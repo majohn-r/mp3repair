@@ -52,5 +52,5 @@ These arguments are common to all facets:
 
 1. **-topDir** The directory whose subdirectories are
    artist names. By default, this is **$HOMEPATH\Music**.
-2. **ext** The extension used to identify music files. By
+2. **-ext** The extension used to identify music files. By
    default, this is **.mp3**
