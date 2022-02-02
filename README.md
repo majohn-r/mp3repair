@@ -1,17 +1,21 @@
 # mp3
+
 The purpose of the **mp3** project is to help manage _mp3_
 sound files in Windows. It has three facets:
 
 ## ls
+
 The **ls** facet provides a means for listing mp3 files. It
 can list artists, albums, and tracks, governed by these
 command line arguments:
+
 1. **-artist** List artist names. **True** by default
 2. **-album** List album names. **True** by default
 3. **-track** List track names. **True** by default
 
 In addition, you can specify that track listings can be in
 numeric or alphabetic order:
+
 1. **-sort** Allowed values are **numeric** (default) and
    **alpha**
 
@@ -39,10 +43,13 @@ Track and album names can be annotated with the boolean
    (**-artist=false**)
 
 ## check
+
 ## repair
 
 ### Common Arguments
+
 These arguments are common to all facets:
+
 1. **-topDir** The directory whose subdirectories are
    artist names. By default, this is **$HOMEPATH\Music**.
 2. **ext** The extension used to identify music files. By
