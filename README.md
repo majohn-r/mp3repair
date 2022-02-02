@@ -27,6 +27,17 @@ it will be replaced by an appropriate value as follows:
 3. If tracks are listed but albums are not listed, the
    value is replaced by **alpha**
 
+Track and album names can be annotated with the boolean
+**-annotate** flag, which is **false** by default. If
+**true**, the following annotations are provided:
+
+1. Album names will include the recording artist if
+   artists are not included (**-artist=false**)
+2. Track names will include the album name if albums are
+   not included (**-album=false**), and the recording
+   artist if artists are also not included
+   (**-artist=false**)
+
 ## check
 ## repair
 

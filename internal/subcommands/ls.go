@@ -10,13 +10,14 @@ import (
 )
 
 type ls struct {
-	fs             *flag.FlagSet
-	includeAlbums  *bool
-	includeArtists *bool
-	includeTracks  *bool
-	trackSorting   *string
-	topDirectory   *string
-	fileExtension  *string
+	fs               *flag.FlagSet
+	includeAlbums    *bool
+	includeArtists   *bool
+	includeTracks    *bool
+	trackSorting     *string
+	topDirectory     *string
+	fileExtension    *string
+	annotateListings *bool
 }
 
 func (l *ls) Name() string {
@@ -27,13 +28,14 @@ func NewLsCommand() *ls {
 	defaultTopDir, _ := files.DefaultDirectory()
 	fSet := flag.NewFlagSet("ls", flag.ExitOnError)
 	return &ls{
-		fs:             fSet,
-		includeAlbums:  fSet.Bool("album", true, "include album names in listing"),
-		includeArtists: fSet.Bool("artist", true, "include artist names in listing"),
-		includeTracks:  fSet.Bool("track", false, "include track names in listing"),
-		trackSorting:   fSet.String("sort", "numeric", "track sorting, 'numeric' in track number order, or 'alpha' in track name order"),
-		topDirectory:   fSet.String("topDir", defaultTopDir, "top directory in which to look for music files"),
-		fileExtension:  fSet.String("ext", files.DefaultFileExtension, "extension for music files"),
+		fs:               fSet,
+		includeAlbums:    fSet.Bool("album", true, "include album names in listing"),
+		includeArtists:   fSet.Bool("artist", true, "include artist names in listing"),
+		includeTracks:    fSet.Bool("track", false, "include track names in listing"),
+		trackSorting:     fSet.String("sort", "numeric", "track sorting, 'numeric' in track number order, or 'alpha' in track name order"),
+		topDirectory:     fSet.String("topDir", defaultTopDir, "top directory in which to look for music files"),
+		fileExtension:    fSet.String("ext", files.DefaultFileExtension, "extension for music files"),
+		annotateListings: fSet.Bool("annotate", false, "annotate listings with album and artist data"),
 	}
 }
 
@@ -99,8 +101,14 @@ func (l *ls) outputAlbums(albums []*files.Album, prefix string) {
 		albumsByAlbumName := make(map[string]*files.Album)
 		var albumNames []string
 		for _, album := range albums {
-			albumsByAlbumName[album.Name()] = album
-			albumNames = append(albumNames, album.Name())
+			var name string
+			if !*l.includeArtists && *l.annotateListings {
+				name = album.Name() + " by " + album.RecordingArtist.Name()
+			} else {
+				name = album.Name()
+			}
+			albumsByAlbumName[name] = album
+			albumNames = append(albumNames, name)
 		}
 		sort.Strings(albumNames)
 		for _, albumName := range albumNames {
@@ -114,7 +122,7 @@ func (l *ls) outputAlbums(albums []*files.Album, prefix string) {
 			tracks = append(tracks, album.Tracks...)
 		}
 		l.outputTracks(tracks, prefix)
-		}
+	}
 }
 
 func (l *ls) validateTrackSorting() {
@@ -157,7 +165,21 @@ func (l *ls) outputTracks(tracks []*files.Track, prefix string) {
 	case "alpha":
 		var trackNames []string
 		for _, track := range tracks {
-			trackNames = append(trackNames, track.Name)
+			var name string
+			if *l.annotateListings {
+				if !*l.includeAlbums {
+					if !*l.includeArtists {
+						name = track.Name + " on " + track.ContainingAlbum.Name() + " by " + track.ContainingAlbum.RecordingArtist.Name()
+					} else {
+						name = track.Name + " on " + track.ContainingAlbum.Name()
+					}
+				} else {
+					name = track.Name
+				}
+			} else {
+				name = track.Name
+			}
+			trackNames = append(trackNames, name)
 		}
 		sort.Strings(trackNames)
 		for _, trackName := range trackNames {

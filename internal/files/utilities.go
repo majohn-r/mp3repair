@@ -31,9 +31,10 @@ type File struct {
 }
 
 type Track struct {
-	internalRep *File
-	Name        string
-	TrackNumber int
+	internalRep     *File
+	Name            string
+	TrackNumber     int
+	ContainingAlbum *Album
 }
 
 func (t *Track) FullName() string {
@@ -41,8 +42,9 @@ func (t *Track) FullName() string {
 }
 
 type Album struct {
-	internalRep *File
-	Tracks      []*Track
+	internalRep     *File
+	Tracks          []*Track
+	RecordingArtist *Artist
 }
 
 func (al *Album) Name() string {
@@ -71,7 +73,8 @@ func GetMusic(dir string, ext string) (artists []*Artist) {
 				if albumFile.dirFlag {
 					// got an album!
 					album := &Album{
-						internalRep: albumFile,
+						internalRep:     albumFile,
+						RecordingArtist: artist,
 					}
 					artist.Albums = append(artist.Albums, album)
 					for _, trackFile := range albumFile.contents {
@@ -79,9 +82,10 @@ func GetMusic(dir string, ext string) (artists []*Artist) {
 							// got a track!
 							name, trackNumber := parseTrackName(trackFile.name, ext)
 							track := &Track{
-								internalRep: trackFile,
-								Name:        name,
-								TrackNumber: trackNumber,
+								internalRep:     trackFile,
+								Name:            name,
+								TrackNumber:     trackNumber,
+								ContainingAlbum: album,
 							}
 							album.Tracks = append(album.Tracks, track)
 						}
