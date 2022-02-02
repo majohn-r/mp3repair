@@ -47,50 +47,74 @@ func (l *ls) Exec(args []string) {
 }
 
 func (l *ls) runSubcommand() {
-	var output []string
-	if *l.includeAlbums {
-		output = append(output, "include albums")
-	}
-	if *l.includeArtists {
-		output = append(output, "include artists")
-	}
-	if *l.includeTracks {
-		output = append(output, "include tracks")
-	}
-	log.Printf("%s: %s", l.Name(), strings.Join(output, "; "))
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
-		log.Printf("nothing to do!")
+		log.Printf("%s: nothing to do!", l.Name())
 		return
 	}
+	var output []string
+	if *l.includeAlbums {
+		output = append(output, " include albums")
+	}
+	if *l.includeArtists {
+		output = append(output, " include artists")
+	}
+	if *l.includeTracks {
+		output = append(output, " include tracks")
+	}
+	log.Printf("%s:%s", l.Name(), strings.Join(output, ";"))
 	log.Printf("search %s for files with extension %s", *l.topDirectory, *l.fileExtension)
 	if *l.includeTracks {
 		l.validateTrackSorting()
 		log.Printf("track order: %s", *l.trackSorting)
 	}
 	artists := files.GetMusic(*l.topDirectory, *l.fileExtension)
-	artistsByArtistNames := make(map[string]*files.Artist)
-	var artistNames []string
-	for _, artist := range artists {
-		artistsByArtistNames[artist.Name()] = artist
-		artistNames = append(artistNames, artist.Name())
+	l.outputArtists(artists)
+}
+
+func (l *ls) outputArtists(artists []*files.Artist) {
+	if *l.includeArtists {
+		artistsByArtistNames := make(map[string]*files.Artist)
+		var artistNames []string
+		for _, artist := range artists {
+			artistsByArtistNames[artist.Name()] = artist
+			artistNames = append(artistNames, artist.Name())
+		}
+		sort.Strings(artistNames)
+		for _, artistName := range artistNames {
+			fmt.Printf("Artist: %s\n", artistName)
+			artist := artistsByArtistNames[artistName]
+			l.outputAlbums(artist.Albums, "  ")
+		}
+	} else {
+		var albums []*files.Album
+		for _, artist := range artists {
+			albums = append(albums, artist.Albums...)
+		}
+		l.outputAlbums(albums, "")
 	}
-	sort.Strings(artistNames)
-	for _, artistName := range artistNames {
-		fmt.Printf("Artist: '%s'\n", artistName)
-		artist := artistsByArtistNames[artistName]
+}
+
+func (l *ls) outputAlbums(albums []*files.Album, prefix string) {
+	if *l.includeAlbums {
 		albumsByAlbumName := make(map[string]*files.Album)
 		var albumNames []string
-		for _, album := range artist.Albums {
+		for _, album := range albums {
 			albumsByAlbumName[album.Name()] = album
 			albumNames = append(albumNames, album.Name())
 		}
 		sort.Strings(albumNames)
 		for _, albumName := range albumNames {
-			fmt.Printf("  Album: '%s'\n", albumName)
+			fmt.Printf("%sAlbum: %s\n", prefix, albumName)
 			album := albumsByAlbumName[albumName]
-			l.outputTracks(album.Tracks, "    ")
+			l.outputTracks(album.Tracks, prefix+"  ")
 		}
-	}
+	} else {
+		var tracks []*files.Track
+		for _, album := range albums {
+			tracks = append(tracks, album.Tracks...)
+		}
+		l.outputTracks(tracks, prefix)
+		}
 }
 
 func (l *ls) validateTrackSorting() {
@@ -104,12 +128,20 @@ func (l *ls) validateTrackSorting() {
 	case "alpha":
 	default:
 		log.Printf("unexpected track sorting '%s'", *l.trackSorting)
-		preferredValue := "numeric"
+		var preferredValue string
+		if *l.includeAlbums {
+			preferredValue = "numeric"
+		} else {
+			preferredValue = "alpha"
+		}
 		l.trackSorting = &preferredValue
 	}
 }
 
 func (l *ls) outputTracks(tracks []*files.Track, prefix string) {
+	if !*l.includeTracks {
+		return
+	}
 	switch *l.trackSorting {
 	case "numeric":
 		tracksNumeric := make(map[int]string)

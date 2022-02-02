@@ -37,7 +37,7 @@
             "mode": "auto",
             "cwd": "${workspaceFolder}\\cmd\\mp3",
             "program": "${workspaceFolder}\\cmd\\mp3",
-            "args": ["ls", "-artist=true", "-album=false", "-track=true", "-sort=numeric"]
+            "args": ["ls", "-artist=false", "-album=true", "-track=true", "-sort=numeric"]
         },
         {
             "name": "Launch Package check",
