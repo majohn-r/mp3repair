@@ -6,6 +6,8 @@ import (
 	"log"
 	"os"
 	"strings"
+
+	"github.com/bogem/id3v2"
 )
 
 const (
@@ -86,6 +88,17 @@ func GetMusic(dir string, ext string) (artists []*Artist) {
 								Name:            name,
 								TrackNumber:     trackNumber,
 								ContainingAlbum: album,
+							}
+							// test mp3 read?
+							tag, err := id3v2.Open(trackFile.parentPath+pathSeparator+trackFile.name, id3v2.Options{Parse: true})
+							if err != nil {
+								log.Printf("Error while opening mp3 file %s %v: ", trackFile.parentPath+pathSeparator+trackFile.name, err)
+							} else {
+								defer tag.Close()
+
+								// Read tags.
+								fmt.Printf("         name: %s by %s on %s\n", track.Name, track.ContainingAlbum.RecordingArtist.Name(), track.ContainingAlbum.Name())
+								fmt.Printf("Metadata says: %s by %s on %s\n", tag.Title(), tag.Artist(), tag.Album())
 							}
 							album.Tracks = append(album.Tracks, track)
 						}
