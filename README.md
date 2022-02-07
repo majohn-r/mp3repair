@@ -37,3 +37,5 @@ These arguments are common to all subcommands:
 
 1. **-topDir** The directory whose subdirectories are artist names. By default, this is **$HOMEPATH\Music**.
 2. **-ext** The extension used to identify music files. By default, this is **.mp3**
+3. **-albums** Filter for which albums to process. By default, **'.*'**
+4. **-artists** Filter foe which artists to process. By default, **'.*'**
