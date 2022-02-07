@@ -3,6 +3,7 @@ package subcommands
 import (
 	"flag"
 	"fmt"
+	"log"
 	"mp3/internal/files"
 )
 
@@ -11,6 +12,8 @@ type check struct {
 	checkEmptyFolders         *bool
 	checkGapsInTrackNumbering *bool
 	checkIntegrity            *bool
+	albumRegex                *string
+	artistRegex               *string
 	topDirectory              *string
 	fileExtension             *string
 }
@@ -29,18 +32,22 @@ func NewCheckCommand() *check {
 		checkIntegrity:            fSet.Bool("integrity", true, "check for disagreement between the file system and audio file metadata"),
 		topDirectory:              fSet.String("topDir", defaultTopDir, "top directory in which to look for music files"),
 		fileExtension:             fSet.String("ext", files.DefaultFileExtension, "extension for music files"),
+		albumRegex:                fSet.String("albums", ".*", "regular expression of albums to repair"),
+		artistRegex:               fSet.String("artists", ".*", "regular epxression of artists to repair"),
 	}
 }
 
 func (c *check) Exec(args []string) {
 	err := c.fs.Parse(args)
-	if err == nil {
+	switch err {
+	case nil:
 		c.runSubcommand()
-	} else {
+	default:
 		fmt.Printf("%v\n", err)
 	}
 }
 
 func (c *check) runSubcommand() {
-	fmt.Printf("%s: empty: %t, gaps: %t, integrity: %t, top directory: %s, extension: %s\n", c.Name(), *c.checkEmptyFolders, *c.checkGapsInTrackNumbering, *c.checkIntegrity, *c.topDirectory, *c.fileExtension)
+	log.Printf("%s: empty: %t, gaps: %t, integrity: %t\n", c.Name(), *c.checkEmptyFolders, *c.checkGapsInTrackNumbering, *c.checkIntegrity)
+	log.Printf("search %s for files with extension %s for artists '%s' and albums '%s'", *c.topDirectory, *c.fileExtension, *c.artistRegex, *c.albumRegex)
 }
