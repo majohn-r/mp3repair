@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"mp3/internal/files"
-	"strings"
 )
 
 type repair struct {
@@ -13,13 +12,14 @@ type repair struct {
 	target        *string
 	albumRegex    *string
 	artistRegex   *string
+	dryRun        *bool
 	topDirectory  *string
 	fileExtension *string
 }
 
 const (
 	defaultRepairType string = "metadata"
-	fsRepair string = "files"
+	fsRepair          string = "files"
 )
 
 func (r *repair) Name() string {
@@ -33,6 +33,7 @@ func NewRepairCommand() *repair {
 		target:        fSet.String("target", defaultRepairType, fmt.Sprintf("either '%s' (make metadata agree with file system) or '%s' (make file system agree with metadata)", defaultRepairType, fsRepair)),
 		albumRegex:    fSet.String("albums", ".*", "regular expression of albums to repair"),
 		artistRegex:   fSet.String("artists", ".*", "regular epxression of artists to repair"),
+		dryRun:        fSet.Bool("dryRun", false, "if true, output what would have repaired, but make no repairs"),
 		topDirectory:  fSet.String("topDir", defaultTopDir, "top directory in which to look for music files"),
 		fileExtension: fSet.String("ext", files.DefaultFileExtension, "extension for music files"),
 	}
@@ -40,27 +41,28 @@ func NewRepairCommand() *repair {
 
 func (r *repair) Exec(args []string) {
 	err := r.fs.Parse(args)
-	if err == nil {
+	switch err {
+	case nil:
 		r.runSubcommand()
-	} else {
-		fmt.Printf("%v\n", err)
+	default:
+		log.Printf("%v\n", err)
 	}
 }
 
 func (r *repair) runSubcommand() {
 	r.validateTarget()
-	var output []string
-	output = append(output, fmt.Sprintf(" target: %s", *r.target))
-	output = append(output, fmt.Sprintf(" albums: %s", *r.albumRegex))
-	output = append(output, fmt.Sprintf(" artists: %s", *r.artistRegex))
-	log.Printf("%s:%s", r.Name(), strings.Join(output, ";"))
-	log.Printf("search %s for files with extension %s", *r.topDirectory, *r.fileExtension)
+	log.Printf("%s %s for artists '%s' and albums '%s'", r.Name(), *r.target, *r.artistRegex, *r.albumRegex)
+	switch *r.dryRun {
+	case true:
+		log.Println("dry run only")
+	case false:
+		log.Printf("search %s for files with extension %s", *r.topDirectory, *r.fileExtension)
+	}
 }
 
 func (r *repair) validateTarget() {
-	switch *r.target{
-	case defaultRepairType:
-	case fsRepair:
+	switch *r.target {
+	case defaultRepairType, fsRepair:
 	default:
 		log.Printf("-target=%s is not valid\n", *r.target)
 		s := defaultRepairType
