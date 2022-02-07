@@ -51,12 +51,12 @@ func (r *repair) Exec(args []string) {
 
 func (r *repair) runSubcommand() {
 	r.validateTarget()
-	log.Printf("%s %s for artists '%s' and albums '%s'", r.Name(), *r.target, *r.artistRegex, *r.albumRegex)
+	log.Printf("%s %s", r.Name(), *r.target)
 	switch *r.dryRun {
 	case true:
 		log.Println("dry run only")
 	case false:
-		log.Printf("search %s for files with extension %s", *r.topDirectory, *r.fileExtension)
+		log.Printf("search %s for files with extension %s for artists '%s' and albums '%s'", *r.topDirectory, *r.fileExtension, *r.artistRegex, *r.albumRegex)
 	}
 }
 

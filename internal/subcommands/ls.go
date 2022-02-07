@@ -17,6 +17,8 @@ type ls struct {
 	trackSorting     *string
 	topDirectory     *string
 	fileExtension    *string
+	albumRegex       *string
+	artistRegex      *string
 	annotateListings *bool
 }
 
@@ -36,14 +38,17 @@ func NewLsCommand() *ls {
 		topDirectory:     fSet.String("topDir", defaultTopDir, "top directory in which to look for music files"),
 		fileExtension:    fSet.String("ext", files.DefaultFileExtension, "extension for music files"),
 		annotateListings: fSet.Bool("annotate", false, "annotate listings with album and artist data"),
+		albumRegex:       fSet.String("albums", ".*", "regular expression of albums to repair"),
+		artistRegex:      fSet.String("artists", ".*", "regular epxression of artists to repair"),
 	}
 }
 
 func (l *ls) Exec(args []string) {
 	err := l.fs.Parse(args)
-	if err == nil {
+	switch err {
+	case nil:
 		l.runSubcommand()
-	} else {
+	default:
 		fmt.Printf("%v\n", err)
 	}
 }
@@ -64,7 +69,7 @@ func (l *ls) runSubcommand() {
 		output = append(output, " include tracks")
 	}
 	log.Printf("%s:%s", l.Name(), strings.Join(output, ";"))
-	log.Printf("search %s for files with extension %s", *l.topDirectory, *l.fileExtension)
+	log.Printf("search %s for files with extension %s; for artists '%s' and albums '%s'", *l.topDirectory, *l.fileExtension, *l.artistRegex, *l.albumRegex)
 	if *l.includeTracks {
 		l.validateTrackSorting()
 		log.Printf("track order: %s", *l.trackSorting)
@@ -74,7 +79,8 @@ func (l *ls) runSubcommand() {
 }
 
 func (l *ls) outputArtists(artists []*files.Artist) {
-	if *l.includeArtists {
+	switch *l.includeArtists {
+	case true:
 		artistsByArtistNames := make(map[string]*files.Artist)
 		var artistNames []string
 		for _, artist := range artists {
@@ -87,7 +93,7 @@ func (l *ls) outputArtists(artists []*files.Artist) {
 			artist := artistsByArtistNames[artistName]
 			l.outputAlbums(artist.Albums, "  ")
 		}
-	} else {
+	case false:
 		var albums []*files.Album
 		for _, artist := range artists {
 			albums = append(albums, artist.Albums...)
@@ -97,14 +103,16 @@ func (l *ls) outputArtists(artists []*files.Artist) {
 }
 
 func (l *ls) outputAlbums(albums []*files.Album, prefix string) {
-	if *l.includeAlbums {
+	switch *l.includeAlbums {
+	case true:
 		albumsByAlbumName := make(map[string]*files.Album)
 		var albumNames []string
 		for _, album := range albums {
 			var name string
-			if !*l.includeArtists && *l.annotateListings {
+			switch {
+			case !*l.includeArtists && *l.annotateListings:
 				name = album.Name() + " by " + album.RecordingArtist.Name()
-			} else {
+			default:
 				name = album.Name()
 			}
 			albumsByAlbumName[name] = album
@@ -116,7 +124,7 @@ func (l *ls) outputAlbums(albums []*files.Album, prefix string) {
 			album := albumsByAlbumName[albumName]
 			l.outputTracks(album.Tracks, prefix+"  ")
 		}
-	} else {
+	case false:
 		var tracks []*files.Track
 		for _, album := range albums {
 			tracks = append(tracks, album.Tracks...)
@@ -137,9 +145,10 @@ func (l *ls) validateTrackSorting() {
 	default:
 		log.Printf("unexpected track sorting '%s'", *l.trackSorting)
 		var preferredValue string
-		if *l.includeAlbums {
+		switch *l.includeAlbums {
+		case true:
 			preferredValue = "numeric"
-		} else {
+		case false:
 			preferredValue = "alpha"
 		}
 		l.trackSorting = &preferredValue
@@ -165,21 +174,17 @@ func (l *ls) outputTracks(tracks []*files.Track, prefix string) {
 	case "alpha":
 		var trackNames []string
 		for _, track := range tracks {
-			var name string
-			if *l.annotateListings {
+			var components []string
+			components = append(components, track.Name)
+			if (*l.annotateListings) {
 				if !*l.includeAlbums {
+					components = append(components, fmt.Sprintf("on %s", track.ContainingAlbum.Name()))
 					if !*l.includeArtists {
-						name = track.Name + " on " + track.ContainingAlbum.Name() + " by " + track.ContainingAlbum.RecordingArtist.Name()
-					} else {
-						name = track.Name + " on " + track.ContainingAlbum.Name()
+						components = append(components, fmt.Sprintf("by %s",track.ContainingAlbum.RecordingArtist.Name()))
 					}
-				} else {
-					name = track.Name
 				}
-			} else {
-				name = track.Name
 			}
-			trackNames = append(trackNames, name)
+			trackNames = append(trackNames, strings.Join(components, " "))
 		}
 		sort.Strings(trackNames)
 		for _, trackName := range trackNames {
