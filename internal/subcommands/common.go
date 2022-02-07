@@ -1,6 +1,6 @@
 package subcommands
 
-type SubCommand interface {
+type CommandProcessor interface {
 	Name() string
 	Exec([]string)
 }

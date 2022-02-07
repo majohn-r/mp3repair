@@ -7,13 +7,13 @@ import (
 )
 
 func main() {
-	sCmdMap := make(map[string]subcommands.SubCommand)
-	lsCommand := subcommands.NewLsCommand()
+	sCmdMap := make(map[string]subcommands.CommandProcessor)
+	lsCommand := subcommands.NewLsCommandProcessor()
 	lsName := lsCommand.Name()
 	sCmdMap[lsName] = lsCommand
-	checkCommand := subcommands.NewCheckCommand()
+	checkCommand := subcommands.NewCheckCommandProcessor()
 	sCmdMap[checkCommand.Name()] = checkCommand
-	repairCommand := subcommands.NewRepairCommand()
+	repairCommand := subcommands.NewRepairCommandProcessor()
 	sCmdMap[repairCommand.Name()] = repairCommand
 
 	if len(os.Args) < 2 {

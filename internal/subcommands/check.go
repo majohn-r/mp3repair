@@ -22,7 +22,7 @@ func (c *check) Name() string {
 	return c.fs.Name()
 }
 
-func NewCheckCommand() *check {
+func NewCheckCommandProcessor() *check {
 	defaultTopDir, _ := files.DefaultDirectory()
 	fSet := flag.NewFlagSet("check", flag.ExitOnError)
 	return &check{

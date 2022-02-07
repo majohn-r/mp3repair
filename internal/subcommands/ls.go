@@ -26,7 +26,7 @@ func (l *ls) Name() string {
 	return l.fs.Name()
 }
 
-func NewLsCommand() *ls {
+func NewLsCommandProcessor() *ls {
 	defaultTopDir, _ := files.DefaultDirectory()
 	fSet := flag.NewFlagSet("ls", flag.ExitOnError)
 	return &ls{

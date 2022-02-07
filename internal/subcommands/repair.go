@@ -25,7 +25,7 @@ const (
 func (r *repair) Name() string {
 	return r.fs.Name()
 }
-func NewRepairCommand() *repair {
+func NewRepairCommandProcessor() *repair {
 	defaultTopDir, _ := files.DefaultDirectory()
 	fSet := flag.NewFlagSet("repair", flag.ExitOnError)
 	return &repair{
