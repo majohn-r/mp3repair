@@ -3,9 +3,10 @@ package files
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/bogem/id3v2"
 )
@@ -13,7 +14,7 @@ import (
 const (
 	DefaultFileExtension string = ".mp3"
 	pathSeparator        string = string(os.PathSeparator)
-	homePathEnvVarName string = "HOMEPATH"
+	homePathEnvVarName   string = "HOMEPATH"
 )
 
 func DefaultDirectory() string {
@@ -91,13 +92,13 @@ func GetMusic(dir string, ext string) (artists []*Artist) {
 							// test mp3 read?
 							tag, err := id3v2.Open(trackFile.parentPath+pathSeparator+trackFile.name, id3v2.Options{Parse: true})
 							if err != nil {
-								log.Printf("Error while opening mp3 file %s %v: ", trackFile.parentPath+pathSeparator+trackFile.name, err)
+								log.Errorf("Error while opening mp3 file %s %v: ", trackFile.parentPath+pathSeparator+trackFile.name, err)
 							} else {
 								defer tag.Close()
 
 								// Read tags.
-								fmt.Printf("         name: %s by %s on %s\n", track.Name, track.ContainingAlbum.RecordingArtist.Name(), track.ContainingAlbum.Name())
-								fmt.Printf("Metadata says: %s by %s on %s\n", tag.Title(), tag.Artist(), tag.Album())
+								log.Debugf("         name: %s by %s on %s\n", track.Name, track.ContainingAlbum.RecordingArtist.Name(), track.ContainingAlbum.Name())
+								log.Debugf("Metadata says: %s by %s on %s\n", tag.Title(), tag.Artist(), tag.Album())
 							}
 							album.Tracks = append(album.Tracks, track)
 						}
@@ -122,7 +123,7 @@ func parseTrackName(name string, ext string) (simple string, track int) {
 func ReadDirectory(dir string) (f *File) {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
-		log.Println(err)
+		log.Error(err)
 	}
 	parts := strings.Split(dir, pathSeparator)
 	var parentSlice []string

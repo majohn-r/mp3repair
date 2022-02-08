@@ -3,10 +3,11 @@ package subcommands
 import (
 	"flag"
 	"fmt"
-	"log"
 	"mp3/internal/files"
 	"sort"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type ls struct {
@@ -48,14 +49,13 @@ func (l *ls) Exec(args []string) {
 	case nil:
 		l.runSubcommand()
 	default:
-		fmt.Printf("%v\n", err)
+		log.Fatal(err)
 	}
 }
 
 func (l *ls) runSubcommand() {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
-		log.Printf("%s: nothing to do!", l.Name())
-		return
+		log.Fatalf("%s: nothing to do!", l.Name())
 	}
 	var output []string
 	if *l.includeAlbums {
@@ -67,11 +67,11 @@ func (l *ls) runSubcommand() {
 	if *l.includeTracks {
 		output = append(output, " include tracks")
 	}
-	log.Printf("%s:%s", l.Name(), strings.Join(output, ";"))
-	log.Printf("search %s for files with extension %s; for artists '%s' and albums '%s'", *l.topDirectory, *l.fileExtension, *l.artistRegex, *l.albumRegex)
+	log.Infof("%s:%s", l.Name(), strings.Join(output, ";"))
+	log.Infof("search %s for files with extension %s; for artists '%s' and albums '%s'", *l.topDirectory, *l.fileExtension, *l.artistRegex, *l.albumRegex)
 	if *l.includeTracks {
 		l.validateTrackSorting()
-		log.Printf("track order: %s", *l.trackSorting)
+		log.Infof("track order: %s", *l.trackSorting)
 	}
 	artists := files.GetMusic(*l.topDirectory, *l.fileExtension)
 	l.outputArtists(artists)
@@ -136,13 +136,13 @@ func (l *ls) validateTrackSorting() {
 	switch *l.trackSorting {
 	case "numeric":
 		if !*l.includeAlbums {
-			log.Printf("numeric track sorting does not make sense without listing albums")
+			log.Warnf("numeric track sorting does not make sense without listing albums")
 			preferredValue := "alpha"
 			l.trackSorting = &preferredValue
 		}
 	case "alpha":
 	default:
-		log.Printf("unexpected track sorting '%s'", *l.trackSorting)
+		log.Warnf("unexpected track sorting '%s'", *l.trackSorting)
 		var preferredValue string
 		switch *l.includeAlbums {
 		case true:
@@ -175,11 +175,11 @@ func (l *ls) outputTracks(tracks []*files.Track, prefix string) {
 		for _, track := range tracks {
 			var components []string
 			components = append(components, track.Name)
-			if (*l.annotateListings) {
+			if *l.annotateListings {
 				if !*l.includeAlbums {
 					components = append(components, fmt.Sprintf("on %s", track.ContainingAlbum.Name()))
 					if !*l.includeArtists {
-						components = append(components, fmt.Sprintf("by %s",track.ContainingAlbum.RecordingArtist.Name()))
+						components = append(components, fmt.Sprintf("by %s", track.ContainingAlbum.RecordingArtist.Name()))
 					}
 				}
 			}

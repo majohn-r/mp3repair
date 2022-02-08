@@ -1,9 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"mp3/internal/subcommands"
 	"os"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -23,7 +24,7 @@ func main() {
 	} else {
 		sCmd, found := sCmdMap[os.Args[1]]
 		if !found {
-			fmt.Printf("%s: argument '%s' is not recognized\n", os.Args[0], os.Args[1])
+			log.Fatalf("%s: argument '%s' is not recognized\n", os.Args[0], os.Args[1])
 		} else {
 			sCmd.Exec(os.Args[2:])
 		}

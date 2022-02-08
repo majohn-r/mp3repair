@@ -2,9 +2,9 @@ package subcommands
 
 import (
 	"flag"
-	"fmt"
-	"log"
 	"mp3/internal/files"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type check struct {
@@ -42,11 +42,11 @@ func (c *check) Exec(args []string) {
 	case nil:
 		c.runSubcommand()
 	default:
-		fmt.Printf("%v\n", err)
+		log.Fatal(err)
 	}
 }
 
 func (c *check) runSubcommand() {
-	log.Printf("%s: empty: %t, gaps: %t, integrity: %t\n", c.Name(), *c.checkEmptyFolders, *c.checkGapsInTrackNumbering, *c.checkIntegrity)
-	log.Printf("search %s for files with extension %s for artists '%s' and albums '%s'", *c.topDirectory, *c.fileExtension, *c.artistRegex, *c.albumRegex)
+	log.Infof("%s: empty: %t, gaps: %t, integrity: %t\n", c.Name(), *c.checkEmptyFolders, *c.checkGapsInTrackNumbering, *c.checkIntegrity)
+	log.Infof("search %s for files with extension %s for artists '%s' and albums '%s'", *c.topDirectory, *c.fileExtension, *c.artistRegex, *c.albumRegex)
 }

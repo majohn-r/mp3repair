@@ -3,8 +3,9 @@ package subcommands
 import (
 	"flag"
 	"fmt"
-	"log"
 	"mp3/internal/files"
+
+	log "github.com/sirupsen/logrus"
 )
 
 type repair struct {
@@ -44,18 +45,18 @@ func (r *repair) Exec(args []string) {
 	case nil:
 		r.runSubcommand()
 	default:
-		log.Printf("%v\n", err)
+		log.Fatal(err)
 	}
 }
 
 func (r *repair) runSubcommand() {
 	r.validateTarget()
-	log.Printf("%s %s", r.Name(), *r.target)
+	log.Infof("%s %s", r.Name(), *r.target)
 	switch *r.dryRun {
 	case true:
-		log.Println("dry run only")
+		log.Info("dry run only")
 	case false:
-		log.Printf("search %s for files with extension %s for artists '%s' and albums '%s'", *r.topDirectory, *r.fileExtension, *r.artistRegex, *r.albumRegex)
+		log.Infof("search %s for files with extension %s for artists '%s' and albums '%s'", *r.topDirectory, *r.fileExtension, *r.artistRegex, *r.albumRegex)
 	}
 }
 
@@ -63,7 +64,7 @@ func (r *repair) validateTarget() {
 	switch *r.target {
 	case defaultRepairType, fsRepair:
 	default:
-		log.Printf("-target=%s is not valid\n", *r.target)
+		log.Warnf("-target=%s is not valid\n", *r.target)
 		s := defaultRepairType
 		r.target = &s
 	}
