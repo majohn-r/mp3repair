@@ -1,10 +1,9 @@
 package main
 
 import (
+	"fmt"
 	"mp3/internal/subcommands"
 	"os"
-
-	log "github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -18,15 +17,14 @@ func main() {
 	sCmdMap[repairCommand.Name()] = repairCommand
 
 	if len(os.Args) < 2 {
-		var args []string
-		args = append(args, lsName)
-		lsCommand.Exec(args)
+		lsCommand.Exec([]string{lsName})
 	} else {
-		sCmd, found := sCmdMap[os.Args[1]]
+		commandName := os.Args[1]
+		sCmd, found := sCmdMap[commandName]
 		if !found {
-			log.Fatalf("%s: argument '%s' is not recognized\n", os.Args[0], os.Args[1])
-		} else {
-			sCmd.Exec(os.Args[2:])
+			fmt.Printf("subcommand '%s' is not recognized\n", commandName)
+			os.Exit(1)
 		}
+		sCmd.Exec(os.Args[2:])
 	}
 }

@@ -37,13 +37,8 @@ func NewCheckCommandProcessor() *check {
 }
 
 func (c *check) Exec(args []string) {
-	err := c.fs.Parse(args)
-	switch err {
-	case nil:
-		c.runSubcommand()
-	default:
-		log.Fatal(err)
-	}
+	processArgs(c.fs, args)
+	c.runSubcommand()
 }
 
 func (c *check) runSubcommand() {

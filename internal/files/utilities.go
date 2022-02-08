@@ -20,7 +20,8 @@ const (
 func DefaultDirectory() string {
 	homePath, found := os.LookupEnv(homePathEnvVarName)
 	if !found {
-		log.Fatalf("%s environment variable is not defined", homePathEnvVarName)
+		fmt.Printf("%s environment variable is not defined", homePathEnvVarName)
+		os.Exit(1)
 	}
 	return fmt.Sprintf("%s%s%s", homePath, pathSeparator, "Music")
 }

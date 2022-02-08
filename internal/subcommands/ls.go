@@ -44,18 +44,13 @@ func NewLsCommandProcessor() *ls {
 }
 
 func (l *ls) Exec(args []string) {
-	err := l.fs.Parse(args)
-	switch err {
-	case nil:
-		l.runSubcommand()
-	default:
-		log.Fatal(err)
-	}
+	processArgs(l.fs, args)
+	l.runSubcommand()
 }
 
 func (l *ls) runSubcommand() {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
-		log.Fatalf("%s: nothing to do!", l.Name())
+		fmt.Printf("%s: nothing to do!", l.Name())
 	}
 	var output []string
 	if *l.includeAlbums {
@@ -142,7 +137,7 @@ func (l *ls) validateTrackSorting() {
 		}
 	case "alpha":
 	default:
-		log.Warnf("unexpected track sorting '%s'", *l.trackSorting)
+		fmt.Printf("unexpected track sorting '%s'", *l.trackSorting)
 		var preferredValue string
 		switch *l.includeAlbums {
 		case true:

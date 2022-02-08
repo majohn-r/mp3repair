@@ -40,13 +40,8 @@ func NewRepairCommandProcessor() *repair {
 }
 
 func (r *repair) Exec(args []string) {
-	err := r.fs.Parse(args)
-	switch err {
-	case nil:
-		r.runSubcommand()
-	default:
-		log.Fatal(err)
-	}
+	processArgs(r.fs, args)
+	r.runSubcommand()
 }
 
 func (r *repair) runSubcommand() {
@@ -64,7 +59,7 @@ func (r *repair) validateTarget() {
 	switch *r.target {
 	case defaultRepairType, fsRepair:
 	default:
-		log.Warnf("-target=%s is not valid\n", *r.target)
+		fmt.Printf("-target=%s is not valid\n", *r.target)
 		s := defaultRepairType
 		r.target = &s
 	}
