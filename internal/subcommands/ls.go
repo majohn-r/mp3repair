@@ -27,7 +27,6 @@ func (l *ls) Name() string {
 }
 
 func NewLsCommandProcessor() *ls {
-	defaultTopDir, _ := files.DefaultDirectory()
 	fSet := flag.NewFlagSet("ls", flag.ExitOnError)
 	return &ls{
 		fs:               fSet,
@@ -35,7 +34,7 @@ func NewLsCommandProcessor() *ls {
 		includeArtists:   fSet.Bool("artist", true, "include artist names in listing"),
 		includeTracks:    fSet.Bool("track", false, "include track names in listing"),
 		trackSorting:     fSet.String("sort", "numeric", "track sorting, 'numeric' in track number order, or 'alpha' in track name order"),
-		topDirectory:     fSet.String("topDir", defaultTopDir, "top directory in which to look for music files"),
+		topDirectory:     fSet.String("topDir", files.DefaultDirectory(), "top directory in which to look for music files"),
 		fileExtension:    fSet.String("ext", files.DefaultFileExtension, "extension for music files"),
 		annotateListings: fSet.Bool("annotate", false, "annotate listings with album and artist data"),
 		albumRegex:       fSet.String("albums", ".*", "regular expression of albums to repair"),

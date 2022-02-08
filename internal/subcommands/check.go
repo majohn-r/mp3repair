@@ -23,14 +23,13 @@ func (c *check) Name() string {
 }
 
 func NewCheckCommandProcessor() *check {
-	defaultTopDir, _ := files.DefaultDirectory()
 	fSet := flag.NewFlagSet("check", flag.ExitOnError)
 	return &check{
 		fs:                        fSet,
 		checkEmptyFolders:         fSet.Bool("empty", true, "check for empty artist and album folders"),
 		checkGapsInTrackNumbering: fSet.Bool("gaps", true, "check for gaps in track numbers"),
 		checkIntegrity:            fSet.Bool("integrity", true, "check for disagreement between the file system and audio file metadata"),
-		topDirectory:              fSet.String("topDir", defaultTopDir, "top directory in which to look for music files"),
+		topDirectory:              fSet.String("topDir", files.DefaultDirectory(), "top directory in which to look for music files"),
 		fileExtension:             fSet.String("ext", files.DefaultFileExtension, "extension for music files"),
 		albumRegex:                fSet.String("albums", ".*", "regular expression of albums to repair"),
 		artistRegex:               fSet.String("artists", ".*", "regular epxression of artists to repair"),

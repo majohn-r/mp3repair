@@ -13,16 +13,15 @@ import (
 const (
 	DefaultFileExtension string = ".mp3"
 	pathSeparator        string = string(os.PathSeparator)
+	homePathEnvVarName string = "HOMEPATH"
 )
 
-func DefaultDirectory() (s string, found bool) {
-	var homePath string
-	homePath, found = os.LookupEnv("HOMEPATH")
+func DefaultDirectory() string {
+	homePath, found := os.LookupEnv(homePathEnvVarName)
 	if !found {
-		return
+		log.Fatalf("%s environment variable is not defined", homePathEnvVarName)
 	}
-	s = fmt.Sprintf("%s%s%s", homePath, pathSeparator, "Music")
-	return
+	return fmt.Sprintf("%s%s%s", homePath, pathSeparator, "Music")
 }
 
 type File struct {

@@ -26,7 +26,6 @@ func (r *repair) Name() string {
 	return r.fs.Name()
 }
 func NewRepairCommandProcessor() *repair {
-	defaultTopDir, _ := files.DefaultDirectory()
 	fSet := flag.NewFlagSet("repair", flag.ExitOnError)
 	return &repair{
 		fs:            fSet,
@@ -34,7 +33,7 @@ func NewRepairCommandProcessor() *repair {
 		albumRegex:    fSet.String("albums", ".*", "regular expression of albums to repair"),
 		artistRegex:   fSet.String("artists", ".*", "regular epxression of artists to repair"),
 		dryRun:        fSet.Bool("dryRun", false, "if true, output what would have repaired, but make no repairs"),
-		topDirectory:  fSet.String("topDir", defaultTopDir, "top directory in which to look for music files"),
+		topDirectory:  fSet.String("topDir", files.DefaultDirectory(), "top directory in which to look for music files"),
 		fileExtension: fSet.String("ext", files.DefaultFileExtension, "extension for music files"),
 	}
 }
