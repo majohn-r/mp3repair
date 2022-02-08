@@ -4,9 +4,15 @@ import (
 	"fmt"
 	"mp3/internal/subcommands"
 	"os"
+	"path/filepath"
+	"time"
+
+	rotatelogs "github.com/lestrrat/go-file-rotatelogs"
+	log "github.com/sirupsen/logrus"
 )
 
 func main() {
+	initLogging()
 	sCmdMap := make(map[string]subcommands.CommandProcessor)
 	lsCommand := subcommands.NewLsCommandProcessor()
 	lsName := lsCommand.Name()
@@ -27,4 +33,36 @@ func main() {
 		}
 		sCmd.Exec(os.Args[2:])
 	}
+}
+
+const (
+	day   time.Duration = time.Hour * 24
+	month time.Duration = day * 30
+)
+
+func initLogging() {
+	tmp, found := os.LookupEnv("TMP")
+	if !found {
+		tmp, found = os.LookupEnv("TEMP")
+		if !found {
+			fmt.Print("cannot find temporary files location, neither TMP nor TEMP environment variables are set")
+			os.Exit(1)
+		}
+	}
+	path := filepath.Join(tmp, "mp3","logs")
+	if err := os.MkdirAll(path, 0755); err != nil {
+		fmt.Printf("cannot create path '%s': %v\n", path, err)
+		os.Exit(1)
+	}
+	writer, err := rotatelogs.New(
+		filepath.Join(path, "%Y-%m-%d.log"),
+		rotatelogs.WithLinkName(filepath.Join(path,"latest")),
+		rotatelogs.WithMaxAge(month),
+		rotatelogs.WithRotationTime(day),
+	)
+	if err != nil {
+		fmt.Printf("failed to initialize logging: %v\n", err)
+		os.Exit(1)
+	}
+	log.SetOutput(writer)
 }

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -13,7 +14,6 @@ import (
 
 const (
 	DefaultFileExtension string = ".mp3"
-	pathSeparator        string = string(os.PathSeparator)
 	homePathEnvVarName   string = "HOMEPATH"
 )
 
@@ -23,7 +23,7 @@ func DefaultDirectory() string {
 		fmt.Printf("%s environment variable is not defined", homePathEnvVarName)
 		os.Exit(1)
 	}
-	return fmt.Sprintf("%s%s%s", homePath, pathSeparator, "Music")
+	return filepath.Join(homePath, "Music")
 }
 
 type File struct {
@@ -91,15 +91,15 @@ func GetMusic(dir string, ext string) (artists []*Artist) {
 								ContainingAlbum: album,
 							}
 							// test mp3 read?
-							tag, err := id3v2.Open(trackFile.parentPath+pathSeparator+trackFile.name, id3v2.Options{Parse: true})
+							tag, err := id3v2.Open(filepath.Join(trackFile.parentPath, trackFile.name), id3v2.Options{Parse: true})
 							if err != nil {
-								log.Errorf("Error while opening mp3 file %s %v: ", trackFile.parentPath+pathSeparator+trackFile.name, err)
+								log.Errorf("Error while opening mp3 file %s %v: ", filepath.Join(trackFile.parentPath, trackFile.name), err)
 							} else {
 								defer tag.Close()
 
 								// Read tags.
-								log.Debugf("         name: %s by %s on %s\n", track.Name, track.ContainingAlbum.RecordingArtist.Name(), track.ContainingAlbum.Name())
-								log.Debugf("Metadata says: %s by %s on %s\n", tag.Title(), tag.Artist(), tag.Album())
+								log.Infof("         name: %s by %s on %s\n", track.Name, track.ContainingAlbum.RecordingArtist.Name(), track.ContainingAlbum.Name())
+								log.Infof("Metadata says: %s by %s on %s\n", tag.Title(), tag.Artist(), tag.Album())
 							}
 							album.Tracks = append(album.Tracks, track)
 						}
@@ -126,19 +126,15 @@ func ReadDirectory(dir string) (f *File) {
 	if err != nil {
 		log.Error(err)
 	}
-	parts := strings.Split(dir, pathSeparator)
-	var parentSlice []string
-	for k := 0; k < len(parts)-1; k++ {
-		parentSlice = append(parentSlice, parts[k])
-	}
+	parentDirName, dirName := filepath.Split(dir)
 	f = &File{
-		parentPath: strings.Join(parentSlice, pathSeparator),
-		name:       parts[len(parts)-1],
+		parentPath: parentDirName,
+		name:       dirName,
 		dirFlag:    true,
 	}
 	for _, file := range files {
 		if file.IsDir() {
-			subdir := ReadDirectory(dir + string(os.PathSeparator) + file.Name())
+			subdir := ReadDirectory(filepath.Join(dir, file.Name()))
 			f.contents = append(f.contents, subdir)
 		} else {
 			plainFile := &File{
