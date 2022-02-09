@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"mp3/internal"
 	"mp3/internal/subcommands"
 	"os"
 	"path/filepath"
@@ -11,7 +12,13 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	day   time.Duration = time.Hour * 24
+	month time.Duration = day * 30
+)
+
 func main() {
+	initEnv()
 	initLogging()
 	sCmdMap := make(map[string]subcommands.CommandProcessor)
 	lsCommand := subcommands.NewLsCommandProcessor()
@@ -35,21 +42,18 @@ func main() {
 	}
 }
 
-const (
-	day   time.Duration = time.Hour * 24
-	month time.Duration = day * 30
-)
+func initEnv() {
+	if errors := internal.LookupEnvVars(); len(errors) > 0 {
+		fmt.Println("1 or more environment variables unset")
+		for _, e := range errors {
+			fmt.Println(e)
+		}
+		os.Exit(1)
+	}
+}
 
 func initLogging() {
-	tmp, found := os.LookupEnv("TMP")
-	if !found {
-		tmp, found = os.LookupEnv("TEMP")
-		if !found {
-			fmt.Print("cannot find temporary files location, neither TMP nor TEMP environment variables are set")
-			os.Exit(1)
-		}
-	}
-	path := filepath.Join(tmp, "mp3","logs")
+	path := filepath.Join(internal.TmpFolder, "mp3","logs")
 	if err := os.MkdirAll(path, 0755); err != nil {
 		fmt.Printf("cannot create path '%s': %v\n", path, err)
 		os.Exit(1)

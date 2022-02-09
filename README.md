@@ -39,3 +39,10 @@ These arguments are common to all subcommands:
 2. **-ext** The extension used to identify music files. By default, this is **.mp3**
 3. **-albums** Filter for which albums to process. By default, **'.*'**
 4. **-artists** Filter foe which artists to process. By default, **'.*'**
+
+## Environment
+
+**mp3** depends on the following environment variables being set:
+
+1. **%TMP%** or **%TEMP%** - the system temporary folder. **%TMP%** is checked first, and, if not found, then **%TEMP%** is checked.
+1. **%HOMEPATH%** - the user's home folder.

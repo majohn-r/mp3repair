@@ -3,7 +3,7 @@ package files
 import (
 	"fmt"
 	"io/ioutil"
-	"os"
+	"mp3/internal"
 	"path/filepath"
 	"strings"
 
@@ -14,16 +14,10 @@ import (
 
 const (
 	DefaultFileExtension string = ".mp3"
-	homePathEnvVarName   string = "HOMEPATH"
 )
 
 func DefaultDirectory() string {
-	homePath, found := os.LookupEnv(homePathEnvVarName)
-	if !found {
-		fmt.Printf("%s environment variable is not defined", homePathEnvVarName)
-		os.Exit(1)
-	}
-	return filepath.Join(homePath, "Music")
+	return filepath.Join(internal.HomePath, "Music")
 }
 
 type File struct {
