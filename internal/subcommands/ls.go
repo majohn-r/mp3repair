@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"mp3/internal/files"
+	"os"
 	"sort"
 	"strings"
 
@@ -51,6 +52,7 @@ func (l *ls) Exec(args []string) {
 func (l *ls) runSubcommand() {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
 		fmt.Printf("%s: nothing to do!", l.Name())
+		os.Exit(0)
 	}
 	var output []string
 	if *l.includeAlbums {
@@ -68,7 +70,8 @@ func (l *ls) runSubcommand() {
 		l.validateTrackSorting()
 		log.Infof("track order: %s", *l.trackSorting)
 	}
-	artists := files.GetMusic(*l.topDirectory, *l.fileExtension)
+	params := files.NewDirectorySearchParams(*l.topDirectory, *l.fileExtension, *l.albumRegex, *l.artistRegex)
+	artists := files.GetMusic(params)
 	l.outputArtists(artists)
 }
 

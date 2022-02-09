@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"io/ioutil"
 	"mp3/internal"
+	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
@@ -57,11 +59,57 @@ func (ar *Artist) Name() string {
 	return ar.internalRep.name
 }
 
-func GetMusic(dir string, ext string) (artists []*Artist) {
-	tree := ReadDirectory(dir)
+type DirectorySearchParams struct {
+	topDirectory    string
+	targetExtension string
+	albumFilter     *regexp.Regexp
+	artistFilter    *regexp.Regexp
+}
+
+func NewDirectorySearchParams(dir, ext, albums, artists string) *DirectorySearchParams {
+	var badRegex bool
+	var albumsFilter *regexp.Regexp
+	var artistsFilter *regexp.Regexp
+	if filter, b := validateRegexp(albums, "album"); b {
+		badRegex = true
+	} else {
+		albumsFilter = filter
+	}
+	if filter, b := validateRegexp(artists, "artist"); b {
+		badRegex = true
+	} else {
+		artistsFilter = filter
+	}
+	if badRegex {
+		os.Exit(1)
+	}
+	return &DirectorySearchParams{
+		topDirectory:    dir,
+		targetExtension: ext,
+		albumFilter:     albumsFilter,
+		artistFilter:    artistsFilter,
+	}
+}
+
+func validateRegexp(pattern, name string) (filter *regexp.Regexp, badRegex bool) {
+	if f, err := regexp.Compile(pattern); err != nil {
+		fmt.Printf("%s filter is invalid: %v\n", name, err)
+		badRegex = true
+	} else {
+		filter = f
+	}
+	return
+}
+
+func GetMusic(params *DirectorySearchParams) (artists []*Artist) {
+	tree := ReadDirectory(params.topDirectory)
+	var filteredAlbums bool
 	for _, file := range tree.contents {
 		if file.dirFlag {
 			// got an artist!
+			if !params.artistFilter.MatchString(file.name) {
+				continue
+			}
 			artist := &Artist{
 				internalRep: file,
 			}
@@ -69,15 +117,19 @@ func GetMusic(dir string, ext string) (artists []*Artist) {
 			for _, albumFile := range file.contents {
 				if albumFile.dirFlag {
 					// got an album!
+					if !params.albumFilter.MatchString(albumFile.name) {
+						filteredAlbums = true
+						continue
+					}
 					album := &Album{
 						internalRep:     albumFile,
 						RecordingArtist: artist,
 					}
 					artist.Albums = append(artist.Albums, album)
 					for _, trackFile := range albumFile.contents {
-						if !trackFile.dirFlag && strings.HasSuffix(trackFile.name, ext) {
+						if !trackFile.dirFlag && strings.HasSuffix(trackFile.name, params.targetExtension) {
 							// got a track!
-							name, trackNumber := parseTrackName(trackFile.name, ext)
+							name, trackNumber := parseTrackName(trackFile.name, params.targetExtension)
 							track := &Track{
 								internalRep:     trackFile,
 								Name:            name,
@@ -101,6 +153,16 @@ func GetMusic(dir string, ext string) (artists []*Artist) {
 				}
 			}
 		}
+	}
+	// purge artists with all albums filtered out
+	if filteredAlbums {
+		var filteredArtists []*Artist
+		for _, artist := range artists {
+			if len(artist.Albums) > 0 {
+				filteredArtists = append(filteredArtists, artist)
+			}
+		}
+		artists = filteredArtists
 	}
 	return artists
 }
