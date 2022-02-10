@@ -54,21 +54,17 @@ func (l *ls) runSubcommand() {
 		fmt.Printf("%s: nothing to do!", l.Name())
 		os.Exit(0)
 	}
-	var output []string
-	if *l.includeAlbums {
-		output = append(output, " include albums")
-	}
-	if *l.includeArtists {
-		output = append(output, " include artists")
-	}
-	if *l.includeTracks {
-		output = append(output, " include tracks")
-	}
-	log.Infof("%s:%s", l.Name(), strings.Join(output, ";"))
-	log.Infof("search %s for files with extension %s; for artists '%s' and albums '%s'", *l.topDirectory, *l.fileExtension, *l.artistRegex, *l.albumRegex)
+	log.WithFields(log.Fields{
+		"subcommandName": l.Name(),
+		"includeAlbums":  *l.includeAlbums,
+		"includeArtists": *l.includeArtists,
+		"includeTracks":  *l.includeTracks,
+	}).Info("subcommand")
 	if *l.includeTracks {
 		l.validateTrackSorting()
-		log.Infof("track order: %s", *l.trackSorting)
+		log.WithFields(log.Fields{
+			"trackSorting": *l.trackSorting,
+		}).Infof("track sorting")
 	}
 	params := files.NewDirectorySearchParams(*l.topDirectory, *l.fileExtension, *l.albumRegex, *l.artistRegex)
 	artists := files.GetMusic(params)
@@ -134,7 +130,7 @@ func (l *ls) validateTrackSorting() {
 	switch *l.trackSorting {
 	case "numeric":
 		if !*l.includeAlbums {
-			log.Warnf("numeric track sorting does not make sense without listing albums")
+			log.Warn("numeric track sorting does not make sense without listing albums")
 			preferredValue := "alpha"
 			l.trackSorting = &preferredValue
 		}

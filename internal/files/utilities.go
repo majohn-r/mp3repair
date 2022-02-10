@@ -102,6 +102,12 @@ func validateRegexp(pattern, name string) (filter *regexp.Regexp, badRegex bool)
 }
 
 func GetMusic(params *DirectorySearchParams) (artists []*Artist) {
+	log.WithFields(log.Fields{
+		"topDirectory":  params.topDirectory,
+		"fileExtension": params.targetExtension,
+		"albumFilter":   params.albumFilter,
+		"artistFilter":  params.artistFilter,
+	}).Info("read data from file system")
 	tree := ReadDirectory(params.topDirectory)
 	var filteredAlbums bool
 	for _, file := range tree.contents {
@@ -139,13 +145,24 @@ func GetMusic(params *DirectorySearchParams) (artists []*Artist) {
 							// test mp3 read?
 							tag, err := id3v2.Open(filepath.Join(trackFile.parentPath, trackFile.name), id3v2.Options{Parse: true})
 							if err != nil {
-								log.Errorf("Error while opening mp3 file %s %v: ", filepath.Join(trackFile.parentPath, trackFile.name), err)
+								log.WithFields(log.Fields{
+									"filename": filepath.Join(trackFile.parentPath, trackFile.name),
+									"error":    err,
+								}).Warn("cannot open mp3 file")
 							} else {
 								defer tag.Close()
 
 								// Read tags.
-								log.Infof("         name: %s by %s on %s\n", track.Name, track.ContainingAlbum.RecordingArtist.Name(), track.ContainingAlbum.Name())
-								log.Infof("Metadata says: %s by %s on %s\n", tag.Title(), tag.Artist(), tag.Album())
+								log.WithFields(log.Fields{
+									"fileSystemTrackName":   track.Name,
+									"fileSystemTrackNumber": track.TrackNumber,
+									"fileSystemArtistName":  track.ContainingAlbum.RecordingArtist.Name(),
+									"fileSystemAlbumName":   track.ContainingAlbum.Name(),
+									"metadataTrackName":     tag.Title(),
+									"metadataTrackNumber":   tag.GetTextFrame("TRCK").Text,
+									"metadataArtistName":    tag.Artist(),
+									"metadataAlbumName":     tag.Album(),
+								}).Info("track date")
 							}
 							album.Tracks = append(album.Tracks, track)
 						}
@@ -180,7 +197,9 @@ func parseTrackName(name string, ext string) (simple string, track int) {
 func ReadDirectory(dir string) (f *File) {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
-		log.Error(err)
+		log.WithFields(log.Fields{
+			"error": err,
+		}).Error("reading directory")
 	}
 	parentDirName, dirName := filepath.Split(dir)
 	f = &File{

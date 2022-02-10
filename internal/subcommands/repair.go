@@ -46,11 +46,15 @@ func (r *repair) Exec(args []string) {
 
 func (r *repair) runSubcommand() {
 	r.validateTarget()
-	log.Infof("%s %s", r.Name(), *r.target)
+	log.WithFields(log.Fields{
+		"subcommandName": r.Name(),
+		"target":         *r.target,
+	}).Info("subcommand")
 	switch *r.dryRun {
 	case true:
 		log.Info("dry run only")
 	case false:
+		// TODO: replace with call to get files and perform the specified repairs
 		log.Infof("search %s for files with extension %s for artists '%s' and albums '%s'", *r.topDirectory, *r.fileExtension, *r.artistRegex, *r.albumRegex)
 	}
 }

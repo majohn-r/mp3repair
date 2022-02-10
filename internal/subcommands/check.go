@@ -42,6 +42,10 @@ func (c *check) Exec(args []string) {
 }
 
 func (c *check) runSubcommand() {
-	log.Infof("%s: empty: %t, gaps: %t, integrity: %t\n", c.Name(), *c.checkEmptyFolders, *c.checkGapsInTrackNumbering, *c.checkIntegrity)
-	log.Infof("search %s for files with extension %s for artists '%s' and albums '%s'", *c.topDirectory, *c.fileExtension, *c.artistRegex, *c.albumRegex)
+	log.WithFields(log.Fields{
+		"subcommandName":    c.Name(),
+		"checkEmptyFolders": *c.checkEmptyFolders,
+		"checkTrackGaps":    *c.checkGapsInTrackNumbering,
+		"checkIntegrity":    *c.checkIntegrity,
+	}).Info("subcommand")
 }
