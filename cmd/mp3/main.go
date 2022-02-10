@@ -6,15 +6,9 @@ import (
 	"mp3/internal/subcommands"
 	"os"
 	"path/filepath"
-	"time"
 
-	rotatelogs "github.com/lestrrat/go-file-rotatelogs"
 	log "github.com/sirupsen/logrus"
-)
-
-const (
-	day   time.Duration = time.Hour * 24
-	month time.Duration = day * 30
+	lumberjack "gopkg.in/natefinch/lumberjack.v2"
 )
 
 func main() {
@@ -53,20 +47,16 @@ func initEnv() {
 }
 
 func initLogging() {
-	path := filepath.Join(internal.TmpFolder, "mp3","logs")
+	path := filepath.Join(internal.TmpFolder, "mp3", "logs")
 	if err := os.MkdirAll(path, 0755); err != nil {
 		fmt.Printf("cannot create path '%s': %v\n", path, err)
 		os.Exit(1)
 	}
-	writer, err := rotatelogs.New(
-		filepath.Join(path, "%Y-%m-%d.log"),
-		rotatelogs.WithLinkName(filepath.Join(path,"latest")),
-		rotatelogs.WithMaxAge(month),
-		rotatelogs.WithRotationTime(day),
-	)
-	if err != nil {
-		fmt.Printf("failed to initialize logging: %v\n", err)
-		os.Exit(1)
+	w := &lumberjack.Logger{
+		Filename:   filepath.Join(path, "mp3.log"),
+		MaxSize:    500, // megabytes
+		MaxBackups: 30,
+		MaxAge:     30, //days
 	}
-	log.SetOutput(writer)
+	log.SetOutput(w)
 }
