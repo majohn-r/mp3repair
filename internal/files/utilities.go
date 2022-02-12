@@ -66,29 +66,53 @@ type DirectorySearchParams struct {
 	artistFilter    *regexp.Regexp
 }
 
-func NewDirectorySearchParams(dir, ext, albums, artists string) *DirectorySearchParams {
-	var badRegex bool
-	var albumsFilter *regexp.Regexp
-	var artistsFilter *regexp.Regexp
+var trackNameRegex *regexp.Regexp
+
+func NewDirectorySearchParams(dir, ext, albums, artists string) (params *DirectorySearchParams) {
+	albumsFilter, artistsFilter, problemsExist := validateSearchParameters(ext, albums, artists)
+	if !problemsExist {
+		params = &DirectorySearchParams{
+			topDirectory:    dir,
+			targetExtension: ext,
+			albumFilter:     albumsFilter,
+			artistFilter:    artistsFilter,
+		}
+	} else {
+		os.Exit(1)
+	}
+	return
+}
+
+func validateSearchParameters(ext string, albums string, artists string) (albumsFilter *regexp.Regexp, artistsFilter *regexp.Regexp, problemsExist bool) {
+	if !validateExtension(ext) {
+		problemsExist = true
+	}
 	if filter, b := validateRegexp(albums, "album"); b {
-		badRegex = true
+		problemsExist = true
 	} else {
 		albumsFilter = filter
 	}
 	if filter, b := validateRegexp(artists, "artist"); b {
-		badRegex = true
+		problemsExist = true
 	} else {
 		artistsFilter = filter
 	}
-	if badRegex {
-		os.Exit(1)
+	return
+}
+
+func validateExtension(ext string) (valid bool) {
+	valid = true
+	if !strings.HasPrefix(ext, ".") || strings.Contains(strings.TrimPrefix(ext, "."), ".") {
+		valid = false
+		fmt.Printf("the extension %q must contain exactly one '.' and it must be the first character\n", ext)
 	}
-	return &DirectorySearchParams{
-		topDirectory:    dir,
-		targetExtension: ext,
-		albumFilter:     albumsFilter,
-		artistFilter:    artistsFilter,
+	var e error
+	trackNameRegex, e = regexp.Compile("^\\d+ .*\\." + strings.TrimPrefix(ext, ".") + "$")
+	if e != nil {
+		valid = false
+		fmt.Printf("%q is not a valid extension\n", ext)
 	}
+	return
 }
 
 func validateRegexp(pattern, name string) (filter *regexp.Regexp, badRegex bool) {
@@ -135,36 +159,38 @@ func GetMusic(params *DirectorySearchParams) (artists []*Artist) {
 					for _, trackFile := range albumFile.contents {
 						if !trackFile.dirFlag && strings.HasSuffix(trackFile.name, params.targetExtension) {
 							// got a track!
-							name, trackNumber := parseTrackName(trackFile.name, params.targetExtension)
-							track := &Track{
-								internalRep:     trackFile,
-								Name:            name,
-								TrackNumber:     trackNumber,
-								ContainingAlbum: album,
-							}
-							// test mp3 read?
-							tag, err := id3v2.Open(filepath.Join(trackFile.parentPath, trackFile.name), id3v2.Options{Parse: true})
-							if err != nil {
-								log.WithFields(log.Fields{
-									"filename": filepath.Join(trackFile.parentPath, trackFile.name),
-									"error":    err,
-								}).Warn("cannot open mp3 file")
-							} else {
-								defer tag.Close()
+							name, trackNumber, validTrackName := parseTrackName(trackFile.name, album.Name(), artist.Name(), params.targetExtension)
+							if validTrackName {
+								track := &Track{
+									internalRep:     trackFile,
+									Name:            name,
+									TrackNumber:     trackNumber,
+									ContainingAlbum: album,
+								}
+								// TODO: move this code
+								tag, err := id3v2.Open(filepath.Join(trackFile.parentPath, trackFile.name), id3v2.Options{Parse: true})
+								if err != nil {
+									log.WithFields(log.Fields{
+										"filename": filepath.Join(trackFile.parentPath, trackFile.name),
+										"error":    err,
+									}).Warn("cannot open mp3 file")
+								} else {
+									defer tag.Close()
 
-								// Read tags.
-								log.WithFields(log.Fields{
-									"fileSystemTrackName":   track.Name,
-									"fileSystemTrackNumber": track.TrackNumber,
-									"fileSystemArtistName":  track.ContainingAlbum.RecordingArtist.Name(),
-									"fileSystemAlbumName":   track.ContainingAlbum.Name(),
-									"metadataTrackName":     tag.Title(),
-									"metadataTrackNumber":   tag.GetTextFrame("TRCK").Text,
-									"metadataArtistName":    tag.Artist(),
-									"metadataAlbumName":     tag.Album(),
-								}).Info("track date")
+									// Read tags.
+									log.WithFields(log.Fields{
+										"fileSystemTrackName":   track.Name,
+										"fileSystemTrackNumber": track.TrackNumber,
+										"fileSystemArtistName":  track.ContainingAlbum.RecordingArtist.Name(),
+										"fileSystemAlbumName":   track.ContainingAlbum.Name(),
+										"metadataTrackName":     tag.Title(),
+										"metadataTrackNumber":   tag.GetTextFrame("TRCK").Text,
+										"metadataArtistName":    tag.Artist(),
+										"metadataAlbumName":     tag.Album(),
+									}).Info("track date")
+								}
+								album.Tracks = append(album.Tracks, track)
 							}
-							album.Tracks = append(album.Tracks, track)
 						}
 					}
 				}
@@ -184,13 +210,22 @@ func GetMusic(params *DirectorySearchParams) (artists []*Artist) {
 	return artists
 }
 
-func parseTrackName(name string, ext string) (simple string, track int) {
-	var rawTrackName string
-	fmt.Sscanf(name, "%s ", &rawTrackName)
-	simple = strings.TrimPrefix(name, rawTrackName)
-	simple = strings.TrimPrefix(simple, " ")
-	simple = strings.TrimSuffix(simple, ext)
-	fmt.Sscanf(rawTrackName, "%d", &track)
+func parseTrackName(name string, album string, artist string, ext string) (simpleName string, trackNumber int, valid bool) {
+	if !trackNameRegex.MatchString(name) {
+		log.WithFields(log.Fields{
+			"trackName":  name,
+			"albumName":  album,
+			"artistName": artist,
+		}).Warn("invalid track name")
+		return
+	}
+	var rawTrackNumber string
+	fmt.Sscanf(name, "%s ", &rawTrackNumber)
+	simpleName = strings.TrimPrefix(name, rawTrackNumber) // trim off leading track number
+	simpleName = strings.TrimPrefix(simpleName, " ")      // trim off leading space
+	simpleName = strings.TrimSuffix(simpleName, ext)      // trim off extension
+	fmt.Sscanf(rawTrackNumber, "%d", &trackNumber)        // read track number as int
+	valid = true
 	return
 }
 

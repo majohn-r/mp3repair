@@ -4,10 +4,10 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"os/exec"
-
 	// "github.com/magefile/mage/mg" // mg contains helpful utility functions, like Deps
 )
 
@@ -45,4 +45,18 @@ func Build() error {
 func Clean() {
 	fmt.Printf("Removing %s\n", executable)
 	os.RemoveAll(executable)
+}
+
+func Test() {
+	stdout := &bytes.Buffer{}
+    stderr := &bytes.Buffer{}
+	cmd := exec.Command("go", "test", "-cover", "./...")
+    cmd.Stderr = stderr
+    cmd.Stdout = stdout
+	fmt.Println("running all unit tests with code coverage")
+	if err := cmd.Run(); err != nil {
+		fmt.Println(stderr.String())
+	} else {
+		fmt.Println(stdout.String())
+	}
 }
