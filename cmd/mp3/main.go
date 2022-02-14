@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
-	lumberjack "gopkg.in/natefinch/lumberjack.v2"
+	"github.com/utahta/go-cronowriter"
 )
 
 func main() {
@@ -52,11 +52,8 @@ func initLogging() {
 		fmt.Printf("cannot create path '%s': %v\n", path, err)
 		os.Exit(1)
 	}
-	w := &lumberjack.Logger{
-		Filename:   filepath.Join(path, "mp3.log"),
-		MaxSize:    500, // megabytes
-		MaxBackups: 30,
-		MaxAge:     30, //days
-	}
+	logFileTemplate := filepath.Join(path, "mp3.log.%Y%m%d")
+	symlink := filepath.Join(path, "latest.log")
+	w := cronowriter.MustNew(logFileTemplate, cronowriter.WithSymlink(symlink))
 	log.SetOutput(w)
 }

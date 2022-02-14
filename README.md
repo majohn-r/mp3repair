@@ -70,7 +70,7 @@ The following third party libraries are used:
   reading and writing the mp3 file metadata.
 * [https://github.com/sirupsen/logrus](https://github.com/sirupsen/logrus) is
   used for logging.
-* [https://github.com/natefinch/lumberjack](https://github.com/natefinch/lumberjack)
+* [https://github.com/utahta/go-cronowriter](https://github.com/utahta/go-cronowriter)
   is used for log rotation.
 
 In addition, [https://libs.garden/](https://libs.garden/) is used to find
