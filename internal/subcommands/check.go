@@ -4,7 +4,7 @@ import (
 	"flag"
 	"mp3/internal/files"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 type check struct {
@@ -42,7 +42,7 @@ func (c *check) Exec(args []string) {
 }
 
 func (c *check) runSubcommand() {
-	log.WithFields(log.Fields{
+	logrus.WithFields(logrus.Fields{
 		"subcommandName":    c.Name(),
 		"checkEmptyFolders": *c.checkEmptyFolders,
 		"checkTrackGaps":    *c.checkGapsInTrackNumbering,

@@ -7,8 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
-	log "github.com/sirupsen/logrus"
-	"github.com/utahta/go-cronowriter"
+	"github.com/sirupsen/logrus"
 )
 
 func main() {
@@ -52,8 +51,6 @@ func initLogging() {
 		fmt.Printf("cannot create path '%s': %v\n", path, err)
 		os.Exit(1)
 	}
-	logFileTemplate := filepath.Join(path, "mp3.log.%Y%m%d")
-	symlink := filepath.Join(path, "latest.log")
-	w := cronowriter.MustNew(logFileTemplate, cronowriter.WithSymlink(symlink))
-	log.SetOutput(w)
+	logrus.SetOutput(internal.ConfigureLogging(path))
+	internal.CleanupLogFiles(path)
 }

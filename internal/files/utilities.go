@@ -9,9 +9,8 @@ import (
 	"regexp"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/bogem/id3v2/v2"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -126,7 +125,7 @@ func validateRegexp(pattern, name string) (filter *regexp.Regexp, badRegex bool)
 }
 
 func GetMusic(params *DirectorySearchParams) (artists []*Artist) {
-	log.WithFields(log.Fields{
+	logrus.WithFields(logrus.Fields{
 		"topDirectory":  params.topDirectory,
 		"fileExtension": params.targetExtension,
 		"albumFilter":   params.albumFilter,
@@ -170,7 +169,7 @@ func GetMusic(params *DirectorySearchParams) (artists []*Artist) {
 								// TODO: move this code
 								tag, err := id3v2.Open(filepath.Join(trackFile.parentPath, trackFile.name), id3v2.Options{Parse: true})
 								if err != nil {
-									log.WithFields(log.Fields{
+									logrus.WithFields(logrus.Fields{
 										"filename": filepath.Join(trackFile.parentPath, trackFile.name),
 										"error":    err,
 									}).Warn("cannot open mp3 file")
@@ -178,7 +177,7 @@ func GetMusic(params *DirectorySearchParams) (artists []*Artist) {
 									defer tag.Close()
 
 									// Read tags.
-									log.WithFields(log.Fields{
+									logrus.WithFields(logrus.Fields{
 										"fileSystemTrackName":   track.Name,
 										"fileSystemTrackNumber": track.TrackNumber,
 										"fileSystemArtistName":  track.ContainingAlbum.RecordingArtist.Name(),
@@ -212,7 +211,7 @@ func GetMusic(params *DirectorySearchParams) (artists []*Artist) {
 
 func parseTrackName(name string, album string, artist string, ext string) (simpleName string, trackNumber int, valid bool) {
 	if !trackNameRegex.MatchString(name) {
-		log.WithFields(log.Fields{
+		logrus.WithFields(logrus.Fields{
 			"trackName":  name,
 			"albumName":  album,
 			"artistName": artist,
@@ -232,7 +231,7 @@ func parseTrackName(name string, album string, artist string, ext string) (simpl
 func ReadDirectory(dir string) (f *File) {
 	files, err := ioutil.ReadDir(dir)
 	if err != nil {
-		log.WithFields(log.Fields{
+		logrus.WithFields(logrus.Fields{
 			"error": err,
 		}).Error("reading directory")
 	}

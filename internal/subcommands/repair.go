@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"mp3/internal/files"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 type repair struct {
@@ -46,16 +46,16 @@ func (r *repair) Exec(args []string) {
 
 func (r *repair) runSubcommand() {
 	r.validateTarget()
-	log.WithFields(log.Fields{
+	logrus.WithFields(logrus.Fields{
 		"subcommandName": r.Name(),
 		"target":         *r.target,
 	}).Info("subcommand")
 	switch *r.dryRun {
 	case true:
-		log.Info("dry run only")
+		logrus.Info("dry run only")
 	case false:
 		// TODO: replace with call to get files and perform the specified repairs
-		log.Infof("search %s for files with extension %s for artists '%s' and albums '%s'", *r.topDirectory, *r.fileExtension, *r.artistRegex, *r.albumRegex)
+		logrus.Infof("search %s for files with extension %s for artists '%s' and albums '%s'", *r.topDirectory, *r.fileExtension, *r.artistRegex, *r.albumRegex)
 	}
 }
 

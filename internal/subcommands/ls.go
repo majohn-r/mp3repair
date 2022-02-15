@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
 
 type ls struct {
@@ -54,7 +54,7 @@ func (l *ls) runSubcommand() {
 		fmt.Printf("%s: nothing to do!", l.Name())
 		os.Exit(0)
 	}
-	log.WithFields(log.Fields{
+	logrus.WithFields(logrus.Fields{
 		"subcommandName": l.Name(),
 		"includeAlbums":  *l.includeAlbums,
 		"includeArtists": *l.includeArtists,
@@ -62,7 +62,7 @@ func (l *ls) runSubcommand() {
 	}).Info("subcommand")
 	if *l.includeTracks {
 		l.validateTrackSorting()
-		log.WithFields(log.Fields{
+		logrus.WithFields(logrus.Fields{
 			"trackSorting": *l.trackSorting,
 		}).Infof("track sorting")
 	}
@@ -130,7 +130,7 @@ func (l *ls) validateTrackSorting() {
 	switch *l.trackSorting {
 	case "numeric":
 		if !*l.includeAlbums {
-			log.Warn("numeric track sorting does not make sense without listing albums")
+			logrus.Warn("numeric track sorting does not make sense without listing albums")
 			preferredValue := "alpha"
 			l.trackSorting = &preferredValue
 		}
