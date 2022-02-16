@@ -13,25 +13,12 @@ import (
 func main() {
 	initEnv()
 	initLogging()
-	sCmdMap := make(map[string]subcommands.CommandProcessor)
-	lsCommand := subcommands.NewLsCommandProcessor()
-	lsName := lsCommand.Name()
-	sCmdMap[lsName] = lsCommand
-	checkCommand := subcommands.NewCheckCommandProcessor()
-	sCmdMap[checkCommand.Name()] = checkCommand
-	repairCommand := subcommands.NewRepairCommandProcessor()
-	sCmdMap[repairCommand.Name()] = repairCommand
-
-	if len(os.Args) < 2 {
-		lsCommand.Exec([]string{lsName})
+	cmd, args := subcommands.ProcessCommand(os.Args)
+	if cmd == nil {
+		fmt.Printf("subcommand %q is not recognized\n", os.Args[1])
+		os.Exit(1)
 	} else {
-		commandName := os.Args[1]
-		sCmd, found := sCmdMap[commandName]
-		if !found {
-			fmt.Printf("subcommand '%s' is not recognized\n", commandName)
-			os.Exit(1)
-		}
-		sCmd.Exec(os.Args[2:])
+		cmd.Exec(args)
 	}
 }
 

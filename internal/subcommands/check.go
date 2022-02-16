@@ -2,48 +2,38 @@ package subcommands
 
 import (
 	"flag"
-	"mp3/internal/files"
 
 	"github.com/sirupsen/logrus"
 )
 
 type check struct {
-	fs                        *flag.FlagSet
 	checkEmptyFolders         *bool
 	checkGapsInTrackNumbering *bool
 	checkIntegrity            *bool
-	albumRegex                *string
-	artistRegex               *string
-	topDirectory              *string
-	fileExtension             *string
+	commons                   *CommonCommandFlags
 }
 
-func (c *check) Name() string {
-	return c.fs.Name()
+func (c *check) name() string {
+	return c.commons.name()
 }
 
-func NewCheckCommandProcessor() *check {
-	fSet := flag.NewFlagSet("check", flag.ExitOnError)
+func newCheck(fSet *flag.FlagSet) CommandProcessor {
 	return &check{
-		fs:                        fSet,
 		checkEmptyFolders:         fSet.Bool("empty", true, "check for empty artist and album folders"),
 		checkGapsInTrackNumbering: fSet.Bool("gaps", true, "check for gaps in track numbers"),
 		checkIntegrity:            fSet.Bool("integrity", true, "check for disagreement between the file system and audio file metadata"),
-		topDirectory:              fSet.String("topDir", files.DefaultDirectory(), "top directory in which to look for music files"),
-		fileExtension:             fSet.String("ext", files.DefaultFileExtension, "extension for music files"),
-		albumRegex:                fSet.String("albums", ".*", "regular expression of albums to repair"),
-		artistRegex:               fSet.String("artists", ".*", "regular epxression of artists to repair"),
+		commons:                   newCommonCommandFlags(fSet),
 	}
 }
 
 func (c *check) Exec(args []string) {
-	processArgs(c.fs, args)
+	c.commons.processArgs(args)
 	c.runSubcommand()
 }
 
 func (c *check) runSubcommand() {
 	logrus.WithFields(logrus.Fields{
-		"subcommandName":    c.Name(),
+		"subcommandName":    c.name(),
 		"checkEmptyFolders": *c.checkEmptyFolders,
 		"checkTrackGaps":    *c.checkGapsInTrackNumbering,
 		"checkIntegrity":    *c.checkIntegrity,

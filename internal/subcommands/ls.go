@@ -12,50 +12,42 @@ import (
 )
 
 type ls struct {
-	fs               *flag.FlagSet
 	includeAlbums    *bool
 	includeArtists   *bool
 	includeTracks    *bool
 	trackSorting     *string
-	topDirectory     *string
-	fileExtension    *string
-	albumRegex       *string
-	artistRegex      *string
 	annotateListings *bool
+	commons          *CommonCommandFlags
 }
 
-func (l *ls) Name() string {
-	return l.fs.Name()
+func (l *ls) name() string {
+	return l.commons.name()
 }
 
-func NewLsCommandProcessor() *ls {
-	fSet := flag.NewFlagSet("ls", flag.ExitOnError)
-	return &ls{
-		fs:               fSet,
+func newLs(fSet *flag.FlagSet) CommandProcessor {
+	processor := &ls{
 		includeAlbums:    fSet.Bool("album", true, "include album names in listing"),
 		includeArtists:   fSet.Bool("artist", true, "include artist names in listing"),
 		includeTracks:    fSet.Bool("track", false, "include track names in listing"),
 		trackSorting:     fSet.String("sort", "numeric", "track sorting, 'numeric' in track number order, or 'alpha' in track name order"),
-		topDirectory:     fSet.String("topDir", files.DefaultDirectory(), "top directory in which to look for music files"),
-		fileExtension:    fSet.String("ext", files.DefaultFileExtension, "extension for music files"),
 		annotateListings: fSet.Bool("annotate", false, "annotate listings with album and artist data"),
-		albumRegex:       fSet.String("albums", ".*", "regular expression of albums to repair"),
-		artistRegex:      fSet.String("artists", ".*", "regular epxression of artists to repair"),
+		commons:          newCommonCommandFlags(fSet),
 	}
+	return processor
 }
 
 func (l *ls) Exec(args []string) {
-	processArgs(l.fs, args)
+	l.commons.processArgs(args)
 	l.runSubcommand()
 }
 
 func (l *ls) runSubcommand() {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
-		fmt.Printf("%s: nothing to do!", l.Name())
+		fmt.Printf("%s: nothing to do!", l.name())
 		os.Exit(0)
 	}
 	logrus.WithFields(logrus.Fields{
-		"subcommandName": l.Name(),
+		"subcommandName": l.name(),
 		"includeAlbums":  *l.includeAlbums,
 		"includeArtists": *l.includeArtists,
 		"includeTracks":  *l.includeTracks,
@@ -66,7 +58,7 @@ func (l *ls) runSubcommand() {
 			"trackSorting": *l.trackSorting,
 		}).Infof("track sorting")
 	}
-	params := files.NewDirectorySearchParams(*l.topDirectory, *l.fileExtension, *l.albumRegex, *l.artistRegex)
+	params := files.NewDirectorySearchParams(*l.commons.topDirectory, *l.commons.fileExtension, *l.commons.albumRegex, *l.commons.artistRegex)
 	artists := files.GetMusic(params)
 	l.outputArtists(artists)
 }
