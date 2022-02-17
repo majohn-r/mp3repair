@@ -14,10 +14,11 @@ import (
 )
 
 const (
-	logFilePrefix   string = "mp3.log."
-	logFileTemplate string = logFilePrefix + "%Y%m%d"
-	symlinkName     string = "latest.log"
-	maxLogFiles     int    = 10
+	logFilePrefix    string = "mp3."
+	logFileExtension string = ".log"
+	logFileTemplate  string = logFilePrefix + "%Y%m%d" + logFileExtension
+	symlinkName      string = "latest.log"
+	maxLogFiles      int    = 10
 )
 
 func ConfigureLogging(path string) *cronowriter.CronoWriter {
@@ -26,7 +27,6 @@ func ConfigureLogging(path string) *cronowriter.CronoWriter {
 	return cronowriter.MustNew(logFileTemplate, cronowriter.WithSymlink(symlink), cronowriter.WithInit())
 }
 
-// For testing, os.Chtimes(filename, accessTime, modificationTime) sets the timestamps
 func CleanupLogFiles(path string) {
 	if files, err := ioutil.ReadDir(path); err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -37,7 +37,8 @@ func CleanupLogFiles(path string) {
 		var fileMap map[time.Time]fs.FileInfo = make(map[time.Time]fs.FileInfo)
 		var times []time.Time
 		for _, file := range files {
-			if file.Mode().IsRegular() && strings.HasPrefix(file.Name(), logFilePrefix) {
+			fileName := file.Name()
+			if file.Mode().IsRegular() && strings.HasPrefix(fileName, logFilePrefix) && strings.HasSuffix(fileName, logFileExtension) {
 				modificationTime := file.ModTime()
 				fileMap[modificationTime] = file
 				times = append(times, modificationTime)

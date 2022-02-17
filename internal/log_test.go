@@ -41,7 +41,7 @@ func TestConfigureLogging(t *testing.T) {
 				for _, file := range files {
 					mode := file.Mode()
 					fileName := file.Name()
-					if mode.IsRegular() && strings.HasPrefix(fileName, logFilePrefix) {
+					if mode.IsRegular() && strings.HasPrefix(fileName, logFilePrefix) && strings.HasSuffix(fileName, logFileExtension) {
 						mp3logFound = true
 
 					} else if fs.ModeSymlink == (mode&fs.ModeSymlink) && fileName == symlinkName {
@@ -53,7 +53,7 @@ func TestConfigureLogging(t *testing.T) {
 				t.Errorf("ConfigureLogging(): %s not found", symlinkName)
 			}
 			if !mp3logFound {
-				t.Errorf("ConfigureLogging(): no %s* files found", logFilePrefix)
+				t.Errorf("ConfigureLogging(): no %s*%s files found", logFilePrefix, logFileExtension)
 			}
 		})
 	}
@@ -101,7 +101,7 @@ func TestCleanupLogFiles(t *testing.T) {
 			}
 			// create required files
 			for k := 0; k < tt.fileCount; k++ {
-				filename := filepath.Join(tt.args.path, logFilePrefix+fmt.Sprintf("%2d", k))
+				filename := filepath.Join(tt.args.path, logFilePrefix+fmt.Sprintf("%02d", k)+logFileExtension)
 				if file, err := os.Create(filename); err != nil {
 					t.Errorf("CleanupLogFiles(): cannot create log file %q: %v", filename, err)
 				} else {
@@ -125,7 +125,8 @@ func TestCleanupLogFiles(t *testing.T) {
 				} else {
 					var gotFileCount int
 					for _, file := range files {
-						if file.Mode().IsRegular() && strings.HasPrefix(file.Name(), logFilePrefix) {
+						fileName := file.Name()
+						if file.Mode().IsRegular() && strings.HasPrefix(fileName, logFilePrefix) && strings.HasSuffix(fileName, logFileExtension) {
 							gotFileCount++
 						}
 					}

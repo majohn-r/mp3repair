@@ -48,15 +48,12 @@ func Clean() {
 }
 
 func Test() {
-	stdout := &bytes.Buffer{}
-    stderr := &bytes.Buffer{}
+	unifiedOutput := &bytes.Buffer{}
 	cmd := exec.Command("go", "test", "-cover", "./...")
-    cmd.Stderr = stderr
-    cmd.Stdout = stdout
+	cmd.Stderr = unifiedOutput
+	cmd.Stdout = unifiedOutput
 	fmt.Println("running all unit tests with code coverage")
-	if err := cmd.Run(); err != nil {
-		fmt.Println(stderr.String())
-	} else {
-		fmt.Println(stdout.String())
-	}
+	// ignore error return
+	_ = cmd.Run()
+	fmt.Println(unifiedOutput.String())
 }
