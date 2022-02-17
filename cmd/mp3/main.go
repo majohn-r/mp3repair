@@ -13,12 +13,14 @@ import (
 func main() {
 	initEnv()
 	initLogging()
-	cmd, args := subcommands.ProcessCommand(os.Args)
-	if cmd == nil {
-		fmt.Printf("subcommand %q is not recognized\n", os.Args[1])
+	if cmd, args, err := subcommands.ProcessCommand(os.Args); err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 	} else {
-		cmd.Exec(args)
+		if err = cmd.Exec(args); err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
 	}
 }
 

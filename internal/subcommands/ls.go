@@ -36,12 +36,16 @@ func newLs(fSet *flag.FlagSet) CommandProcessor {
 	return processor
 }
 
-func (l *ls) Exec(args []string) {
-	l.commons.processArgs(args)
-	l.runSubcommand()
+func (l *ls) Exec(args []string) error {
+	if params, err := l.commons.processArgs(args); err == nil {
+		l.runSubcommand(params)
+		return nil
+	} else {
+		return err
+	}
 }
 
-func (l *ls) runSubcommand() {
+func (l *ls) runSubcommand(params *files.DirectorySearchParams) {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
 		fmt.Printf("%s: nothing to do!", l.name())
 		os.Exit(0)
@@ -58,7 +62,6 @@ func (l *ls) runSubcommand() {
 			"trackSorting": *l.trackSorting,
 		}).Infof("track sorting")
 	}
-	params := files.NewDirectorySearchParams(*l.commons.topDirectory, *l.commons.fileExtension, *l.commons.albumRegex, *l.commons.artistRegex)
 	artists := files.GetMusic(params)
 	l.outputArtists(artists)
 }

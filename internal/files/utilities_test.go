@@ -107,6 +107,7 @@ func Test_validateRegexp(t *testing.T) {
 
 func Test_validateSearchParameters(t *testing.T) {
 	type args struct {
+		dir     string
 		ext     string
 		albums  string
 		artists string
@@ -121,6 +122,7 @@ func Test_validateSearchParameters(t *testing.T) {
 		{
 			name: "valid input",
 			args: args{
+				dir:     ".",
 				ext:     ".mp3",
 				albums:  ".*",
 				artists: ".*",
@@ -132,6 +134,7 @@ func Test_validateSearchParameters(t *testing.T) {
 		{
 			name: "bad extension 1",
 			args: args{
+				dir:     ".",
 				ext:     "mp3",
 				albums:  ".*",
 				artists: ".*",
@@ -141,6 +144,7 @@ func Test_validateSearchParameters(t *testing.T) {
 		{
 			name: "bad extension 2",
 			args: args{
+				dir:     ".",
 				ext:     ".m.p3",
 				albums:  ".*",
 				artists: ".*",
@@ -150,6 +154,7 @@ func Test_validateSearchParameters(t *testing.T) {
 		{
 			name: "bad extension 3",
 			args: args{
+				dir:     ".",
 				ext:     ".mp[3",
 				albums:  ".*",
 				artists: ".*",
@@ -159,6 +164,7 @@ func Test_validateSearchParameters(t *testing.T) {
 		{
 			name: "bad album filter",
 			args: args{
+				dir:     ".",
 				ext:     ".mp3",
 				albums:  ".[*",
 				artists: ".*",
@@ -169,6 +175,7 @@ func Test_validateSearchParameters(t *testing.T) {
 		{
 			name: "bad album filter",
 			args: args{
+				dir:     ".",
 				ext:     ".mp3",
 				albums:  ".*",
 				artists: ".[*",
@@ -176,10 +183,34 @@ func Test_validateSearchParameters(t *testing.T) {
 			wantAlbumsFilter:  regexp.MustCompile(".*"),
 			wantProblemsExist: true,
 		},
+		{
+			name: "non-existent directory",
+			args: args{
+				dir:     "no such directory",
+				ext:     ".mp3",
+				albums:  ".*",
+				artists: ".*",
+			},
+			wantAlbumsFilter:  regexp.MustCompile(".*"),
+			wantArtistsFilter: regexp.MustCompile(".*"),
+			wantProblemsExist: true,
+		},
+		{
+			name: "directory is not a directory",
+			args: args{
+				dir:     "utilities_test.go",
+				ext:     ".mp3",
+				albums:  ".*",
+				artists: ".*",
+			},
+			wantAlbumsFilter:  regexp.MustCompile(".*"),
+			wantArtistsFilter: regexp.MustCompile(".*"),
+			wantProblemsExist: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotAlbumsFilter, gotArtistsFilter, gotProblemsExist := validateSearchParameters(tt.args.ext, tt.args.albums, tt.args.artists)
+			gotAlbumsFilter, gotArtistsFilter, gotProblemsExist := validateSearchParameters(tt.args.dir, tt.args.ext, tt.args.albums, tt.args.artists)
 			if !tt.wantProblemsExist {
 				if !reflect.DeepEqual(gotAlbumsFilter, tt.wantAlbumsFilter) {
 					t.Errorf("validateSearchParameters() gotAlbumsFilter = %v, want %v", gotAlbumsFilter, tt.wantAlbumsFilter)
@@ -272,6 +303,40 @@ func Test_parseTrackName(t *testing.T) {
 			}
 			if gotValid != tt.wantValid {
 				t.Errorf("parseTrackName() gotValid = %v, want %v", gotValid, tt.wantValid)
+			}
+		})
+	}
+}
+
+func Test_validateTopLevelDirectory(t *testing.T) {
+	type args struct {
+		dir string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "is directory",
+			args: args{dir: "."},
+			want: true,
+		},
+		{
+			name: "non-existent directory",
+			args: args{dir: "no such file"},
+			want: false,
+		},
+		{
+			name: "file that is not a directory",
+			args: args{dir: "utilities_test.go"},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := validateTopLevelDirectory(tt.args.dir); got != tt.want {
+				t.Errorf("validateTopLevelDirectory() = %v, want %v", got, tt.want)
 			}
 		})
 	}

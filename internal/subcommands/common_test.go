@@ -15,6 +15,7 @@ func TestProcessCommand(t *testing.T) {
 		args            args
 		wantCmd         CommandProcessor
 		wantCallingArgs []string
+		wantErr         error
 	}{
 		{
 			name:            "call ls",
@@ -45,11 +46,25 @@ func TestProcessCommand(t *testing.T) {
 			args:            args{args: []string{"mp3.exe", "no such command"}},
 			wantCmd:         nil,
 			wantCallingArgs: nil,
+			wantErr:         noSuchSubcommandError("no such command", []string{"check", "ls", "repair"}),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotCmd, gotCallingArgs := ProcessCommand(tt.args.args)
+			gotCmd, gotCallingArgs, gotErr := ProcessCommand(tt.args.args)
+			if gotErr == nil {
+				if tt.wantErr != nil {
+					t.Errorf("ProcessCommand() gotErr = %v, want %v", gotErr, tt.wantErr)
+				}
+			} else {
+				if tt.wantErr == nil {
+					t.Errorf("ProcessCommand() gotErr = %v, want %v", gotErr, tt.wantErr)
+				} else {
+					if gotErr.Error() != tt.wantErr.Error() {
+						t.Errorf("ProcessCommand() gotErr = %v, want %v", gotErr, tt.wantErr)
+					}
+				}
+			}
 			if gotCmd == nil {
 				if tt.wantCmd != nil {
 					t.Errorf("ProcessCommand() gotCmd = %v, want %v", gotCmd, tt.wantCmd)

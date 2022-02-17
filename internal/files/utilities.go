@@ -68,7 +68,7 @@ type DirectorySearchParams struct {
 var trackNameRegex *regexp.Regexp
 
 func NewDirectorySearchParams(dir, ext, albums, artists string) (params *DirectorySearchParams) {
-	albumsFilter, artistsFilter, problemsExist := validateSearchParameters(ext, albums, artists)
+	albumsFilter, artistsFilter, problemsExist := validateSearchParameters(dir, ext, albums, artists)
 	if !problemsExist {
 		params = &DirectorySearchParams{
 			topDirectory:    dir,
@@ -82,7 +82,10 @@ func NewDirectorySearchParams(dir, ext, albums, artists string) (params *Directo
 	return
 }
 
-func validateSearchParameters(ext string, albums string, artists string) (albumsFilter *regexp.Regexp, artistsFilter *regexp.Regexp, problemsExist bool) {
+func validateSearchParameters(dir string, ext string, albums string, artists string) (albumsFilter *regexp.Regexp, artistsFilter *regexp.Regexp, problemsExist bool) {
+	if !validateTopLevelDirectory(dir) {
+		problemsExist = true
+	}
 	if !validateExtension(ext) {
 		problemsExist = true
 	}
@@ -97,6 +100,20 @@ func validateSearchParameters(ext string, albums string, artists string) (albums
 		artistsFilter = filter
 	}
 	return
+}
+
+func validateTopLevelDirectory(dir string) bool {
+	if file, err := os.Stat(dir); err != nil {
+		fmt.Printf("error checking top directory %q: %v\n", dir, err)
+		return false
+	} else {
+		if file.IsDir() {
+			return true
+		} else {
+			fmt.Printf("top directory %q is not actually a directory\n", dir)
+			return false
+		}
+	}
 }
 
 func validateExtension(ext string) (valid bool) {
