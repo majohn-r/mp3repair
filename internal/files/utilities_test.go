@@ -1,6 +1,9 @@
 package files
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"testing"
@@ -340,4 +343,177 @@ func Test_validateTopLevelDirectory(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestLoadData(t *testing.T) {
+	// generate test data
+	topDir := "loadTest"
+	if err := mkdir(t, "LoadData", topDir); err != nil {
+		return
+	}
+	defer func() {
+		if err := os.RemoveAll(topDir); err != nil {
+			t.Errorf("LoadData() error destroying test directory %q: %v", topDir, err)
+		}
+	}()
+	for k := 0; k < 10; k++ {
+		createArtist(t, topDir, k)
+	}
+	type args struct {
+		params *DirectorySearchParams
+	}
+	faultyParams := NewDirectorySearchParams(topDir, DefaultFileExtension, "^.*$", "^.*$")
+	faultyParams.topDirectory = "no such directory"
+	tests := []struct {
+		name        string
+		args        args
+		wantArtists []*Artist
+	}{
+		{
+			name:        "read all",
+			args:        args{params: NewDirectorySearchParams(topDir, DefaultFileExtension, "^.*$", "^.*$")},
+			wantArtists: createAllArtists(topDir),
+		},
+		{
+			name: "no such top dir",
+			args: args{faultyParams},
+		},
+		{
+			name:        "read with filtering",
+			args:        args{params: NewDirectorySearchParams(topDir, DefaultFileExtension, "^.*[02468]$", "^.*[13579]$")},
+			wantArtists: createAllOddArtistsWithEvenAlbums(topDir),
+		},
+		{
+			name: "read with all artists filtered out",
+			args: args{params: NewDirectorySearchParams(topDir, DefaultFileExtension, "^.*$", "^.*X$")},
+		},
+		{
+			name: "read with all albums filtered out",
+			args: args{params: NewDirectorySearchParams(topDir, DefaultFileExtension, "^.*X$", "^.*$")},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotArtists := LoadData(tt.args.params); !reflect.DeepEqual(gotArtists, tt.wantArtists) {
+				t.Errorf("LoadData() = %v, want %v", gotArtists, tt.wantArtists)
+			}
+		})
+	}
+}
+
+func createAllOddArtistsWithEvenAlbums(topDir string) []*Artist {
+	var artists []*Artist
+	for k := 1; k < 10; k += 2 {
+		artistName := createArtistName(k)
+		artistDir := filepath.Join(topDir, artistName)
+		artist := &Artist{Name: artistName}
+		for n := 0; n < 10; n += 2 {
+			albumName := createAlbumName(n)
+			albumDir := filepath.Join(artistDir, albumName)
+			album := &Album{
+				Name:            albumName,
+				RecordingArtist: artist,
+			}
+			for p := 0; p < 10; p++ {
+				trackName := createTrackName(p)
+				name, _, _ := parseTrackName(trackName, albumName, artistName, DefaultFileExtension)
+				track := &Track{
+					fullPath:        filepath.Join(albumDir, trackName),
+					fileName:        trackName,
+					Name:            name,
+					TrackNumber:     p,
+					ContainingAlbum: album,
+				}
+				album.Tracks = append(album.Tracks, track)
+			}
+			artist.Albums = append(artist.Albums, album)
+		}
+		artists = append(artists, artist)
+	}
+	return artists
+}
+
+func createAllArtists(topDir string) []*Artist {
+	var artists []*Artist
+	for k := 0; k < 10; k++ {
+		artistName := createArtistName(k)
+		artistDir := filepath.Join(topDir, artistName)
+		artist := &Artist{Name: artistName}
+		for n := 0; n < 10; n++ {
+			albumName := createAlbumName(n)
+			albumDir := filepath.Join(artistDir, albumName)
+			album := &Album{
+				Name:            albumName,
+				RecordingArtist: artist,
+			}
+			for p := 0; p < 10; p++ {
+				trackName := createTrackName(p)
+				name, _, _ := parseTrackName(trackName, albumName, artistName, DefaultFileExtension)
+				track := &Track{
+					fullPath:        filepath.Join(albumDir, trackName),
+					fileName:        trackName,
+					Name:            name,
+					TrackNumber:     p,
+					ContainingAlbum: album,
+				}
+				album.Tracks = append(album.Tracks, track)
+			}
+			artist.Albums = append(artist.Albums, album)
+		}
+		artists = append(artists, artist)
+	}
+	return artists
+}
+
+func createArtistName(k int) string {
+	return fmt.Sprintf("Test Artist %d", k)
+}
+
+func createAlbumName(k int) string {
+	return fmt.Sprintf("Test Album %d", k)
+}
+
+func createTrackName(k int) string {
+	return fmt.Sprintf("%02d Test Track.mp3", k)
+}
+
+func mkdir(t *testing.T, fnName string, dirName string) error {
+	if err := os.Mkdir(dirName, 0755); err != nil {
+		t.Errorf("%s error creating directory %q: %v", fnName, dirName, err)
+		return err
+	}
+	return nil
+}
+
+func createArtist(t *testing.T, topDir string, k int) {
+	artistDir := filepath.Join(topDir, createArtistName(k))
+	if err := mkdir(t, "createArtist", artistDir); err == nil {
+		for n := 0; n < 10; n++ {
+			createAlbum(t, artistDir, n)
+		}
+		createFile(t, artistDir, "dummy file to be ignored.txt")
+	}
+}
+
+func createFile(t *testing.T, dir, s string) {
+	fileName := filepath.Join(dir, s)
+	if err := os.WriteFile(fileName, []byte("file contents for "+s), 0644); err != nil {
+		t.Errorf("createFile() error creating %q: %v", fileName, err)
+	}
+}
+
+func createAlbum(t *testing.T, artistDir string, n int) {
+	albumDir := filepath.Join(artistDir, createAlbumName(n))
+	if err := mkdir(t, "createAlbum", albumDir); err == nil {
+		for k := 0; k < 10; k++ {
+			createTrack(t, albumDir, k)
+		}
+		createFile(t, albumDir, "album cover.jpeg")
+		dummyDir := filepath.Join(albumDir, "ignore this folder")
+		_ = mkdir(t, "createAlbum", dummyDir)
+	}
+}
+
+func createTrack(t *testing.T, artistDir string, k int) {
+	createFile(t, artistDir, createTrackName(k))
 }

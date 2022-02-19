@@ -62,7 +62,8 @@ func (l *ls) runSubcommand(params *files.DirectorySearchParams) {
 			"trackSorting": *l.trackSorting,
 		}).Infof("track sorting")
 	}
-	artists := files.GetMusic(params)
+	// artists := files.GetMusic(params)
+	artists := files.LoadData(params)
 	l.outputArtists(artists)
 }
 
@@ -72,8 +73,8 @@ func (l *ls) outputArtists(artists []*files.Artist) {
 		artistsByArtistNames := make(map[string]*files.Artist)
 		var artistNames []string
 		for _, artist := range artists {
-			artistsByArtistNames[artist.Name()] = artist
-			artistNames = append(artistNames, artist.Name())
+			artistsByArtistNames[artist.Name] = artist
+			artistNames = append(artistNames, artist.Name)
 		}
 		sort.Strings(artistNames)
 		for _, artistName := range artistNames {
@@ -99,9 +100,9 @@ func (l *ls) outputAlbums(albums []*files.Album, prefix string) {
 			var name string
 			switch {
 			case !*l.includeArtists && *l.annotateListings:
-				name = album.Name() + " by " + album.RecordingArtist.Name()
+				name = album.Name + " by " + album.RecordingArtist.Name
 			default:
-				name = album.Name()
+				name = album.Name
 			}
 			albumsByAlbumName[name] = album
 			albumNames = append(albumNames, name)
@@ -166,9 +167,9 @@ func (l *ls) outputTracks(tracks []*files.Track, prefix string) {
 			components = append(components, track.Name)
 			if *l.annotateListings {
 				if !*l.includeAlbums {
-					components = append(components, fmt.Sprintf("on %s", track.ContainingAlbum.Name()))
+					components = append(components, fmt.Sprintf("on %s", track.ContainingAlbum.Name))
 					if !*l.includeArtists {
-						components = append(components, fmt.Sprintf("by %s", track.ContainingAlbum.RecordingArtist.Name()))
+						components = append(components, fmt.Sprintf("by %s", track.ContainingAlbum.RecordingArtist.Name))
 					}
 				}
 			}

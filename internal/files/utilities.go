@@ -2,6 +2,7 @@ package files
 
 import (
 	"fmt"
+	"io/fs"
 	"io/ioutil"
 	"mp3/internal"
 	"os"
@@ -14,48 +15,36 @@ import (
 )
 
 const (
-	DefaultFileExtension string = ".mp3"
+	rawExtension            string = "mp3"
+	DefaultFileExtension    string = "." + rawExtension
+	defaultTrackNamePattern string = "^\\d+ .+\\." + rawExtension + "$"
 )
 
 func DefaultDirectory() string {
 	return filepath.Join(internal.HomePath, "Music")
 }
 
-type File struct {
-	parentPath string
-	name       string
-	dirFlag    bool
-	contents   []*File
-}
-
 type Track struct {
-	internalRep     *File
+	fullPath        string
+	fileName        string
 	Name            string
 	TrackNumber     int
 	ContainingAlbum *Album
 }
 
 func (t *Track) FullName() string {
-	return t.internalRep.name
+	return t.fileName
 }
 
 type Album struct {
-	internalRep     *File
+	Name            string
 	Tracks          []*Track
 	RecordingArtist *Artist
 }
 
-func (al *Album) Name() string {
-	return al.internalRep.name
-}
-
 type Artist struct {
-	internalRep *File
-	Albums      []*Album
-}
-
-func (ar *Artist) Name() string {
-	return ar.internalRep.name
+	Name   string
+	Albums []*Album
 }
 
 type DirectorySearchParams struct {
@@ -65,7 +54,7 @@ type DirectorySearchParams struct {
 	artistFilter    *regexp.Regexp
 }
 
-var trackNameRegex *regexp.Regexp
+var trackNameRegex *regexp.Regexp = regexp.MustCompile(defaultTrackNamePattern)
 
 func NewDirectorySearchParams(dir, ext, albums, artists string) (params *DirectorySearchParams) {
 	albumsFilter, artistsFilter, problemsExist := validateSearchParameters(dir, ext, albums, artists)
@@ -120,10 +109,10 @@ func validateExtension(ext string) (valid bool) {
 	valid = true
 	if !strings.HasPrefix(ext, ".") || strings.Contains(strings.TrimPrefix(ext, "."), ".") {
 		valid = false
-		fmt.Printf("the extension %q must contain exactly one '.' and it must be the first character\n", ext)
+		fmt.Printf("the extension %q must contain exactly one '.' and '.' must be the first character\n", ext)
 	}
 	var e error
-	trackNameRegex, e = regexp.Compile("^\\d+ .*\\." + strings.TrimPrefix(ext, ".") + "$")
+	trackNameRegex, e = regexp.Compile("^\\d+ .+\\." + strings.TrimPrefix(ext, ".") + "$")
 	if e != nil {
 		valid = false
 		fmt.Printf("%q is not a valid extension\n", ext)
@@ -141,89 +130,105 @@ func validateRegexp(pattern, name string) (filter *regexp.Regexp, badRegex bool)
 	return
 }
 
-func GetMusic(params *DirectorySearchParams) (artists []*Artist) {
+func LoadData(params *DirectorySearchParams) (artists []*Artist) {
 	logrus.WithFields(logrus.Fields{
 		"topDirectory":  params.topDirectory,
 		"fileExtension": params.targetExtension,
 		"albumFilter":   params.albumFilter,
 		"artistFilter":  params.artistFilter,
-	}).Info("read data from file system")
-	tree := ReadDirectory(params.topDirectory)
-	var filteredAlbums bool
-	for _, file := range tree.contents {
-		if file.dirFlag {
-			// got an artist!
-			if !params.artistFilter.MatchString(file.name) {
-				continue
-			}
-			artist := &Artist{
-				internalRep: file,
-			}
-			artists = append(artists, artist)
-			for _, albumFile := range file.contents {
-				if albumFile.dirFlag {
-					// got an album!
-					if !params.albumFilter.MatchString(albumFile.name) {
-						filteredAlbums = true
-						continue
-					}
-					album := &Album{
-						internalRep:     albumFile,
-						RecordingArtist: artist,
-					}
-					artist.Albums = append(artist.Albums, album)
-					for _, trackFile := range albumFile.contents {
-						if !trackFile.dirFlag && strings.HasSuffix(trackFile.name, params.targetExtension) {
-							// got a track!
-							name, trackNumber, validTrackName := parseTrackName(trackFile.name, album.Name(), artist.Name(), params.targetExtension)
-							if validTrackName {
-								track := &Track{
-									internalRep:     trackFile,
-									Name:            name,
-									TrackNumber:     trackNumber,
-									ContainingAlbum: album,
-								}
-								// TODO: move this code
-								tag, err := id3v2.Open(filepath.Join(trackFile.parentPath, trackFile.name), id3v2.Options{Parse: true})
-								if err != nil {
-									logrus.WithFields(logrus.Fields{
-										"filename": filepath.Join(trackFile.parentPath, trackFile.name),
-										"error":    err,
-									}).Warn("cannot open mp3 file")
-								} else {
-									defer tag.Close()
-
-									// Read tags.
-									logrus.WithFields(logrus.Fields{
-										"fileSystemTrackName":   track.Name,
-										"fileSystemTrackNumber": track.TrackNumber,
-										"fileSystemArtistName":  track.ContainingAlbum.RecordingArtist.Name(),
-										"fileSystemAlbumName":   track.ContainingAlbum.Name(),
-										"metadataTrackName":     tag.Title(),
-										"metadataTrackNumber":   tag.GetTextFrame("TRCK").Text,
-										"metadataArtistName":    tag.Artist(),
-										"metadataAlbumName":     tag.Album(),
-									}).Info("track date")
-								}
-								album.Tracks = append(album.Tracks, track)
+	}).Info("load data from file system")
+	// read top directory
+	artistFiles, err := readDirectory(params.topDirectory)
+	if err != nil {
+		return
+	}
+	for _, artistFile := range artistFiles {
+		// we only care about directories, which correspond to artists
+		if !artistFile.IsDir() || !params.artistFilter.MatchString(artistFile.Name()) {
+			continue
+		}
+		artist := &Artist{
+			Name: artistFile.Name(),
+		}
+		// look for albums for the current artist
+		artistDir := filepath.Join(params.topDirectory, artistFile.Name())
+		albumFiles, err := readDirectory(artistDir)
+		if err == nil {
+			for _, albumFile := range albumFiles {
+				// skip over non-directories or directories whose name does not match the album filter
+				if !albumFile.IsDir() || !params.albumFilter.MatchString(albumFile.Name()) {
+					continue
+				}
+				album := &Album{
+					Name:            albumFile.Name(),
+					RecordingArtist: artist,
+				}
+				// look for tracks in the current album
+				albumDir := filepath.Join(artistDir, album.Name)
+				trackFiles, err := readDirectory(albumDir)
+				if err == nil {
+					// process tracks
+					for _, trackFile := range trackFiles {
+						if trackFile.IsDir() || !trackNameRegex.MatchString(trackFile.Name()) {
+							continue
+						}
+						if simpleName, trackNumber, valid := parseTrackName(trackFile.Name(), album.Name, artist.Name, params.targetExtension); valid {
+							track := &Track{
+								fullPath:        filepath.Join(albumDir, trackFile.Name()),
+								fileName:        trackFile.Name(),
+								Name:            simpleName,
+								TrackNumber:     trackNumber,
+								ContainingAlbum: album,
 							}
+							album.Tracks = append(album.Tracks, track)
 						}
 					}
 				}
+				if len(album.Tracks) != 0 {
+					artist.Albums = append(artist.Albums, album)
+				}
 			}
 		}
-	}
-	// purge artists with all albums filtered out
-	if filteredAlbums {
-		var filteredArtists []*Artist
-		for _, artist := range artists {
-			if len(artist.Albums) > 0 {
-				filteredArtists = append(filteredArtists, artist)
-			}
+		if len(artist.Albums) != 0 {
+			artists = append(artists, artist)
 		}
-		artists = filteredArtists
 	}
-	return artists
+	return
+}
+
+func readDirectory(dir string) (files []fs.FileInfo, err error) {
+	files, err = ioutil.ReadDir(dir)
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"directory": dir,
+			"error":     err,
+		}).Error("problem reading directory")
+	}
+	return
+}
+
+func ReadMP3Data(track *Track) {
+	tag, err := id3v2.Open(track.fullPath, id3v2.Options{Parse: true})
+	if err != nil {
+		logrus.WithFields(logrus.Fields{
+			"filename": track.fullPath,
+			"error":    err,
+		}).Warn("cannot open mp3 file")
+	} else {
+		defer tag.Close()
+
+		// Read tags.
+		logrus.WithFields(logrus.Fields{
+			"fileSystemTrackName":   track.Name,
+			"fileSystemTrackNumber": track.TrackNumber,
+			"fileSystemArtistName":  track.ContainingAlbum.RecordingArtist.Name,
+			"fileSystemAlbumName":   track.ContainingAlbum.Name,
+			"metadataTrackName":     tag.Title(),
+			"metadataTrackNumber":   tag.GetTextFrame("TRCK").Text,
+			"metadataArtistName":    tag.Artist(),
+			"metadataAlbumName":     tag.Album(),
+		}).Info("track data")
+	}
 }
 
 func parseTrackName(name string, album string, artist string, ext string) (simpleName string, trackNumber int, valid bool) {
@@ -242,34 +247,5 @@ func parseTrackName(name string, album string, artist string, ext string) (simpl
 	simpleName = strings.TrimSuffix(simpleName, ext)      // trim off extension
 	fmt.Sscanf(rawTrackNumber, "%d", &trackNumber)        // read track number as int
 	valid = true
-	return
-}
-
-func ReadDirectory(dir string) (f *File) {
-	files, err := ioutil.ReadDir(dir)
-	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"error": err,
-		}).Error("reading directory")
-	}
-	parentDirName, dirName := filepath.Split(dir)
-	f = &File{
-		parentPath: parentDirName,
-		name:       dirName,
-		dirFlag:    true,
-	}
-	for _, file := range files {
-		if file.IsDir() {
-			subdir := ReadDirectory(filepath.Join(dir, file.Name()))
-			f.contents = append(f.contents, subdir)
-		} else {
-			plainFile := &File{
-				parentPath: dir,
-				name:       file.Name(),
-				dirFlag:    false,
-			}
-			f.contents = append(f.contents, plainFile)
-		}
-	}
 	return
 }
