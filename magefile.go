@@ -57,3 +57,23 @@ func Test() {
 	_ = cmd.Run()
 	fmt.Println(unifiedOutput.String())
 }
+
+func CoverageReport(){
+	unifiedOutput := &bytes.Buffer{}
+	cmd := exec.Command("go", "test", "-coverprofile=coverage.out", "./...")
+	cmd.Stderr = unifiedOutput
+	cmd.Stdout = unifiedOutput
+	fmt.Println("generating code coverage data")
+	// ignore error return
+	_ = cmd.Run()
+	fmt.Println(unifiedOutput.String())
+	unifiedOutput = &bytes.Buffer{}
+	// go tool cover -html=coverage.out
+	cmd = exec.Command("go", "tool", "cover", "-html=coverage.out")
+	cmd.Stderr = unifiedOutput
+	cmd.Stdout = unifiedOutput
+	fmt.Println("generating report from code coverage data")
+	// ignore error return
+	_ = cmd.Run()
+	fmt.Println(unifiedOutput.String())
+}
