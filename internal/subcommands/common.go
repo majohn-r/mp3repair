@@ -3,7 +3,9 @@ package subcommands
 import (
 	"flag"
 	"fmt"
+	"mp3/internal"
 	"mp3/internal/files"
+	"path/filepath"
 	"sort"
 )
 
@@ -67,10 +69,14 @@ type CommonCommandFlags struct {
 	artistRegex   *string
 }
 
+func defaultDirectory() string {
+	return filepath.Join(internal.HomePath, "Music")
+}
+
 func newCommonCommandFlags(fSet *flag.FlagSet) *CommonCommandFlags {
 	return &CommonCommandFlags{
 		fs:            fSet,
-		topDirectory:  fSet.String("topDir", files.DefaultDirectory(), "top directory in which to look for music files"),
+		topDirectory:  fSet.String("topDir", defaultDirectory(), "top directory in which to look for music files"),
 		fileExtension: fSet.String("ext", files.DefaultFileExtension, "extension for music files"),
 		albumRegex:    fSet.String("albums", ".*", "regular expression of albums to select"),
 		artistRegex:   fSet.String("artists", ".*", "regular expression of artists to select"),

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/fs"
 	"io/ioutil"
-	"mp3/internal"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -19,10 +18,6 @@ const (
 	DefaultFileExtension    string = "." + rawExtension
 	defaultTrackNamePattern string = "^\\d+ .+\\." + rawExtension + "$"
 )
-
-func DefaultDirectory() string {
-	return filepath.Join(internal.HomePath, "Music")
-}
 
 type Track struct {
 	fullPath        string
@@ -61,8 +56,6 @@ func NewDirectorySearchParams(dir, ext, albums, artists string) (params *Directo
 			albumFilter:     albumsFilter,
 			artistFilter:    artistsFilter,
 		}
-	} else {
-		os.Exit(1)
 	}
 	return
 }
