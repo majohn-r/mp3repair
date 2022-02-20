@@ -32,10 +32,6 @@ type Track struct {
 	ContainingAlbum *Album
 }
 
-func (t *Track) FullName() string {
-	return t.fileName
-}
-
 type Album struct {
 	Name            string
 	Tracks          []*Track
