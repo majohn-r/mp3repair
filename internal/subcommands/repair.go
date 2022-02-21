@@ -29,11 +29,10 @@ func newRepair(fSet *flag.FlagSet) CommandProcessor {
 	}
 }
 
-func (r *repair) Exec(args []string) (err error) {
-	if _, err = r.commons.processArgs(args); err == nil {
+func (r *repair) Exec(args []string){
+	if params := r.commons.processArgs(args); params != nil {
 		r.runSubcommand()
 	}
-	return
 }
 
 func (r *repair) runSubcommand() {

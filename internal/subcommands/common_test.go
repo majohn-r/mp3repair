@@ -52,18 +52,8 @@ func TestProcessCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotCmd, gotCallingArgs, gotErr := ProcessCommand(tt.args.args)
-			if gotErr == nil {
-				if tt.wantErr != nil {
-					t.Errorf("ProcessCommand() gotErr = %v, want %v", gotErr, tt.wantErr)
-				}
-			} else {
-				if tt.wantErr == nil {
-					t.Errorf("ProcessCommand() gotErr = %v, want %v", gotErr, tt.wantErr)
-				} else {
-					if gotErr.Error() != tt.wantErr.Error() {
-						t.Errorf("ProcessCommand() gotErr = %v, want %v", gotErr, tt.wantErr)
-					}
-				}
+			if !equalErrors(gotErr, tt.wantErr) {
+				t.Errorf("ProcessCommand() gotErr = %v, want %v", gotErr, tt.wantErr)
 			}
 			if gotCmd == nil {
 				if tt.wantCmd != nil {
@@ -80,6 +70,55 @@ func TestProcessCommand(t *testing.T) {
 			}
 			if !reflect.DeepEqual(gotCallingArgs, tt.wantCallingArgs) {
 				t.Errorf("ProcessCommand() gotCallingArgs = %v, want %v", gotCallingArgs, tt.wantCallingArgs)
+			}
+		})
+	}
+}
+
+func equalErrors(gotErr error, wantErr error) bool {
+	if gotErr == nil {
+		return wantErr == nil
+	}
+	if wantErr == nil {
+		return false
+	}
+	return gotErr.Error() == wantErr.Error()
+}
+
+func Test_selectSubCommand(t *testing.T) {
+	type args struct {
+		initializers []subcommandInitializer
+		args         []string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantErr error
+	}{
+		// only handling error cases here, success cases are handled by TestProcessCommand
+		{
+			name: "no initializers",
+			args: args{
+				initializers: nil,
+			},
+			wantErr: internalErrorNoSubCommandInitializers(),
+		},
+		{
+			name:    "no default initializers",
+			args:    args{initializers: []subcommandInitializer{{}}},
+			wantErr: internalErrorIncorrectNumberOfDefaultSubcommands(0),
+		},
+		{
+			name:    "no default initializers",
+			args:    args{initializers: []subcommandInitializer{{defaultSubCommand: true}, {defaultSubCommand: true}}},
+			wantErr: internalErrorIncorrectNumberOfDefaultSubcommands(2),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			_, _, gotErr := selectSubCommand(tt.args.initializers, tt.args.args)
+			if !equalErrors(gotErr, tt.wantErr) {
+				t.Errorf("selectSubCommand() gotErr = %v, want %v", gotErr, tt.wantErr)
 			}
 		})
 	}

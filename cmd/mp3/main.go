@@ -17,10 +17,7 @@ func main() {
 		fmt.Println(err)
 		os.Exit(1)
 	} else {
-		if err = cmd.Exec(args); err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
+		cmd.Exec(args)
 	}
 }
 

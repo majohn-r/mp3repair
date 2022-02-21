@@ -26,11 +26,10 @@ func newCheck(fSet *flag.FlagSet) CommandProcessor {
 	}
 }
 
-func (c *check) Exec(args []string) (err error) {
-	if _, err = c.commons.processArgs(args); err == nil {
+func (c *check) Exec(args []string) {
+	if params := c.commons.processArgs(args); params != nil {
 		c.runSubcommand()
 	}
-	return
 }
 
 func (c *check) runSubcommand() {
