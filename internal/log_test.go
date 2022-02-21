@@ -67,6 +67,7 @@ func TestCleanupLogFiles(t *testing.T) {
 		name          string
 		fileCount     int
 		createFolder  bool
+		lockFiles     bool
 		args          args
 		wantFileCount int
 	}{
@@ -85,6 +86,14 @@ func TestCleanupLogFiles(t *testing.T) {
 			wantFileCount: maxLogFiles,
 		},
 		{
+			name:          "locked",
+			fileCount:     maxLogFiles + 2,
+			createFolder:  true,
+			lockFiles:     true,
+			args:          args{path: "testlogs"},
+			wantFileCount: maxLogFiles + 2,
+		},
+		{
 			name: "missing path",
 			args: args{path: "testlogs"},
 		},
@@ -95,6 +104,7 @@ func TestCleanupLogFiles(t *testing.T) {
 				t.Errorf("CleanupLogFiles(): cannot clean up %v: %v", tt.args.path, err)
 			}
 		}()
+		var filesToClose []*os.File
 		if tt.createFolder {
 			if err := os.MkdirAll(tt.args.path, 0755); err != nil {
 				t.Errorf("CleanupLogFiles(): cannot create %v: %v", tt.args.path, err)
@@ -109,7 +119,14 @@ func TestCleanupLogFiles(t *testing.T) {
 					if err := os.Chtimes(filename, tm, tm); err != nil {
 						t.Errorf("CleanupLogFiles(): cannot set access and modification times on %s: %v", filename, err)
 					}
-					file.Close()
+					if !tt.lockFiles {
+						file.Close()
+					} else {
+						// this delay in closing the files will exercise the
+						// path where the cleanup code cannot delete files
+						// because they're locked
+						filesToClose = append(filesToClose, file)
+					}
 				}
 			}
 		} else {
@@ -133,6 +150,9 @@ func TestCleanupLogFiles(t *testing.T) {
 					if gotFileCount != tt.wantFileCount {
 						t.Errorf("CleanupLogFiles(): file count got %d, want %d", gotFileCount, tt.wantFileCount)
 					}
+				}
+				for _, file := range filesToClose {
+					file.Close()
 				}
 			} else {
 				if _, err := os.Stat(tt.args.path); err != nil {
