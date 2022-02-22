@@ -9,6 +9,8 @@ import (
 	"mp3/internal/files"
 	"path/filepath"
 	"sort"
+
+	"github.com/sirupsen/logrus"
 )
 
 type CommandProcessor interface {
@@ -115,6 +117,7 @@ func (c *CommonCommandFlags) name() string {
 func (c *CommonCommandFlags) processArgs(writer io.Writer, args []string) *files.DirectorySearchParams {
 	c.fs.SetOutput(writer)
 	if err := c.fs.Parse(args); err != nil {
+		logrus.Error(err)
 		return nil
 	}
 	return files.NewDirectorySearchParams(*c.topDirectory, *c.fileExtension, *c.albumRegex, *c.artistRegex)

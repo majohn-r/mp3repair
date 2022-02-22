@@ -44,24 +44,25 @@ func (l *ls) Exec(args []string) {
 
 func (l *ls) runSubcommand(params *files.DirectorySearchParams) {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
-		fmt.Printf("%s: nothing to do!", l.name())
-		os.Exit(0)
-	}
-	logrus.WithFields(logrus.Fields{
-		"subcommandName": l.name(),
-		"includeAlbums":  *l.includeAlbums,
-		"includeArtists": *l.includeArtists,
-		"includeTracks":  *l.includeTracks,
-	}).Info("subcommand")
-	if *l.includeTracks {
-		l.validateTrackSorting()
+		fmt.Fprintf(os.Stderr, "%s: nothing to do!", l.name())
+		logrus.WithFields(logrus.Fields{"subcommand name": l.name()}).Error("nothing to do")
+	} else {
 		logrus.WithFields(logrus.Fields{
-			"trackSorting": *l.trackSorting,
-		}).Infof("track sorting")
+			"subcommandName": l.name(),
+			"includeAlbums":  *l.includeAlbums,
+			"includeArtists": *l.includeArtists,
+			"includeTracks":  *l.includeTracks,
+		}).Info("subcommand")
+		if *l.includeTracks {
+			l.validateTrackSorting()
+			logrus.WithFields(logrus.Fields{
+				"trackSorting": *l.trackSorting,
+			}).Infof("track sorting")
+		}
+		// artists := files.GetMusic(params)
+		artists := files.LoadData(params)
+		l.outputArtists(artists)
 	}
-	// artists := files.GetMusic(params)
-	artists := files.LoadData(params)
-	l.outputArtists(artists)
 }
 
 func (l *ls) outputArtists(artists []*files.Artist) {
@@ -129,7 +130,8 @@ func (l *ls) validateTrackSorting() {
 		}
 	case "alpha":
 	default:
-		fmt.Printf("unexpected track sorting '%s'", *l.trackSorting)
+		fmt.Fprintf(os.Stderr, "unexpected track sorting '%s'", *l.trackSorting)
+		logrus.WithFields(logrus.Fields{"subcommand": l.name(), "setting": "-sort", "value": *l.trackSorting}).Warn("unexpected setting")
 		var preferredValue string
 		switch *l.includeAlbums {
 		case true:

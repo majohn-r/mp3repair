@@ -11,32 +11,39 @@ import (
 )
 
 func main() {
-	initEnv()
-	initLogging()
-	if cmd, args, err := subcommands.ProcessCommand(os.Args); err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	} else {
-		cmd.Exec(args)
-	}
-}
-
-func initEnv() {
-	if errors := internal.LookupEnvVars(); len(errors) > 0 {
-		fmt.Println("1 or more environment variables unset")
-		for _, e := range errors {
-			fmt.Println(e)
+	returnValue := 1
+	if initEnv() {
+		if initLogging() {
+			if cmd, args, err := subcommands.ProcessCommand(os.Args); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				logrus.Error(err)
+			} else {
+				cmd.Exec(args)
+				returnValue = 0
+			}
 		}
-		os.Exit(1)
 	}
+	os.Exit(returnValue)
 }
 
-func initLogging() {
+func initEnv() bool {
+	if errors := internal.LookupEnvVars(); len(errors) > 0 {
+		fmt.Fprintln(os.Stderr, "1 or more environment variables unset")
+		for _, e := range errors {
+			fmt.Fprintln(os.Stderr, e)
+		}
+		return false
+	}
+	return true
+}
+
+func initLogging() bool {
 	path := filepath.Join(internal.TmpFolder, "mp3", "logs")
 	if err := os.MkdirAll(path, 0755); err != nil {
-		fmt.Printf("cannot create path '%s': %v\n", path, err)
-		os.Exit(1)
+		fmt.Fprintf(os.Stderr, "cannot create path '%s': %v\n", path, err)
+		return false
 	}
 	logrus.SetOutput(internal.ConfigureLogging(path))
 	internal.CleanupLogFiles(path)
+	return true
 }

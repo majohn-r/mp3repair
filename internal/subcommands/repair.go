@@ -55,7 +55,8 @@ func (r *repair) validateTarget() {
 	switch *r.target {
 	case defaultRepairType, fsRepair:
 	default:
-		fmt.Printf("-target=%s is not valid\n", *r.target)
+		fmt.Fprintf(os.Stderr, "-target=%s is not valid\n", *r.target)
+		logrus.WithFields(logrus.Fields{"subcommand": r.name(), "setting": "-target", "value": *r.target}).Warn("unexpected setting")
 		s := defaultRepairType
 		r.target = &s
 	}

@@ -82,13 +82,15 @@ func validateSearchParameters(dir string, ext string, albums string, artists str
 
 func validateTopLevelDirectory(dir string) bool {
 	if file, err := os.Stat(dir); err != nil {
-		fmt.Printf("error checking top directory %q: %v\n", dir, err)
+		fmt.Fprintf(os.Stderr, "error checking top directory %q: %v\n", dir, err)
+		logrus.WithFields(logrus.Fields{"directory": dir, "error": err}).Error("error checking top directory")
 		return false
 	} else {
 		if file.IsDir() {
 			return true
 		} else {
-			fmt.Printf("top directory %q is not actually a directory\n", dir)
+			fmt.Fprintf(os.Stderr, "top directory %q is not actually a directory\n", dir)
+			logrus.WithFields(logrus.Fields{"directory": dir}).Error("top directory is not a directory")
 			return false
 		}
 	}
@@ -98,20 +100,23 @@ func validateExtension(ext string) (valid bool) {
 	valid = true
 	if !strings.HasPrefix(ext, ".") || strings.Contains(strings.TrimPrefix(ext, "."), ".") {
 		valid = false
-		fmt.Printf("the extension %q must contain exactly one '.' and '.' must be the first character\n", ext)
+		fmt.Fprintf(os.Stderr, "the extension %q must contain exactly one '.' and '.' must be the first character\n", ext)
+		logrus.WithFields(logrus.Fields{"extension": ext}).Error("the file extension must contain exactly one '.' and '.' must be the first character")
 	}
 	var e error
 	trackNameRegex, e = regexp.Compile("^\\d+ .+\\." + strings.TrimPrefix(ext, ".") + "$")
 	if e != nil {
 		valid = false
-		fmt.Printf("%q is not a valid extension\n", ext)
+		fmt.Fprintf(os.Stderr, "%q is not a valid extension: %v\n", ext, e)
+		logrus.WithFields(logrus.Fields{"extension": ext, "error": e}).Error("the extension is not valid")
 	}
 	return
 }
 
 func validateRegexp(pattern, name string) (filter *regexp.Regexp, badRegex bool) {
 	if f, err := regexp.Compile(pattern); err != nil {
-		fmt.Printf("%s filter is invalid: %v\n", name, err)
+		fmt.Fprintf(os.Stderr, "%s filter is invalid: %v\n", name, err)
+		logrus.WithFields(logrus.Fields{"filterName": name, "error": err}).Error("the filter is invalid")
 		badRegex = true
 	} else {
 		filter = f
