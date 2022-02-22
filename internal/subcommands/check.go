@@ -2,6 +2,7 @@ package subcommands
 
 import (
 	"flag"
+	"os"
 
 	"github.com/sirupsen/logrus"
 )
@@ -27,7 +28,7 @@ func newCheck(fSet *flag.FlagSet) CommandProcessor {
 }
 
 func (c *check) Exec(args []string) {
-	if params := c.commons.processArgs(args); params != nil {
+	if params := c.commons.processArgs(os.Stderr, args); params != nil {
 		c.runSubcommand()
 	}
 }

@@ -37,7 +37,7 @@ func newLs(fSet *flag.FlagSet) CommandProcessor {
 }
 
 func (l *ls) Exec(args []string) {
-	if params := l.commons.processArgs(args); params != nil {
+	if params := l.commons.processArgs(os.Stderr, args); params != nil {
 		l.runSubcommand(params)
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"mp3/internal"
 	"mp3/internal/files"
 	"path/filepath"
@@ -111,9 +112,9 @@ func (c *CommonCommandFlags) name() string {
 	return c.fs.Name()
 }
 
-func (c *CommonCommandFlags) processArgs(args []string) (*files.DirectorySearchParams) {
+func (c *CommonCommandFlags) processArgs(writer io.Writer, args []string) *files.DirectorySearchParams {
+	c.fs.SetOutput(writer)
 	if err := c.fs.Parse(args); err != nil {
-		fmt.Println(err)
 		return nil
 	}
 	return files.NewDirectorySearchParams(*c.topDirectory, *c.fileExtension, *c.albumRegex, *c.artistRegex)

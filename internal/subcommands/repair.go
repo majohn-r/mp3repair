@@ -3,6 +3,7 @@ package subcommands
 import (
 	"flag"
 	"fmt"
+	"os"
 
 	"github.com/sirupsen/logrus"
 )
@@ -29,8 +30,8 @@ func newRepair(fSet *flag.FlagSet) CommandProcessor {
 	}
 }
 
-func (r *repair) Exec(args []string){
-	if params := r.commons.processArgs(args); params != nil {
+func (r *repair) Exec(args []string) {
+	if params := r.commons.processArgs(os.Stderr, args); params != nil {
 		r.runSubcommand()
 	}
 }
