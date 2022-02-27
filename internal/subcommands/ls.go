@@ -3,6 +3,7 @@ package subcommands
 import (
 	"flag"
 	"fmt"
+	"io"
 	"mp3/internal/files"
 	"os"
 	"sort"
@@ -25,7 +26,11 @@ func (l *ls) name() string {
 }
 
 func newLs(fSet *flag.FlagSet) CommandProcessor {
-	processor := &ls{
+	return newLsSubCommand(fSet)
+}
+
+func newLsSubCommand(fSet *flag.FlagSet) *ls {
+	return &ls{
 		includeAlbums:    fSet.Bool("album", true, "include album names in listing"),
 		includeArtists:   fSet.Bool("artist", true, "include artist names in listing"),
 		includeTracks:    fSet.Bool("track", false, "include track names in listing"),
@@ -33,16 +38,15 @@ func newLs(fSet *flag.FlagSet) CommandProcessor {
 		annotateListings: fSet.Bool("annotate", false, "annotate listings with album and artist data"),
 		commons:          newCommonCommandFlags(fSet),
 	}
-	return processor
 }
 
 func (l *ls) Exec(args []string) {
 	if params := l.commons.processArgs(os.Stderr, args); params != nil {
-		l.runSubcommand(params)
+		l.runSubcommand(os.Stdout, params)
 	}
 }
 
-func (l *ls) runSubcommand(params *files.DirectorySearchParams) {
+func (l *ls) runSubcommand(w io.Writer, params *files.DirectorySearchParams) {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
 		fmt.Fprintf(os.Stderr, "%s: nothing to do!", l.name())
 		logrus.WithFields(logrus.Fields{"subcommand name": l.name()}).Error("nothing to do")
@@ -61,11 +65,11 @@ func (l *ls) runSubcommand(params *files.DirectorySearchParams) {
 		}
 		// artists := files.GetMusic(params)
 		artists := files.LoadData(params)
-		l.outputArtists(artists)
+		l.outputArtists(w, artists)
 	}
 }
 
-func (l *ls) outputArtists(artists []*files.Artist) {
+func (l *ls) outputArtists(w io.Writer, artists []*files.Artist) {
 	switch *l.includeArtists {
 	case true:
 		artistsByArtistNames := make(map[string]*files.Artist)
@@ -76,20 +80,20 @@ func (l *ls) outputArtists(artists []*files.Artist) {
 		}
 		sort.Strings(artistNames)
 		for _, artistName := range artistNames {
-			fmt.Printf("Artist: %s\n", artistName)
+			fmt.Fprintf(w, "Artist: %s\n", artistName)
 			artist := artistsByArtistNames[artistName]
-			l.outputAlbums(artist.Albums, "  ")
+			l.outputAlbums(w, artist.Albums, "  ")
 		}
 	case false:
 		var albums []*files.Album
 		for _, artist := range artists {
 			albums = append(albums, artist.Albums...)
 		}
-		l.outputAlbums(albums, "")
+		l.outputAlbums(w, albums, "")
 	}
 }
 
-func (l *ls) outputAlbums(albums []*files.Album, prefix string) {
+func (l *ls) outputAlbums(w io.Writer, albums []*files.Album, prefix string) {
 	switch *l.includeAlbums {
 	case true:
 		albumsByAlbumName := make(map[string]*files.Album)
@@ -107,16 +111,16 @@ func (l *ls) outputAlbums(albums []*files.Album, prefix string) {
 		}
 		sort.Strings(albumNames)
 		for _, albumName := range albumNames {
-			fmt.Printf("%sAlbum: %s\n", prefix, albumName)
+			fmt.Fprintf(w, "%sAlbum: %s\n", prefix, albumName)
 			album := albumsByAlbumName[albumName]
-			l.outputTracks(album.Tracks, prefix+"  ")
+			l.outputTracks(w, album.Tracks, prefix+"  ")
 		}
 	case false:
 		var tracks []*files.Track
 		for _, album := range albums {
 			tracks = append(tracks, album.Tracks...)
 		}
-		l.outputTracks(tracks, prefix)
+		l.outputTracks(w, tracks, prefix)
 	}
 }
 
@@ -143,7 +147,7 @@ func (l *ls) validateTrackSorting() {
 	}
 }
 
-func (l *ls) outputTracks(tracks []*files.Track, prefix string) {
+func (l *ls) outputTracks(w io.Writer, tracks []*files.Track, prefix string) {
 	if !*l.includeTracks {
 		return
 	}
@@ -157,7 +161,7 @@ func (l *ls) outputTracks(tracks []*files.Track, prefix string) {
 		}
 		sort.Ints(trackNumbers)
 		for _, trackNumber := range trackNumbers {
-			fmt.Printf("%s%2d. %s\n", prefix, trackNumber, tracksNumeric[trackNumber])
+			fmt.Fprintf(w, "%s%2d. %s\n", prefix, trackNumber, tracksNumeric[trackNumber])
 		}
 	case "alpha":
 		var trackNames []string
@@ -176,7 +180,7 @@ func (l *ls) outputTracks(tracks []*files.Track, prefix string) {
 		}
 		sort.Strings(trackNames)
 		for _, trackName := range trackNames {
-			fmt.Printf("%s%s\n", prefix, trackName)
+			fmt.Fprintf(w, "%s%s\n", prefix, trackName)
 		}
 	}
 }

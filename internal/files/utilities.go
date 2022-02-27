@@ -166,7 +166,7 @@ func LoadData(params *DirectorySearchParams) (artists []*Artist) {
 						if trackFile.IsDir() || !trackNameRegex.MatchString(trackFile.Name()) {
 							continue
 						}
-						if simpleName, trackNumber, valid := parseTrackName(trackFile.Name(), album.Name, artist.Name, params.targetExtension); valid {
+						if simpleName, trackNumber, valid := ParseTrackName(trackFile.Name(), album.Name, artist.Name, params.targetExtension); valid {
 							track := &Track{
 								fullPath:        filepath.Join(albumDir, trackFile.Name()),
 								fileName:        trackFile.Name(),
@@ -225,7 +225,8 @@ func ReadMP3Data(track *Track) {
 	}
 }
 
-func parseTrackName(name string, album string, artist string, ext string) (simpleName string, trackNumber int, valid bool) {
+// accessible outside the package for test purposes
+func ParseTrackName(name string, album string, artist string, ext string) (simpleName string, trackNumber int, valid bool) {
 	if !trackNameRegex.MatchString(name) {
 		logrus.WithFields(logrus.Fields{
 			"trackName":  name,
