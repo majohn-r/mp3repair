@@ -41,6 +41,33 @@ provided:
 
 ## check
 
+The **check** subcommand provides a means to run various checks on the mp3 files
+and their directories, governed by these command line arguments:
+
+1. **-empty** Check for empty _artist_ and _album_ directories. **False** by
+   default. If **true**, ignores the **-albums** and **-artists** filter
+   settings. An _artist_ directory is any subdirectory of the **-topDir**
+   directory, and is considered empty if it contains no subdirectories. An album
+   directory is any subdirectory of an artist directory and is considered empty
+   if it contains no mp3 files.
+2. **-gaps** Check for gaps in the numbered mp3 files in an _album_ directory.
+   **False** by default. The assumption is that the mp3 files in an album
+   directory are numbered as tracks, starting with **1** and ending with **N**
+   where **N** is the number of mp3 files in the directory. If any mp3 files
+   have an associated track number outside the range of **1..N**, those are
+   listed in the output, as are those track numbers in the expected range that
+   are not associated with any mp3 files in the directory.
+3. **-integrity** Check for differences between the _tags_ in an mp3 file and
+   the associated file and directory names. **True** by default. Each mp3 file
+   is expected to have a file name consisting of a track number, a space, and a
+   track title; the file's _TRCK_ (track number/position in set) tag and _TIT2_
+   (title/songname/content description) tag are expected to match the file's
+   track number and track title. The file's _TALB_ (album/movie/show title) tag
+   is expected to match the name of the _album_ directory that contains the
+   file. The file's _TPE1_ (lead artist/lead performer/soloist/performing group)
+   tag is expected to match the name of the _artist_ directory that contains the
+   _album_ directory that contains the file. All differences found are output.
+
 ## repair
 
 ### Common Arguments
@@ -58,9 +85,9 @@ These arguments are common to all subcommands:
 
 **mp3** depends on the following environment variables being set:
 
-1. **%TMP%** or **%TEMP%** - the system temporary folder. **%TMP%** is checked
-   first, and, if not found, then **%TEMP%** is checked.
-1. **%HOMEPATH%** - the user's home folder.
+1. **%TMP%** or **%TEMP%** - the system temporary directory. **%TMP%** is
+   checked first, and, if not found, then **%TEMP%** is checked.
+1. **%HOMEPATH%** - the user's home directory.
 
 ## Dependencies
 
