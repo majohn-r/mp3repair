@@ -51,9 +51,7 @@ func Test_ls_runSubcommand(t *testing.T) {
 			t.Errorf("LoadData() error destroying test directory %q: %v", topDir, err)
 		}
 	}()
-	for k := 0; k < 10; k++ {
-		internal.CreateArtist(t, topDir, k)
-	}
+	internal.PopulateTopDir(t, topDir)
 	tests := []struct {
 		name             string
 		includeAlbums    bool

@@ -40,7 +40,7 @@ func CreateAllOddArtistsWithEvenAlbums(topDir string) []*Artist {
 	return artists
 }
 
-func CreateAllArtists(topDir string) []*Artist {
+func CreateAllArtists(topDir string, addExtras bool) []*Artist {
 	var artists []*Artist
 	for k := 0; k < 10; k++ {
 		artistName := internal.CreateArtistName(k)
@@ -67,6 +67,19 @@ func CreateAllArtists(topDir string) []*Artist {
 			}
 			artist.Albums = append(artist.Albums, album)
 		}
+		if addExtras {
+			albumName := internal.CreateAlbumName(999)
+			album := &Album{
+				Name:            albumName,
+				RecordingArtist: artist,
+			}
+			artist.Albums = append(artist.Albums, album)
+		}
+		artists = append(artists, artist)
+	}
+	if addExtras {
+		artistName := internal.CreateArtistName(999)
+		artist := &Artist{Name: artistName}
 		artists = append(artists, artist)
 	}
 	return artists

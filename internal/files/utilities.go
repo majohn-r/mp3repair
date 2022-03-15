@@ -124,6 +124,65 @@ func validateRegexp(pattern, name string) (filter *regexp.Regexp, badRegex bool)
 	return
 }
 
+func LoadUnfilteredData(topDirectory string, targetExtension string) (artists []*Artist) {
+	logrus.WithFields(logrus.Fields{
+		"topDirectory":  topDirectory,
+		"fileExtension": targetExtension,
+	}).Info("load raw data from file system")
+	// read top directory
+	artistFiles, err := readDirectory(topDirectory)
+	if err != nil {
+		return
+	}
+	for _, artistFile := range artistFiles {
+		// we only care about directories, which correspond to artists
+		if artistFile.IsDir() {
+			artist := &Artist{
+				Name: artistFile.Name(),
+			}
+			// look for albums for the current artist
+			artistDir := filepath.Join(topDirectory, artistFile.Name())
+			albumFiles, err := readDirectory(artistDir)
+			if err == nil {
+				for _, albumFile := range albumFiles {
+					// skip over non-directories
+					if !albumFile.IsDir() {
+						continue
+					}
+					album := &Album{
+						Name:            albumFile.Name(),
+						RecordingArtist: artist,
+					}
+					// look for tracks in the current album
+					albumDir := filepath.Join(artistDir, album.Name)
+					trackFiles, err := readDirectory(albumDir)
+					if err == nil {
+						// process tracks
+						for _, trackFile := range trackFiles {
+							if trackFile.IsDir() || !trackNameRegex.MatchString(trackFile.Name()) {
+								continue
+							}
+							if simpleName, trackNumber, valid := ParseTrackName(trackFile.Name(), album.Name, artist.Name, targetExtension); valid {
+								track := &Track{
+									fullPath:        filepath.Join(albumDir, trackFile.Name()),
+									fileName:        trackFile.Name(),
+									Name:            simpleName,
+									TrackNumber:     trackNumber,
+									ContainingAlbum: album,
+								}
+								album.Tracks = append(album.Tracks, track)
+							}
+						}
+					}
+					artist.Albums = append(artist.Albums, album)
+				}
+			}
+			artists = append(artists, artist)
+		}
+	}
+	return
+}
+
 func LoadData(params *DirectorySearchParams) (artists []*Artist) {
 	logrus.WithFields(logrus.Fields{
 		"topDirectory":  params.topDirectory,

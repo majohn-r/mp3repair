@@ -355,9 +355,7 @@ func TestLoadData(t *testing.T) {
 			t.Errorf("LoadData() error destroying test directory %q: %v", topDir, err)
 		}
 	}()
-	for k := 0; k < 10; k++ {
-		internal.CreateArtist(t, topDir, k)
-	}
+	internal.PopulateTopDir(t, topDir)
 	type args struct {
 		params *DirectorySearchParams
 	}
@@ -371,7 +369,7 @@ func TestLoadData(t *testing.T) {
 		{
 			name:        "read all",
 			args:        args{params: NewDirectorySearchParams(topDir, DefaultFileExtension, "^.*$", "^.*$")},
-			wantArtists: CreateAllArtists(topDir),
+			wantArtists: CreateAllArtists(topDir, false),
 		},
 		{
 			name: "no such top dir",
@@ -395,6 +393,46 @@ func TestLoadData(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if gotArtists := LoadData(tt.args.params); !reflect.DeepEqual(gotArtists, tt.wantArtists) {
 				t.Errorf("LoadData() = %v, want %v", gotArtists, tt.wantArtists)
+			}
+		})
+	}
+}
+
+func TestLoadUnfilteredData(t *testing.T) {
+	// generate test data
+	topDir := "loadTest"
+	if err := internal.Mkdir(t, "LoadData", topDir); err != nil {
+		return
+	}
+	defer func() {
+		if err := os.RemoveAll(topDir); err != nil {
+			t.Errorf("LoadUnfilteredData() error destroying test directory %q: %v", topDir, err)
+		}
+	}()
+	internal.PopulateTopDir(t, topDir)
+	type args struct {
+		topDirectory    string
+		targetExtension string
+	}
+	tests := []struct {
+		name        string
+		args        args
+		wantArtists []*Artist
+	}{
+		{
+			name:        "read all",
+			args:        args{topDirectory: topDir, targetExtension: DefaultFileExtension},
+			wantArtists: CreateAllArtists(topDir, true),
+		},
+		{
+			name: "no such top dir",
+			args: args{topDirectory: "no such directory", targetExtension: DefaultFileExtension},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotArtists := LoadUnfilteredData(tt.args.topDirectory, tt.args.targetExtension); !reflect.DeepEqual(gotArtists, tt.wantArtists) {
+				t.Errorf("LoadUnfilteredData() = %v, want %v", gotArtists, tt.wantArtists)
 			}
 		})
 	}
