@@ -437,3 +437,53 @@ func TestLoadUnfilteredData(t *testing.T) {
 		})
 	}
 }
+
+func TestFilterArtists(t *testing.T) {
+	// generate test data
+	topDir := "loadTest"
+	if err := internal.Mkdir(t, "LoadData", topDir); err != nil {
+		return
+	}
+	defer func() {
+		if err := os.RemoveAll(topDir); err != nil {
+			t.Errorf("TestFilterArtists() error destroying test directory %q: %v", topDir, err)
+		}
+	}()
+	internal.PopulateTopDir(t, topDir)
+	nonFilter := NewDirectorySearchParams(topDir, DefaultFileExtension, ".*", ".*")
+	initialArtistList := LoadUnfilteredData(topDir, DefaultFileExtension)
+	expectedArtistList := LoadData(nonFilter)
+	type args struct {
+		unfilteredArtists []*Artist
+		params            *DirectorySearchParams
+	}
+	tests := []struct {
+		name        string
+		args        args
+		wantArtists []*Artist
+	}{
+		{
+			name: "empty input",
+			args: args{
+				unfilteredArtists: nil,
+				params: nonFilter,
+			},
+			wantArtists: nil,
+		},
+		{
+			name: "normal input, no real filtering",
+			args: args{
+				unfilteredArtists: initialArtistList,
+				params: nonFilter,
+			},
+			wantArtists: expectedArtistList,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotArtists := FilterArtists(tt.args.unfilteredArtists, tt.args.params); !reflect.DeepEqual(gotArtists, tt.wantArtists) {
+				t.Errorf("FilterArtists() = %v, want %v", gotArtists, tt.wantArtists)
+			}
+		})
+	}
+}

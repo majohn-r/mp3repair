@@ -183,6 +183,47 @@ func LoadUnfilteredData(topDirectory string, targetExtension string) (artists []
 	return
 }
 
+func FilterArtists(unfilteredArtists []*Artist, params *DirectorySearchParams) (artists []*Artist) {
+	logrus.WithFields(logrus.Fields{
+		"topDirectory":  params.topDirectory,
+		"fileExtension": params.targetExtension,
+		"albumFilter":   params.albumFilter,
+		"artistFilter":  params.artistFilter,
+	}).Info("filter artists")
+	for _, unfilteredArtist := range unfilteredArtists {
+		if params.artistFilter.MatchString(unfilteredArtist.Name) {
+			artist := &Artist{
+				Name: unfilteredArtist.Name,
+			}
+			for _, album := range unfilteredArtist.Albums {
+				if params.albumFilter.MatchString(album.Name) {
+					if len(album.Tracks) != 0 {
+						newAlbum := &Album{
+							Name:            album.Name,
+							RecordingArtist: artist,
+						}
+						for _, track := range album.Tracks {
+							newTrack := &Track{
+								fullPath:        track.fullPath,
+								fileName:        track.fileName,
+								Name:            track.Name,
+								TrackNumber:     track.TrackNumber,
+								ContainingAlbum: newAlbum,
+							}
+							newAlbum.Tracks = append(newAlbum.Tracks, newTrack)
+						}
+						artist.Albums = append(artist.Albums, newAlbum)
+					}
+				}
+			}
+			if len(artist.Albums) != 0 {
+				artists = append(artists, artist)
+			}
+		}
+	}
+	return
+}
+
 func LoadData(params *DirectorySearchParams) (artists []*Artist) {
 	logrus.WithFields(logrus.Fields{
 		"topDirectory":  params.topDirectory,
