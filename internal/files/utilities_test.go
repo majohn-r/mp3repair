@@ -243,52 +243,24 @@ func Test_parseTrackName(t *testing.T) {
 		wantValid       bool
 	}{
 		{
-			name: "expected use case",
-			args: args{
-				name:   "59 track name.mp3",
-				album:  "some album",
-				artist: "some artist",
-				ext:    ".mp3",
-			},
-			wantSimpleName:  "track name",
-			wantTrackNumber: 59,
-			wantValid:       true,
+			name: "expected use case", wantSimpleName: "track name", wantTrackNumber: 59, wantValid: true,
+			args: args{name: "59 track name.mp3", album: "some album", artist: "some artist", ext: ".mp3"},
 		},
 		{
-			name: "wrong extension",
-			args: args{
-				name:   "59 track name.mp4",
-				album:  "some album",
-				artist: "some artist",
-				ext:    ".mp3",
-			},
-			wantSimpleName:  "track name.mp4",
-			wantTrackNumber: 59,
-			wantValid:       false,
+			name: "expected use case with hyphen separator", wantSimpleName: "other track name", wantTrackNumber: 60, wantValid: true,
+			args: args{name: "60-other track name.mp3", album: "some album", artist: "some artist", ext: ".mp3"},
 		},
 		{
-			name: "missing track number",
-			args: args{
-				name:   "track name.mp3",
-				album:  "some album",
-				artist: "some artist",
-				ext:    ".mp3",
-			},
-			wantSimpleName:  "name",
-			wantTrackNumber: 0,
-			wantValid:       false,
+			name: "wrong extension", wantSimpleName: "track name.mp4", wantTrackNumber: 59, wantValid: false,
+			args: args{name: "59 track name.mp4", album: "some album", artist: "some artist", ext: ".mp3"},
 		},
 		{
-			name: "missing track number, simple name",
-			args: args{
-				name:   "trackName.mp3",
-				album:  "some album",
-				artist: "some artist",
-				ext:    ".mp3",
-			},
-			wantSimpleName:  "",
-			wantTrackNumber: 0,
-			wantValid:       false,
+			name: "missing track number", wantSimpleName: "name", wantTrackNumber: 0, wantValid: false,
+			args: args{name: "track name.mp3", album: "some album", artist: "some artist", ext: ".mp3"},
+		},
+		{
+			name: "missing track number, simple name", wantSimpleName: "", wantTrackNumber: 0, wantValid: false,
+			args: args{name: "trackName.mp3", album: "some album", artist: "some artist", ext: ".mp3"},
 		},
 	}
 	validateExtension(".mp3")
@@ -466,7 +438,7 @@ func TestFilterArtists(t *testing.T) {
 			name: "empty input",
 			args: args{
 				unfilteredArtists: nil,
-				params: nonFilter,
+				params:            nonFilter,
 			},
 			wantArtists: nil,
 		},
@@ -474,7 +446,7 @@ func TestFilterArtists(t *testing.T) {
 			name: "normal input, no real filtering",
 			args: args{
 				unfilteredArtists: initialArtistList,
-				params: nonFilter,
+				params:            nonFilter,
 			},
 			wantArtists: expectedArtistList,
 		},

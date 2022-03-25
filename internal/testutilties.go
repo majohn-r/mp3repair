@@ -19,7 +19,12 @@ func CreateArtistName(k int) string {
 }
 
 func CreateTrackName(k int) string {
-	return fmt.Sprintf("%02d Test Track[%02d].mp3", k, k)
+	switch k % 2 {
+	case 0:
+		return fmt.Sprintf("%02d-Test Track[%02d].mp3", k, k)
+	default:
+		return fmt.Sprintf("%02d Test Track[%02d].mp3", k, k)
+	}
 }
 
 func Mkdir(t *testing.T, fnName string, dirName string) error {
@@ -30,7 +35,7 @@ func Mkdir(t *testing.T, fnName string, dirName string) error {
 	return nil
 }
 
-func PopulateTopDir(t *testing.T, topDir string){
+func PopulateTopDir(t *testing.T, topDir string) {
 	for k := 0; k < 10; k++ {
 		createArtistDir(t, topDir, k, true)
 	}

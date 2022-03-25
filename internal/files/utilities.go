@@ -16,7 +16,7 @@ import (
 const (
 	rawExtension            string = "mp3"
 	DefaultFileExtension    string = "." + rawExtension
-	defaultTrackNamePattern string = "^\\d+ .+\\." + rawExtension + "$"
+	defaultTrackNamePattern string = "^\\d+[\\s-].+\\." + rawExtension + "$"
 )
 
 type Track struct {
@@ -104,7 +104,7 @@ func validateExtension(ext string) (valid bool) {
 		logrus.WithFields(logrus.Fields{"extension": ext}).Error("the file extension must contain exactly one '.' and '.' must be the first character")
 	}
 	var e error
-	trackNameRegex, e = regexp.Compile("^\\d+ .+\\." + strings.TrimPrefix(ext, ".") + "$")
+	trackNameRegex, e = regexp.Compile("^\\d+[\\s-].+\\." + strings.TrimPrefix(ext, ".") + "$")
 	if e != nil {
 		valid = false
 		fmt.Fprintf(os.Stderr, "%q is not a valid extension: %v\n", ext, e)
@@ -335,12 +335,21 @@ func ParseTrackName(name string, album string, artist string, ext string) (simpl
 		}).Warn("invalid track name")
 		return
 	}
-	var rawTrackNumber string
-	fmt.Sscanf(name, "%s ", &rawTrackNumber)
-	simpleName = strings.TrimPrefix(name, rawTrackNumber) // trim off leading track number
-	simpleName = strings.TrimPrefix(simpleName, " ")      // trim off leading space
-	simpleName = strings.TrimSuffix(simpleName, ext)      // trim off extension
-	fmt.Sscanf(rawTrackNumber, "%d", &trackNumber)        // read track number as int
+	wantDigit := true
+	runes := []rune(name)
+	for i, r := range runes {
+		if wantDigit {
+			if r >= '0' && r <= '9' {
+				trackNumber *= 10
+				trackNumber += int(r - '0')
+			} else {
+				wantDigit = false
+			}
+		} else {
+			simpleName = strings.TrimSuffix(string(runes[i:]), ext) // trim off extension
+			break
+		}
+	}
 	valid = true
 	return
 }
