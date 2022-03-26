@@ -49,91 +49,98 @@ func (c *check) runSubcommand(w io.Writer) {
 			"checkTrackGaps":    *c.checkGapsInTrackNumbering,
 			"checkIntegrity":    *c.checkIntegrity,
 		}).Info("subcommand")
-		var artists []*files.Artist
-		if *c.checkEmptyFolders {
-			artists = performEmptyFolderAnalysis(w, c)
-		}
-		if *c.checkGapsInTrackNumbering || *c.checkIntegrity {
-			searchParams := files.NewDirectorySearchParams(*c.commons.topDirectory, *c.commons.fileExtension, *c.commons.albumRegex, *c.commons.artistRegex)
-			if len(artists) == 0 {
-				artists = files.LoadData(searchParams)
-			} else {
-				// filter existing artists using provided filters
-				artists = files.FilterArtists(artists, searchParams)
-			}
-			if *c.checkGapsInTrackNumbering {
-				c.performGapAnalysis(w, artists)
-			}
-		}
+		artists := performEmptyFolderAnalysis(w, c)
+		// filter existing artists using provided filters
+		artists = filterArtists(c, artists)
+		c.performGapAnalysis(w, c, artists)
 	}
 }
 
-func performEmptyFolderAnalysis(w io.Writer, c *check) (artists []*files.Artist) {
-	artists = files.LoadUnfilteredData(*c.commons.topDirectory, *c.commons.fileExtension)
-	if len(artists) == 0 {
-		logrus.WithFields(
-			logrus.Fields{
-				"topDirectory":  *c.commons.topDirectory,
-				"fileExtension": *c.commons.fileExtension,
-			}).Error("checking empty folders, no artists found")
-	}
-	var complaints []string
-	for _, artist := range artists {
-		if len(artist.Albums) == 0 {
-			complaints = append(complaints, fmt.Sprintf("Artist %q: no albums found", artist.Name))
+func filterArtists(c *check, artists []*files.Artist) (filteredArtists []*files.Artist) {
+	if *c.checkGapsInTrackNumbering || *c.checkIntegrity {
+		searchParams := files.NewDirectorySearchParams(*c.commons.topDirectory, *c.commons.fileExtension, *c.commons.albumRegex, *c.commons.artistRegex)
+		if len(artists) == 0 {
+			filteredArtists = files.LoadData(searchParams)
 		} else {
-			for _, album := range artist.Albums {
-				if len(album.Tracks) == 0 {
-					complaints = append(complaints, fmt.Sprintf("Artist %q album %q: no tracks found", artist.Name, album.Name))
-				}
-			}
+
+			filteredArtists = files.FilterArtists(artists, searchParams)
 		}
-	}
-	if len(complaints) > 0 {
-		sort.Strings(complaints)
-		fmt.Fprintf(w, "Empty Folder Analysis\n%s\n", strings.Join(complaints, "\n"))
 	} else {
-		fmt.Fprintln(w, "Empty Folder Analysis: no empty folders found")
+		filteredArtists = artists
 	}
 	return
 }
 
-func (*check) performGapAnalysis(w io.Writer, artists []*files.Artist) {
-	var complaints []string
-	for _, artist := range artists {
-		for _, album := range artist.Albums {
-			albumId := fmt.Sprintf("Artist: %q album %q", artist.Name, album.Name)
-			m := make(map[int]*files.Track)
-			for _, track := range album.Tracks {
-				if t, ok := m[track.TrackNumber]; ok {
-					complaints = append(complaints, fmt.Sprintf("%s: track %d used by %q and %q", albumId, track.TrackNumber, t.Name, track.Name))
-				} else {
-					m[track.TrackNumber] = track
-				}
-			}
-			missingTracks := 0
-			for trackNumber := 1; trackNumber <= len(album.Tracks); trackNumber++ {
-				if _, ok := m[trackNumber]; !ok {
-					missingTracks++
-					complaints = append(complaints, fmt.Sprintf("%s: missing track %d", albumId, trackNumber))
-				}
-			}
-			expectedTrackCount := len(album.Tracks) + missingTracks
-			validTracks := fmt.Sprintf("valid tracks are 1..%d", expectedTrackCount)
-			for trackNumber, track := range m {
-				switch {
-				case trackNumber < 1:
-					complaints = append(complaints, fmt.Sprintf("%s: track %d (%q) is not a valid track number; %s", albumId, trackNumber, track.Name, validTracks))
-				case trackNumber > expectedTrackCount:
-					complaints = append(complaints, fmt.Sprintf("%s: track %d (%q) is not a valid track number; %s", albumId, trackNumber, track.Name, validTracks))
+func performEmptyFolderAnalysis(w io.Writer, c *check) (artists []*files.Artist) {
+	if *c.checkEmptyFolders {
+		artists = files.LoadUnfilteredData(*c.commons.topDirectory, *c.commons.fileExtension)
+		if len(artists) == 0 {
+			logrus.WithFields(
+				logrus.Fields{
+					"topDirectory":  *c.commons.topDirectory,
+					"fileExtension": *c.commons.fileExtension,
+				}).Error("checking empty folders, no artists found")
+		}
+		var complaints []string
+		for _, artist := range artists {
+			if len(artist.Albums) == 0 {
+				complaints = append(complaints, fmt.Sprintf("Artist %q: no albums found", artist.Name))
+			} else {
+				for _, album := range artist.Albums {
+					if len(album.Tracks) == 0 {
+						complaints = append(complaints, fmt.Sprintf("Artist %q album %q: no tracks found", artist.Name, album.Name))
+					}
 				}
 			}
 		}
+		if len(complaints) > 0 {
+			sort.Strings(complaints)
+			fmt.Fprintf(w, "Empty Folder Analysis\n%s\n", strings.Join(complaints, "\n"))
+		} else {
+			fmt.Fprintln(w, "Empty Folder Analysis: no empty folders found")
+		}
 	}
-	if len(complaints) > 0 {
-		sort.Strings(complaints)
-		fmt.Fprintf(w, "Check Gaps\n%s\n", strings.Join(complaints, "\n"))
-	} else {
-		fmt.Fprintln(w, "Check Gaps: no gaps found")
+	return
+}
+
+func (*check) performGapAnalysis(w io.Writer, c *check, artists []*files.Artist) {
+	if *c.checkGapsInTrackNumbering {
+		var complaints []string
+		for _, artist := range artists {
+			for _, album := range artist.Albums {
+				albumId := fmt.Sprintf("Artist: %q album %q", artist.Name, album.Name)
+				m := make(map[int]*files.Track)
+				for _, track := range album.Tracks {
+					if t, ok := m[track.TrackNumber]; ok {
+						complaints = append(complaints, fmt.Sprintf("%s: track %d used by %q and %q", albumId, track.TrackNumber, t.Name, track.Name))
+					} else {
+						m[track.TrackNumber] = track
+					}
+				}
+				missingTracks := 0
+				for trackNumber := 1; trackNumber <= len(album.Tracks); trackNumber++ {
+					if _, ok := m[trackNumber]; !ok {
+						missingTracks++
+						complaints = append(complaints, fmt.Sprintf("%s: missing track %d", albumId, trackNumber))
+					}
+				}
+				expectedTrackCount := len(album.Tracks) + missingTracks
+				validTracks := fmt.Sprintf("valid tracks are 1..%d", expectedTrackCount)
+				for trackNumber, track := range m {
+					switch {
+					case trackNumber < 1:
+						complaints = append(complaints, fmt.Sprintf("%s: track %d (%q) is not a valid track number; %s", albumId, trackNumber, track.Name, validTracks))
+					case trackNumber > expectedTrackCount:
+						complaints = append(complaints, fmt.Sprintf("%s: track %d (%q) is not a valid track number; %s", albumId, trackNumber, track.Name, validTracks))
+					}
+				}
+			}
+		}
+		if len(complaints) > 0 {
+			sort.Strings(complaints)
+			fmt.Fprintf(w, "Check Gaps\n%s\n", strings.Join(complaints, "\n"))
+		} else {
+			fmt.Fprintln(w, "Check Gaps: no gaps found")
+		}
 	}
 }
