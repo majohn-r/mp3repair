@@ -13,16 +13,17 @@ import (
 )
 
 type ls struct {
+	n string
 	includeAlbums    *bool
 	includeArtists   *bool
 	includeTracks    *bool
 	trackSorting     *string
 	annotateListings *bool
-	commons          *CommonCommandFlags
+	ff               *files.FileFlags
 }
 
 func (l *ls) name() string {
-	return l.commons.name()
+	return l.n
 }
 
 func newLs(fSet *flag.FlagSet) CommandProcessor {
@@ -31,22 +32,23 @@ func newLs(fSet *flag.FlagSet) CommandProcessor {
 
 func newLsSubCommand(fSet *flag.FlagSet) *ls {
 	return &ls{
+		n:                fSet.Name(),
 		includeAlbums:    fSet.Bool("album", true, "include album names in listing"),
 		includeArtists:   fSet.Bool("artist", true, "include artist names in listing"),
 		includeTracks:    fSet.Bool("track", false, "include track names in listing"),
 		trackSorting:     fSet.String("sort", "numeric", "track sorting, 'numeric' in track number order, or 'alpha' in track name order"),
 		annotateListings: fSet.Bool("annotate", false, "annotate listings with album and artist data"),
-		commons:          newCommonCommandFlags(fSet),
+		ff:               files.NewFileFlags(fSet),
 	}
 }
 
 func (l *ls) Exec(args []string) {
-	if params := l.commons.processArgs(os.Stderr, args); params != nil {
+	if params := l.ff.ProcessArgs(os.Stderr, args); params != nil {
 		l.runSubcommand(os.Stdout, params)
 	}
 }
 
-func (l *ls) runSubcommand(w io.Writer, params *files.DirectorySearchParams) {
+func (l *ls) runSubcommand(w io.Writer, s *files.Search) {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
 		fmt.Fprintf(os.Stderr, "%s: nothing to do!", l.name())
 		logrus.WithFields(logrus.Fields{"subcommand name": l.name()}).Error("nothing to do")
@@ -64,7 +66,7 @@ func (l *ls) runSubcommand(w io.Writer, params *files.DirectorySearchParams) {
 			}).Infof("track sorting")
 		}
 		// artists := files.GetMusic(params)
-		artists := files.LoadData(params)
+		artists := s.LoadData()
 		l.outputArtists(w, artists)
 	}
 }

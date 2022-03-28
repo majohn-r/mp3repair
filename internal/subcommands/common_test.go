@@ -1,9 +1,7 @@
 package subcommands
 
 import (
-	"bytes"
 	"flag"
-	"mp3/internal/files"
 	"reflect"
 	"testing"
 )
@@ -121,67 +119,6 @@ func Test_selectSubCommand(t *testing.T) {
 			_, _, gotErr := selectSubCommand(tt.args.initializers, tt.args.args)
 			if !equalErrors(gotErr, tt.wantErr) {
 				t.Errorf("selectSubCommand() gotErr = %v, want %v", gotErr, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestCommonCommandFlags_processArgs(t *testing.T) {
-	type args struct {
-		args []string
-	}
-	fs := flag.NewFlagSet("test", flag.ContinueOnError)
-	flags := &CommonCommandFlags{
-		fs:            fs,
-		topDirectory:  fs.String("topDir", ".", "top directory in which to look for music files"),
-		fileExtension: fs.String("ext", files.DefaultFileExtension, "extension for music files"),
-		albumRegex:    fs.String("albums", ".*", "regular expression of albums to select"),
-		artistRegex:   fs.String("artists", ".*", "regular expression of artists to select"),
-	}
-	params := files.NewDirectorySearchParams(*flags.topDirectory, *flags.fileExtension, *flags.albumRegex, *flags.artistRegex)
-	savedWriter := fs.Output()
-	usageWriter := &bytes.Buffer{}
-	fs.SetOutput(usageWriter)
-	fs.Usage()
-	usage := usageWriter.String()
-	fs.SetOutput(savedWriter)
-	tests := []struct {
-		name       string
-		c          *CommonCommandFlags
-		args       args
-		want       *files.DirectorySearchParams
-		wantWriter string
-	}{
-		{
-			name:       "good arguments",
-			c:          flags,
-			args:       args{args: nil},
-			want:       params,
-			wantWriter: "",
-		},
-		{
-			name:       "request help",
-			c:          flags,
-			args:       args{args: []string{"-help"}},
-			want:       nil,
-			wantWriter: usage,
-		},
-		{
-			name:       "request invalid argument",
-			c:          flags,
-			args:       args{args: []string{"-foo"}},
-			want:       nil,
-			wantWriter: "flag provided but not defined: -foo\n" + usage,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			writer := &bytes.Buffer{}
-			if got := tt.c.processArgs(writer, tt.args.args); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("CommonCommandFlags.processArgs() = %v, want %v", got, tt.want)
-			}
-			if gotWriter := writer.String(); gotWriter != tt.wantWriter {
-				t.Errorf("CommonCommandFlags.processArgs() = %v, want %v", gotWriter, tt.wantWriter)
 			}
 		})
 	}

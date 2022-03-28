@@ -3,15 +3,17 @@ package subcommands
 import (
 	"flag"
 	"fmt"
+	"mp3/internal/files"
 	"os"
 
 	"github.com/sirupsen/logrus"
 )
 
 type repair struct {
-	target  *string
-	dryRun  *bool
-	commons *CommonCommandFlags
+	n string
+	target *string
+	dryRun *bool
+	ff     *files.FileFlags
 }
 
 const (
@@ -20,18 +22,19 @@ const (
 )
 
 func (r *repair) name() string {
-	return r.commons.name()
+	return r.n
 }
 func newRepair(fSet *flag.FlagSet) CommandProcessor {
 	return &repair{
-		target:  fSet.String("target", defaultRepairType, fmt.Sprintf("either '%s' (make metadata agree with file system) or '%s' (make file system agree with metadata)", defaultRepairType, fsRepair)),
-		dryRun:  fSet.Bool("dryRun", false, "if true, output what would have repaired, but make no repairs"),
-		commons: newCommonCommandFlags(fSet),
+		n:      fSet.Name(),
+		target: fSet.String("target", defaultRepairType, fmt.Sprintf("either '%s' (make metadata agree with file system) or '%s' (make file system agree with metadata)", defaultRepairType, fsRepair)),
+		dryRun: fSet.Bool("dryRun", false, "if true, output what would have repaired, but make no repairs"),
+		ff:     files.NewFileFlags(fSet),
 	}
 }
 
 func (r *repair) Exec(args []string) {
-	if params := r.commons.processArgs(os.Stderr, args); params != nil {
+	if params := r.ff.ProcessArgs(os.Stderr, args); params != nil {
 		r.runSubcommand()
 	}
 }
@@ -47,7 +50,7 @@ func (r *repair) runSubcommand() {
 		logrus.Info("dry run only")
 	case false:
 		// TODO: replace with call to get files and perform the specified repairs
-		logrus.Infof("search %s for files with extension %s for artists '%s' and albums '%s'", *r.commons.topDirectory, *r.commons.fileExtension, *r.commons.artistRegex, *r.commons.albumRegex)
+		// logrus.Infof("search %s for files with extension %s for artists '%s' and albums '%s'", *r.ff.topDirectory, *r.ff.fileExtension, *r.ff.artistRegex, *r.ff.albumRegex)
 	}
 }
 

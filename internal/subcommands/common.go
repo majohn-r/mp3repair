@@ -4,13 +4,7 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io"
-	"mp3/internal"
-	"mp3/internal/files"
-	"path/filepath"
 	"sort"
-
-	"github.com/sirupsen/logrus"
 )
 
 type CommandProcessor interface {
@@ -86,39 +80,4 @@ func selectSubCommand(initializers []subcommandInitializer, args []string) (cmd 
 	}
 	callingArgs = args[2:]
 	return
-}
-
-type CommonCommandFlags struct {
-	fs            *flag.FlagSet
-	topDirectory  *string
-	fileExtension *string
-	albumRegex    *string
-	artistRegex   *string
-}
-
-func defaultDirectory() string {
-	return filepath.Join(internal.HomePath, "Music")
-}
-
-func newCommonCommandFlags(fSet *flag.FlagSet) *CommonCommandFlags {
-	return &CommonCommandFlags{
-		fs:            fSet,
-		topDirectory:  fSet.String("topDir", defaultDirectory(), "top directory in which to look for music files"),
-		fileExtension: fSet.String("ext", files.DefaultFileExtension, "extension for music files"),
-		albumRegex:    fSet.String("albums", ".*", "regular expression of albums to select"),
-		artistRegex:   fSet.String("artists", ".*", "regular expression of artists to select"),
-	}
-}
-
-func (c *CommonCommandFlags) name() string {
-	return c.fs.Name()
-}
-
-func (c *CommonCommandFlags) processArgs(writer io.Writer, args []string) *files.DirectorySearchParams {
-	c.fs.SetOutput(writer)
-	if err := c.fs.Parse(args); err != nil {
-		logrus.Error(err)
-		return nil
-	}
-	return files.NewDirectorySearchParams(*c.topDirectory, *c.fileExtension, *c.albumRegex, *c.artistRegex)
 }

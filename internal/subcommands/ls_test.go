@@ -276,9 +276,9 @@ func Test_ls_runSubcommand(t *testing.T) {
 			lsCommand.includeTracks = &tt.includeTracks
 			lsCommand.trackSorting = &tt.trackSorting
 			lsCommand.annotateListings = &tt.annotateListings
-			lsCommand.commons.topDirectory = &topDir
-			params := lsCommand.commons.processArgs(os.Stderr, nil)
-			lsCommand.runSubcommand(w, params)
+			args := []string{"-topDir", topDir}
+			s := lsCommand.ff.ProcessArgs(os.Stderr, args)
+			lsCommand.runSubcommand(w, s)
 			if gotW := w.String(); gotW != tt.wantW {
 				t.Errorf("ls.runSubcommand() = %v, want %v", gotW, tt.wantW)
 			}

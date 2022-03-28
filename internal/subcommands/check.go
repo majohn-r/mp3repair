@@ -13,32 +13,34 @@ import (
 )
 
 type check struct {
+	n                         string
 	checkEmptyFolders         *bool
 	checkGapsInTrackNumbering *bool
 	checkIntegrity            *bool
-	commons                   *CommonCommandFlags
+	ff                        *files.FileFlags
 }
 
 func (c *check) name() string {
-	return c.commons.name()
+	return c.n
 }
 
 func newCheck(fSet *flag.FlagSet) CommandProcessor {
 	return &check{
+		n:                         fSet.Name(),
 		checkEmptyFolders:         fSet.Bool("empty", false, "check for empty artist and album folders"),
 		checkGapsInTrackNumbering: fSet.Bool("gaps", false, "check for gaps in track numbers"),
 		checkIntegrity:            fSet.Bool("integrity", true, "check for disagreement between the file system and audio file metadata"),
-		commons:                   newCommonCommandFlags(fSet),
+		ff:                        files.NewFileFlags(fSet),
 	}
 }
 
 func (c *check) Exec(args []string) {
-	if params := c.commons.processArgs(os.Stderr, args); params != nil {
-		c.runSubcommand(os.Stdout)
+	if s := c.ff.ProcessArgs(os.Stderr, args); s != nil {
+		c.runSubcommand(os.Stdout, s)
 	}
 }
 
-func (c *check) runSubcommand(w io.Writer) {
+func (c *check) runSubcommand(w io.Writer, s *files.Search) {
 	if !*c.checkEmptyFolders && !*c.checkGapsInTrackNumbering && !*c.checkIntegrity {
 		fmt.Fprintf(os.Stderr, "%s: nothing to do!", c.name())
 		logrus.WithFields(logrus.Fields{"subcommand name": c.name()}).Error("nothing to do")
@@ -49,21 +51,20 @@ func (c *check) runSubcommand(w io.Writer) {
 			"checkTrackGaps":    *c.checkGapsInTrackNumbering,
 			"checkIntegrity":    *c.checkIntegrity,
 		}).Info("subcommand")
-		artists := performEmptyFolderAnalysis(w, c)
+		artists := performEmptyFolderAnalysis(w, c, s)
 		// filter existing artists using provided filters
-		artists = filterArtists(c, artists)
+		artists = filterArtists(c, s, artists)
 		c.performGapAnalysis(w, c, artists)
 	}
 }
 
-func filterArtists(c *check, artists []*files.Artist) (filteredArtists []*files.Artist) {
+func filterArtists(c *check, s *files.Search, artists []*files.Artist) (filteredArtists []*files.Artist) {
 	if *c.checkGapsInTrackNumbering || *c.checkIntegrity {
-		searchParams := files.NewDirectorySearchParams(*c.commons.topDirectory, *c.commons.fileExtension, *c.commons.albumRegex, *c.commons.artistRegex)
 		if len(artists) == 0 {
-			filteredArtists = files.LoadData(searchParams)
+			filteredArtists = s.LoadData()
 		} else {
 
-			filteredArtists = files.FilterArtists(artists, searchParams)
+			filteredArtists = s.FilterArtists(artists)
 		}
 	} else {
 		filteredArtists = artists
@@ -71,14 +72,14 @@ func filterArtists(c *check, artists []*files.Artist) (filteredArtists []*files.
 	return
 }
 
-func performEmptyFolderAnalysis(w io.Writer, c *check) (artists []*files.Artist) {
+func performEmptyFolderAnalysis(w io.Writer, c *check, s *files.Search) (artists []*files.Artist) {
 	if *c.checkEmptyFolders {
-		artists = files.LoadUnfilteredData(*c.commons.topDirectory, *c.commons.fileExtension)
+		artists = s.LoadUnfilteredData()
 		if len(artists) == 0 {
 			logrus.WithFields(
 				logrus.Fields{
-					"topDirectory":  *c.commons.topDirectory,
-					"fileExtension": *c.commons.fileExtension,
+					"topDirectory":  s.TopDirectory(),
+					"fileExtension": s.TargetExtension(),
 				}).Error("checking empty folders, no artists found")
 		}
 		var complaints []string
