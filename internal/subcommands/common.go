@@ -4,12 +4,13 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"sort"
 )
 
 type CommandProcessor interface {
 	name() string
-	Exec([]string)
+	Exec(io.Writer, []string)
 }
 
 type subcommandInitializer struct {

@@ -40,252 +40,6 @@ func Test_ls_validateTrackSorting(t *testing.T) {
 	}
 }
 
-func Test_ls_runSubcommand(t *testing.T) {
-	// generate test data
-	topDir := "loadTest"
-	if err := internal.Mkdir(t, "LoadData", topDir); err != nil {
-		return
-	}
-	defer func() {
-		if err := os.RemoveAll(topDir); err != nil {
-			t.Errorf("LoadData() error destroying test directory %q: %v", topDir, err)
-		}
-	}()
-	internal.PopulateTopDir(t, topDir)
-	tests := []struct {
-		name             string
-		includeAlbums    bool
-		includeArtists   bool
-		includeTracks    bool
-		trackSorting     string
-		annotateListings bool
-		wantW            string
-	}{
-		{
-			name:           "no output",
-			includeAlbums:  false,
-			includeArtists: false,
-			includeTracks:  false,
-			wantW:          generateListing(false, false, false, false, false),
-		},
-		// tracks only
-		{
-			name:             "unannotated tracks only",
-			includeAlbums:    false,
-			includeArtists:   false,
-			includeTracks:    true,
-			annotateListings: false,
-			wantW:            generateListing(false, false, true, false, false),
-		},
-		{
-			name:             "annotated tracks only",
-			includeAlbums:    false,
-			includeArtists:   false,
-			includeTracks:    true,
-			annotateListings: true,
-			wantW:            generateListing(false, false, true, true, false),
-		},
-		{
-			name:             "unannotated tracks only with numeric sorting",
-			includeAlbums:    false,
-			includeArtists:   false,
-			includeTracks:    true,
-			annotateListings: false,
-			trackSorting:     "numeric",
-			wantW:            generateListing(false, false, true, false, true),
-		},
-		{
-			name:             "annotated tracks only with numeric sorting",
-			includeAlbums:    false,
-			includeArtists:   false,
-			includeTracks:    true,
-			annotateListings: true,
-			trackSorting:     "numeric",
-			wantW:            generateListing(false, false, true, true, true),
-		},
-		// albums only
-		{
-			name:             "unannotated albums only",
-			includeAlbums:    true,
-			includeArtists:   false,
-			includeTracks:    false,
-			annotateListings: false,
-			wantW:            generateListing(false, true, false, false, false),
-		},
-		{
-			name:             "annotated albums only",
-			includeAlbums:    true,
-			includeArtists:   false,
-			includeTracks:    false,
-			annotateListings: true,
-			wantW:            generateListing(false, true, false, true, false),
-		},
-		// artists only
-		{
-			name:             "unannotated artists only",
-			includeAlbums:    false,
-			includeArtists:   true,
-			includeTracks:    false,
-			annotateListings: false,
-			wantW:            generateListing(true, false, false, false, false),
-		},
-		{
-			name:             "annotated artists only",
-			includeAlbums:    false,
-			includeArtists:   true,
-			includeTracks:    false,
-			annotateListings: true,
-			wantW:            generateListing(true, false, false, true, false),
-		},
-		// albums and artists
-		{
-			name:             "unannotated artists and albums only",
-			includeAlbums:    true,
-			includeArtists:   true,
-			includeTracks:    false,
-			annotateListings: false,
-			wantW:            generateListing(true, true, false, false, false),
-		},
-		{
-			name:             "annotated artists and albums only",
-			includeAlbums:    true,
-			includeArtists:   true,
-			includeTracks:    false,
-			annotateListings: true,
-			wantW:            generateListing(true, true, false, true, false),
-		},
-		// albums and tracks
-		{
-			name:             "unannotated albums and tracks with alpha sorting",
-			includeAlbums:    true,
-			includeArtists:   false,
-			includeTracks:    true,
-			annotateListings: false,
-			trackSorting:     "alpha",
-			wantW:            generateListing(false, true, true, false, false),
-		},
-		{
-			name:             "annotated albums and tracks with alpha sorting",
-			includeAlbums:    true,
-			includeArtists:   false,
-			includeTracks:    true,
-			annotateListings: true,
-			trackSorting:     "alpha",
-			wantW:            generateListing(false, true, true, true, false),
-		},
-		{
-			name:             "unannotated albums and tracks with numeric sorting",
-			includeAlbums:    true,
-			includeArtists:   false,
-			includeTracks:    true,
-			annotateListings: false,
-			trackSorting:     "numeric",
-			wantW:            generateListing(false, true, true, false, true),
-		},
-		{
-			name:             "annotated albums and tracks with numeric sorting",
-			includeAlbums:    true,
-			includeArtists:   false,
-			includeTracks:    true,
-			annotateListings: true,
-			trackSorting:     "numeric",
-			wantW:            generateListing(false, true, true, true, true),
-		},
-		// artists and tracks
-		{
-			name:             "unannotated artists and tracks with alpha sorting",
-			includeAlbums:    false,
-			includeArtists:   true,
-			includeTracks:    true,
-			annotateListings: false,
-			trackSorting:     "alpha",
-			wantW:            generateListing(true, false, true, false, false),
-		},
-		{
-			name:             "annotated artists and tracks with alpha sorting",
-			includeAlbums:    false,
-			includeArtists:   true,
-			includeTracks:    true,
-			annotateListings: true,
-			trackSorting:     "alpha",
-			wantW:            generateListing(true, false, true, true, false),
-		},
-		{
-			name:             "unannotated artists and tracks with numeric sorting",
-			includeAlbums:    false,
-			includeArtists:   true,
-			includeTracks:    true,
-			annotateListings: false,
-			trackSorting:     "numeric",
-			wantW:            generateListing(true, false, true, false, true),
-		},
-		{
-			name:             "annotated artists and tracks with numeric sorting",
-			includeAlbums:    false,
-			includeArtists:   true,
-			includeTracks:    true,
-			annotateListings: true,
-			trackSorting:     "numeric",
-			wantW:            generateListing(true, false, true, true, true),
-		},
-		// albums, artists, and tracks
-		{
-			name:             "unannotated artists, albums, and tracks with alpha sorting",
-			includeAlbums:    true,
-			includeArtists:   true,
-			includeTracks:    true,
-			annotateListings: false,
-			trackSorting:     "alpha",
-			wantW:            generateListing(true, true, true, false, false),
-		},
-		{
-			name:             "annotated artists, albums, and tracks with alpha sorting",
-			includeAlbums:    true,
-			includeArtists:   true,
-			includeTracks:    true,
-			annotateListings: true,
-			trackSorting:     "alpha",
-			wantW:            generateListing(true, true, true, true, false),
-		},
-		{
-			name:             "unannotated artists, albums, and tracks with numeric sorting",
-			includeAlbums:    true,
-			includeArtists:   true,
-			includeTracks:    true,
-			annotateListings: false,
-			trackSorting:     "numeric",
-			wantW:            generateListing(true, true, true, false, true),
-		},
-		{
-			name:             "annotated artists, albums, and tracks with numeric sorting",
-			includeAlbums:    true,
-			includeArtists:   true,
-			includeTracks:    true,
-			annotateListings: true,
-			trackSorting:     "numeric",
-			wantW:            generateListing(true, true, true, true, true),
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			w := &bytes.Buffer{}
-			fs := flag.NewFlagSet("ls", flag.ContinueOnError)
-			lsCommand := newLsSubCommand(fs)
-			lsCommand.includeAlbums = &tt.includeAlbums
-			lsCommand.includeArtists = &tt.includeArtists
-			lsCommand.includeTracks = &tt.includeTracks
-			lsCommand.trackSorting = &tt.trackSorting
-			lsCommand.annotateListings = &tt.annotateListings
-			args := []string{"-topDir", topDir}
-			s := lsCommand.sf.ProcessArgs(os.Stderr, args)
-			lsCommand.runSubcommand(w, s)
-			if gotW := w.String(); gotW != tt.wantW {
-				t.Errorf("ls.runSubcommand() = %v, want %v", gotW, tt.wantW)
-			}
-		})
-	}
-}
-
 type testTrack struct {
 	artistName string
 	albumName  string
@@ -411,4 +165,182 @@ func generateTrackListings(testTracks []*testTrack, spacer string, artists, albu
 		}
 	}
 	return output
+}
+
+func Test_ls_Exec(t *testing.T) {
+	// generate test data
+	topDir := "loadTest"
+	if err := internal.Mkdir(t, "LoadData", topDir); err != nil {
+		return
+	}
+	defer func() {
+		if err := os.RemoveAll(topDir); err != nil {
+			t.Errorf("LoadData() error destroying test directory %q: %v", topDir, err)
+		}
+	}()
+	internal.PopulateTopDir(t, topDir)
+	type args struct {
+		args []string
+	}
+	tests := []struct {
+		name  string
+		l     *ls
+		args  args
+		wantW string
+	}{
+		{
+			name:  "no output",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=false", "-track=false"}},
+			wantW: generateListing(false, false, false, false, false),
+		},
+		// tracks only
+		{
+			name:  "unannotated tracks only",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=false", "-track=true", "-annotate=false"}},
+			wantW: generateListing(false, false, true, false, false),
+		},
+		{
+			name:  "annotated tracks only",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=false", "-track=true", "-annotate=true"}},
+			wantW: generateListing(false, false, true, true, false),
+		},
+		{
+			name:  "unannotated tracks only with numeric sorting",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=false", "-track=true", "-annotate=false", "-sort=numeric"}},
+			wantW: generateListing(false, false, true, false, true),
+		},
+		{
+			name:  "annotated tracks only with numeric sorting",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=false", "-track=true", "-annotate=true", "-sort", "numeric"}},
+			wantW: generateListing(false, false, true, true, true),
+		},
+		// albums only
+		{
+			name:  "unannotated albums only",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=false", "-track=false", "-annotate=false"}},
+			wantW: generateListing(false, true, false, false, false),
+		},
+		{
+			name:  "annotated albums only",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=false", "-track=false", "-annotate=true"}},
+			wantW: generateListing(false, true, false, true, false),
+		},
+		// artists only
+		{
+			name:  "unannotated artists only",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=true", "-track=false", "-annotate=false"}},
+			wantW: generateListing(true, false, false, false, false),
+		},
+		{
+			name:  "annotated artists only",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=true", "-track=false", "-annotate=true"}},
+			wantW: generateListing(true, false, false, true, false),
+		},
+		// albums and artists
+		{
+			name:  "unannotated artists and albums only",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=true", "-track=false", "-annotate=false"}},
+			wantW: generateListing(true, true, false, false, false),
+		},
+		{
+			name:  "annotated artists and albums only",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=true", "-track=false", "-annotate=true"}},
+			wantW: generateListing(true, true, false, true, false),
+		},
+		// albums and tracks
+		{
+			name:  "unannotated albums and tracks with alpha sorting",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=false", "-track=true", "-annotate=false", "-sort", "alpha"}},
+			wantW: generateListing(false, true, true, false, false),
+		},
+		{
+			name:  "annotated albums and tracks with alpha sorting",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=false", "-track=true", "-annotate=true", "-sort", "alpha"}},
+			wantW: generateListing(false, true, true, true, false),
+		},
+		{
+			name:  "unannotated albums and tracks with numeric sorting",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=false", "-track=true", "-annotate=false", "-sort", "numeric"}},
+			wantW: generateListing(false, true, true, false, true),
+		},
+		{
+			name:  "annotated albums and tracks with numeric sorting",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=false", "-track=true", "-annotate=true", "-sort", "numeric"}},
+			wantW: generateListing(false, true, true, true, true),
+		},
+		// artists and tracks
+		{
+			name:  "unannotated artists and tracks with alpha sorting",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=true", "-track=true", "-annotate=false", "-sort", "alpha"}},
+			wantW: generateListing(true, false, true, false, false),
+		},
+		{
+			name:  "annotated artists and tracks with alpha sorting",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=true", "-track=true", "-annotate=true", "-sort", "alpha"}},
+			wantW: generateListing(true, false, true, true, false),
+		},
+		{
+			name:  "unannotated artists and tracks with numeric sorting",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=true", "-track=true", "-annotate=false", "-sort", "numeric"}},
+			wantW: generateListing(true, false, true, false, true),
+		},
+		{
+			name:  "annotated artists and tracks with numeric sorting",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=true", "-track=true", "-annotate=true", "-sort", "numeric"}},
+			wantW: generateListing(true, false, true, true, true),
+		},
+		// albums, artists, and tracks
+		{
+			name:  "unannotated artists, albums, and tracks with alpha sorting",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=true", "-track=true", "-annotate=false", "-sort", "alpha"}},
+			wantW: generateListing(true, true, true, false, false),
+		},
+		{
+			name:  "annotated artists, albums, and tracks with alpha sorting",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=true", "-track=true", "-annotate=true", "-sort", "alpha"}},
+			wantW: generateListing(true, true, true, true, false),
+		},
+		{
+			name:  "unannotated artists, albums, and tracks with numeric sorting",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=true", "-track=true", "-annotate=false", "-sort", "numeric"}},
+			wantW: generateListing(true, true, true, false, true),
+		},
+		{
+			name:  "annotated artists, albums, and tracks with numeric sorting",
+			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=true", "-track=true", "-annotate=true", "-sort", "numeric"}},
+			wantW: generateListing(true, true, true, true, true),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := &bytes.Buffer{}
+			tt.l.Exec(w, tt.args.args)
+			if gotW := w.String(); gotW != tt.wantW {
+				t.Errorf("ls.Exec() = %v, want %v", gotW, tt.wantW)
+			}
+		})
+	}
 }

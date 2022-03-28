@@ -42,9 +42,9 @@ func newLsSubCommand(fSet *flag.FlagSet) *ls {
 	}
 }
 
-func (l *ls) Exec(args []string) {
-	if params := l.sf.ProcessArgs(os.Stderr, args); params != nil {
-		l.runSubcommand(os.Stdout, params)
+func (l *ls) Exec(w io.Writer, args []string) {
+	if s := l.sf.ProcessArgs(os.Stderr, args); s != nil {
+		l.runSubcommand(w, s)
 	}
 }
 

@@ -3,6 +3,7 @@ package subcommands
 import (
 	"flag"
 	"fmt"
+	"io"
 	"mp3/internal/files"
 	"os"
 
@@ -33,8 +34,8 @@ func newRepair(fSet *flag.FlagSet) CommandProcessor {
 	}
 }
 
-func (r *repair) Exec(args []string) {
-	if params := r.sf.ProcessArgs(os.Stderr, args); params != nil {
+func (r *repair) Exec(w io.Writer, args []string) {
+	if s := r.sf.ProcessArgs(os.Stderr, args); s != nil {
 		r.runSubcommand()
 	}
 }

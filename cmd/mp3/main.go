@@ -19,7 +19,7 @@ func main() {
 				fmt.Fprintln(os.Stderr, err)
 				logrus.Error(err)
 			} else {
-				cmd.Exec(args)
+				cmd.Exec(os.Stdout, args)
 				returnValue = 0
 			}
 		}

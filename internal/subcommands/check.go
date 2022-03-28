@@ -34,9 +34,9 @@ func newCheck(fSet *flag.FlagSet) CommandProcessor {
 	}
 }
 
-func (c *check) Exec(args []string) {
+func (c *check) Exec(w io.Writer, args []string) {
 	if s := c.sf.ProcessArgs(os.Stderr, args); s != nil {
-		c.runSubcommand(os.Stdout, s)
+		c.runSubcommand(w, s)
 	}
 }
 
