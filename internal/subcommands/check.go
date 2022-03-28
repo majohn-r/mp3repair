@@ -17,7 +17,7 @@ type check struct {
 	checkEmptyFolders         *bool
 	checkGapsInTrackNumbering *bool
 	checkIntegrity            *bool
-	ff                        *files.FileFlags
+	sf                        *files.SearchFlags
 }
 
 func (c *check) name() string {
@@ -30,12 +30,12 @@ func newCheck(fSet *flag.FlagSet) CommandProcessor {
 		checkEmptyFolders:         fSet.Bool("empty", false, "check for empty artist and album folders"),
 		checkGapsInTrackNumbering: fSet.Bool("gaps", false, "check for gaps in track numbers"),
 		checkIntegrity:            fSet.Bool("integrity", true, "check for disagreement between the file system and audio file metadata"),
-		ff:                        files.NewFileFlags(fSet),
+		sf:                        files.NewSearchFlags(fSet),
 	}
 }
 
 func (c *check) Exec(args []string) {
-	if s := c.ff.ProcessArgs(os.Stderr, args); s != nil {
+	if s := c.sf.ProcessArgs(os.Stderr, args); s != nil {
 		c.runSubcommand(os.Stdout, s)
 	}
 }

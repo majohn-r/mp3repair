@@ -39,7 +39,6 @@ func Test_parseTrackName(t *testing.T) {
 			args: args{name: "trackName.mp3", album: "some album", artist: "some artist", ext: ".mp3"},
 		},
 	}
-	validateExtension(".mp3")
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotSimpleName, gotTrackNumber, gotValid := ParseTrackName(tt.args.name, tt.args.album, tt.args.artist, tt.args.ext)

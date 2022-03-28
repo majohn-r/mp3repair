@@ -13,13 +13,13 @@ import (
 )
 
 type ls struct {
-	n string
+	n                string
 	includeAlbums    *bool
 	includeArtists   *bool
 	includeTracks    *bool
 	trackSorting     *string
 	annotateListings *bool
-	ff               *files.FileFlags
+	sf               *files.SearchFlags
 }
 
 func (l *ls) name() string {
@@ -38,12 +38,12 @@ func newLsSubCommand(fSet *flag.FlagSet) *ls {
 		includeTracks:    fSet.Bool("track", false, "include track names in listing"),
 		trackSorting:     fSet.String("sort", "numeric", "track sorting, 'numeric' in track number order, or 'alpha' in track name order"),
 		annotateListings: fSet.Bool("annotate", false, "annotate listings with album and artist data"),
-		ff:               files.NewFileFlags(fSet),
+		sf:               files.NewSearchFlags(fSet),
 	}
 }
 
 func (l *ls) Exec(args []string) {
-	if params := l.ff.ProcessArgs(os.Stderr, args); params != nil {
+	if params := l.sf.ProcessArgs(os.Stderr, args); params != nil {
 		l.runSubcommand(os.Stdout, params)
 	}
 }

@@ -10,10 +10,10 @@ import (
 )
 
 type repair struct {
-	n string
+	n      string
 	target *string
 	dryRun *bool
-	ff     *files.FileFlags
+	sf     *files.SearchFlags
 }
 
 const (
@@ -29,12 +29,12 @@ func newRepair(fSet *flag.FlagSet) CommandProcessor {
 		n:      fSet.Name(),
 		target: fSet.String("target", defaultRepairType, fmt.Sprintf("either '%s' (make metadata agree with file system) or '%s' (make file system agree with metadata)", defaultRepairType, fsRepair)),
 		dryRun: fSet.Bool("dryRun", false, "if true, output what would have repaired, but make no repairs"),
-		ff:     files.NewFileFlags(fSet),
+		sf:     files.NewSearchFlags(fSet),
 	}
 }
 
 func (r *repair) Exec(args []string) {
-	if params := r.ff.ProcessArgs(os.Stderr, args); params != nil {
+	if params := r.sf.ProcessArgs(os.Stderr, args); params != nil {
 		r.runSubcommand()
 	}
 }

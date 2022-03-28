@@ -73,12 +73,12 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 	}{
 		{
 			name:        "read all",
-			s:           NewFileFlags(realFlagSet).ProcessArgs(os.Stdout, []string{"-topDir", topDir}),
+			s:           NewSearchFlags(realFlagSet).ProcessArgs(os.Stdout, []string{"-topDir", topDir}),
 			wantArtists: CreateAllArtists(topDir, true),
 		},
 		{
 			name: "empty dir",
-			s:    NewFileFlags(emptyFlagSet).ProcessArgs(os.Stdout, []string{"-topDir", emptyDir}),
+			s:    NewSearchFlags(emptyFlagSet).ProcessArgs(os.Stdout, []string{"-topDir", emptyDir}),
 		},
 	}
 	for _, tt := range tests {
@@ -103,7 +103,7 @@ func TestSearch_FilterArtists(t *testing.T) {
 	}()
 	internal.PopulateTopDir(t, topDir)
 	realFlagSet := flag.NewFlagSet("real", flag.ContinueOnError)
-	realS := NewFileFlags(realFlagSet).ProcessArgs(os.Stdout, []string{"-topDir", topDir})
+	realS := NewSearchFlags(realFlagSet).ProcessArgs(os.Stdout, []string{"-topDir", topDir})
 	type args struct {
 		unfilteredArtists []*Artist
 	}
@@ -147,21 +147,21 @@ func TestSearch_LoadData(t *testing.T) {
 	}{
 		{
 			name:        "read all",
-			s:           NewFileFlags(fsCase1).ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-albums", "^.*$", "-artists", "^.*$"}),
+			s:           NewSearchFlags(fsCase1).ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-albums", "^.*$", "-artists", "^.*$"}),
 			wantArtists: CreateAllArtists(topDir, false),
 		},
 		{
 			name:        "read with filtering",
-			s:           NewFileFlags(fsCase2).ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-albums", "^.*[02468]$", "-artists", "^.*[13579]$"}),
+			s:           NewSearchFlags(fsCase2).ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-albums", "^.*[02468]$", "-artists", "^.*[13579]$"}),
 			wantArtists: CreateAllOddArtistsWithEvenAlbums(topDir),
 		},
 		{
 			name: "read with all artists filtered out",
-			s:    NewFileFlags(fsCase3).ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-albums", "^.*$", "-artists", "^.*X$"}),
+			s:    NewSearchFlags(fsCase3).ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-albums", "^.*$", "-artists", "^.*X$"}),
 		},
 		{
 			name: "read with all albums filtered out",
-			s:    NewFileFlags(fsCase4).ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-albums", "^.*X$", "-artists", "^.*X$"}),
+			s:    NewSearchFlags(fsCase4).ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-albums", "^.*X$", "-artists", "^.*X$"}),
 		},
 	}
 	for _, tt := range tests {
