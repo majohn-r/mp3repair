@@ -7,6 +7,7 @@ import (
 )
 
 func Test_initLogging(t *testing.T) {
+	fnName := "initLogging()"
 	type args struct {
 		parentDir string
 	}
@@ -21,19 +22,20 @@ func Test_initLogging(t *testing.T) {
 	defer func() {
 		logger.Close()
 		if err := os.RemoveAll("mp3"); err != nil {
-			t.Errorf("initLogging(): %v", err)
+			t.Errorf("%s: %v", fnName, err)
 		}
 	}()
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := initLogging(tt.args.parentDir); got != tt.want {
-				t.Errorf("initLogging() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func Test_initEnv(t *testing.T) {
+	fnName := "initEnv()"
 	type args struct {
 		lookup func() []error
 	}
@@ -53,7 +55,7 @@ func Test_initEnv(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := initEnv(tt.args.lookup); got != tt.want {
-				t.Errorf("initEnv() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}

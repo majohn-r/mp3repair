@@ -5,6 +5,7 @@ import (
 )
 
 func Test_parseTrackName(t *testing.T) {
+	fnName := "parseTrackName()"
 	type args struct {
 		name   string
 		album  string
@@ -44,14 +45,14 @@ func Test_parseTrackName(t *testing.T) {
 			gotSimpleName, gotTrackNumber, gotValid := ParseTrackName(tt.args.name, tt.args.album, tt.args.artist, tt.args.ext)
 			if tt.wantValid {
 				if gotSimpleName != tt.wantSimpleName {
-					t.Errorf("parseTrackName() gotSimpleName = %v, want %v", gotSimpleName, tt.wantSimpleName)
+					t.Errorf("%s gotSimpleName = %v, want %v", fnName, gotSimpleName, tt.wantSimpleName)
 				}
 				if gotTrackNumber != tt.wantTrackNumber {
-					t.Errorf("parseTrackName() gotTrackNumber = %v, want %v", gotTrackNumber, tt.wantTrackNumber)
+					t.Errorf("%s gotTrackNumber = %v, want %v", fnName, gotTrackNumber, tt.wantTrackNumber)
 				}
 			}
 			if gotValid != tt.wantValid {
-				t.Errorf("parseTrackName() gotValid = %v, want %v", gotValid, tt.wantValid)
+				t.Errorf("%s gotValid = %v, want %v", fnName, gotValid, tt.wantValid)
 			}
 		})
 	}

@@ -9,6 +9,7 @@ import (
 )
 
 func TestFileFlags_processArgs(t *testing.T) {
+	fnName := "FileFlags.processArgs()"
 	fs := flag.NewFlagSet("test", flag.ContinueOnError)
 	flags := &SearchFlags{
 		f:             fs,
@@ -47,16 +48,17 @@ func TestFileFlags_processArgs(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			writer := &bytes.Buffer{}
 			if got := tt.sf.ProcessArgs(writer, tt.args.args); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("FileFlags.processArgs() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 			if gotWriter := writer.String(); gotWriter != tt.wantWriter {
-				t.Errorf("FileFlags.processArgs() = %v, want %v", gotWriter, tt.wantWriter)
+				t.Errorf("%s = %v, want %v", fnName, gotWriter, tt.wantWriter)
 			}
 		})
 	}
 }
 
 func Test_NewFileFlags(t *testing.T) {
+	fnName := "NewFileFlags()"
 	type args struct {
 		fSet *flag.FlagSet
 	}
@@ -69,13 +71,14 @@ func Test_NewFileFlags(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := NewSearchFlags(tt.args.fSet); got == nil {
-				t.Errorf("newFileFlags() = %v", got)
+				t.Errorf("%s = %v", fnName, got)
 			}
 		})
 	}
 }
 
 func Test_validateRegexp(t *testing.T) {
+	fnName := "validateRegexp()"
 	type args struct {
 		pattern string
 		name    string
@@ -118,16 +121,17 @@ func Test_validateRegexp(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotFilter, gotBadRegex := validateRegexp(tt.args.pattern, tt.args.name)
 			if !tt.wantBadRegex && !reflect.DeepEqual(gotFilter, tt.wantFilter) {
-				t.Errorf("validateRegexp() gotFilter = %v, want %v", gotFilter, tt.wantFilter)
+				t.Errorf("%s gotFilter = %v, want %v", fnName, gotFilter, tt.wantFilter)
 			}
 			if gotBadRegex != tt.wantBadRegex {
-				t.Errorf("validateRegexp() gotBadRegex = %v, want %v", gotBadRegex, tt.wantBadRegex)
+				t.Errorf("%s gotBadRegex = %v, want %v", fnName, gotBadRegex, tt.wantBadRegex)
 			}
 		})
 	}
 }
 
 func Test_validateSearchParameters(t *testing.T) {
+	fnName := "validateSearchParameters()"
 	type args struct {
 		dir     string
 		ext     string
@@ -241,20 +245,21 @@ func Test_validateSearchParameters(t *testing.T) {
 			gotAlbumsFilter, gotArtistsFilter, gotProblemsExist := sf.validate()
 			if !tt.wantProblemsExist {
 				if !reflect.DeepEqual(gotAlbumsFilter, tt.wantAlbumsFilter) {
-					t.Errorf("validateSearchParameters() gotAlbumsFilter = %v, want %v", gotAlbumsFilter, tt.wantAlbumsFilter)
+					t.Errorf("%s gotAlbumsFilter = %v, want %v", fnName, gotAlbumsFilter, tt.wantAlbumsFilter)
 				}
 				if !reflect.DeepEqual(gotArtistsFilter, tt.wantArtistsFilter) {
-					t.Errorf("validateSearchParameters() gotArtistsFilter = %v, want %v", gotArtistsFilter, tt.wantArtistsFilter)
+					t.Errorf("%s gotArtistsFilter = %v, want %v", fnName, gotArtistsFilter, tt.wantArtistsFilter)
 				}
 			}
 			if gotProblemsExist != tt.wantProblemsExist {
-				t.Errorf("validateSearchParameters() gotProblemsExist = %v, want %v", gotProblemsExist, tt.wantProblemsExist)
+				t.Errorf("%s gotProblemsExist = %v, want %v", fnName, gotProblemsExist, tt.wantProblemsExist)
 			}
 		})
 	}
 }
 
 func TestSearchFlags_validateTopLevelDirectory(t *testing.T) {
+	fnName := "SearchFlags.validateTopLevelDirectory()"
 	thisDir := "."
 	notAFile := "no such file"
 	notADir := "input_test.go"
@@ -270,13 +275,14 @@ func TestSearchFlags_validateTopLevelDirectory(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.sf.validateTopLevelDirectory(); got != tt.want {
-				t.Errorf("SearchFlags.validateTopLevelDirectory() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestSearchFlags_validateExtension(t *testing.T) {
+	fnName := "SearchFlags.validateExtension()"
 	defaultExtension := DefaultFileExtension
 	missingLeadDot := "mp3"
 	multipleDots := ".m.p3"
@@ -294,7 +300,7 @@ func TestSearchFlags_validateExtension(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if gotValid := tt.sf.validateExtension(); gotValid != tt.wantValid {
-				t.Errorf("SearchFlags.validateExtension() = %v, want %v", gotValid, tt.wantValid)
+				t.Errorf("%s = %v, want %v", fnName, gotValid, tt.wantValid)
 			}
 		})
 	}

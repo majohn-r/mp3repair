@@ -12,6 +12,7 @@ import (
 )
 
 func TestConfigureLogging(t *testing.T) {
+	fnName := "configureLogging()"
 	type args struct {
 		path string
 	}
@@ -25,18 +26,18 @@ func TestConfigureLogging(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			defer func() {
 				if err := os.RemoveAll(tt.args.path); err != nil {
-					t.Errorf("ConfigureLogging(): cannot clean up %v: %v", tt.args.path, err)
+					t.Errorf("%s: cannot clean up %v: %v", fnName, tt.args.path, err)
 				}
 			}()
 			got := ConfigureLogging(tt.args.path)
 			if got == nil {
-				t.Error("ConfigureLogging(): returned nil coronWriter.CronoWriter")
+				t.Errorf("%s: returned nil cronoWriter.CronoWriter", fnName)
 			}
 			got.Close()
 			var latestFound bool
 			var mp3logFound bool
 			if files, err := ioutil.ReadDir(tt.args.path); err != nil {
-				t.Errorf("ConfigureLogging(): cannot read path %v: %v", tt.args.path, err)
+				t.Errorf("%s: cannot read path %v: %v", fnName, tt.args.path, err)
 			} else {
 				for _, file := range files {
 					mode := file.Mode()
@@ -50,16 +51,17 @@ func TestConfigureLogging(t *testing.T) {
 				}
 			}
 			if !latestFound {
-				t.Errorf("ConfigureLogging(): %s not found", symlinkName)
+				t.Errorf("%s: %s not found", fnName, symlinkName)
 			}
 			if !mp3logFound {
-				t.Errorf("ConfigureLogging(): no %s*%s files found", logFilePrefix, logFileExtension)
+				t.Errorf("%s: no %s*%s files found", fnName, logFilePrefix, logFileExtension)
 			}
 		})
 	}
 }
 
 func TestCleanupLogFiles(t *testing.T) {
+	fnName := "CleanupLogFiles()"
 	type args struct {
 		path string
 	}
@@ -101,23 +103,23 @@ func TestCleanupLogFiles(t *testing.T) {
 	for _, tt := range tests {
 		defer func() {
 			if err := os.RemoveAll(tt.args.path); err != nil {
-				t.Errorf("CleanupLogFiles(): cannot clean up %v: %v", tt.args.path, err)
+				t.Errorf("%s: cannot clean up %v: %v", fnName, tt.args.path, err)
 			}
 		}()
 		var filesToClose []*os.File
 		if tt.createFolder {
 			if err := os.MkdirAll(tt.args.path, 0755); err != nil {
-				t.Errorf("CleanupLogFiles(): cannot create %v: %v", tt.args.path, err)
+				t.Errorf("%s: cannot create %v: %v", fnName, tt.args.path, err)
 			}
 			// create required files
 			for k := 0; k < tt.fileCount; k++ {
 				filename := filepath.Join(tt.args.path, logFilePrefix+fmt.Sprintf("%02d", k)+logFileExtension)
 				if file, err := os.Create(filename); err != nil {
-					t.Errorf("CleanupLogFiles(): cannot create log file %q: %v", filename, err)
+					t.Errorf("%s: cannot create log file %q: %v", fnName, filename, err)
 				} else {
 					tm := time.Now().Add(time.Hour * time.Duration(k))
 					if err := os.Chtimes(filename, tm, tm); err != nil {
-						t.Errorf("CleanupLogFiles(): cannot set access and modification times on %s: %v", filename, err)
+						t.Errorf("%s: cannot set access and modification times on %s: %v", fnName, filename, err)
 					}
 					if !tt.lockFiles {
 						file.Close()
@@ -131,14 +133,14 @@ func TestCleanupLogFiles(t *testing.T) {
 			}
 		} else {
 			if err := os.RemoveAll(tt.args.path); err != nil {
-				t.Errorf("CleanupLogFiles(): cannot ensure %v does not exist: %v", tt.args.path, err)
+				t.Errorf("%s: cannot ensure %v does not exist: %v", fnName, tt.args.path, err)
 			}
 		}
 		t.Run(tt.name, func(t *testing.T) {
 			CleanupLogFiles(tt.args.path)
 			if tt.createFolder {
 				if files, err := ioutil.ReadDir(tt.args.path); err != nil {
-					t.Errorf("CleanupLogFiles(): cannot read directory %s: %v", tt.args.path, err)
+					t.Errorf("%s: cannot read directory %s: %v", fnName, tt.args.path, err)
 				} else {
 					var gotFileCount int
 					for _, file := range files {
@@ -148,7 +150,7 @@ func TestCleanupLogFiles(t *testing.T) {
 						}
 					}
 					if gotFileCount != tt.wantFileCount {
-						t.Errorf("CleanupLogFiles(): file count got %d, want %d", gotFileCount, tt.wantFileCount)
+						t.Errorf("%s: file count got %d, want %d", fnName, gotFileCount, tt.wantFileCount)
 					}
 				}
 				for _, file := range filesToClose {
@@ -157,10 +159,10 @@ func TestCleanupLogFiles(t *testing.T) {
 			} else {
 				if _, err := os.Stat(tt.args.path); err != nil {
 					if !os.IsNotExist(err) {
-						t.Errorf("CleanupLogFiles(): expected %s to not exist, but got error %v", tt.args.path, err)
+						t.Errorf("%s: expected %s to not exist, but got error %v", fnName, tt.args.path, err)
 					}
 				} else {
-					t.Errorf("CleanupLogFiles(): expected %s to not exist!", tt.args.path)
+					t.Errorf("%s: expected %s to not exist!", fnName, tt.args.path)
 				}
 			}
 		})

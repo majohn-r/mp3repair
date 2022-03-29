@@ -7,6 +7,7 @@ import (
 )
 
 func TestProcessCommand(t *testing.T) {
+	fnName := "ProcessCommand()"
 	type args struct {
 		args []string
 	}
@@ -53,23 +54,23 @@ func TestProcessCommand(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotCmd, gotCallingArgs, gotErr := ProcessCommand(tt.args.args)
 			if !equalErrors(gotErr, tt.wantErr) {
-				t.Errorf("ProcessCommand() gotErr = %v, want %v", gotErr, tt.wantErr)
+				t.Errorf("%s gotErr = %v, want %v", fnName, gotErr, tt.wantErr)
 			}
 			if gotCmd == nil {
 				if tt.wantCmd != nil {
-					t.Errorf("ProcessCommand() gotCmd = %v, want %v", gotCmd, tt.wantCmd)
+					t.Errorf("%s gotCmd = %v, want %v", fnName, gotCmd, tt.wantCmd)
 				}
 			} else {
 				if tt.wantCmd == nil {
-					t.Errorf("ProcessCommand() gotCmd = %v, want %v", gotCmd, tt.wantCmd)
+					t.Errorf("%s gotCmd = %v, want %v", fnName, gotCmd, tt.wantCmd)
 				} else {
 					if gotCmd.name() != tt.wantCmd.name() {
-						t.Errorf("ProcessCommand() gotCmd name = %v, want name %v", gotCmd.name(), tt.wantCmd.name())
+						t.Errorf("%s gotCmd name = %v, want name %v", fnName, gotCmd.name(), tt.wantCmd.name())
 					}
 				}
 			}
 			if !reflect.DeepEqual(gotCallingArgs, tt.wantCallingArgs) {
-				t.Errorf("ProcessCommand() gotCallingArgs = %v, want %v", gotCallingArgs, tt.wantCallingArgs)
+				t.Errorf("%s gotCallingArgs = %v, want %v", fnName, gotCallingArgs, tt.wantCallingArgs)
 			}
 		})
 	}
@@ -86,6 +87,7 @@ func equalErrors(gotErr error, wantErr error) bool {
 }
 
 func Test_selectSubCommand(t *testing.T) {
+	fnName := "selectSubCommand()"
 	type args struct {
 		initializers []subcommandInitializer
 		args         []string
@@ -118,7 +120,7 @@ func Test_selectSubCommand(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			_, _, gotErr := selectSubCommand(tt.args.initializers, tt.args.args)
 			if !equalErrors(gotErr, tt.wantErr) {
-				t.Errorf("selectSubCommand() gotErr = %v, want %v", gotErr, tt.wantErr)
+				t.Errorf("%s gotErr = %v, want %v", fnName, gotErr, tt.wantErr)
 			}
 		})
 	}

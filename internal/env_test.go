@@ -7,6 +7,7 @@ import (
 )
 
 func TestLookupEnvVars(t *testing.T) {
+	fnName := "LookupEnvVars()"
 	type envState struct {
 		varName  string
 		varValue string
@@ -98,13 +99,13 @@ func TestLookupEnvVars(t *testing.T) {
 				}
 			}
 			if gotErrors := LookupEnvVars(); !equalErrorSlices(gotErrors, tt.wantErrors) {
-				t.Errorf("LookupEnvVars() = %v, want %v", gotErrors, tt.wantErrors)
+				t.Errorf("%s errors = %v, want %v", fnName, gotErrors, tt.wantErrors)
 			}
 			if TmpFolder != tt.wantTmpFolder {
-				t.Errorf("TmpFolder = %v, want %v", TmpFolder, tt.wantTmpFolder)
+				t.Errorf("%s TmpFolder = %v, want %v", fnName, TmpFolder, tt.wantTmpFolder)
 			}
 			if HomePath != tt.wantHomePath {
-				t.Errorf("HomePath = %v, want %v", HomePath, tt.wantHomePath)
+				t.Errorf("%s HomePath = %v, want %v", fnName, HomePath, tt.wantHomePath)
 			}
 		})
 	}

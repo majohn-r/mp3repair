@@ -10,6 +10,7 @@ import (
 )
 
 func TestSearch_TopDirectory(t *testing.T) {
+	fnName := "Search.TopDirectory()"
 	tests := []struct {
 		name string
 		s    *Search
@@ -20,13 +21,14 @@ func TestSearch_TopDirectory(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.s.TopDirectory(); got != tt.want {
-				t.Errorf("Search.TopDirectory() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestSearch_TargetExtension(t *testing.T) {
+	fnName := "Search.TargetExtension()"
 	tests := []struct {
 		name string
 		s    *Search
@@ -37,31 +39,32 @@ func TestSearch_TargetExtension(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.s.TargetExtension(); got != tt.want {
-				t.Errorf("Search.TargetExtension() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestSearch_LoadUnfilteredData(t *testing.T) {
+	fnName := "Search.LoadUnfilteredData()"
 	// generate test data
 	topDir := "loadTest"
-	if err := internal.Mkdir(t, "Search.LoadUnfilteredData", topDir); err != nil {
+	if err := internal.Mkdir(t, fnName, topDir); err != nil {
 		return
 	}
 	defer func() {
 		if err := os.RemoveAll(topDir); err != nil {
-			t.Errorf("Search.LoadUnfilteredData error destroying test directory %q: %v", topDir, err)
+			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
 		}
 	}()
-	internal.PopulateTopDir(t, topDir)
+	internal.PopulateTopDir(t, fnName, topDir)
 	emptyDir := "empty directory"
-	if err := internal.Mkdir(t, "Search.LoadUnfilteredData", emptyDir); err != nil {
+	if err := internal.Mkdir(t, fnName, emptyDir); err != nil {
 		return
 	}
 	defer func() {
 		if err := os.RemoveAll(emptyDir); err != nil {
-			t.Errorf("Search.LoadUnfilteredData error destroying test directory %q: %v", emptyDir, err)
+			t.Errorf("%s error destroying test directory %q: %v", fnName, emptyDir, err)
 		}
 	}()
 	realFlagSet := flag.NewFlagSet("real", flag.ContinueOnError)
@@ -84,24 +87,25 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if gotArtists := tt.s.LoadUnfilteredData(); !reflect.DeepEqual(gotArtists, tt.wantArtists) {
-				t.Errorf("Search.LoadUnfilteredData() = %v, want %v", gotArtists, tt.wantArtists)
+				t.Errorf("%s = %v, want %v", fnName, gotArtists, tt.wantArtists)
 			}
 		})
 	}
 }
 
 func TestSearch_FilterArtists(t *testing.T) {
+	fnName := "Search.FilterArtists()"
 	// generate test data
 	topDir := "loadTest"
-	if err := internal.Mkdir(t, "LoadData", topDir); err != nil {
+	if err := internal.Mkdir(t, fnName, topDir); err != nil {
 		return
 	}
 	defer func() {
 		if err := os.RemoveAll(topDir); err != nil {
-			t.Errorf("TestFilterArtists() error destroying test directory %q: %v", topDir, err)
+			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
 		}
 	}()
-	internal.PopulateTopDir(t, topDir)
+	internal.PopulateTopDir(t, fnName, topDir)
 	realFlagSet := flag.NewFlagSet("real", flag.ContinueOnError)
 	realS := NewSearchFlags(realFlagSet).ProcessArgs(os.Stdout, []string{"-topDir", topDir})
 	type args struct {
@@ -118,24 +122,25 @@ func TestSearch_FilterArtists(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if gotArtists := tt.s.FilterArtists(tt.args.unfilteredArtists); !reflect.DeepEqual(gotArtists, tt.wantArtists) {
-				t.Errorf("Search.FilterArtists() = %v, want %v", gotArtists, tt.wantArtists)
+				t.Errorf("%s = %v, want %v", fnName, gotArtists, tt.wantArtists)
 			}
 		})
 	}
 }
 
 func TestSearch_LoadData(t *testing.T) {
+	fnName := "Search.LoadData()"
 	// generate test data
 	topDir := "loadTest"
-	if err := internal.Mkdir(t, "LoadData", topDir); err != nil {
+	if err := internal.Mkdir(t, fnName, topDir); err != nil {
 		return
 	}
 	defer func() {
 		if err := os.RemoveAll(topDir); err != nil {
-			t.Errorf("LoadData() error destroying test directory %q: %v", topDir, err)
+			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
 		}
 	}()
-	internal.PopulateTopDir(t, topDir)
+	internal.PopulateTopDir(t, fnName, topDir)
 	fsCase1 := flag.NewFlagSet("case1", flag.ContinueOnError)
 	fsCase2 := flag.NewFlagSet("case2", flag.ContinueOnError)
 	fsCase3 := flag.NewFlagSet("case3", flag.ContinueOnError)
@@ -167,21 +172,22 @@ func TestSearch_LoadData(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if gotArtists := tt.s.LoadData(); !reflect.DeepEqual(gotArtists, tt.wantArtists) {
-				t.Errorf("Search.LoadData() = %v, want %v", gotArtists, tt.wantArtists)
+				t.Errorf("%s = %v, want %v", fnName, gotArtists, tt.wantArtists)
 			}
 		})
 	}
 }
 
 func Test_readDirectory(t *testing.T) {
+	fnName := "readDirectory()"
 	// generate test data
 	topDir := "loadTest"
-	if err := internal.Mkdir(t, "readDirectory", topDir); err != nil {
+	if err := internal.Mkdir(t, fnName, topDir); err != nil {
 		return
 	}
 	defer func() {
 		if err := os.RemoveAll(topDir); err != nil {
-			t.Errorf("readDirectory() error destroying test directory %q: %v", topDir, err)
+			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
 		}
 	}()
 	type args struct {
@@ -200,12 +206,12 @@ func Test_readDirectory(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotFiles, err := readDirectory(tt.args.dir)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("readDirectory() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
 				return
 			}
 			if err == nil {
 				if !reflect.DeepEqual(gotFiles, tt.wantFiles) {
-					t.Errorf("readDirectory() = %v, want %v", gotFiles, tt.wantFiles)
+					t.Errorf("%s = %v, want %v", fnName, gotFiles, tt.wantFiles)
 				}
 			}
 		})

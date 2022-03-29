@@ -13,6 +13,7 @@ import (
 )
 
 func Test_ls_validateTrackSorting(t *testing.T) {
+	fnName := "ls.validateTrackSorting()"
 	tests := []struct {
 		name          string
 		sortingInput  string
@@ -34,7 +35,7 @@ func Test_ls_validateTrackSorting(t *testing.T) {
 			lsCommand.includeAlbums = &tt.includeAlbums
 			lsCommand.validateTrackSorting()
 			if *lsCommand.trackSorting != tt.wantSorting {
-				t.Errorf("validateTrackSorting(): got %q, want %q", *lsCommand.trackSorting, tt.wantSorting)
+				t.Errorf("%s: got %q, want %q", fnName, *lsCommand.trackSorting, tt.wantSorting)
 			}
 		})
 	}
@@ -168,17 +169,18 @@ func generateTrackListings(testTracks []*testTrack, spacer string, artists, albu
 }
 
 func Test_ls_Exec(t *testing.T) {
+	fnName := "ls.Exec()"
 	// generate test data
 	topDir := "loadTest"
-	if err := internal.Mkdir(t, "LoadData", topDir); err != nil {
+	if err := internal.Mkdir(t, fnName, topDir); err != nil {
 		return
 	}
 	defer func() {
 		if err := os.RemoveAll(topDir); err != nil {
-			t.Errorf("LoadData() error destroying test directory %q: %v", topDir, err)
+			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
 		}
 	}()
-	internal.PopulateTopDir(t, topDir)
+	internal.PopulateTopDir(t, fnName, topDir)
 	type args struct {
 		args []string
 	}
@@ -339,7 +341,7 @@ func Test_ls_Exec(t *testing.T) {
 			w := &bytes.Buffer{}
 			tt.l.Exec(w, tt.args.args)
 			if gotW := w.String(); gotW != tt.wantW {
-				t.Errorf("ls.Exec() = %v, want %v", gotW, tt.wantW)
+				t.Errorf("%s = %v, want %v", fnName, gotW, tt.wantW)
 			}
 		})
 	}
