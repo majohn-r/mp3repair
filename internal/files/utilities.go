@@ -1,6 +1,7 @@
 package files
 
 import (
+	"mp3/internal"
 	"regexp"
 	"strings"
 
@@ -38,14 +39,12 @@ var trackNameRegex *regexp.Regexp = regexp.MustCompile(defaultTrackNamePattern)
 func ReadMP3Data(track *Track) {
 	tag, err := id3v2.Open(track.fullPath, id3v2.Options{Parse: true})
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"filename": track.fullPath,
-			"error":    err,
-		}).Warn("cannot open mp3 file")
+		logrus.WithFields(logrus.Fields{internal.LOG_PATH: track.fullPath, internal.LOG_ERROR: err}).Warn(internal.LOG_CANNOT_READ_FILE)
 	} else {
 		defer tag.Close()
 
 		// Read tags.
+		// TODO: this is temporary, and so does not use official log field names
 		logrus.WithFields(logrus.Fields{
 			"fileSystemTrackName":   track.Name,
 			"fileSystemTrackNumber": track.TrackNumber,
@@ -62,11 +61,7 @@ func ReadMP3Data(track *Track) {
 // accessible outside the package for test purposes
 func ParseTrackName(name string, album string, artist string, ext string) (simpleName string, trackNumber int, valid bool) {
 	if !trackNameRegex.MatchString(name) {
-		logrus.WithFields(logrus.Fields{
-			"trackName":  name,
-			"albumName":  album,
-			"artistName": artist,
-		}).Warn("invalid track name")
+		logrus.WithFields(logrus.Fields{internal.LOG_TRACK_NAME: name, internal.LOG_ALBUM_NAME: album, internal.LOG_ARTIST_NAME: artist}).Warn(internal.LOG_INVALID_TRACK_NAME)
 		return
 	}
 	wantDigit := true
@@ -80,7 +75,7 @@ func ParseTrackName(name string, album string, artist string, ext string) (simpl
 				wantDigit = false
 			}
 		} else {
-			simpleName = strings.TrimSuffix(string(runes[i:]), ext) // trim off extension
+			simpleName = strings.TrimSuffix(string(runes[i:]), ext)
 			break
 		}
 	}

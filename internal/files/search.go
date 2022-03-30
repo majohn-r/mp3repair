@@ -3,6 +3,7 @@ package files
 import (
 	"io/fs"
 	"io/ioutil"
+	"mp3/internal"
 	"path/filepath"
 	"regexp"
 
@@ -25,25 +26,18 @@ func (s *Search) TargetExtension() string {
 }
 
 func (s *Search) LoadUnfilteredData() (artists []*Artist) {
-	logrus.WithFields(logrus.Fields{
-		"topDirectory":  s.topDirectory,
-		"fileExtension": s.targetExtension,
-	}).Info("load raw data from file system")
-	// read top directory
+	logrus.WithFields(logrus.Fields{internal.LOG_DIRECTORY: s.topDirectory, internal.LOG_EXTENSION: s.targetExtension}).Info(internal.LOG_READING_UNFILTERED_FILES)
 	artistFiles, err := readDirectory(s.topDirectory)
 	if err == nil {
 		for _, artistFile := range artistFiles {
-			// we only care about directories, which correspond to artists
 			if artistFile.IsDir() {
 				artist := &Artist{
 					Name: artistFile.Name(),
 				}
-				// look for albums for the current artist
 				artistDir := filepath.Join(s.topDirectory, artistFile.Name())
 				albumFiles, err := readDirectory(artistDir)
 				if err == nil {
 					for _, albumFile := range albumFiles {
-						// skip over non-directories
 						if !albumFile.IsDir() {
 							continue
 						}
@@ -51,11 +45,9 @@ func (s *Search) LoadUnfilteredData() (artists []*Artist) {
 							Name:            albumFile.Name(),
 							RecordingArtist: artist,
 						}
-						// look for tracks in the current album
 						albumDir := filepath.Join(artistDir, album.Name)
 						trackFiles, err := readDirectory(albumDir)
 						if err == nil {
-							// process tracks
 							for _, trackFile := range trackFiles {
 								if trackFile.IsDir() || !trackNameRegex.MatchString(trackFile.Name()) {
 									continue
@@ -82,13 +74,12 @@ func (s *Search) LoadUnfilteredData() (artists []*Artist) {
 	return
 }
 
+func (s *Search) logFields() logrus.Fields {
+	return logrus.Fields{internal.LOG_DIRECTORY: s.topDirectory, internal.LOG_EXTENSION: s.targetExtension, internal.LOG_ALBUM_FILTER: s.albumFilter, internal.LOG_ARTIST_FILTER: s.artistFilter}
+}
+
 func (s *Search) FilterArtists(unfilteredArtists []*Artist) (artists []*Artist) {
-	logrus.WithFields(logrus.Fields{
-		"topDirectory":  s.topDirectory,
-		"fileExtension": s.targetExtension,
-		"albumFilter":   s.albumFilter,
-		"artistFilter":  s.artistFilter,
-	}).Info("filter artists")
+	logrus.WithFields(s.logFields()).Info(internal.LOG_FILTERING_FILES)
 	for _, unfilteredArtist := range unfilteredArtists {
 		if s.artistFilter.MatchString(unfilteredArtist.Name) {
 			artist := &Artist{
@@ -124,29 +115,20 @@ func (s *Search) FilterArtists(unfilteredArtists []*Artist) (artists []*Artist) 
 }
 
 func (s *Search) LoadData() (artists []*Artist) {
-	logrus.WithFields(logrus.Fields{
-		"topDirectory":  s.topDirectory,
-		"fileExtension": s.targetExtension,
-		"albumFilter":   s.albumFilter,
-		"artistFilter":  s.artistFilter,
-	}).Info("load data from file system")
-	// read top directory
+	logrus.WithFields(s.logFields()).Info(internal.LOG_READING_FILTERED_FILES)
 	artistFiles, err := readDirectory(s.topDirectory)
 	if err == nil {
 		for _, artistFile := range artistFiles {
-			// we only care about directories, which correspond to artists
 			if !artistFile.IsDir() || !s.artistFilter.MatchString(artistFile.Name()) {
 				continue
 			}
 			artist := &Artist{
 				Name: artistFile.Name(),
 			}
-			// look for albums for the current artist
 			artistDir := filepath.Join(s.topDirectory, artistFile.Name())
 			albumFiles, err := readDirectory(artistDir)
 			if err == nil {
 				for _, albumFile := range albumFiles {
-					// skip over non-directories or directories whose name does not match the album filter
 					if !albumFile.IsDir() || !s.albumFilter.MatchString(albumFile.Name()) {
 						continue
 					}
@@ -154,11 +136,9 @@ func (s *Search) LoadData() (artists []*Artist) {
 						Name:            albumFile.Name(),
 						RecordingArtist: artist,
 					}
-					// look for tracks in the current album
 					albumDir := filepath.Join(artistDir, album.Name)
 					trackFiles, err := readDirectory(albumDir)
 					if err == nil {
-						// process tracks
 						for _, trackFile := range trackFiles {
 							if trackFile.IsDir() || !trackNameRegex.MatchString(trackFile.Name()) {
 								continue
@@ -191,10 +171,7 @@ func (s *Search) LoadData() (artists []*Artist) {
 func readDirectory(dir string) (files []fs.FileInfo, err error) {
 	files, err = ioutil.ReadDir(dir)
 	if err != nil {
-		logrus.WithFields(logrus.Fields{
-			"directory": dir,
-			"error":     err,
-		}).Error("problem reading directory")
+		logrus.WithFields(logrus.Fields{internal.LOG_DIRECTORY: dir, internal.LOG_ERROR: err}).Error(internal.LOG_CANNOT_READ_DIRECTORY)
 	}
 	return
 }

@@ -8,8 +8,8 @@ import (
 var (
 	HomePath     string
 	TmpFolder    string
-	noTempFolder error = fmt.Errorf("no temporary folder defined, checked TMP and TEMP")
-	noHomePath   error = fmt.Errorf("no home path defined, checked HOMEPATH")
+	noTempFolder error = fmt.Errorf(LOG_NO_TEMP_DIRECTORY)
+	noHomePath   error = fmt.Errorf(LOG_NO_HOME_PATH)
 )
 
 func LookupEnvVars() (errors []error) {

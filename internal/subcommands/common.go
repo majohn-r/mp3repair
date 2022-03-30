@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"mp3/internal"
 	"sort"
 )
 
@@ -20,33 +21,34 @@ type subcommandInitializer struct {
 }
 
 func noSuchSubcommandError(commandName string, validNames []string) error {
-	return fmt.Errorf("no subcommand named %q; valid subcommands include %v", commandName, validNames)
+	return fmt.Errorf(internal.LOG_NO_SUCH_COMMAND, commandName, validNames)
 }
 
 func internalErrorNoSubCommandInitializers() error {
-	return errors.New("internal error: no subcommand initializers defined")
+	return errors.New(internal.LOG_NO_DEFAULT_COMMAND_DEFINED)
 }
 
 func internalErrorIncorrectNumberOfDefaultSubcommands(defaultInitializers int) error {
-	return fmt.Errorf("internal error: only 1 subcommand should be designated as default; %d were found", defaultInitializers)
+	return fmt.Errorf(internal.LOG_TOO_MANY_DEFAULT_COMMANDS_DEFINED, defaultInitializers)
 }
 
 func ProcessCommand(args []string) (CommandProcessor, []string, error) {
 	var initializers []subcommandInitializer
-	initializers = append(initializers, subcommandInitializer{name: "ls", defaultSubCommand: true, initializer: newLs})
-	initializers = append(initializers, subcommandInitializer{name: "check", defaultSubCommand: false, initializer: newCheck})
-	initializers = append(initializers, subcommandInitializer{name: "repair", defaultSubCommand: false, initializer: newRepair})
+	lsSubCommand := subcommandInitializer{name: "ls", defaultSubCommand: true, initializer: newLs}
+	checkSubCommand := subcommandInitializer{name: "check", defaultSubCommand: false, initializer: newCheck}
+	repairSubCommand := subcommandInitializer{name: "repair", defaultSubCommand: false, initializer: newRepair}
+	initializers = append(initializers, lsSubCommand, checkSubCommand, repairSubCommand)
 	return selectSubCommand(initializers, args)
 }
 
-func selectSubCommand(initializers []subcommandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, err error) {
-	if len(initializers) == 0 {
+func selectSubCommand(i []subcommandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, err error) {
+	if len(i) == 0 {
 		err = internalErrorNoSubCommandInitializers()
 		return
 	}
 	var defaultInitializers int
 	var defaultInitializerName string
-	for _, initializer := range initializers {
+	for _, initializer := range i {
 		if initializer.defaultSubCommand {
 			defaultInitializers++
 			defaultInitializerName = initializer.name
@@ -57,7 +59,7 @@ func selectSubCommand(initializers []subcommandInitializer, args []string) (cmd 
 		return
 	}
 	processorMap := make(map[string]CommandProcessor)
-	for _, subcommandInitializer := range initializers {
+	for _, subcommandInitializer := range i {
 		fSet := flag.NewFlagSet(subcommandInitializer.name, flag.ContinueOnError)
 		processorMap[subcommandInitializer.name] = subcommandInitializer.initializer(fSet)
 	}
@@ -72,7 +74,7 @@ func selectSubCommand(initializers []subcommandInitializer, args []string) (cmd 
 		cmd = nil
 		callingArgs = nil
 		var subCommandNames []string
-		for _, initializer := range initializers {
+		for _, initializer := range i {
 			subCommandNames = append(subCommandNames, initializer.name)
 		}
 		sort.Strings(subCommandNames)

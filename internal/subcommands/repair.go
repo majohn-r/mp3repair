@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"mp3/internal"
 	"mp3/internal/files"
 	"os"
 
@@ -40,12 +41,18 @@ func (r *repair) Exec(w io.Writer, args []string) {
 	}
 }
 
+const (
+	logDryRunFlag string = "dryRun"
+	logTargetFlag string = "target"
+)
+
+func (r *repair) logFields() logrus.Fields {
+	return logrus.Fields{internal.LOG_COMMAND_NAME: r.name(), logDryRunFlag: *r.dryRun, logTargetFlag: *r.target}
+}
+
 func (r *repair) runSubcommand() {
 	r.validateTarget()
-	logrus.WithFields(logrus.Fields{
-		"subcommandName": r.name(),
-		"target":         *r.target,
-	}).Info("subcommand")
+	logrus.WithFields(r.logFields()).Info(internal.LOG_EXECUTING_COMMAND)
 	switch *r.dryRun {
 	case true:
 		logrus.Info("dry run only")
@@ -59,8 +66,12 @@ func (r *repair) validateTarget() {
 	switch *r.target {
 	case defaultRepairType, fsRepair:
 	default:
-		fmt.Fprintf(os.Stderr, "-target=%s is not valid\n", *r.target)
-		logrus.WithFields(logrus.Fields{"subcommand": r.name(), "setting": "-target", "value": *r.target}).Warn("unexpected setting")
+		fmt.Fprintf(os.Stderr, internal.USER_UNRECOGNIZED_VALUE, "-target", *r.target)
+		logrus.WithFields(logrus.Fields{
+			internal.LOG_COMMAND_NAME: r.name(),
+			internal.LOG_FLAG:         "-target",
+			internal.LOG_VALUE:        *r.target,
+		}).Warn(internal.LOG_INVALID_FLAG_SETTING)
 		s := defaultRepairType
 		r.target = &s
 	}

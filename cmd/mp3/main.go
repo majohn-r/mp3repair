@@ -29,7 +29,7 @@ func main() {
 
 func initEnv(lookup func() []error) bool {
 	if errors := lookup(); len(errors) > 0 {
-		fmt.Fprintln(os.Stderr, "1 or more environment variables unset")
+		fmt.Fprintln(os.Stderr, internal.LOG_ENV_ISSUES_DETECTED)
 		for _, e := range errors {
 			fmt.Fprintln(os.Stderr, e)
 		}
@@ -44,7 +44,7 @@ var logger *cronowriter.CronoWriter
 func initLogging(parentDir string) bool {
 	path := filepath.Join(parentDir, "mp3", "logs")
 	if err := os.MkdirAll(path, 0755); err != nil {
-		fmt.Fprintf(os.Stderr, "cannot create path '%s': %v\n", path, err)
+		fmt.Fprintf(os.Stderr, internal.USER_CANNOT_CREATE_DIRECTORY, path, err)
 		return false
 	}
 	logger = internal.ConfigureLogging(path)

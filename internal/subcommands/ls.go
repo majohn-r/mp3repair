@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"mp3/internal"
 	"mp3/internal/files"
 	"os"
 	"sort"
@@ -48,24 +49,34 @@ func (l *ls) Exec(w io.Writer, args []string) {
 	}
 }
 
+const (
+	logAlbumsFlag  string = "includeAlbums"
+	logArtistsFlag string = "includeArtists"
+	logSortingFlag string = "trackSorting"
+	logTracksFlag  string = "includeTracks"
+)
+
+func (l *ls) logFields() logrus.Fields {
+	return logrus.Fields{
+		internal.LOG_COMMAND_NAME: l.name(),
+		logAlbumsFlag:             *l.includeAlbums,
+		logArtistsFlag:            *l.includeArtists,
+		logTracksFlag:             *l.includeTracks,
+		logSortingFlag:            *l.trackSorting,
+	}
+}
+
 func (l *ls) runSubcommand(w io.Writer, s *files.Search) {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
-		fmt.Fprintf(os.Stderr, "%s: nothing to do!", l.name())
-		logrus.WithFields(logrus.Fields{"subcommand name": l.name()}).Error("nothing to do")
+		fmt.Fprintf(os.Stderr, internal.USER_SPECIFIED_NO_WORK, l.name())
+		logrus.WithFields(l.logFields()).Error(internal.LOG_NOTHING_TO_DO)
 	} else {
-		logrus.WithFields(logrus.Fields{
-			"subcommandName": l.name(),
-			"includeAlbums":  *l.includeAlbums,
-			"includeArtists": *l.includeArtists,
-			"includeTracks":  *l.includeTracks,
-		}).Info("subcommand")
+		logrus.WithFields(l.logFields()).Info(internal.LOG_EXECUTING_COMMAND)
 		if *l.includeTracks {
-			l.validateTrackSorting()
-			logrus.WithFields(logrus.Fields{
-				"trackSorting": *l.trackSorting,
-			}).Infof("track sorting")
+			if l.validateTrackSorting(){
+				logrus.WithFields(l.logFields()).Info(internal.LOG_PARAMETERS_OVERRIDDEN)
+			}
 		}
-		// artists := files.GetMusic(params)
 		artists := s.LoadData()
 		l.outputArtists(w, artists)
 	}
@@ -126,18 +137,23 @@ func (l *ls) outputAlbums(w io.Writer, albums []*files.Album, prefix string) {
 	}
 }
 
-func (l *ls) validateTrackSorting() {
+func (l *ls) validateTrackSorting() bool {
 	switch *l.trackSorting {
 	case "numeric":
 		if !*l.includeAlbums {
 			logrus.Warn("numeric track sorting does not make sense without listing albums")
 			preferredValue := "alpha"
 			l.trackSorting = &preferredValue
+			return true
 		}
 	case "alpha":
 	default:
-		fmt.Fprintf(os.Stderr, "unexpected track sorting '%s'", *l.trackSorting)
-		logrus.WithFields(logrus.Fields{"subcommand": l.name(), "setting": "-sort", "value": *l.trackSorting}).Warn("unexpected setting")
+		fmt.Fprintf(os.Stderr, internal.USER_UNRECOGNIZED_VALUE, "-sort", *l.trackSorting)
+		logrus.WithFields(logrus.Fields{
+			internal.LOG_COMMAND_NAME: l.name(),
+			internal.LOG_FLAG:         "-sort",
+			internal.LOG_VALUE:        *l.trackSorting,
+		}).Warn(internal.LOG_INVALID_FLAG_SETTING)
 		var preferredValue string
 		switch *l.includeAlbums {
 		case true:
@@ -146,7 +162,9 @@ func (l *ls) validateTrackSorting() {
 			preferredValue = "alpha"
 		}
 		l.trackSorting = &preferredValue
+		return true
 	}
+	return false
 }
 
 func (l *ls) outputTracks(w io.Writer, tracks []*files.Track, prefix string) {

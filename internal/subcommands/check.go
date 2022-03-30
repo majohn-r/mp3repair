@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"mp3/internal"
 	"mp3/internal/files"
 	"os"
 	"sort"
@@ -40,19 +41,28 @@ func (c *check) Exec(w io.Writer, args []string) {
 	}
 }
 
+const (
+	logEmptyFoldersFlag string = "emptyFolders"
+	logIntegrityFlag    string = "integrityAnalysis"
+	logTrackGapFlag     string = "gapAnalysis"
+)
+
+func (c *check) logFields() logrus.Fields {
+	return logrus.Fields{
+		internal.LOG_COMMAND_NAME: c.name(),
+		logEmptyFoldersFlag:       *c.checkEmptyFolders,
+		logTrackGapFlag:           *c.checkGapsInTrackNumbering,
+		logIntegrityFlag:          *c.checkIntegrity,
+	}
+}
+
 func (c *check) runSubcommand(w io.Writer, s *files.Search) {
 	if !*c.checkEmptyFolders && !*c.checkGapsInTrackNumbering && !*c.checkIntegrity {
-		fmt.Fprintf(os.Stderr, "%s: nothing to do!", c.name())
-		logrus.WithFields(logrus.Fields{"subcommand name": c.name()}).Error("nothing to do")
+		fmt.Fprintf(os.Stderr, internal.USER_SPECIFIED_NO_WORK, c.name())
+		logrus.WithFields(c.logFields()).Error(internal.LOG_NOTHING_TO_DO)
 	} else {
-		logrus.WithFields(logrus.Fields{
-			"subcommandName":    c.name(),
-			"checkEmptyFolders": *c.checkEmptyFolders,
-			"checkTrackGaps":    *c.checkGapsInTrackNumbering,
-			"checkIntegrity":    *c.checkIntegrity,
-		}).Info("subcommand")
+		logrus.WithFields(c.logFields()).Info(internal.LOG_EXECUTING_COMMAND)
 		artists := performEmptyFolderAnalysis(w, c, s)
-		// filter existing artists using provided filters
 		artists = filterArtists(c, s, artists)
 		c.performGapAnalysis(w, c, artists)
 	}
@@ -76,11 +86,10 @@ func performEmptyFolderAnalysis(w io.Writer, c *check, s *files.Search) (artists
 	if *c.checkEmptyFolders {
 		artists = s.LoadUnfilteredData()
 		if len(artists) == 0 {
-			logrus.WithFields(
-				logrus.Fields{
-					"topDirectory":  s.TopDirectory(),
-					"fileExtension": s.TargetExtension(),
-				}).Error("checking empty folders, no artists found")
+			logrus.WithFields(logrus.Fields{
+				internal.LOG_DIRECTORY: s.TopDirectory(),
+				internal.LOG_EXTENSION: s.TargetExtension(),
+			}).Error(internal.LOG_NO_ARTIST_DIRECTORIES)
 		}
 		var complaints []string
 		for _, artist := range artists {
@@ -89,7 +98,8 @@ func performEmptyFolderAnalysis(w io.Writer, c *check, s *files.Search) (artists
 			} else {
 				for _, album := range artist.Albums {
 					if len(album.Tracks) == 0 {
-						complaints = append(complaints, fmt.Sprintf("Artist %q album %q: no tracks found", artist.Name, album.Name))
+						complaint := fmt.Sprintf("Artist %q album %q: no tracks found", artist.Name, album.Name)
+						complaints = append(complaints, complaint)
 					}
 				}
 			}
@@ -113,7 +123,8 @@ func (*check) performGapAnalysis(w io.Writer, c *check, artists []*files.Artist)
 				m := make(map[int]*files.Track)
 				for _, track := range album.Tracks {
 					if t, ok := m[track.TrackNumber]; ok {
-						complaints = append(complaints, fmt.Sprintf("%s: track %d used by %q and %q", albumId, track.TrackNumber, t.Name, track.Name))
+						complaint := fmt.Sprintf("%s: track %d used by %q and %q", albumId, track.TrackNumber, t.Name, track.Name)
+						complaints = append(complaints, complaint)
 					} else {
 						m[track.TrackNumber] = track
 					}
@@ -130,9 +141,11 @@ func (*check) performGapAnalysis(w io.Writer, c *check, artists []*files.Artist)
 				for trackNumber, track := range m {
 					switch {
 					case trackNumber < 1:
-						complaints = append(complaints, fmt.Sprintf("%s: track %d (%q) is not a valid track number; %s", albumId, trackNumber, track.Name, validTracks))
+						complaint := fmt.Sprintf("%s: track %d (%q) is not a valid track number; %s", albumId, trackNumber, track.Name, validTracks)
+						complaints = append(complaints, complaint)
 					case trackNumber > expectedTrackCount:
-						complaints = append(complaints, fmt.Sprintf("%s: track %d (%q) is not a valid track number; %s", albumId, trackNumber, track.Name, validTracks))
+						complaint := fmt.Sprintf("%s: track %d (%q) is not a valid track number; %s", albumId, trackNumber, track.Name, validTracks)
+						complaints = append(complaints, complaint)
 					}
 				}
 			}
