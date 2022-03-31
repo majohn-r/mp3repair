@@ -1,9 +1,11 @@
 package files
 
 import (
+	"flag"
 	"io/fs"
 	"io/ioutil"
 	"mp3/internal"
+	"os"
 	"path/filepath"
 	"regexp"
 
@@ -26,14 +28,15 @@ func (s *Search) TargetExtension() string {
 }
 
 func (s *Search) LoadUnfilteredData() (artists []*Artist) {
-	logrus.WithFields(logrus.Fields{internal.LOG_DIRECTORY: s.topDirectory, internal.LOG_EXTENSION: s.targetExtension}).Info(internal.LOG_READING_UNFILTERED_FILES)
+	logrus.WithFields(logrus.Fields{
+		internal.LOG_DIRECTORY: s.topDirectory,
+		internal.LOG_EXTENSION: s.targetExtension,
+	}).Info(internal.LOG_READING_UNFILTERED_FILES)
 	artistFiles, err := readDirectory(s.topDirectory)
 	if err == nil {
 		for _, artistFile := range artistFiles {
 			if artistFile.IsDir() {
-				artist := &Artist{
-					Name: artistFile.Name(),
-				}
+				artist := &Artist{Name: artistFile.Name()}
 				artistDir := filepath.Join(s.topDirectory, artistFile.Name())
 				albumFiles, err := readDirectory(artistDir)
 				if err == nil {
@@ -41,10 +44,7 @@ func (s *Search) LoadUnfilteredData() (artists []*Artist) {
 						if !albumFile.IsDir() {
 							continue
 						}
-						album := &Album{
-							Name:            albumFile.Name(),
-							RecordingArtist: artist,
-						}
+						album := &Album{Name: albumFile.Name(), RecordingArtist: artist}
 						albumDir := filepath.Join(artistDir, album.Name)
 						trackFiles, err := readDirectory(albumDir)
 						if err == nil {
@@ -75,23 +75,23 @@ func (s *Search) LoadUnfilteredData() (artists []*Artist) {
 }
 
 func (s *Search) logFields() logrus.Fields {
-	return logrus.Fields{internal.LOG_DIRECTORY: s.topDirectory, internal.LOG_EXTENSION: s.targetExtension, internal.LOG_ALBUM_FILTER: s.albumFilter, internal.LOG_ARTIST_FILTER: s.artistFilter}
+	return logrus.Fields{
+		internal.LOG_DIRECTORY:     s.topDirectory,
+		internal.LOG_EXTENSION:     s.targetExtension,
+		internal.LOG_ALBUM_FILTER:  s.albumFilter,
+		internal.LOG_ARTIST_FILTER: s.artistFilter,
+	}
 }
 
 func (s *Search) FilterArtists(unfilteredArtists []*Artist) (artists []*Artist) {
 	logrus.WithFields(s.logFields()).Info(internal.LOG_FILTERING_FILES)
 	for _, unfilteredArtist := range unfilteredArtists {
 		if s.artistFilter.MatchString(unfilteredArtist.Name) {
-			artist := &Artist{
-				Name: unfilteredArtist.Name,
-			}
+			artist := &Artist{Name: unfilteredArtist.Name}
 			for _, album := range unfilteredArtist.Albums {
 				if s.albumFilter.MatchString(album.Name) {
 					if len(album.Tracks) != 0 {
-						newAlbum := &Album{
-							Name:            album.Name,
-							RecordingArtist: artist,
-						}
+						newAlbum := &Album{Name: album.Name, RecordingArtist: artist}
 						for _, track := range album.Tracks {
 							newTrack := &Track{
 								fullPath:        track.fullPath,
@@ -122,9 +122,7 @@ func (s *Search) LoadData() (artists []*Artist) {
 			if !artistFile.IsDir() || !s.artistFilter.MatchString(artistFile.Name()) {
 				continue
 			}
-			artist := &Artist{
-				Name: artistFile.Name(),
-			}
+			artist := &Artist{Name: artistFile.Name()}
 			artistDir := filepath.Join(s.topDirectory, artistFile.Name())
 			albumFiles, err := readDirectory(artistDir)
 			if err == nil {
@@ -132,10 +130,7 @@ func (s *Search) LoadData() (artists []*Artist) {
 					if !albumFile.IsDir() || !s.albumFilter.MatchString(albumFile.Name()) {
 						continue
 					}
-					album := &Album{
-						Name:            albumFile.Name(),
-						RecordingArtist: artist,
-					}
+					album := &Album{Name: albumFile.Name(), RecordingArtist: artist}
 					albumDir := filepath.Join(artistDir, album.Name)
 					trackFiles, err := readDirectory(albumDir)
 					if err == nil {
@@ -168,10 +163,28 @@ func (s *Search) LoadData() (artists []*Artist) {
 	return
 }
 
+// used for testing only!
+func CreateSearchForTesting(topDir string) *Search {
+	realFlagSet := flag.NewFlagSet("testing", flag.ContinueOnError)
+	return NewSearchFlags(realFlagSet).ProcessArgs(os.Stdout, []string{"-topDir", topDir})
+}
+
+func CreateFilteredSearchForTesting(topDir string, artistFilter string, albumFilter string) *Search {
+	realFlagSet := flag.NewFlagSet("testing", flag.ContinueOnError)
+	return NewSearchFlags(realFlagSet).ProcessArgs(os.Stdout, []string{
+		"-topDir", topDir,
+		"-artists", artistFilter,
+		"-albums", albumFilter,
+	})
+}
+
 func readDirectory(dir string) (files []fs.FileInfo, err error) {
 	files, err = ioutil.ReadDir(dir)
 	if err != nil {
-		logrus.WithFields(logrus.Fields{internal.LOG_DIRECTORY: dir, internal.LOG_ERROR: err}).Error(internal.LOG_CANNOT_READ_DIRECTORY)
+		logrus.WithFields(logrus.Fields{
+			internal.LOG_DIRECTORY: dir,
+			internal.LOG_ERROR:     err,
+		}).Error(internal.LOG_CANNOT_READ_DIRECTORY)
 	}
 	return
 }

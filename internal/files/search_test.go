@@ -67,8 +67,6 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 			t.Errorf("%s error destroying test directory %q: %v", fnName, emptyDir, err)
 		}
 	}()
-	realFlagSet := flag.NewFlagSet("real", flag.ContinueOnError)
-	emptyFlagSet := flag.NewFlagSet("empty", flag.ContinueOnError)
 	tests := []struct {
 		name        string
 		s           *Search
@@ -76,13 +74,10 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 	}{
 		{
 			name:        "read all",
-			s:           NewSearchFlags(realFlagSet).ProcessArgs(os.Stdout, []string{"-topDir", topDir}),
+			s:           CreateSearchForTesting(topDir),
 			wantArtists: CreateAllArtists(topDir, true),
 		},
-		{
-			name: "empty dir",
-			s:    NewSearchFlags(emptyFlagSet).ProcessArgs(os.Stdout, []string{"-topDir", emptyDir}),
-		},
+		{name: "empty dir", s: CreateSearchForTesting(emptyDir)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -141,10 +136,6 @@ func TestSearch_LoadData(t *testing.T) {
 		}
 	}()
 	internal.PopulateTopDir(t, fnName, topDir)
-	fsCase1 := flag.NewFlagSet("case1", flag.ContinueOnError)
-	fsCase2 := flag.NewFlagSet("case2", flag.ContinueOnError)
-	fsCase3 := flag.NewFlagSet("case3", flag.ContinueOnError)
-	fsCase4 := flag.NewFlagSet("case4", flag.ContinueOnError)
 	tests := []struct {
 		name        string
 		s           *Search
@@ -152,21 +143,21 @@ func TestSearch_LoadData(t *testing.T) {
 	}{
 		{
 			name:        "read all",
-			s:           NewSearchFlags(fsCase1).ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-albums", "^.*$", "-artists", "^.*$"}),
+			s:           CreateFilteredSearchForTesting(topDir, "^.*$", "^.*$"),
 			wantArtists: CreateAllArtists(topDir, false),
 		},
 		{
 			name:        "read with filtering",
-			s:           NewSearchFlags(fsCase2).ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-albums", "^.*[02468]$", "-artists", "^.*[13579]$"}),
+			s:           CreateFilteredSearchForTesting(topDir, "^.*[13579]$", "^.*[02468]$"),
 			wantArtists: CreateAllOddArtistsWithEvenAlbums(topDir),
 		},
 		{
 			name: "read with all artists filtered out",
-			s:    NewSearchFlags(fsCase3).ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-albums", "^.*$", "-artists", "^.*X$"}),
+			s:    CreateFilteredSearchForTesting(topDir, "^.*X$", "^.*$"),
 		},
 		{
 			name: "read with all albums filtered out",
-			s:    NewSearchFlags(fsCase4).ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-albums", "^.*X$", "-artists", "^.*X$"}),
+			s:    CreateFilteredSearchForTesting(topDir, "^.*$", "^.*X$"),
 		},
 	}
 	for _, tt := range tests {

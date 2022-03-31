@@ -73,7 +73,6 @@ func filterArtists(c *check, s *files.Search, artists []*files.Artist) (filtered
 		if len(artists) == 0 {
 			filteredArtists = s.LoadData()
 		} else {
-
 			filteredArtists = s.FilterArtists(artists)
 		}
 	} else {
