@@ -49,7 +49,7 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 	fnName := "Search.LoadUnfilteredData()"
 	// generate test data
 	topDir := "loadTest"
-	if err := internal.Mkdir(t, fnName, topDir); err != nil {
+	if err := internal.MkdirForTesting(t, fnName, topDir); err != nil {
 		return
 	}
 	defer func() {
@@ -57,9 +57,9 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
 		}
 	}()
-	internal.PopulateTopDir(t, fnName, topDir)
+	internal.PopulateTopDirForTesting(t, fnName, topDir)
 	emptyDir := "empty directory"
-	if err := internal.Mkdir(t, fnName, emptyDir); err != nil {
+	if err := internal.MkdirForTesting(t, fnName, emptyDir); err != nil {
 		return
 	}
 	defer func() {
@@ -75,7 +75,7 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 		{
 			name:        "read all",
 			s:           CreateSearchForTesting(topDir),
-			wantArtists: CreateAllArtists(topDir, true),
+			wantArtists: CreateAllArtistsForTesting(topDir, true),
 		},
 		{name: "empty dir", s: CreateSearchForTesting(emptyDir)},
 	}
@@ -92,7 +92,7 @@ func TestSearch_FilterArtists(t *testing.T) {
 	fnName := "Search.FilterArtists()"
 	// generate test data
 	topDir := "loadTest"
-	if err := internal.Mkdir(t, fnName, topDir); err != nil {
+	if err := internal.MkdirForTesting(t, fnName, topDir); err != nil {
 		return
 	}
 	defer func() {
@@ -100,7 +100,7 @@ func TestSearch_FilterArtists(t *testing.T) {
 			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
 		}
 	}()
-	internal.PopulateTopDir(t, fnName, topDir)
+	internal.PopulateTopDirForTesting(t, fnName, topDir)
 	realFlagSet := flag.NewFlagSet("real", flag.ContinueOnError)
 	realS := NewSearchFlags(realFlagSet).ProcessArgs(os.Stdout, []string{"-topDir", topDir})
 	type args struct {
@@ -112,7 +112,11 @@ func TestSearch_FilterArtists(t *testing.T) {
 		args        args
 		wantArtists []*Artist
 	}{
-		{name: "default", s: realS, args: args{unfilteredArtists: realS.LoadUnfilteredData()}, wantArtists: realS.LoadData()},
+		{
+			name: "default", s: realS,
+			args:        args{unfilteredArtists: realS.LoadUnfilteredData()},
+			wantArtists: realS.LoadData(),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -127,7 +131,7 @@ func TestSearch_LoadData(t *testing.T) {
 	fnName := "Search.LoadData()"
 	// generate test data
 	topDir := "loadTest"
-	if err := internal.Mkdir(t, fnName, topDir); err != nil {
+	if err := internal.MkdirForTesting(t, fnName, topDir); err != nil {
 		return
 	}
 	defer func() {
@@ -135,7 +139,7 @@ func TestSearch_LoadData(t *testing.T) {
 			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
 		}
 	}()
-	internal.PopulateTopDir(t, fnName, topDir)
+	internal.PopulateTopDirForTesting(t, fnName, topDir)
 	tests := []struct {
 		name        string
 		s           *Search
@@ -144,12 +148,12 @@ func TestSearch_LoadData(t *testing.T) {
 		{
 			name:        "read all",
 			s:           CreateFilteredSearchForTesting(topDir, "^.*$", "^.*$"),
-			wantArtists: CreateAllArtists(topDir, false),
+			wantArtists: CreateAllArtistsForTesting(topDir, false),
 		},
 		{
 			name:        "read with filtering",
 			s:           CreateFilteredSearchForTesting(topDir, "^.*[13579]$", "^.*[02468]$"),
-			wantArtists: CreateAllOddArtistsWithEvenAlbums(topDir),
+			wantArtists: CreateAllOddArtistsWithEvenAlbumsForTesting(topDir),
 		},
 		{
 			name: "read with all artists filtered out",
@@ -173,7 +177,7 @@ func Test_readDirectory(t *testing.T) {
 	fnName := "readDirectory()"
 	// generate test data
 	topDir := "loadTest"
-	if err := internal.Mkdir(t, fnName, topDir); err != nil {
+	if err := internal.MkdirForTesting(t, fnName, topDir); err != nil {
 		return
 	}
 	defer func() {

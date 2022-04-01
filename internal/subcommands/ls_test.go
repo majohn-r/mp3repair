@@ -50,12 +50,16 @@ type testTrack struct {
 func generateListing(artists, albums, tracks, annotated, sortNumerically bool) string {
 	var trackCollection []*testTrack
 	for j := 0; j < 10; j++ {
-		artist := internal.CreateArtistName(j)
+		artist := internal.CreateArtistNameForTesting(j)
 		for k := 0; k < 10; k++ {
-			album := internal.CreateAlbumName(k)
+			album := internal.CreateAlbumNameForTesting(k)
 			for m := 0; m < 10; m++ {
-				track := internal.CreateTrackName(m)
-				trackCollection = append(trackCollection, &testTrack{artistName: artist, albumName: album, trackName: track})
+				track := internal.CreateTrackNameForTesting(m)
+				trackCollection = append(trackCollection, &testTrack{
+					artistName: artist,
+					albumName:  album,
+					trackName:  track,
+				})
 			}
 		}
 	}
@@ -172,7 +176,7 @@ func Test_ls_Exec(t *testing.T) {
 	fnName := "ls.Exec()"
 	// generate test data
 	topDir := "loadTest"
-	if err := internal.Mkdir(t, fnName, topDir); err != nil {
+	if err := internal.MkdirForTesting(t, fnName, topDir); err != nil {
 		return
 	}
 	defer func() {
@@ -180,7 +184,7 @@ func Test_ls_Exec(t *testing.T) {
 			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
 		}
 	}()
-	internal.PopulateTopDir(t, fnName, topDir)
+	internal.PopulateTopDirForTesting(t, fnName, topDir)
 	type args struct {
 		args []string
 	}
@@ -210,129 +214,263 @@ func Test_ls_Exec(t *testing.T) {
 			wantW: generateListing(false, false, true, true, false),
 		},
 		{
-			name:  "unannotated tracks only with numeric sorting",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=false", "-track=true", "-annotate=false", "-sort=numeric"}},
+			name: "unannotated tracks only with numeric sorting",
+			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args: args{[]string{
+				"-topDir", topDir,
+				"-album=false",
+				"-artist=false",
+				"-track=true",
+				"-annotate=false",
+				"-sort=numeric",
+			}},
 			wantW: generateListing(false, false, true, false, true),
 		},
 		{
-			name:  "annotated tracks only with numeric sorting",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=false", "-track=true", "-annotate=true", "-sort", "numeric"}},
+			name: "annotated tracks only with numeric sorting",
+			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args: args{[]string{
+				"-topDir", topDir,
+				"-album=false",
+				"-artist=false",
+				"-track=true",
+				"-annotate=true",
+				"-sort", "numeric",
+			}},
 			wantW: generateListing(false, false, true, true, true),
 		},
 		// albums only
 		{
-			name:  "unannotated albums only",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=false", "-track=false", "-annotate=false"}},
+			name: "unannotated albums only",
+			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args: args{[]string{
+				"-topDir", topDir,
+				"-album=true",
+				"-artist=false",
+				"-track=false",
+				"-annotate=false",
+			}},
 			wantW: generateListing(false, true, false, false, false),
 		},
 		{
-			name:  "annotated albums only",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=false", "-track=false", "-annotate=true"}},
+			name: "annotated albums only",
+			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args: args{[]string{
+				"-topDir", topDir,
+				"-album=true",
+				"-artist=false",
+				"-track=false",
+				"-annotate=true",
+			}},
 			wantW: generateListing(false, true, false, true, false),
 		},
 		// artists only
 		{
-			name:  "unannotated artists only",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=true", "-track=false", "-annotate=false"}},
+			name: "unannotated artists only",
+			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args: args{[]string{
+				"-topDir", topDir,
+				"-album=false",
+				"-artist=true",
+				"-track=false",
+				"-annotate=false",
+			}},
 			wantW: generateListing(true, false, false, false, false),
 		},
 		{
-			name:  "annotated artists only",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=true", "-track=false", "-annotate=true"}},
+			name: "annotated artists only",
+			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args: args{[]string{
+				"-topDir", topDir,
+				"-album=false",
+				"-artist=true",
+				"-track=false",
+				"-annotate=true",
+			}},
 			wantW: generateListing(true, false, false, true, false),
 		},
 		// albums and artists
 		{
-			name:  "unannotated artists and albums only",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=true", "-track=false", "-annotate=false"}},
+			name: "unannotated artists and albums only",
+			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args: args{[]string{
+				"-topDir", topDir,
+				"-album=true",
+				"-artist=true",
+				"-track=false",
+				"-annotate=false",
+			}},
 			wantW: generateListing(true, true, false, false, false),
 		},
 		{
-			name:  "annotated artists and albums only",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=true", "-track=false", "-annotate=true"}},
+			name: "annotated artists and albums only",
+			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args: args{[]string{
+				"-topDir", topDir,
+				"-album=true",
+				"-artist=true",
+				"-track=false",
+				"-annotate=true",
+			}},
 			wantW: generateListing(true, true, false, true, false),
 		},
 		// albums and tracks
 		{
-			name:  "unannotated albums and tracks with alpha sorting",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=false", "-track=true", "-annotate=false", "-sort", "alpha"}},
+			name: "unannotated albums and tracks with alpha sorting",
+			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args: args{[]string{
+				"-topDir", topDir,
+				"-album=true",
+				"-artist=false",
+				"-track=true",
+				"-annotate=false",
+				"-sort", "alpha",
+			}},
 			wantW: generateListing(false, true, true, false, false),
 		},
 		{
-			name:  "annotated albums and tracks with alpha sorting",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=false", "-track=true", "-annotate=true", "-sort", "alpha"}},
+			name: "annotated albums and tracks with alpha sorting",
+			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args: args{[]string{
+				"-topDir", topDir,
+				"-album=true",
+				"-artist=false",
+				"-track=true",
+				"-annotate=true",
+				"-sort", "alpha",
+			}},
 			wantW: generateListing(false, true, true, true, false),
 		},
 		{
-			name:  "unannotated albums and tracks with numeric sorting",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=false", "-track=true", "-annotate=false", "-sort", "numeric"}},
+			name: "unannotated albums and tracks with numeric sorting",
+			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args: args{[]string{
+				"-topDir", topDir,
+				"-album=true",
+				"-artist=false",
+				"-track=true",
+				"-annotate=false",
+				"-sort", "numeric",
+			}},
 			wantW: generateListing(false, true, true, false, true),
 		},
 		{
-			name:  "annotated albums and tracks with numeric sorting",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=false", "-track=true", "-annotate=true", "-sort", "numeric"}},
+			name: "annotated albums and tracks with numeric sorting",
+			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args: args{[]string{
+				"-topDir", topDir,
+				"-album=true",
+				"-artist=false",
+				"-track=true",
+				"-annotate=true",
+				"-sort", "numeric",
+			}},
 			wantW: generateListing(false, true, true, true, true),
 		},
 		// artists and tracks
 		{
-			name:  "unannotated artists and tracks with alpha sorting",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=true", "-track=true", "-annotate=false", "-sort", "alpha"}},
+			name: "unannotated artists and tracks with alpha sorting",
+			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args: args{[]string{
+				"-topDir", topDir,
+				"-album=false",
+				"-artist=true",
+				"-track=true",
+				"-annotate=false",
+				"-sort", "alpha",
+			}},
 			wantW: generateListing(true, false, true, false, false),
 		},
 		{
-			name:  "annotated artists and tracks with alpha sorting",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=true", "-track=true", "-annotate=true", "-sort", "alpha"}},
+			name: "annotated artists and tracks with alpha sorting",
+			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args: args{[]string{
+				"-topDir", topDir,
+				"-album=false",
+				"-artist=true",
+				"-track=true",
+				"-annotate=true",
+				"-sort", "alpha",
+			}},
 			wantW: generateListing(true, false, true, true, false),
 		},
 		{
-			name:  "unannotated artists and tracks with numeric sorting",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=true", "-track=true", "-annotate=false", "-sort", "numeric"}},
+			name: "unannotated artists and tracks with numeric sorting",
+			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args: args{[]string{
+				"-topDir", topDir,
+				"-album=false",
+				"-artist=true",
+				"-track=true",
+				"-annotate=false",
+				"-sort", "numeric",
+			}},
 			wantW: generateListing(true, false, true, false, true),
 		},
 		{
-			name:  "annotated artists and tracks with numeric sorting",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=true", "-track=true", "-annotate=true", "-sort", "numeric"}},
+			name: "annotated artists and tracks with numeric sorting",
+			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args: args{[]string{
+				"-topDir", topDir,
+				"-album=false",
+				"-artist=true",
+				"-track=true",
+				"-annotate=true",
+				"-sort", "numeric",
+			}},
 			wantW: generateListing(true, false, true, true, true),
 		},
 		// albums, artists, and tracks
 		{
-			name:  "unannotated artists, albums, and tracks with alpha sorting",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=true", "-track=true", "-annotate=false", "-sort", "alpha"}},
+			name: "unannotated artists, albums, and tracks with alpha sorting",
+			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args: args{[]string{
+				"-topDir", topDir,
+				"-album=true",
+				"-artist=true",
+				"-track=true",
+				"-annotate=false",
+				"-sort", "alpha",
+			}},
 			wantW: generateListing(true, true, true, false, false),
 		},
 		{
-			name:  "annotated artists, albums, and tracks with alpha sorting",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=true", "-track=true", "-annotate=true", "-sort", "alpha"}},
+			name: "annotated artists, albums, and tracks with alpha sorting",
+			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args: args{[]string{
+				"-topDir", topDir,
+				"-album=true",
+				"-artist=true",
+				"-track=true",
+				"-annotate=true",
+				"-sort", "alpha",
+			}},
 			wantW: generateListing(true, true, true, true, false),
 		},
 		{
-			name:  "unannotated artists, albums, and tracks with numeric sorting",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=true", "-track=true", "-annotate=false", "-sort", "numeric"}},
+			name: "unannotated artists, albums, and tracks with numeric sorting",
+			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args: args{[]string{
+				"-topDir", topDir,
+				"-album=true",
+				"-artist=true",
+				"-track=true",
+				"-annotate=false",
+				"-sort", "numeric",
+			}},
 			wantW: generateListing(true, true, true, false, true),
 		},
 		{
-			name:  "annotated artists, albums, and tracks with numeric sorting",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDir, "-album=true", "-artist=true", "-track=true", "-annotate=true", "-sort", "numeric"}},
+			name: "annotated artists, albums, and tracks with numeric sorting",
+			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			args: args{[]string{
+				"-topDir", topDir,
+				"-album=true",
+				"-artist=true",
+				"-track=true",
+				"-annotate=true",
+				"-sort", "numeric",
+			}},
 			wantW: generateListing(true, true, true, true, true),
 		},
 	}

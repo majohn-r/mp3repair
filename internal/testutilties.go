@@ -10,15 +10,15 @@ import (
 // NOTE: the functions in this file are strictly for testing purposes. Do not
 // call them from production code.
 
-func CreateAlbumName(k int) string {
+func CreateAlbumNameForTesting(k int) string {
 	return fmt.Sprintf("Test Album %d", k)
 }
 
-func CreateArtistName(k int) string {
+func CreateArtistNameForTesting(k int) string {
 	return fmt.Sprintf("Test Artist %d", k)
 }
 
-func CreateTrackName(k int) string {
+func CreateTrackNameForTesting(k int) string {
 	switch k % 2 {
 	case 0:
 		return fmt.Sprintf("%02d-Test Track[%02d].mp3", k, k)
@@ -27,7 +27,7 @@ func CreateTrackName(k int) string {
 	}
 }
 
-func Mkdir(t *testing.T, fnName string, dirName string) error {
+func MkdirForTesting(t *testing.T, fnName string, dirName string) error {
 	if err := os.Mkdir(dirName, 0755); err != nil {
 		t.Errorf("%s: error creating directory %q: %v", fnName, dirName, err)
 		return err
@@ -35,42 +35,42 @@ func Mkdir(t *testing.T, fnName string, dirName string) error {
 	return nil
 }
 
-func PopulateTopDir(t *testing.T, fnName string, topDir string) {
+func PopulateTopDirForTesting(t *testing.T, fnName string, topDir string) {
 	internalFnName := fmt.Sprintf("%s->PopulateTopDir()", fnName)
 	for k := 0; k < 10; k++ {
-		createArtistDir(t, internalFnName, topDir, k, true)
+		createArtistDirForTesting(t, internalFnName, topDir, k, true)
 	}
-	createArtistDir(t, internalFnName, topDir, 999, false)
+	createArtistDirForTesting(t, internalFnName, topDir, 999, false)
 }
 
-func createAlbumDir(t *testing.T, fnName string, artistDir string, n int, tracks int) {
+func createAlbumDirForTesting(t *testing.T, fnName string, artistDir string, n int, tracks int) {
 	internalFnName := fmt.Sprintf("%s->createAlbumDir()", fnName)
-	albumDir := filepath.Join(artistDir, CreateAlbumName(n))
-	if err := Mkdir(t, "createAlbumDir()", albumDir); err == nil {
+	albumDir := filepath.Join(artistDir, CreateAlbumNameForTesting(n))
+	if err := MkdirForTesting(t, "createAlbumDir()", albumDir); err == nil {
 		for k := 0; k < tracks; k++ {
 			createTrackFile(t, internalFnName, albumDir, k)
 		}
-		createFile(t, internalFnName, albumDir, "album cover.jpeg")
+		createFileForTesting(t, internalFnName, albumDir, "album cover.jpeg")
 		dummyDir := filepath.Join(albumDir, "ignore this folder")
-		_ = Mkdir(t, internalFnName, dummyDir)
+		_ = MkdirForTesting(t, internalFnName, dummyDir)
 	}
 }
 
-func createArtistDir(t *testing.T, fnName string, topDir string, k int, withContent bool) {
+func createArtistDirForTesting(t *testing.T, fnName string, topDir string, k int, withContent bool) {
 	internalFnName := fmt.Sprintf("%s->createArtistDir()", fnName)
-	artistDir := filepath.Join(topDir, CreateArtistName(k))
-	if err := Mkdir(t, "createArtistDir()", artistDir); err == nil {
+	artistDir := filepath.Join(topDir, CreateArtistNameForTesting(k))
+	if err := MkdirForTesting(t, "createArtistDir()", artistDir); err == nil {
 		if withContent {
 			for n := 0; n < 10; n++ {
-				createAlbumDir(t, internalFnName, artistDir, n, 10)
+				createAlbumDirForTesting(t, internalFnName, artistDir, n, 10)
 			}
-			createAlbumDir(t, internalFnName, artistDir, 999, 0) // create album with no tracks
-			createFile(t, internalFnName, artistDir, "dummy file to be ignored.txt")
+			createAlbumDirForTesting(t, internalFnName, artistDir, 999, 0) // create album with no tracks
+			createFileForTesting(t, internalFnName, artistDir, "dummy file to be ignored.txt")
 		}
 	}
 }
 
-func createFile(t *testing.T, fnName, dir, s string) {
+func createFileForTesting(t *testing.T, fnName, dir, s string) {
 	internalFnName := fmt.Sprintf("%s->createFile()", fnName)
 	fileName := filepath.Join(dir, s)
 	if err := os.WriteFile(fileName, []byte("file contents for "+s), 0644); err != nil {
@@ -80,5 +80,5 @@ func createFile(t *testing.T, fnName, dir, s string) {
 
 func createTrackFile(t *testing.T, fnName string, artistDir string, k int) {
 	internalFnName := fmt.Sprintf("%s->createTrackFile()", fnName)
-	createFile(t, internalFnName, artistDir, CreateTrackName(k))
+	createFileForTesting(t, internalFnName, artistDir, CreateTrackNameForTesting(k))
 }

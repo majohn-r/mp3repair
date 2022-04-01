@@ -15,7 +15,7 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 	noCheck := false
 	performCheck := true
 	emptyDirName := "empty"
-	if internal.Mkdir(t, fnName, emptyDirName) != nil {
+	if internal.MkdirForTesting(t, fnName, emptyDirName) != nil {
 		return
 	}
 	defer func() {
@@ -24,7 +24,7 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 		}
 	}()
 	dirtyDirName := "dirty"
-	if internal.Mkdir(t, fnName, dirtyDirName) != nil {
+	if internal.MkdirForTesting(t, fnName, dirtyDirName) != nil {
 		return
 	}
 	defer func() {
@@ -32,7 +32,7 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 			t.Errorf("%s error destroying test directory %q: %v", fnName, dirtyDirName, err)
 		}
 	}()
-	internal.PopulateTopDir(t, fnName, dirtyDirName)
+	internal.PopulateTopDirForTesting(t, fnName, dirtyDirName)
 	type args struct {
 		c *check
 		s *files.Search
@@ -73,7 +73,7 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 				"Artist \"Test Artist 999\": no albums found",
 				"",
 			}, "\n"),
-			wantArtists: files.CreateAllArtists(dirtyDirName, true),
+			wantArtists: files.CreateAllArtistsForTesting(dirtyDirName, true),
 		},
 	}
 	for _, tt := range tests {

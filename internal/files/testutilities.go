@@ -8,21 +8,21 @@ import (
 // NOTE: the functions in this file are strictly for testing purposes. Do not
 // call them from production code.
 
-func CreateAllOddArtistsWithEvenAlbums(topDir string) []*Artist {
+func CreateAllOddArtistsWithEvenAlbumsForTesting(topDir string) []*Artist {
 	var artists []*Artist
 	for k := 1; k < 10; k += 2 {
-		artistName := internal.CreateArtistName(k)
+		artistName := internal.CreateArtistNameForTesting(k)
 		artistDir := filepath.Join(topDir, artistName)
 		artist := &Artist{Name: artistName}
 		for n := 0; n < 10; n += 2 {
-			albumName := internal.CreateAlbumName(n)
+			albumName := internal.CreateAlbumNameForTesting(n)
 			albumDir := filepath.Join(artistDir, albumName)
 			album := &Album{
 				Name:            albumName,
 				RecordingArtist: artist,
 			}
 			for p := 0; p < 10; p++ {
-				trackName := internal.CreateTrackName(p)
+				trackName := internal.CreateTrackNameForTesting(p)
 				name, _, _ := ParseTrackName(trackName, albumName, artistName, DefaultFileExtension)
 				track := &Track{
 					fullPath:        filepath.Join(albumDir, trackName),
@@ -40,21 +40,21 @@ func CreateAllOddArtistsWithEvenAlbums(topDir string) []*Artist {
 	return artists
 }
 
-func CreateAllArtists(topDir string, addExtras bool) []*Artist {
+func CreateAllArtistsForTesting(topDir string, addExtras bool) []*Artist {
 	var artists []*Artist
 	for k := 0; k < 10; k++ {
-		artistName := internal.CreateArtistName(k)
+		artistName := internal.CreateArtistNameForTesting(k)
 		artistDir := filepath.Join(topDir, artistName)
 		artist := &Artist{Name: artistName}
 		for n := 0; n < 10; n++ {
-			albumName := internal.CreateAlbumName(n)
+			albumName := internal.CreateAlbumNameForTesting(n)
 			albumDir := filepath.Join(artistDir, albumName)
 			album := &Album{
 				Name:            albumName,
 				RecordingArtist: artist,
 			}
 			for p := 0; p < 10; p++ {
-				trackName := internal.CreateTrackName(p)
+				trackName := internal.CreateTrackNameForTesting(p)
 				name, _, _ := ParseTrackName(trackName, albumName, artistName, DefaultFileExtension)
 				track := &Track{
 					fullPath:        filepath.Join(albumDir, trackName),
@@ -68,7 +68,7 @@ func CreateAllArtists(topDir string, addExtras bool) []*Artist {
 			artist.Albums = append(artist.Albums, album)
 		}
 		if addExtras {
-			albumName := internal.CreateAlbumName(999)
+			albumName := internal.CreateAlbumNameForTesting(999)
 			album := &Album{
 				Name:            albumName,
 				RecordingArtist: artist,
@@ -78,7 +78,7 @@ func CreateAllArtists(topDir string, addExtras bool) []*Artist {
 		artists = append(artists, artist)
 	}
 	if addExtras {
-		artistName := internal.CreateArtistName(999)
+		artistName := internal.CreateArtistNameForTesting(999)
 		artist := &Artist{Name: artistName}
 		artists = append(artists, artist)
 	}
