@@ -177,14 +177,16 @@ func Test_ls_Exec(t *testing.T) {
 	// generate test data
 	topDir := "loadTest"
 	if err := internal.Mkdir(topDir); err != nil {
-		return
+		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
 	}
 	defer func() {
 		if err := os.RemoveAll(topDir); err != nil {
 			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
 		}
 	}()
-	internal.PopulateTopDirForTesting(topDir)
+	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
+		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
+	}
 	type args struct {
 		args []string
 	}

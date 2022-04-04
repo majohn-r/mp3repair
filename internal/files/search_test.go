@@ -50,17 +50,19 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 	// generate test data
 	topDir := "loadTest"
 	if err := internal.Mkdir(topDir); err != nil {
-		return
+		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
 	}
 	defer func() {
 		if err := os.RemoveAll(topDir); err != nil {
 			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
 		}
 	}()
-	internal.PopulateTopDirForTesting(topDir)
+	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
+		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
+	}
 	emptyDir := "empty directory"
 	if err := internal.Mkdir(emptyDir); err != nil {
-		return
+		t.Errorf("%s error creating %s: %v", fnName, emptyDir, err)
 	}
 	defer func() {
 		if err := os.RemoveAll(emptyDir); err != nil {
@@ -93,14 +95,16 @@ func TestSearch_FilterArtists(t *testing.T) {
 	// generate test data
 	topDir := "loadTest"
 	if err := internal.Mkdir(topDir); err != nil {
-		return
+		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
 	}
 	defer func() {
 		if err := os.RemoveAll(topDir); err != nil {
 			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
 		}
 	}()
-	internal.PopulateTopDirForTesting(topDir)
+	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
+		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
+	}
 	realFlagSet := flag.NewFlagSet("real", flag.ContinueOnError)
 	realS := NewSearchFlags(realFlagSet).ProcessArgs(os.Stdout, []string{"-topDir", topDir})
 	type args struct {
@@ -132,14 +136,16 @@ func TestSearch_LoadData(t *testing.T) {
 	// generate test data
 	topDir := "loadTest"
 	if err := internal.Mkdir(topDir); err != nil {
-		return
+		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
 	}
 	defer func() {
 		if err := os.RemoveAll(topDir); err != nil {
 			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
 		}
 	}()
-	internal.PopulateTopDirForTesting(topDir)
+	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
+		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
+	}
 	tests := []struct {
 		name        string
 		s           *Search
@@ -178,7 +184,7 @@ func Test_readDirectory(t *testing.T) {
 	// generate test data
 	topDir := "loadTest"
 	if err := internal.Mkdir(topDir); err != nil {
-		return
+		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
 	}
 	defer func() {
 		if err := os.RemoveAll(topDir); err != nil {

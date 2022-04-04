@@ -26,43 +26,56 @@ func CreateTrackNameForTesting(k int) string {
 	}
 }
 
-func PopulateTopDirForTesting(topDir string) {
+func PopulateTopDirForTesting(topDir string) error {
 	for k := 0; k < 10; k++ {
-		createArtistDirForTesting(topDir, k, true)
+		if err := createArtistDirForTesting(topDir, k, true); err != nil {
+			return err
+		}
 	}
-	createArtistDirForTesting(topDir, 999, false)
+	return createArtistDirForTesting(topDir, 999, false)
 }
 
-func createAlbumDirForTesting(artistDir string, n int, tracks int) {
+func createAlbumDirForTesting(artistDir string, n int, tracks int) error {
 	albumDir := filepath.Join(artistDir, CreateAlbumNameForTesting(n))
-	if err := Mkdir(albumDir); err == nil {
-		for k := 0; k < tracks; k++ {
-			createTrackFile(albumDir, k)
-		}
-		createFileForTesting(albumDir, "album cover.jpeg")
-		dummyDir := filepath.Join(albumDir, "ignore this folder")
-		_ = Mkdir(dummyDir)
+	if err := Mkdir(albumDir); err != nil {
+		return err
 	}
+	for k := 0; k < tracks; k++ {
+		if err := createTrackFile(albumDir, k); err != nil {
+			return err
+		}
+	}
+	if err := createFileForTesting(albumDir, "album cover.jpeg"); err != nil {
+		return err
+	}
+	dummyDir := filepath.Join(albumDir, "ignore this folder")
+	return Mkdir(dummyDir)
 }
 
-func createArtistDirForTesting(topDir string, k int, withContent bool) {
+func createArtistDirForTesting(topDir string, k int, withContent bool) error {
 	artistDir := filepath.Join(topDir, CreateArtistNameForTesting(k))
-	if err := Mkdir(artistDir); err == nil {
-		if withContent {
-			for n := 0; n < 10; n++ {
-				createAlbumDirForTesting(artistDir, n, 10)
-			}
-			createAlbumDirForTesting(artistDir, 999, 0) // create album with no tracks
-			createFileForTesting(artistDir, "dummy file to be ignored.txt")
-		}
+	if err := Mkdir(artistDir); err != nil {
+		return err
 	}
+	if withContent {
+		for n := 0; n < 10; n++ {
+			if err := createAlbumDirForTesting(artistDir, n, 10); err != nil {
+				return err
+			}
+		}
+		if err := createAlbumDirForTesting(artistDir, 999, 0); err != nil {
+			return err
+		} // create album with no tracks
+		return createFileForTesting(artistDir, "dummy file to be ignored.txt")
+	}
+	return nil
 }
 
-func createFileForTesting(dir, s string) {
+func createFileForTesting(dir, s string) error {
 	fileName := filepath.Join(dir, s)
-	_ = os.WriteFile(fileName, []byte("file contents for "+s), 0644)
+	return os.WriteFile(fileName, []byte("file contents for "+s), 0644)
 }
 
-func createTrackFile(artistDir string, k int) {
-	createFileForTesting(artistDir, CreateTrackNameForTesting(k))
+func createTrackFile(artistDir string, k int) error {
+	return createFileForTesting(artistDir, CreateTrackNameForTesting(k))
 }
