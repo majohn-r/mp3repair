@@ -15,7 +15,7 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 	noCheck := false
 	performCheck := true
 	emptyDirName := "empty"
-	if internal.MkdirForTesting(t, fnName, emptyDirName) != nil {
+	if internal.Mkdir(emptyDirName) != nil {
 		return
 	}
 	defer func() {
@@ -24,7 +24,7 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 		}
 	}()
 	dirtyDirName := "dirty"
-	if internal.MkdirForTesting(t, fnName, dirtyDirName) != nil {
+	if internal.Mkdir(dirtyDirName) != nil {
 		return
 	}
 	defer func() {
@@ -32,7 +32,7 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 			t.Errorf("%s error destroying test directory %q: %v", fnName, dirtyDirName, err)
 		}
 	}()
-	internal.PopulateTopDirForTesting(t, fnName, dirtyDirName)
+	internal.PopulateTopDirForTesting(dirtyDirName)
 	type args struct {
 		c *check
 		s *files.Search
@@ -92,7 +92,7 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 func Test_filterArtists(t *testing.T) {
 	fnName := "filterArtists()"
 	topDirName := "filterArtists"
-	if internal.MkdirForTesting(t, fnName, topDirName) != nil {
+	if internal.Mkdir(topDirName) != nil {
 		return
 	}
 	defer func() {
@@ -100,7 +100,7 @@ func Test_filterArtists(t *testing.T) {
 			t.Errorf("%s error destroying test directory %q: %v", fnName, topDirName, err)
 		}
 	}()
-	internal.PopulateTopDirForTesting(t, fnName, topDirName)
+	internal.PopulateTopDirForTesting(topDirName)
 	searchStruct := files.CreateSearchForTesting(topDirName)
 	fullArtists := searchStruct.LoadUnfilteredData()
 	filteredArtists := searchStruct.LoadData()

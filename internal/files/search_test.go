@@ -49,7 +49,7 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 	fnName := "Search.LoadUnfilteredData()"
 	// generate test data
 	topDir := "loadTest"
-	if err := internal.MkdirForTesting(t, fnName, topDir); err != nil {
+	if err := internal.Mkdir(topDir); err != nil {
 		return
 	}
 	defer func() {
@@ -57,9 +57,9 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
 		}
 	}()
-	internal.PopulateTopDirForTesting(t, fnName, topDir)
+	internal.PopulateTopDirForTesting(topDir)
 	emptyDir := "empty directory"
-	if err := internal.MkdirForTesting(t, fnName, emptyDir); err != nil {
+	if err := internal.Mkdir(emptyDir); err != nil {
 		return
 	}
 	defer func() {
@@ -92,7 +92,7 @@ func TestSearch_FilterArtists(t *testing.T) {
 	fnName := "Search.FilterArtists()"
 	// generate test data
 	topDir := "loadTest"
-	if err := internal.MkdirForTesting(t, fnName, topDir); err != nil {
+	if err := internal.Mkdir(topDir); err != nil {
 		return
 	}
 	defer func() {
@@ -100,7 +100,7 @@ func TestSearch_FilterArtists(t *testing.T) {
 			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
 		}
 	}()
-	internal.PopulateTopDirForTesting(t, fnName, topDir)
+	internal.PopulateTopDirForTesting(topDir)
 	realFlagSet := flag.NewFlagSet("real", flag.ContinueOnError)
 	realS := NewSearchFlags(realFlagSet).ProcessArgs(os.Stdout, []string{"-topDir", topDir})
 	type args struct {
@@ -131,7 +131,7 @@ func TestSearch_LoadData(t *testing.T) {
 	fnName := "Search.LoadData()"
 	// generate test data
 	topDir := "loadTest"
-	if err := internal.MkdirForTesting(t, fnName, topDir); err != nil {
+	if err := internal.Mkdir(topDir); err != nil {
 		return
 	}
 	defer func() {
@@ -139,7 +139,7 @@ func TestSearch_LoadData(t *testing.T) {
 			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
 		}
 	}()
-	internal.PopulateTopDirForTesting(t, fnName, topDir)
+	internal.PopulateTopDirForTesting(topDir)
 	tests := []struct {
 		name        string
 		s           *Search
@@ -177,7 +177,7 @@ func Test_readDirectory(t *testing.T) {
 	fnName := "readDirectory()"
 	// generate test data
 	topDir := "loadTest"
-	if err := internal.MkdirForTesting(t, fnName, topDir); err != nil {
+	if err := internal.Mkdir(topDir); err != nil {
 		return
 	}
 	defer func() {

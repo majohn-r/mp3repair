@@ -176,7 +176,7 @@ func Test_ls_Exec(t *testing.T) {
 	fnName := "ls.Exec()"
 	// generate test data
 	topDir := "loadTest"
-	if err := internal.MkdirForTesting(t, fnName, topDir); err != nil {
+	if err := internal.Mkdir(topDir); err != nil {
 		return
 	}
 	defer func() {
@@ -184,7 +184,7 @@ func Test_ls_Exec(t *testing.T) {
 			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
 		}
 	}()
-	internal.PopulateTopDirForTesting(t, fnName, topDir)
+	internal.PopulateTopDirForTesting(topDir)
 	type args struct {
 		args []string
 	}
