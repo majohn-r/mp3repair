@@ -25,9 +25,7 @@ func TestConfigureLogging(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			defer func() {
-				if err := os.RemoveAll(tt.args.path); err != nil {
-					t.Errorf("%s: cannot clean up %v: %v", fnName, tt.args.path, err)
-				}
+				DestroyDirectoryForTesting(fnName, tt.args.path)
 			}()
 			got := ConfigureLogging(tt.args.path)
 			if got == nil {
@@ -102,9 +100,7 @@ func TestCleanupLogFiles(t *testing.T) {
 	}
 	for _, tt := range tests {
 		defer func() {
-			if err := os.RemoveAll(tt.args.path); err != nil {
-				t.Errorf("%s: cannot clean up %v: %v", fnName, tt.args.path, err)
-			}
+			DestroyDirectoryForTesting(fnName, tt.args.path)
 		}()
 		var filesToClose []*os.File
 		if tt.createFolder {
@@ -133,7 +129,7 @@ func TestCleanupLogFiles(t *testing.T) {
 			}
 		} else {
 			if err := os.RemoveAll(tt.args.path); err != nil {
-				t.Errorf("%s: cannot ensure %v does not exist: %v", fnName, tt.args.path, err)
+				t.Errorf("%s error destroying test directory %q: %v", fnName, tt.args.path, err)
 			}
 		}
 		t.Run(tt.name, func(t *testing.T) {

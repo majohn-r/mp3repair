@@ -72,3 +72,27 @@ func TestCreateTrackNameForTesting(t *testing.T) {
 		})
 	}
 }
+
+func TestDestroyDirectoryForTesting(t *testing.T) {
+	fnName := "DestroyDirectoryForTesting()"
+	type args struct {
+		fnName  string
+		dirName string
+	}
+	testDirName := "testDir"
+	if err := Mkdir(testDirName); err != nil {
+		t.Errorf("%s: error creating %q: %v", fnName, testDirName, err)
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{name: "no error", args: args{fnName: fnName, dirName: testDirName}},
+		{name: "error", args: args{fnName: fnName, dirName: "."}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			DestroyDirectoryForTesting(tt.args.fnName, tt.args.dirName)
+		})
+	}
+}

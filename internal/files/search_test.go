@@ -15,9 +15,7 @@ func TestSearch_TopDirectory(t *testing.T) {
 		name string
 		s    *Search
 		want string
-	}{
-		{name: "expected", s: &Search{topDirectory: "check"}, want: "check"},
-	}
+	}{{name: "expected", s: &Search{topDirectory: "check"}, want: "check"}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.s.TopDirectory(); got != tt.want {
@@ -33,9 +31,7 @@ func TestSearch_TargetExtension(t *testing.T) {
 		name string
 		s    *Search
 		want string
-	}{
-		{name: "expected", s: &Search{targetExtension: ".txt"}, want: ".txt"},
-	}
+	}{{name: "expected", s: &Search{targetExtension: ".txt"}, want: ".txt"}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.s.TargetExtension(); got != tt.want {
@@ -53,9 +49,7 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
 	}
 	defer func() {
-		if err := os.RemoveAll(topDir); err != nil {
-			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
-		}
+		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
 		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
@@ -65,9 +59,7 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 		t.Errorf("%s error creating %s: %v", fnName, emptyDir, err)
 	}
 	defer func() {
-		if err := os.RemoveAll(emptyDir); err != nil {
-			t.Errorf("%s error destroying test directory %q: %v", fnName, emptyDir, err)
-		}
+		internal.DestroyDirectoryForTesting(fnName, emptyDir)
 	}()
 	tests := []struct {
 		name        string
@@ -98,9 +90,7 @@ func TestSearch_FilterArtists(t *testing.T) {
 		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
 	}
 	defer func() {
-		if err := os.RemoveAll(topDir); err != nil {
-			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
-		}
+		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
 		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
@@ -117,7 +107,8 @@ func TestSearch_FilterArtists(t *testing.T) {
 		wantArtists []*Artist
 	}{
 		{
-			name: "default", s: realS,
+			name:        "default",
+			s:           realS,
 			args:        args{unfilteredArtists: realS.LoadUnfilteredData()},
 			wantArtists: realS.LoadData(),
 		},
@@ -139,9 +130,7 @@ func TestSearch_LoadData(t *testing.T) {
 		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
 	}
 	defer func() {
-		if err := os.RemoveAll(topDir); err != nil {
-			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
-		}
+		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
 		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
@@ -187,9 +176,7 @@ func Test_readDirectory(t *testing.T) {
 		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
 	}
 	defer func() {
-		if err := os.RemoveAll(topDir); err != nil {
-			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
-		}
+		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
 	type args struct {
 		dir string

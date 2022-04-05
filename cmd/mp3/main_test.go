@@ -21,8 +21,9 @@ func Test_initLogging(t *testing.T) {
 	}
 	defer func() {
 		logger.Close()
-		if err := os.RemoveAll("mp3"); err != nil {
-			t.Errorf("%s: %v", fnName, err)
+		dirName := "mp3"
+		if err := os.RemoveAll(dirName); err != nil {
+			t.Errorf("%s error destroying test directory %q: %v", fnName, dirName, err)
 		}
 	}()
 	for _, tt := range tests {

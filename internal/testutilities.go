@@ -26,6 +26,12 @@ func CreateTrackNameForTesting(k int) string {
 	}
 }
 
+func DestroyDirectoryForTesting(fnName string, dirName string) {
+	if err := os.RemoveAll(dirName); err != nil {
+		fmt.Fprintf(os.Stderr, "%s error destroying test directory %q: %v", fnName, dirName, err)
+	}
+}
+
 func PopulateTopDirForTesting(topDir string) error {
 	for k := 0; k < 10; k++ {
 		if err := createArtistDirForTesting(topDir, k, true); err != nil {

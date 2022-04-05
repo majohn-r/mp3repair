@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"mp3/internal"
 	"mp3/internal/files"
-	"os"
 	"reflect"
 	"strings"
 	"testing"
@@ -19,18 +18,14 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 		t.Errorf("%s error creating %s: %v", fnName, emptyDirName, err)
 	}
 	defer func() {
-		if err := os.RemoveAll(emptyDirName); err != nil {
-			t.Errorf("%s error destroying test directory %q: %v", fnName, emptyDirName, err)
-		}
+		internal.DestroyDirectoryForTesting(fnName, emptyDirName)
 	}()
 	dirtyDirName := "dirty"
 	if err := internal.Mkdir(dirtyDirName); err != nil {
 		t.Errorf("%s error creating %s: %v", fnName, dirtyDirName, err)
 	}
 	defer func() {
-		if err := os.RemoveAll(dirtyDirName); err != nil {
-			t.Errorf("%s error destroying test directory %q: %v", fnName, dirtyDirName, err)
-		}
+		internal.DestroyDirectoryForTesting(fnName, dirtyDirName)
 	}()
 	if err := internal.PopulateTopDirForTesting(dirtyDirName); err != nil {
 		t.Errorf("%s error populating %s: %v", fnName, dirtyDirName, err)
@@ -47,11 +42,8 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 	}{
 		{name: "no work to do", args: args{c: &check{checkEmptyFolders: &noCheck}}},
 		{
-			name: "empty topDir",
-			args: args{
-				c: &check{checkEmptyFolders: &performCheck},
-				s: files.CreateSearchForTesting(emptyDirName),
-			},
+			name:  "empty topDir",
+			args:  args{c: &check{checkEmptyFolders: &performCheck}, s: files.CreateSearchForTesting(emptyDirName)},
 			wantW: "Empty Folder Analysis: no empty folders found\n",
 		},
 		{
@@ -98,9 +90,7 @@ func Test_filterArtists(t *testing.T) {
 		t.Errorf("%s error creating %s: %v", fnName, topDirName, err)
 	}
 	defer func() {
-		if err := os.RemoveAll(topDirName); err != nil {
-			t.Errorf("%s error destroying test directory %q: %v", fnName, topDirName, err)
-		}
+		internal.DestroyDirectoryForTesting(fnName, topDirName)
 	}()
 	if err := internal.PopulateTopDirForTesting(topDirName); err != nil {
 		t.Errorf("%s error populating %s: %v", fnName, topDirName, err)
@@ -143,8 +133,8 @@ func Test_filterArtists(t *testing.T) {
 		},
 		{
 			name: "only integrity check enabled, no artists supplied",
-			args: args{c: &check{
-				checkGapsInTrackNumbering: &fFlag, checkIntegrity: &tFlag},
+			args: args{
+				c: &check{checkGapsInTrackNumbering: &fFlag, checkIntegrity: &tFlag},
 				s: searchStruct,
 			},
 			wantFilteredArtists: filteredArtists,
@@ -160,8 +150,8 @@ func Test_filterArtists(t *testing.T) {
 		},
 		{
 			name: "gap analysis and integrity check enabled, no artists supplied",
-			args: args{c: &check{
-				checkGapsInTrackNumbering: &tFlag, checkIntegrity: &tFlag},
+			args: args{
+				c: &check{checkGapsInTrackNumbering: &tFlag, checkIntegrity: &tFlag},
 				s: searchStruct,
 			},
 			wantFilteredArtists: filteredArtists,

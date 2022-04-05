@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"mp3/internal"
 	"mp3/internal/files"
-	"os"
 	"sort"
 	"strings"
 	"testing"
@@ -180,9 +179,7 @@ func Test_ls_Exec(t *testing.T) {
 		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
 	}
 	defer func() {
-		if err := os.RemoveAll(topDir); err != nil {
-			t.Errorf("%s error destroying test directory %q: %v", fnName, topDir, err)
-		}
+		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
 		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
