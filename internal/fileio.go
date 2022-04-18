@@ -1,7 +1,21 @@
 package internal
 
-import "os"
+import (
+	"errors"
+	"fmt"
+	"os"
+)
 
-func Mkdir(dirName string) error {
-	return os.Mkdir(dirName, 0755)
+func Mkdir(dirName string) (err error) {
+	status, err := os.Stat(dirName)
+	if err != nil {
+		if errors.Is(err, os.ErrNotExist){
+			err = os.Mkdir(dirName, 0755)
+		}
+		return
+	}
+	if !status.IsDir(){
+		err = fmt.Errorf("%q exists and is not a directory", dirName)
+	}
+	return
 }

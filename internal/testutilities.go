@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -33,29 +34,50 @@ func DestroyDirectoryForTesting(fnName string, dirName string) {
 }
 
 func PopulateTopDirForTesting(topDir string) error {
-	for k := 0; k < 10; k++ {
-		if err := createArtistDirForTesting(topDir, k, true); err != nil {
+	creationParameters := []struct {
+		artist        int
+		createContent bool
+	}{
+		{artist: 0, createContent: true},
+		{artist: 1, createContent: true},
+		{artist: 2, createContent: true},
+		{artist: 3, createContent: true},
+		{artist: 4, createContent: true},
+		{artist: 5, createContent: true},
+		{artist: 6, createContent: true},
+		{artist: 7, createContent: true},
+		{artist: 8, createContent: true},
+		{artist: 9, createContent: true},
+		{artist: 999, createContent: false},
+	}
+	for _, params := range creationParameters {
+		if err := createArtistDirForTesting(topDir, params.artist, params.createContent); err != nil {
 			return err
 		}
 	}
-	return createArtistDirForTesting(topDir, 999, false)
+	return nil
 }
 
 func createAlbumDirForTesting(artistDir string, n int, tracks int) error {
 	albumDir := filepath.Join(artistDir, CreateAlbumNameForTesting(n))
-	if err := Mkdir(albumDir); err != nil {
-		return err
-	}
-	for k := 0; k < tracks; k++ {
-		if err := createTrackFile(albumDir, k); err != nil {
+	dummyDir := filepath.Join(albumDir, "ignore this folder")
+	directories := []string{albumDir, dummyDir}
+	for _, directory := range directories {
+		if err := Mkdir(directory); err != nil {
 			return err
 		}
 	}
-	if err := createFileForTesting(albumDir, "album cover.jpeg"); err != nil {
-		return err
+	var fileNames []string
+	for k := 0; k < tracks; k++ {
+		fileNames = append(fileNames, CreateTrackNameForTesting(k))
 	}
-	dummyDir := filepath.Join(albumDir, "ignore this folder")
-	return Mkdir(dummyDir)
+	fileNames = append(fileNames, "album cover.jpeg")
+	for _, fileName := range fileNames {
+		if err := createFileForTesting(albumDir, fileName); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func createArtistDirForTesting(topDir string, k int, withContent bool) error {
@@ -64,24 +86,41 @@ func createArtistDirForTesting(topDir string, k int, withContent bool) error {
 		return err
 	}
 	if withContent {
-		for n := 0; n < 10; n++ {
-			if err := createAlbumDirForTesting(artistDir, n, 10); err != nil {
+		creationParams := []struct {
+			id     int
+			tracks int
+		}{
+			{id: 0, tracks: 10},
+			{id: 1, tracks: 10},
+			{id: 2, tracks: 10},
+			{id: 3, tracks: 10},
+			{id: 4, tracks: 10},
+			{id: 5, tracks: 10},
+			{id: 6, tracks: 10},
+			{id: 7, tracks: 10},
+			{id: 8, tracks: 10},
+			{id: 9, tracks: 10},
+			{id: 999, tracks: 0},
+		}
+		for _, p := range creationParams {
+			if err := createAlbumDirForTesting(artistDir, p.id, p.tracks); err != nil {
 				return err
 			}
 		}
-		if err := createAlbumDirForTesting(artistDir, 999, 0); err != nil {
-			return err
-		} // create album with no tracks
 		return createFileForTesting(artistDir, "dummy file to be ignored.txt")
 	}
 	return nil
 }
 
-func createFileForTesting(dir, s string) error {
-	fileName := filepath.Join(dir, s)
-	return os.WriteFile(fileName, []byte("file contents for "+s), 0644)
-}
-
-func createTrackFile(artistDir string, k int) error {
-	return createFileForTesting(artistDir, CreateTrackNameForTesting(k))
+func createFileForTesting(dir, name string) (err error) {
+	fileName := filepath.Join(dir, name)
+	_, err = os.Stat(fileName)
+	if err == nil {
+		err = fmt.Errorf("file %q already exists", fileName)
+	} else {
+		if errors.Is(err, os.ErrNotExist) {
+			err = os.WriteFile(fileName, []byte("file contents for "+name), 0644)
+		}
+	}
+	return
 }

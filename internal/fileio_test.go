@@ -23,6 +23,8 @@ func TestMkdir(t *testing.T) {
 	}{
 		{name: "failure", args: args{dirName: "testutilities_test.go"}, wantErr: true},
 		{name: "success", args: args{dirName: topDir}, wantErr: false},
+		// previous test will have created 'topDir' ... subsequent attempt should not fail
+		{name: "directory exists", args: args{dirName: topDir}, wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
