@@ -102,38 +102,46 @@ func TestDestroyDirectoryForTesting(t *testing.T) {
 func TestPopulateTopDirForTesting(t *testing.T) {
 	fnName := "PopulateTopDirForTesting()"
 	cleanDirName := "testDir0"
+	forceEarlyErrorDirName := "testDir1"
+	albumDirErrName := "testDir2"
+	badTrackFileName := "testDir3"
+	defer func() {
+		type results struct {
+			dirName string
+			e error
+		}
+		output := []results{}
+		if err := os.RemoveAll(cleanDirName); err != nil {
+			output = append(output, results{ dirName: cleanDirName, e: err})
+		}
+		if err := os.RemoveAll(forceEarlyErrorDirName); err != nil {
+			output = append(output, results{ dirName: forceEarlyErrorDirName, e: err})
+		}
+		if err := os.RemoveAll(albumDirErrName); err != nil {
+			output = append(output, results{ dirName: albumDirErrName, e: err})
+		}
+		if err := os.RemoveAll(badTrackFileName); err != nil {
+			output = append(output, results{ dirName: badTrackFileName, e: err})
+		}
+		if len(output) != 0 {
+			t.Errorf("%s errors deleting test directories %v", fnName, output)
+		}
+	}()
 	if err := Mkdir(cleanDirName); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, cleanDirName, err)
 	}
-	defer func() {
-		if err := os.RemoveAll(cleanDirName); err != nil {
-			t.Errorf("%s error destroying test directory %q: %v", fnName, cleanDirName, err)
-		}
-	}()
-	forceEarlyErrorDirName := "testDir1"
 	if err := Mkdir(forceEarlyErrorDirName); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, forceEarlyErrorDirName, err)
 	}
-	defer func() {
-		if err := os.RemoveAll(forceEarlyErrorDirName); err != nil {
-			t.Errorf("%s error destroying test directory %q: %v", fnName, forceEarlyErrorDirName, err)
-		}
-	}()
 	artistDirName := CreateArtistNameForTesting(0)
 	if err := createFileForTesting(forceEarlyErrorDirName, artistDirName); err != nil {
 		t.Errorf("%s error creating file %q: %v", fnName, artistDirName, err)
 	}
 
 	// create an artist with a file that is named the same as an expected album name
-	albumDirErrName := "testDir2"
 	if err := Mkdir(albumDirErrName); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, albumDirErrName, err)
 	}
-	defer func() {
-		if err := os.RemoveAll(albumDirErrName); err != nil {
-			t.Errorf("%s error destroying test directory %q: %v", fnName, albumDirErrName, err)
-		}
-	}()
 	artistFileName := filepath.Join(albumDirErrName, CreateArtistNameForTesting(0))
 	if err := Mkdir(artistFileName); err != nil {
 		t.Errorf("%s error creating test directory %q: %v", fnName, artistFileName, err)
@@ -144,15 +152,9 @@ func TestPopulateTopDirForTesting(t *testing.T) {
 	}
 
 	// create an album with a pre-existing track name
-	badTrackFileName := "testDir3"
 	if err := Mkdir(badTrackFileName); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, badTrackFileName, err)
 	}
-	defer func() {
-		if err := os.RemoveAll(badTrackFileName); err != nil {
-			t.Errorf("%s error destroying test directory %q: %v", fnName, badTrackFileName, err)
-		}
-	}()
 	artistFileName = filepath.Join(badTrackFileName, CreateArtistNameForTesting(0))
 	if err := Mkdir(artistFileName); err != nil {
 		t.Errorf("%s error creating test directory %q: %v", fnName, artistFileName, err)

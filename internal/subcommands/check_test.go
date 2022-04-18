@@ -14,19 +14,17 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 	noCheck := false
 	performCheck := true
 	emptyDirName := "empty"
+	dirtyDirName := "dirty"
 	if err := internal.Mkdir(emptyDirName); err != nil {
 		t.Errorf("%s error creating %s: %v", fnName, emptyDirName, err)
 	}
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, emptyDirName)
+		internal.DestroyDirectoryForTesting(fnName, dirtyDirName)
 	}()
-	dirtyDirName := "dirty"
 	if err := internal.Mkdir(dirtyDirName); err != nil {
 		t.Errorf("%s error creating %s: %v", fnName, dirtyDirName, err)
 	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, dirtyDirName)
-	}()
 	if err := internal.PopulateTopDirForTesting(dirtyDirName); err != nil {
 		t.Errorf("%s error populating %s: %v", fnName, dirtyDirName, err)
 	}

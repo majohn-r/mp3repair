@@ -45,22 +45,20 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 	fnName := "Search.LoadUnfilteredData()"
 	// generate test data
 	topDir := "loadTest"
+	emptyDir := "empty directory"
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, topDir)
+		internal.DestroyDirectoryForTesting(fnName, emptyDir)
+	}()
 	if err := internal.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
 	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, topDir)
-	}()
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
 		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
 	}
-	emptyDir := "empty directory"
 	if err := internal.Mkdir(emptyDir); err != nil {
 		t.Errorf("%s error creating %s: %v", fnName, emptyDir, err)
 	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, emptyDir)
-	}()
 	tests := []struct {
 		name        string
 		s           *Search
