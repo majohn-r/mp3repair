@@ -62,13 +62,13 @@ func (c *check) runSubcommand(w io.Writer, s *files.Search) {
 		logrus.WithFields(c.logFields()).Error(internal.LOG_NOTHING_TO_DO)
 	} else {
 		logrus.WithFields(c.logFields()).Info(internal.LOG_EXECUTING_COMMAND)
-		artists := performEmptyFolderAnalysis(w, c, s)
-		artists = filterArtists(c, s, artists)
-		c.performGapAnalysis(w, c, artists)
+		artists := c.performEmptyFolderAnalysis(w, s)
+		artists = c.filterArtists(s, artists)
+		c.performGapAnalysis(w, artists)
 	}
 }
 
-func filterArtists(c *check, s *files.Search, artists []*files.Artist) (filteredArtists []*files.Artist) {
+func (c *check) filterArtists(s *files.Search, artists []*files.Artist) (filteredArtists []*files.Artist) {
 	if *c.checkGapsInTrackNumbering || *c.checkIntegrity {
 		if len(artists) == 0 {
 			filteredArtists = s.LoadData()
@@ -81,7 +81,7 @@ func filterArtists(c *check, s *files.Search, artists []*files.Artist) (filtered
 	return
 }
 
-func performEmptyFolderAnalysis(w io.Writer, c *check, s *files.Search) (artists []*files.Artist) {
+func (c *check) performEmptyFolderAnalysis(w io.Writer, s *files.Search) (artists []*files.Artist) {
 	if *c.checkEmptyFolders {
 		artists = s.LoadUnfilteredData()
 		if len(artists) == 0 {
@@ -113,7 +113,7 @@ func performEmptyFolderAnalysis(w io.Writer, c *check, s *files.Search) (artists
 	return
 }
 
-func (*check) performGapAnalysis(w io.Writer, c *check, artists []*files.Artist) {
+func (c *check) performGapAnalysis(w io.Writer, artists []*files.Artist) {
 	if *c.checkGapsInTrackNumbering {
 		var complaints []string
 		for _, artist := range artists {
