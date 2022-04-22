@@ -1,6 +1,7 @@
 package files
 
 import (
+	"fmt"
 	"mp3/internal"
 	"regexp"
 	"strconv"
@@ -33,6 +34,13 @@ const (
 	trackUnknownTagReadError int = -3
 )
 
+type taggedTrackData struct {
+	album  string
+	artist string
+	title  string
+	number string
+}
+
 type Album struct {
 	Name            string
 	Tracks          []*Track
@@ -46,24 +54,65 @@ type Artist struct {
 
 var trackNameRegex *regexp.Regexp = regexp.MustCompile(defaultTrackNamePattern)
 
-func ReadMP3Data(track *Track) {
-	if track.TaggedTrack == trackUnknownTagsNotRead {
-		tag, err := id3v2.Open(track.fullPath, id3v2.Options{Parse: true})
-		if err != nil {
-			logrus.WithFields(logrus.Fields{internal.LOG_PATH: track.fullPath, internal.LOG_ERROR: err}).Warn(internal.LOG_CANNOT_READ_FILE)
-			track.TaggedTrack = trackUnknownTagReadError
-		} else {
-			defer tag.Close()
+func (t *Track) needsTaggedData() bool {
+	return t.TaggedTrack == trackUnknownTagsNotRead
+}
 
-			// Read tags.
-			track.TaggedAlbum = tag.Album()
-			track.TaggedArtist = tag.Artist()
-			track.TaggedTitle = tag.Title()
-			rawTrackTag := tag.GetTextFrame("TRCK").Text
-			if track.TaggedTrack, err = strconv.Atoi(rawTrackTag); err != nil || strings.HasPrefix(rawTrackTag, "-") {
-				logrus.WithFields(logrus.Fields{"trackTag": rawTrackTag, internal.LOG_ERROR: err}).Warn("invalid track tag")
-				track.TaggedTrack = trackUnknownFormatError
-			}
+func (t *Track) setTagReadError() {
+	t.TaggedTrack = trackUnknownTagReadError
+}
+
+func (t *Track) setTagFormatError() {
+	t.TaggedTrack = trackUnknownFormatError
+}
+
+func toTrackNumber(s string) (i int, err error) {
+	if strings.HasPrefix(s, "-") {
+		err = fmt.Errorf("invalid format: %q", s)
+		return
+	}
+	i, err = strconv.Atoi(s)
+	return
+}
+
+func (t *Track) setTags(d *taggedTrackData) {
+	if trackNumber, err := toTrackNumber(d.number); err != nil {
+		logrus.WithFields(logrus.Fields{"trackTag": d.number, internal.LOG_ERROR: err}).Warn("invalid track tag")
+		t.setTagFormatError()
+	} else {
+		t.TaggedAlbum = d.album
+		t.TaggedArtist = d.artist
+		t.TaggedTitle = d.title
+		t.TaggedTrack = trackNumber
+	}
+}
+
+func rawReadTags(path string) (d *taggedTrackData, err error) {
+	var tag *id3v2.Tag
+	if tag, err = id3v2.Open(path, id3v2.Options{Parse: true}); err != nil {
+		return
+	}
+	defer tag.Close()
+	d = &taggedTrackData{
+		album:  tag.Album(),
+		artist: tag.Artist(),
+		title:  tag.Title(),
+		number: tag.GetTextFrame("TRCK").Text,
+	}
+	return
+}
+
+func (t *Track) ReadMP3Tags() {
+	t.readTags(rawReadTags)
+}
+
+func (t *Track) readTags(reader func(string) (*taggedTrackData, error)) {
+	if t.needsTaggedData() {
+		if tags, err := reader(t.fullPath); err != nil {
+			logrus.WithFields(logrus.Fields{internal.LOG_PATH: t.fullPath, internal.LOG_ERROR: err}).Warn(internal.LOG_CANNOT_READ_FILE)
+			t.setTagReadError()
+		} else {
+			t.setTags(tags)
 		}
 	}
 }
