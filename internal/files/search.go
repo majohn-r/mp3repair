@@ -55,9 +55,9 @@ func (s *Search) LoadUnfilteredData() (artists []*Artist) {
 								if simpleName, trackNumber, valid := ParseTrackName(trackFile.Name(), album.Name, artist.Name, s.targetExtension); valid {
 									track := &Track{
 										fullPath:        filepath.Join(albumDir, trackFile.Name()),
-										fileName:        trackFile.Name(),
 										Name:            simpleName,
 										TrackNumber:     trackNumber,
+										TaggedTrack:     trackUnknownTagsNotRead,
 										ContainingAlbum: album,
 									}
 									album.Tracks = append(album.Tracks, track)
@@ -95,9 +95,12 @@ func (s *Search) FilterArtists(unfilteredArtists []*Artist) (artists []*Artist) 
 						for _, track := range album.Tracks {
 							newTrack := &Track{
 								fullPath:        track.fullPath,
-								fileName:        track.fileName,
 								Name:            track.Name,
 								TrackNumber:     track.TrackNumber,
+								TaggedAlbum:     track.TaggedAlbum,
+								TaggedArtist:    track.TaggedArtist,
+								TaggedTitle:     track.TaggedTitle,
+								TaggedTrack:     track.TaggedTrack,
 								ContainingAlbum: newAlbum,
 							}
 							newAlbum.Tracks = append(newAlbum.Tracks, newTrack)
@@ -141,9 +144,9 @@ func (s *Search) LoadData() (artists []*Artist) {
 							if simpleName, trackNumber, valid := ParseTrackName(trackFile.Name(), album.Name, artist.Name, s.targetExtension); valid {
 								track := &Track{
 									fullPath:        filepath.Join(albumDir, trackFile.Name()),
-									fileName:        trackFile.Name(),
 									Name:            simpleName,
 									TrackNumber:     trackNumber,
+									TaggedTrack:     trackUnknownTagsNotRead,
 									ContainingAlbum: album,
 								}
 								album.Tracks = append(album.Tracks, track)

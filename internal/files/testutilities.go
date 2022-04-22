@@ -26,10 +26,10 @@ func CreateAllOddArtistsWithEvenAlbumsForTesting(topDir string) []*Artist {
 				name, _, _ := ParseTrackName(trackName, albumName, artistName, DefaultFileExtension)
 				track := &Track{
 					fullPath:        filepath.Join(albumDir, trackName),
-					fileName:        trackName,
 					Name:            name,
 					TrackNumber:     p,
 					ContainingAlbum: album,
+					TaggedTrack:     trackUnknownTagsNotRead,
 				}
 				album.Tracks = append(album.Tracks, track)
 			}
@@ -55,13 +55,13 @@ func CreateAllArtistsForTesting(topDir string, addExtras bool) []*Artist {
 			}
 			for p := 0; p < 10; p++ {
 				trackName := internal.CreateTrackNameForTesting(p)
-				name, _, _ := ParseTrackName(trackName, albumName, artistName, DefaultFileExtension)
+				name, trackNo, _ := ParseTrackName(trackName, albumName, artistName, DefaultFileExtension)
 				track := &Track{
 					fullPath:        filepath.Join(albumDir, trackName),
-					fileName:        trackName,
 					Name:            name,
-					TrackNumber:     p,
+					TrackNumber:     trackNo,
 					ContainingAlbum: album,
+					TaggedTrack:     trackUnknownTagsNotRead,
 				}
 				album.Tracks = append(album.Tracks, track)
 			}

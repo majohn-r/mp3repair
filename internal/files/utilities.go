@@ -3,6 +3,7 @@ package files
 import (
 	"mp3/internal"
 	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/bogem/id3v2/v2"
@@ -16,12 +17,21 @@ const (
 )
 
 type Track struct {
-	fullPath        string
-	fileName        string
-	Name            string
-	TrackNumber     int
+	fullPath        string // full path to the file associated with the track, including the file itself
+	Name            string // name of the track, without the track number or file extension, e.g., "First Track"
+	TrackNumber     int    // number of the track
 	ContainingAlbum *Album
+	TaggedTitle     string // track title per mp3 tag
+	TaggedTrack     int    // track number per mp3 tag
+	TaggedAlbum     string // album name per mp3 tag
+	TaggedArtist    string // artist name per mp3 tag
 }
+
+const (
+	trackUnknownFormatError  int = -1
+	trackUnknownTagsNotRead  int = -2
+	trackUnknownTagReadError int = -3
+)
 
 type Album struct {
 	Name            string
@@ -37,24 +47,24 @@ type Artist struct {
 var trackNameRegex *regexp.Regexp = regexp.MustCompile(defaultTrackNamePattern)
 
 func ReadMP3Data(track *Track) {
-	tag, err := id3v2.Open(track.fullPath, id3v2.Options{Parse: true})
-	if err != nil {
-		logrus.WithFields(logrus.Fields{internal.LOG_PATH: track.fullPath, internal.LOG_ERROR: err}).Warn(internal.LOG_CANNOT_READ_FILE)
-	} else {
-		defer tag.Close()
+	if track.TaggedTrack == trackUnknownTagsNotRead {
+		tag, err := id3v2.Open(track.fullPath, id3v2.Options{Parse: true})
+		if err != nil {
+			logrus.WithFields(logrus.Fields{internal.LOG_PATH: track.fullPath, internal.LOG_ERROR: err}).Warn(internal.LOG_CANNOT_READ_FILE)
+			track.TaggedTrack = trackUnknownTagReadError
+		} else {
+			defer tag.Close()
 
-		// Read tags.
-		// TODO: this is temporary, and so does not use official log field names
-		logrus.WithFields(logrus.Fields{
-			"fileSystemTrackName":   track.Name,
-			"fileSystemTrackNumber": track.TrackNumber,
-			"fileSystemArtistName":  track.ContainingAlbum.RecordingArtist.Name,
-			"fileSystemAlbumName":   track.ContainingAlbum.Name,
-			"metadataTrackName":     tag.Title(),
-			"metadataTrackNumber":   tag.GetTextFrame("TRCK").Text,
-			"metadataArtistName":    tag.Artist(),
-			"metadataAlbumName":     tag.Album(),
-		}).Info("track data")
+			// Read tags.
+			track.TaggedAlbum = tag.Album()
+			track.TaggedArtist = tag.Artist()
+			track.TaggedTitle = tag.Title()
+			rawTrackTag := tag.GetTextFrame("TRCK").Text
+			if track.TaggedTrack, err = strconv.Atoi(rawTrackTag); err != nil || strings.HasPrefix(rawTrackTag, "-") {
+				logrus.WithFields(logrus.Fields{"trackTag": rawTrackTag, internal.LOG_ERROR: err}).Warn("invalid track tag")
+				track.TaggedTrack = trackUnknownFormatError
+			}
+		}
 	}
 }
 
