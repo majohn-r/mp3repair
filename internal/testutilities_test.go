@@ -134,7 +134,7 @@ func TestPopulateTopDirForTesting(t *testing.T) {
 		t.Errorf("%s error creating directory %q: %v", fnName, forceEarlyErrorDirName, err)
 	}
 	artistDirName := CreateArtistNameForTesting(0)
-	if err := createFileForTesting(forceEarlyErrorDirName, artistDirName); err != nil {
+	if err := CreateFileForTesting(forceEarlyErrorDirName, artistDirName); err != nil {
 		t.Errorf("%s error creating file %q: %v", fnName, artistDirName, err)
 	}
 
@@ -147,7 +147,7 @@ func TestPopulateTopDirForTesting(t *testing.T) {
 		t.Errorf("%s error creating test directory %q: %v", fnName, artistFileName, err)
 	}
 	albumFileName := CreateAlbumNameForTesting(0)
-	if err := createFileForTesting(artistFileName, albumFileName) ; err != nil {
+	if err := CreateFileForTesting(artistFileName, albumFileName) ; err != nil {
 		t.Errorf("%s error creating file %q: %v", fnName, albumFileName, err)
 	}
 
@@ -164,7 +164,7 @@ func TestPopulateTopDirForTesting(t *testing.T) {
 		t.Errorf("%s error creating test directory %q: %v", fnName, albumFileName, err)
 	}
 	trackName := CreateTrackNameForTesting(0)
-	if err := createFileForTesting(albumFileName, trackName) ; err != nil {
+	if err := CreateFileForTesting(albumFileName, trackName) ; err != nil {
 		t.Errorf("%s error creating track %q: %v", fnName, trackName, err)
 	}
 

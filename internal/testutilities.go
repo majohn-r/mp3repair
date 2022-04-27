@@ -73,7 +73,7 @@ func createAlbumDirForTesting(artistDir string, n int, tracks int) error {
 	}
 	fileNames = append(fileNames, "album cover.jpeg")
 	for _, fileName := range fileNames {
-		if err := createFileForTesting(albumDir, fileName); err != nil {
+		if err := CreateFileForTesting(albumDir, fileName); err != nil {
 			return err
 		}
 	}
@@ -107,12 +107,12 @@ func createArtistDirForTesting(topDir string, k int, withContent bool) error {
 				return err
 			}
 		}
-		return createFileForTesting(artistDir, "dummy file to be ignored.txt")
+		return CreateFileForTesting(artistDir, "dummy file to be ignored.txt")
 	}
 	return nil
 }
 
-func createFileForTesting(dir, name string) (err error) {
+func CreateFileForTesting(dir, name string) (err error) {
 	fileName := filepath.Join(dir, name)
 	_, err = os.Stat(fileName)
 	if err == nil {

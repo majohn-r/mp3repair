@@ -2,6 +2,10 @@ package files
 
 import (
 	"fmt"
+	"mp3/internal"
+	"os"
+	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -124,8 +128,10 @@ func Test_toTrackNumber(t *testing.T) {
 		wantErr bool
 	}{
 		{name: "good value", args: args{s: "12"}, wantI: 12, wantErr: false},
+		{name: "empty value", args: args{s: ""}, wantI: 0, wantErr: true},
 		{name: "negative value", args: args{s: "-12"}, wantI: 0, wantErr: true},
 		{name: "invalid value", args: args{s: "foo"}, wantI: 0, wantErr: true},
+		{name: "complicated value", args: args{s: "12/39"}, wantI: 12, wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -295,6 +301,7 @@ func TestTrack_readTags(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.tr.readTags(tt.args.reader)
+			waitForSemaphoresDrained()
 			if tt.tr.TaggedTrack != tt.wantNumber {
 				t.Errorf("track.readTags() tagged track = %d, want %d ", tt.tr.TaggedTrack, tt.wantNumber)
 			}
@@ -308,6 +315,377 @@ func TestTrack_readTags(t *testing.T) {
 				if tt.tr.TaggedTitle != tt.wantTitle {
 					t.Errorf("track.readTags() tagged title = %q, want %q", tt.tr.TaggedTitle, tt.wantTitle)
 				}
+			}
+		})
+	}
+}
+
+func Test_isIllegalRuneForFileNames(t *testing.T) {
+	type args struct {
+		r rune
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{name: "0", args: args{r: 0}, want: true},
+		{name: "1", args: args{r: 1}, want: true},
+		{name: "2", args: args{r: 2}, want: true},
+		{name: "3", args: args{r: 3}, want: true},
+		{name: "4", args: args{r: 4}, want: true},
+		{name: "5", args: args{r: 5}, want: true},
+		{name: "6", args: args{r: 6}, want: true},
+		{name: "7", args: args{r: 7}, want: true},
+		{name: "8", args: args{r: 8}, want: true},
+		{name: "9", args: args{r: 9}, want: true},
+		{name: "10", args: args{r: 10}, want: true},
+		{name: "11", args: args{r: 11}, want: true},
+		{name: "12", args: args{r: 12}, want: true},
+		{name: "13", args: args{r: 13}, want: true},
+		{name: "14", args: args{r: 14}, want: true},
+		{name: "15", args: args{r: 15}, want: true},
+		{name: "16", args: args{r: 16}, want: true},
+		{name: "17", args: args{r: 17}, want: true},
+		{name: "18", args: args{r: 18}, want: true},
+		{name: "19", args: args{r: 19}, want: true},
+		{name: "20", args: args{r: 20}, want: true},
+		{name: "21", args: args{r: 21}, want: true},
+		{name: "22", args: args{r: 22}, want: true},
+		{name: "23", args: args{r: 23}, want: true},
+		{name: "24", args: args{r: 24}, want: true},
+		{name: "25", args: args{r: 25}, want: true},
+		{name: "26", args: args{r: 26}, want: true},
+		{name: "27", args: args{r: 27}, want: true},
+		{name: "28", args: args{r: 28}, want: true},
+		{name: "29", args: args{r: 29}, want: true},
+		{name: "30", args: args{r: 30}, want: true},
+		{name: "31", args: args{r: 31}, want: true},
+		{name: "<", args: args{r: '<'}, want: true},
+		{name: ">", args: args{r: '>'}, want: true},
+		{name: ":", args: args{r: ':'}, want: true},
+		{name: "\"", args: args{r: '"'}, want: true},
+		{name: "/", args: args{r: '/'}, want: true},
+		{name: "\\", args: args{r: '\\'}, want: true},
+		{name: "|", args: args{r: '|'}, want: true},
+		{name: "?", args: args{r: '?'}, want: true},
+		{name: "*", args: args{r: '*'}, want: true},
+		{name: "!", args: args{r: '!'}, want: false},
+		{name: "#", args: args{r: '#'}, want: false},
+		{name: "$", args: args{r: '$'}, want: false},
+		{name: "&", args: args{r: '&'}, want: false},
+		{name: "'", args: args{r: '\''}, want: false},
+		{name: "(", args: args{r: '('}, want: false},
+		{name: ")", args: args{r: ')'}, want: false},
+		{name: "+", args: args{r: '+'}, want: false},
+		{name: ",", args: args{r: ','}, want: false},
+		{name: "-", args: args{r: '-'}, want: false},
+		{name: ".", args: args{r: '.'}, want: false},
+		{name: "0", args: args{r: '0'}, want: false},
+		{name: "1", args: args{r: '1'}, want: false},
+		{name: "2", args: args{r: '2'}, want: false},
+		{name: "3", args: args{r: '3'}, want: false},
+		{name: "4", args: args{r: '4'}, want: false},
+		{name: "5", args: args{r: '5'}, want: false},
+		{name: "6", args: args{r: '6'}, want: false},
+		{name: "7", args: args{r: '7'}, want: false},
+		{name: "8", args: args{r: '8'}, want: false},
+		{name: "9", args: args{r: '9'}, want: false},
+		{name: ";", args: args{r: ';'}, want: false},
+		{name: "A", args: args{r: 'A'}, want: false},
+		{name: "B", args: args{r: 'B'}, want: false},
+		{name: "C", args: args{r: 'C'}, want: false},
+		{name: "D", args: args{r: 'D'}, want: false},
+		{name: "E", args: args{r: 'E'}, want: false},
+		{name: "F", args: args{r: 'F'}, want: false},
+		{name: "G", args: args{r: 'G'}, want: false},
+		{name: "H", args: args{r: 'H'}, want: false},
+		{name: "I", args: args{r: 'I'}, want: false},
+		{name: "J", args: args{r: 'J'}, want: false},
+		{name: "K", args: args{r: 'K'}, want: false},
+		{name: "L", args: args{r: 'L'}, want: false},
+		{name: "M", args: args{r: 'M'}, want: false},
+		{name: "N", args: args{r: 'N'}, want: false},
+		{name: "O", args: args{r: 'O'}, want: false},
+		{name: "P", args: args{r: 'P'}, want: false},
+		{name: "Q", args: args{r: 'Q'}, want: false},
+		{name: "R", args: args{r: 'R'}, want: false},
+		{name: "S", args: args{r: 'S'}, want: false},
+		{name: "T", args: args{r: 'T'}, want: false},
+		{name: "U", args: args{r: 'U'}, want: false},
+		{name: "V", args: args{r: 'V'}, want: false},
+		{name: "W", args: args{r: 'W'}, want: false},
+		{name: "X", args: args{r: 'X'}, want: false},
+		{name: "Y", args: args{r: 'Y'}, want: false},
+		{name: "Z", args: args{r: 'Z'}, want: false},
+		{name: "[", args: args{r: '['}, want: false},
+		{name: "]", args: args{r: ']'}, want: false},
+		{name: "_", args: args{r: '_'}, want: false},
+		{name: "a", args: args{r: 'a'}, want: false},
+		{name: "b", args: args{r: 'b'}, want: false},
+		{name: "c", args: args{r: 'c'}, want: false},
+		{name: "d", args: args{r: 'd'}, want: false},
+		{name: "e", args: args{r: 'e'}, want: false},
+		{name: "f", args: args{r: 'f'}, want: false},
+		{name: "g", args: args{r: 'g'}, want: false},
+		{name: "h", args: args{r: 'h'}, want: false},
+		{name: "i", args: args{r: 'i'}, want: false},
+		{name: "j", args: args{r: 'j'}, want: false},
+		{name: "k", args: args{r: 'k'}, want: false},
+		{name: "l", args: args{r: 'l'}, want: false},
+		{name: "m", args: args{r: 'm'}, want: false},
+		{name: "n", args: args{r: 'n'}, want: false},
+		{name: "o", args: args{r: 'o'}, want: false},
+		{name: "p", args: args{r: 'p'}, want: false},
+		{name: "q", args: args{r: 'q'}, want: false},
+		{name: "r", args: args{r: 'r'}, want: false},
+		{name: "s", args: args{r: 's'}, want: false},
+		{name: "space", args: args{r: ' '}, want: false},
+		{name: "t", args: args{r: 't'}, want: false},
+		{name: "u", args: args{r: 'u'}, want: false},
+		{name: "v", args: args{r: 'v'}, want: false},
+		{name: "w", args: args{r: 'w'}, want: false},
+		{name: "x", args: args{r: 'x'}, want: false},
+		{name: "y", args: args{r: 'y'}, want: false},
+		{name: "z", args: args{r: 'z'}, want: false},
+		{name: "Á", args: args{r: 'Á'}, want: false},
+		{name: "È", args: args{r: 'È'}, want: false},
+		{name: "É", args: args{r: 'É'}, want: false},
+		{name: "Ô", args: args{r: 'Ô'}, want: false},
+		{name: "à", args: args{r: 'à'}, want: false},
+		{name: "á", args: args{r: 'á'}, want: false},
+		{name: "ã", args: args{r: 'ã'}, want: false},
+		{name: "ä", args: args{r: 'ä'}, want: false},
+		{name: "å", args: args{r: 'å'}, want: false},
+		{name: "ç", args: args{r: 'ç'}, want: false},
+		{name: "è", args: args{r: 'è'}, want: false},
+		{name: "é", args: args{r: 'é'}, want: false},
+		{name: "ê", args: args{r: 'ê'}, want: false},
+		{name: "ë", args: args{r: 'ë'}, want: false},
+		{name: "í", args: args{r: 'í'}, want: false},
+		{name: "î", args: args{r: 'î'}, want: false},
+		{name: "ï", args: args{r: 'ï'}, want: false},
+		{name: "ñ", args: args{r: 'ñ'}, want: false},
+		{name: "ò", args: args{r: 'ò'}, want: false},
+		{name: "ó", args: args{r: 'ó'}, want: false},
+		{name: "ô", args: args{r: 'ô'}, want: false},
+		{name: "ö", args: args{r: 'ö'}, want: false},
+		{name: "ø", args: args{r: 'ø'}, want: false},
+		{name: "ù", args: args{r: 'ù'}, want: false},
+		{name: "ú", args: args{r: 'ú'}, want: false},
+		{name: "ü", args: args{r: 'ü'}, want: false},
+		{name: "ř", args: args{r: 'ř'}, want: false},
+		{name: "…", args: args{r: '…'}, want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isIllegalRuneForFileNames(tt.args.r); got != tt.want {
+				t.Errorf("isIllegalRuneForFileNames() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_isComparable(t *testing.T) {
+	type args struct {
+		p nameTagPair
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{name: "simple case", args: args{nameTagPair{name: "simple name", tag: "simple name"}}, want: true},
+		{name: "case insensitive", args: args{nameTagPair{name: "SIMPLE name", tag: "simple NAME"}}, want: true},
+		{name: "expected fail", args: args{nameTagPair{name: "simple name", tag: "artist: simple name"}}, want: false},
+		{name: "illegal char case", args: args{nameTagPair{name: "simple_name", tag: "simple:name"}}, want: true},
+		{name: "illegal final space", args: args{nameTagPair{name: "simple name", tag: "simple name "}}, want: true},
+		{name: "illegal final period", args: args{nameTagPair{name: "simple name", tag: "simple name."}}, want: true},
+		{name: "complex fail", args: args{nameTagPair{name: "simple_name", tag: "simple: nam"}}, want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isComparable(tt.args.p); got != tt.want {
+				t.Errorf("isComparable() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTrack_FindDifferences(t *testing.T) {
+	tests := []struct {
+		name string
+		tr   *Track
+		want string
+	}{
+		{
+			name: "typical use case",
+			tr: &Track{
+				TrackNumber:     1,
+				Name:            "track name",
+				ContainingAlbum: &Album{Name: "album name", RecordingArtist: &Artist{Name: "artist name"}},
+				TaggedTrack:     1,
+				TaggedTitle:     "track name",
+				TaggedAlbum:     "album name",
+				TaggedArtist:    "artist name",
+			},
+			want: "",
+		},
+		{
+			name: "another OK use case",
+			tr: &Track{
+				TrackNumber:     1,
+				Name:            "track name",
+				ContainingAlbum: &Album{Name: "album name", RecordingArtist: &Artist{Name: "artist name"}},
+				TaggedTrack:     1,
+				TaggedTitle:     "track:name",
+				TaggedAlbum:     "album:name",
+				TaggedArtist:    "artist:name",
+			},
+			want: "",
+		},
+		{
+			name: "oops",
+			tr: &Track{
+				TrackNumber:     2,
+				Name:            "track:name",
+				ContainingAlbum: &Album{Name: "album:name", RecordingArtist: &Artist{Name: "artist:name"}},
+				TaggedTrack:     1,
+				TaggedTitle:     "track name",
+				TaggedAlbum:     "album name",
+				TaggedArtist:    "artist name",
+			},
+			want: strings.Join([]string{
+				"album \"album:name\" does not agree with album tag \"album name\"",
+				"artist \"artist:name\" does not agree with artist tag \"artist name\"",
+				"title \"track:name\" does not agree with title tag \"track name\"",
+				"track number 2 does not agree with track tag 1",
+			}, "\n"),
+		},
+		{name: "unread tags", tr: &Track{TaggedTrack: trackUnknownTagsNotRead}, want: trackDiffUnreadTags},
+		{name: "unreadable tags", tr: &Track{TaggedTrack: trackUnknownTagReadError}, want: trackDiffUnreadableTags},
+		{name: "garbage tags", tr: &Track{TaggedTrack: trackUnknownFormatError}, want: trackDiffBadTags},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.tr.FindDifferences(); got != tt.want {
+				t.Errorf("Track.FindDifferences() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestUpdateTracks(t *testing.T) {
+	// 500 artists, 20 albums each, 50 tracks apiece ... total: 500,000 tracks
+	var artists []*Artist
+	for k := 0; k < 500; k++ {
+		artist := &Artist{
+			Name:   fmt.Sprintf("artist %d", k),
+			Albums: make([]*Album, 0),
+		}
+		artists = append(artists, artist)
+		for m := 0; m < 20; m++ {
+			album := &Album{
+				Name:            fmt.Sprintf("album %d-%d", k, m),
+				Tracks:          make([]*Track, 0),
+				RecordingArtist: artist,
+			}
+			artist.Albums = append(artist.Albums, album)
+			for n := 0; n < 50; n++ {
+				track := &Track{
+					Name:            fmt.Sprintf("track %d-%d-%d", k, m, n),
+					TaggedTrack:     trackUnknownTagsNotRead,
+					ContainingAlbum: album,
+				}
+				album.Tracks = append(album.Tracks, track)
+			}
+		}
+	}
+	normalReader := func(path string) (*taggedTrackData, error) {
+		return &taggedTrackData{
+			album:  "beautiful album",
+			artist: "great artist",
+			title:  "terrific track",
+			number: "1",
+		}, nil
+	}
+	type args struct {
+		artists []*Artist
+		reader  func(string) (*taggedTrackData, error)
+	}
+	tests := []struct {
+		name string
+		args args
+	}{
+		{name: "big test", args: args{artists: artists, reader: normalReader}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			UpdateTracks(tt.args.artists, tt.args.reader)
+			for _, artist := range tt.args.artists {
+				for _, album := range artist.Albums {
+					for _, track := range album.Tracks {
+						if track.TaggedTrack != 1 {
+							t.Errorf("UpdateTracks() %q track = %d", track.Name, track.TaggedTrack)
+						}
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestRawReadTags(t *testing.T) {
+	if err := internal.CreateFileForTesting(".", "goodFile.mp3"); err != nil {
+		t.Errorf("failed to create ./goodFile.mp3")
+	}
+	defer func() {
+		if err := os.Remove("./goodFile.mp3"); err != nil {
+			t.Errorf("failed to delete ./goodFile.mp3")
+		}
+	}()
+	type args struct {
+		path string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		wantD   *taggedTrackData
+		wantErr bool
+	}{
+		{name: "bad test", args: args{path: "./noSuchFile!.mp3"}, wantD: nil, wantErr: true},
+		{name: "good test", args: args{path: "./goodFile.mp3"}, wantD: &taggedTrackData{}, wantErr: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotD, err := RawReadTags(tt.args.path)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("RawReadTags() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if err == nil && !reflect.DeepEqual(gotD, tt.wantD) {
+				t.Errorf("RawReadTags() = %v, want %v", gotD, tt.wantD)
+			}
+		})
+	}
+}
+
+func Test_removeLeadingBOMs(t *testing.T) {
+	type args struct {
+		s string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{name: "normal string", args: args{s:"normal"}, want: "normal"},
+		{name: "abnormal string", args: args{s:"\ufeff\ufeffnormal"}, want: "normal"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := removeLeadingBOMs(tt.args.s); got != tt.want {
+				t.Errorf("removeLeadingBOMs() = %v, want %v", got, tt.want)
 			}
 		})
 	}

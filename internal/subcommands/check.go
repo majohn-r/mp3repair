@@ -65,6 +65,7 @@ func (c *check) runSubcommand(w io.Writer, s *files.Search) {
 		artists := c.performEmptyFolderAnalysis(w, s)
 		artists = c.filterArtists(s, artists)
 		c.performGapAnalysis(w, artists)
+		c.performIntegrityCheck(w, artists)
 	}
 }
 
@@ -111,6 +112,22 @@ func (c *check) performEmptyFolderAnalysis(w io.Writer, s *files.Search) (artist
 		}
 	}
 	return
+}
+
+func (c *check) performIntegrityCheck(w io.Writer, artists []*files.Artist) {
+	if *c.checkIntegrity {
+		files.UpdateTracks(artists, files.RawReadTags)
+		for _, artist := range artists {
+			for _, album := range artist.Albums{
+				for _, track := range album.Tracks {
+					differences := track.FindDifferences()
+					if len(differences) > 0 {
+						fmt.Fprintf(w, "%q: %q: %q\n%s\n\n", artist.Name, album.Name, track.Name, differences)
+					}
+				}
+			}
+		}
+	}
 }
 
 func (c *check) performGapAnalysis(w io.Writer, artists []*files.Artist) {
