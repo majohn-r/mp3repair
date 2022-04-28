@@ -112,15 +112,19 @@ func createArtistDirForTesting(topDir string, k int, withContent bool) error {
 	return nil
 }
 
-func CreateFileForTesting(dir, name string) (err error) {
+func CreateFileForTestingWithContent(dir, name, content string) (err error) {
 	fileName := filepath.Join(dir, name)
 	_, err = os.Stat(fileName)
 	if err == nil {
 		err = fmt.Errorf("file %q already exists", fileName)
 	} else {
 		if errors.Is(err, os.ErrNotExist) {
-			err = os.WriteFile(fileName, []byte("file contents for "+name), 0644)
+			err = os.WriteFile(fileName, []byte(content), 0644)
 		}
 	}
 	return
+}
+
+func CreateFileForTesting(dir, name string) (err error) {
+	return CreateFileForTestingWithContent(dir, name, "file contents for "+name)
 }

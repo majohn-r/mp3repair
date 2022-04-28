@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"mp3/internal"
 	"mp3/internal/files"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
@@ -217,6 +218,61 @@ func Test_check_performGapAnalysis(t *testing.T) {
 			tt.c.performGapAnalysis(w, tt.args.artists)
 			if gotW := w.String(); gotW != tt.wantW {
 				t.Errorf("check.performGapAnalysis() = %v, want %v", gotW, tt.wantW)
+			}
+		})
+	}
+}
+
+func Test_check_performIntegrityCheck(t *testing.T) {
+	fnName := "check.performIntegrityCheck()"
+	// create some data to work with
+	topDirName := "integrity"
+	if err := internal.Mkdir(topDirName); err != nil {
+		t.Errorf("cannot create %q: %v", topDirName, err)
+	}
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, topDirName)
+	}()
+	// keep it simple: one artist, one album, one track
+	artistPath := filepath.Join(topDirName, "artist")
+	if err := internal.Mkdir(artistPath); err != nil {
+		t.Errorf("error creating artist folder")
+	}
+	albumPath := filepath.Join(artistPath, "album")
+	if err := internal.Mkdir(albumPath); err != nil {
+		t.Errorf("error creating album folder")
+	}
+	if err := internal.CreateFileForTestingWithContent(albumPath, "01 track.mp3", ""); err != nil {
+		t.Errorf("error creating track")
+	}
+	s := files.CreateSearchForTesting(topDirName)
+	type args struct {
+		artists []*files.Artist
+	}
+	tests := []struct {
+		name  string
+		c     *check
+		args  args
+		wantW string
+	}{
+		{name: "degenerate case", c: &check{checkIntegrity: &fFlag}, args: args{}, wantW: ""},
+		{
+			name: "meaningful case",
+			c:    &check{checkIntegrity: &tFlag},
+			args: args{artists: s.LoadUnfilteredData()},
+			wantW: strings.Join([]string{
+				"\"artist\": \"album\": \"track\"",
+				"cannot determine differences, tags were not recognized",
+				"",
+				""}, "\n"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := &bytes.Buffer{}
+			tt.c.performIntegrityCheck(w, tt.args.artists)
+			if gotW := w.String(); gotW != tt.wantW {
+				t.Errorf("%s = %v, want %v", fnName, gotW, tt.wantW)
 			}
 		})
 	}
