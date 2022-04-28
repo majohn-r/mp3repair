@@ -26,7 +26,12 @@ const (
 func (r *repair) name() string {
 	return r.n
 }
+
 func newRepair(fSet *flag.FlagSet) CommandProcessor {
+	return newRepairSubCommand(fSet)
+}
+
+func newRepairSubCommand(fSet *flag.FlagSet) *repair {
 	return &repair{
 		n:      fSet.Name(),
 		target: fSet.String("target", defaultRepairType, fmt.Sprintf("either '%s' (make metadata agree with file system) or '%s' (make file system agree with metadata)", defaultRepairType, fsRepair)),

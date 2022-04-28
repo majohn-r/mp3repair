@@ -26,6 +26,10 @@ func (c *check) name() string {
 }
 
 func newCheck(fSet *flag.FlagSet) CommandProcessor {
+	return newCheckSubCommand(fSet)
+}
+
+func newCheckSubCommand(fSet *flag.FlagSet) *check {
 	return &check{
 		n:                         fSet.Name(),
 		checkEmptyFolders:         fSet.Bool("empty", false, "check for empty artist and album folders"),

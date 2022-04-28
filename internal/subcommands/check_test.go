@@ -2,6 +2,7 @@ package subcommands
 
 import (
 	"bytes"
+	"flag"
 	"mp3/internal"
 	"mp3/internal/files"
 	"path/filepath"
@@ -271,6 +272,65 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			w := &bytes.Buffer{}
 			tt.c.performIntegrityCheck(w, tt.args.artists)
+			if gotW := w.String(); gotW != tt.wantW {
+				t.Errorf("%s = %v, want %v", fnName, gotW, tt.wantW)
+			}
+		})
+	}
+}
+
+func Test_check_Exec(t *testing.T) {
+	topDirName := "checkExec"
+	if err := internal.Mkdir(topDirName); err != nil {
+		t.Errorf("error creating directory %q", topDirName)
+	}
+	fnName := "check.Exec()"
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, topDirName)
+	}()
+	if err := internal.PopulateTopDirForTesting(topDirName); err != nil {
+		t.Errorf("error populating directory %q", topDirName)
+	}
+	type args struct {
+		args []string
+	}
+	tests := []struct {
+		name  string
+		c     *check
+		args  args
+		wantW string
+	}{
+		{
+			name:  "do nothing",
+			c:     newCheckSubCommand(flag.NewFlagSet("check", flag.ContinueOnError)),
+			args:  args{[]string{"-topDir", topDirName, "-empty=false", "-gaps=false", "-integrity=false"}},
+			wantW: "",
+		},
+		{
+			name: "do something",
+			c:    newCheckSubCommand(flag.NewFlagSet("check", flag.ContinueOnError)),
+			args: args{[]string{"-topDir", topDirName, "-empty=true", "-gaps=false", "-integrity=false"}},
+			wantW: strings.Join([]string{
+				"Empty Folder Analysis",
+				"Artist \"Test Artist 0\" album \"Test Album 999\": no tracks found",
+				"Artist \"Test Artist 1\" album \"Test Album 999\": no tracks found",
+				"Artist \"Test Artist 2\" album \"Test Album 999\": no tracks found",
+				"Artist \"Test Artist 3\" album \"Test Album 999\": no tracks found",
+				"Artist \"Test Artist 4\" album \"Test Album 999\": no tracks found",
+				"Artist \"Test Artist 5\" album \"Test Album 999\": no tracks found",
+				"Artist \"Test Artist 6\" album \"Test Album 999\": no tracks found",
+				"Artist \"Test Artist 7\" album \"Test Album 999\": no tracks found",
+				"Artist \"Test Artist 8\" album \"Test Album 999\": no tracks found",
+				"Artist \"Test Artist 9\" album \"Test Album 999\": no tracks found",
+				"Artist \"Test Artist 999\": no albums found",
+				"",
+			}, "\n"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := &bytes.Buffer{}
+			tt.c.Exec(w, tt.args.args)
 			if gotW := w.String(); gotW != tt.wantW {
 				t.Errorf("%s = %v, want %v", fnName, gotW, tt.wantW)
 			}
