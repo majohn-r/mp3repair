@@ -199,9 +199,11 @@ func isIllegalRuneForFileNames(r rune) bool {
 	}
 }
 
+var stdFrames = []string{"TALB", "TIT2", "TPE1", "TRCK"} // album, title, artist, track, in that order
+
 func RawReadTags(path string) (d *taggedTrackData, err error) {
 	var tag *id3v2.Tag
-	if tag, err = id3v2.Open(path, id3v2.Options{Parse: true}); err != nil {
+	if tag, err = id3v2.Open(path, id3v2.Options{Parse: true, ParseFrames: stdFrames}); err != nil {
 		return
 	}
 	defer tag.Close()
