@@ -13,9 +13,10 @@ import (
 	"github.com/utahta/go-cronowriter"
 )
 
+// these variables' value are injected by the mage build
 var (
-	version string
-	creation string
+	version  string // semantic version; read by the mage build from version.txt
+	creation string // build timestamp in RFC3339 format (2006-01-02T15:04:05Z07:00)
 )
 
 func main() {
@@ -45,7 +46,7 @@ func run(cmdlineArgs []string) (returnValue int) {
 	logrus.WithFields(logrus.Fields{"version": version, "created": creation}).Info("begin execution")
 	defer func() {
 		logrus.WithFields(logrus.Fields{"duration": time.Since(startTime)}).Info("end execution")
-	} ()
+	}()
 	if cmd, args, err := subcommands.ProcessCommand(cmdlineArgs); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		logrus.Error(err)
