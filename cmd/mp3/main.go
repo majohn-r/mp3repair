@@ -2,29 +2,58 @@ package main
 
 import (
 	"fmt"
+	"io"
 	"mp3/internal"
 	"mp3/internal/subcommands"
 	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/sirupsen/logrus"
 	"github.com/utahta/go-cronowriter"
+)
+
+var (
+	version string
+	creation string
 )
 
 func main() {
 	returnValue := 1
 	if initEnv(internal.LookupEnvVars) {
 		if initLogging(internal.TmpFolder) {
-			if cmd, args, err := subcommands.ProcessCommand(os.Args); err != nil {
-				fmt.Fprintln(os.Stderr, err)
-				logrus.Error(err)
-			} else {
-				cmd.Exec(os.Stdout, args)
-				returnValue = 0
-			}
+			returnValue = run(os.Args)
 		}
 	}
+	report(os.Stderr, returnValue)
 	os.Exit(returnValue)
+}
+
+const (
+	statusFormat = "mp3 version %s, created at %s, failed\n"
+)
+
+func report(w io.Writer, returnValue int) {
+	if returnValue != 0 {
+		fmt.Fprintf(w, statusFormat, version, creation)
+	}
+}
+
+func run(cmdlineArgs []string) (returnValue int) {
+	returnValue = 1
+	startTime := time.Now()
+	logrus.WithFields(logrus.Fields{"version": version, "created": creation}).Info("begin execution")
+	defer func() {
+		logrus.WithFields(logrus.Fields{"duration": time.Since(startTime)}).Info("end execution")
+	} ()
+	if cmd, args, err := subcommands.ProcessCommand(cmdlineArgs); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		logrus.Error(err)
+	} else {
+		cmd.Exec(os.Stdout, args)
+		returnValue = 0
+	}
+	return
 }
 
 func initEnv(lookup func() []error) bool {
