@@ -13,7 +13,7 @@ import (
 	"github.com/utahta/go-cronowriter"
 )
 
-// these variables' value are injected by the mage build
+// these variables' values are injected by the mage build
 var (
 	version  string // semantic version; read by the mage build from version.txt
 	creation string // build timestamp in RFC3339 format (2006-01-02T15:04:05Z07:00)
