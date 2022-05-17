@@ -7,6 +7,7 @@ import (
 	"io"
 	"mp3/internal"
 	"sort"
+	"strings"
 )
 
 type CommandProcessor interface {
@@ -69,6 +70,12 @@ func selectSubCommand(i []subcommandInitializer, args []string) (cmd CommandProc
 		return
 	}
 	commandName := args[1]
+	if strings.HasPrefix(commandName, "-") {
+		// [#38] - use the default subcommand and pass in args[1:]
+		cmd = processorMap[defaultInitializerName]
+		callingArgs = args[1:]
+		return
+	}
 	cmd, found := processorMap[commandName]
 	if !found {
 		cmd = nil

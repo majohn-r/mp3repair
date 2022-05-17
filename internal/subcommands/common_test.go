@@ -49,6 +49,12 @@ func TestProcessCommand(t *testing.T) {
 			wantCallingArgs: nil,
 			wantErr:         noSuchSubcommandError("no such command", []string{"check", "ls", "repair"}),
 		},
+		{
+			name:            "[#38] pass arguments to default subcommand",
+			args:            args{args: []string{"mp3.exe", "-album", "-artist", "-track"}},
+			wantCmd:         newLs(flag.NewFlagSet("ls", flag.ExitOnError)),
+			wantCallingArgs: []string{"-album", "-artist", "-track"},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
