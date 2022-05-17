@@ -33,11 +33,11 @@ func internalErrorIncorrectNumberOfDefaultSubcommands(defaultInitializers int) e
 	return fmt.Errorf(internal.LOG_TOO_MANY_DEFAULT_COMMANDS_DEFINED, defaultInitializers)
 }
 
-func ProcessCommand(args []string) (CommandProcessor, []string, error) {
+func ProcessCommand(appDataPath string, args []string) (CommandProcessor, []string, error) {
 	var initializers []subcommandInitializer
 	lsSubCommand := subcommandInitializer{name: "ls", defaultSubCommand: true, initializer: newLs}
-	checkSubCommand := subcommandInitializer{name: "check", defaultSubCommand: false, initializer: newCheck}
-	repairSubCommand := subcommandInitializer{name: "repair", defaultSubCommand: false, initializer: newRepair}
+	checkSubCommand := subcommandInitializer{name: "check", initializer: newCheck}
+	repairSubCommand := subcommandInitializer{name: "repair", initializer: newRepair}
 	initializers = append(initializers, lsSubCommand, checkSubCommand, repairSubCommand)
 	return selectSubCommand(initializers, args)
 }

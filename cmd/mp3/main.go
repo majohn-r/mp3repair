@@ -16,7 +16,7 @@ import (
 // these variables' values are injected by the mage build
 var (
 	// semantic version; read by the mage build from version.txt
-	version  string = "unknown version!"
+	version string = "unknown version!"
 	// build timestamp in RFC3339 format (2006-01-02T15:04:05Z07:00)
 	creation string
 )
@@ -49,7 +49,7 @@ func run(cmdlineArgs []string) (returnValue int) {
 	defer func() {
 		logrus.WithFields(logrus.Fields{"duration": time.Since(startTime)}).Info("end execution")
 	}()
-	if cmd, args, err := subcommands.ProcessCommand(cmdlineArgs); err != nil {
+	if cmd, args, err := subcommands.ProcessCommand(internal.AppDataPath, cmdlineArgs); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		logrus.Error(err)
 	} else {

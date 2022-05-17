@@ -9,7 +9,8 @@ import (
 func TestProcessCommand(t *testing.T) {
 	fnName := "ProcessCommand()"
 	type args struct {
-		args []string
+		appDataPath string
+		args        []string
 	}
 	tests := []struct {
 		name            string
@@ -20,45 +21,43 @@ func TestProcessCommand(t *testing.T) {
 	}{
 		{
 			name:            "call ls",
-			args:            args{args: []string{"mp3.exe", "ls", "-track=true"}},
+			args:            args{appDataPath: ".", args: []string{"mp3.exe", "ls", "-track=true"}},
 			wantCmd:         newLs(flag.NewFlagSet("ls", flag.ExitOnError)),
 			wantCallingArgs: []string{"-track=true"},
 		},
 		{
 			name:            "call check",
-			args:            args{args: []string{"mp3.exe", "check", "-integrity=false"}},
+			args:            args{appDataPath: ".", args: []string{"mp3.exe", "check", "-integrity=false"}},
 			wantCmd:         newCheck(flag.NewFlagSet("check", flag.ExitOnError)),
 			wantCallingArgs: []string{"-integrity=false"},
 		},
 		{
 			name:            "call repair",
-			args:            args{args: []string{"mp3.exe", "repair", "-target=metadata"}},
+			args:            args{appDataPath: ".", args: []string{"mp3.exe", "repair", "-target=metadata"}},
 			wantCmd:         newRepair(flag.NewFlagSet("repair", flag.ExitOnError)),
 			wantCallingArgs: []string{"-target=metadata"},
 		},
 		{
 			name:            "call default command",
-			args:            args{args: []string{"mp3.exe"}},
+			args:            args{appDataPath: ".", args: []string{"mp3.exe"}},
 			wantCmd:         newLs(flag.NewFlagSet("ls", flag.ExitOnError)),
 			wantCallingArgs: []string{"ls"},
 		},
 		{
-			name:            "call invalid command",
-			args:            args{args: []string{"mp3.exe", "no such command"}},
-			wantCmd:         nil,
-			wantCallingArgs: nil,
-			wantErr:         noSuchSubcommandError("no such command", []string{"check", "ls", "repair"}),
+			name:    "call invalid command",
+			args:    args{appDataPath: ".", args: []string{"mp3.exe", "no such command"}},
+			wantErr: noSuchSubcommandError("no such command", []string{"check", "ls", "repair"}),
 		},
 		{
 			name:            "[#38] pass arguments to default subcommand",
-			args:            args{args: []string{"mp3.exe", "-album", "-artist", "-track"}},
+			args:            args{appDataPath: ".", args: []string{"mp3.exe", "-album", "-artist", "-track"}},
 			wantCmd:         newLs(flag.NewFlagSet("ls", flag.ExitOnError)),
 			wantCallingArgs: []string{"-album", "-artist", "-track"},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotCmd, gotCallingArgs, gotErr := ProcessCommand(tt.args.args)
+			gotCmd, gotCallingArgs, gotErr := ProcessCommand(tt.args.appDataPath, tt.args.args)
 			if !equalErrors(gotErr, tt.wantErr) {
 				t.Errorf("%s gotErr = %v, want %v", fnName, gotErr, tt.wantErr)
 			}
@@ -105,10 +104,8 @@ func Test_selectSubCommand(t *testing.T) {
 	}{
 		// only handling error cases here, success cases are handled by TestProcessCommand
 		{
-			name: "no initializers",
-			args: args{
-				initializers: nil,
-			},
+			name:    "no initializers",
+			args:    args{},
 			wantErr: internalErrorNoSubCommandInitializers(),
 		},
 		{
