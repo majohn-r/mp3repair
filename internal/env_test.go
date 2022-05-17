@@ -14,14 +14,13 @@ func TestLookupEnvVars(t *testing.T) {
 		varSet   bool
 	}
 	var savedStates []envState
-	value, set := os.LookupEnv("TMP")
-	savedStates = append(savedStates, envState{varName: "TMP", varValue: value, varSet: set})
-	value, set = os.LookupEnv("TEMP")
-	savedStates = append(savedStates, envState{varName: "TEMP", varValue: value, varSet: set})
-	value, set = os.LookupEnv("HOMEPATH")
-	savedStates = append(savedStates, envState{varName: "HOMEPATH", varValue: value, varSet: set})
+	for _, name := range []string{"TMP", "TEMP", "HOMEPATH", "APPDATA"} {
+		value, set := os.LookupEnv(name)
+		savedStates = append(savedStates, envState{varName: name, varValue: value, varSet: set})
+	}
 	var savedTmpFolder = TmpFolder
 	var savedHomePath = HomePath
+	var savedAppDataPath = AppDataPath
 	defer func() {
 		for _, ss := range savedStates {
 			if ss.varSet {
@@ -32,13 +31,15 @@ func TestLookupEnvVars(t *testing.T) {
 		}
 		TmpFolder = savedTmpFolder
 		HomePath = savedHomePath
+		AppDataPath = savedAppDataPath
 	}()
 	tests := []struct {
-		name          string
-		envs          []envState
-		wantTmpFolder string
-		wantHomePath  string
-		wantErrors    []error
+		name            string
+		envs            []envState
+		wantTmpFolder   string
+		wantHomePath    string
+		wantAppDataPath string
+		wantErrors      []error
 	}{
 		{
 			name: "expected use case",
@@ -46,44 +47,69 @@ func TestLookupEnvVars(t *testing.T) {
 				{varName: "TMP", varValue: "/tmp", varSet: true},
 				{varName: "TEMP", varValue: "/tmp2", varSet: true},
 				{varName: "HOMEPATH", varValue: "/users/myUser", varSet: true},
+				{varName: "APPDATA", varValue: "/users/myUser/AppData/Roaming", varSet: true},
 			},
-			wantTmpFolder: "/tmp", wantHomePath: "/users/myUser", wantErrors: nil,
+			wantTmpFolder:   "/tmp",
+			wantHomePath:    "/users/myUser",
+			wantAppDataPath: "/users/myUser/AppData/Roaming",
 		},
 		{
 			name: "missing TMP",
 			envs: []envState{
-				{varName: "TMP", varValue: "", varSet: false},
+				{varName: "TMP"},
 				{varName: "TEMP", varValue: "/tmp2", varSet: true},
 				{varName: "HOMEPATH", varValue: "/users/myUser", varSet: true},
+				{varName: "APPDATA", varValue: "/users/myUser/AppData/Roaming", varSet: true},
 			},
-			wantTmpFolder: "/tmp2", wantHomePath: "/users/myUser", wantErrors: nil,
+			wantTmpFolder:   "/tmp2",
+			wantHomePath:    "/users/myUser",
+			wantAppDataPath: "/users/myUser/AppData/Roaming",
 		},
 		{
 			name: "missing TMP and TEMP",
 			envs: []envState{
-				{varName: "TMP", varValue: "", varSet: false},
-				{varName: "TEMP", varValue: "", varSet: false},
+				{varName: "TMP"},
+				{varName: "TEMP"},
 				{varName: "HOMEPATH", varValue: "/users/myUser", varSet: true},
+				{varName: "APPDATA", varValue: "/users/myUser/AppData/Roaming", varSet: true},
 			},
-			wantTmpFolder: "", wantHomePath: "/users/myUser", wantErrors: []error{noTempFolder},
+			wantHomePath:    "/users/myUser",
+			wantAppDataPath: "/users/myUser/AppData/Roaming",
+			wantErrors:      []error{noTempFolder},
 		},
 		{
 			name: "missing homepath",
 			envs: []envState{
 				{varName: "TMP", varValue: "/tmp", varSet: true},
 				{varName: "TEMP", varValue: "/tmp2", varSet: true},
-				{varName: "HOMEPATH", varValue: "", varSet: false},
+				{varName: "HOMEPATH"},
+				{varName: "APPDATA", varValue: "/users/myUser/AppData/Roaming", varSet: true},
 			},
-			wantTmpFolder: "/tmp", wantHomePath: "", wantErrors: []error{noHomePath},
+			wantTmpFolder:   "/tmp",
+			wantAppDataPath: "/users/myUser/AppData/Roaming",
+			wantErrors:      []error{noHomePath},
 		},
 		{
-			name: "missing both vars",
+			name: "missing appDataPath",
 			envs: []envState{
-				{varName: "TMP", varValue: "", varSet: false},
-				{varName: "TEMP", varValue: "", varSet: false},
-				{varName: "HOMEPATH", varValue: "", varSet: false},
+				{varName: "TMP", varValue: "/tmp", varSet: true},
+				{varName: "TEMP", varValue: "/tmp2", varSet: true},
+				{varName: "HOMEPATH", varValue: "/users/myUser", varSet: true},
+				{varName: "APPDATA"},
 			},
-			wantTmpFolder: "", wantHomePath: "", wantErrors: []error{noTempFolder, noHomePath},
+			wantTmpFolder: "/tmp",
+			wantHomePath:  "/users/myUser",
+			wantErrors:    []error{noAppDataPath},
+		},
+		{
+			name: "missing all vars",
+			envs: []envState{
+				{varName: "TMP"},
+				{varName: "TEMP"},
+				{varName: "HOMEPATH"},
+				{varName: "APPDATA"},
+			},
+			wantErrors: []error{noTempFolder, noHomePath, noAppDataPath},
 		},
 	}
 	for _, tt := range tests {
@@ -91,6 +117,7 @@ func TestLookupEnvVars(t *testing.T) {
 			// clear initial state
 			TmpFolder = ""
 			HomePath = ""
+			AppDataPath = ""
 			for _, env := range tt.envs {
 				if env.varSet {
 					os.Setenv(env.varName, env.varValue)
@@ -106,6 +133,9 @@ func TestLookupEnvVars(t *testing.T) {
 			}
 			if HomePath != tt.wantHomePath {
 				t.Errorf("%s HomePath = %v, want %v", fnName, HomePath, tt.wantHomePath)
+			}
+			if AppDataPath != tt.wantAppDataPath {
+				t.Errorf("%s AppDataPath = %v, want %v", fnName, AppDataPath, tt.wantAppDataPath)
 			}
 		})
 	}

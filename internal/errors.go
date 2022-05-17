@@ -3,6 +3,7 @@ package internal
 // for logging
 const (
 	LOG_ENV_ISSUES_DETECTED               string = "at least one required environment variable is not set"
+	LOG_NO_APP_DATA_PATH                  string = "environment: APPDATA is not defined"
 	LOG_NO_HOME_PATH                      string = "environment: HOMEPATH is not defined"
 	LOG_NO_TEMP_DIRECTORY                 string = "environment: neither TMP nor TEMP are defined"
 	LOG_NO_DEFAULT_COMMAND_DEFINED        string = "internal error: no subcommand initializers defined"

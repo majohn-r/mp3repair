@@ -6,10 +6,12 @@ import (
 )
 
 var (
-	HomePath     string
-	TmpFolder    string
-	noTempFolder error = fmt.Errorf(LOG_NO_TEMP_DIRECTORY)
-	noHomePath   error = fmt.Errorf(LOG_NO_HOME_PATH)
+	AppDataPath   string
+	HomePath      string
+	TmpFolder     string
+	noTempFolder  error = fmt.Errorf(LOG_NO_TEMP_DIRECTORY)
+	noHomePath    error = fmt.Errorf(LOG_NO_HOME_PATH)
+	noAppDataPath error = fmt.Errorf(LOG_NO_APP_DATA_PATH)
 )
 
 func LookupEnvVars() (errors []error) {
@@ -23,6 +25,9 @@ func LookupEnvVars() (errors []error) {
 	// get homepath
 	if HomePath, found = os.LookupEnv("HOMEPATH"); !found {
 		errors = append(errors, noHomePath)
+	}
+	if AppDataPath, found = os.LookupEnv("APPDATA"); !found {
+		errors = append(errors, noAppDataPath)
 	}
 	return
 }
