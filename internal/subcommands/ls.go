@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 type ls struct {
@@ -27,19 +28,43 @@ func (l *ls) name() string {
 	return l.n
 }
 
-func newLs(fSet *flag.FlagSet) CommandProcessor {
-	return newLsSubCommand(fSet)
+func newLs(v *viper.Viper, fSet *flag.FlagSet) CommandProcessor {
+	return newLsSubCommand(v, fSet)
 }
 
-func newLsSubCommand(fSet *flag.FlagSet) *ls {
+const (
+	includeAlbumsFlag       = "album"
+	defaultIncludeAlbums    = true
+	includeArtistsFlag      = "artist"
+	defaultIncludeArtists   = true
+	includeTracksFlag       = "track"
+	defaultIncludeTracks    = false
+	trackSortingFlag        = "sort"
+	defaultTrackSorting     = "numeric"
+	annotateListingsFlag    = "annotate"
+	defaultAnnotateListings = false
+)
+
+func newLsSubCommand(v *viper.Viper, fSet *flag.FlagSet) *ls {
+	subViper := internal.SafeSubViper(v, "ls")
 	return &ls{
-		n:                fSet.Name(),
-		includeAlbums:    fSet.Bool("album", true, "include album names in listing"),
-		includeArtists:   fSet.Bool("artist", true, "include artist names in listing"),
-		includeTracks:    fSet.Bool("track", false, "include track names in listing"),
-		trackSorting:     fSet.String("sort", "numeric", "track sorting, 'numeric' in track number order, or 'alpha' in track name order"),
-		annotateListings: fSet.Bool("annotate", false, "annotate listings with album and artist data"),
-		sf:               files.NewSearchFlags(fSet),
+		n: fSet.Name(),
+		includeAlbums: fSet.Bool(includeAlbumsFlag,
+			internal.GetBoolDefault(subViper, includeAlbumsFlag, defaultIncludeAlbums),
+			"include album names in listing"),
+		includeArtists: fSet.Bool(includeArtistsFlag,
+			internal.GetBoolDefault(subViper, includeArtistsFlag, defaultIncludeArtists),
+			"include artist names in listing"),
+		includeTracks: fSet.Bool(includeTracksFlag,
+			internal.GetBoolDefault(subViper, includeTracksFlag, defaultIncludeTracks),
+			"include track names in listing"),
+		trackSorting: fSet.String(trackSortingFlag,
+			internal.GetStringDefault(subViper, trackSortingFlag, defaultTrackSorting),
+			"track sorting, 'numeric' in track number order, or 'alpha' in track name order"),
+		annotateListings: fSet.Bool(annotateListingsFlag,
+			internal.GetBoolDefault(subViper, annotateListingsFlag, defaultAnnotateListings),
+			"annotate listings with album and artist data"),
+		sf: files.NewSearchFlags(v, fSet),
 	}
 }
 
@@ -73,7 +98,7 @@ func (l *ls) runSubcommand(w io.Writer, s *files.Search) {
 	} else {
 		logrus.WithFields(l.logFields()).Info(internal.LOG_EXECUTING_COMMAND)
 		if *l.includeTracks {
-			if l.validateTrackSorting(){
+			if l.validateTrackSorting() {
 				logrus.WithFields(l.logFields()).Info(internal.LOG_PARAMETERS_OVERRIDDEN)
 			}
 		}

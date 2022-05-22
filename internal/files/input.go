@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 type SearchFlags struct {
@@ -21,13 +22,30 @@ type SearchFlags struct {
 	artistRegex   *string
 }
 
-func NewSearchFlags(fSet *flag.FlagSet) *SearchFlags {
+const (
+	topDirectoryFlag  = "topDir"
+	fileExtensionFlag = "ext"
+	albumRegexFlag    = "albums"
+	artistRegexFlag   = "artists"
+	defaultRegex      = ".*"
+)
+
+func NewSearchFlags(v *viper.Viper, fSet *flag.FlagSet) *SearchFlags {
+	subViper := internal.SafeSubViper(v, "common")
 	return &SearchFlags{
 		f:             fSet,
-		topDirectory:  fSet.String("topDir", filepath.Join(internal.HomePath, "Music"), "top directory in which to look for music files"),
-		fileExtension: fSet.String("ext", DefaultFileExtension, "extension for music files"),
-		albumRegex:    fSet.String("albums", ".*", "regular expression of albums to select"),
-		artistRegex:   fSet.String("artists", ".*", "regular expression of artists to select"),
+		topDirectory:  fSet.String(topDirectoryFlag, 
+			internal.GetStringDefault(subViper, topDirectoryFlag, filepath.Join(internal.HomePath, "Music")),
+			"top directory in which to look for music files"),
+		fileExtension: fSet.String(fileExtensionFlag,
+			internal.GetStringDefault(subViper, fileExtensionFlag, DefaultFileExtension),
+			"extension for music files"),
+		albumRegex:    fSet.String(albumRegexFlag,
+			internal.GetStringDefault(subViper, albumRegexFlag, defaultRegex), 
+			"regular expression of albums to select"),
+		artistRegex:   fSet.String(artistRegexFlag,
+			internal.GetStringDefault(subViper, artistRegexFlag, defaultRegex),
+			"regular expression of artists to select"),
 	}
 }
 

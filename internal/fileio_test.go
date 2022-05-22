@@ -34,3 +34,25 @@ func TestMkdir(t *testing.T) {
 		})
 	}
 }
+
+func TestPlainFileExists(t *testing.T) {
+	type args struct {
+		path string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{name: "plain file", args: args{path: "fileio_test.go"}, want: true},
+		{name: "non-existent file", args: args{path: "no such file"}, want: false},
+		{name: "directory", args: args{path: "."}, want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := PlainFileExists(tt.args.path); got != tt.want {
+				t.Errorf("PlainFileExists() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

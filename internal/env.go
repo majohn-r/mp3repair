@@ -5,6 +5,8 @@ import (
 	"os"
 )
 
+const AppName = "mp3"
+
 var (
 	AppDataPath   string
 	HomePath      string

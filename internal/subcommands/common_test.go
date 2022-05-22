@@ -2,12 +2,21 @@ package subcommands
 
 import (
 	"flag"
+	"mp3/internal"
 	"reflect"
 	"testing"
+
+	"github.com/spf13/viper"
 )
 
 func TestProcessCommand(t *testing.T) {
+	if err := internal.CreateDefaultYamlFile(); err != nil {
+		t.Errorf("error creating defaults.yaml: %v", err)
+	}
 	fnName := "ProcessCommand()"
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, "./mp3")
+	}()
 	type args struct {
 		appDataPath string
 		args        []string
@@ -22,25 +31,25 @@ func TestProcessCommand(t *testing.T) {
 		{
 			name:            "call ls",
 			args:            args{appDataPath: ".", args: []string{"mp3.exe", "ls", "-track=true"}},
-			wantCmd:         newLs(flag.NewFlagSet("ls", flag.ExitOnError)),
+			wantCmd:         newLs(nil, flag.NewFlagSet("ls", flag.ExitOnError)),
 			wantCallingArgs: []string{"-track=true"},
 		},
 		{
 			name:            "call check",
 			args:            args{appDataPath: ".", args: []string{"mp3.exe", "check", "-integrity=false"}},
-			wantCmd:         newCheck(flag.NewFlagSet("check", flag.ExitOnError)),
+			wantCmd:         newCheck(nil, flag.NewFlagSet("check", flag.ExitOnError)),
 			wantCallingArgs: []string{"-integrity=false"},
 		},
 		{
 			name:            "call repair",
 			args:            args{appDataPath: ".", args: []string{"mp3.exe", "repair", "-target=metadata"}},
-			wantCmd:         newRepair(flag.NewFlagSet("repair", flag.ExitOnError)),
+			wantCmd:         newRepair(nil, flag.NewFlagSet("repair", flag.ExitOnError)),
 			wantCallingArgs: []string{"-target=metadata"},
 		},
 		{
 			name:            "call default command",
 			args:            args{appDataPath: ".", args: []string{"mp3.exe"}},
-			wantCmd:         newLs(flag.NewFlagSet("ls", flag.ExitOnError)),
+			wantCmd:         newLs(nil, flag.NewFlagSet("ls", flag.ExitOnError)),
 			wantCallingArgs: []string{"ls"},
 		},
 		{
@@ -51,7 +60,7 @@ func TestProcessCommand(t *testing.T) {
 		{
 			name:            "[#38] pass arguments to default subcommand",
 			args:            args{appDataPath: ".", args: []string{"mp3.exe", "-album", "-artist", "-track"}},
-			wantCmd:         newLs(flag.NewFlagSet("ls", flag.ExitOnError)),
+			wantCmd:         newLs(nil, flag.NewFlagSet("ls", flag.ExitOnError)),
 			wantCallingArgs: []string{"-album", "-artist", "-track"},
 		},
 	}
@@ -94,6 +103,7 @@ func equalErrors(gotErr error, wantErr error) bool {
 func Test_selectSubCommand(t *testing.T) {
 	fnName := "selectSubCommand()"
 	type args struct {
+		v            *viper.Viper
 		initializers []subcommandInitializer
 		args         []string
 	}
@@ -121,7 +131,7 @@ func Test_selectSubCommand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, _, gotErr := selectSubCommand(tt.args.initializers, tt.args.args)
+			_, _, gotErr := selectSubCommand(tt.args.v, tt.args.initializers, tt.args.args)
 			if !equalErrors(gotErr, tt.wantErr) {
 				t.Errorf("%s gotErr = %v, want %v", fnName, gotErr, tt.wantErr)
 			}

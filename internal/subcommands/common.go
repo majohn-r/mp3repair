@@ -6,8 +6,11 @@ import (
 	"fmt"
 	"io"
 	"mp3/internal"
+	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/spf13/viper"
 )
 
 type CommandProcessor interface {
@@ -18,7 +21,7 @@ type CommandProcessor interface {
 type subcommandInitializer struct {
 	name              string
 	defaultSubCommand bool
-	initializer       func(*flag.FlagSet) CommandProcessor
+	initializer       func(*viper.Viper, *flag.FlagSet) CommandProcessor
 }
 
 func noSuchSubcommandError(commandName string, validNames []string) error {
@@ -34,15 +37,20 @@ func internalErrorIncorrectNumberOfDefaultSubcommands(defaultInitializers int) e
 }
 
 func ProcessCommand(appDataPath string, args []string) (CommandProcessor, []string, error) {
+	configPath := filepath.Join(appDataPath, internal.AppName)
+	var v *viper.Viper
+	if internal.PlainFileExists(filepath.Join(configPath, internal.DefaultConfigFileName)) {
+		v = internal.ReadDefaultsYaml(configPath)
+	}
 	var initializers []subcommandInitializer
 	lsSubCommand := subcommandInitializer{name: "ls", defaultSubCommand: true, initializer: newLs}
 	checkSubCommand := subcommandInitializer{name: "check", initializer: newCheck}
 	repairSubCommand := subcommandInitializer{name: "repair", initializer: newRepair}
 	initializers = append(initializers, lsSubCommand, checkSubCommand, repairSubCommand)
-	return selectSubCommand(initializers, args)
+	return selectSubCommand(v, initializers, args)
 }
 
-func selectSubCommand(i []subcommandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, err error) {
+func selectSubCommand(v *viper.Viper, i []subcommandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, err error) {
 	if len(i) == 0 {
 		err = internalErrorNoSubCommandInitializers()
 		return
@@ -62,7 +70,7 @@ func selectSubCommand(i []subcommandInitializer, args []string) (cmd CommandProc
 	processorMap := make(map[string]CommandProcessor)
 	for _, subcommandInitializer := range i {
 		fSet := flag.NewFlagSet(subcommandInitializer.name, flag.ContinueOnError)
-		processorMap[subcommandInitializer.name] = subcommandInitializer.initializer(fSet)
+		processorMap[subcommandInitializer.name] = subcommandInitializer.initializer(v, fSet)
 	}
 	if len(args) < 2 {
 		cmd = processorMap[defaultInitializerName]

@@ -31,6 +31,7 @@ const (
 	LOG_DIRECTORY     string = "directory"
 	LOG_ERROR         string = "error"
 	LOG_EXTENSION     string = "extension"
+	LOG_FILE_NAME     string = "fileName"
 	LOG_FILTER        string = "filter"
 	LOG_FLAG          string = "flag"
 	LOG_PATH          string = "path"

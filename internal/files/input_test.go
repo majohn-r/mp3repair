@@ -3,9 +3,13 @@ package files
 import (
 	"bytes"
 	"flag"
+	"mp3/internal"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"testing"
+
+	"github.com/spf13/viper"
 )
 
 func TestFileFlags_processArgs(t *testing.T) {
@@ -58,20 +62,67 @@ func TestFileFlags_processArgs(t *testing.T) {
 }
 
 func Test_NewFileFlags(t *testing.T) {
+	oldHomePath := internal.HomePath
+	defer func() {
+		internal.HomePath = oldHomePath
+	}()
+	internal.HomePath = "."
 	fnName := "NewFileFlags()"
+	if err := internal.CreateDefaultYamlFile(); err != nil {
+		t.Errorf("error creating defaults.yaml: %v", err)
+	}
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, "./mp3")
+	}()
 	type args struct {
-		fSet *flag.FlagSet
+		v *viper.Viper
 	}
 	tests := []struct {
-		name string
-		args args
+		name            string
+		args            args
+		wantTopDir      string
+		wantExtension   string
+		wantAlbumRegex  string
+		wantArtistRegex string
 	}{
-		{name: "default", args: args{fSet: flag.NewFlagSet("test", flag.ContinueOnError)}},
+		{
+			name:            "default",
+			args:            args{},
+			wantTopDir:      filepath.Join(".", "Music"),
+			wantExtension:   ".mp3",
+			wantAlbumRegex:  ".*",
+			wantArtistRegex: ".*",
+		},
+		{
+			name:            "overrides",
+			args:            args{v: internal.ReadDefaultsYaml("./mp3")},
+			wantTopDir:      ".",
+			wantExtension:   ".mpeg",
+			wantAlbumRegex:  "^.*$",
+			wantArtistRegex: "^.*$",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewSearchFlags(tt.args.fSet); got == nil {
+			if got := NewSearchFlags(tt.args.v, flag.NewFlagSet("test", flag.ContinueOnError)); got == nil {
 				t.Errorf("%s = %v", fnName, got)
+			} else {
+				if err := got.f.Parse([]string{}); err != nil {
+					t.Errorf("%s error parsing flags: %v", fnName, err)
+				} else {
+					if *got.topDirectory != tt.wantTopDir {
+						t.Errorf("%s got top directory %q want %q", fnName, *got.topDirectory, tt.wantTopDir)
+					}
+					if *got.fileExtension != tt.wantExtension {
+						t.Errorf("%s got extension %q want %q", fnName, *got.fileExtension, tt.wantExtension)
+					}
+					if *got.albumRegex != tt.wantAlbumRegex {
+						t.Errorf("%s got album regex %q want %q", fnName, *got.albumRegex, tt.wantAlbumRegex)
+					}
+					if *got.artistRegex != tt.wantArtistRegex {
+						t.Errorf("%s got artist regex %q want %q", fnName, *got.artistRegex, tt.wantArtistRegex)
+					}
+				}			
 			}
 		})
 	}

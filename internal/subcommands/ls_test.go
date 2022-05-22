@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"mp3/internal"
 	"mp3/internal/files"
+	"os"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/spf13/viper"
 )
 
 func Test_ls_validateTrackSorting(t *testing.T) {
@@ -29,7 +32,7 @@ func Test_ls_validateTrackSorting(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fs := flag.NewFlagSet("ls", flag.ContinueOnError)
-			lsCommand := newLsSubCommand(fs)
+			lsCommand := newLsSubCommand(nil, fs)
 			lsCommand.trackSorting = &tt.sortingInput
 			lsCommand.includeAlbums = &tt.includeAlbums
 			lsCommand.validateTrackSorting()
@@ -195,26 +198,26 @@ func Test_ls_Exec(t *testing.T) {
 	}{
 		{
 			name:  "no output",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:     newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=false", "-track=false"}},
 			wantW: generateListing(false, false, false, false, false),
 		},
 		// tracks only
 		{
 			name:  "unannotated tracks only",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:     newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=false", "-track=true", "-annotate=false"}},
 			wantW: generateListing(false, false, true, false, false),
 		},
 		{
 			name:  "annotated tracks only",
-			l:     newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:     newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args:  args{[]string{"-topDir", topDir, "-album=false", "-artist=false", "-track=true", "-annotate=true"}},
 			wantW: generateListing(false, false, true, true, false),
 		},
 		{
 			name: "unannotated tracks only with numeric sorting",
-			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{[]string{
 				"-topDir", topDir,
 				"-album=false",
@@ -227,7 +230,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "annotated tracks only with numeric sorting",
-			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{[]string{
 				"-topDir", topDir,
 				"-album=false",
@@ -241,7 +244,7 @@ func Test_ls_Exec(t *testing.T) {
 		// albums only
 		{
 			name: "unannotated albums only",
-			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{[]string{
 				"-topDir", topDir,
 				"-album=true",
@@ -253,7 +256,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "annotated albums only",
-			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{[]string{
 				"-topDir", topDir,
 				"-album=true",
@@ -266,7 +269,7 @@ func Test_ls_Exec(t *testing.T) {
 		// artists only
 		{
 			name: "unannotated artists only",
-			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{[]string{
 				"-topDir", topDir,
 				"-album=false",
@@ -278,7 +281,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "annotated artists only",
-			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{[]string{
 				"-topDir", topDir,
 				"-album=false",
@@ -291,7 +294,7 @@ func Test_ls_Exec(t *testing.T) {
 		// albums and artists
 		{
 			name: "unannotated artists and albums only",
-			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{[]string{
 				"-topDir", topDir,
 				"-album=true",
@@ -303,7 +306,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "annotated artists and albums only",
-			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{[]string{
 				"-topDir", topDir,
 				"-album=true",
@@ -316,7 +319,7 @@ func Test_ls_Exec(t *testing.T) {
 		// albums and tracks
 		{
 			name: "unannotated albums and tracks with alpha sorting",
-			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{[]string{
 				"-topDir", topDir,
 				"-album=true",
@@ -329,7 +332,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "annotated albums and tracks with alpha sorting",
-			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{[]string{
 				"-topDir", topDir,
 				"-album=true",
@@ -342,7 +345,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "unannotated albums and tracks with numeric sorting",
-			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{[]string{
 				"-topDir", topDir,
 				"-album=true",
@@ -355,7 +358,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "annotated albums and tracks with numeric sorting",
-			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{[]string{
 				"-topDir", topDir,
 				"-album=true",
@@ -369,7 +372,7 @@ func Test_ls_Exec(t *testing.T) {
 		// artists and tracks
 		{
 			name: "unannotated artists and tracks with alpha sorting",
-			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{[]string{
 				"-topDir", topDir,
 				"-album=false",
@@ -382,7 +385,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "annotated artists and tracks with alpha sorting",
-			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{[]string{
 				"-topDir", topDir,
 				"-album=false",
@@ -395,7 +398,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "unannotated artists and tracks with numeric sorting",
-			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{[]string{
 				"-topDir", topDir,
 				"-album=false",
@@ -408,7 +411,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "annotated artists and tracks with numeric sorting",
-			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{[]string{
 				"-topDir", topDir,
 				"-album=false",
@@ -422,7 +425,7 @@ func Test_ls_Exec(t *testing.T) {
 		// albums, artists, and tracks
 		{
 			name: "unannotated artists, albums, and tracks with alpha sorting",
-			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{[]string{
 				"-topDir", topDir,
 				"-album=true",
@@ -435,7 +438,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "annotated artists, albums, and tracks with alpha sorting",
-			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{[]string{
 				"-topDir", topDir,
 				"-album=true",
@@ -448,7 +451,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "unannotated artists, albums, and tracks with numeric sorting",
-			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{[]string{
 				"-topDir", topDir,
 				"-album=true",
@@ -461,7 +464,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "annotated artists, albums, and tracks with numeric sorting",
-			l:    newLsSubCommand(flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsSubCommand(nil, flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{[]string{
 				"-topDir", topDir,
 				"-album=true",
@@ -479,6 +482,79 @@ func Test_ls_Exec(t *testing.T) {
 			tt.l.Exec(w, tt.args.args)
 			if gotW := w.String(); gotW != tt.wantW {
 				t.Errorf("%s = %v, want %v", fnName, gotW, tt.wantW)
+			}
+		})
+	}
+}
+
+func Test_newLsSubCommand(t *testing.T) {
+	topDir := "loadTest"
+	fnName := "newLsSubCommand()"
+	if err := internal.Mkdir(topDir); err != nil {
+		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
+	}
+	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
+		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
+	}
+	if err := internal.CreateDefaultYamlFile(); err != nil {
+		t.Errorf("error creating defaults.yaml: %v", err)
+	}
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, topDir)
+		internal.DestroyDirectoryForTesting(fnName, "./mp3")
+	}()
+	type args struct {
+		v    *viper.Viper
+	}
+	tests := []struct {
+		name                 string
+		args                 args
+		wantIncludeAlbums    bool
+		wantIncludeArtists   bool
+		wantIncludeTracks    bool
+		wantTrackSorting     string
+		wantAnnotateListings bool
+	}{
+		{
+			name:                 "ordinary defaults",
+			args:                 args{v: nil},
+			wantIncludeAlbums:    true,
+			wantIncludeArtists:   true,
+			wantIncludeTracks:    false,
+			wantTrackSorting:     "numeric",
+			wantAnnotateListings: false,
+		},
+		{
+			name:                 "overridden defaults",
+			args:                 args{v: internal.ReadDefaultsYaml("./mp3")},
+			wantIncludeAlbums:    false,
+			wantIncludeArtists:   false,
+			wantIncludeTracks:    true,
+			wantTrackSorting:     "alpha",
+			wantAnnotateListings: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ls := newLsSubCommand(tt.args.v, flag.NewFlagSet("ls", flag.ContinueOnError))
+			if s := ls.sf.ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-ext", ".mp3"}); s != nil {
+				if *ls.includeAlbums != tt.wantIncludeAlbums {
+					t.Errorf("%s %s: got includeAlbums %t want %t", fnName, tt.name, *ls.includeAlbums, tt.wantIncludeAlbums)
+				}
+				if *ls.includeArtists != tt.wantIncludeArtists {
+					t.Errorf("%s %s: got includeArtists %t want %t", fnName, tt.name, *ls.includeArtists, tt.wantIncludeArtists)
+				}
+				if *ls.includeTracks != tt.wantIncludeTracks {
+					t.Errorf("%s %s: got includeTracks %t want %t", fnName, tt.name, *ls.includeTracks, tt.wantIncludeTracks)
+				}
+				if *ls.annotateListings != tt.wantAnnotateListings {
+					t.Errorf("%s %s: got annotateListings %t want %t", fnName, tt.name, *ls.annotateListings, tt.wantAnnotateListings)
+				}
+				if *ls.trackSorting != tt.wantTrackSorting {
+					t.Errorf("%s %s: got trackSorting %q want %q", fnName, tt.name, *ls.trackSorting, tt.wantTrackSorting)
+				}
+			} else {
+				t.Errorf("%s %s: error processing arguments", fnName, tt.name)
 			}
 		})
 	}

@@ -128,3 +128,29 @@ func CreateFileForTestingWithContent(dir, name, content string) (err error) {
 func CreateFileForTesting(dir, name string) (err error) {
 	return CreateFileForTestingWithContent(dir, name, "file contents for "+name)
 }
+
+func CreateDefaultYamlFile() error {
+	path := "./mp3"
+	if err := Mkdir(path); err != nil {
+		return err
+	}
+	return CreateFileForTestingWithContent(path, DefaultConfigFileName,
+		`---
+common:
+    topDir: .      # $HOMEPATH/Music
+    ext: .mpeg     # .mp3
+    albums: ^.*$   # .*
+    artists: ^.*$  # .* 
+ls:
+    album: false   # true
+    artist: false  # true
+    track: true    # false
+    sort: alpha    # numeric
+    annotate: true # false
+check:
+    empty: true      # false
+    gaps: true       # false
+    integrity: false # true
+repair:
+    dryRun: true # false`)
+}

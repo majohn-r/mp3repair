@@ -94,7 +94,7 @@ func TestSearch_FilterArtists(t *testing.T) {
 		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
 	}
 	realFlagSet := flag.NewFlagSet("real", flag.ContinueOnError)
-	realS := NewSearchFlags(realFlagSet).ProcessArgs(os.Stdout, []string{"-topDir", topDir})
+	realS := NewSearchFlags(nil, realFlagSet).ProcessArgs(os.Stdout, []string{"-topDir", topDir})
 	type args struct {
 		unfilteredArtists []*Artist
 	}

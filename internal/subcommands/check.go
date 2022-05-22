@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 type check struct {
@@ -25,17 +26,33 @@ func (c *check) name() string {
 	return c.n
 }
 
-func newCheck(fSet *flag.FlagSet) CommandProcessor {
-	return newCheckSubCommand(fSet)
+func newCheck(v *viper.Viper, fSet *flag.FlagSet) CommandProcessor {
+	return newCheckSubCommand(v, fSet)
 }
 
-func newCheckSubCommand(fSet *flag.FlagSet) *check {
+const (
+	emptyFoldersFlag            = "empty"
+	defaultEmptyFolders         = false
+	gapsInTrackNumberingFlag    = "gaps"
+	defaultGapsInTrackNumbering = false
+	integrityFlag               = "integrity"
+	defaultIntegrity            = true
+)
+
+func newCheckSubCommand(v *viper.Viper, fSet *flag.FlagSet) *check {
+	subViper := internal.SafeSubViper(v, "check")
 	return &check{
-		n:                         fSet.Name(),
-		checkEmptyFolders:         fSet.Bool("empty", false, "check for empty artist and album folders"),
-		checkGapsInTrackNumbering: fSet.Bool("gaps", false, "check for gaps in track numbers"),
-		checkIntegrity:            fSet.Bool("integrity", true, "check for disagreement between the file system and audio file metadata"),
-		sf:                        files.NewSearchFlags(fSet),
+		n: fSet.Name(),
+		checkEmptyFolders: fSet.Bool(emptyFoldersFlag,
+			internal.GetBoolDefault(subViper, emptyFoldersFlag, defaultEmptyFolders),
+			"check for empty artist and album folders"),
+		checkGapsInTrackNumbering: fSet.Bool(gapsInTrackNumberingFlag,
+			internal.GetBoolDefault(subViper, gapsInTrackNumberingFlag, defaultGapsInTrackNumbering),
+			"check for gaps in track numbers"),
+		checkIntegrity: fSet.Bool(integrityFlag,
+			internal.GetBoolDefault(subViper, integrityFlag, defaultIntegrity),
+			"check for disagreement between the file system and audio file metadata"),
+		sf: files.NewSearchFlags(v, fSet),
 	}
 }
 
@@ -122,7 +139,7 @@ func (c *check) performIntegrityCheck(w io.Writer, artists []*files.Artist) {
 	if *c.checkIntegrity {
 		files.UpdateTracks(artists, files.RawReadTags)
 		for _, artist := range artists {
-			for _, album := range artist.Albums{
+			for _, album := range artist.Albums {
 				for _, track := range album.Tracks {
 					differences := track.FindDifferences()
 					if len(differences) > 0 {

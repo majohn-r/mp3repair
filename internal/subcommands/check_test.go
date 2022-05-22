@@ -5,10 +5,13 @@ import (
 	"flag"
 	"mp3/internal"
 	"mp3/internal/files"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/spf13/viper"
 )
 
 var (
@@ -302,13 +305,13 @@ func Test_check_Exec(t *testing.T) {
 	}{
 		{
 			name:  "do nothing",
-			c:     newCheckSubCommand(flag.NewFlagSet("check", flag.ContinueOnError)),
+			c:     newCheckSubCommand(nil, flag.NewFlagSet("check", flag.ContinueOnError)),
 			args:  args{[]string{"-topDir", topDirName, "-empty=false", "-gaps=false", "-integrity=false"}},
 			wantW: "",
 		},
 		{
 			name: "do something",
-			c:    newCheckSubCommand(flag.NewFlagSet("check", flag.ContinueOnError)),
+			c:    newCheckSubCommand(nil, flag.NewFlagSet("check", flag.ContinueOnError)),
 			args: args{[]string{"-topDir", topDirName, "-empty=true", "-gaps=false", "-integrity=false"}},
 			wantW: strings.Join([]string{
 				"Empty Folder Analysis",
@@ -333,6 +336,67 @@ func Test_check_Exec(t *testing.T) {
 			tt.c.Exec(w, tt.args.args)
 			if gotW := w.String(); gotW != tt.wantW {
 				t.Errorf("%s = %v, want %v", fnName, gotW, tt.wantW)
+			}
+		})
+	}
+}
+
+func Test_newCheckSubCommand(t *testing.T) {
+	topDir := "loadTest"
+	fnName := "newCheckSubCommand()"
+	if err := internal.Mkdir(topDir); err != nil {
+		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
+	}
+	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
+		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
+	}
+	if err := internal.CreateDefaultYamlFile(); err != nil {
+		t.Errorf("error creating defaults.yaml: %v", err)
+	}
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, topDir)
+		internal.DestroyDirectoryForTesting(fnName, "./mp3")
+	}()
+	type args struct {
+		v *viper.Viper
+	}
+	tests := []struct {
+		name                     string
+		args                     args
+		wantEmptyFolders         bool
+		wantGapsInTrackNumbering bool
+		wantIntegrity            bool
+	}{
+		{
+			name:                     "ordinary defaults",
+			args:                     args{v: nil},
+			wantEmptyFolders:         false,
+			wantGapsInTrackNumbering: false,
+			wantIntegrity:            true,
+		},
+		{
+			name:                     "overridden defaults",
+			args:                     args{v: internal.ReadDefaultsYaml("./mp3")},
+			wantEmptyFolders:         true,
+			wantGapsInTrackNumbering: true,
+			wantIntegrity:            false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			check := newCheckSubCommand(tt.args.v, flag.NewFlagSet("ls", flag.ContinueOnError))
+			if s := check.sf.ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-ext", ".mp3"}); s != nil {
+				if *check.checkEmptyFolders != tt.wantEmptyFolders {
+					t.Errorf("%s %s: got checkEmptyFolders %t want %t", fnName, tt.name, *check.checkEmptyFolders, tt.wantEmptyFolders)
+				}
+				if *check.checkGapsInTrackNumbering != tt.wantGapsInTrackNumbering {
+					t.Errorf("%s %s: got checkGapsInTrackNumbering %t want %t", fnName, tt.name, *check.checkGapsInTrackNumbering, tt.wantGapsInTrackNumbering)
+				}
+				if *check.checkIntegrity != tt.wantIntegrity {
+					t.Errorf("%s %s: got checkIntegrity %t want %t", fnName, tt.name, *check.checkIntegrity, tt.wantIntegrity)
+				}
+			} else {
+				t.Errorf("%s %s: error processing arguments", fnName, tt.name)
 			}
 		})
 	}
