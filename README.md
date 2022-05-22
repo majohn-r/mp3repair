@@ -10,7 +10,7 @@ artists, albums, and tracks, governed by these command line arguments:
 
 1. **-artist** List artist names. **True** by default
 2. **-album** List album names. **True** by default
-3. **-track** List track names. **True** by default
+3. **-track** List track names. **False** by default
 
 In addition, you can specify that track listings can be in numeric or alphabetic
 order:
