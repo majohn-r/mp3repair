@@ -45,7 +45,7 @@ func SafeSubViper(v *viper.Viper, key string) *viper.Viper {
 func GetBoolDefault(v *viper.Viper, key string, defaultValue bool) (b bool) {
 	b = defaultValue
 	if v != nil && v.IsSet(key) {
-		rawValue := v.GetString(key)
+		rawValue := InterpretEnvVarReferences(v.GetString(key))
 		if cookedValue, e := strconv.ParseBool(rawValue); e == nil {
 			b = cookedValue
 		}
@@ -54,9 +54,9 @@ func GetBoolDefault(v *viper.Viper, key string, defaultValue bool) (b bool) {
 }
 
 func GetStringDefault(v *viper.Viper, key string, defaultValue string) (s string) {
-	s = defaultValue
+	s = InterpretEnvVarReferences(defaultValue)
 	if v != nil && v.IsSet(key) {
-		s = v.GetString(key)
+		s = InterpretEnvVarReferences(v.GetString(key))
 	}
 	return
 }

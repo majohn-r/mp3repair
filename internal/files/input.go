@@ -6,7 +6,6 @@ import (
 	"io"
 	"mp3/internal"
 	"os"
-	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -33,25 +32,29 @@ const (
 func NewSearchFlags(v *viper.Viper, fSet *flag.FlagSet) *SearchFlags {
 	subViper := internal.SafeSubViper(v, "common")
 	return &SearchFlags{
-		f:             fSet,
-		topDirectory:  fSet.String(topDirectoryFlag, 
-			internal.GetStringDefault(subViper, topDirectoryFlag, filepath.Join(internal.HomePath, "Music")),
+		f: fSet,
+		topDirectory: fSet.String(topDirectoryFlag,
+			internal.GetStringDefault(subViper, topDirectoryFlag, "$HOMEPATH/Music"),
 			"top directory in which to look for music files"),
 		fileExtension: fSet.String(fileExtensionFlag,
 			internal.GetStringDefault(subViper, fileExtensionFlag, DefaultFileExtension),
 			"extension for music files"),
-		albumRegex:    fSet.String(albumRegexFlag,
-			internal.GetStringDefault(subViper, albumRegexFlag, defaultRegex), 
+		albumRegex: fSet.String(albumRegexFlag,
+			internal.GetStringDefault(subViper, albumRegexFlag, defaultRegex),
 			"regular expression of albums to select"),
-		artistRegex:   fSet.String(artistRegexFlag,
+		artistRegex: fSet.String(artistRegexFlag,
 			internal.GetStringDefault(subViper, artistRegexFlag, defaultRegex),
 			"regular expression of artists to select"),
 	}
 }
 
 func (sf *SearchFlags) ProcessArgs(writer io.Writer, args []string) *Search {
+	dereferencedArgs := make([]string, len(args))
+	for i, arg := range args {
+		dereferencedArgs[i] = internal.InterpretEnvVarReferences(arg)
+	}
 	sf.f.SetOutput(writer)
-	if err := sf.f.Parse(args); err != nil {
+	if err := sf.f.Parse(dereferencedArgs); err != nil {
 		logrus.Error(err)
 		return nil
 	}
