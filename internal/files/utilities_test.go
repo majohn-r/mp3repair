@@ -5,7 +5,7 @@ import (
 	"mp3/internal"
 	"os"
 	"reflect"
-	"strings"
+	"sort"
 	"testing"
 )
 
@@ -516,7 +516,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 	tests := []struct {
 		name string
 		tr   *Track
-		want string
+		want []string
 	}{
 		{
 			name: "typical use case",
@@ -529,7 +529,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 				TaggedAlbum:     "album name",
 				TaggedArtist:    "artist name",
 			},
-			want: "",
+			want: nil,
 		},
 		{
 			name: "another OK use case",
@@ -542,7 +542,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 				TaggedAlbum:     "album:name",
 				TaggedArtist:    "artist:name",
 			},
-			want: "",
+			want: nil,
 		},
 		{
 			name: "oops",
@@ -555,20 +555,23 @@ func TestTrack_FindDifferences(t *testing.T) {
 				TaggedAlbum:     "album name",
 				TaggedArtist:    "artist name",
 			},
-			want: strings.Join([]string{
+			want: []string{
 				"album \"album:name\" does not agree with album tag \"album name\"",
 				"artist \"artist:name\" does not agree with artist tag \"artist name\"",
 				"title \"track:name\" does not agree with title tag \"track name\"",
 				"track number 2 does not agree with track tag 1",
-			}, "\n"),
+			},
 		},
-		{name: "unread tags", tr: &Track{TaggedTrack: trackUnknownTagsNotRead}, want: trackDiffUnreadTags},
-		{name: "unreadable tags", tr: &Track{TaggedTrack: trackUnknownTagReadError}, want: trackDiffUnreadableTags},
-		{name: "garbage tags", tr: &Track{TaggedTrack: trackUnknownFormatError}, want: trackDiffBadTags},
+		{name: "unread tags", tr: &Track{TaggedTrack: trackUnknownTagsNotRead}, want: []string{trackDiffUnreadTags}},
+		{name: "unreadable tags", tr: &Track{TaggedTrack: trackUnknownTagReadError}, want: []string{trackDiffUnreadableTags}},
+		{name: "garbage tags", tr: &Track{TaggedTrack: trackUnknownFormatError}, want: []string{trackDiffBadTags}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.tr.FindDifferences(); got != tt.want {
+			got := tt.tr.FindDifferences()
+			sort.Strings(got)
+			sort.Strings(tt.want)
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("Track.FindDifferences() = %v, want %v", got, tt.want)
 			}
 		})
@@ -679,8 +682,8 @@ func Test_removeLeadingBOMs(t *testing.T) {
 		args args
 		want string
 	}{
-		{name: "normal string", args: args{s:"normal"}, want: "normal"},
-		{name: "abnormal string", args: args{s:"\ufeff\ufeffnormal"}, want: "normal"},
+		{name: "normal string", args: args{s: "normal"}, want: "normal"},
+		{name: "abnormal string", args: args{s: "\ufeff\ufeffnormal"}, want: "normal"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

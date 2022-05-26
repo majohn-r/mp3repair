@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"mp3/internal"
 	"regexp"
-	"sort"
 	"strings"
 	"time"
 
@@ -129,15 +128,14 @@ type nameTagPair struct {
 	tag  string
 }
 
-// BUG [#42] should return []string
-func (t *Track) FindDifferences() string {
+func (t *Track) FindDifferences() []string {
 	switch t.TaggedTrack {
 	case trackUnknownFormatError:
-		return trackDiffBadTags
+		return []string{trackDiffBadTags}
 	case trackUnknownTagReadError:
-		return trackDiffUnreadableTags
+		return []string{trackDiffUnreadableTags}
 	case trackUnknownTagsNotRead:
-		return trackDiffUnreadTags
+		return []string{trackDiffUnreadTags}
 	default:
 		var differences []string
 		if t.TaggedTrack != t.TrackNumber {
@@ -156,12 +154,7 @@ func (t *Track) FindDifferences() string {
 			differences = append(differences,
 				fmt.Sprintf("artist %q does not agree with artist tag %q", t.ContainingAlbum.RecordingArtist.Name, t.TaggedArtist))
 		}
-		// BUG [#42] this sort and join is unneccesary
-		if len(differences) > 0 {
-			sort.Strings(differences)
-			return strings.Join(differences, "\n")
-		}
-		return ""
+		return differences
 	}
 }
 

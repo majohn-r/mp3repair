@@ -8,7 +8,6 @@ import (
 	"mp3/internal/files"
 	"os"
 	"sort"
-	"strings"
 
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -378,7 +377,7 @@ func (c *check) performIntegrityCheck(w io.Writer, artists []*files.Artist) []*a
 				for _, conflictedTrack := range conflictedAlbum.tracks {
 					differences := conflictedTrack.track.FindDifferences()
 					if len(differences) > 0 {
-						conflictedTrack.issues = append(conflictedTrack.issues, strings.Split(differences, "\n")...)
+						conflictedTrack.issues = append(conflictedTrack.issues, differences...)
 						issuesFound = true
 					}
 				}
