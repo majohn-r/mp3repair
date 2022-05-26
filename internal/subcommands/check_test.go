@@ -8,6 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"sort"
 	"strings"
 	"testing"
 
@@ -40,11 +41,12 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 		s *files.Search
 	}
 	tests := []struct {
-		name        string
-		c           *check
-		args        args
-		wantArtists []*files.Artist
-		wantW       string
+		name                string
+		c                   *check
+		args                args
+		wantArtists         []*files.Artist
+		wantW               string
+		wantFilteredArtists []*artistWithIssues
 	}{
 		{name: "no work to do", c: &check{checkEmptyFolders: &fFlag}, args: args{}},
 		{
@@ -54,32 +56,68 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 			wantW: "Empty Folder Analysis: no empty folders found\n",
 		},
 		{
-			name: "empty folders present",
-			c:    &check{checkEmptyFolders: &tFlag},
-			args: args{s: files.CreateSearchForTesting(dirtyDirName)},
-			wantW: strings.Join([]string{
-				"Empty Folder Analysis",
-				"Artist \"Test Artist 0\" album \"Test Album 999\": no tracks found",
-				"Artist \"Test Artist 1\" album \"Test Album 999\": no tracks found",
-				"Artist \"Test Artist 2\" album \"Test Album 999\": no tracks found",
-				"Artist \"Test Artist 3\" album \"Test Album 999\": no tracks found",
-				"Artist \"Test Artist 4\" album \"Test Album 999\": no tracks found",
-				"Artist \"Test Artist 5\" album \"Test Album 999\": no tracks found",
-				"Artist \"Test Artist 6\" album \"Test Album 999\": no tracks found",
-				"Artist \"Test Artist 7\" album \"Test Album 999\": no tracks found",
-				"Artist \"Test Artist 8\" album \"Test Album 999\": no tracks found",
-				"Artist \"Test Artist 9\" album \"Test Album 999\": no tracks found",
-				"Artist \"Test Artist 999\": no albums found",
-				"",
-			}, "\n"),
+			name:        "empty folders present",
+			c:           &check{checkEmptyFolders: &tFlag},
+			args:        args{s: files.CreateSearchForTesting(dirtyDirName)},
 			wantArtists: files.CreateAllArtistsForTesting(dirtyDirName, true),
+			wantFilteredArtists: []*artistWithIssues{
+				{
+					name:   "Test Artist 0",
+					albums: []*albumWithIssues{{name: "Test Album 999", issues: []string{"no tracks found"}}},
+				},
+				{
+					name:   "Test Artist 1",
+					albums: []*albumWithIssues{{name: "Test Album 999", issues: []string{"no tracks found"}}},
+				},
+				{
+					name:   "Test Artist 2",
+					albums: []*albumWithIssues{{name: "Test Album 999", issues: []string{"no tracks found"}}},
+				},
+				{
+					name:   "Test Artist 3",
+					albums: []*albumWithIssues{{name: "Test Album 999", issues: []string{"no tracks found"}}},
+				},
+				{
+					name:   "Test Artist 4",
+					albums: []*albumWithIssues{{name: "Test Album 999", issues: []string{"no tracks found"}}},
+				},
+				{
+					name:   "Test Artist 5",
+					albums: []*albumWithIssues{{name: "Test Album 999", issues: []string{"no tracks found"}}},
+				},
+				{
+					name:   "Test Artist 6",
+					albums: []*albumWithIssues{{name: "Test Album 999", issues: []string{"no tracks found"}}},
+				},
+				{
+					name:   "Test Artist 7",
+					albums: []*albumWithIssues{{name: "Test Album 999", issues: []string{"no tracks found"}}},
+				},
+				{
+					name:   "Test Artist 8",
+					albums: []*albumWithIssues{{name: "Test Album 999", issues: []string{"no tracks found"}}},
+				},
+				{
+					name:   "Test Artist 9",
+					albums: []*albumWithIssues{{name: "Test Album 999", issues: []string{"no tracks found"}}},
+				},
+				{
+					name:   "Test Artist 999",
+					issues: []string{"no albums found"},
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w := &bytes.Buffer{}
-			if gotArtists := tt.c.performEmptyFolderAnalysis(w, tt.args.s); !reflect.DeepEqual(gotArtists, tt.wantArtists) {
+			if gotArtists, gotArtistsWithIssues := tt.c.performEmptyFolderAnalysis(w, tt.args.s); !reflect.DeepEqual(gotArtists, tt.wantArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotArtists, tt.wantArtists)
+			} else {
+				filteredArtists := filterAndSortArtists(gotArtistsWithIssues)
+				if !reflect.DeepEqual(filteredArtists, tt.wantFilteredArtists) {
+					t.Errorf("%s = %v, want %v", fnName, filteredArtists, tt.wantFilteredArtists)
+				}
 			}
 			if gotW := w.String(); gotW != tt.wantW {
 				t.Errorf("%s = %v, want %v", fnName, gotW, tt.wantW)
@@ -182,10 +220,11 @@ func Test_check_performGapAnalysis(t *testing.T) {
 		artists []*files.Artist
 	}
 	tests := []struct {
-		name  string
-		c     *check
-		args  args
-		wantW string
+		name                  string
+		c                     *check
+		args                  args
+		wantW                 string
+		wantConflictedArtists []*artistWithIssues
 	}{
 		{name: "no analysis", c: &check{checkGapsInTrackNumbering: &fFlag}, args: args{}, wantW: ""},
 		{
@@ -204,24 +243,35 @@ func Test_check_performGapAnalysis(t *testing.T) {
 			name: "bad artist",
 			c:    &check{checkGapsInTrackNumbering: &tFlag},
 			args: args{artists: []*files.Artist{badArtist}},
-			wantW: strings.Join([]string{
-				"Check Gaps",
-				"Artist: \"BadArtist\" album \"No Biscuits For You!\": missing track 2",
-				"Artist: \"BadArtist\" album \"No Biscuits For You!\": missing track 3",
-				"Artist: \"BadArtist\" album \"No Biscuits For You!\": missing track 4",
-				"Artist: \"BadArtist\" album \"No Biscuits For You!\": track 0 (\"Awful Track\") is not a valid track number; valid tracks are 1..7",
-				"Artist: \"BadArtist\" album \"No Biscuits For You!\": track 1 used by \"Nasty Track\" and \"Worse Track\"",
-				"Artist: \"BadArtist\" album \"No Biscuits For You!\": track 9 (\"Bonus Track\") is not a valid track number; valid tracks are 1..7",
-				"",
-			}, "\n"),
+			wantConflictedArtists: []*artistWithIssues{
+				{
+					name: "BadArtist",
+					albums: []*albumWithIssues{
+						{
+							name: "No Biscuits For You!",
+							issues: []string{
+								"missing track 2",
+								"missing track 3",
+								"missing track 4",
+								"track 0 (\"Awful Track\") is not a valid track number; valid tracks are 1..7",
+								"track 1 used by \"Nasty Track\" and \"Worse Track\"",
+								"track 9 (\"Bonus Track\") is not a valid track number; valid tracks are 1..7",
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w := &bytes.Buffer{}
-			tt.c.performGapAnalysis(w, tt.args.artists)
+			gotConflictedArtists := filterAndSortArtists(tt.c.performGapAnalysis(w, tt.args.artists))
 			if gotW := w.String(); gotW != tt.wantW {
 				t.Errorf("check.performGapAnalysis() = %v, want %v", gotW, tt.wantW)
+			}
+			if !reflect.DeepEqual(gotConflictedArtists, tt.wantConflictedArtists) {
+				t.Errorf("check.performGapAnalysis() = %v, want %v", gotConflictedArtists, tt.wantConflictedArtists)
 			}
 		})
 	}
@@ -254,29 +304,46 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 		artists []*files.Artist
 	}
 	tests := []struct {
-		name  string
-		c     *check
-		args  args
-		wantW string
+		name                  string
+		c                     *check
+		args                  args
+		wantW                 string
+		wantConflictedArtists []*artistWithIssues
 	}{
-		{name: "degenerate case", c: &check{checkIntegrity: &fFlag}, args: args{}, wantW: ""},
+		{name: "degenerate case", c: &check{checkIntegrity: &fFlag}, args: args{}},
+		{name: "no artists", c: &check{checkIntegrity: &tFlag}, args: args{}, wantW: "Integrity Analysis: no issues found\n"},
 		{
 			name: "meaningful case",
 			c:    &check{checkIntegrity: &tFlag},
 			args: args{artists: s.LoadUnfilteredData()},
-			wantW: strings.Join([]string{
-				"\"artist\": \"album\": \"track\"",
-				"cannot determine differences, tags were not recognized",
-				"",
-				""}, "\n"),
+			wantConflictedArtists: []*artistWithIssues{
+				{
+					name: "artist",
+					albums: []*albumWithIssues{
+						{
+							name: "album",
+							tracks: []*trackWithIssues{
+								{
+									name:   "track",
+									number: 1,
+									issues: []string{"cannot determine differences, tags were not recognized"},
+								},
+							},
+						},
+					},
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w := &bytes.Buffer{}
-			tt.c.performIntegrityCheck(w, tt.args.artists)
+			gotConflictedArtists := filterAndSortArtists(tt.c.performIntegrityCheck(w, tt.args.artists))
 			if gotW := w.String(); gotW != tt.wantW {
 				t.Errorf("%s = %v, want %v", fnName, gotW, tt.wantW)
+			}
+			if !reflect.DeepEqual(gotConflictedArtists, tt.wantConflictedArtists) {
+				t.Errorf("check.performGapAnalysis() = %v, want %v", gotConflictedArtists, tt.wantConflictedArtists)
 			}
 		})
 	}
@@ -314,18 +381,38 @@ func Test_check_Exec(t *testing.T) {
 			c:    newCheckSubCommand(nil, flag.NewFlagSet("check", flag.ContinueOnError)),
 			args: args{[]string{"-topDir", topDirName, "-empty=true", "-gaps=false", "-integrity=false"}},
 			wantW: strings.Join([]string{
-				"Empty Folder Analysis",
-				"Artist \"Test Artist 0\" album \"Test Album 999\": no tracks found",
-				"Artist \"Test Artist 1\" album \"Test Album 999\": no tracks found",
-				"Artist \"Test Artist 2\" album \"Test Album 999\": no tracks found",
-				"Artist \"Test Artist 3\" album \"Test Album 999\": no tracks found",
-				"Artist \"Test Artist 4\" album \"Test Album 999\": no tracks found",
-				"Artist \"Test Artist 5\" album \"Test Album 999\": no tracks found",
-				"Artist \"Test Artist 6\" album \"Test Album 999\": no tracks found",
-				"Artist \"Test Artist 7\" album \"Test Album 999\": no tracks found",
-				"Artist \"Test Artist 8\" album \"Test Album 999\": no tracks found",
-				"Artist \"Test Artist 9\" album \"Test Album 999\": no tracks found",
-				"Artist \"Test Artist 999\": no albums found",
+				"Test Artist 0",
+				"    Test Album 999",
+				"      no tracks found",
+				"Test Artist 1",
+				"    Test Album 999",
+				"      no tracks found",
+				"Test Artist 2",
+				"    Test Album 999",
+				"      no tracks found",
+				"Test Artist 3",
+				"    Test Album 999",
+				"      no tracks found",
+				"Test Artist 4",
+				"    Test Album 999",
+				"      no tracks found",
+				"Test Artist 5",
+				"    Test Album 999",
+				"      no tracks found",
+				"Test Artist 6",
+				"    Test Album 999",
+				"      no tracks found",
+				"Test Artist 7",
+				"    Test Album 999",
+				"      no tracks found",
+				"Test Artist 8",
+				"    Test Album 999",
+				"      no tracks found",
+				"Test Artist 9",
+				"    Test Album 999",
+				"      no tracks found",
+				"Test Artist 999",
+				"  no albums found",
 				"",
 			}, "\n"),
 		},
@@ -397,6 +484,410 @@ func Test_newCheckSubCommand(t *testing.T) {
 				}
 			} else {
 				t.Errorf("%s %s: error processing arguments", fnName, tt.name)
+			}
+		})
+	}
+}
+
+func Test_merge(t *testing.T) {
+	type args struct {
+		sets [][]*artistWithIssues
+	}
+	tests := []struct {
+		name string
+		args args
+		want []*artistWithIssues
+	}{
+		{name: "degenerate case", args: args{}},
+		{
+			name: "more interesting case",
+			args: args{sets: [][]*artistWithIssues{
+				// set 1
+				{
+					{
+						name:   "artist1",
+						issues: []string{"bad artist"},
+						albums: []*albumWithIssues{
+							{
+								name:   "album1",
+								issues: []string{"skips badly"},
+								tracks: []*trackWithIssues{
+									{
+										number: 1,
+										name:   "track1",
+										issues: []string{"inaudible"},
+									},
+								},
+							},
+						},
+					},
+				},
+				// set 2
+				{
+					{
+						name:   "artist1",
+						issues: []string{"really awful artist"},
+						albums: []*albumWithIssues{
+							{
+								name:   "album1",
+								issues: []string{"bad cover art"},
+								tracks: []*trackWithIssues{
+									{
+										number: 1,
+										name:   "track1",
+										issues: []string{"plays backwards!"},
+									},
+									{
+										number: 2,
+										name:   "track2",
+										issues: []string{"truly insipid"},
+									},
+								},
+							},
+							{
+								name:   "album2",
+								issues: []string{"horrible sequel"},
+								tracks: []*trackWithIssues{
+									{
+										number: 3,
+										name:   "track3",
+										issues: []string{"singer is dreadful, band is worse"},
+									},
+								},
+							},
+						},
+					},
+					{
+						name:   "artist2",
+						issues: []string{"tone deaf"},
+						albums: []*albumWithIssues{
+							{
+								name:   "album34",
+								issues: []string{"worst album I own"},
+								tracks: []*trackWithIssues{
+									{
+										number: 40,
+										name:   "track40",
+										issues: []string{"singer died in mid act and that improved the track"},
+									},
+								},
+							},
+						},
+					},
+				},
+			}},
+			want: []*artistWithIssues{
+				{
+					name:   "artist1",
+					issues: []string{"bad artist", "really awful artist"},
+					albums: []*albumWithIssues{
+						{
+							name:   "album1",
+							issues: []string{"bad cover art", "skips badly"},
+							tracks: []*trackWithIssues{
+								{
+									number: 1,
+									name:   "track1",
+									issues: []string{"inaudible", "plays backwards!"},
+								},
+								{
+									number: 2,
+									name:   "track2",
+									issues: []string{"truly insipid"},
+								},
+							},
+						},
+						{
+							name:   "album2",
+							issues: []string{"horrible sequel"},
+							tracks: []*trackWithIssues{
+								{
+									number: 3,
+									name:   "track3",
+									issues: []string{"singer is dreadful, band is worse"},
+								},
+							},
+						},
+					},
+				},
+				{
+					name:   "artist2",
+					issues: []string{"tone deaf"},
+					albums: []*albumWithIssues{
+						{
+							name:   "album34",
+							issues: []string{"worst album I own"},
+							tracks: []*trackWithIssues{
+								{
+									number: 40,
+									name:   "track40",
+									issues: []string{"singer died in mid act and that improved the track"},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := merge(tt.args.sets)
+			if len(got) != len(tt.want) {
+				t.Errorf("merge() artist len = %d, want %d", len(got), len(tt.want))
+			} else {
+				for i := range got {
+					gotArtist := got[i]
+					wantArtist := tt.want[i]
+					if gotArtist.name != wantArtist.name {
+						t.Errorf("merge() artist[%d] name %q, want %q", i, gotArtist.name, wantArtist.name)
+					}
+					if !reflect.DeepEqual(gotArtist.issues, wantArtist.issues) {
+						t.Errorf("merge() artist[%d] issues %v, want %v", i, gotArtist.issues, wantArtist.issues)
+					}
+					if len(gotArtist.albums) != len(wantArtist.albums) {
+						t.Errorf("merge() artist[%d] albums len = %d, want %d", i, len(gotArtist.albums), len(wantArtist.albums))
+					} else {
+						for j := range gotArtist.albums {
+							gotAlbum := gotArtist.albums[j]
+							wantAlbum := wantArtist.albums[j]
+							if gotAlbum.name != wantAlbum.name {
+								t.Errorf("merge() artist[%d] album[%d] name %q, want %q", i, j, gotAlbum.name, wantAlbum.name)
+							}
+							if !reflect.DeepEqual(gotAlbum.issues, wantAlbum.issues) {
+								t.Errorf("merge() artist[%d] album[%d] issues %v, want %v", i, j, gotAlbum.issues, wantAlbum.issues)
+							}
+							if len(gotAlbum.tracks) != len(wantAlbum.tracks) {
+								t.Errorf("merge() artist[%d] album[%d] tracks len = %d, want %d", i, j, len(gotAlbum.tracks), len(wantAlbum.tracks))
+							} else {
+								for k := range gotAlbum.tracks {
+									gotTrack := gotAlbum.tracks[k]
+									wantTrack := wantAlbum.tracks[k]
+									if gotTrack.number != wantTrack.number {
+										t.Errorf("merge() artist[%d] album[%d] track[%d] number %d, want %d", i, j, k, gotTrack.number, wantTrack.number)
+									}
+									if gotTrack.name != wantTrack.name {
+										t.Errorf("merge() artist[%d] album[%d] track[%d] name %q, want %q", i, j, k, gotTrack.name, wantTrack.name)
+									}
+									if !reflect.DeepEqual(gotTrack.issues, wantTrack.issues) {
+										t.Errorf("merge() artist[%d] album[%d] track[%d] issues %v, want %v", i, j, k, gotTrack.issues, wantTrack.issues)
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		})
+	}
+}
+
+func Test_sortArtistsWithIssues(t *testing.T) {
+	tests := []struct {
+		name  string
+		input artistSlice
+	}{
+		{name: "degenerate case", input: nil},
+		{name: "scrambled input", input: artistSlice([]*artistWithIssues{
+			{name: "10"},
+			{name: "2"},
+			{name: "35"},
+			{name: "1"},
+			{name: "3"},
+		})},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sort.Sort(tt.input)
+			for i := range tt.input {
+				if i == 0 {
+					continue
+				}
+				if tt.input[i-1].name > tt.input[i].name {
+					t.Errorf("sortArtistsWithIssues artist[%d] with name %q comes before artist[%d] with name %q", i-1, tt.input[i-1].name, i, tt.input[i].name)
+				}
+			}
+		})
+	}
+}
+
+func Test_sortAlbumsWithIssues(t *testing.T) {
+	tests := []struct {
+		name  string
+		input albumSlice
+	}{
+		{name: "degenerate case", input: nil},
+		{name: "scrambled input", input: albumSlice([]*albumWithIssues{
+			{name: "10"},
+			{name: "2"},
+			{name: "35"},
+			{name: "1"},
+			{name: "3"},
+		})},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sort.Sort(tt.input)
+			for i := range tt.input {
+				if i == 0 {
+					continue
+				}
+				if tt.input[i-1].name > tt.input[i].name {
+					t.Errorf("sortAlbumsWithIssues album[%d] with name %q comes before album[%d] with name %q", i-1, tt.input[i-1].name, i, tt.input[i].name)
+				}
+			}
+		})
+	}
+}
+
+func Test_sortTracksWithIssues(t *testing.T) {
+	tests := []struct {
+		name  string
+		input trackSlice
+	}{
+		{name: "degenerate case", input: nil},
+		{name: "scrambled input", input: trackSlice([]*trackWithIssues{
+			{number: 10},
+			{number: 2},
+			{number: 35},
+			{number: 1},
+			{number: 3},
+		})},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			sort.Sort(tt.input)
+			for i := range tt.input {
+				if i == 0 {
+					continue
+				}
+				if tt.input[i-1].number > tt.input[i].number {
+					t.Errorf("sortTracksWithIssues track[%d] with number %d comes before track[%d] with number %d", i-1, tt.input[i-1].number, i, tt.input[i].number)
+				}
+			}
+		})
+	}
+}
+
+func Test_reportResults(t *testing.T) {
+	type args struct {
+		artistsWithIssues [][]*artistWithIssues
+	}
+	tests := []struct {
+		name  string
+		args  args
+		wantW string
+	}{
+		{name: "degenerate case", args: args{}},
+		{
+			name: "more interesting case",
+			args: args{artistsWithIssues: [][]*artistWithIssues{
+				// set 1
+				{
+					{
+						name:   "artist1",
+						issues: []string{"bad artist"},
+						albums: []*albumWithIssues{
+							{
+								name:   "album1",
+								issues: []string{"skips badly"},
+								tracks: []*trackWithIssues{
+									{
+										number: 1,
+										name:   "track1",
+										issues: []string{"inaudible"},
+									},
+								},
+							},
+						},
+					},
+				},
+				// set 2
+				{
+					{
+						name:   "artist1",
+						issues: []string{"really awful artist"},
+						albums: []*albumWithIssues{
+							{
+								name:   "album1",
+								issues: []string{"bad cover art"},
+								tracks: []*trackWithIssues{
+									{
+										number: 1,
+										name:   "track1",
+										issues: []string{"plays backwards!"},
+									},
+									{
+										number: 2,
+										name:   "track2",
+										issues: []string{"truly insipid"},
+									},
+								},
+							},
+							{
+								name:   "album2",
+								issues: []string{"horrible sequel"},
+								tracks: []*trackWithIssues{
+									{
+										number: 3,
+										name:   "track3",
+										issues: []string{"singer is dreadful, band is worse"},
+									},
+								},
+							},
+						},
+					},
+					{
+						name:   "artist2",
+						issues: []string{"tone deaf"},
+						albums: []*albumWithIssues{
+							{
+								name:   "album34",
+								issues: []string{"worst album I own"},
+								tracks: []*trackWithIssues{
+									{
+										number: 40,
+										name:   "track40",
+										issues: []string{"singer died in mid act and that improved the track"},
+									},
+								},
+							},
+						},
+					},
+				},
+			}},
+			wantW: strings.Join([]string{
+				"artist1",
+				"  bad artist",
+				"  really awful artist",
+				"    album1",
+				"      bad cover art",
+				"      skips badly",
+				"         1 track1",
+				"          inaudible",
+				"          plays backwards!",
+				"         2 track2",
+				"          truly insipid",
+				"    album2",
+				"      horrible sequel",
+				"         3 track3",
+				"          singer is dreadful, band is worse",
+				"artist2",
+				"  tone deaf",
+				"    album34",
+				"      worst album I own",
+				"        40 track40",
+				"          singer died in mid act and that improved the track",
+				"",
+			}, "\n"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := &bytes.Buffer{}
+			reportResults(w, tt.args.artistsWithIssues...)
+			if gotW := w.String(); gotW != tt.wantW {
+				t.Errorf("reportResults() = %v, want %v", gotW, tt.wantW)
 			}
 		})
 	}

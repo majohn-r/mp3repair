@@ -53,11 +53,8 @@ func (r *repair) logFields() logrus.Fields {
 
 func (r *repair) runSubcommand() {
 	logrus.WithFields(r.logFields()).Info(internal.LOG_EXECUTING_COMMAND)
-	switch *r.dryRun {
-	case true:
-		logrus.Info("dry run only")
-	case false:
-		// TODO: replace with call to get files and perform the specified repairs
-		// logrus.Infof("search %s for files with extension %s for artists '%s' and albums '%s'", *r.ff.topDirectory, *r.ff.fileExtension, *r.ff.artistRegex, *r.ff.albumRegex)
-	}
+	// TODO [#6] needs implementation! basically, run the integrity check (hmmm
+	// ... maybe refactor that logic?) and fix the reported track-specific
+	// problems found (in the case of dryRun = true, state what would be done
+	// for each issue)
 }

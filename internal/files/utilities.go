@@ -129,6 +129,7 @@ type nameTagPair struct {
 	tag  string
 }
 
+// BUG [#42] should return []string
 func (t *Track) FindDifferences() string {
 	switch t.TaggedTrack {
 	case trackUnknownFormatError:
@@ -155,6 +156,7 @@ func (t *Track) FindDifferences() string {
 			differences = append(differences,
 				fmt.Sprintf("artist %q does not agree with artist tag %q", t.ContainingAlbum.RecordingArtist.Name, t.TaggedArtist))
 		}
+		// BUG [#42] this sort and join is unneccesary
 		if len(differences) > 0 {
 			sort.Strings(differences)
 			return strings.Join(differences, "\n")
@@ -225,9 +227,9 @@ var semaphores = make(chan empty, 20) // 20 is a typical limit for open files
 
 func (t *Track) readTags(reader func(string) (*taggedTrackData, error)) {
 	if t.needsTaggedData() {
-		semaphores<-empty{} // block while full
+		semaphores <- empty{} // block while full
 		go func() {
-			defer func(){
+			defer func() {
 				<-semaphores // read to release a slot
 			}()
 			if tags, err := reader(t.fullPath); err != nil {
@@ -251,7 +253,7 @@ func UpdateTracks(artists []*Artist, reader func(string) (*taggedTrackData, erro
 	waitForSemaphoresDrained()
 }
 
-func waitForSemaphoresDrained(){
+func waitForSemaphoresDrained() {
 	for len(semaphores) != 0 {
 		time.Sleep(1 * time.Microsecond)
 	}
