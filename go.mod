@@ -26,6 +26,6 @@ require (
 require (
 	github.com/bogem/id3v2/v2 v2.1.2
 	github.com/sirupsen/logrus v1.8.1
-	github.com/spf13/viper v1.11.0
+	github.com/spf13/viper v1.12.0
 	github.com/utahta/go-cronowriter v1.2.0
 )
