@@ -31,6 +31,38 @@ type Track struct {
 	TaggedArtist    string // artist name per mp3 tag
 }
 
+// logic for sorting tracks spanning albums and artists
+type Tracks []*Track
+
+func (t Tracks) Len() int {
+	return len(t)
+}
+
+func (t Tracks) Less(i, j int) bool {
+	track1 := t[i]
+	track2 := t[j]
+	album1 := track1.ContainingAlbum
+	album2 := track2.ContainingAlbum
+	artist1 := album1.RecordingArtist
+	artist2 := album2.RecordingArtist
+	// compare artist name first
+	if artist1.Name == artist2.Name {
+		// artist names are the same ... try the album name next
+		if album1.Name == album2.Name {
+			// and album names are the same ... go by track number
+			return track1.TrackNumber < track2.TrackNumber
+		} else {
+			return album1.Name < album2.Name
+		}
+	} else {
+		return artist1.Name < artist2.Name
+	}
+}
+
+func (t Tracks) Swap(i, j int) {
+	t[i], t[j] = t[j], t[i]
+}
+
 const (
 	trackUnknownFormatError  int = -1
 	trackUnknownTagsNotRead  int = -2
@@ -128,34 +160,86 @@ type nameTagPair struct {
 	tag  string
 }
 
-func (t *Track) FindDifferences() []string {
+type TrackState struct {
+	tagFormatError     bool
+	tagReadError       bool
+	noTags             bool
+	numberingConflict  bool
+	trackNameConflict  bool
+	albumNameConflict  bool
+	artistNameConflict bool
+}
+
+func (s TrackState) HasNumberingConflict() bool {
+	return s.numberingConflict
+}
+
+func (s TrackState) HasTrackNameConflict() bool {
+	return s.trackNameConflict
+}
+
+func (s TrackState) HasAlbumNameConflict() bool {
+	return s.albumNameConflict
+}
+
+func (s TrackState) HasArtistNameConflict() bool {
+	return s.artistNameConflict
+}
+
+func (s TrackState) HasTaggingConflicts() bool {
+	return s.numberingConflict || s.trackNameConflict || s.albumNameConflict || s.artistNameConflict
+}
+
+func (t *Track) AnalyzeIssues() TrackState {
 	switch t.TaggedTrack {
 	case trackUnknownFormatError:
-		return []string{trackDiffBadTags}
+		return TrackState{tagFormatError: true}
 	case trackUnknownTagReadError:
-		return []string{trackDiffUnreadableTags}
+		return TrackState{tagReadError: true}
 	case trackUnknownTagsNotRead:
-		return []string{trackDiffUnreadTags}
+		return TrackState{noTags: true}
 	default:
-		var differences []string
-		if t.TaggedTrack != t.TrackNumber {
-			differences = append(differences,
-				fmt.Sprintf("track number %d does not agree with track tag %d", t.TrackNumber, t.TaggedTrack))
+		return TrackState{
+			numberingConflict:  t.TaggedTrack != t.TrackNumber,
+			trackNameConflict:  !isComparable(nameTagPair{name: t.Name, tag: t.TaggedTitle}),
+			albumNameConflict:  !isComparable(nameTagPair{name: t.ContainingAlbum.Name, tag: t.TaggedAlbum}),
+			artistNameConflict: !isComparable(nameTagPair{name: t.ContainingAlbum.RecordingArtist.Name, tag: t.TaggedArtist}),
 		}
-		if !isComparable(nameTagPair{name: t.Name, tag: t.TaggedTitle}) {
-			differences = append(differences,
-				fmt.Sprintf("title %q does not agree with title tag %q", t.Name, t.TaggedTitle))
-		}
-		if !isComparable(nameTagPair{name: t.ContainingAlbum.Name, tag: t.TaggedAlbum}) {
-			differences = append(differences,
-				fmt.Sprintf("album %q does not agree with album tag %q", t.ContainingAlbum.Name, t.TaggedAlbum))
-		}
-		if !isComparable(nameTagPair{name: t.ContainingAlbum.RecordingArtist.Name, tag: t.TaggedArtist}) {
-			differences = append(differences,
-				fmt.Sprintf("artist %q does not agree with artist tag %q", t.ContainingAlbum.RecordingArtist.Name, t.TaggedArtist))
-		}
-		return differences
 	}
+}
+
+func (t *Track) FindDifferences() []string {
+	s := t.AnalyzeIssues()
+	if s.tagFormatError {
+		return []string{trackDiffBadTags}
+	}
+	if s.tagReadError {
+		return []string{trackDiffUnreadableTags}
+	}
+	if s.noTags {
+		return []string{trackDiffUnreadTags}
+	}
+	if !s.HasTaggingConflicts() {
+		return nil
+	}
+	var differences []string
+	if s.HasNumberingConflict() {
+		differences = append(differences,
+			fmt.Sprintf("track number %d does not agree with track tag %d", t.TrackNumber, t.TaggedTrack))
+	}
+	if s.HasTrackNameConflict() {
+		differences = append(differences,
+			fmt.Sprintf("title %q does not agree with title tag %q", t.Name, t.TaggedTitle))
+	}
+	if s.HasAlbumNameConflict() {
+		differences = append(differences,
+			fmt.Sprintf("album %q does not agree with album tag %q", t.ContainingAlbum.Name, t.TaggedAlbum))
+	}
+	if s.HasArtistNameConflict() {
+		differences = append(differences,
+			fmt.Sprintf("artist %q does not agree with artist tag %q", t.ContainingAlbum.RecordingArtist.Name, t.TaggedArtist))
+	}
+	return differences
 }
 
 func isComparable(p nameTagPair) bool {

@@ -693,3 +693,88 @@ func Test_removeLeadingBOMs(t *testing.T) {
 		})
 	}
 }
+
+func Test_sortTracks(t *testing.T) {
+	tests := []struct {
+		name   string
+		tracks []*Track
+	}{
+		{name: "degenerate case"},
+		{
+			name: "mixed tracks",
+			tracks: []*Track{
+				{
+					TrackNumber: 10,
+					ContainingAlbum: &Album{
+						Name:            "album2",
+						RecordingArtist: &Artist{Name: "artist3"},
+					},
+				},
+				{
+					TrackNumber: 1,
+					ContainingAlbum: &Album{
+						Name:            "album2",
+						RecordingArtist: &Artist{Name: "artist3"},
+					},
+				},
+				{
+					TrackNumber: 2,
+					ContainingAlbum: &Album{
+						Name:            "album1",
+						RecordingArtist: &Artist{Name: "artist3"},
+					},
+				},
+				{
+					TrackNumber: 3,
+					ContainingAlbum: &Album{
+						Name:            "album3",
+						RecordingArtist: &Artist{Name: "artist2"},
+					},
+				},
+				{
+					TrackNumber: 3,
+					ContainingAlbum: &Album{
+						Name:            "album3",
+						RecordingArtist: &Artist{Name: "artist4"},
+					},
+				},
+				{
+					TrackNumber: 3,
+					ContainingAlbum: &Album{
+						Name:            "album5",
+						RecordingArtist: &Artist{Name: "artist2"},
+					},
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		sort.Sort(Tracks(tt.tracks))
+		for i := range tt.tracks {
+			if i == 0 {
+				continue
+			}
+			track1 := tt.tracks[i-1]
+			track2 := tt.tracks[i]
+			album1 := track1.ContainingAlbum
+			album2 := track2.ContainingAlbum
+			artist1 := album1.RecordingArtist.Name
+			artist2 := album2.RecordingArtist.Name
+			if artist1 > artist2 {
+				t.Errorf("Sort(Tracks) track[%d] artist name %q comes after track[%d] artist name %q", i-1, artist1, i, artist2)
+			} else {
+				if artist1 == artist2 {
+					if album1.Name > album2.Name {
+						t.Errorf("Sort(Tracks) track[%d] album name %q comes after track[%d] album name %q", i-1, album1.Name, i, album2.Name)
+					} else {
+						if album1.Name == album2.Name {
+							if track1.TrackNumber > track2.TrackNumber {
+								t.Errorf("Sort(Tracks) track[%d] track %d comes after track[%d] track %d", i-1, track1.TrackNumber, i, track2.TrackNumber)
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
