@@ -1,12 +1,16 @@
 package files
 
 import (
+	"bytes"
 	"fmt"
 	"mp3/internal"
 	"os"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"testing"
+
+	"github.com/bogem/id3v2/v2"
 )
 
 func Test_parseTrackName(t *testing.T) {
@@ -777,4 +781,144 @@ func Test_sortTracks(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestTrack_EditTags(t *testing.T) {
+	fnName := "Track.EditTags()"
+	topDir := "editTags"
+	if err := internal.Mkdir(topDir); err != nil {
+		t.Errorf("%s cannot create %q: %v", fnName, topDir, err)
+	}
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, topDir)
+	}()
+	// this code that creates the test.mp3 file is based on reading
+	// https://id3.org/id3v2.3.0 and on looking at a hex dump of a real mp3 file.
+	testFileName := "test.mp3"
+	fullPath := filepath.Join(topDir, testFileName)
+	content := make([]byte, 0)
+	// block off tag header
+	content = append(content, []byte("ID3")...)
+	content = append(content, []byte{3, 0, 0, 0, 0, 0, 0}...)
+	// add some text frames
+	content = append(content, makeTextFrame("TYER", "2022")...)
+	content = append(content, makeTextFrame("TALB", "unknown album")...)
+	content = append(content, makeTextFrame("TRCK", "2")...)
+	content = append(content, makeTextFrame("TCON", "dance music")...)
+	content = append(content, makeTextFrame("TCOM", "a couple of idiots")...)
+	content = append(content, makeTextFrame("TIT2", "unknown track")...)
+	content = append(content, makeTextFrame("TPE1", "unknown artist")...)
+	content = append(content, makeTextFrame("TLEN", "1000")...)
+	contentLength := len(content) - 10
+	factor := 128 * 128 * 128
+	for k := 0; k < 4; k++ {
+		content[6+k] = byte(contentLength / factor)
+		contentLength = contentLength % factor
+		factor = factor / 128
+	}
+	// add "music"
+	for k := 0; k < 256; k++ {
+		content = append(content, byte(k))
+	}
+	if err := internal.CreateFileForTestingWithContent(topDir, testFileName, string(content)); err != nil {
+		t.Errorf("%s cannot create file %q: %v", fnName, fullPath, err)
+	}
+	tests := []struct {
+		name    string
+		tr      *Track
+		wantErr bool
+	}{
+		{
+			name: "defective track",
+			tr: &Track{
+				TrackNumber:     1,
+				Name:            "defective track",
+				TaggedTrack:     trackUnknownTagsNotRead,
+				ContainingAlbum: &Album{Name: "poor album", RecordingArtist: &Artist{Name: "sorry artist"}},
+			},
+			wantErr: true,
+		},
+		{
+			name: "track got deleted!",
+			tr: &Track{
+				TrackNumber:     1,
+				Name:            "defective track",
+				TaggedTrack:     1,
+				TaggedTitle:     "unknown track",
+				TaggedAlbum:     "unknown album",
+				TaggedArtist:    "unknown artist",
+				fullPath:        filepath.Join(topDir, "non-existent-file.mp3"),
+				ContainingAlbum: &Album{Name: "poor album", RecordingArtist: &Artist{Name: "sorry artist"}},
+			},
+			wantErr: true,
+		},
+		{
+			name: "fixable track",
+			tr: &Track{
+				TrackNumber:     1,
+				Name:            "fixable track",
+				TaggedTrack:     2,
+				TaggedTitle:     "unknown track",
+				TaggedAlbum:     "unknown album",
+				TaggedArtist:    "unknown artist",
+				fullPath:        fullPath,
+				ContainingAlbum: &Album{Name: "poor album", RecordingArtist: &Artist{Name: "sorry artist"}},
+			},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.tr.EditTags(); (err != nil) != tt.wantErr {
+				t.Errorf("Track.EditTags() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+	if edited, err := os.ReadFile(fullPath); err != nil {
+		t.Errorf("%s cannot read file %q: %v", fnName, fullPath, err)
+	} else {
+		if tag, err := id3v2.ParseReader(bytes.NewReader(edited), id3v2.Options{Parse: true}); err != nil {
+			t.Errorf("%s edited mp3 file %q cannot be read for tags: %v", fnName, fullPath, err)
+		} else {
+			m := map[string]string{
+				// changed by editing
+				"TALB": "poor album",
+				"TIT2": "fixable track",
+				"TPE1": "sorry artist",
+				"TRCK": "1",
+				// preserved from original file
+				"TCOM": "a couple of idiots",
+				"TCON": "dance music",
+				"TLEN": "1000",
+				"TYER": "2022",
+			}
+			for key, value := range m {
+				if got := tag.GetTextFrame(key).Text; got != value {
+					t.Errorf("%s edited mp3 file key %q got %q want %q", fnName, key, got, value)
+				}
+			}
+		}
+		// verify "music" is present
+		musicStarts := len(edited) - 256
+		for k := 0; k < 256; k++ {
+			if edited[musicStarts+k] != byte(k) {
+				t.Errorf("%s edited mp3 file music at index %d mismatch (%d v. %d)", fnName, k, edited[musicStarts+k], k)
+			}
+		}
+	}
+}
+
+func makeTextFrame(id string, content string) []byte {
+	frame := make([]byte, 0)
+	frame = append(frame, []byte(id)...)
+	contentSize := 1 + len(content)
+	factor := 256 * 256 * 256
+	for k := 0; k < 4; k++ {
+		frame = append(frame, byte(contentSize/factor))
+		contentSize = contentSize % factor
+		factor = factor / 256
+	}
+	frame = append(frame, []byte{0, 0, 0}...)
+	frame = append(frame, []byte(content)...)
+	return frame
 }

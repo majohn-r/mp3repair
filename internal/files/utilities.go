@@ -295,6 +295,32 @@ func RawReadTags(path string) (d *taggedTrackData, err error) {
 	return
 }
 
+func (t *Track) EditTags() error {
+	a := t.AnalyzeIssues()
+	if !a.HasTaggingConflicts() {
+		return fmt.Errorf("track %d %q of album %q by artist %q has no tagging conflicts, no edit needed",
+			t.TrackNumber, t.Name, t.ContainingAlbum.Name, t.ContainingAlbum.RecordingArtist.Name)
+	}
+	tag, err := id3v2.Open(t.fullPath, id3v2.Options{Parse: true})
+	if err != nil {
+		return err
+	}
+	defer tag.Close()
+	if a.HasAlbumNameConflict() {
+		tag.SetAlbum(t.ContainingAlbum.Name)
+	}
+	if a.HasArtistNameConflict() {
+		tag.SetArtist(t.ContainingAlbum.RecordingArtist.Name)
+	}
+	if a.HasTrackNameConflict() {
+		tag.SetTitle(t.Name)
+	}
+	if a.HasNumberingConflict() {
+		tag.AddTextFrame("TRCK", tag.DefaultEncoding(), fmt.Sprintf("%d", t.TrackNumber))
+	}
+	return tag.Save()
+}
+
 // use of semaphores nicely documented here:
 // https://gist.github.com/repejota/ed9070d57c23102d50c94e1a126b2f5b
 
