@@ -542,46 +542,28 @@ func Test_sortTracks(t *testing.T) {
 			name: "mixed tracks",
 			tracks: []*Track{
 				{
-					TrackNumber: 10,
-					ContainingAlbum: &Album{
-						Name:            "album2",
-						RecordingArtist: &Artist{Name: "artist3"},
-					},
+					TrackNumber:     10,
+					ContainingAlbum: &Album{Name: "album2", RecordingArtist: &Artist{Name: "artist3"}},
 				},
 				{
-					TrackNumber: 1,
-					ContainingAlbum: &Album{
-						Name:            "album2",
-						RecordingArtist: &Artist{Name: "artist3"},
-					},
+					TrackNumber:     1,
+					ContainingAlbum: &Album{Name: "album2", RecordingArtist: &Artist{Name: "artist3"}},
 				},
 				{
-					TrackNumber: 2,
-					ContainingAlbum: &Album{
-						Name:            "album1",
-						RecordingArtist: &Artist{Name: "artist3"},
-					},
+					TrackNumber:     2,
+					ContainingAlbum: &Album{Name: "album1", RecordingArtist: &Artist{Name: "artist3"}},
 				},
 				{
-					TrackNumber: 3,
-					ContainingAlbum: &Album{
-						Name:            "album3",
-						RecordingArtist: &Artist{Name: "artist2"},
-					},
+					TrackNumber:     3,
+					ContainingAlbum: &Album{Name: "album3", RecordingArtist: &Artist{Name: "artist2"}},
 				},
 				{
-					TrackNumber: 3,
-					ContainingAlbum: &Album{
-						Name:            "album3",
-						RecordingArtist: &Artist{Name: "artist4"},
-					},
+					TrackNumber:     3,
+					ContainingAlbum: &Album{Name: "album3", RecordingArtist: &Artist{Name: "artist4"}},
 				},
 				{
-					TrackNumber: 3,
-					ContainingAlbum: &Album{
-						Name:            "album5",
-						RecordingArtist: &Artist{Name: "artist2"},
-					},
+					TrackNumber:     3,
+					ContainingAlbum: &Album{Name: "album5", RecordingArtist: &Artist{Name: "artist2"}},
 				},
 			},
 		},
