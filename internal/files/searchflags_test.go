@@ -313,7 +313,7 @@ func TestSearchFlags_validateTopLevelDirectory(t *testing.T) {
 	fnName := "SearchFlags.validateTopLevelDirectory()"
 	thisDir := "."
 	notAFile := "no such file"
-	notADir := "input_test.go"
+	notADir := "searchflags_test.go"
 	tests := []struct {
 		name string
 		sf   *SearchFlags
@@ -333,6 +333,10 @@ func TestSearchFlags_validateTopLevelDirectory(t *testing.T) {
 }
 
 func TestSearchFlags_validateExtension(t *testing.T) {
+	originalRegex := trackNameRegex
+	defer func() {
+		trackNameRegex = originalRegex
+	}()
 	fnName := "SearchFlags.validateExtension()"
 	defaultExtension := DefaultFileExtension
 	missingLeadDot := "mp3"

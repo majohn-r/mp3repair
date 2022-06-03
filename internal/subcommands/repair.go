@@ -119,5 +119,7 @@ func reportProblem(b bool, problem string) string {
 }
 
 func fixTracks(w io.Writer, tracks []*files.Track) {
-
+	/*
+	ensure backup subdirectories exist for the specified tracks, creating a map of album paths to backup paths
+	*/
 }
