@@ -9,7 +9,7 @@ import (
 
 func Test_ReadDefaultsYaml(t *testing.T) {
 	fnName := "ReadDefaultsYaml()"
-	if err := CreateDefaultYamlFile(); err != nil {
+	if err := CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
 	defer func() {
@@ -43,7 +43,7 @@ func okViper(got, want *viper.Viper) bool {
 }
 
 func Test_SafeSubViper(t *testing.T) {
-	if err := CreateDefaultYamlFile(); err != nil {
+	if err := CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("error creating defaults.yaml: %v", err)
 	}
 	fnName := "SafeSubViper()"
@@ -77,7 +77,7 @@ func Test_SafeSubViper(t *testing.T) {
 }
 
 func Test_GetBoolDefault(t *testing.T) {
-	if err := CreateDefaultYamlFile(); err != nil {
+	if err := CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("error creating defaults.yaml: %v", err)
 	}
 	fnName := "GetBoolDefault()"
@@ -130,7 +130,7 @@ func Test_GetBoolDefault(t *testing.T) {
 }
 
 func Test_GetStringDefault(t *testing.T) {
-	if err := CreateDefaultYamlFile(); err != nil {
+	if err := CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("error creating defaults.yaml: %v", err)
 	}
 	fnName := "GetStringDefault()"

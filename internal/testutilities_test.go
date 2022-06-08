@@ -192,7 +192,7 @@ func TestPopulateTopDirForTesting(t *testing.T) {
 	}
 }
 
-func TestCreateDefaultYamlFile(t *testing.T) {
+func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 	tests := []struct {
 		name     string
 		preTest  func(t *testing.T)
@@ -241,7 +241,7 @@ func TestCreateDefaultYamlFile(t *testing.T) {
 				v.AddConfigPath("./mp3")
 				if err := v.ReadInConfig(); err != nil {
 					t.Errorf("CreateDefaultYamlFile() 'good test': error reading defaults configuration file: %v", err)
-				}			
+				}
 				if common := v.Sub("common"); common == nil {
 					t.Error("CreateDefaultYamlFile() 'good test': viper does not contain common subtree")
 				} else {
@@ -304,7 +304,7 @@ func TestCreateDefaultYamlFile(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.preTest(t)
-			if err := CreateDefaultYamlFile(); (err != nil) != tt.wantErr {
+			if err := CreateDefaultYamlFileForTesting(); (err != nil) != tt.wantErr {
 				t.Errorf("CreateDefaultYamlFile() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			tt.postTest(t)

@@ -129,7 +129,7 @@ func CreateFileForTesting(dir, name string) (err error) {
 	return CreateFileForTestingWithContent(dir, name, "file contents for "+name)
 }
 
-func CreateDefaultYamlFile() error {
+func CreateDefaultYamlFileForTesting() error {
 	path := "./mp3"
 	if err := Mkdir(path); err != nil {
 		return err

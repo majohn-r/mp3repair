@@ -53,7 +53,7 @@ func (s *Search) LoadUnfilteredData() (artists []*Artist) {
 								}
 								if simpleName, trackNumber, valid := ParseTrackName(trackFile.Name(), album.Name, artist.Name, s.targetExtension); valid {
 									track := &Track{
-										fullPath:        filepath.Join(album.Path, trackFile.Name()),
+										Path:            filepath.Join(album.Path, trackFile.Name()),
 										Name:            simpleName,
 										TrackNumber:     trackNumber,
 										TaggedTrack:     trackUnknownTagsNotRead,
@@ -93,7 +93,7 @@ func (s *Search) FilterArtists(unfilteredArtists []*Artist) (artists []*Artist) 
 						newAlbum := copyAlbum(album, artist)
 						for _, track := range album.Tracks {
 							newTrack := &Track{
-								fullPath:        track.fullPath,
+								Path:            track.Path,
 								Name:            track.Name,
 								TrackNumber:     track.TrackNumber,
 								TaggedAlbum:     track.TaggedAlbum,
@@ -140,7 +140,7 @@ func (s *Search) LoadData() (artists []*Artist) {
 							}
 							if simpleName, trackNumber, valid := ParseTrackName(trackFile.Name(), album.Name, artist.Name, s.targetExtension); valid {
 								track := &Track{
-									fullPath:        filepath.Join(album.Path, trackFile.Name()),
+									Path:            filepath.Join(album.Path, trackFile.Name()),
 									Name:            simpleName,
 									TrackNumber:     trackNumber,
 									TaggedTrack:     trackUnknownTagsNotRead,

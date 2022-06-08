@@ -10,7 +10,7 @@ import (
 )
 
 func TestProcessCommand(t *testing.T) {
-	if err := internal.CreateDefaultYamlFile(); err != nil {
+	if err := internal.CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("error creating defaults.yaml: %v", err)
 	}
 	fnName := "ProcessCommand()"

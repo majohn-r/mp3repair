@@ -14,29 +14,29 @@ import (
 )
 
 const (
-	logFilePrefix    string = "mp3."
-	logFileExtension string = ".log"
-	logFileTemplate  string = logFilePrefix + "%Y%m%d" + logFileExtension
-	symlinkName      string = "latest.log"
-	maxLogFiles      int    = 10
+	logFilePrefix    = "mp3."
+	logFileExtension = ".log"
+	logFileTemplate  = logFilePrefix + "%Y%m%d" + logFileExtension
+	symlinkName      = "latest.log"
+	maxLogFiles      = 10
 )
 
 // constants for log fields
 const (
-	LOG_ALBUM_FILTER  string = "albumFilter"
-	LOG_ALBUM_NAME    string = "albumName"
-	LOG_ARTIST_FILTER string = "artistFilter"
-	LOG_ARTIST_NAME   string = "artistName"
-	LOG_COMMAND_NAME  string = "command"
-	LOG_DIRECTORY     string = "directory"
-	LOG_ERROR         string = "error"
-	LOG_EXTENSION     string = "extension"
-	LOG_FILE_NAME     string = "fileName"
-	LOG_FILTER        string = "filter"
-	LOG_FLAG          string = "flag"
-	LOG_PATH          string = "path"
-	LOG_TRACK_NAME    string = "trackName"
-	LOG_VALUE         string = "value"
+	LOG_ALBUM_FILTER  = "albumFilter"
+	LOG_ALBUM_NAME    = "albumName"
+	LOG_ARTIST_FILTER = "artistFilter"
+	LOG_ARTIST_NAME   = "artistName"
+	LOG_COMMAND_NAME  = "command"
+	LOG_DIRECTORY     = "directory"
+	LOG_ERROR         = "error"
+	LOG_EXTENSION     = "extension"
+	LOG_FILE_NAME     = "fileName"
+	LOG_FILTER        = "filter"
+	LOG_FLAG          = "flag"
+	LOG_PATH          = "path"
+	LOG_TRACK_NAME    = "trackName"
+	LOG_VALUE         = "value"
 )
 
 func ConfigureLogging(path string) *cronowriter.CronoWriter {

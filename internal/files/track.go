@@ -3,6 +3,7 @@ package files
 import (
 	"fmt"
 	"mp3/internal"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -12,16 +13,20 @@ import (
 )
 
 const (
-	rawExtension            string = "mp3"
-	DefaultFileExtension    string = "." + rawExtension
-	defaultTrackNamePattern string = "^\\d+[\\s-].+\\." + rawExtension + "$"
-	trackDiffBadTags        string = "cannot determine differences, tags were not recognized"
-	trackDiffUnreadableTags string = "cannot determine differences, could not read tags"
-	trackDiffUnreadTags     string = "cannot determine differences, tags have not been read"
+	rawExtension             = "mp3"
+	DefaultFileExtension     = "." + rawExtension
+	defaultTrackNamePattern  = "^\\d+[\\s-].+\\." + rawExtension + "$"
+	trackDiffBadTags         = "cannot determine differences, tags were not recognized"
+	trackDiffUnreadableTags  = "cannot determine differences, could not read tags"
+	trackDiffUnreadTags      = "cannot determine differences, tags have not been read"
+	BackupDirName            = "pre-repair-backup"
+	trackUnknownFormatError  = -1
+	trackUnknownTagsNotRead  = -2
+	TrackUnknownTagReadError = -3
 )
 
 type Track struct {
-	fullPath        string // full path to the file associated with the track, including the file itself
+	Path            string // full path to the file associated with the track, including the file itself
 	Name            string // name of the track, without the track number or file extension, e.g., "First Track"
 	TrackNumber     int    // number of the track
 	ContainingAlbum *Album
@@ -63,12 +68,6 @@ func (t Tracks) Swap(i, j int) {
 	t[i], t[j] = t[j], t[i]
 }
 
-const (
-	trackUnknownFormatError  int = -1
-	trackUnknownTagsNotRead  int = -2
-	trackUnknownTagReadError int = -3
-)
-
 type taggedTrackData struct {
 	album  string
 	artist string
@@ -78,12 +77,17 @@ type taggedTrackData struct {
 
 var trackNameRegex *regexp.Regexp = regexp.MustCompile(defaultTrackNamePattern)
 
+// BackupDirectory returns the path for this track
+func (t *Track) BackupDirectory() string {
+	return filepath.Join(t.ContainingAlbum.Path, BackupDirName)
+}
+
 func (t *Track) needsTaggedData() bool {
 	return t.TaggedTrack == trackUnknownTagsNotRead
 }
 
 func (t *Track) setTagReadError() {
-	t.TaggedTrack = trackUnknownTagReadError
+	t.TaggedTrack = TrackUnknownTagReadError
 }
 
 func (t *Track) setTagFormatError() {
@@ -183,7 +187,7 @@ func (t *Track) AnalyzeIssues() TrackState {
 	switch t.TaggedTrack {
 	case trackUnknownFormatError:
 		return TrackState{tagFormatError: true}
-	case trackUnknownTagReadError:
+	case TrackUnknownTagReadError:
 		return TrackState{tagReadError: true}
 	case trackUnknownTagsNotRead:
 		return TrackState{noTags: true}
@@ -277,7 +281,7 @@ func (t *Track) EditTags() error {
 		return fmt.Errorf("track %d %q of album %q by artist %q has no tagging conflicts, no edit needed",
 			t.TrackNumber, t.Name, t.ContainingAlbum.Name, t.ContainingAlbum.RecordingArtist.Name)
 	}
-	tag, err := id3v2.Open(t.fullPath, id3v2.Options{Parse: true})
+	tag, err := id3v2.Open(t.Path, id3v2.Options{Parse: true})
 	if err != nil {
 		return err
 	}
@@ -311,8 +315,8 @@ func (t *Track) readTags(reader func(string) (*taggedTrackData, error)) {
 			defer func() {
 				<-semaphores // read to release a slot
 			}()
-			if tags, err := reader(t.fullPath); err != nil {
-				logrus.WithFields(logrus.Fields{internal.LOG_PATH: t.fullPath, internal.LOG_ERROR: err}).Warn(internal.LOG_CANNOT_READ_FILE)
+			if tags, err := reader(t.Path); err != nil {
+				logrus.WithFields(logrus.Fields{internal.LOG_PATH: t.Path, internal.LOG_ERROR: err}).Warn(internal.LOG_CANNOT_READ_FILE)
 				t.setTagReadError()
 			} else {
 				t.setTags(tags)

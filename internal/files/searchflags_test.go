@@ -68,7 +68,7 @@ func Test_NewFileFlags(t *testing.T) {
 	}()
 	os.Setenv("HOMEPATH", ".")
 	fnName := "NewFileFlags()"
-	if err := internal.CreateDefaultYamlFile(); err != nil {
+	if err := internal.CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("error creating defaults.yaml: %v", err)
 	}
 	defer func() {

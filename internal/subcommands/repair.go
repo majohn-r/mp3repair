@@ -7,6 +7,7 @@ import (
 	"mp3/internal"
 	"mp3/internal/files"
 	"os"
+	"path/filepath"
 	"sort"
 
 	"github.com/sirupsen/logrus"
@@ -58,10 +59,15 @@ func (r *repair) runSubcommand(w io.Writer, s *files.Search) {
 	artists := s.LoadData()
 	files.UpdateTracks(artists, files.RawReadTags)
 	tracksWithConflicts := findConflictedTracks(artists)
-	if *r.dryRun {
-		reportTracks(w, tracksWithConflicts)
+	if len(tracksWithConflicts) == 0 {
+		fmt.Fprintln(w, noProblemsFound)
 	} else {
-		fixTracks(w, tracksWithConflicts)
+		if *r.dryRun {
+			reportTracks(w, tracksWithConflicts)
+		} else {
+			r.createBackups(w, tracksWithConflicts)
+			r.fixTracks(w, tracksWithConflicts)
+		}
 	}
 }
 
@@ -83,43 +89,107 @@ func findConflictedTracks(artists []*files.Artist) []*files.Track {
 const noProblemsFound = "No repairable track defects found"
 
 func reportTracks(w io.Writer, tracks []*files.Track) {
-	if len(tracks) == 0 {
-		fmt.Fprintln(w, noProblemsFound)
-	} else {
-		lastArtistName := ""
-		lastAlbumName := ""
-		for _, t := range tracks {
-			albumName := t.ContainingAlbum.Name
-			artistName := t.ContainingAlbum.RecordingArtist.Name
-			if lastArtistName != artistName {
-				fmt.Fprintf(w, "%q\n", artistName)
-				lastArtistName = artistName
-				lastAlbumName = ""
-			}
-			if albumName != lastAlbumName {
-				fmt.Fprintf(w, "    %q\n", albumName)
-				lastAlbumName = albumName
-			}
-			s := t.AnalyzeIssues()
-			fmt.Fprintf(w, "        %2d %q need to fix%s%s%s%s\n",
-				t.TrackNumber, t.Name,
-				reportProblem(s.HasNumberingConflict(), " track numbering;"),
-				reportProblem(s.HasTrackNameConflict(), " track name;"),
-				reportProblem(s.HasAlbumNameConflict(), " album name;"),
-				reportProblem(s.HasArtistNameConflict(), " artist name;"))
+	lastArtistName := ""
+	lastAlbumName := ""
+	for _, t := range tracks {
+		albumName := t.ContainingAlbum.Name
+		artistName := t.ContainingAlbum.RecordingArtist.Name
+		if lastArtistName != artistName {
+			fmt.Fprintf(w, "%q\n", artistName)
+			lastArtistName = artistName
+			lastAlbumName = ""
+		}
+		if albumName != lastAlbumName {
+			fmt.Fprintf(w, "    %q\n", albumName)
+			lastAlbumName = albumName
+		}
+		s := t.AnalyzeIssues()
+		fmt.Fprintf(w, "        %2d %q need to fix%s%s%s%s\n",
+			t.TrackNumber, t.Name,
+			reportProblem(s.HasNumberingConflict(), " track numbering;"),
+			reportProblem(s.HasTrackNameConflict(), " track name;"),
+			reportProblem(s.HasAlbumNameConflict(), " album name;"),
+			reportProblem(s.HasArtistNameConflict(), " artist name;"))
+	}
+}
+
+func reportProblem(b bool, problem string) (s string) {
+	if b {
+		s = problem
+	}
+	return
+}
+
+func (r *repair) fixTracks(w io.Writer, tracks []*files.Track) {
+	for _, t := range tracks {
+		if err := t.EditTags(); err != nil {
+			fmt.Fprintf(w, "An error occurred fixing track %q\n", t.Path)
+			logrus.WithFields(logrus.Fields{
+				internal.LOG_EXECUTING_COMMAND: r.name(),
+				internal.LOG_PATH:              t.Path,
+				internal.LOG_ERROR:             err,
+			}).Warn("attempt to edit track failed")
+		} else {
+			fmt.Fprintf(w, "%q fixed\n", t.Path)
 		}
 	}
 }
 
-func reportProblem(b bool, problem string) string {
-	if !b {
-		return ""
-	}
-	return problem
+func (r *repair) createBackups(w io.Writer, tracks []*files.Track) {
+	albumPaths := getAlbumPaths(tracks)
+	r.makeBackupDirectories(w, albumPaths)
+	r.backupTracks(w, tracks)
 }
 
-func fixTracks(w io.Writer, tracks []*files.Track) {
-	/*
-	ensure backup subdirectories exist for the specified tracks, creating a map of album paths to backup paths
-	*/
+func (r *repair) backupTracks(w io.Writer, tracks []*files.Track) {
+	for _, track := range tracks {
+		r.backupTrack(w, track)
+	}
+}
+
+func (r *repair) backupTrack(w io.Writer, t *files.Track) {
+	backupDir := t.BackupDirectory()
+	destinationPath := filepath.Join(backupDir, fmt.Sprintf("%d.mp3", t.TrackNumber))
+	if internal.DirExists(backupDir) && !internal.PlainFileExists(destinationPath) {
+		if err := internal.CopyFile(t.Path, destinationPath); err != nil {
+			fmt.Fprintf(w, "The track %q cannot be backed up.\n", t.Path)
+			logrus.WithFields(logrus.Fields{
+				internal.LOG_COMMAND_NAME: r.name(),
+				"source":                  t.Path,
+				"destination":             destinationPath,
+				internal.LOG_ERROR:        err,
+			}).Info("error backing up file")
+		} else {
+			fmt.Fprintf(w, "The track %q has been backed up to %q.\n", t.Path, destinationPath)
+		}
+	}
+}
+
+func (r *repair) makeBackupDirectories(w io.Writer, paths []string) {
+	for _, path := range paths {
+		newPath := filepath.Join(path, files.BackupDirName)
+		if !internal.DirExists(newPath) {
+			if err := internal.Mkdir(newPath); err != nil {
+				fmt.Fprintf(w, internal.USER_CANNOT_CREATE_DIRECTORY, newPath, err)
+				logrus.WithFields(logrus.Fields{
+					internal.LOG_COMMAND_NAME: r.name(),
+					internal.LOG_DIRECTORY:    newPath,
+					internal.LOG_ERROR:        err,
+				}).Info(internal.LOG_CANNOT_CREATE_DIRECTORY)
+			}
+		}
+	}
+}
+
+func getAlbumPaths(tracks []*files.Track) []string {
+	albumPaths := map[string]bool{}
+	for _, t := range tracks {
+		albumPaths[t.ContainingAlbum.Path] = true
+	}
+	var result []string
+	for path := range albumPaths {
+		result = append(result, path)
+	}
+	sort.Strings(result)
+	return result
 }

@@ -22,7 +22,7 @@ func CreateAllOddArtistsWithEvenAlbumsForTesting(topDir string) []*Artist {
 				trackName := internal.CreateTrackNameForTesting(p)
 				name, _, _ := ParseTrackName(trackName, albumName, artistName, DefaultFileExtension)
 				track := &Track{
-					fullPath:        filepath.Join(albumDir, trackName),
+					Path:            filepath.Join(albumDir, trackName),
 					Name:            name,
 					TrackNumber:     p,
 					ContainingAlbum: album,
@@ -51,7 +51,7 @@ func CreateAllArtistsForTesting(topDir string, addExtras bool) []*Artist {
 				trackName := internal.CreateTrackNameForTesting(p)
 				name, trackNo, _ := ParseTrackName(trackName, albumName, artistName, DefaultFileExtension)
 				track := &Track{
-					fullPath:        filepath.Join(albumDir, trackName),
+					Path:            filepath.Join(albumDir, trackName),
 					Name:            name,
 					TrackNumber:     trackNo,
 					ContainingAlbum: album,
@@ -74,4 +74,42 @@ func CreateAllArtistsForTesting(topDir string, addExtras bool) []*Artist {
 		artists = append(artists, artist)
 	}
 	return artists
+}
+
+// CreateTaggedData creates tagged content. This code is based on reading
+// https://id3.org/id3v2.3.0 and on looking at a hex dump of a real mp3 file.
+func CreateTaggedData(payload []byte, frames map[string] string) []byte {
+	content := make([]byte, 0)
+	// block off tag header
+	content = append(content, []byte("ID3")...)
+	content = append(content, []byte{3, 0, 0, 0, 0, 0, 0}...)
+	// add some text frames
+	for name, value := range frames {
+		content = append(content, makeTextFrame(name, value)...)
+	}
+	contentLength := len(content) - 10
+	factor := 128 * 128 * 128
+	for k := 0; k < 4; k++ {
+		content[6+k] = byte(contentLength / factor)
+		contentLength = contentLength % factor
+		factor = factor / 128
+	}
+	// add payload
+	content = append(content, payload...)
+	return content
+}
+
+func makeTextFrame(id string, content string) []byte {
+	frame := make([]byte, 0)
+	frame = append(frame, []byte(id)...)
+	contentSize := 1 + len(content)
+	factor := 256 * 256 * 256
+	for k := 0; k < 4; k++ {
+		frame = append(frame, byte(contentSize/factor))
+		contentSize = contentSize % factor
+		factor = factor / 256
+	}
+	frame = append(frame, []byte{0, 0, 0}...)
+	frame = append(frame, []byte(content)...)
+	return frame
 }

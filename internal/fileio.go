@@ -3,9 +3,12 @@ package internal
 import (
 	"errors"
 	"fmt"
+	"io"
 	"os"
 )
 
+// PlainFileExists returns whether the specified file exists as a plain file
+// (i.e., not a directory)
 func PlainFileExists(path string) bool {
 	f, err := os.Stat(path)
 	if err == nil {
@@ -15,6 +18,35 @@ func PlainFileExists(path string) bool {
 	}
 }
 
+// DirExists returns whether the specified file exists as a directory
+func DirExists(path string) bool {
+	f, err := os.Stat(path)
+	if err == nil {
+		return f.IsDir()
+	} else {
+		return !errors.Is(err, os.ErrNotExist)
+	}
+}
+
+// Copy copies a file. Adapted from
+// https://github.com/cleversoap/go-cp/blob/master/cp.go
+func CopyFile(src, dest string) (err error) {
+	var r *os.File
+	r, err = os.Open(src)
+	if err == nil {
+		defer r.Close()
+		var w *os.File
+		w, err = os.Create(dest)
+		if err == nil {
+			defer w.Close()
+			_, err = io.Copy(w, r)
+		}
+	}
+	return
+}
+
+// Mkdir makes the specified directory; succeeds if the directory already
+// exists. Fails if a plain file exists with the specified path.
 func Mkdir(dirName string) (err error) {
 	status, err := os.Stat(dirName)
 	if err != nil {

@@ -496,7 +496,7 @@ func Test_newLsSubCommand(t *testing.T) {
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
 		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
 	}
-	if err := internal.CreateDefaultYamlFile(); err != nil {
+	if err := internal.CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("error creating defaults.yaml: %v", err)
 	}
 	defer func() {
@@ -504,7 +504,7 @@ func Test_newLsSubCommand(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
 	type args struct {
-		v    *viper.Viper
+		v *viper.Viper
 	}
 	tests := []struct {
 		name                 string

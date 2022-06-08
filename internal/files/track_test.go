@@ -75,7 +75,7 @@ func TestTrack_needsTaggedData(t *testing.T) {
 	}{
 		{name: "needs tagged data", tr: &Track{TaggedTrack: trackUnknownTagsNotRead}, want: true},
 		{name: "format error", tr: &Track{TaggedTrack: trackUnknownFormatError}, want: false},
-		{name: "tag read error", tr: &Track{TaggedTrack: trackUnknownTagReadError}, want: false},
+		{name: "tag read error", tr: &Track{TaggedTrack: TrackUnknownTagReadError}, want: false},
 		{name: "valid track number", tr: &Track{TaggedTrack: 1}, want: false},
 	}
 	for _, tt := range tests {
@@ -97,7 +97,7 @@ func TestTrack_setTagReadError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.tr.setTagReadError()
-			if tt.tr.TaggedTrack != trackUnknownTagReadError {
+			if tt.tr.TaggedTrack != TrackUnknownTagReadError {
 				t.Errorf("Track.setTagReadError() failed to set TaggedTrack: %d", tt.tr.TaggedTrack)
 			}
 		})
@@ -279,9 +279,9 @@ func TestTrack_readTags(t *testing.T) {
 		},
 		{
 			name:       "replay after read error",
-			tr:         &Track{TaggedTrack: trackUnknownTagReadError},
+			tr:         &Track{TaggedTrack: TrackUnknownTagReadError},
 			args:       args{normalReader},
-			wantNumber: trackUnknownTagReadError,
+			wantNumber: TrackUnknownTagReadError,
 		},
 		{
 			name:       "replay after format error",
@@ -293,7 +293,7 @@ func TestTrack_readTags(t *testing.T) {
 			name:       "read error",
 			tr:         &Track{TaggedTrack: trackUnknownTagsNotRead},
 			args:       args{brokenReader},
-			wantNumber: trackUnknownTagReadError,
+			wantNumber: TrackUnknownTagReadError,
 		},
 		{
 			name:       "format error",
@@ -401,7 +401,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 			},
 		},
 		{name: "unread tags", tr: &Track{TaggedTrack: trackUnknownTagsNotRead}, want: []string{trackDiffUnreadTags}},
-		{name: "unreadable tags", tr: &Track{TaggedTrack: trackUnknownTagReadError}, want: []string{trackDiffUnreadableTags}},
+		{name: "unreadable tags", tr: &Track{TaggedTrack: TrackUnknownTagReadError}, want: []string{trackDiffUnreadableTags}},
 		{name: "garbage tags", tr: &Track{TaggedTrack: trackUnknownFormatError}, want: []string{trackDiffBadTags}},
 	}
 	for _, tt := range tests {
@@ -608,34 +608,38 @@ func TestTrack_EditTags(t *testing.T) {
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
-	// this code that creates the test.mp3 file is based on reading
-	// https://id3.org/id3v2.3.0 and on looking at a hex dump of a real mp3 file.
 	testFileName := "test.mp3"
 	fullPath := filepath.Join(topDir, testFileName)
-	content := make([]byte, 0)
-	// block off tag header
-	content = append(content, []byte("ID3")...)
-	content = append(content, []byte{3, 0, 0, 0, 0, 0, 0}...)
-	// add some text frames
-	content = append(content, makeTextFrame("TYER", "2022")...)
-	content = append(content, makeTextFrame("TALB", "unknown album")...)
-	content = append(content, makeTextFrame("TRCK", "2")...)
-	content = append(content, makeTextFrame("TCON", "dance music")...)
-	content = append(content, makeTextFrame("TCOM", "a couple of idiots")...)
-	content = append(content, makeTextFrame("TIT2", "unknown track")...)
-	content = append(content, makeTextFrame("TPE1", "unknown artist")...)
-	content = append(content, makeTextFrame("TLEN", "1000")...)
-	contentLength := len(content) - 10
-	factor := 128 * 128 * 128
-	for k := 0; k < 4; k++ {
-		content[6+k] = byte(contentLength / factor)
-		contentLength = contentLength % factor
-		factor = factor / 128
-	}
-	// add "music"
+	payload := make([]byte, 0)
 	for k := 0; k < 256; k++ {
-		content = append(content, byte(k))
+		payload = append(payload, byte(k))
 	}
+	frames := map[string]string{
+		"TYER": "2022",
+		"TALB": "unknown album",
+		"TRCK": "2",
+		"TCON": "dance music",
+		"TCOM": "a couple of idiots",
+		"TIT2": "unknown track",
+		"TPE1": "unknown artist",
+		"TLEN": "1000",
+	}
+	content := CreateTaggedData(payload, frames)
+	// // block off tag header
+	// content = append(content, []byte("ID3")...)
+	// content = append(content, []byte{3, 0, 0, 0, 0, 0, 0}...)
+	// // add some text frames
+	// contentLength := len(content) - 10
+	// factor := 128 * 128 * 128
+	// for k := 0; k < 4; k++ {
+	// 	content[6+k] = byte(contentLength / factor)
+	// 	contentLength = contentLength % factor
+	// 	factor = factor / 128
+	// }
+	// // add "music"
+	// for k := 0; k < 256; k++ {
+	// 	content = append(content, byte(k))
+	// }
 	if err := internal.CreateFileForTestingWithContent(topDir, testFileName, string(content)); err != nil {
 		t.Errorf("%s cannot create file %q: %v", fnName, fullPath, err)
 	}
@@ -663,7 +667,7 @@ func TestTrack_EditTags(t *testing.T) {
 				TaggedTitle:     "unknown track",
 				TaggedAlbum:     "unknown album",
 				TaggedArtist:    "unknown artist",
-				fullPath:        filepath.Join(topDir, "non-existent-file.mp3"),
+				Path:            filepath.Join(topDir, "non-existent-file.mp3"),
 				ContainingAlbum: &Album{Name: "poor album", RecordingArtist: &Artist{Name: "sorry artist"}},
 			},
 			wantErr: true,
@@ -677,7 +681,7 @@ func TestTrack_EditTags(t *testing.T) {
 				TaggedTitle:     "unknown track",
 				TaggedAlbum:     "unknown album",
 				TaggedArtist:    "unknown artist",
-				fullPath:        fullPath,
+				Path:            fullPath,
 				ContainingAlbum: &Album{Name: "poor album", RecordingArtist: &Artist{Name: "sorry artist"}},
 			},
 			wantErr: false,
@@ -724,17 +728,23 @@ func TestTrack_EditTags(t *testing.T) {
 	}
 }
 
-func makeTextFrame(id string, content string) []byte {
-	frame := make([]byte, 0)
-	frame = append(frame, []byte(id)...)
-	contentSize := 1 + len(content)
-	factor := 256 * 256 * 256
-	for k := 0; k < 4; k++ {
-		frame = append(frame, byte(contentSize/factor))
-		contentSize = contentSize % factor
-		factor = factor / 256
+func TestTrack_BackupDirectory(t *testing.T) {
+	tests := []struct {
+		name string
+		tr   *Track
+		want string
+	}{
+		{
+			name: "simple case",
+			tr:   &Track{ContainingAlbum: &Album{Path: "albumPath"}},
+			want: "albumPath\\pre-repair-backup",
+		},
 	}
-	frame = append(frame, []byte{0, 0, 0}...)
-	frame = append(frame, []byte(content)...)
-	return frame
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.tr.BackupDirectory(); got != tt.want {
+				t.Errorf("Track.BackupDirectory() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
