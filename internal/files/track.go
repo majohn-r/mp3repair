@@ -94,6 +94,9 @@ func (t *Track) setTagFormatError() {
 	t.TaggedTrack = trackUnknownFormatError
 }
 
+// BUG [#47] if the track number string begins with a BOM character, which can
+// be safely ignored, this fails with an invalid format error.
+// NEEDTEST this needs to be explicitly tested, sigh.
 func toTrackNumber(s string) (i int, err error) {
 	// this is more complicated than I wanted, because some mp3 rippers produce
 	// track numbers like "12/14", meaning 12th track of 14
@@ -126,7 +129,10 @@ func toTrackNumber(s string) (i int, err error) {
 
 func (t *Track) setTags(d *taggedTrackData) {
 	if trackNumber, err := toTrackNumber(d.number); err != nil {
-		logrus.WithFields(logrus.Fields{"trackTag": d.number, internal.LOG_ERROR: err}).Warn("invalid track tag")
+		logrus.WithFields(logrus.Fields{
+			internal.LOG_PATH: t.Path,
+			"trackTag": d.number,
+			internal.LOG_ERROR: err}).Warn("invalid track tag")
 		t.setTagFormatError()
 	} else {
 		t.TaggedAlbum = removeLeadingBOMs(d.album)
@@ -136,7 +142,10 @@ func (t *Track) setTags(d *taggedTrackData) {
 	}
 }
 
-// randomly, some tags - particularly titles - begin with a BOM (byte order mark)
+// randomly, some tags - particularly titles - begin with a BOM (byte order
+// mark)
+// BUG what if the string is zero-length, or consists of a naked BOM character?
+// NEEDTEST this needs to be explicitly tested
 func removeLeadingBOMs(s string) string {
 	r := []rune(s)
 	if r[0] == '\ufeff' {
