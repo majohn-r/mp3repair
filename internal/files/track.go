@@ -291,6 +291,7 @@ func (t *Track) EditTags() error {
 		return err
 	}
 	defer tag.Close()
+	tag.SetDefaultEncoding(id3v2.EncodingUTF8)
 	if a.HasAlbumNameConflict() {
 		tag.SetAlbum(t.ContainingAlbum.Name)
 	}
