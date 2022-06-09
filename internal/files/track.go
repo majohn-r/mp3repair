@@ -244,7 +244,7 @@ func isComparable(p nameTagPair) bool {
 	fileName := strings.ToLower(p.name)
 	tag := strings.ToLower(p.tag)
 	// strip off illegal end characters from the tag
-	for strings.HasSuffix(tag, ".") || strings.HasSuffix(tag, " ") {
+	for strings.HasSuffix(tag, " ") {
 		tag = tag[:len(tag)-1]
 	}
 	if fileName == tag {

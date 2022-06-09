@@ -339,7 +339,7 @@ func Test_isComparable(t *testing.T) {
 		{name: "expected fail", args: args{nameTagPair{name: "simple name", tag: "artist: simple name"}}, want: false},
 		{name: "illegal char case", args: args{nameTagPair{name: "simple_name", tag: "simple:name"}}, want: true},
 		{name: "illegal final space", args: args{nameTagPair{name: "simple name", tag: "simple name "}}, want: true},
-		{name: "illegal final period", args: args{nameTagPair{name: "simple name", tag: "simple name."}}, want: true},
+		{name: "final period", args: args{nameTagPair{name: "simple name.", tag: "simple name."}}, want: true},
 		{name: "complex fail", args: args{nameTagPair{name: "simple_name", tag: "simple: nam"}}, want: false},
 	}
 	for _, tt := range tests {
