@@ -136,6 +136,7 @@ func Test_toTrackNumber(t *testing.T) {
 		{name: "negative value", args: args{s: "-12"}, wantI: 0, wantErr: true},
 		{name: "invalid value", args: args{s: "foo"}, wantI: 0, wantErr: true},
 		{name: "complicated value", args: args{s: "12/39"}, wantI: 12, wantErr: false},
+		{name: "BOM-infested complicated value", args: args{s: "\ufeff12/39"}, wantI: 12, wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -522,6 +523,8 @@ func Test_removeLeadingBOMs(t *testing.T) {
 	}{
 		{name: "normal string", args: args{s: "normal"}, want: "normal"},
 		{name: "abnormal string", args: args{s: "\ufeff\ufeffnormal"}, want: "normal"},
+		{name: "empty string", args: args{}},
+		{name: "nothing but BOM", args: args{s: "\ufeff\ufeff"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

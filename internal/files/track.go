@@ -94,9 +94,6 @@ func (t *Track) setTagFormatError() {
 	t.TaggedTrack = trackUnknownFormatError
 }
 
-// BUG [#47] if the track number string begins with a BOM character, which can
-// be safely ignored, this fails with an invalid format error.
-// NEEDTEST this needs to be explicitly tested, sigh.
 func toTrackNumber(s string) (i int, err error) {
 	// this is more complicated than I wanted, because some mp3 rippers produce
 	// track numbers like "12/14", meaning 12th track of 14
@@ -104,6 +101,7 @@ func toTrackNumber(s string) (i int, err error) {
 		err = fmt.Errorf("invalid format: %q", s)
 		return
 	}
+	s = removeLeadingBOMs(s)
 	n := 0
 	bs := []byte(s)
 	for j, b := range bs {
@@ -144,15 +142,13 @@ func (t *Track) setTags(d *taggedTrackData) {
 
 // randomly, some tags - particularly titles - begin with a BOM (byte order
 // mark)
-// BUG what if the string is zero-length, or consists of a naked BOM character?
-// NEEDTEST this needs to be explicitly tested
 func removeLeadingBOMs(s string) string {
+	if len(s) == 0 {
+		return s
+	}
 	r := []rune(s)
 	if r[0] == '\ufeff' {
-		for r[0] == '\ufeff' {
-			r = r[1:]
-		}
-		return string(r)
+		return removeLeadingBOMs(string(r[1:]))
 	}
 	return s
 }
