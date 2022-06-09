@@ -140,7 +140,7 @@ func (l *ls) outputAlbums(w io.Writer, albums []*files.Album, prefix string) {
 			var name string
 			switch {
 			case !*l.includeArtists && *l.annotateListings:
-				name = album.Name() + " by " + album.RecordingArtist.Name
+				name = album.Name() + " by " + album.RecordingArtistName()
 			default:
 				name = album.Name()
 			}
@@ -217,7 +217,7 @@ func (l *ls) outputTracks(w io.Writer, tracks []*files.Track, prefix string) {
 				if !*l.includeAlbums {
 					components = append(components, fmt.Sprintf("on %s", track.ContainingAlbum.Name()))
 					if !*l.includeArtists {
-						components = append(components, fmt.Sprintf("by %s", track.ContainingAlbum.RecordingArtist.Name))
+						components = append(components, fmt.Sprintf("by %s", track.ContainingAlbum.RecordingArtistName()))
 					}
 				}
 			}

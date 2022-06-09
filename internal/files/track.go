@@ -48,10 +48,10 @@ func (t Tracks) Less(i, j int) bool {
 	track2 := t[j]
 	album1 := track1.ContainingAlbum
 	album2 := track2.ContainingAlbum
-	artist1 := album1.RecordingArtist
-	artist2 := album2.RecordingArtist
+	artist1 := album1.RecordingArtistName()
+	artist2 := album2.RecordingArtistName()
 	// compare artist name first
-	if artist1.Name == artist2.Name {
+	if artist1 == artist2 {
 		// artist names are the same ... try the album name next
 		if album1.Name() == album2.Name() {
 			// and album names are the same ... go by track number
@@ -60,7 +60,7 @@ func (t Tracks) Less(i, j int) bool {
 			return album1.Name() < album2.Name()
 		}
 	} else {
-		return artist1.Name < artist2.Name
+		return artist1 < artist2
 	}
 }
 
@@ -201,7 +201,7 @@ func (t *Track) AnalyzeIssues() TrackState {
 			numberingConflict:  t.TaggedTrack != t.TrackNumber,
 			trackNameConflict:  !isComparable(nameTagPair{name: t.Name, tag: t.TaggedTitle}),
 			albumNameConflict:  !isComparable(nameTagPair{name: t.ContainingAlbum.Name(), tag: t.TaggedAlbum}),
-			artistNameConflict: !isComparable(nameTagPair{name: t.ContainingAlbum.RecordingArtist.Name, tag: t.TaggedArtist}),
+			artistNameConflict: !isComparable(nameTagPair{name: t.ContainingAlbum.RecordingArtistName(), tag: t.TaggedArtist}),
 		}
 	}
 }
@@ -235,7 +235,7 @@ func (t *Track) FindDifferences() []string {
 	}
 	if s.HasArtistNameConflict() {
 		differences = append(differences,
-			fmt.Sprintf("artist %q does not agree with artist tag %q", t.ContainingAlbum.RecordingArtist.Name, t.TaggedArtist))
+			fmt.Sprintf("artist %q does not agree with artist tag %q", t.ContainingAlbum.RecordingArtistName(), t.TaggedArtist))
 	}
 	return differences
 }
@@ -284,7 +284,7 @@ func (t *Track) EditTags() error {
 	a := t.AnalyzeIssues()
 	if !a.HasTaggingConflicts() {
 		return fmt.Errorf("track %d %q of album %q by artist %q has no tagging conflicts, no edit needed",
-			t.TrackNumber, t.Name, t.ContainingAlbum.Name(), t.ContainingAlbum.RecordingArtist.Name)
+			t.TrackNumber, t.Name, t.ContainingAlbum.Name(), t.ContainingAlbum.RecordingArtistName())
 	}
 	tag, err := id3v2.Open(t.Path, id3v2.Options{Parse: true})
 	if err != nil {
@@ -296,7 +296,7 @@ func (t *Track) EditTags() error {
 		tag.SetAlbum(t.ContainingAlbum.Name())
 	}
 	if a.HasArtistNameConflict() {
-		tag.SetArtist(t.ContainingAlbum.RecordingArtist.Name)
+		tag.SetArtist(t.ContainingAlbum.RecordingArtistName())
 	}
 	if a.HasTrackNameConflict() {
 		tag.SetTitle(t.Name)

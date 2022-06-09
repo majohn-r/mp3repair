@@ -577,8 +577,8 @@ func Test_sortTracks(t *testing.T) {
 			track2 := tt.tracks[i]
 			album1 := track1.ContainingAlbum
 			album2 := track2.ContainingAlbum
-			artist1 := album1.RecordingArtist.Name
-			artist2 := album2.RecordingArtist.Name
+			artist1 := album1.RecordingArtistName()
+			artist2 := album2.RecordingArtistName()
 			if artist1 > artist2 {
 				t.Errorf("Sort(Tracks) track[%d] artist name %q comes after track[%d] artist name %q", i-1, artist1, i, artist2)
 			} else {
