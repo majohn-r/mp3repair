@@ -184,7 +184,7 @@ func (r *repair) makeBackupDirectories(w io.Writer, paths []string) {
 func getAlbumPaths(tracks []*files.Track) []string {
 	albumPaths := map[string]bool{}
 	for _, t := range tracks {
-		albumPaths[t.ContainingAlbum.Path] = true
+		albumPaths[t.ContainingAlbum.Path()] = true
 	}
 	var result []string
 	for path := range albumPaths {

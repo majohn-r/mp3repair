@@ -735,7 +735,7 @@ func TestTrack_BackupDirectory(t *testing.T) {
 	}{
 		{
 			name: "simple case",
-			tr:   &Track{ContainingAlbum: &Album{Path: "albumPath"}},
+			tr:   &Track{ContainingAlbum: NewAlbum("", nil, "albumPath")},
 			want: "albumPath\\pre-repair-backup",
 		},
 	}

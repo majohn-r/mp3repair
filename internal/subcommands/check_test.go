@@ -112,18 +112,6 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			w := &bytes.Buffer{}
 			gotArtists, gotArtistsWithIssues := tt.c.performEmptyFolderAnalysis(w, tt.args.s)
-			for _, gA := range gotArtists {
-				gA.Path = ""
-				for _, album := range gA.Albums {
-					album.Path = ""
-				}
-			}
-			for _, wA := range tt.wantArtists {
-				wA.Path = ""
-				for _, album := range wA.Albums {
-					album.Path = ""
-				}
-			}
 			if !reflect.DeepEqual(gotArtists, tt.wantArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotArtists, tt.wantArtists)
 			} else {

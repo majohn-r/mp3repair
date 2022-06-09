@@ -45,7 +45,7 @@ func (s *Search) LoadUnfilteredData() (artists []*Artist) {
 							continue
 						}
 						album := newAlbumFromFile(albumFile, artist)
-						trackFiles, err := readDirectory(album.Path)
+						trackFiles, err := readDirectory(album.Path())
 						if err == nil {
 							for _, trackFile := range trackFiles {
 								if trackFile.IsDir() || !trackNameRegex.MatchString(trackFile.Name()) {
@@ -53,7 +53,7 @@ func (s *Search) LoadUnfilteredData() (artists []*Artist) {
 								}
 								if simpleName, trackNumber, valid := ParseTrackName(trackFile.Name(), album.Name(), artist.Name, s.targetExtension); valid {
 									track := &Track{
-										Path:            filepath.Join(album.Path, trackFile.Name()),
+										Path:            filepath.Join(album.Path(), trackFile.Name()),
 										Name:            simpleName,
 										TrackNumber:     trackNumber,
 										TaggedTrack:     trackUnknownTagsNotRead,
@@ -132,7 +132,7 @@ func (s *Search) LoadData() (artists []*Artist) {
 						continue
 					}
 					album := newAlbumFromFile(albumFile, artist)
-					trackFiles, err := readDirectory(album.Path)
+					trackFiles, err := readDirectory(album.Path())
 					if err == nil {
 						for _, trackFile := range trackFiles {
 							if trackFile.IsDir() || !trackNameRegex.MatchString(trackFile.Name()) {
@@ -140,7 +140,7 @@ func (s *Search) LoadData() (artists []*Artist) {
 							}
 							if simpleName, trackNumber, valid := ParseTrackName(trackFile.Name(), album.Name(), artist.Name, s.targetExtension); valid {
 								track := &Track{
-									Path:            filepath.Join(album.Path, trackFile.Name()),
+									Path:            filepath.Join(album.Path(), trackFile.Name()),
 									Name:            simpleName,
 									TrackNumber:     trackNumber,
 									TaggedTrack:     trackUnknownTagsNotRead,

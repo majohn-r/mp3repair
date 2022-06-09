@@ -529,17 +529,17 @@ func Test_repair_backupTracks(t *testing.T) {
 					{
 						TrackNumber:     1,
 						Path:            filepath.Join(topDir, goodTrackName),
-						ContainingAlbum: &files.Album{Path: topDir},
+						ContainingAlbum: files.NewAlbum("", nil, topDir),
 					},
 					{
 						TrackNumber:     1,
 						Path:            filepath.Join(topDir, "dup track"),
-						ContainingAlbum: &files.Album{Path: topDir},
+						ContainingAlbum: files.NewAlbum("", nil, topDir),
 					},
 					{
 						TrackNumber:     2,
 						Path:            filepath.Join(topDir, goodTrackName),
-						ContainingAlbum: &files.Album{Path: topDir},
+						ContainingAlbum: files.NewAlbum("", nil, topDir),
 					},
 				},
 			},

@@ -9,7 +9,7 @@ type Album struct {
 	name            string
 	Tracks          []*Track
 	recordingArtist *Artist
-	Path            string
+	path            string
 }
 
 func newAlbumFromFile(file fs.FileInfo, artist *Artist) *Album {
@@ -18,17 +18,28 @@ func newAlbumFromFile(file fs.FileInfo, artist *Artist) *Album {
 }
 
 func copyAlbum(a *Album, artist *Artist) *Album {
-	return NewAlbum(a.name, artist, a.Path)
+	return NewAlbum(a.name, artist, a.path)
 }
 
-func NewAlbum(title string, artist *Artist, path string) *Album {
-	return &Album{name: title, recordingArtist: artist, Path: path}
+// NewAlbum creates a new Album instance
+func NewAlbum(title string, artist *Artist, albumPath string) *Album {
+	return &Album{name: title, recordingArtist: artist, path: albumPath}
 }
 
+// Name returns the album's name
 func (a *Album) Name() string {
 	return a.name
 }
 
+// RecordingArtistName returns the name of the album's recording artist
 func (a *Album) RecordingArtistName() string {
+	if a.recordingArtist == nil {
+		return ""
+	}
 	return a.recordingArtist.Name
+}
+
+// Path returns the name of the album's path
+func (a *Album) Path() string {
+	return a.path
 }

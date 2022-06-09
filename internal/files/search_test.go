@@ -74,18 +74,6 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotArtists := tt.s.LoadUnfilteredData()
-			for _, a := range gotArtists {
-				a.Path = ""
-				for _, a2 := range a.Albums {
-					a2.Path = ""
-				}
-			}
-			for _, a := range tt.wantArtists {
-				a.Path = ""
-				for _, a2 := range a.Albums {
-					a2.Path = ""
-				}
-			}
 			if !reflect.DeepEqual(gotArtists, tt.wantArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotArtists, tt.wantArtists)
 			}
