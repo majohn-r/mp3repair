@@ -151,12 +151,12 @@ func (l *ls) outputAlbums(w io.Writer, albums []*files.Album, prefix string) {
 		for _, albumName := range albumNames {
 			fmt.Fprintf(w, "%sAlbum: %s\n", prefix, albumName)
 			album := albumsByAlbumName[albumName]
-			l.outputTracks(w, album.Tracks, prefix+"  ")
+			l.outputTracks(w, album.Tracks(), prefix+"  ")
 		}
 	case false:
 		var tracks []*files.Track
 		for _, album := range albums {
-			tracks = append(tracks, album.Tracks...)
+			tracks = append(tracks, album.Tracks()...)
 		}
 		l.outputTracks(w, tracks, prefix)
 	}

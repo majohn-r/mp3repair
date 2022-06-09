@@ -77,7 +77,7 @@ func Test_findConflictedTracks(t *testing.T) {
 		TaggedArtist:    "artist1",
 		ContainingAlbum: goodAlbum,
 	}
-	goodAlbum.Tracks = append(goodAlbum.Tracks, goodTrack)
+	goodAlbum.AddTrack(goodTrack)
 	badArtist := &files.Artist{Name: "artist1"}
 	badAlbum := files.NewAlbum("album1", badArtist, "")
 	badArtist.Albums = append(badArtist.Albums, badAlbum)
@@ -90,7 +90,7 @@ func Test_findConflictedTracks(t *testing.T) {
 		TaggedArtist:    "artist1",
 		ContainingAlbum: badAlbum,
 	}
-	badAlbum.Tracks = append(badAlbum.Tracks, badTrack)
+	badAlbum.AddTrack(badTrack)
 	type args struct {
 		artists []*files.Artist
 	}
@@ -313,7 +313,7 @@ func Test_getAlbumPaths(t *testing.T) {
 	var tSlice []*files.Track
 	for _, artist := range a {
 		for _, album := range artist.Albums {
-			tSlice = append(tSlice, album.Tracks...)
+			tSlice = append(tSlice, album.Tracks()...)
 		}
 	}
 	type args struct {

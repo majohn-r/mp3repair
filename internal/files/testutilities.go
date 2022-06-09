@@ -28,7 +28,7 @@ func CreateAllOddArtistsWithEvenAlbumsForTesting(topDir string) []*Artist {
 					ContainingAlbum: album,
 					TaggedTrack:     trackUnknownTagsNotRead,
 				}
-				album.Tracks = append(album.Tracks, track)
+				album.AddTrack(track)
 			}
 			artist.Albums = append(artist.Albums, album)
 		}
@@ -57,7 +57,7 @@ func CreateAllArtistsForTesting(topDir string, addExtras bool) []*Artist {
 					ContainingAlbum: album,
 					TaggedTrack:     trackUnknownTagsNotRead,
 				}
-				album.Tracks = append(album.Tracks, track)
+				album.AddTrack(track)
 			}
 			artist.Albums = append(artist.Albums, album)
 		}

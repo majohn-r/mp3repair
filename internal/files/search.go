@@ -59,7 +59,7 @@ func (s *Search) LoadUnfilteredData() (artists []*Artist) {
 										TaggedTrack:     trackUnknownTagsNotRead,
 										ContainingAlbum: album,
 									}
-									album.Tracks = append(album.Tracks, track)
+									album.AddTrack(track)
 								}
 							}
 						}
@@ -89,21 +89,8 @@ func (s *Search) FilterArtists(unfilteredArtists []*Artist) (artists []*Artist) 
 			artist := copyArtist(unfilteredArtist)
 			for _, album := range unfilteredArtist.Albums {
 				if s.albumFilter.MatchString(album.Name()) {
-					if len(album.Tracks) != 0 {
+					if album.HasTracks() {
 						newAlbum := copyAlbum(album, artist)
-						for _, track := range album.Tracks {
-							newTrack := &Track{
-								Path:            track.Path,
-								Name:            track.Name,
-								TrackNumber:     track.TrackNumber,
-								TaggedAlbum:     track.TaggedAlbum,
-								TaggedArtist:    track.TaggedArtist,
-								TaggedTitle:     track.TaggedTitle,
-								TaggedTrack:     track.TaggedTrack,
-								ContainingAlbum: newAlbum,
-							}
-							newAlbum.Tracks = append(newAlbum.Tracks, newTrack)
-						}
 						artist.Albums = append(artist.Albums, newAlbum)
 					}
 				}
@@ -146,11 +133,11 @@ func (s *Search) LoadData() (artists []*Artist) {
 									TaggedTrack:     trackUnknownTagsNotRead,
 									ContainingAlbum: album,
 								}
-								album.Tracks = append(album.Tracks, track)
+								album.AddTrack(track)
 							}
 						}
 					}
-					if len(album.Tracks) != 0 {
+					if album.HasTracks() {
 						artist.Albums = append(artist.Albums, album)
 					}
 				}

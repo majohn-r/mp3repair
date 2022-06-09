@@ -435,7 +435,7 @@ func TestUpdateTracks(t *testing.T) {
 					TaggedTrack:     trackUnknownTagsNotRead,
 					ContainingAlbum: album,
 				}
-				album.Tracks = append(album.Tracks, track)
+				album.AddTrack(track)
 			}
 		}
 	}
@@ -462,7 +462,7 @@ func TestUpdateTracks(t *testing.T) {
 			UpdateTracks(tt.args.artists, tt.args.reader)
 			for _, artist := range tt.args.artists {
 				for _, album := range artist.Albums {
-					for _, track := range album.Tracks {
+					for _, track := range album.Tracks() {
 						if track.TaggedTrack != 1 {
 							t.Errorf("UpdateTracks() %q track = %d", track.Name, track.TaggedTrack)
 						}

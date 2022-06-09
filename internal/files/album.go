@@ -7,7 +7,7 @@ import (
 
 type Album struct {
 	name            string
-	Tracks          []*Track
+	tracks          []*Track
 	recordingArtist *Artist
 	path            string
 }
@@ -18,7 +18,20 @@ func newAlbumFromFile(file fs.FileInfo, artist *Artist) *Album {
 }
 
 func copyAlbum(a *Album, artist *Artist) *Album {
-	return NewAlbum(a.name, artist, a.path)
+	a2 := NewAlbum(a.name, artist, a.path)
+	for _, t := range a.tracks {
+		a2.AddTrack(&Track{
+			Path:            t.Path,
+			Name:            t.Name,
+			TrackNumber:     t.TrackNumber,
+			TaggedAlbum:     t.TaggedAlbum,
+			TaggedArtist:    t.TaggedArtist,
+			TaggedTitle:     t.TaggedTitle,
+			TaggedTrack:     t.TaggedTrack,
+			ContainingAlbum: a2,
+		})
+	}
+	return a2
 }
 
 // NewAlbum creates a new Album instance
@@ -42,4 +55,19 @@ func (a *Album) RecordingArtistName() string {
 // Path returns the name of the album's path
 func (a *Album) Path() string {
 	return a.path
+}
+
+// AddTrack adds a new track to the album
+func (a *Album) AddTrack(t *Track) {
+	a.tracks = append(a.tracks, t)
+}
+
+// HasTracks returns true if the album has tracks
+func (a *Album) HasTracks() bool {
+	return len(a.tracks) != 0
+}
+
+// Tracks returns the slice of Tracks
+func (a *Album) Tracks() []*Track {
+	return a.tracks
 }
