@@ -44,14 +44,14 @@ func (s *Search) LoadUnfilteredData() (artists []*Artist) {
 						if !albumFile.IsDir() {
 							continue
 						}
-						album := newAlbum(albumFile, artist)
+						album := newAlbumFromFile(albumFile, artist)
 						trackFiles, err := readDirectory(album.Path)
 						if err == nil {
 							for _, trackFile := range trackFiles {
 								if trackFile.IsDir() || !trackNameRegex.MatchString(trackFile.Name()) {
 									continue
 								}
-								if simpleName, trackNumber, valid := ParseTrackName(trackFile.Name(), album.Name, artist.Name, s.targetExtension); valid {
+								if simpleName, trackNumber, valid := ParseTrackName(trackFile.Name(), album.Name(), artist.Name, s.targetExtension); valid {
 									track := &Track{
 										Path:            filepath.Join(album.Path, trackFile.Name()),
 										Name:            simpleName,
@@ -88,7 +88,7 @@ func (s *Search) FilterArtists(unfilteredArtists []*Artist) (artists []*Artist) 
 		if s.artistFilter.MatchString(unfilteredArtist.Name) {
 			artist := copyArtist(unfilteredArtist)
 			for _, album := range unfilteredArtist.Albums {
-				if s.albumFilter.MatchString(album.Name) {
+				if s.albumFilter.MatchString(album.Name()) {
 					if len(album.Tracks) != 0 {
 						newAlbum := copyAlbum(album, artist)
 						for _, track := range album.Tracks {
@@ -131,14 +131,14 @@ func (s *Search) LoadData() (artists []*Artist) {
 					if !albumFile.IsDir() || !s.albumFilter.MatchString(albumFile.Name()) {
 						continue
 					}
-					album := newAlbum(albumFile, artist)
+					album := newAlbumFromFile(albumFile, artist)
 					trackFiles, err := readDirectory(album.Path)
 					if err == nil {
 						for _, trackFile := range trackFiles {
 							if trackFile.IsDir() || !trackNameRegex.MatchString(trackFile.Name()) {
 								continue
 							}
-							if simpleName, trackNumber, valid := ParseTrackName(trackFile.Name(), album.Name, artist.Name, s.targetExtension); valid {
+							if simpleName, trackNumber, valid := ParseTrackName(trackFile.Name(), album.Name(), artist.Name, s.targetExtension); valid {
 								track := &Track{
 									Path:            filepath.Join(album.Path, trackFile.Name()),
 									Name:            simpleName,

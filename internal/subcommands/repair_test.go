@@ -65,6 +65,32 @@ func Test_newRepairSubCommand(t *testing.T) {
 }
 
 func Test_findConflictedTracks(t *testing.T) {
+	goodArtist := &files.Artist{Name: "artist1"}
+	goodAlbum := files.NewAlbum("album1", goodArtist, "")
+	goodArtist.Albums = append(goodArtist.Albums, goodAlbum)
+	goodTrack := &files.Track{
+		TrackNumber:     1,
+		Name:            "track1",
+		TaggedTrack:     1,
+		TaggedTitle:     "track1",
+		TaggedAlbum:     "album1",
+		TaggedArtist:    "artist1",
+		ContainingAlbum: goodAlbum,
+	}
+	goodAlbum.Tracks = append(goodAlbum.Tracks, goodTrack)
+	badArtist := &files.Artist{Name: "artist1"}
+	badAlbum := files.NewAlbum("album1", badArtist, "")
+	badArtist.Albums = append(badArtist.Albums, badAlbum)
+	badTrack := &files.Track{
+		TrackNumber:     1,
+		Name:            "track1",
+		TaggedTrack:     1,
+		TaggedTitle:     "track3",
+		TaggedAlbum:     "album1",
+		TaggedArtist:    "artist1",
+		ContainingAlbum: badAlbum,
+	}
+	badAlbum.Tracks = append(badAlbum.Tracks, badTrack)
 	type args struct {
 		artists []*files.Artist
 	}
@@ -76,58 +102,11 @@ func Test_findConflictedTracks(t *testing.T) {
 		{name: "degenerate case", args: args{}},
 		{
 			name: "no problems",
-			args: args{
-				artists: []*files.Artist{
-					{
-						Name: "artist1",
-						Albums: []*files.Album{
-							{
-								Name: "album1",
-								Tracks: []*files.Track{
-									{
-										TrackNumber:  1,
-										Name:         "track1",
-										TaggedTrack:  1,
-										TaggedTitle:  "track1",
-										TaggedAlbum:  "album1",
-										TaggedArtist: "artist1",
-										ContainingAlbum: &files.Album{
-											Name:            "album1",
-											RecordingArtist: &files.Artist{Name: "artist1"},
-										},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
+			args: args{artists: []*files.Artist{goodArtist}},
 		},
 		{
 			name: "problems",
-			args: args{
-				artists: []*files.Artist{
-					{
-						Name: "artist1",
-						Albums: []*files.Album{
-							{
-								Name: "album1",
-								Tracks: []*files.Track{
-									{
-										TrackNumber:     1,
-										Name:            "track1",
-										TaggedTrack:     1,
-										TaggedTitle:     "track3",
-										TaggedAlbum:     "album1",
-										TaggedArtist:    "artist1",
-										ContainingAlbum: &files.Album{Name: "album1", RecordingArtist: &files.Artist{Name: "artist1"}},
-									},
-								},
-							},
-						},
-					},
-				},
-			},
+			args: args{artists: []*files.Artist{badArtist}},
 			want: []*files.Track{
 				{
 					TrackNumber:     1,
@@ -136,7 +115,7 @@ func Test_findConflictedTracks(t *testing.T) {
 					TaggedTitle:     "track3",
 					TaggedAlbum:     "album1",
 					TaggedArtist:    "artist1",
-					ContainingAlbum: &files.Album{Name: "album1", RecordingArtist: &files.Artist{Name: "artist1"}},
+					ContainingAlbum: badAlbum,
 				},
 			},
 		},
@@ -171,7 +150,7 @@ func Test_reportTracks(t *testing.T) {
 						TaggedArtist:    "no artist known",
 						TaggedTitle:     "no track name",
 						TaggedTrack:     1,
-						ContainingAlbum: &files.Album{Name: "album1", RecordingArtist: &files.Artist{Name: "artist1"}},
+						ContainingAlbum: files.NewAlbum("album1", &files.Artist{Name: "artist1"}, ""),
 					},
 					{
 						TrackNumber:     2,
@@ -180,7 +159,7 @@ func Test_reportTracks(t *testing.T) {
 						TaggedArtist:    "no artist known",
 						TaggedTitle:     "track2",
 						TaggedTrack:     1,
-						ContainingAlbum: &files.Album{Name: "album1", RecordingArtist: &files.Artist{Name: "artist1"}},
+						ContainingAlbum: files.NewAlbum("album1", &files.Artist{Name: "artist1"}, ""),
 					},
 					{
 						TrackNumber:     1,
@@ -189,7 +168,7 @@ func Test_reportTracks(t *testing.T) {
 						TaggedArtist:    "no artist known",
 						TaggedTitle:     "no track name",
 						TaggedTrack:     1,
-						ContainingAlbum: &files.Album{Name: "album2", RecordingArtist: &files.Artist{Name: "artist1"}},
+						ContainingAlbum: files.NewAlbum("album2", &files.Artist{Name: "artist1"}, ""),
 					},
 					{
 						TrackNumber:     1,
@@ -198,7 +177,7 @@ func Test_reportTracks(t *testing.T) {
 						TaggedArtist:    "no artist known",
 						TaggedTitle:     "no track name",
 						TaggedTrack:     1,
-						ContainingAlbum: &files.Album{Name: "album1", RecordingArtist: &files.Artist{Name: "artist2"}},
+						ContainingAlbum: files.NewAlbum("album1", &files.Artist{Name: "artist2"}, ""),
 					},
 				},
 			},
@@ -629,25 +608,19 @@ func Test_repair_fixTracks(t *testing.T) {
 			r:    &repair{dryRun: &fFlag},
 			args: args{tracks: []*files.Track{
 				{
-					Path:        filepath.Join(topDir, "non-existent-track"),
-					TaggedTrack: files.TrackUnknownTagReadError,
-					ContainingAlbum: &files.Album{
-						Name:            "ok album",
-						RecordingArtist: &files.Artist{Name: "beautiful singer"},
-					},
+					Path:            filepath.Join(topDir, "non-existent-track"),
+					TaggedTrack:     files.TrackUnknownTagReadError,
+					ContainingAlbum: files.NewAlbum("ok album", &files.Artist{Name: "beautiful singer"}, ""),
 				},
 				{
-					TrackNumber: 1,
-					Name:        trackName,
-					ContainingAlbum: &files.Album{
-						Name:            "ok album",
-						RecordingArtist: &files.Artist{Name: "beautiful singer"},
-					},
-					Path:         filepath.Join(topDir, goodFileName),
-					TaggedTitle:  frames["TIT2"],
-					TaggedTrack:  2,
-					TaggedAlbum:  frames["TALB"],
-					TaggedArtist: frames["TPE1"],
+					TrackNumber:     1,
+					Name:            trackName,
+					ContainingAlbum: files.NewAlbum("ok album", &files.Artist{Name: "beautiful singer"}, ""),
+					Path:            filepath.Join(topDir, goodFileName),
+					TaggedTitle:     frames["TIT2"],
+					TaggedTrack:     2,
+					TaggedAlbum:     frames["TALB"],
+					TaggedArtist:    frames["TPE1"],
 				},
 			}},
 			wantW: fmt.Sprintf("An error occurred fixing track %q\n", filepath.Join(topDir, "non-existent-track")) +

@@ -6,17 +6,25 @@ import (
 )
 
 type Album struct {
-	Name            string
+	name            string
 	Tracks          []*Track
 	RecordingArtist *Artist
 	Path            string
 }
 
-func newAlbum(file fs.FileInfo, artist *Artist) *Album {
+func newAlbumFromFile(file fs.FileInfo, artist *Artist) *Album {
 	dirName := file.Name()
-	return &Album{Name: dirName, RecordingArtist: artist, Path: filepath.Join(artist.Path, dirName)}
+	return NewAlbum(dirName, artist, filepath.Join(artist.Path, dirName))
 }
 
 func copyAlbum(a *Album, artist *Artist) *Album {
-	return &Album{Name: a.Name, RecordingArtist: artist, Path: a.Path}
+	return &Album{name: a.name, RecordingArtist: artist, Path: a.Path}
+}
+
+func NewAlbum(title string, artist *Artist, path string) *Album {
+	return &Album{name: title, RecordingArtist: artist, Path: path}
+}
+
+func (a *Album) Name() string {
+	return a.name
 }

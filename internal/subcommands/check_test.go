@@ -217,13 +217,13 @@ func Test_filterArtists(t *testing.T) {
 
 func Test_check_performGapAnalysis(t *testing.T) {
 	goodArtist := &files.Artist{Name: "My Good Artist"}
-	goodAlbum := &files.Album{Name: "An Excellent Album", RecordingArtist: goodArtist}
+	goodAlbum := files.NewAlbum("An Excellent Album", goodArtist, "")
 	goodArtist.Albums = append(goodArtist.Albums, goodAlbum)
 	goodAlbum.Tracks = append(goodAlbum.Tracks, &files.Track{Name: "First Track", TrackNumber: 1, ContainingAlbum: goodAlbum})
 	goodAlbum.Tracks = append(goodAlbum.Tracks, &files.Track{Name: "Second Track", TrackNumber: 2, ContainingAlbum: goodAlbum})
 	goodAlbum.Tracks = append(goodAlbum.Tracks, &files.Track{Name: "Third Track", TrackNumber: 3, ContainingAlbum: goodAlbum})
 	badArtist := &files.Artist{Name: "BadArtist"}
-	badAlbum := &files.Album{Name: "No Biscuits For You!", RecordingArtist: badArtist}
+	badAlbum := files.NewAlbum("No Biscuits For You!", badArtist, "")
 	badArtist.Albums = append(badArtist.Albums, badAlbum)
 	badAlbum.Tracks = append(badAlbum.Tracks, &files.Track{Name: "Awful Track", TrackNumber: 0, ContainingAlbum: badAlbum})
 	badAlbum.Tracks = append(badAlbum.Tracks, &files.Track{Name: "Nasty Track", TrackNumber: 1, ContainingAlbum: badAlbum})

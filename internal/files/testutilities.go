@@ -17,7 +17,7 @@ func CreateAllOddArtistsWithEvenAlbumsForTesting(topDir string) []*Artist {
 		for n := 0; n < 10; n += 2 {
 			albumName := internal.CreateAlbumNameForTesting(n)
 			albumDir := filepath.Join(artistDir, albumName)
-			album := &Album{Name: albumName, RecordingArtist: artist, Path: albumDir}
+			album := NewAlbum(albumName, artist, albumDir)
 			for p := 0; p < 10; p++ {
 				trackName := internal.CreateTrackNameForTesting(p)
 				name, _, _ := ParseTrackName(trackName, albumName, artistName, DefaultFileExtension)
@@ -46,7 +46,7 @@ func CreateAllArtistsForTesting(topDir string, addExtras bool) []*Artist {
 		for n := 0; n < 10; n++ {
 			albumName := internal.CreateAlbumNameForTesting(n)
 			albumDir := filepath.Join(artistDir, albumName)
-			album := &Album{Name: albumName, RecordingArtist: artist, Path: albumDir}
+			album := NewAlbum(albumName, artist, albumDir)
 			for p := 0; p < 10; p++ {
 				trackName := internal.CreateTrackNameForTesting(p)
 				name, trackNo, _ := ParseTrackName(trackName, albumName, artistName, DefaultFileExtension)
@@ -63,7 +63,7 @@ func CreateAllArtistsForTesting(topDir string, addExtras bool) []*Artist {
 		}
 		if addExtras {
 			albumName := internal.CreateAlbumNameForTesting(999)
-			album := &Album{Name: albumName, RecordingArtist: artist}
+			album := NewAlbum(albumName, artist, "")
 			artist.Albums = append(artist.Albums, album)
 		}
 		artists = append(artists, artist)
@@ -78,7 +78,7 @@ func CreateAllArtistsForTesting(topDir string, addExtras bool) []*Artist {
 
 // CreateTaggedData creates tagged content. This code is based on reading
 // https://id3.org/id3v2.3.0 and on looking at a hex dump of a real mp3 file.
-func CreateTaggedData(payload []byte, frames map[string] string) []byte {
+func CreateTaggedData(payload []byte, frames map[string]string) []byte {
 	content := make([]byte, 0)
 	// block off tag header
 	content = append(content, []byte("ID3")...)
