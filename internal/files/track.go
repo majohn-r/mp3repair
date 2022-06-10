@@ -21,7 +21,7 @@ const (
 	trackDiffUnreadTags      = "cannot determine differences, tags have not been read"
 	trackUnknownFormatError  = -1
 	trackUnknownTagsNotRead  = -2
-	TrackUnknownTagReadError = -3 // TODO make this private [#46]
+	trackUnknownTagReadError = -3
 )
 
 // Track encapsulates data about a track in an album
@@ -30,10 +30,11 @@ type Track struct {
 	Name            string // name of the track, without the track number or file extension, e.g., "First Track"
 	TrackNumber     int    // number of the track
 	ContainingAlbum *Album
-	TaggedTitle     string // track title per mp3 tag TRCK frame
-	TaggedTrack     int    // track number per mp3 tag TIT2 frame
-	TaggedAlbum     string // album name per mp3 tag TALB frame
-	TaggedArtist    string // artist name per mp3 tag TPE1 frame
+	// these fields are populated when needed; acquisition is expensive
+	TaggedTitle  string // track title per mp3 tag TRCK frame
+	TaggedTrack  int    // track number per mp3 tag TIT2 frame
+	TaggedAlbum  string // album name per mp3 tag TALB frame
+	TaggedArtist string // artist name per mp3 tag TPE1 frame
 }
 
 // String returns the track's path (implementation of Stringer interface)
@@ -50,7 +51,7 @@ func copyTrack(t *Track, a *Album) *Track {
 		TaggedArtist:    t.TaggedArtist,
 		TaggedTitle:     t.TaggedTitle,
 		TaggedTrack:     t.TaggedTrack,
-		ContainingAlbum: a,
+		ContainingAlbum: a, // do not use source track's album!
 	}
 }
 
@@ -58,7 +59,7 @@ func newTrackFromFile(a *Album, f fs.FileInfo, simpleName string, trackNumber in
 	return NewTrack(a, f.Name(), simpleName, trackNumber)
 }
 
-// NewTrack creates a new instance of Track without tag data
+// NewTrack creates a new instance of Track without (expensive) tag data
 func NewTrack(a *Album, fullName string, simpleName string, trackNumber int) *Track {
 	return &Track{
 		path:            a.subDirectory(fullName),
@@ -131,7 +132,7 @@ func (t *Track) needsTaggedData() bool {
 }
 
 func (t *Track) setTagReadError() {
-	t.TaggedTrack = TrackUnknownTagReadError
+	t.TaggedTrack = trackUnknownTagReadError
 }
 
 func (t *Track) setTagFormatError() {
@@ -237,7 +238,7 @@ func (t *Track) AnalyzeIssues() TrackState {
 	switch t.TaggedTrack {
 	case trackUnknownFormatError:
 		return TrackState{tagFormatError: true}
-	case TrackUnknownTagReadError:
+	case trackUnknownTagReadError:
 		return TrackState{tagReadError: true}
 	case trackUnknownTagsNotRead:
 		return TrackState{noTags: true}

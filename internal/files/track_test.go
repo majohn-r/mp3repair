@@ -75,7 +75,7 @@ func TestTrack_needsTaggedData(t *testing.T) {
 	}{
 		{name: "needs tagged data", tr: &Track{TaggedTrack: trackUnknownTagsNotRead}, want: true},
 		{name: "format error", tr: &Track{TaggedTrack: trackUnknownFormatError}, want: false},
-		{name: "tag read error", tr: &Track{TaggedTrack: TrackUnknownTagReadError}, want: false},
+		{name: "tag read error", tr: &Track{TaggedTrack: trackUnknownTagReadError}, want: false},
 		{name: "valid track number", tr: &Track{TaggedTrack: 1}, want: false},
 	}
 	for _, tt := range tests {
@@ -97,7 +97,7 @@ func TestTrack_setTagReadError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.tr.setTagReadError()
-			if tt.tr.TaggedTrack != TrackUnknownTagReadError {
+			if tt.tr.TaggedTrack != trackUnknownTagReadError {
 				t.Errorf("Track.setTagReadError() failed to set TaggedTrack: %d", tt.tr.TaggedTrack)
 			}
 		})
@@ -280,9 +280,9 @@ func TestTrack_readTags(t *testing.T) {
 		},
 		{
 			name:       "replay after read error",
-			tr:         &Track{TaggedTrack: TrackUnknownTagReadError},
+			tr:         &Track{TaggedTrack: trackUnknownTagReadError},
 			args:       args{normalReader},
-			wantNumber: TrackUnknownTagReadError,
+			wantNumber: trackUnknownTagReadError,
 		},
 		{
 			name:       "replay after format error",
@@ -294,7 +294,7 @@ func TestTrack_readTags(t *testing.T) {
 			name:       "read error",
 			tr:         &Track{TaggedTrack: trackUnknownTagsNotRead},
 			args:       args{brokenReader},
-			wantNumber: TrackUnknownTagReadError,
+			wantNumber: trackUnknownTagReadError,
 		},
 		{
 			name:       "format error",
@@ -402,7 +402,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 			},
 		},
 		{name: "unread tags", tr: &Track{TaggedTrack: trackUnknownTagsNotRead}, want: []string{trackDiffUnreadTags}},
-		{name: "unreadable tags", tr: &Track{TaggedTrack: TrackUnknownTagReadError}, want: []string{trackDiffUnreadableTags}},
+		{name: "unreadable tags", tr: &Track{TaggedTrack: trackUnknownTagReadError}, want: []string{trackDiffUnreadableTags}},
 		{name: "garbage tags", tr: &Track{TaggedTrack: trackUnknownFormatError}, want: []string{trackDiffBadTags}},
 	}
 	for _, tt := range tests {
