@@ -18,13 +18,13 @@ func TestFileFlags_processArgs(t *testing.T) {
 	flags := &SearchFlags{
 		f:             fs,
 		topDirectory:  fs.String("topDir", ".", "top directory in which to look for music files"),
-		fileExtension: fs.String("ext", DefaultFileExtension, "extension for music files"),
+		fileExtension: fs.String("ext", defaultFileExtension, "extension for music files"),
 		albumRegex:    fs.String("albums", ".*", "regular expression of albums to select"),
 		artistRegex:   fs.String("artists", ".*", "regular expression of artists to select"),
 	}
 	s := &Search{
 		topDirectory:    ".",
-		targetExtension: DefaultFileExtension,
+		targetExtension: defaultFileExtension,
 		albumFilter:     regexp.MustCompile(".*"),
 		artistFilter:    regexp.MustCompile(".*"),
 	}
@@ -338,7 +338,7 @@ func TestSearchFlags_validateExtension(t *testing.T) {
 		trackNameRegex = originalRegex
 	}()
 	fnName := "SearchFlags.validateExtension()"
-	defaultExtension := DefaultFileExtension
+	defaultExtension := defaultFileExtension
 	missingLeadDot := "mp3"
 	multipleDots := ".m.p3"
 	badChar := ".m[p3"

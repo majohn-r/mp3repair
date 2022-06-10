@@ -13,15 +13,14 @@ import (
 
 const (
 	rawExtension             = "mp3"
-	DefaultFileExtension     = "." + rawExtension
+	defaultFileExtension     = "." + rawExtension
 	defaultTrackNamePattern  = "^\\d+[\\s-].+\\." + rawExtension + "$"
 	trackDiffBadTags         = "cannot determine differences, tags were not recognized"
 	trackDiffUnreadableTags  = "cannot determine differences, could not read tags"
 	trackDiffUnreadTags      = "cannot determine differences, tags have not been read"
-	BackupDirName            = "pre-repair-backup"
 	trackUnknownFormatError  = -1
 	trackUnknownTagsNotRead  = -2
-	TrackUnknownTagReadError = -3
+	TrackUnknownTagReadError = -3 // TODO make this private [#46]
 )
 
 type Track struct {

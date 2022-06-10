@@ -41,7 +41,7 @@ func NewSearchFlags(v *viper.Viper, fSet *flag.FlagSet) *SearchFlags {
 			internal.GetStringDefault(subViper, topDirectoryFlag, "$HOMEPATH/Music"),
 			"top directory in which to look for music files"),
 		fileExtension: fSet.String(fileExtensionFlag,
-			internal.GetStringDefault(subViper, fileExtensionFlag, DefaultFileExtension),
+			internal.GetStringDefault(subViper, fileExtensionFlag, defaultFileExtension),
 			"extension for music files"),
 		albumRegex: fSet.String(albumRegexFlag,
 			internal.GetStringDefault(subViper, albumRegexFlag, defaultRegex),
