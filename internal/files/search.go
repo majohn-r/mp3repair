@@ -11,6 +11,8 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// Search encapsulates the parameters used to find mp3 files and filter them by
+// artist and album
 type Search struct {
 	topDirectory    string
 	targetExtension string
@@ -18,23 +20,15 @@ type Search struct {
 	artistFilter    *regexp.Regexp
 }
 
-func (s *Search) TopDirectory() string {
-	return s.topDirectory
-}
-
-func (s *Search) TargetExtension() string {
-	return s.targetExtension
-}
-
 func (s *Search) contents() ([]fs.FileInfo, error) {
 	return readDirectory(s.topDirectory)
 }
 
+// LoadUnfilteredData loads artists, albums, and tracks from the specified top
+// directory, honoring the specified track extension, but ignoring the album and
+// artist filter expressions.
 func (s *Search) LoadUnfilteredData() (artists []*Artist) {
-	logrus.WithFields(logrus.Fields{
-		internal.LOG_DIRECTORY: s.topDirectory,
-		internal.LOG_EXTENSION: s.targetExtension,
-	}).Info(internal.LOG_READING_UNFILTERED_FILES)
+	logrus.WithFields(s.LogFields(false)).Info(internal.LOG_READING_UNFILTERED_FILES)
 	artistFiles, err := s.contents()
 	if err == nil {
 		for _, artistFile := range artistFiles {
@@ -76,17 +70,27 @@ func (s *Search) LoadUnfilteredData() (artists []*Artist) {
 	return
 }
 
-func (s *Search) logFields() logrus.Fields {
-	return logrus.Fields{
-		internal.LOG_DIRECTORY:     s.topDirectory,
-		internal.LOG_EXTENSION:     s.targetExtension,
-		internal.LOG_ALBUM_FILTER:  s.albumFilter,
-		internal.LOG_ARTIST_FILTER: s.artistFilter,
+// LogFields returns an appropriate set of logrus fields
+func (s *Search) LogFields(includeFilters bool) logrus.Fields {
+	if includeFilters {
+		return logrus.Fields{
+			internal.LOG_DIRECTORY:     s.topDirectory,
+			internal.LOG_EXTENSION:     s.targetExtension,
+			internal.LOG_ALBUM_FILTER:  s.albumFilter,
+			internal.LOG_ARTIST_FILTER: s.artistFilter,
+		}
+	} else {
+		return logrus.Fields{
+			internal.LOG_DIRECTORY: s.topDirectory,
+			internal.LOG_EXTENSION: s.targetExtension,
+		}
 	}
 }
 
+// FilterArtists filters out the unwanted artists and albums from the input. The
+// result is a new, filtered, copy of the original slice of Artists.
 func (s *Search) FilterArtists(unfilteredArtists []*Artist) (artists []*Artist) {
-	logrus.WithFields(s.logFields()).Info(internal.LOG_FILTERING_FILES)
+	logrus.WithFields(s.LogFields(true)).Info(internal.LOG_FILTERING_FILES)
 	for _, unfilteredArtist := range unfilteredArtists {
 		if s.artistFilter.MatchString(unfilteredArtist.Name()) {
 			artist := copyArtist(unfilteredArtist)
@@ -106,8 +110,10 @@ func (s *Search) FilterArtists(unfilteredArtists []*Artist) (artists []*Artist) 
 	return
 }
 
+// LoadData collects the artists, albums, and mp3 tracks, honoring all the
+// search parameters.
 func (s *Search) LoadData() (artists []*Artist) {
-	logrus.WithFields(s.logFields()).Info(internal.LOG_READING_FILTERED_FILES)
+	logrus.WithFields(s.LogFields(true)).Info(internal.LOG_READING_FILTERED_FILES)
 	artistFiles, err := s.contents()
 	if err == nil {
 		for _, artistFile := range artistFiles {

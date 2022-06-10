@@ -323,10 +323,7 @@ func (c *check) performEmptyFolderAnalysis(w io.Writer, s *files.Search) (artist
 	if *c.checkEmptyFolders {
 		artists = s.LoadUnfilteredData()
 		if len(artists) == 0 {
-			logrus.WithFields(logrus.Fields{
-				internal.LOG_DIRECTORY: s.TopDirectory(),
-				internal.LOG_EXTENSION: s.TargetExtension(),
-			}).Error(internal.LOG_NO_ARTIST_DIRECTORIES)
+			logrus.WithFields(s.LogFields(false)).Error(internal.LOG_NO_ARTIST_DIRECTORIES)
 		}
 		conflictedArtists = createBareConflictedIssues(artists)
 		issuesFound := false

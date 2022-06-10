@@ -9,38 +9,6 @@ import (
 	"testing"
 )
 
-func TestSearch_TopDirectory(t *testing.T) {
-	fnName := "Search.TopDirectory()"
-	tests := []struct {
-		name string
-		s    *Search
-		want string
-	}{{name: "expected", s: &Search{topDirectory: "check"}, want: "check"}}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.s.TopDirectory(); got != tt.want {
-				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
-			}
-		})
-	}
-}
-
-func TestSearch_TargetExtension(t *testing.T) {
-	fnName := "Search.TargetExtension()"
-	tests := []struct {
-		name string
-		s    *Search
-		want string
-	}{{name: "expected", s: &Search{targetExtension: ".txt"}, want: ".txt"}}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.s.TargetExtension(); got != tt.want {
-				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
-			}
-		})
-	}
-}
-
 func TestSearch_LoadUnfilteredData(t *testing.T) {
 	fnName := "Search.LoadUnfilteredData()"
 	// generate test data
