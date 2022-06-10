@@ -202,7 +202,7 @@ func (l *ls) outputTracks(w io.Writer, tracks []*files.Track, prefix string) {
 		var trackNumbers []int
 		for _, track := range tracks {
 			trackNumbers = append(trackNumbers, track.TrackNumber)
-			tracksNumeric[track.TrackNumber] = track.Name
+			tracksNumeric[track.TrackNumber] = track.Name()
 		}
 		sort.Ints(trackNumbers)
 		for _, trackNumber := range trackNumbers {
@@ -212,7 +212,7 @@ func (l *ls) outputTracks(w io.Writer, tracks []*files.Track, prefix string) {
 		var trackNames []string
 		for _, track := range tracks {
 			var components []string
-			components = append(components, track.Name)
+			components = append(components, track.Name())
 			if *l.annotateListings {
 				if !*l.includeAlbums {
 					components = append(components, fmt.Sprintf("on %s", track.ContainingAlbum.Name()))

@@ -361,7 +361,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 			name: "typical use case",
 			tr: &Track{
 				TrackNumber:     1,
-				Name:            "track name",
+				name:            "track name",
 				ContainingAlbum: NewAlbum("album name", NewArtist("artist name", ""), ""),
 				TaggedTrack:     1,
 				TaggedTitle:     "track name",
@@ -374,7 +374,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 			name: "another OK use case",
 			tr: &Track{
 				TrackNumber:     1,
-				Name:            "track name",
+				name:            "track name",
 				ContainingAlbum: NewAlbum("album name", NewArtist("artist name", ""), ""),
 				TaggedTrack:     1,
 				TaggedTitle:     "track:name",
@@ -387,7 +387,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 			name: "oops",
 			tr: &Track{
 				TrackNumber:     2,
-				Name:            "track:name",
+				name:            "track:name",
 				ContainingAlbum: NewAlbum("album:name", NewArtist("artist:name", ""), ""),
 				TaggedTrack:     1,
 				TaggedTitle:     "track name",
@@ -428,7 +428,7 @@ func TestUpdateTracks(t *testing.T) {
 			artist.AddAlbum(album)
 			for n := 0; n < 50; n++ {
 				track := &Track{
-					Name:            fmt.Sprintf("track %d-%d-%d", k, m, n),
+					name:            fmt.Sprintf("track %d-%d-%d", k, m, n),
 					TaggedTrack:     trackUnknownTagsNotRead,
 					ContainingAlbum: album,
 				}
@@ -461,7 +461,7 @@ func TestUpdateTracks(t *testing.T) {
 				for _, album := range artist.Albums() {
 					for _, track := range album.Tracks() {
 						if track.TaggedTrack != 1 {
-							t.Errorf("UpdateTracks() %q track = %d", track.Name, track.TaggedTrack)
+							t.Errorf("UpdateTracks() %q track = %d", track.name, track.TaggedTrack)
 						}
 					}
 				}
@@ -648,7 +648,7 @@ func TestTrack_EditTags(t *testing.T) {
 			name: "defective track",
 			tr: &Track{
 				TrackNumber:     1,
-				Name:            "defective track",
+				name:            "defective track",
 				TaggedTrack:     trackUnknownTagsNotRead,
 				ContainingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
 			},
@@ -658,7 +658,7 @@ func TestTrack_EditTags(t *testing.T) {
 			name: "track got deleted!",
 			tr: &Track{
 				TrackNumber:     1,
-				Name:            "defective track",
+				name:            "defective track",
 				TaggedTrack:     1,
 				TaggedTitle:     "unknown track",
 				TaggedAlbum:     "unknown album",
@@ -672,7 +672,7 @@ func TestTrack_EditTags(t *testing.T) {
 			name: "fixable track",
 			tr: &Track{
 				TrackNumber:     1,
-				Name:            "fixable track",
+				name:            "fixable track",
 				TaggedTrack:     2,
 				TaggedTitle:     "unknown track",
 				TaggedAlbum:     "unknown album",
@@ -855,6 +855,21 @@ func TestTrack_String(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.tr.String(); got != tt.want {
 				t.Errorf("Track.String() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTrack_Name(t *testing.T) {
+	tests := []struct {
+		name string
+		tr   *Track
+		want string
+	}{{name: "expected", tr: &Track{name: "track name"}, want: "track name"}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.tr.Name(); got != tt.want {
+				t.Errorf("Track.Name() = %v, want %v", got, tt.want)
 			}
 		})
 	}

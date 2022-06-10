@@ -207,16 +207,16 @@ func Test_check_performGapAnalysis(t *testing.T) {
 	goodArtist := files.NewArtist("My Good Artist", "")
 	goodAlbum := files.NewAlbum("An Excellent Album", goodArtist, "")
 	goodArtist.AddAlbum(goodAlbum)
-	goodAlbum.AddTrack(&files.Track{Name: "First Track", TrackNumber: 1, ContainingAlbum: goodAlbum})
-	goodAlbum.AddTrack(&files.Track{Name: "Second Track", TrackNumber: 2, ContainingAlbum: goodAlbum})
-	goodAlbum.AddTrack(&files.Track{Name: "Third Track", TrackNumber: 3, ContainingAlbum: goodAlbum})
+	goodAlbum.AddTrack(files.NewTrack(goodAlbum, "", "First Track", 1))
+	goodAlbum.AddTrack(files.NewTrack(goodAlbum, "", "Second Track", 2))
+	goodAlbum.AddTrack(files.NewTrack(goodAlbum, "", "Third Track", 3))
 	badArtist := files.NewArtist("BadArtist", "")
 	badAlbum := files.NewAlbum("No Biscuits For You!", badArtist, "")
 	badArtist.AddAlbum(badAlbum)
-	badAlbum.AddTrack(&files.Track{Name: "Awful Track", TrackNumber: 0, ContainingAlbum: badAlbum})
-	badAlbum.AddTrack(&files.Track{Name: "Nasty Track", TrackNumber: 1, ContainingAlbum: badAlbum})
-	badAlbum.AddTrack(&files.Track{Name: "Worse Track", TrackNumber: 1, ContainingAlbum: badAlbum})
-	badAlbum.AddTrack(&files.Track{Name: "Bonus Track", TrackNumber: 9, ContainingAlbum: badAlbum})
+	badAlbum.AddTrack(files.NewTrack(badAlbum, "", "Awful Track", 0))
+	badAlbum.AddTrack(files.NewTrack(badAlbum, "", "Nasty Track", 1))
+	badAlbum.AddTrack(files.NewTrack(badAlbum, "", "Worse Track", 1))
+	badAlbum.AddTrack(files.NewTrack(badAlbum, "", "Bonus Track", 9))
 	type args struct {
 		artists []*files.Artist
 	}

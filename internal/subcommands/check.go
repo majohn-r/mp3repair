@@ -355,7 +355,7 @@ func createBareConflictedIssues(artists []*files.Artist) (conflictedArtists []*a
 			albumWithIssues := albumWithIssues{name: originalAlbum.Name(), album: originalAlbum}
 			artistWithIssues.albums = append(artistWithIssues.albums, &albumWithIssues)
 			for _, originalTrack := range originalAlbum.Tracks() {
-				trackWithIssues := trackWithIssues{number: originalTrack.TrackNumber, name: originalTrack.Name, track: originalTrack}
+				trackWithIssues := trackWithIssues{number: originalTrack.TrackNumber, name: originalTrack.Name(), track: originalTrack}
 				albumWithIssues.tracks = append(albumWithIssues.tracks, &trackWithIssues)
 			}
 		}

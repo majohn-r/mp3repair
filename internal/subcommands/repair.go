@@ -105,7 +105,7 @@ func reportTracks(w io.Writer, tracks []*files.Track) {
 		}
 		s := t.AnalyzeIssues()
 		fmt.Fprintf(w, "        %2d %q need to fix%s%s%s%s\n",
-			t.TrackNumber, t.Name,
+			t.TrackNumber, t.Name(),
 			reportProblem(s.HasNumberingConflict(), " track numbering;"),
 			reportProblem(s.HasTrackNameConflict(), " track name;"),
 			reportProblem(s.HasAlbumNameConflict(), " album name;"),

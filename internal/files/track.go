@@ -27,7 +27,7 @@ const (
 // Track encapsulates data about a track in an album
 type Track struct {
 	path            string // full path to the file associated with the track, including the file itself
-	Name            string // name of the track, without the track number or file extension, e.g., "First Track"
+	name            string // name of the track, without the track number or file extension, e.g., "First Track"
 	TrackNumber     int    // number of the track
 	ContainingAlbum *Album
 	// these fields are populated when needed; acquisition is expensive
@@ -42,10 +42,15 @@ func (t *Track) String() string {
 	return t.path
 }
 
+// Name returns the simple name of the track
+func (t *Track) Name() string {
+	return t.name
+}
+
 func copyTrack(t *Track, a *Album) *Track {
 	return &Track{
 		path:            t.path,
-		Name:            t.Name,
+		name:            t.name,
 		TrackNumber:     t.TrackNumber,
 		TaggedAlbum:     t.TaggedAlbum,
 		TaggedArtist:    t.TaggedArtist,
@@ -63,7 +68,7 @@ func newTrackFromFile(a *Album, f fs.FileInfo, simpleName string, trackNumber in
 func NewTrack(a *Album, fullName string, simpleName string, trackNumber int) *Track {
 	return &Track{
 		path:            a.subDirectory(fullName),
-		Name:            simpleName,
+		name:            simpleName,
 		TrackNumber:     trackNumber,
 		TaggedTrack:     trackUnknownTagsNotRead,
 		ContainingAlbum: a,
@@ -245,7 +250,7 @@ func (t *Track) AnalyzeIssues() TrackState {
 	default:
 		return TrackState{
 			numberingConflict:  t.TaggedTrack != t.TrackNumber,
-			trackNameConflict:  !isComparable(nameTagPair{name: t.Name, tag: t.TaggedTitle}),
+			trackNameConflict:  !isComparable(nameTagPair{name: t.name, tag: t.TaggedTitle}),
 			albumNameConflict:  !isComparable(nameTagPair{name: t.ContainingAlbum.Name(), tag: t.TaggedAlbum}),
 			artistNameConflict: !isComparable(nameTagPair{name: t.ContainingAlbum.RecordingArtistName(), tag: t.TaggedArtist}),
 		}
@@ -273,7 +278,7 @@ func (t *Track) FindDifferences() []string {
 	}
 	if s.HasTrackNameConflict() {
 		differences = append(differences,
-			fmt.Sprintf("title %q does not agree with title tag %q", t.Name, t.TaggedTitle))
+			fmt.Sprintf("title %q does not agree with title tag %q", t.name, t.TaggedTitle))
 	}
 	if s.HasAlbumNameConflict() {
 		differences = append(differences,
@@ -330,7 +335,7 @@ func (t *Track) EditTags() error {
 	a := t.AnalyzeIssues()
 	if !a.HasTaggingConflicts() {
 		return fmt.Errorf("track %d %q of album %q by artist %q has no tagging conflicts, no edit needed",
-			t.TrackNumber, t.Name, t.ContainingAlbum.Name(), t.ContainingAlbum.RecordingArtistName())
+			t.TrackNumber, t.name, t.ContainingAlbum.Name(), t.ContainingAlbum.RecordingArtistName())
 	}
 	tag, err := id3v2.Open(t.path, id3v2.Options{Parse: true})
 	if err != nil {
@@ -345,7 +350,7 @@ func (t *Track) EditTags() error {
 		tag.SetArtist(t.ContainingAlbum.RecordingArtistName())
 	}
 	if a.HasTrackNameConflict() {
-		tag.SetTitle(t.Name)
+		tag.SetTitle(t.name)
 	}
 	if a.HasNumberingConflict() {
 		tag.AddTextFrame("TRCK", tag.DefaultEncoding(), fmt.Sprintf("%d", t.TrackNumber))
