@@ -105,7 +105,7 @@ func reportTracks(w io.Writer, tracks []*files.Track) {
 		}
 		s := t.AnalyzeIssues()
 		fmt.Fprintf(w, "        %2d %q need to fix%s%s%s%s\n",
-			t.TrackNumber, t.Name(),
+			t.Number(), t.Name(),
 			reportProblem(s.HasNumberingConflict(), " track numbering;"),
 			reportProblem(s.HasTrackNameConflict(), " track name;"),
 			reportProblem(s.HasAlbumNameConflict(), " album name;"),
@@ -149,7 +149,7 @@ func (r *repair) backupTracks(w io.Writer, tracks []*files.Track) {
 
 func (r *repair) backupTrack(w io.Writer, t *files.Track) {
 	backupDir := t.BackupDirectory()
-	destinationPath := filepath.Join(backupDir, fmt.Sprintf("%d.mp3", t.TrackNumber))
+	destinationPath := filepath.Join(backupDir, fmt.Sprintf("%d.mp3", t.Number()))
 	if internal.DirExists(backupDir) && !internal.PlainFileExists(destinationPath) {
 		if err := t.Copy(destinationPath); err != nil {
 			fmt.Fprintf(w, "The track %q cannot be backed up.\n", t)

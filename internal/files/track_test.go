@@ -360,7 +360,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 		{
 			name: "typical use case",
 			tr: &Track{
-				TrackNumber:     1,
+				number:          1,
 				name:            "track name",
 				ContainingAlbum: NewAlbum("album name", NewArtist("artist name", ""), ""),
 				TaggedTrack:     1,
@@ -373,7 +373,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 		{
 			name: "another OK use case",
 			tr: &Track{
-				TrackNumber:     1,
+				number:          1,
 				name:            "track name",
 				ContainingAlbum: NewAlbum("album name", NewArtist("artist name", ""), ""),
 				TaggedTrack:     1,
@@ -386,7 +386,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 		{
 			name: "oops",
 			tr: &Track{
-				TrackNumber:     2,
+				number:          2,
 				name:            "track:name",
 				ContainingAlbum: NewAlbum("album:name", NewArtist("artist:name", ""), ""),
 				TaggedTrack:     1,
@@ -538,27 +538,27 @@ func Test_sortTracks(t *testing.T) {
 			name: "mixed tracks",
 			tracks: []*Track{
 				{
-					TrackNumber:     10,
+					number:          10,
 					ContainingAlbum: NewAlbum("album2", NewArtist("artist3", ""), ""),
 				},
 				{
-					TrackNumber:     1,
+					number:          1,
 					ContainingAlbum: NewAlbum("album2", NewArtist("artist3", ""), ""),
 				},
 				{
-					TrackNumber:     2,
+					number:          2,
 					ContainingAlbum: NewAlbum("album1", NewArtist("artist3", ""), ""),
 				},
 				{
-					TrackNumber:     3,
+					number:          3,
 					ContainingAlbum: NewAlbum("album3", NewArtist("artist2", ""), ""),
 				},
 				{
-					TrackNumber:     3,
+					number:          3,
 					ContainingAlbum: NewAlbum("album3", NewArtist("artist4", ""), ""),
 				},
 				{
-					TrackNumber:     3,
+					number:          3,
 					ContainingAlbum: NewAlbum("album5", NewArtist("artist2", ""), ""),
 				},
 			},
@@ -584,8 +584,8 @@ func Test_sortTracks(t *testing.T) {
 						t.Errorf("Sort(Tracks) track[%d] album name %q comes after track[%d] album name %q", i-1, album1.Name(), i, album2.Name())
 					} else {
 						if album1.Name() == album2.Name() {
-							if track1.TrackNumber > track2.TrackNumber {
-								t.Errorf("Sort(Tracks) track[%d] track %d comes after track[%d] track %d", i-1, track1.TrackNumber, i, track2.TrackNumber)
+							if track1.number > track2.number {
+								t.Errorf("Sort(Tracks) track[%d] track %d comes after track[%d] track %d", i-1, track1.number, i, track2.number)
 							}
 						}
 					}
@@ -647,7 +647,7 @@ func TestTrack_EditTags(t *testing.T) {
 		{
 			name: "defective track",
 			tr: &Track{
-				TrackNumber:     1,
+				number:          1,
 				name:            "defective track",
 				TaggedTrack:     trackUnknownTagsNotRead,
 				ContainingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
@@ -657,7 +657,7 @@ func TestTrack_EditTags(t *testing.T) {
 		{
 			name: "track got deleted!",
 			tr: &Track{
-				TrackNumber:     1,
+				number:          1,
 				name:            "defective track",
 				TaggedTrack:     1,
 				TaggedTitle:     "unknown track",
@@ -671,7 +671,7 @@ func TestTrack_EditTags(t *testing.T) {
 		{
 			name: "fixable track",
 			tr: &Track{
-				TrackNumber:     1,
+				number:          1,
 				name:            "fixable track",
 				TaggedTrack:     2,
 				TaggedTitle:     "unknown track",
@@ -870,6 +870,21 @@ func TestTrack_Name(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.tr.Name(); got != tt.want {
 				t.Errorf("Track.Name() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTrack_Number(t *testing.T) {
+	tests := []struct {
+		name string
+		tr   *Track
+		want int
+	}{{name: "expected", tr: &Track{number: 42}, want: 42}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.tr.Number(); got != tt.want {
+				t.Errorf("Track.Number() = %v, want %v", got, tt.want)
 			}
 		})
 	}

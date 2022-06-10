@@ -201,8 +201,8 @@ func (l *ls) outputTracks(w io.Writer, tracks []*files.Track, prefix string) {
 		tracksNumeric := make(map[int]string)
 		var trackNumbers []int
 		for _, track := range tracks {
-			trackNumbers = append(trackNumbers, track.TrackNumber)
-			tracksNumeric[track.TrackNumber] = track.Name()
+			trackNumbers = append(trackNumbers, track.Number())
+			tracksNumeric[track.Number()] = track.Name()
 		}
 		sort.Ints(trackNumbers)
 		for _, trackNumber := range trackNumbers {
