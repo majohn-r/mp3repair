@@ -21,16 +21,7 @@ func newAlbumFromFile(file fs.FileInfo, artist *Artist) *Album {
 func copyAlbum(a *Album, artist *Artist) *Album {
 	a2 := NewAlbum(a.name, artist, a.path)
 	for _, t := range a.tracks {
-		a2.AddTrack(&Track{
-			Path:            t.Path,
-			Name:            t.Name,
-			TrackNumber:     t.TrackNumber,
-			TaggedAlbum:     t.TaggedAlbum,
-			TaggedArtist:    t.TaggedArtist,
-			TaggedTitle:     t.TaggedTitle,
-			TaggedTrack:     t.TaggedTrack,
-			ContainingAlbum: a2,
-		})
+		a2.AddTrack(copyTrack(t, a2))
 	}
 	return a2
 }

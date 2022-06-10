@@ -154,7 +154,7 @@ func Test_toTrackNumber(t *testing.T) {
 
 func TestTrack_setTags(t *testing.T) {
 	type args struct {
-		d *taggedTrackData
+		d *TaggedTrackData
 	}
 	tests := []struct {
 		name       string
@@ -168,7 +168,7 @@ func TestTrack_setTags(t *testing.T) {
 		{
 			name: "good input",
 			tr:   &Track{},
-			args: args{&taggedTrackData{
+			args: args{&TaggedTrackData{
 				album:  "my excellent album",
 				artist: "great artist",
 				title:  "best track ever",
@@ -182,7 +182,7 @@ func TestTrack_setTags(t *testing.T) {
 		{
 			name: "badly formatted input",
 			tr:   &Track{},
-			args: args{&taggedTrackData{
+			args: args{&TaggedTrackData{
 				album:  "my excellent album",
 				artist: "great artist",
 				title:  "best track ever",
@@ -193,7 +193,7 @@ func TestTrack_setTags(t *testing.T) {
 		{
 			name: "negative track",
 			tr:   &Track{},
-			args: args{&taggedTrackData{
+			args: args{&TaggedTrackData{
 				album:  "my excellent album",
 				artist: "great artist",
 				title:  "best track ever",
@@ -204,7 +204,7 @@ func TestTrack_setTags(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.tr.setTags(tt.args.d)
+			tt.tr.SetTags(tt.args.d)
 			if tt.tr.TaggedTrack != tt.wantNumber {
 				t.Errorf("track.SetTags() tagged track = %d, want %d ", tt.tr.TaggedTrack, tt.wantNumber)
 			}
@@ -224,27 +224,27 @@ func TestTrack_setTags(t *testing.T) {
 }
 
 func TestTrack_readTags(t *testing.T) {
-	normalReader := func(path string) (*taggedTrackData, error) {
-		return &taggedTrackData{
+	normalReader := func(path string) (*TaggedTrackData, error) {
+		return &TaggedTrackData{
 			album:  "beautiful album",
 			artist: "great artist",
 			title:  "terrific track",
 			number: "1",
 		}, nil
 	}
-	bentReader := func(path string) (*taggedTrackData, error) {
-		return &taggedTrackData{
+	bentReader := func(path string) (*TaggedTrackData, error) {
+		return &TaggedTrackData{
 			album:  "beautiful album",
 			artist: "great artist",
 			title:  "terrific track",
 			number: "-2",
 		}, nil
 	}
-	brokenReader := func(path string) (*taggedTrackData, error) {
+	brokenReader := func(path string) (*TaggedTrackData, error) {
 		return nil, fmt.Errorf("read error")
 	}
 	type args struct {
-		reader func(string) (*taggedTrackData, error)
+		reader func(string) (*TaggedTrackData, error)
 	}
 	tests := []struct {
 		name       string
@@ -436,8 +436,8 @@ func TestUpdateTracks(t *testing.T) {
 			}
 		}
 	}
-	normalReader := func(path string) (*taggedTrackData, error) {
-		return &taggedTrackData{
+	normalReader := func(path string) (*TaggedTrackData, error) {
+		return &TaggedTrackData{
 			album:  "beautiful album",
 			artist: "great artist",
 			title:  "terrific track",
@@ -446,7 +446,7 @@ func TestUpdateTracks(t *testing.T) {
 	}
 	type args struct {
 		artists []*Artist
-		reader  func(string) (*taggedTrackData, error)
+		reader  func(string) (*TaggedTrackData, error)
 	}
 	tests := []struct {
 		name string
@@ -485,11 +485,11 @@ func TestRawReadTags(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		wantD   *taggedTrackData
+		wantD   *TaggedTrackData
 		wantErr bool
 	}{
 		{name: "bad test", args: args{path: "./noSuchFile!.mp3"}, wantD: nil, wantErr: true},
-		{name: "good test", args: args{path: "./goodFile.mp3"}, wantD: &taggedTrackData{}, wantErr: false},
+		{name: "good test", args: args{path: "./goodFile.mp3"}, wantD: &TaggedTrackData{}, wantErr: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -663,7 +663,7 @@ func TestTrack_EditTags(t *testing.T) {
 				TaggedTitle:     "unknown track",
 				TaggedAlbum:     "unknown album",
 				TaggedArtist:    "unknown artist",
-				Path:            filepath.Join(topDir, "non-existent-file.mp3"),
+				path:            filepath.Join(topDir, "non-existent-file.mp3"),
 				ContainingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
 			},
 			wantErr: true,
@@ -677,7 +677,7 @@ func TestTrack_EditTags(t *testing.T) {
 				TaggedTitle:     "unknown track",
 				TaggedAlbum:     "unknown album",
 				TaggedArtist:    "unknown artist",
-				Path:            fullPath,
+				path:            fullPath,
 				ContainingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
 			},
 			wantErr: false,
@@ -758,6 +758,103 @@ func TestTrack_AlbumPath(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.tr.AlbumPath(); got != tt.want {
 				t.Errorf("Track.AlbumPath() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNewTaggedTrackData(t *testing.T) {
+	type args struct {
+		albumFrame  string
+		artistFrame string
+		titleFrame  string
+		numberFrame string
+	}
+	tests := []struct {
+		name string
+		args args
+		want *TaggedTrackData
+	}{
+		{
+			name: "usual",
+			args: args{
+				albumFrame:  "the album",
+				artistFrame: "the artist",
+				titleFrame:  "the title",
+				numberFrame: "1",
+			},
+			want: &TaggedTrackData{
+				album:  "the album",
+				artist: "the artist",
+				title:  "the title",
+				number: "1",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := NewTaggedTrackData(tt.args.albumFrame, tt.args.artistFrame, tt.args.titleFrame, tt.args.numberFrame); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewTaggedTrackData() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTrack_Copy(t *testing.T) {
+	fnName := "Track.Copy()"
+	topDir := "copies"
+	if err := internal.Mkdir(topDir); err != nil {
+		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
+	}
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, topDir)
+	}()
+	srcName := "source.mp3"
+	srcPath := filepath.Join(topDir, srcName)
+	if err := internal.CreateFileForTesting(topDir, srcName); err != nil {
+		t.Errorf("%s error creating %s: %v", fnName, srcPath, err)
+	}
+	type args struct {
+		destination string
+	}
+	tests := []struct {
+		name    string
+		tr      *Track
+		args    args
+		wantErr bool
+	}{
+		{
+			name:    "error case",
+			tr:      &Track{path: "no such file"},
+			args:    args{destination: filepath.Join(topDir, "destination.mp3")},
+			wantErr: true,
+		},
+		{
+			name:    "good case",
+			tr:      &Track{path: srcPath},
+			args:    args{destination: filepath.Join(topDir, "destination.mp3")},
+			wantErr: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if err := tt.tr.Copy(tt.args.destination); (err != nil) != tt.wantErr {
+				t.Errorf("Track.Copy() error = %v, wantErr %v", err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestTrack_String(t *testing.T) {
+	tests := []struct {
+		name string
+		tr   *Track
+		want string
+	}{{name: "expected", tr: &Track{path: "my path"}, want: "my path"}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.tr.String(); got != tt.want {
+				t.Errorf("Track.String() = %v, want %v", got, tt.want)
 			}
 		})
 	}

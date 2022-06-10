@@ -123,14 +123,14 @@ func reportProblem(b bool, problem string) (s string) {
 func (r *repair) fixTracks(w io.Writer, tracks []*files.Track) {
 	for _, t := range tracks {
 		if err := t.EditTags(); err != nil {
-			fmt.Fprintf(w, "An error occurred fixing track %q\n", t.Path)
+			fmt.Fprintf(w, "An error occurred fixing track %q\n", t)
 			logrus.WithFields(logrus.Fields{
 				internal.LOG_EXECUTING_COMMAND: r.name(),
-				internal.LOG_PATH:              t.Path,
+				internal.LOG_PATH:              t.String(),
 				internal.LOG_ERROR:             err,
 			}).Warn("attempt to edit track failed")
 		} else {
-			fmt.Fprintf(w, "%q fixed\n", t.Path)
+			fmt.Fprintf(w, "%q fixed\n", t)
 		}
 	}
 }
@@ -151,16 +151,16 @@ func (r *repair) backupTrack(w io.Writer, t *files.Track) {
 	backupDir := t.BackupDirectory()
 	destinationPath := filepath.Join(backupDir, fmt.Sprintf("%d.mp3", t.TrackNumber))
 	if internal.DirExists(backupDir) && !internal.PlainFileExists(destinationPath) {
-		if err := internal.CopyFile(t.Path, destinationPath); err != nil {
-			fmt.Fprintf(w, "The track %q cannot be backed up.\n", t.Path)
+		if err := t.Copy(destinationPath); err != nil {
+			fmt.Fprintf(w, "The track %q cannot be backed up.\n", t)
 			logrus.WithFields(logrus.Fields{
 				internal.LOG_COMMAND_NAME: r.name(),
-				"source":                  t.Path,
+				"source":                  t.String,
 				"destination":             destinationPath,
 				internal.LOG_ERROR:        err,
 			}).Info("error backing up file")
 		} else {
-			fmt.Fprintf(w, "The track %q has been backed up to %q.\n", t.Path, destinationPath)
+			fmt.Fprintf(w, "The track %q has been backed up to %q.\n", t, destinationPath)
 		}
 	}
 }

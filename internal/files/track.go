@@ -2,6 +2,7 @@ package files
 
 import (
 	"fmt"
+	"io/fs"
 	"mp3/internal"
 	"regexp"
 	"strings"
@@ -23,8 +24,9 @@ const (
 	TrackUnknownTagReadError = -3 // TODO make this private [#46]
 )
 
+// Track encapsulates data about a track in an album
 type Track struct {
-	Path            string // full path to the file associated with the track, including the file itself
+	path            string // full path to the file associated with the track, including the file itself
 	Name            string // name of the track, without the track number or file extension, e.g., "First Track"
 	TrackNumber     int    // number of the track
 	ContainingAlbum *Album
@@ -32,6 +34,39 @@ type Track struct {
 	TaggedTrack     int    // track number per mp3 tag TIT2 frame
 	TaggedAlbum     string // album name per mp3 tag TALB frame
 	TaggedArtist    string // artist name per mp3 tag TPE1 frame
+}
+
+// String returns the track's path (implementation of Stringer interface)
+func (t *Track) String() string {
+	return t.path
+}
+
+func copyTrack(t *Track, a *Album) *Track {
+	return &Track{
+		path:            t.path,
+		Name:            t.Name,
+		TrackNumber:     t.TrackNumber,
+		TaggedAlbum:     t.TaggedAlbum,
+		TaggedArtist:    t.TaggedArtist,
+		TaggedTitle:     t.TaggedTitle,
+		TaggedTrack:     t.TaggedTrack,
+		ContainingAlbum: a,
+	}
+}
+
+func newTrackFromFile(a *Album, f fs.FileInfo, simpleName string, trackNumber int) *Track {
+	return NewTrack(a, f.Name(), simpleName, trackNumber)
+}
+
+// NewTrack creates a new instance of Track without tag data
+func NewTrack(a *Album, fullName string, simpleName string, trackNumber int) *Track {
+	return &Track{
+		path:            a.subDirectory(fullName),
+		Name:            simpleName,
+		TrackNumber:     trackNumber,
+		TaggedTrack:     trackUnknownTagsNotRead,
+		ContainingAlbum: a,
+	}
 }
 
 // logic for sorting tracks spanning albums and artists
@@ -66,11 +101,22 @@ func (t Tracks) Swap(i, j int) {
 	t[i], t[j] = t[j], t[i]
 }
 
-type taggedTrackData struct {
+// TaggedTrackData contains raw tag frames data
+type TaggedTrackData struct {
 	album  string
 	artist string
 	title  string
 	number string
+}
+
+// NewTaggedTrackData creates a new instance of TaggedTrackData
+func NewTaggedTrackData(albumFrame, artistFrame, titleFrame, numberFrame string) *TaggedTrackData {
+	return &TaggedTrackData{
+		album:  albumFrame,
+		artist: artistFrame,
+		title:  titleFrame,
+		number: numberFrame,
+	}
 }
 
 var trackNameRegex *regexp.Regexp = regexp.MustCompile(defaultTrackNamePattern)
@@ -123,10 +169,11 @@ func toTrackNumber(s string) (i int, err error) {
 	return
 }
 
-func (t *Track) setTags(d *taggedTrackData) {
+// SetTags sets track frame fields
+func (t *Track) SetTags(d *TaggedTrackData) {
 	if trackNumber, err := toTrackNumber(d.number); err != nil {
 		logrus.WithFields(logrus.Fields{
-			internal.LOG_PATH:  t.Path,
+			internal.LOG_PATH:  t.String,
 			"trackTag":         d.number,
 			internal.LOG_ERROR: err}).Warn("invalid track tag")
 		t.setTagFormatError()
@@ -263,13 +310,13 @@ func isComparable(p nameTagPair) bool {
 
 var stdFrames = []string{"TALB", "TIT2", "TPE1", "TRCK"} // album, title, artist, track, in that order
 
-func RawReadTags(path string) (d *taggedTrackData, err error) {
+func RawReadTags(path string) (d *TaggedTrackData, err error) {
 	var tag *id3v2.Tag
 	if tag, err = id3v2.Open(path, id3v2.Options{Parse: true, ParseFrames: stdFrames}); err != nil {
 		return
 	}
 	defer tag.Close()
-	d = &taggedTrackData{
+	d = &TaggedTrackData{
 		album:  tag.Album(),
 		artist: tag.Artist(),
 		title:  tag.Title(),
@@ -284,7 +331,7 @@ func (t *Track) EditTags() error {
 		return fmt.Errorf("track %d %q of album %q by artist %q has no tagging conflicts, no edit needed",
 			t.TrackNumber, t.Name, t.ContainingAlbum.Name(), t.ContainingAlbum.RecordingArtistName())
 	}
-	tag, err := id3v2.Open(t.Path, id3v2.Options{Parse: true})
+	tag, err := id3v2.Open(t.path, id3v2.Options{Parse: true})
 	if err != nil {
 		return err
 	}
@@ -312,24 +359,24 @@ type empty struct{}
 
 var semaphores = make(chan empty, 20) // 20 is a typical limit for open files
 
-func (t *Track) readTags(reader func(string) (*taggedTrackData, error)) {
+func (t *Track) readTags(reader func(string) (*TaggedTrackData, error)) {
 	if t.needsTaggedData() {
 		semaphores <- empty{} // block while full
 		go func() {
 			defer func() {
 				<-semaphores // read to release a slot
 			}()
-			if tags, err := reader(t.Path); err != nil {
-				logrus.WithFields(logrus.Fields{internal.LOG_PATH: t.Path, internal.LOG_ERROR: err}).Warn(internal.LOG_CANNOT_READ_FILE)
+			if tags, err := reader(t.path); err != nil {
+				logrus.WithFields(logrus.Fields{internal.LOG_PATH: t.String, internal.LOG_ERROR: err}).Warn(internal.LOG_CANNOT_READ_FILE)
 				t.setTagReadError()
 			} else {
-				t.setTags(tags)
+				t.SetTags(tags)
 			}
 		}()
 	}
 }
 
-func UpdateTracks(artists []*Artist, reader func(string) (*taggedTrackData, error)) {
+func UpdateTracks(artists []*Artist, reader func(string) (*TaggedTrackData, error)) {
 	for _, artist := range artists {
 		for _, album := range artist.Albums() {
 			for _, track := range album.Tracks() {
@@ -377,4 +424,9 @@ func (t *Track) AlbumPath() string {
 		return ""
 	}
 	return t.ContainingAlbum.path
+}
+
+// Copy copies the track to a specified destination path
+func (t *Track) Copy(destination string) error {
+	return internal.CopyFile(t.path, destination)
 }

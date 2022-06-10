@@ -49,14 +49,7 @@ func (s *Search) LoadUnfilteredData() (artists []*Artist) {
 									continue
 								}
 								if simpleName, trackNumber, valid := ParseTrackName(trackFile.Name(), album.Name(), artist.Name(), s.targetExtension); valid {
-									track := &Track{
-										Path:            album.subDirectory(trackFile.Name()),
-										Name:            simpleName,
-										TrackNumber:     trackNumber,
-										TaggedTrack:     trackUnknownTagsNotRead,
-										ContainingAlbum: album,
-									}
-									album.AddTrack(track)
+									album.AddTrack(newTrackFromFile(album, trackFile, simpleName, trackNumber))
 								}
 							}
 						}
@@ -135,14 +128,7 @@ func (s *Search) LoadData() (artists []*Artist) {
 								continue
 							}
 							if simpleName, trackNumber, valid := ParseTrackName(trackFile.Name(), album.Name(), artist.Name(), s.targetExtension); valid {
-								track := &Track{
-									Path:            album.subDirectory(trackFile.Name()),
-									Name:            simpleName,
-									TrackNumber:     trackNumber,
-									TaggedTrack:     trackUnknownTagsNotRead,
-									ContainingAlbum: album,
-								}
-								album.AddTrack(track)
+								album.AddTrack(newTrackFromFile(album, trackFile, simpleName, trackNumber))
 							}
 						}
 					}

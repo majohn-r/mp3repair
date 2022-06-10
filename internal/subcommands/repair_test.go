@@ -526,21 +526,9 @@ func Test_repair_backupTracks(t *testing.T) {
 			r:    &repair{dryRun: &fFlag},
 			args: args{
 				tracks: []*files.Track{
-					{
-						TrackNumber:     1,
-						Path:            filepath.Join(topDir, goodTrackName),
-						ContainingAlbum: files.NewAlbum("", nil, topDir),
-					},
-					{
-						TrackNumber:     1,
-						Path:            filepath.Join(topDir, "dup track"),
-						ContainingAlbum: files.NewAlbum("", nil, topDir),
-					},
-					{
-						TrackNumber:     2,
-						Path:            filepath.Join(topDir, goodTrackName),
-						ContainingAlbum: files.NewAlbum("", nil, topDir),
-					},
+					files.NewTrack(files.NewAlbum("", nil, topDir), goodTrackName, "", 1),
+					files.NewTrack(files.NewAlbum("", nil, topDir), "dup track", "", 1),
+					files.NewTrack(files.NewAlbum("", nil, topDir), goodTrackName, "", 2),
 				},
 			},
 			wantW: fmt.Sprintf("The track %q has been backed up to %q.\n", filepath.Join(topDir, goodTrackName), filepath.Join(topDir, files.BackupDirName, "1.mp3")) +
@@ -593,6 +581,8 @@ func Test_repair_fixTracks(t *testing.T) {
 	if err := internal.CreateFileForTestingWithContent(topDir, goodFileName, string(content)); err != nil {
 		t.Errorf("%s error creating %s: %v", fnName, filepath.Join(topDir, goodFileName), err)
 	}
+	trackWithData := files.NewTrack(files.NewAlbum("ok album", files.NewArtist("beautiful singer", ""), topDir), goodFileName, trackName, 1)
+	trackWithData.SetTags(files.NewTaggedTrackData(frames["TALB"], frames["TPE1"], frames["TIT2"], frames["TRCK"]))
 	type args struct {
 		tracks []*files.Track
 	}
@@ -607,23 +597,13 @@ func Test_repair_fixTracks(t *testing.T) {
 			name: "actual tracks",
 			r:    &repair{dryRun: &fFlag},
 			args: args{tracks: []*files.Track{
-				{
-					Path:            filepath.Join(topDir, "non-existent-track"),
-					TaggedTrack:     files.TrackUnknownTagReadError,
-					ContainingAlbum: files.NewAlbum("ok album", files.NewArtist("beautiful singer", ""), ""),
-				},
-				{
-					TrackNumber:     1,
-					Name:            trackName,
-					ContainingAlbum: files.NewAlbum("ok album", files.NewArtist("beautiful singer", ""), ""),
-					Path:            filepath.Join(topDir, goodFileName),
-					TaggedTitle:     frames["TIT2"],
-					TaggedTrack:     2,
-					TaggedAlbum:     frames["TALB"],
-					TaggedArtist:    frames["TPE1"],
-				},
+				files.NewTrack(
+					files.NewAlbum("ok album", files.NewArtist("beautiful singer", ""), topDir),
+					"non-existent-track", "", 0),
+				trackWithData,
 			}},
-			wantW: fmt.Sprintf("An error occurred fixing track %q\n", filepath.Join(topDir, "non-existent-track")) +
+			wantW: fmt.Sprintf("An error occurred fixing track %q\n",
+				filepath.Join(topDir, "non-existent-track")) +
 				fmt.Sprintf("%q fixed\n", filepath.Join(topDir, goodFileName)),
 		},
 	}
