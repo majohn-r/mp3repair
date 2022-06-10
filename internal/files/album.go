@@ -15,7 +15,7 @@ type Album struct {
 
 func newAlbumFromFile(file fs.FileInfo, artist *Artist) *Album {
 	dirName := file.Name()
-	return NewAlbum(dirName, artist, filepath.Join(artist.Path(), dirName))
+	return NewAlbum(dirName, artist, artist.subDirectory(dirName))
 }
 
 func copyAlbum(a *Album, artist *Artist) *Album {
@@ -40,6 +40,10 @@ func NewAlbum(title string, artist *Artist, albumPath string) *Album {
 	return &Album{name: title, recordingArtist: artist, path: albumPath}
 }
 
+func (a *Album) contents() ([]fs.FileInfo, error) {
+	return readDirectory(a.path)
+}
+
 // Name returns the album's name
 func (a *Album) Name() string {
 	return a.name
@@ -51,11 +55,6 @@ func (a *Album) RecordingArtistName() string {
 		return ""
 	}
 	return a.recordingArtist.Name()
-}
-
-// Path returns the name of the album's path
-func (a *Album) Path() string {
-	return a.path
 }
 
 // AddTrack adds a new track to the album
@@ -71,4 +70,8 @@ func (a *Album) HasTracks() bool {
 // Tracks returns the slice of Tracks
 func (a *Album) Tracks() []*Track {
 	return a.tracks
+}
+
+func (a *Album) subDirectory(s string) string {
+	return filepath.Join(a.path, s)
 }

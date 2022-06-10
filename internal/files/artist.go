@@ -27,12 +27,15 @@ func NewArtist(n, p string) *Artist {
 	return &Artist{name: n, path: p}
 }
 
+func (a *Artist) contents() ([]fs.FileInfo, error) {
+	return readDirectory(a.path)
+}
+
 // Name returns the artist's name
 func (a *Artist) Name() string {
 	return a.name
 }
 
-// Path returns the artist's underlying path
-func (a *Artist) Path() string {
-	return a.path
+func (a *Artist) subDirectory(s string) string {
+	return filepath.Join(a.path, s)
 }

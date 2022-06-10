@@ -63,7 +63,7 @@ func CreateAllArtistsForTesting(topDir string, addExtras bool) []*Artist {
 		}
 		if addExtras {
 			albumName := internal.CreateAlbumNameForTesting(999)
-			album := NewAlbum(albumName, artist, filepath.Join(artist.Path(), albumName))
+			album := NewAlbum(albumName, artist, artist.subDirectory(albumName))
 			artist.Albums = append(artist.Albums, album)
 		}
 		artists = append(artists, artist)

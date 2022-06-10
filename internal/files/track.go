@@ -3,7 +3,6 @@ package files
 import (
 	"fmt"
 	"mp3/internal"
-	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -79,7 +78,7 @@ var trackNameRegex *regexp.Regexp = regexp.MustCompile(defaultTrackNamePattern)
 
 // BackupDirectory returns the path for this track
 func (t *Track) BackupDirectory() string {
-	return filepath.Join(t.ContainingAlbum.Path(), BackupDirName)
+	return t.ContainingAlbum.subDirectory(BackupDirName)
 }
 
 func (t *Track) needsTaggedData() bool {
@@ -371,4 +370,12 @@ func ParseTrackName(name string, album string, artist string, ext string) (simpl
 	}
 	valid = true
 	return
+}
+
+// AlbumPath returns the path to the track's album
+func (t *Track) AlbumPath() string {
+	if t.ContainingAlbum == nil {
+		return ""
+	}
+	return t.ContainingAlbum.path
 }

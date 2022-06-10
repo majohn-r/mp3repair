@@ -744,3 +744,21 @@ func TestTrack_BackupDirectory(t *testing.T) {
 		})
 	}
 }
+
+func TestTrack_AlbumPath(t *testing.T) {
+	tests := []struct {
+		name string
+		tr   *Track
+		want string
+	}{
+		{name: "no containing album", tr: &Track{}, want: ""},
+		{name: "has containing album", tr: &Track{ContainingAlbum: NewAlbum("", nil, "album-path")}, want: "album-path"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.tr.AlbumPath(); got != tt.want {
+				t.Errorf("Track.AlbumPath() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
