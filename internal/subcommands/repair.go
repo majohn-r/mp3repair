@@ -92,8 +92,8 @@ func reportTracks(w io.Writer, tracks []*files.Track) {
 	lastArtistName := ""
 	lastAlbumName := ""
 	for _, t := range tracks {
-		albumName := t.ContainingAlbum.Name()
-		artistName := t.ContainingAlbum.RecordingArtistName()
+		albumName := t.AlbumName()
+		artistName := t.RecordingArtist()
 		if lastArtistName != artistName {
 			fmt.Fprintf(w, "%q\n", artistName)
 			lastArtistName = artistName

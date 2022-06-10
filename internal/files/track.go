@@ -29,7 +29,7 @@ type Track struct {
 	path            string // full path to the file associated with the track, including the file itself
 	name            string // name of the track, without the track number or file extension, e.g., "First Track"
 	number          int    // number of the track
-	ContainingAlbum *Album
+	containingAlbum *Album
 	// these fields are populated when needed; acquisition is expensive
 	TaggedTitle  string // track title per mp3 tag TRCK frame - initially set to trackUnknownTagsNotRead
 	TaggedTrack  int    // track number per mp3 tag TIT2 frame
@@ -61,7 +61,7 @@ func copyTrack(t *Track, a *Album) *Track {
 		TaggedArtist:    t.TaggedArtist,
 		TaggedTitle:     t.TaggedTitle,
 		TaggedTrack:     t.TaggedTrack,
-		ContainingAlbum: a, // do not use source track's album!
+		containingAlbum: a, // do not use source track's album!
 	}
 }
 
@@ -76,7 +76,7 @@ func NewTrack(a *Album, fullName string, simpleName string, trackNumber int) *Tr
 		name:            simpleName,
 		number:          trackNumber,
 		TaggedTrack:     trackUnknownTagsNotRead,
-		ContainingAlbum: a,
+		containingAlbum: a,
 	}
 }
 
@@ -90,8 +90,8 @@ func (t Tracks) Len() int {
 func (t Tracks) Less(i, j int) bool {
 	track1 := t[i]
 	track2 := t[j]
-	album1 := track1.ContainingAlbum
-	album2 := track2.ContainingAlbum
+	album1 := track1.containingAlbum
+	album2 := track2.containingAlbum
 	artist1 := album1.RecordingArtistName()
 	artist2 := album2.RecordingArtistName()
 	// compare artist name first
@@ -134,7 +134,7 @@ var trackNameRegex *regexp.Regexp = regexp.MustCompile(defaultTrackNamePattern)
 
 // BackupDirectory returns the path for this track
 func (t *Track) BackupDirectory() string {
-	return t.ContainingAlbum.subDirectory(BackupDirName)
+	return t.containingAlbum.subDirectory(BackupDirName)
 }
 
 func (t *Track) needsTaggedData() bool {
@@ -256,8 +256,8 @@ func (t *Track) AnalyzeIssues() TrackState {
 		return TrackState{
 			numberingConflict:  t.TaggedTrack != t.number,
 			trackNameConflict:  !isComparable(nameTagPair{name: t.name, tag: t.TaggedTitle}),
-			albumNameConflict:  !isComparable(nameTagPair{name: t.ContainingAlbum.Name(), tag: t.TaggedAlbum}),
-			artistNameConflict: !isComparable(nameTagPair{name: t.ContainingAlbum.RecordingArtistName(), tag: t.TaggedArtist}),
+			albumNameConflict:  !isComparable(nameTagPair{name: t.containingAlbum.Name(), tag: t.TaggedAlbum}),
+			artistNameConflict: !isComparable(nameTagPair{name: t.containingAlbum.RecordingArtistName(), tag: t.TaggedArtist}),
 		}
 	}
 }
@@ -287,11 +287,11 @@ func (t *Track) FindDifferences() []string {
 	}
 	if s.HasAlbumNameConflict() {
 		differences = append(differences,
-			fmt.Sprintf("album %q does not agree with album tag %q", t.ContainingAlbum.Name(), t.TaggedAlbum))
+			fmt.Sprintf("album %q does not agree with album tag %q", t.containingAlbum.Name(), t.TaggedAlbum))
 	}
 	if s.HasArtistNameConflict() {
 		differences = append(differences,
-			fmt.Sprintf("artist %q does not agree with artist tag %q", t.ContainingAlbum.RecordingArtistName(), t.TaggedArtist))
+			fmt.Sprintf("artist %q does not agree with artist tag %q", t.containingAlbum.RecordingArtistName(), t.TaggedArtist))
 	}
 	return differences
 }
@@ -340,7 +340,7 @@ func (t *Track) EditTags() error {
 	a := t.AnalyzeIssues()
 	if !a.HasTaggingConflicts() {
 		return fmt.Errorf("track %d %q of album %q by artist %q has no tagging conflicts, no edit needed",
-			t.number, t.name, t.ContainingAlbum.Name(), t.ContainingAlbum.RecordingArtistName())
+			t.number, t.name, t.containingAlbum.Name(), t.containingAlbum.RecordingArtistName())
 	}
 	tag, err := id3v2.Open(t.path, id3v2.Options{Parse: true})
 	if err != nil {
@@ -349,10 +349,10 @@ func (t *Track) EditTags() error {
 	defer tag.Close()
 	tag.SetDefaultEncoding(id3v2.EncodingUTF8)
 	if a.HasAlbumNameConflict() {
-		tag.SetAlbum(t.ContainingAlbum.Name())
+		tag.SetAlbum(t.containingAlbum.Name())
 	}
 	if a.HasArtistNameConflict() {
-		tag.SetArtist(t.ContainingAlbum.RecordingArtistName())
+		tag.SetArtist(t.containingAlbum.RecordingArtistName())
 	}
 	if a.HasTrackNameConflict() {
 		tag.SetTitle(t.name)
@@ -431,10 +431,27 @@ func ParseTrackName(name string, album string, artist string, ext string) (simpl
 
 // AlbumPath returns the path to the track's album
 func (t *Track) AlbumPath() string {
-	if t.ContainingAlbum == nil {
+	if t.containingAlbum == nil {
 		return ""
 	}
-	return t.ContainingAlbum.path
+	return t.containingAlbum.path
+}
+
+// AlbumName returns the name of the track's album
+func (t *Track) AlbumName() string {
+	if t.containingAlbum == nil {
+		return ""
+	}
+	return t.containingAlbum.name
+}
+
+// RecordingArtist returns the name of the artist on whose album this track
+// appears
+func (t *Track) RecordingArtist() string {
+	if t.containingAlbum == nil {
+		return ""
+	}
+	return t.containingAlbum.RecordingArtistName()
 }
 
 // Copy copies the track to a specified destination path

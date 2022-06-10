@@ -215,9 +215,9 @@ func (l *ls) outputTracks(w io.Writer, tracks []*files.Track, prefix string) {
 			components = append(components, track.Name())
 			if *l.annotateListings {
 				if !*l.includeAlbums {
-					components = append(components, fmt.Sprintf("on %s", track.ContainingAlbum.Name()))
+					components = append(components, fmt.Sprintf("on %s", track.AlbumName()))
 					if !*l.includeArtists {
-						components = append(components, fmt.Sprintf("by %s", track.ContainingAlbum.RecordingArtistName()))
+						components = append(components, fmt.Sprintf("by %s", track.RecordingArtist()))
 					}
 				}
 			}

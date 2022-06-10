@@ -362,7 +362,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 			tr: &Track{
 				number:          1,
 				name:            "track name",
-				ContainingAlbum: NewAlbum("album name", NewArtist("artist name", ""), ""),
+				containingAlbum: NewAlbum("album name", NewArtist("artist name", ""), ""),
 				TaggedTrack:     1,
 				TaggedTitle:     "track name",
 				TaggedAlbum:     "album name",
@@ -375,7 +375,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 			tr: &Track{
 				number:          1,
 				name:            "track name",
-				ContainingAlbum: NewAlbum("album name", NewArtist("artist name", ""), ""),
+				containingAlbum: NewAlbum("album name", NewArtist("artist name", ""), ""),
 				TaggedTrack:     1,
 				TaggedTitle:     "track:name",
 				TaggedAlbum:     "album:name",
@@ -388,7 +388,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 			tr: &Track{
 				number:          2,
 				name:            "track:name",
-				ContainingAlbum: NewAlbum("album:name", NewArtist("artist:name", ""), ""),
+				containingAlbum: NewAlbum("album:name", NewArtist("artist:name", ""), ""),
 				TaggedTrack:     1,
 				TaggedTitle:     "track name",
 				TaggedAlbum:     "album name",
@@ -430,7 +430,7 @@ func TestUpdateTracks(t *testing.T) {
 				track := &Track{
 					name:            fmt.Sprintf("track %d-%d-%d", k, m, n),
 					TaggedTrack:     trackUnknownTagsNotRead,
-					ContainingAlbum: album,
+					containingAlbum: album,
 				}
 				album.AddTrack(track)
 			}
@@ -539,27 +539,27 @@ func Test_sortTracks(t *testing.T) {
 			tracks: []*Track{
 				{
 					number:          10,
-					ContainingAlbum: NewAlbum("album2", NewArtist("artist3", ""), ""),
+					containingAlbum: NewAlbum("album2", NewArtist("artist3", ""), ""),
 				},
 				{
 					number:          1,
-					ContainingAlbum: NewAlbum("album2", NewArtist("artist3", ""), ""),
+					containingAlbum: NewAlbum("album2", NewArtist("artist3", ""), ""),
 				},
 				{
 					number:          2,
-					ContainingAlbum: NewAlbum("album1", NewArtist("artist3", ""), ""),
+					containingAlbum: NewAlbum("album1", NewArtist("artist3", ""), ""),
 				},
 				{
 					number:          3,
-					ContainingAlbum: NewAlbum("album3", NewArtist("artist2", ""), ""),
+					containingAlbum: NewAlbum("album3", NewArtist("artist2", ""), ""),
 				},
 				{
 					number:          3,
-					ContainingAlbum: NewAlbum("album3", NewArtist("artist4", ""), ""),
+					containingAlbum: NewAlbum("album3", NewArtist("artist4", ""), ""),
 				},
 				{
 					number:          3,
-					ContainingAlbum: NewAlbum("album5", NewArtist("artist2", ""), ""),
+					containingAlbum: NewAlbum("album5", NewArtist("artist2", ""), ""),
 				},
 			},
 		},
@@ -572,8 +572,8 @@ func Test_sortTracks(t *testing.T) {
 			}
 			track1 := tt.tracks[i-1]
 			track2 := tt.tracks[i]
-			album1 := track1.ContainingAlbum
-			album2 := track2.ContainingAlbum
+			album1 := track1.containingAlbum
+			album2 := track2.containingAlbum
 			artist1 := album1.RecordingArtistName()
 			artist2 := album2.RecordingArtistName()
 			if artist1 > artist2 {
@@ -650,7 +650,7 @@ func TestTrack_EditTags(t *testing.T) {
 				number:          1,
 				name:            "defective track",
 				TaggedTrack:     trackUnknownTagsNotRead,
-				ContainingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
+				containingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
 			},
 			wantErr: true,
 		},
@@ -664,7 +664,7 @@ func TestTrack_EditTags(t *testing.T) {
 				TaggedAlbum:     "unknown album",
 				TaggedArtist:    "unknown artist",
 				path:            filepath.Join(topDir, "non-existent-file.mp3"),
-				ContainingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
+				containingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
 			},
 			wantErr: true,
 		},
@@ -678,7 +678,7 @@ func TestTrack_EditTags(t *testing.T) {
 				TaggedAlbum:     "unknown album",
 				TaggedArtist:    "unknown artist",
 				path:            fullPath,
-				ContainingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
+				containingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
 			},
 			wantErr: false,
 		},
@@ -732,7 +732,7 @@ func TestTrack_BackupDirectory(t *testing.T) {
 	}{
 		{
 			name: "simple case",
-			tr:   &Track{ContainingAlbum: NewAlbum("", nil, "albumPath")},
+			tr:   &Track{containingAlbum: NewAlbum("", nil, "albumPath")},
 			want: "albumPath\\pre-repair-backup",
 		},
 	}
@@ -752,7 +752,7 @@ func TestTrack_AlbumPath(t *testing.T) {
 		want string
 	}{
 		{name: "no containing album", tr: &Track{}, want: ""},
-		{name: "has containing album", tr: &Track{ContainingAlbum: NewAlbum("", nil, "album-path")}, want: "album-path"},
+		{name: "has containing album", tr: &Track{containingAlbum: NewAlbum("", nil, "album-path")}, want: "album-path"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -885,6 +885,46 @@ func TestTrack_Number(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.tr.Number(); got != tt.want {
 				t.Errorf("Track.Number() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTrack_AlbumName(t *testing.T) {
+	tests := []struct {
+		name string
+		tr   *Track
+		want string
+	}{
+		{name: "orphan track", tr: &Track{}, want: ""},
+		{name: "good track", tr: &Track{containingAlbum: &Album{name: "my album name"}}, want: "my album name"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.tr.AlbumName(); got != tt.want {
+				t.Errorf("Track.AlbumName() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTrack_RecordingArtist(t *testing.T) {
+	tests := []struct {
+		name string
+		tr   *Track
+		want string
+	}{
+		{name: "orphan track", tr: &Track{}, want: ""},
+		{
+			name: "good track",
+			tr:   &Track{containingAlbum: &Album{recordingArtist: &Artist{name: "my artist"}}},
+			want: "my artist",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.tr.RecordingArtist(); got != tt.want {
+				t.Errorf("Track.RecordingArtist() = %v, want %v", got, tt.want)
 			}
 		})
 	}
