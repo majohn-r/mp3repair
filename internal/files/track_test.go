@@ -620,7 +620,7 @@ func TestTrack_EditTags(t *testing.T) {
 		"TPE1": "unknown artist",
 		"TLEN": "1000",
 	}
-	content := CreateTaggedData(payload, frames)
+	content := CreateTaggedDataForTesting(payload, frames)
 	// // block off tag header
 	// content = append(content, []byte("ID3")...)
 	// content = append(content, []byte{3, 0, 0, 0, 0, 0, 0}...)

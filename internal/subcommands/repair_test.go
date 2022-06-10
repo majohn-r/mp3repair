@@ -563,7 +563,7 @@ func createTaggedContent(frames map[string]string) []byte {
 	for k := 0; k < 256; k++ {
 		payload = append(payload, byte(k))
 	}
-	content := files.CreateTaggedData(payload, frames)
+	content := files.CreateTaggedDataForTesting(payload, frames)
 	return content
 }
 

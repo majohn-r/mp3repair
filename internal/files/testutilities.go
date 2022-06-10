@@ -8,6 +8,8 @@ import (
 // NOTE: the functions in this file are strictly for testing purposes. Do not
 // call them from production code.
 
+// CreateAllOddArtistsWithEvenAlbumsForTesting generates a slice of artists with
+// odd-valued names and albums with even-valued names.
 func CreateAllOddArtistsWithEvenAlbumsForTesting(topDir string) []*Artist {
 	var artists []*Artist
 	for k := 1; k < 10; k += 2 {
@@ -37,6 +39,8 @@ func CreateAllOddArtistsWithEvenAlbumsForTesting(topDir string) []*Artist {
 	return artists
 }
 
+// CreateAllArtistsForTesting creates a well-defined slice of artists, with
+// albums and tracks.
 func CreateAllArtistsForTesting(topDir string, addExtras bool) []*Artist {
 	var artists []*Artist
 	for k := 0; k < 10; k++ {
@@ -76,9 +80,10 @@ func CreateAllArtistsForTesting(topDir string, addExtras bool) []*Artist {
 	return artists
 }
 
-// CreateTaggedData creates tagged content. This code is based on reading
-// https://id3.org/id3v2.3.0 and on looking at a hex dump of a real mp3 file.
-func CreateTaggedData(payload []byte, frames map[string]string) []byte {
+// CreateTaggedDataForTesting creates tagged content. This code is based on
+// reading https://id3.org/id3v2.3.0 and on looking at a hex dump of a real mp3
+// file.
+func CreateTaggedDataForTesting(payload []byte, frames map[string]string) []byte {
 	content := make([]byte, 0)
 	// block off tag header
 	content = append(content, []byte("ID3")...)
