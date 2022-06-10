@@ -15,7 +15,7 @@ type Album struct {
 
 func newAlbumFromFile(file fs.FileInfo, artist *Artist) *Album {
 	dirName := file.Name()
-	return NewAlbum(dirName, artist, filepath.Join(artist.Path, dirName))
+	return NewAlbum(dirName, artist, filepath.Join(artist.Path(), dirName))
 }
 
 func copyAlbum(a *Album, artist *Artist) *Album {

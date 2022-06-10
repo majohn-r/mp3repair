@@ -38,7 +38,7 @@ func (s *Search) LoadUnfilteredData() (artists []*Artist) {
 			if artistFile.IsDir() {
 				artist := newArtistFromFile(artistFile, s.topDirectory)
 				// artistDir := filepath.Join(s.topDirectory, artistFile.Name())
-				albumFiles, err := readDirectory(artist.Path)
+				albumFiles, err := readDirectory((artist.Path()))
 				if err == nil {
 					for _, albumFile := range albumFiles {
 						if !albumFile.IsDir() {
@@ -112,7 +112,7 @@ func (s *Search) LoadData() (artists []*Artist) {
 				continue
 			}
 			artist := newArtistFromFile(artistFile, s.topDirectory)
-			albumFiles, err := readDirectory(artist.Path)
+			albumFiles, err := readDirectory(artist.Path())
 			if err == nil {
 				for _, albumFile := range albumFiles {
 					if !albumFile.IsDir() || !s.albumFilter.MatchString(albumFile.Name()) {
