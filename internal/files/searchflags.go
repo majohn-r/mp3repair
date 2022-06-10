@@ -13,6 +13,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+// SearchFlags defines the common flags used to specify how the top directory,
+// file extension, and album and artist filters are defined and validated.
 type SearchFlags struct {
 	f             *flag.FlagSet
 	topDirectory  *string
@@ -29,6 +31,8 @@ const (
 	defaultRegex      = ".*"
 )
 
+// NewSearchFlags are used by subCommands to use the common top directory,
+// target extension, and album and artist filter regular expressions.
 func NewSearchFlags(v *viper.Viper, fSet *flag.FlagSet) *SearchFlags {
 	subViper := internal.SafeSubViper(v, "common")
 	return &SearchFlags{
@@ -48,6 +52,7 @@ func NewSearchFlags(v *viper.Viper, fSet *flag.FlagSet) *SearchFlags {
 	}
 }
 
+// ProcessArgs consumes the command line arguments.
 func (sf *SearchFlags) ProcessArgs(writer io.Writer, args []string) *Search {
 	dereferencedArgs := make([]string, len(args))
 	for i, arg := range args {
@@ -61,6 +66,8 @@ func (sf *SearchFlags) ProcessArgs(writer io.Writer, args []string) *Search {
 	return sf.NewSearch()
 }
 
+// NewSearch validates the common search parameters and creates a Search
+// instance based on them.
 func (sf *SearchFlags) NewSearch() (s *Search) {
 	albumsFilter, artistsFilter, problemsExist := sf.validate()
 	if !problemsExist {
