@@ -8,7 +8,7 @@ func TestAlbum_RecordingArtistName(t *testing.T) {
 		a    *Album
 		want string
 	}{
-		{name: "with recording artist", a: NewAlbum("album1", &Artist{Name: "artist1"}, ""), want: "artist1"},
+		{name: "with recording artist", a: NewAlbum("album1", NewArtist("artist1", ""), ""), want: "artist1"},
 		{name: "no recording artist", a: NewAlbum("album1", nil, ""), want: ""},
 	}
 	for _, tt := range tests {

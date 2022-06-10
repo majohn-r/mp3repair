@@ -362,7 +362,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 			tr: &Track{
 				TrackNumber:     1,
 				Name:            "track name",
-				ContainingAlbum: NewAlbum("album name", &Artist{Name: "artist name"}, ""),
+				ContainingAlbum: NewAlbum("album name", NewArtist("artist name", ""), ""),
 				TaggedTrack:     1,
 				TaggedTitle:     "track name",
 				TaggedAlbum:     "album name",
@@ -375,7 +375,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 			tr: &Track{
 				TrackNumber:     1,
 				Name:            "track name",
-				ContainingAlbum: NewAlbum("album name", &Artist{Name: "artist name"}, ""),
+				ContainingAlbum: NewAlbum("album name", NewArtist("artist name", ""), ""),
 				TaggedTrack:     1,
 				TaggedTitle:     "track:name",
 				TaggedAlbum:     "album:name",
@@ -388,7 +388,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 			tr: &Track{
 				TrackNumber:     2,
 				Name:            "track:name",
-				ContainingAlbum: NewAlbum("album:name", &Artist{Name: "artist:name"}, ""),
+				ContainingAlbum: NewAlbum("album:name", NewArtist("artist:name", ""), ""),
 				TaggedTrack:     1,
 				TaggedTitle:     "track name",
 				TaggedAlbum:     "album name",
@@ -421,10 +421,7 @@ func TestUpdateTracks(t *testing.T) {
 	// 500 artists, 20 albums each, 50 tracks apiece ... total: 500,000 tracks
 	var artists []*Artist
 	for k := 0; k < 500; k++ {
-		artist := &Artist{
-			Name:   fmt.Sprintf("artist %d", k),
-			Albums: make([]*Album, 0),
-		}
+		artist := NewArtist(fmt.Sprintf("artist %d", k), "")
 		artists = append(artists, artist)
 		for m := 0; m < 20; m++ {
 			album := NewAlbum(fmt.Sprintf("album %d-%d", k, m), artist, "")
@@ -542,27 +539,27 @@ func Test_sortTracks(t *testing.T) {
 			tracks: []*Track{
 				{
 					TrackNumber:     10,
-					ContainingAlbum: NewAlbum("album2", &Artist{Name: "artist3"}, ""),
+					ContainingAlbum: NewAlbum("album2", NewArtist("artist3", ""), ""),
 				},
 				{
 					TrackNumber:     1,
-					ContainingAlbum: NewAlbum("album2", &Artist{Name: "artist3"}, ""),
+					ContainingAlbum: NewAlbum("album2", NewArtist("artist3", ""), ""),
 				},
 				{
 					TrackNumber:     2,
-					ContainingAlbum: NewAlbum("album1", &Artist{Name: "artist3"}, ""),
+					ContainingAlbum: NewAlbum("album1", NewArtist("artist3", ""), ""),
 				},
 				{
 					TrackNumber:     3,
-					ContainingAlbum: NewAlbum("album3", &Artist{Name: "artist2"}, ""),
+					ContainingAlbum: NewAlbum("album3", NewArtist("artist2", ""), ""),
 				},
 				{
 					TrackNumber:     3,
-					ContainingAlbum: NewAlbum("album3", &Artist{Name: "artist4"}, ""),
+					ContainingAlbum: NewAlbum("album3", NewArtist("artist4", ""), ""),
 				},
 				{
 					TrackNumber:     3,
-					ContainingAlbum: NewAlbum("album5", &Artist{Name: "artist2"}, ""),
+					ContainingAlbum: NewAlbum("album5", NewArtist("artist2", ""), ""),
 				},
 			},
 		},
@@ -653,7 +650,7 @@ func TestTrack_EditTags(t *testing.T) {
 				TrackNumber:     1,
 				Name:            "defective track",
 				TaggedTrack:     trackUnknownTagsNotRead,
-				ContainingAlbum: NewAlbum("poor album", &Artist{Name: "sorry artist"}, ""),
+				ContainingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
 			},
 			wantErr: true,
 		},
@@ -667,7 +664,7 @@ func TestTrack_EditTags(t *testing.T) {
 				TaggedAlbum:     "unknown album",
 				TaggedArtist:    "unknown artist",
 				Path:            filepath.Join(topDir, "non-existent-file.mp3"),
-				ContainingAlbum: NewAlbum("poor album", &Artist{Name: "sorry artist"}, ""),
+				ContainingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
 			},
 			wantErr: true,
 		},
@@ -681,7 +678,7 @@ func TestTrack_EditTags(t *testing.T) {
 				TaggedAlbum:     "unknown album",
 				TaggedArtist:    "unknown artist",
 				Path:            fullPath,
-				ContainingAlbum: NewAlbum("poor album", &Artist{Name: "sorry artist"}, ""),
+				ContainingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
 			},
 			wantErr: false,
 		},

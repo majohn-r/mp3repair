@@ -13,7 +13,7 @@ func CreateAllOddArtistsWithEvenAlbumsForTesting(topDir string) []*Artist {
 	for k := 1; k < 10; k += 2 {
 		artistName := internal.CreateArtistNameForTesting(k)
 		artistDir := filepath.Join(topDir, artistName)
-		artist := &Artist{Name: artistName, Path: artistDir}
+		artist := NewArtist(artistName, artistDir)
 		for n := 0; n < 10; n += 2 {
 			albumName := internal.CreateAlbumNameForTesting(n)
 			albumDir := filepath.Join(artistDir, albumName)
@@ -42,7 +42,7 @@ func CreateAllArtistsForTesting(topDir string, addExtras bool) []*Artist {
 	for k := 0; k < 10; k++ {
 		artistName := internal.CreateArtistNameForTesting(k)
 		artistDir := filepath.Join(topDir, artistName)
-		artist := &Artist{Name: artistName, Path: artistDir}
+		artist := NewArtist(artistName, artistDir)
 		for n := 0; n < 10; n++ {
 			albumName := internal.CreateAlbumNameForTesting(n)
 			albumDir := filepath.Join(artistDir, albumName)
@@ -70,7 +70,7 @@ func CreateAllArtistsForTesting(topDir string, addExtras bool) []*Artist {
 	}
 	if addExtras {
 		artistName := internal.CreateArtistNameForTesting(999)
-		artist := &Artist{Name: artistName, Path: filepath.Join(topDir, artistName)}
+		artist := NewArtist(artistName, filepath.Join(topDir, artistName))
 		artists = append(artists, artist)
 	}
 	return artists

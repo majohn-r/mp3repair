@@ -5,17 +5,28 @@ import (
 	"path/filepath"
 )
 
+// Artist encapsulates information about a recording artist (a solo performer, a duo, a band, etc.)
 type Artist struct {
-	Name   string
+	name   string
 	Albums []*Album
 	Path   string
 }
 
-func newArtist(f fs.FileInfo, dir string) *Artist {
-	name := f.Name()
-	return &Artist{Name: name, Path: filepath.Join(dir, name)}
+func newArtistFromFile(f fs.FileInfo, dir string) *Artist {
+	artistName := f.Name()
+	return NewArtist(artistName, filepath.Join(dir, artistName))
 }
 
 func copyArtist(a *Artist) *Artist {
-	return &Artist{Name: a.Name, Path: a.Path}
+	return NewArtist(a.name, a.Path)
+}
+
+// NewArtist creates a new instance of Artist
+func NewArtist(n, p string) *Artist {
+	return &Artist{name: n, Path: p}
+}
+
+// Name returns the artist's name
+func (a *Artist) Name() string {
+	return a.name
 }

@@ -36,7 +36,7 @@ func (s *Search) LoadUnfilteredData() (artists []*Artist) {
 	if err == nil {
 		for _, artistFile := range artistFiles {
 			if artistFile.IsDir() {
-				artist := newArtist(artistFile, s.topDirectory)
+				artist := newArtistFromFile(artistFile, s.topDirectory)
 				// artistDir := filepath.Join(s.topDirectory, artistFile.Name())
 				albumFiles, err := readDirectory(artist.Path)
 				if err == nil {
@@ -51,7 +51,7 @@ func (s *Search) LoadUnfilteredData() (artists []*Artist) {
 								if trackFile.IsDir() || !trackNameRegex.MatchString(trackFile.Name()) {
 									continue
 								}
-								if simpleName, trackNumber, valid := ParseTrackName(trackFile.Name(), album.Name(), artist.Name, s.targetExtension); valid {
+								if simpleName, trackNumber, valid := ParseTrackName(trackFile.Name(), album.Name(), artist.Name(), s.targetExtension); valid {
 									track := &Track{
 										Path:            filepath.Join(album.Path(), trackFile.Name()),
 										Name:            simpleName,
@@ -85,7 +85,7 @@ func (s *Search) logFields() logrus.Fields {
 func (s *Search) FilterArtists(unfilteredArtists []*Artist) (artists []*Artist) {
 	logrus.WithFields(s.logFields()).Info(internal.LOG_FILTERING_FILES)
 	for _, unfilteredArtist := range unfilteredArtists {
-		if s.artistFilter.MatchString(unfilteredArtist.Name) {
+		if s.artistFilter.MatchString(unfilteredArtist.Name()) {
 			artist := copyArtist(unfilteredArtist)
 			for _, album := range unfilteredArtist.Albums {
 				if s.albumFilter.MatchString(album.Name()) {
@@ -111,7 +111,7 @@ func (s *Search) LoadData() (artists []*Artist) {
 			if !artistFile.IsDir() || !s.artistFilter.MatchString(artistFile.Name()) {
 				continue
 			}
-			artist := newArtist(artistFile, s.topDirectory)
+			artist := newArtistFromFile(artistFile, s.topDirectory)
 			albumFiles, err := readDirectory(artist.Path)
 			if err == nil {
 				for _, albumFile := range albumFiles {
@@ -125,7 +125,7 @@ func (s *Search) LoadData() (artists []*Artist) {
 							if trackFile.IsDir() || !trackNameRegex.MatchString(trackFile.Name()) {
 								continue
 							}
-							if simpleName, trackNumber, valid := ParseTrackName(trackFile.Name(), album.Name(), artist.Name, s.targetExtension); valid {
+							if simpleName, trackNumber, valid := ParseTrackName(trackFile.Name(), album.Name(), artist.Name(), s.targetExtension); valid {
 								track := &Track{
 									Path:            filepath.Join(album.Path(), trackFile.Name()),
 									Name:            simpleName,

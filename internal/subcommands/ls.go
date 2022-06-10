@@ -113,8 +113,8 @@ func (l *ls) outputArtists(w io.Writer, artists []*files.Artist) {
 		artistsByArtistNames := make(map[string]*files.Artist)
 		var artistNames []string
 		for _, artist := range artists {
-			artistsByArtistNames[artist.Name] = artist
-			artistNames = append(artistNames, artist.Name)
+			artistsByArtistNames[artist.Name()] = artist
+			artistNames = append(artistNames, artist.Name())
 		}
 		sort.Strings(artistNames)
 		for _, artistName := range artistNames {

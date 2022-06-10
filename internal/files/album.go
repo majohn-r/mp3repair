@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 )
 
+// Album encapsulates information about a music album
 type Album struct {
 	name            string
 	tracks          []*Track
@@ -49,7 +50,7 @@ func (a *Album) RecordingArtistName() string {
 	if a.recordingArtist == nil {
 		return ""
 	}
-	return a.recordingArtist.Name
+	return a.recordingArtist.Name()
 }
 
 // Path returns the name of the album's path
