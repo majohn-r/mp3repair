@@ -332,7 +332,7 @@ func (t *Track) readTags(reader func(string) (*taggedTrackData, error)) {
 
 func UpdateTracks(artists []*Artist, reader func(string) (*taggedTrackData, error)) {
 	for _, artist := range artists {
-		for _, album := range artist.Albums {
+		for _, album := range artist.Albums() {
 			for _, track := range album.Tracks() {
 				track.readTags(reader)
 			}

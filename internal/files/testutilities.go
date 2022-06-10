@@ -30,7 +30,7 @@ func CreateAllOddArtistsWithEvenAlbumsForTesting(topDir string) []*Artist {
 				}
 				album.AddTrack(track)
 			}
-			artist.Albums = append(artist.Albums, album)
+			artist.AddAlbum(album)
 		}
 		artists = append(artists, artist)
 	}
@@ -59,12 +59,12 @@ func CreateAllArtistsForTesting(topDir string, addExtras bool) []*Artist {
 				}
 				album.AddTrack(track)
 			}
-			artist.Albums = append(artist.Albums, album)
+			artist.AddAlbum(album)
 		}
 		if addExtras {
 			albumName := internal.CreateAlbumNameForTesting(999)
 			album := NewAlbum(albumName, artist, artist.subDirectory(albumName))
-			artist.Albums = append(artist.Albums, album)
+			artist.AddAlbum(album)
 		}
 		artists = append(artists, artist)
 	}

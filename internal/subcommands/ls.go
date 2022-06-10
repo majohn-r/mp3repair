@@ -120,12 +120,12 @@ func (l *ls) outputArtists(w io.Writer, artists []*files.Artist) {
 		for _, artistName := range artistNames {
 			fmt.Fprintf(w, "Artist: %s\n", artistName)
 			artist := artistsByArtistNames[artistName]
-			l.outputAlbums(w, artist.Albums, "  ")
+			l.outputAlbums(w, artist.Albums(), "  ")
 		}
 	case false:
 		var albums []*files.Album
 		for _, artist := range artists {
-			albums = append(albums, artist.Albums...)
+			albums = append(albums, artist.Albums()...)
 		}
 		l.outputAlbums(w, albums, "")
 	}

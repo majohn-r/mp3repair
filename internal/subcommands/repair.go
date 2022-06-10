@@ -74,7 +74,7 @@ func (r *repair) runSubcommand(w io.Writer, s *files.Search) {
 func findConflictedTracks(artists []*files.Artist) []*files.Track {
 	var t []*files.Track
 	for _, artist := range artists {
-		for _, album := range artist.Albums {
+		for _, album := range artist.Albums() {
 			for _, track := range album.Tracks() {
 				if state := track.AnalyzeIssues(); state.HasTaggingConflicts() {
 					t = append(t, track)

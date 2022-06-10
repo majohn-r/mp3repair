@@ -67,7 +67,7 @@ func Test_newRepairSubCommand(t *testing.T) {
 func Test_findConflictedTracks(t *testing.T) {
 	goodArtist := files.NewArtist("artist1", "")
 	goodAlbum := files.NewAlbum("album1", goodArtist, "")
-	goodArtist.Albums = append(goodArtist.Albums, goodAlbum)
+	goodArtist.AddAlbum(goodAlbum)
 	goodTrack := &files.Track{
 		TrackNumber:     1,
 		Name:            "track1",
@@ -80,7 +80,7 @@ func Test_findConflictedTracks(t *testing.T) {
 	goodAlbum.AddTrack(goodTrack)
 	badArtist := files.NewArtist("artist1", "")
 	badAlbum := files.NewAlbum("album1", badArtist, "")
-	badArtist.Albums = append(badArtist.Albums, badAlbum)
+	badArtist.AddAlbum(badAlbum)
 	badTrack := &files.Track{
 		TrackNumber:     1,
 		Name:            "track1",
@@ -312,7 +312,7 @@ func Test_getAlbumPaths(t *testing.T) {
 	a := s.LoadData()
 	var tSlice []*files.Track
 	for _, artist := range a {
-		for _, album := range artist.Albums {
+		for _, album := range artist.Albums() {
 			tSlice = append(tSlice, album.Tracks()...)
 		}
 	}

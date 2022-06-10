@@ -331,7 +331,7 @@ func (c *check) performEmptyFolderAnalysis(w io.Writer, s *files.Search) (artist
 		conflictedArtists = createBareConflictedIssues(artists)
 		issuesFound := false
 		for _, conflictedArtist := range conflictedArtists {
-			if len(conflictedArtist.artist.Albums) == 0 {
+			if !conflictedArtist.artist.HasAlbums() {
 				conflictedArtist.issues = append(conflictedArtist.issues, "no albums found")
 				issuesFound = true
 			} else {
@@ -354,7 +354,7 @@ func createBareConflictedIssues(artists []*files.Artist) (conflictedArtists []*a
 	for _, originalArtist := range artists {
 		artistWithIssues := artistWithIssues{name: originalArtist.Name(), artist: originalArtist}
 		conflictedArtists = append(conflictedArtists, &artistWithIssues)
-		for _, originalAlbum := range originalArtist.Albums {
+		for _, originalAlbum := range originalArtist.Albums() {
 			albumWithIssues := albumWithIssues{name: originalAlbum.Name(), album: originalAlbum}
 			artistWithIssues.albums = append(artistWithIssues.albums, &albumWithIssues)
 			for _, originalTrack := range originalAlbum.Tracks() {

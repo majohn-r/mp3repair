@@ -425,7 +425,7 @@ func TestUpdateTracks(t *testing.T) {
 		artists = append(artists, artist)
 		for m := 0; m < 20; m++ {
 			album := NewAlbum(fmt.Sprintf("album %d-%d", k, m), artist, "")
-			artist.Albums = append(artist.Albums, album)
+			artist.AddAlbum(album)
 			for n := 0; n < 50; n++ {
 				track := &Track{
 					Name:            fmt.Sprintf("track %d-%d-%d", k, m, n),
@@ -458,7 +458,7 @@ func TestUpdateTracks(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			UpdateTracks(tt.args.artists, tt.args.reader)
 			for _, artist := range tt.args.artists {
-				for _, album := range artist.Albums {
+				for _, album := range artist.Albums() {
 					for _, track := range album.Tracks() {
 						if track.TaggedTrack != 1 {
 							t.Errorf("UpdateTracks() %q track = %d", track.Name, track.TaggedTrack)
