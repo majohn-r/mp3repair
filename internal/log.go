@@ -39,12 +39,14 @@ const (
 	LOG_VALUE         = "value"
 )
 
+// ConfigureLogging sets up logging
 func ConfigureLogging(path string) *cronowriter.CronoWriter {
 	logFileTemplate := filepath.Join(path, logFileTemplate)
 	symlink := filepath.Join(path, symlinkName)
 	return cronowriter.MustNew(logFileTemplate, cronowriter.WithSymlink(symlink), cronowriter.WithInit())
 }
 
+// CleanupLogFiles cleans up old log files
 func CleanupLogFiles(path string) {
 	if files, err := ioutil.ReadDir(path); err != nil {
 		logrus.WithFields(logrus.Fields{LOG_PATH: path, LOG_ERROR: err}).Warn(LOG_CANNOT_READ_DIRECTORY)
