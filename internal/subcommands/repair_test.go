@@ -388,7 +388,7 @@ func Test_repair_makeBackupDirectories(t *testing.T) {
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
-	backupDir := filepath.Join(topDir, files.BackupDirName)
+	backupDir := files.CreateBackupPath(topDir)
 	if err := internal.Mkdir(backupDir); err != nil {
 		t.Errorf("%s error creating %s: %v", fnName, backupDir, err)
 	}
@@ -396,8 +396,8 @@ func Test_repair_makeBackupDirectories(t *testing.T) {
 	if err := internal.Mkdir(albumDir); err != nil {
 		t.Errorf("%s error creating %s: %v", fnName, albumDir, err)
 	}
-	if err := internal.CreateFileForTesting(albumDir, files.BackupDirName); err != nil {
-		t.Errorf("%s error creating file %s in %s: %v", fnName, files.BackupDirName, albumDir, err)
+	if err := internal.CreateNamedFileForTesting(files.CreateBackupPath(albumDir), "nonsense content"); err != nil {
+		t.Errorf("%s error creating file %s in %s: %v", fnName, files.CreateBackupPath(albumDir), albumDir, err)
 	}
 	albumDir2 := filepath.Join(topDir, "album2")
 	if err := internal.Mkdir(albumDir2); err != nil {
@@ -446,10 +446,10 @@ func Test_repair_backupTracks(t *testing.T) {
 	if err := internal.CreateFileForTesting(topDir, goodTrackName); err != nil {
 		t.Errorf("%s error creating %s: %v", fnName, goodTrackName, err)
 	}
-	if err := internal.Mkdir(filepath.Join(topDir, files.BackupDirName)); err != nil {
-		t.Errorf("%s error creating %s: %v", fnName, files.BackupDirName, err)
+	if err := internal.Mkdir(files.CreateBackupPath(topDir)); err != nil {
+		t.Errorf("%s error creating %s: %v", fnName, files.CreateBackupPath(topDir), err)
 	}
-	if err := internal.Mkdir(filepath.Join(topDir, files.BackupDirName, "2.mp3")); err != nil {
+	if err := internal.Mkdir(filepath.Join(files.CreateBackupPath(topDir), "2.mp3")); err != nil {
 		t.Errorf("%s error creating %s: %v", fnName, "2.mp3", err)
 	}
 	fFlag := false
@@ -473,7 +473,7 @@ func Test_repair_backupTracks(t *testing.T) {
 					files.NewTrack(files.NewAlbum("", nil, topDir), goodTrackName, "", 2),
 				},
 			},
-			wantW: fmt.Sprintf("The track %q has been backed up to %q.\n", filepath.Join(topDir, goodTrackName), filepath.Join(topDir, files.BackupDirName, "1.mp3")) +
+			wantW: fmt.Sprintf("The track %q has been backed up to %q.\n", filepath.Join(topDir, goodTrackName), filepath.Join(files.CreateBackupPath(topDir), "1.mp3")) +
 				fmt.Sprintf("The track %q cannot be backed up.\n", filepath.Join(topDir, goodTrackName)),
 		},
 	}

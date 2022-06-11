@@ -134,7 +134,7 @@ var trackNameRegex *regexp.Regexp = regexp.MustCompile(defaultTrackNamePattern)
 
 // BackupDirectory returns the path for this track
 func (t *Track) BackupDirectory() string {
-	return t.containingAlbum.subDirectory(BackupDirName)
+	return t.containingAlbum.subDirectory(backupDirName)
 }
 
 func (t *Track) needsTaggedData() bool {

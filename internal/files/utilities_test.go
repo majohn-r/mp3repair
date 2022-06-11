@@ -1,6 +1,7 @@
 package files
 
 import (
+	"path/filepath"
 	"testing"
 )
 
@@ -165,6 +166,30 @@ func Test_isIllegalRuneForFileNames(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := isIllegalRuneForFileNames(tt.args.r); got != tt.want {
 				t.Errorf("isIllegalRuneForFileNames() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCreateBackupPath(t *testing.T) {
+	type args struct {
+		topDir string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "simple test",
+			args: args{topDir: "top-level-directory"},
+			want: filepath.Join("top-level-directory", backupDirName),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := CreateBackupPath(tt.args.topDir); got != tt.want {
+				t.Errorf("CreateBackupPath() = %v, want %v", got, tt.want)
 			}
 		})
 	}

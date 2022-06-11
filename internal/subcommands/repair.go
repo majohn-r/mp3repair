@@ -167,7 +167,7 @@ func (r *repair) backupTrack(w io.Writer, t *files.Track) {
 
 func (r *repair) makeBackupDirectories(w io.Writer, paths []string) {
 	for _, path := range paths {
-		newPath := filepath.Join(path, files.BackupDirName)
+		newPath := files.CreateBackupPath(path)
 		if !internal.DirExists(newPath) {
 			if err := internal.Mkdir(newPath); err != nil {
 				fmt.Fprintf(w, internal.USER_CANNOT_CREATE_DIRECTORY, newPath, err)
