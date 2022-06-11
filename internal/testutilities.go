@@ -10,14 +10,17 @@ import (
 // NOTE: the functions in this file are strictly for testing purposes. Do not
 // call them from production code.
 
+// CreateAlbumNameForTesting creates a suitable album name
 func CreateAlbumNameForTesting(k int) string {
 	return fmt.Sprintf("Test Album %d", k)
 }
 
+// CreateArtistNameForTesting creates a suitable artist name.
 func CreateArtistNameForTesting(k int) string {
 	return fmt.Sprintf("Test Artist %d", k)
 }
 
+// CreateTrackNameForTesting creates a suitable track name.
 func CreateTrackNameForTesting(k int) string {
 	switch k % 2 {
 	case 0:
@@ -27,12 +30,15 @@ func CreateTrackNameForTesting(k int) string {
 	}
 }
 
+// DestroyDirectoryForTesting destroys a directory and its contents.
 func DestroyDirectoryForTesting(fnName string, dirName string) {
 	if err := os.RemoveAll(dirName); err != nil {
 		fmt.Fprintf(os.Stderr, "%s error destroying test directory %q: %v", fnName, dirName, err)
 	}
 }
 
+// PopulateTopDirForTesting populates a specified directory with a collection of
+// artists, albums, and tracks.
 func PopulateTopDirForTesting(topDir string) error {
 	creationParameters := []struct {
 		artist        int
@@ -112,6 +118,7 @@ func createArtistDirForTesting(topDir string, k int, withContent bool) error {
 	return nil
 }
 
+// CreateNamedFileForTesting creates a specified name with the specified content.
 func CreateNamedFileForTesting(fileName, content string) (err error) {
 	_, err = os.Stat(fileName)
 	if err == nil {
@@ -124,6 +131,7 @@ func CreateNamedFileForTesting(fileName, content string) (err error) {
 	return
 }
 
+// CreateFileForTestingWithContent creates a file in a specified directory.
 func CreateFileForTestingWithContent(dir, name, content string) error {
 	fileName := filepath.Join(dir, name)
 	return CreateNamedFileForTesting(fileName, content)
