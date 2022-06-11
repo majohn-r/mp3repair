@@ -15,6 +15,7 @@ const (
 	DefaultConfigFileName     = defaultConfigFileBaseName + ".yaml"
 )
 
+// ReadDefaultsYaml reads the defaults configuration file
 func ReadDefaultsYaml(path string) (v *viper.Viper) {
 	v = viper.New()
 	v.SetConfigName(defaultConfigFileBaseName)
@@ -35,6 +36,7 @@ func ReadDefaultsYaml(path string) (v *viper.Viper) {
 	return
 }
 
+// SafeSubViper returns a specified sub-viper struct
 func SafeSubViper(v *viper.Viper, key string) *viper.Viper {
 	if v == nil {
 		return nil
@@ -42,6 +44,7 @@ func SafeSubViper(v *viper.Viper, key string) *viper.Viper {
 	return v.Sub(key)
 }
 
+// GetBoolDefault returns a boolean value for a specified key
 func GetBoolDefault(v *viper.Viper, key string, defaultValue bool) (b bool) {
 	b = defaultValue
 	if v != nil && v.IsSet(key) {
@@ -53,6 +56,7 @@ func GetBoolDefault(v *viper.Viper, key string, defaultValue bool) (b bool) {
 	return
 }
 
+// GetStringDefault returns a string value for a specified key
 func GetStringDefault(v *viper.Viper, key string, defaultValue string) (s string) {
 	s = InterpretEnvVarReferences(defaultValue)
 	if v != nil && v.IsSet(key) {
