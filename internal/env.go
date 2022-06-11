@@ -3,12 +3,18 @@ package internal
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
 )
 
-const AppName = "mp3"
+const appName = "mp3"
+
+// CreateAppSpecificPath creates a path string for an app-related directory
+func CreateAppSpecificPath(topDir string) string {
+	return filepath.Join(topDir, appName)
+}
 
 var (
 	AppDataPath   string

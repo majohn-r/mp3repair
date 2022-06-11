@@ -3,6 +3,7 @@ package internal
 import (
 	"errors"
 	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
@@ -189,6 +190,24 @@ func TestInterpretEnvVarReferences(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := InterpretEnvVarReferences(tt.args.s); got != tt.want {
 				t.Errorf("InterpretEnvVarReferences() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestCreateAppSpecificPath(t *testing.T) {
+	type args struct {
+		topDir string
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{{name: "simple test", args: args{topDir: "top"}, want: filepath.Join("top", appName)}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := CreateAppSpecificPath(tt.args.topDir); got != tt.want {
+				t.Errorf("CreateAppSpecificPath() = %v, want %v", got, tt.want)
 			}
 		})
 	}

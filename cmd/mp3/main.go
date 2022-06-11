@@ -34,7 +34,7 @@ func main() {
 
 const (
 	statusFormat = "mp3 version %s, created at %s, failed\n"
-	logDirName = "logs"
+	logDirName   = "logs"
 )
 
 func report(w io.Writer, returnValue int) {
@@ -75,7 +75,7 @@ func initEnv(lookup func() []error) bool {
 var logger *cronowriter.CronoWriter
 
 func initLogging(parentDir string) bool {
-	path := filepath.Join(parentDir, internal.AppName, logDirName)
+	path := filepath.Join(internal.CreateAppSpecificPath(parentDir), logDirName)
 	if err := os.MkdirAll(path, 0755); err != nil {
 		fmt.Fprintf(os.Stderr, internal.USER_CANNOT_CREATE_DIRECTORY, path, err)
 		return false

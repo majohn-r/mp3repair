@@ -37,7 +37,7 @@ func internalErrorIncorrectNumberOfDefaultSubcommands(defaultInitializers int) e
 }
 
 func ProcessCommand(appDataPath string, args []string) (CommandProcessor, []string, error) {
-	configPath := filepath.Join(appDataPath, internal.AppName)
+	configPath := internal.CreateAppSpecificPath(appDataPath)
 	var v *viper.Viper
 	if internal.PlainFileExists(filepath.Join(configPath, internal.DefaultConfigFileName)) {
 		v = internal.ReadDefaultsYaml(configPath)
