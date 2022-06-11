@@ -21,7 +21,7 @@ func TestLookupEnvVars(t *testing.T) {
 		savedStates = append(savedStates, envState{varName: name, varValue: value, varSet: set})
 	}
 	var savedTmpFolder = TmpFolder
-	var savedAppDataPath = AppDataPath
+	var savedAppDataPath = ApplicationDataPath()
 	defer func() {
 		for _, ss := range savedStates {
 			if ss.varSet {
@@ -31,7 +31,7 @@ func TestLookupEnvVars(t *testing.T) {
 			}
 		}
 		TmpFolder = savedTmpFolder
-		AppDataPath = savedAppDataPath
+		appDataPath = savedAppDataPath
 	}()
 	tests := []struct {
 		name            string
@@ -94,7 +94,7 @@ func TestLookupEnvVars(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// clear initial state
 			TmpFolder = ""
-			AppDataPath = ""
+			appDataPath = ""
 			for _, env := range tt.envs {
 				if env.varSet {
 					os.Setenv(env.varName, env.varValue)
@@ -108,8 +108,8 @@ func TestLookupEnvVars(t *testing.T) {
 			if TmpFolder != tt.wantTmpFolder {
 				t.Errorf("%s TmpFolder = %v, want %v", fnName, TmpFolder, tt.wantTmpFolder)
 			}
-			if AppDataPath != tt.wantAppDataPath {
-				t.Errorf("%s AppDataPath = %v, want %v", fnName, AppDataPath, tt.wantAppDataPath)
+			if ApplicationDataPath() != tt.wantAppDataPath {
+				t.Errorf("%s AppDataPath = %v, want %v", fnName, ApplicationDataPath(), tt.wantAppDataPath)
 			}
 		})
 	}

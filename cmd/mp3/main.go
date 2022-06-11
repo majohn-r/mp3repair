@@ -50,7 +50,7 @@ func run(cmdlineArgs []string) (returnValue int) {
 	defer func() {
 		logrus.WithFields(logrus.Fields{"duration": time.Since(startTime)}).Info("end execution")
 	}()
-	if cmd, args, err := subcommands.ProcessCommand(internal.AppDataPath, cmdlineArgs); err != nil {
+	if cmd, args, err := subcommands.ProcessCommand(internal.ApplicationDataPath(), cmdlineArgs); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		logrus.Error(err)
 	} else {

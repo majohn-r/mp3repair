@@ -17,11 +17,16 @@ func CreateAppSpecificPath(topDir string) string {
 }
 
 var (
-	AppDataPath   string
+	appDataPath   string
 	TmpFolder     string
 	noTempFolder  error = fmt.Errorf(LOG_NO_TEMP_DIRECTORY)
 	noAppDataPath error = fmt.Errorf(LOG_NO_APP_DATA_PATH)
 )
+
+// ApplicationDataPath returns the application data path
+func ApplicationDataPath() string {
+	return appDataPath
+}
 
 func LookupEnvVars() (errors []error) {
 	var found bool
@@ -31,7 +36,7 @@ func LookupEnvVars() (errors []error) {
 			errors = append(errors, noTempFolder)
 		}
 	}
-	if AppDataPath, found = os.LookupEnv("APPDATA"); !found {
+	if appDataPath, found = os.LookupEnv("APPDATA"); !found {
 		errors = append(errors, noAppDataPath)
 	}
 	return
