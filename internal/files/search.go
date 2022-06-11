@@ -48,7 +48,7 @@ func (s *Search) LoadUnfilteredData() (artists []*Artist) {
 								if trackFile.IsDir() || !trackNameRegex.MatchString(trackFile.Name()) {
 									continue
 								}
-								if simpleName, trackNumber, valid := ParseTrackName(trackFile.Name(), album.Name(), artist.Name(), s.targetExtension); valid {
+								if simpleName, trackNumber, valid := parseTrackName(trackFile.Name(), album, s.targetExtension); valid {
 									album.AddTrack(newTrackFromFile(album, trackFile, simpleName, trackNumber))
 								}
 							}
@@ -127,7 +127,7 @@ func (s *Search) LoadData() (artists []*Artist) {
 							if trackFile.IsDir() || !trackNameRegex.MatchString(trackFile.Name()) {
 								continue
 							}
-							if simpleName, trackNumber, valid := ParseTrackName(trackFile.Name(), album.Name(), artist.Name(), s.targetExtension); valid {
+							if simpleName, trackNumber, valid := parseTrackName(trackFile.Name(), album, s.targetExtension); valid {
 								album.AddTrack(newTrackFromFile(album, trackFile, simpleName, trackNumber))
 							}
 						}

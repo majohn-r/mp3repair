@@ -425,12 +425,16 @@ func waitForSemaphoresDrained() {
 	}
 }
 
-// accessible outside the package for test purposes ParseTrackName parses a
-// track's file name into a simple name (stripping off the leading track number
-// and the file extension) and track number.
-func ParseTrackName(name string, album string, artist string, ext string) (simpleName string, trackNumber int, valid bool) {
+// ParseTrackNameForTesting parses a name into its simple form (no leading track
+// number, no file extension); it is for testing only
+func ParseTrackNameForTesting(name string) (simpleName string, trackNumber int) {
+	simpleName, trackNumber, _ = parseTrackName(name, nil, defaultFileExtension)
+	return
+}
+
+func parseTrackName(name string, album *Album, ext string) (simpleName string, trackNumber int, valid bool) {
 	if !trackNameRegex.MatchString(name) {
-		logrus.WithFields(logrus.Fields{internal.LOG_TRACK_NAME: name, internal.LOG_ALBUM_NAME: album, internal.LOG_ARTIST_NAME: artist}).Warn(internal.LOG_INVALID_TRACK_NAME)
+		logrus.WithFields(logrus.Fields{internal.LOG_TRACK_NAME: name, internal.LOG_ALBUM_NAME: album.name, internal.LOG_ARTIST_NAME: album.RecordingArtistName()}).Warn(internal.LOG_INVALID_TRACK_NAME)
 		return
 	}
 	wantDigit := true

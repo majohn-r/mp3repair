@@ -150,7 +150,7 @@ func generateTrackListings(testTracks []*testTrack, spacer string, artists, albu
 	if tracks {
 		var tracksToList []string
 		for _, tt := range testTracks {
-			trackName, trackNumber, _ := files.ParseTrackName(tt.trackName, tt.albumName, tt.artistName, ".mp3")
+			trackName, trackNumber := files.ParseTrackNameForTesting(tt.trackName)
 			key := trackName
 			if annotated {
 				if !albums {
