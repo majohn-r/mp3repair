@@ -73,6 +73,13 @@ and their directories, governed by these command line arguments:
 
 ## repair
 
+The **repair** subcommand provides a means to repair tracks whose **MP3** _tags_
+do not match the track name, album name, or artist name. It has a single command
+line argument:
+
+1. **-dryRun** If true, outputs what the **repair** subcommand would fix.
+   **False** by default.
+
 ### Common Arguments
 
 These arguments are common to all subcommands:
@@ -157,11 +164,11 @@ This applies to command line arguments and to defaults defined in
 
 **mp3** depends on the following environment variables being set:
 
+1. **%APPDATA%** - the location of application-specific files, such as
+   configuration files.
 1. **%TMP%** or **%TEMP%** - the system temporary directory. mp3 looks for
    **%TMP%** first, and, if that variable is not defined, then mp3 looks for
    **%TEMP%**.
-1. **%APPDATA%** - the location of application-specific files, such as
-   configuration files.
 
 ## Dependencies
 
