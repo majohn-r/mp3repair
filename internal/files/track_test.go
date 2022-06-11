@@ -73,10 +73,10 @@ func TestTrack_needsTaggedData(t *testing.T) {
 		tr   *Track
 		want bool
 	}{
-		{name: "needs tagged data", tr: &Track{TaggedTrack: trackUnknownTagsNotRead}, want: true},
-		{name: "format error", tr: &Track{TaggedTrack: trackUnknownFormatError}, want: false},
-		{name: "tag read error", tr: &Track{TaggedTrack: trackUnknownTagReadError}, want: false},
-		{name: "valid track number", tr: &Track{TaggedTrack: 1}, want: false},
+		{name: "needs tagged data", tr: &Track{track: trackUnknownTagsNotRead}, want: true},
+		{name: "format error", tr: &Track{track: trackUnknownFormatError}, want: false},
+		{name: "tag read error", tr: &Track{track: trackUnknownTagReadError}, want: false},
+		{name: "valid track number", tr: &Track{track: 1}, want: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -97,8 +97,8 @@ func TestTrack_setTagReadError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.tr.setTagReadError()
-			if tt.tr.TaggedTrack != trackUnknownTagReadError {
-				t.Errorf("Track.setTagReadError() failed to set TaggedTrack: %d", tt.tr.TaggedTrack)
+			if tt.tr.track != trackUnknownTagReadError {
+				t.Errorf("Track.setTagReadError() failed to set TaggedTrack: %d", tt.tr.track)
 			}
 		})
 	}
@@ -114,8 +114,8 @@ func TestTrack_setTagFormatError(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.tr.setTagFormatError()
-			if tt.tr.TaggedTrack != trackUnknownFormatError {
-				t.Errorf("Track.setTagFormatError() failed to set TaggedTrack: %d", tt.tr.TaggedTrack)
+			if tt.tr.track != trackUnknownFormatError {
+				t.Errorf("Track.setTagFormatError() failed to set TaggedTrack: %d", tt.tr.track)
 			}
 		})
 	}
@@ -172,7 +172,7 @@ func TestTrack_setTags(t *testing.T) {
 				album:  "my excellent album",
 				artist: "great artist",
 				title:  "best track ever",
-				number: "1",
+				track:  "1",
 			}},
 			wantAlbum:  "my excellent album",
 			wantArtist: "great artist",
@@ -186,7 +186,7 @@ func TestTrack_setTags(t *testing.T) {
 				album:  "my excellent album",
 				artist: "great artist",
 				title:  "best track ever",
-				number: "foo",
+				track:  "foo",
 			}},
 			wantNumber: trackUnknownFormatError,
 		},
@@ -197,7 +197,7 @@ func TestTrack_setTags(t *testing.T) {
 				album:  "my excellent album",
 				artist: "great artist",
 				title:  "best track ever",
-				number: "-1",
+				track:  "-1",
 			}},
 			wantNumber: trackUnknownFormatError,
 		},
@@ -205,18 +205,18 @@ func TestTrack_setTags(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.tr.SetTags(tt.args.d)
-			if tt.tr.TaggedTrack != tt.wantNumber {
-				t.Errorf("track.SetTags() tagged track = %d, want %d ", tt.tr.TaggedTrack, tt.wantNumber)
+			if tt.tr.track != tt.wantNumber {
+				t.Errorf("track.SetTags() tagged track = %d, want %d ", tt.tr.track, tt.wantNumber)
 			}
 			if tt.wantNumber != trackUnknownFormatError {
-				if tt.tr.TaggedAlbum != tt.wantAlbum {
-					t.Errorf("track.SetTags() tagged album = %q, want %q", tt.tr.TaggedAlbum, tt.wantAlbum)
+				if tt.tr.album != tt.wantAlbum {
+					t.Errorf("track.SetTags() tagged album = %q, want %q", tt.tr.album, tt.wantAlbum)
 				}
-				if tt.tr.TaggedArtist != tt.wantArtist {
-					t.Errorf("track.SetTags() tagged artist = %q, want %q", tt.tr.TaggedArtist, tt.wantArtist)
+				if tt.tr.artist != tt.wantArtist {
+					t.Errorf("track.SetTags() tagged artist = %q, want %q", tt.tr.artist, tt.wantArtist)
 				}
-				if tt.tr.TaggedTitle != tt.wantTitle {
-					t.Errorf("track.SetTags() tagged title = %q, want %q", tt.tr.TaggedTitle, tt.wantTitle)
+				if tt.tr.title != tt.wantTitle {
+					t.Errorf("track.SetTags() tagged title = %q, want %q", tt.tr.title, tt.wantTitle)
 				}
 			}
 		})
@@ -229,7 +229,7 @@ func TestTrack_readTags(t *testing.T) {
 			album:  "beautiful album",
 			artist: "great artist",
 			title:  "terrific track",
-			number: "1",
+			track:  "1",
 		}, nil
 	}
 	bentReader := func(path string) (*TaggedTrackData, error) {
@@ -237,7 +237,7 @@ func TestTrack_readTags(t *testing.T) {
 			album:  "beautiful album",
 			artist: "great artist",
 			title:  "terrific track",
-			number: "-2",
+			track:  "-2",
 		}, nil
 	}
 	brokenReader := func(path string) (*TaggedTrackData, error) {
@@ -257,7 +257,7 @@ func TestTrack_readTags(t *testing.T) {
 	}{
 		{
 			name:       "normal",
-			tr:         &Track{TaggedTrack: trackUnknownTagsNotRead},
+			tr:         &Track{track: trackUnknownTagsNotRead},
 			args:       args{normalReader},
 			wantAlbum:  "beautiful album",
 			wantArtist: "great artist",
@@ -267,10 +267,10 @@ func TestTrack_readTags(t *testing.T) {
 		{
 			name: "replay",
 			tr: &Track{
-				TaggedTrack:  2,
-				TaggedAlbum:  "nice album",
-				TaggedArtist: "good artist",
-				TaggedTitle:  "pretty song",
+				track:  2,
+				album:  "nice album",
+				artist: "good artist",
+				title:  "pretty song",
 			},
 			args:       args{normalReader},
 			wantAlbum:  "nice album",
@@ -280,25 +280,25 @@ func TestTrack_readTags(t *testing.T) {
 		},
 		{
 			name:       "replay after read error",
-			tr:         &Track{TaggedTrack: trackUnknownTagReadError},
+			tr:         &Track{track: trackUnknownTagReadError},
 			args:       args{normalReader},
 			wantNumber: trackUnknownTagReadError,
 		},
 		{
 			name:       "replay after format error",
-			tr:         &Track{TaggedTrack: trackUnknownFormatError},
+			tr:         &Track{track: trackUnknownFormatError},
 			args:       args{normalReader},
 			wantNumber: trackUnknownFormatError,
 		},
 		{
 			name:       "read error",
-			tr:         &Track{TaggedTrack: trackUnknownTagsNotRead},
+			tr:         &Track{track: trackUnknownTagsNotRead},
 			args:       args{brokenReader},
 			wantNumber: trackUnknownTagReadError,
 		},
 		{
 			name:       "format error",
-			tr:         &Track{TaggedTrack: trackUnknownTagsNotRead},
+			tr:         &Track{track: trackUnknownTagsNotRead},
 			args:       args{bentReader},
 			wantNumber: trackUnknownFormatError,
 		},
@@ -307,18 +307,18 @@ func TestTrack_readTags(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.tr.readTags(tt.args.reader)
 			waitForSemaphoresDrained()
-			if tt.tr.TaggedTrack != tt.wantNumber {
-				t.Errorf("track.readTags() tagged track = %d, want %d ", tt.tr.TaggedTrack, tt.wantNumber)
+			if tt.tr.track != tt.wantNumber {
+				t.Errorf("track.readTags() tagged track = %d, want %d ", tt.tr.track, tt.wantNumber)
 			}
 			if tt.wantNumber >= 0 {
-				if tt.tr.TaggedAlbum != tt.wantAlbum {
-					t.Errorf("track.readTags() tagged album = %q, want %q", tt.tr.TaggedAlbum, tt.wantAlbum)
+				if tt.tr.album != tt.wantAlbum {
+					t.Errorf("track.readTags() tagged album = %q, want %q", tt.tr.album, tt.wantAlbum)
 				}
-				if tt.tr.TaggedArtist != tt.wantArtist {
-					t.Errorf("track.readTags() tagged artist = %q, want %q", tt.tr.TaggedArtist, tt.wantArtist)
+				if tt.tr.artist != tt.wantArtist {
+					t.Errorf("track.readTags() tagged artist = %q, want %q", tt.tr.artist, tt.wantArtist)
 				}
-				if tt.tr.TaggedTitle != tt.wantTitle {
-					t.Errorf("track.readTags() tagged title = %q, want %q", tt.tr.TaggedTitle, tt.wantTitle)
+				if tt.tr.title != tt.wantTitle {
+					t.Errorf("track.readTags() tagged title = %q, want %q", tt.tr.title, tt.wantTitle)
 				}
 			}
 		})
@@ -363,10 +363,10 @@ func TestTrack_FindDifferences(t *testing.T) {
 				number:          1,
 				name:            "track name",
 				containingAlbum: NewAlbum("album name", NewArtist("artist name", ""), ""),
-				TaggedTrack:     1,
-				TaggedTitle:     "track name",
-				TaggedAlbum:     "album name",
-				TaggedArtist:    "artist name",
+				track:           1,
+				title:           "track name",
+				album:           "album name",
+				artist:          "artist name",
 			},
 			want: nil,
 		},
@@ -376,10 +376,10 @@ func TestTrack_FindDifferences(t *testing.T) {
 				number:          1,
 				name:            "track name",
 				containingAlbum: NewAlbum("album name", NewArtist("artist name", ""), ""),
-				TaggedTrack:     1,
-				TaggedTitle:     "track:name",
-				TaggedAlbum:     "album:name",
-				TaggedArtist:    "artist:name",
+				track:           1,
+				title:           "track:name",
+				album:           "album:name",
+				artist:          "artist:name",
 			},
 			want: nil,
 		},
@@ -389,10 +389,10 @@ func TestTrack_FindDifferences(t *testing.T) {
 				number:          2,
 				name:            "track:name",
 				containingAlbum: NewAlbum("album:name", NewArtist("artist:name", ""), ""),
-				TaggedTrack:     1,
-				TaggedTitle:     "track name",
-				TaggedAlbum:     "album name",
-				TaggedArtist:    "artist name",
+				track:           1,
+				title:           "track name",
+				album:           "album name",
+				artist:          "artist name",
 			},
 			want: []string{
 				"album \"album:name\" does not agree with album tag \"album name\"",
@@ -401,9 +401,9 @@ func TestTrack_FindDifferences(t *testing.T) {
 				"track number 2 does not agree with track tag 1",
 			},
 		},
-		{name: "unread tags", tr: &Track{TaggedTrack: trackUnknownTagsNotRead}, want: []string{trackDiffUnreadTags}},
-		{name: "unreadable tags", tr: &Track{TaggedTrack: trackUnknownTagReadError}, want: []string{trackDiffUnreadableTags}},
-		{name: "garbage tags", tr: &Track{TaggedTrack: trackUnknownFormatError}, want: []string{trackDiffBadTags}},
+		{name: "unread tags", tr: &Track{track: trackUnknownTagsNotRead}, want: []string{trackDiffUnreadTags}},
+		{name: "unreadable tags", tr: &Track{track: trackUnknownTagReadError}, want: []string{trackDiffUnreadableTags}},
+		{name: "garbage tags", tr: &Track{track: trackUnknownFormatError}, want: []string{trackDiffBadTags}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -429,7 +429,7 @@ func TestUpdateTracks(t *testing.T) {
 			for n := 0; n < 50; n++ {
 				track := &Track{
 					name:            fmt.Sprintf("track %d-%d-%d", k, m, n),
-					TaggedTrack:     trackUnknownTagsNotRead,
+					track:           trackUnknownTagsNotRead,
 					containingAlbum: album,
 				}
 				album.AddTrack(track)
@@ -441,7 +441,7 @@ func TestUpdateTracks(t *testing.T) {
 			album:  "beautiful album",
 			artist: "great artist",
 			title:  "terrific track",
-			number: "1",
+			track:  "1",
 		}, nil
 	}
 	type args struct {
@@ -460,8 +460,8 @@ func TestUpdateTracks(t *testing.T) {
 			for _, artist := range tt.args.artists {
 				for _, album := range artist.Albums() {
 					for _, track := range album.Tracks() {
-						if track.TaggedTrack != 1 {
-							t.Errorf("UpdateTracks() %q track = %d", track.name, track.TaggedTrack)
+						if track.track != 1 {
+							t.Errorf("UpdateTracks() %q track = %d", track.name, track.track)
 						}
 					}
 				}
@@ -649,7 +649,7 @@ func TestTrack_EditTags(t *testing.T) {
 			tr: &Track{
 				number:          1,
 				name:            "defective track",
-				TaggedTrack:     trackUnknownTagsNotRead,
+				track:           trackUnknownTagsNotRead,
 				containingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
 			},
 			wantErr: true,
@@ -659,10 +659,10 @@ func TestTrack_EditTags(t *testing.T) {
 			tr: &Track{
 				number:          1,
 				name:            "defective track",
-				TaggedTrack:     1,
-				TaggedTitle:     "unknown track",
-				TaggedAlbum:     "unknown album",
-				TaggedArtist:    "unknown artist",
+				track:           1,
+				title:           "unknown track",
+				album:           "unknown album",
+				artist:          "unknown artist",
 				path:            filepath.Join(topDir, "non-existent-file.mp3"),
 				containingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
 			},
@@ -673,10 +673,10 @@ func TestTrack_EditTags(t *testing.T) {
 			tr: &Track{
 				number:          1,
 				name:            "fixable track",
-				TaggedTrack:     2,
-				TaggedTitle:     "unknown track",
-				TaggedAlbum:     "unknown album",
-				TaggedArtist:    "unknown artist",
+				track:           2,
+				title:           "unknown track",
+				album:           "unknown album",
+				artist:          "unknown artist",
 				path:            fullPath,
 				containingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
 			},
@@ -787,7 +787,7 @@ func TestNewTaggedTrackData(t *testing.T) {
 				album:  "the album",
 				artist: "the artist",
 				title:  "the title",
-				number: "1",
+				track:  "1",
 			},
 		},
 	}

@@ -31,10 +31,10 @@ type Track struct {
 	number          int    // number of the track
 	containingAlbum *Album
 	// these fields are populated when needed; acquisition is expensive
-	TaggedTitle  string // track title per mp3 tag TRCK frame - initially set to trackUnknownTagsNotRead
-	TaggedTrack  int    // track number per mp3 tag TIT2 frame
-	TaggedAlbum  string // album name per mp3 tag TALB frame
-	TaggedArtist string // artist name per mp3 tag TPE1 frame
+	title  string // track title per mp3 tag TIT2 frame
+	track  int    // track number per mp3 tag TRCK frame - initially set to trackUnknownTagsNotRead
+	album  string // album name per mp3 tag TALB frame
+	artist string // artist name per mp3 tag TPE1 frame
 }
 
 // String returns the track's path (implementation of Stringer interface)
@@ -57,10 +57,10 @@ func copyTrack(t *Track, a *Album) *Track {
 		path:            t.path,
 		name:            t.name,
 		number:          t.number,
-		TaggedAlbum:     t.TaggedAlbum,
-		TaggedArtist:    t.TaggedArtist,
-		TaggedTitle:     t.TaggedTitle,
-		TaggedTrack:     t.TaggedTrack,
+		album:           t.album,
+		artist:          t.artist,
+		title:           t.title,
+		track:           t.track,
 		containingAlbum: a, // do not use source track's album!
 	}
 }
@@ -75,7 +75,7 @@ func NewTrack(a *Album, fullName string, simpleName string, trackNumber int) *Tr
 		path:            a.subDirectory(fullName),
 		name:            simpleName,
 		number:          trackNumber,
-		TaggedTrack:     trackUnknownTagsNotRead,
+		track:           trackUnknownTagsNotRead,
 		containingAlbum: a,
 	}
 }
@@ -117,7 +117,7 @@ type TaggedTrackData struct {
 	album  string
 	artist string
 	title  string
-	number string
+	track  string
 }
 
 // NewTaggedTrackData creates a new instance of TaggedTrackData
@@ -126,7 +126,7 @@ func NewTaggedTrackData(albumFrame, artistFrame, titleFrame, numberFrame string)
 		album:  albumFrame,
 		artist: artistFrame,
 		title:  titleFrame,
-		number: numberFrame,
+		track:  numberFrame,
 	}
 }
 
@@ -138,15 +138,15 @@ func (t *Track) BackupDirectory() string {
 }
 
 func (t *Track) needsTaggedData() bool {
-	return t.TaggedTrack == trackUnknownTagsNotRead
+	return t.track == trackUnknownTagsNotRead
 }
 
 func (t *Track) setTagReadError() {
-	t.TaggedTrack = trackUnknownTagReadError
+	t.track = trackUnknownTagReadError
 }
 
 func (t *Track) setTagFormatError() {
-	t.TaggedTrack = trackUnknownFormatError
+	t.track = trackUnknownFormatError
 }
 
 func toTrackNumber(s string) (i int, err error) {
@@ -182,22 +182,21 @@ func toTrackNumber(s string) (i int, err error) {
 
 // SetTags sets track frame fields
 func (t *Track) SetTags(d *TaggedTrackData) {
-	if trackNumber, err := toTrackNumber(d.number); err != nil {
+	if trackNumber, err := toTrackNumber(d.track); err != nil {
 		logrus.WithFields(logrus.Fields{
 			internal.LOG_PATH:  t.String,
-			"trackTag":         d.number,
+			"trackTag":         d.track,
 			internal.LOG_ERROR: err}).Warn("invalid track tag")
 		t.setTagFormatError()
 	} else {
-		t.TaggedAlbum = removeLeadingBOMs(d.album)
-		t.TaggedArtist = removeLeadingBOMs(d.artist)
-		t.TaggedTitle = removeLeadingBOMs(d.title)
-		t.TaggedTrack = trackNumber
+		t.album = removeLeadingBOMs(d.album)
+		t.artist = removeLeadingBOMs(d.artist)
+		t.title = removeLeadingBOMs(d.title)
+		t.track = trackNumber
 	}
 }
 
-// randomly, some tags - particularly titles - begin with a BOM (byte order
-// mark)
+// depending on encoding, frame values may begin with a BOM (byte order mark)
 func removeLeadingBOMs(s string) string {
 	if len(s) == 0 {
 		return s
@@ -214,7 +213,7 @@ type nameTagPair struct {
 	tag  string
 }
 
-type TrackState struct {
+type taggedTrackState struct {
 	tagFormatError     bool
 	tagReadError       bool
 	noTags             bool
@@ -224,44 +223,61 @@ type TrackState struct {
 	artistNameConflict bool
 }
 
-func (s TrackState) HasNumberingConflict() bool {
+// HasNumberingConflict returns true if there is a conflict between the track
+// number (as derived from the track's file name) and the value of the track's
+// TRCK frame.
+func (s taggedTrackState) HasNumberingConflict() bool {
 	return s.numberingConflict
 }
 
-func (s TrackState) HasTrackNameConflict() bool {
+// HasTrackNameConflict returns true if there is a conflict between the track
+// name (as derived from the track's file name) and the value of the track's
+// TIT2 frame.
+func (s taggedTrackState) HasTrackNameConflict() bool {
 	return s.trackNameConflict
 }
 
-func (s TrackState) HasAlbumNameConflict() bool {
+// HasAlbumNameConflict returns true if there is a conflict between the name of
+// the album the track is associated with and the value of the track's TALB
+// frame.
+func (s taggedTrackState) HasAlbumNameConflict() bool {
 	return s.albumNameConflict
 }
 
-func (s TrackState) HasArtistNameConflict() bool {
+// HasArtistNameConflict returns true if there is a conflict between the track's
+// recording artist and the value of the track's TPE1 frame.
+func (s taggedTrackState) HasArtistNameConflict() bool {
 	return s.artistNameConflict
 }
 
-func (s TrackState) HasTaggingConflicts() bool {
+// HasTaggingConflicts returns true if there are any conflicts between the
+// track's frame values and their corresponding file-based values.
+func (s taggedTrackState) HasTaggingConflicts() bool {
 	return s.numberingConflict || s.trackNameConflict || s.albumNameConflict || s.artistNameConflict
 }
 
-func (t *Track) AnalyzeIssues() TrackState {
-	switch t.TaggedTrack {
+// AnalyzeIssues determines whether there are problems with the track's
+// frame-based values.
+func (t *Track) AnalyzeIssues() taggedTrackState {
+	switch t.track {
 	case trackUnknownFormatError:
-		return TrackState{tagFormatError: true}
+		return taggedTrackState{tagFormatError: true}
 	case trackUnknownTagReadError:
-		return TrackState{tagReadError: true}
+		return taggedTrackState{tagReadError: true}
 	case trackUnknownTagsNotRead:
-		return TrackState{noTags: true}
+		return taggedTrackState{noTags: true}
 	default:
-		return TrackState{
-			numberingConflict:  t.TaggedTrack != t.number,
-			trackNameConflict:  !isComparable(nameTagPair{name: t.name, tag: t.TaggedTitle}),
-			albumNameConflict:  !isComparable(nameTagPair{name: t.containingAlbum.Name(), tag: t.TaggedAlbum}),
-			artistNameConflict: !isComparable(nameTagPair{name: t.containingAlbum.RecordingArtistName(), tag: t.TaggedArtist}),
+		return taggedTrackState{
+			numberingConflict:  t.track != t.number,
+			trackNameConflict:  !isComparable(nameTagPair{name: t.name, tag: t.title}),
+			albumNameConflict:  !isComparable(nameTagPair{name: t.containingAlbum.Name(), tag: t.album}),
+			artistNameConflict: !isComparable(nameTagPair{name: t.containingAlbum.RecordingArtistName(), tag: t.artist}),
 		}
 	}
 }
 
+// FindDifferences returns strings describing the problems found by calling
+// AnalyzeIssues.
 func (t *Track) FindDifferences() []string {
 	s := t.AnalyzeIssues()
 	if s.tagFormatError {
@@ -279,19 +295,19 @@ func (t *Track) FindDifferences() []string {
 	var differences []string
 	if s.HasNumberingConflict() {
 		differences = append(differences,
-			fmt.Sprintf("track number %d does not agree with track tag %d", t.number, t.TaggedTrack))
+			fmt.Sprintf("track number %d does not agree with track tag %d", t.number, t.track))
 	}
 	if s.HasTrackNameConflict() {
 		differences = append(differences,
-			fmt.Sprintf("title %q does not agree with title tag %q", t.name, t.TaggedTitle))
+			fmt.Sprintf("title %q does not agree with title tag %q", t.name, t.title))
 	}
 	if s.HasAlbumNameConflict() {
 		differences = append(differences,
-			fmt.Sprintf("album %q does not agree with album tag %q", t.containingAlbum.Name(), t.TaggedAlbum))
+			fmt.Sprintf("album %q does not agree with album tag %q", t.containingAlbum.Name(), t.album))
 	}
 	if s.HasArtistNameConflict() {
 		differences = append(differences,
-			fmt.Sprintf("artist %q does not agree with artist tag %q", t.containingAlbum.RecordingArtistName(), t.TaggedArtist))
+			fmt.Sprintf("artist %q does not agree with artist tag %q", t.containingAlbum.RecordingArtistName(), t.artist))
 	}
 	return differences
 }
@@ -321,6 +337,8 @@ func isComparable(p nameTagPair) bool {
 
 var stdFrames = []string{"TALB", "TIT2", "TPE1", "TRCK"} // album, title, artist, track, in that order
 
+// RawReadTags reads the tag from an MP3 file and collects interesting frame
+// values.
 func RawReadTags(path string) (d *TaggedTrackData, err error) {
 	var tag *id3v2.Tag
 	if tag, err = id3v2.Open(path, id3v2.Options{Parse: true, ParseFrames: stdFrames}); err != nil {
@@ -331,11 +349,13 @@ func RawReadTags(path string) (d *TaggedTrackData, err error) {
 		album:  tag.Album(),
 		artist: tag.Artist(),
 		title:  tag.Title(),
-		number: tag.GetTextFrame("TRCK").Text,
+		track:  tag.GetTextFrame("TRCK").Text,
 	}
 	return
 }
 
+// EditTags rewrites tag frames to match file-based values and saves (re-writes)
+// the associated MP3 file.
 func (t *Track) EditTags() error {
 	a := t.AnalyzeIssues()
 	if !a.HasTaggingConflicts() {
@@ -387,6 +407,7 @@ func (t *Track) readTags(reader func(string) (*TaggedTrackData, error)) {
 	}
 }
 
+// UpdateTracks reads the MP3 tags for all the associated tracks.
 func UpdateTracks(artists []*Artist, reader func(string) (*TaggedTrackData, error)) {
 	for _, artist := range artists {
 		for _, album := range artist.Albums() {
@@ -404,7 +425,9 @@ func waitForSemaphoresDrained() {
 	}
 }
 
-// accessible outside the package for test purposes
+// accessible outside the package for test purposes ParseTrackName parses a
+// track's file name into a simple name (stripping off the leading track number
+// and the file extension) and track number.
 func ParseTrackName(name string, album string, artist string, ext string) (simpleName string, trackNumber int, valid bool) {
 	if !trackNameRegex.MatchString(name) {
 		logrus.WithFields(logrus.Fields{internal.LOG_TRACK_NAME: name, internal.LOG_ALBUM_NAME: album, internal.LOG_ARTIST_NAME: artist}).Warn(internal.LOG_INVALID_TRACK_NAME)
