@@ -75,10 +75,10 @@ func (l *ls) Exec(w io.Writer, args []string) {
 }
 
 const (
-	logAlbumsFlag  string = "includeAlbums"
-	logArtistsFlag string = "includeArtists"
-	logSortingFlag string = "trackSorting"
-	logTracksFlag  string = "includeTracks"
+	logAlbumsFlag  = "includeAlbums"
+	logArtistsFlag = "includeArtists"
+	logSortingFlag = "trackSorting"
+	logTracksFlag  = "includeTracks"
 )
 
 func (l *ls) logFields() logrus.Fields {

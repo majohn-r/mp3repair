@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	executable  string = "mp3.exe"
-	versionFile string = "version.txt"
+	executable  = "mp3.exe"
+	versionFile = "version.txt"
 )
 
 // var Default = Build

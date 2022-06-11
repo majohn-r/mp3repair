@@ -62,9 +62,9 @@ func (c *check) Exec(w io.Writer, args []string) {
 }
 
 const (
-	logEmptyFoldersFlag string = "emptyFolders"
-	logIntegrityFlag    string = "integrityAnalysis"
-	logTrackGapFlag     string = "gapAnalysis"
+	logEmptyFoldersFlag = "emptyFolders"
+	logIntegrityFlag    = "integrityAnalysis"
+	logTrackGapFlag     = "gapAnalysis"
 )
 
 func (c *check) logFields() logrus.Fields {
