@@ -18,7 +18,7 @@ func CreateAppSpecificPath(topDir string) string {
 
 var (
 	appDataPath   string
-	TmpFolder     string
+	tmpFolder     string
 	noTempFolder  error = fmt.Errorf(LOG_NO_TEMP_DIRECTORY)
 	noAppDataPath error = fmt.Errorf(LOG_NO_APP_DATA_PATH)
 )
@@ -28,11 +28,16 @@ func ApplicationDataPath() string {
 	return appDataPath
 }
 
+// TemporaryFileFolder returns the path to the system temporary file folder
+func TemporaryFileFolder() string {
+	return tmpFolder
+}
+
 func LookupEnvVars() (errors []error) {
 	var found bool
 	// get temporary folder
-	if TmpFolder, found = os.LookupEnv("TMP"); !found {
-		if TmpFolder, found = os.LookupEnv("TEMP"); !found {
+	if tmpFolder, found = os.LookupEnv("TMP"); !found {
+		if tmpFolder, found = os.LookupEnv("TEMP"); !found {
 			errors = append(errors, noTempFolder)
 		}
 	}

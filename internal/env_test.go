@@ -20,7 +20,7 @@ func TestLookupEnvVars(t *testing.T) {
 		value, set := os.LookupEnv(name)
 		savedStates = append(savedStates, envState{varName: name, varValue: value, varSet: set})
 	}
-	var savedTmpFolder = TmpFolder
+	var savedTmpFolder = TemporaryFileFolder()
 	var savedAppDataPath = ApplicationDataPath()
 	defer func() {
 		for _, ss := range savedStates {
@@ -30,7 +30,7 @@ func TestLookupEnvVars(t *testing.T) {
 				os.Unsetenv(ss.varName)
 			}
 		}
-		TmpFolder = savedTmpFolder
+		tmpFolder = savedTmpFolder
 		appDataPath = savedAppDataPath
 	}()
 	tests := []struct {
@@ -93,7 +93,7 @@ func TestLookupEnvVars(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// clear initial state
-			TmpFolder = ""
+			tmpFolder = ""
 			appDataPath = ""
 			for _, env := range tt.envs {
 				if env.varSet {
@@ -105,8 +105,8 @@ func TestLookupEnvVars(t *testing.T) {
 			if gotErrors := LookupEnvVars(); !equalErrorSlices(gotErrors, tt.wantErrors) {
 				t.Errorf("%s errors = %v, want %v", fnName, gotErrors, tt.wantErrors)
 			}
-			if TmpFolder != tt.wantTmpFolder {
-				t.Errorf("%s TmpFolder = %v, want %v", fnName, TmpFolder, tt.wantTmpFolder)
+			if TemporaryFileFolder() != tt.wantTmpFolder {
+				t.Errorf("%s TmpFolder = %v, want %v", fnName, TemporaryFileFolder(), tt.wantTmpFolder)
 			}
 			if ApplicationDataPath() != tt.wantAppDataPath {
 				t.Errorf("%s AppDataPath = %v, want %v", fnName, ApplicationDataPath(), tt.wantAppDataPath)

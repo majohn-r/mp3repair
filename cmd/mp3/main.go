@@ -24,7 +24,7 @@ var (
 func main() {
 	returnValue := 1
 	if initEnv(internal.LookupEnvVars) {
-		if initLogging(internal.TmpFolder) {
+		if initLogging(internal.TemporaryFileFolder()) {
 			returnValue = run(os.Args)
 		}
 	}
