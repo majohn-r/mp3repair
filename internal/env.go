@@ -33,6 +33,7 @@ func TemporaryFileFolder() string {
 	return tmpFolder
 }
 
+// LookupEnvVars looks up critical environment variables
 func LookupEnvVars() (errors []error) {
 	var found bool
 	// get temporary folder
@@ -47,6 +48,9 @@ func LookupEnvVars() (errors []error) {
 	return
 }
 
+// InterpretEnvVarReferences looks up environment variable references in the
+// provided string and substitutes the specified environment variable value into
+// the string
 func InterpretEnvVarReferences(s string) string {
 	references := findReferences(s)
 	if len(references) == 0 {
