@@ -5,8 +5,6 @@ import (
 	"mp3/internal"
 	"reflect"
 	"testing"
-
-	"github.com/spf13/viper"
 )
 
 func TestProcessCommand(t *testing.T) {
@@ -103,7 +101,7 @@ func equalErrors(gotErr error, wantErr error) bool {
 func Test_selectSubCommand(t *testing.T) {
 	fnName := "selectSubCommand()"
 	type args struct {
-		v            *viper.Viper
+		n            *internal.Node
 		initializers []subcommandInitializer
 		args         []string
 	}
@@ -131,7 +129,7 @@ func Test_selectSubCommand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, _, gotErr := selectSubCommand(tt.args.v, tt.args.initializers, tt.args.args)
+			_, _, gotErr := selectSubCommand(tt.args.n, tt.args.initializers, tt.args.args)
 			if !equalErrors(gotErr, tt.wantErr) {
 				t.Errorf("%s gotErr = %v, want %v", fnName, gotErr, tt.wantErr)
 			}

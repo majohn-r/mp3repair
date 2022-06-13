@@ -11,7 +11,6 @@ import (
 	"sort"
 
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 type repair struct {
@@ -24,8 +23,8 @@ func (r *repair) name() string {
 	return r.n
 }
 
-func newRepair(v *viper.Viper, fSet *flag.FlagSet) CommandProcessor {
-	return newRepairSubCommand(v, fSet)
+func newRepair(n *internal.Node, fSet *flag.FlagSet) CommandProcessor {
+	return newRepairSubCommand(n, fSet)
 }
 
 const (
@@ -33,14 +32,14 @@ const (
 	defaultDryRun = false
 )
 
-func newRepairSubCommand(v *viper.Viper, fSet *flag.FlagSet) *repair {
-	subViper := internal.SafeSubViper(v, "repair")
+func newRepairSubCommand(n *internal.Node, fSet *flag.FlagSet) *repair {
+	subNode := internal.SafeSubNode(n, "repair")
 	return &repair{
 		n: fSet.Name(),
 		dryRun: fSet.Bool(dryRunFlag,
-			internal.GetBoolDefault(subViper, dryRunFlag, defaultDryRun),
+			internal.GetBoolDefault(subNode, dryRunFlag, defaultDryRun),
 			"if true, output what would have repaired, but make no repairs"),
-		sf: files.NewSearchFlags(v, fSet),
+		sf: files.NewSearchFlags(n, fSet),
 	}
 }
 

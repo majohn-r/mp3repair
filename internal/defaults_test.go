@@ -1,75 +1,39 @@
 package internal
 
 import (
+	"path/filepath"
 	"reflect"
 	"testing"
-
-	"github.com/spf13/viper"
 )
 
-func Test_ReadDefaultsYaml(t *testing.T) {
-	fnName := "ReadDefaultsYaml()"
-	if err := CreateDefaultYamlFileForTesting(); err != nil {
-		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
-	}
-	defer func() {
-		DestroyDirectoryForTesting(fnName, "./mp3")
-	}()
-	type args struct {
-		path string
-	}
-	tests := []struct {
-		name  string
-		args  args
-		wantV *viper.Viper
-	}{
-		{name: "good", args: args{path: "./mp3"}, wantV: viper.New()},
-		{name: "error", args: args{path: "./non-existent-dir"}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if gotV := ReadDefaultsYaml(tt.args.path); !okViper(gotV, tt.wantV) {
-				t.Errorf("%s = %v, want %v", fnName, gotV, tt.wantV)
-			}
-		})
-	}
-}
-
-func okViper(got, want *viper.Viper) bool {
-	if got == nil {
-		return want == nil
-	}
-	return want != nil
-}
-
-func Test_SafeSubViper(t *testing.T) {
+func Test_SafeSubNode(t *testing.T) {
 	if err := CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("error creating defaults.yaml: %v", err)
 	}
-	fnName := "SafeSubViper()"
+	fnName := "SafeSubNode()"
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	testV := ReadDefaultsYaml("./mp3")
+	testN := ReadYaml("./mp3")
 	type args struct {
-		v   *viper.Viper
+		n   *Node
 		key string
 	}
 	tests := []struct {
 		name string
 		args args
-		want *viper.Viper
+		want *Node
 	}{
-		{name: "no viper", args: args{}},
-		{name: "commons", args: args{v: testV, key: "common"}, want: testV.Sub("common")},
-		{name: "ls", args: args{v: testV, key: "ls"}, want: testV.Sub("ls")},
-		{name: "check", args: args{v: testV, key: "check"}, want: testV.Sub("check")},
-		{name: "repair", args: args{v: testV, key: "repair"}, want: testV.Sub("repair")},
-		{name: "unknown key", args: args{v: testV, key: "unknown key"}},
+		{name: "no node", args: args{}},
+		{name: "commons", args: args{n: testN, key: "common"}, want: testN.nMap["common"]},
+		{name: "ls", args: args{n: testN, key: "ls"}, want: testN.nMap["ls"]},
+		{name: "check", args: args{n: testN, key: "check"}, want: testN.nMap["check"]},
+		{name: "repair", args: args{n: testN, key: "repair"}, want: testN.nMap["repair"]},
+		{name: "unknown key", args: args{n: testN, key: "unknown key"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := SafeSubViper(tt.args.v, tt.args.key); !reflect.DeepEqual(got, tt.want) {
+			if got := SafeSubNode(tt.args.n, tt.args.key); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
@@ -84,9 +48,9 @@ func Test_GetBoolDefault(t *testing.T) {
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	testV := ReadDefaultsYaml("./mp3")
+	testN := ReadYaml("./mp3")
 	type args struct {
-		v            *viper.Viper
+		n            *Node
 		key          string
 		defaultValue bool
 	}
@@ -95,34 +59,44 @@ func Test_GetBoolDefault(t *testing.T) {
 		args  args
 		wantB bool
 	}{
-		{name: "nil viper default false", args: args{defaultValue: false}, wantB: false},
-		{name: "nil viper default true", args: args{defaultValue: true}, wantB: true},
-		{name: "undefined key default false", args: args{v: testV, key: "no key", defaultValue: false}, wantB: false},
-		{name: "undefined key default true", args: args{v: testV, key: "no key", defaultValue: true}, wantB: true},
+		{name: "nil node default false", args: args{defaultValue: false}, wantB: false},
+		{name: "nil node default true", args: args{defaultValue: true}, wantB: true},
+		{name: "undefined key default false", args: args{n: testN, key: "no key", defaultValue: false}, wantB: false},
+		{name: "undefined key default true", args: args{n: testN, key: "no key", defaultValue: true}, wantB: true},
 		{
 			name:  "non-boolean value default false",
-			args:  args{v: testV.Sub("common"), key: "albums", defaultValue: false},
+			args:  args{n: testN.nMap["common"], key: "albums", defaultValue: false},
 			wantB: false,
 		},
 		{
 			name:  "non-boolean value default true",
-			args:  args{v: testV.Sub("common"), key: "albums", defaultValue: true},
+			args:  args{n: testN.nMap["common"], key: "albums", defaultValue: true},
 			wantB: true,
 		},
 		{
 			name:  "boolean value default false",
-			args:  args{v: testV.Sub("ls"), key: "track", defaultValue: false},
+			args:  args{n: testN.nMap["ls"], key: "track", defaultValue: false},
 			wantB: true,
 		},
 		{
 			name:  "boolean value default true",
-			args:  args{v: testV.Sub("ls"), key: "track", defaultValue: true},
+			args:  args{n: testN.nMap["ls"], key: "track", defaultValue: true},
+			wantB: true,
+		},
+		{
+			name:  "boolean (string) value default true",
+			args:  args{n: testN.nMap["unused"], key: "value", defaultValue: true},
+			wantB: true,
+		},
+		{
+			name:  "boolean (string) value default false",
+			args:  args{n: testN.nMap["unused"], key: "value", defaultValue: false},
 			wantB: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotB := GetBoolDefault(tt.args.v, tt.args.key, tt.args.defaultValue); gotB != tt.wantB {
+			if gotB := GetBoolDefault(tt.args.n, tt.args.key, tt.args.defaultValue); gotB != tt.wantB {
 				t.Errorf("%s = %v, want %v", fnName, gotB, tt.wantB)
 			}
 		})
@@ -137,9 +111,9 @@ func Test_GetStringDefault(t *testing.T) {
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	testV := ReadDefaultsYaml("./mp3")
+	testN := ReadYaml("./mp3")
 	type args struct {
-		v            *viper.Viper
+		n            *Node
 		key          string
 		defaultValue string
 	}
@@ -148,22 +122,91 @@ func Test_GetStringDefault(t *testing.T) {
 		args  args
 		wantS string
 	}{
-		{name: "nil viper", args: args{defaultValue: "my default value"}, wantS: "my default value"},
+		{name: "nil node", args: args{defaultValue: "my default value"}, wantS: "my default value"},
 		{
 			name:  "undefined key",
-			args:  args{v: testV, key: "no key", defaultValue: "my default value"},
+			args:  args{n: testN, key: "no key", defaultValue: "my default value"},
 			wantS: "my default value",
 		},
 		{
 			name:  "defined key",
-			args:  args{v: testV.Sub("ls"), key: "sort", defaultValue: "my default value"},
+			args:  args{n: testN.nMap["ls"], key: "sort", defaultValue: "my default value"},
 			wantS: "alpha",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotS := GetStringDefault(tt.args.v, tt.args.key, tt.args.defaultValue); gotS != tt.wantS {
+			if gotS := GetStringDefault(tt.args.n, tt.args.key, tt.args.defaultValue); gotS != tt.wantS {
 				t.Errorf("%s = %v, want %v", fnName, gotS, tt.wantS)
+			}
+		})
+	}
+}
+
+func TestReadYaml(t *testing.T) {
+	fnName := "ReadYaml()"
+	if err := CreateDefaultYamlFileForTesting(); err != nil {
+		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
+	}
+	defer func() {
+		DestroyDirectoryForTesting(fnName, "./mp3")
+	}()
+	badDir := filepath.Join(".", "mp3", "badData")
+	if err := Mkdir(badDir); err != nil {
+		t.Errorf("%s error creating non-standard test directory %q: %v", fnName, badDir, err)
+	}
+	if err := CreateFileForTestingWithContent(badDir, DefaultConfigFileName, "gibberish"); err != nil {
+		t.Errorf("%s error creating non-standard defaults.yaml: %v", fnName, err)
+	}
+	type args struct {
+		path string
+	}
+	tests := []struct {
+		name string
+		args args
+		want *Node
+	}{
+		{name: "bad", args: args{path: badDir}},
+		{name: "good",
+			args: args{path: "./mp3"},
+			want: &Node{
+				bMap: map[string]bool{},
+				sMap: map[string]string{},
+				nMap: map[string]*Node{
+					"check": {
+						bMap: map[string]bool{"empty": true, "gaps": true, "integrity": false},
+						sMap: map[string]string{},
+						nMap: map[string]*Node{},
+					},
+					"common": {
+						bMap: map[string]bool{},
+						sMap: map[string]string{"albums": "^.*$", "artists": "^.*$", "ext": ".mpeg", "topDir": "."},
+						nMap: map[string]*Node{},
+					},
+					"ls": {
+						bMap: map[string]bool{"album": false, "annotate": true, "artist": false, "track": true},
+						sMap: map[string]string{"sort": "alpha"},
+						nMap: map[string]*Node{},
+					},
+					"repair": {
+						bMap: map[string]bool{"dryRun": true},
+						sMap: map[string]string{},
+						nMap: map[string]*Node{},
+					},
+					"unused": {
+						bMap: map[string]bool{},
+						sMap: map[string]string{"value": "1"},
+						nMap: map[string]*Node{}},
+				},
+			},
+		},
+		{name: "error", args: args{path: "./non-existent-dir"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := ReadYaml(tt.args.path)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("ReadYaml() = %v, want %v", got, tt.want)
 			}
 		})
 	}

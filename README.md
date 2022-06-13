@@ -174,14 +174,14 @@ This applies to command line arguments and to defaults defined in
 
 **mp3** uses the following third party libraries:
 
-* Reading and writing the mp3 file metadata:
-  [https://github.com/bogem/id3v2](https://github.com/bogem/id3v2).
-* Logging:
-  [https://github.com/sirupsen/logrus](https://github.com/sirupsen/logrus).
-* Reading configuration files:
-  [https://github.com/spf13/viper](https://github.com/spf13/viper)
 * Log rotation:
   [https://github.com/utahta/go-cronowriter](https://github.com/utahta/go-cronowriter).
+* Logging:
+  [https://github.com/sirupsen/logrus](https://github.com/sirupsen/logrus).
+* Reading and writing the mp3 file metadata:
+  [https://github.com/bogem/id3v2](https://github.com/bogem/id3v2).
+* Reading configuration files:
+  [https://pkg.go.dev/gopkg.in/yaml.v2](https://pkg.go.dev/gopkg.in/yaml.v2)
 
 In addition, I use [https://libs.garden/](https://libs.garden/) to look for
 libraries.

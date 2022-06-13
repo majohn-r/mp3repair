@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 type ls struct {
@@ -28,8 +27,8 @@ func (l *ls) name() string {
 	return l.n
 }
 
-func newLs(v *viper.Viper, fSet *flag.FlagSet) CommandProcessor {
-	return newLsSubCommand(v, fSet)
+func newLs(n *internal.Node, fSet *flag.FlagSet) CommandProcessor {
+	return newLsSubCommand(n, fSet)
 }
 
 const (
@@ -45,26 +44,26 @@ const (
 	defaultAnnotateListings = false
 )
 
-func newLsSubCommand(v *viper.Viper, fSet *flag.FlagSet) *ls {
-	subViper := internal.SafeSubViper(v, "ls")
+func newLsSubCommand(n *internal.Node, fSet *flag.FlagSet) *ls {
+	subNode := internal.SafeSubNode(n, "ls")
 	return &ls{
 		n: fSet.Name(),
 		includeAlbums: fSet.Bool(includeAlbumsFlag,
-			internal.GetBoolDefault(subViper, includeAlbumsFlag, defaultIncludeAlbums),
+			internal.GetBoolDefault(subNode, includeAlbumsFlag, defaultIncludeAlbums),
 			"include album names in listing"),
 		includeArtists: fSet.Bool(includeArtistsFlag,
-			internal.GetBoolDefault(subViper, includeArtistsFlag, defaultIncludeArtists),
+			internal.GetBoolDefault(subNode, includeArtistsFlag, defaultIncludeArtists),
 			"include artist names in listing"),
 		includeTracks: fSet.Bool(includeTracksFlag,
-			internal.GetBoolDefault(subViper, includeTracksFlag, defaultIncludeTracks),
+			internal.GetBoolDefault(subNode, includeTracksFlag, defaultIncludeTracks),
 			"include track names in listing"),
 		trackSorting: fSet.String(trackSortingFlag,
-			internal.GetStringDefault(subViper, trackSortingFlag, defaultTrackSorting),
+			internal.GetStringDefault(subNode, trackSortingFlag, defaultTrackSorting),
 			"track sorting, 'numeric' in track number order, or 'alpha' in track name order"),
 		annotateListings: fSet.Bool(annotateListingsFlag,
-			internal.GetBoolDefault(subViper, annotateListingsFlag, defaultAnnotateListings),
+			internal.GetBoolDefault(subNode, annotateListingsFlag, defaultAnnotateListings),
 			"annotate listings with album and artist data"),
-		sf: files.NewSearchFlags(v, fSet),
+		sf: files.NewSearchFlags(n, fSet),
 	}
 }
 

@@ -11,8 +11,6 @@ import (
 	"sort"
 	"strings"
 	"testing"
-
-	"github.com/spf13/viper"
 )
 
 var (
@@ -446,7 +444,7 @@ func Test_newCheckSubCommand(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
 	type args struct {
-		v *viper.Viper
+		n *internal.Node
 	}
 	tests := []struct {
 		name                     string
@@ -457,14 +455,14 @@ func Test_newCheckSubCommand(t *testing.T) {
 	}{
 		{
 			name:                     "ordinary defaults",
-			args:                     args{v: nil},
+			args:                     args{n: nil},
 			wantEmptyFolders:         false,
 			wantGapsInTrackNumbering: false,
 			wantIntegrity:            true,
 		},
 		{
 			name:                     "overridden defaults",
-			args:                     args{v: internal.ReadDefaultsYaml("./mp3")},
+			args:                     args{n: internal.ReadYaml("./mp3")},
 			wantEmptyFolders:         true,
 			wantGapsInTrackNumbering: true,
 			wantIntegrity:            false,
@@ -472,7 +470,7 @@ func Test_newCheckSubCommand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			check := newCheckSubCommand(tt.args.v, flag.NewFlagSet("ls", flag.ContinueOnError))
+			check := newCheckSubCommand(tt.args.n, flag.NewFlagSet("ls", flag.ContinueOnError))
 			if s := check.sf.ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-ext", ".mp3"}); s != nil {
 				if *check.checkEmptyFolders != tt.wantEmptyFolders {
 					t.Errorf("%s %s: got checkEmptyFolders %t want %t", fnName, tt.name, *check.checkEmptyFolders, tt.wantEmptyFolders)

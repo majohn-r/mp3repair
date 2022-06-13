@@ -163,6 +163,8 @@ check:
     empty: true      # false
     gaps: true       # false
     integrity: false # true
+unused:
+    value: 1
 repair:
     dryRun: true # false`)
 }

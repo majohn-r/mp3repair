@@ -11,8 +11,6 @@ import (
 	"reflect"
 	"strings"
 	"testing"
-
-	"github.com/spf13/viper"
 )
 
 func Test_newRepairSubCommand(t *testing.T) {
@@ -32,7 +30,7 @@ func Test_newRepairSubCommand(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
 	type args struct {
-		v *viper.Viper
+		n *internal.Node
 	}
 	tests := []struct {
 		name       string
@@ -41,18 +39,18 @@ func Test_newRepairSubCommand(t *testing.T) {
 	}{
 		{
 			name:       "ordinary defaults",
-			args:       args{v: nil},
+			args:       args{n: nil},
 			wantDryRun: false,
 		},
 		{
 			name:       "overridden defaults",
-			args:       args{v: internal.ReadDefaultsYaml("./mp3")},
+			args:       args{n: internal.ReadYaml("./mp3")},
 			wantDryRun: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			repair := newRepairSubCommand(tt.args.v, flag.NewFlagSet("ls", flag.ContinueOnError))
+			repair := newRepairSubCommand(tt.args.n, flag.NewFlagSet("ls", flag.ContinueOnError))
 			if s := repair.sf.ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-ext", ".mp3"}); s != nil {
 				if *repair.dryRun != tt.wantDryRun {
 					t.Errorf("%s %s: got dryRun %t want %t", fnName, tt.name, *repair.dryRun, tt.wantDryRun)

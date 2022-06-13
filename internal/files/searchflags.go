@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 // SearchFlags defines the common flags used to specify how the top directory,
@@ -33,21 +32,21 @@ const (
 
 // NewSearchFlags are used by subCommands to use the common top directory,
 // target extension, and album and artist filter regular expressions.
-func NewSearchFlags(v *viper.Viper, fSet *flag.FlagSet) *SearchFlags {
-	subViper := internal.SafeSubViper(v, "common")
+func NewSearchFlags(n *internal.Node, fSet *flag.FlagSet) *SearchFlags {
+	subNode := internal.SafeSubNode(n, "common")
 	return &SearchFlags{
 		f: fSet,
 		topDirectory: fSet.String(topDirectoryFlag,
-			internal.GetStringDefault(subViper, topDirectoryFlag, "$HOMEPATH/Music"),
+			internal.GetStringDefault(subNode, topDirectoryFlag, "$HOMEPATH/Music"),
 			"top directory in which to look for music files"),
 		fileExtension: fSet.String(fileExtensionFlag,
-			internal.GetStringDefault(subViper, fileExtensionFlag, defaultFileExtension),
+			internal.GetStringDefault(subNode, fileExtensionFlag, defaultFileExtension),
 			"extension for music files"),
 		albumRegex: fSet.String(albumRegexFlag,
-			internal.GetStringDefault(subViper, albumRegexFlag, defaultRegex),
+			internal.GetStringDefault(subNode, albumRegexFlag, defaultRegex),
 			"regular expression of albums to select"),
 		artistRegex: fSet.String(artistRegexFlag,
-			internal.GetStringDefault(subViper, artistRegexFlag, defaultRegex),
+			internal.GetStringDefault(subNode, artistRegexFlag, defaultRegex),
 			"regular expression of artists to select"),
 	}
 }

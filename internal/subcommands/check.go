@@ -10,7 +10,6 @@ import (
 	"sort"
 
 	"github.com/sirupsen/logrus"
-	"github.com/spf13/viper"
 )
 
 type check struct {
@@ -25,8 +24,8 @@ func (c *check) name() string {
 	return c.n
 }
 
-func newCheck(v *viper.Viper, fSet *flag.FlagSet) CommandProcessor {
-	return newCheckSubCommand(v, fSet)
+func newCheck(n *internal.Node, fSet *flag.FlagSet) CommandProcessor {
+	return newCheckSubCommand(n, fSet)
 }
 
 const (
@@ -38,20 +37,20 @@ const (
 	defaultIntegrity            = true
 )
 
-func newCheckSubCommand(v *viper.Viper, fSet *flag.FlagSet) *check {
-	subViper := internal.SafeSubViper(v, "check")
+func newCheckSubCommand(n *internal.Node, fSet *flag.FlagSet) *check {
+	subNode := internal.SafeSubNode(n, "check")
 	return &check{
 		n: fSet.Name(),
 		checkEmptyFolders: fSet.Bool(emptyFoldersFlag,
-			internal.GetBoolDefault(subViper, emptyFoldersFlag, defaultEmptyFolders),
+			internal.GetBoolDefault(subNode, emptyFoldersFlag, defaultEmptyFolders),
 			"check for empty artist and album folders"),
 		checkGapsInTrackNumbering: fSet.Bool(gapsInTrackNumberingFlag,
-			internal.GetBoolDefault(subViper, gapsInTrackNumberingFlag, defaultGapsInTrackNumbering),
+			internal.GetBoolDefault(subNode, gapsInTrackNumberingFlag, defaultGapsInTrackNumbering),
 			"check for gaps in track numbers"),
 		checkIntegrity: fSet.Bool(integrityFlag,
-			internal.GetBoolDefault(subViper, integrityFlag, defaultIntegrity),
+			internal.GetBoolDefault(subNode, integrityFlag, defaultIntegrity),
 			"check for disagreement between the file system and audio file metadata"),
-		sf: files.NewSearchFlags(v, fSet),
+		sf: files.NewSearchFlags(n, fSet),
 	}
 }
 

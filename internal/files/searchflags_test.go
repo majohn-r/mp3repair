@@ -8,8 +8,6 @@ import (
 	"reflect"
 	"regexp"
 	"testing"
-
-	"github.com/spf13/viper"
 )
 
 func TestFileFlags_processArgs(t *testing.T) {
@@ -75,7 +73,7 @@ func Test_NewFileFlags(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
 	type args struct {
-		v *viper.Viper
+		n *internal.Node
 	}
 	tests := []struct {
 		name            string
@@ -95,7 +93,7 @@ func Test_NewFileFlags(t *testing.T) {
 		},
 		{
 			name:            "overrides",
-			args:            args{v: internal.ReadDefaultsYaml("./mp3")},
+			args:            args{n: internal.ReadYaml("./mp3")},
 			wantTopDir:      ".",
 			wantExtension:   ".mpeg",
 			wantAlbumRegex:  "^.*$",
@@ -104,7 +102,7 @@ func Test_NewFileFlags(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewSearchFlags(tt.args.v, flag.NewFlagSet("test", flag.ContinueOnError)); got == nil {
+			if got := NewSearchFlags(tt.args.n, flag.NewFlagSet("test", flag.ContinueOnError)); got == nil {
 				t.Errorf("%s = %v", fnName, got)
 			} else {
 				if err := got.f.Parse([]string{}); err != nil {

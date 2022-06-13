@@ -10,8 +10,6 @@ import (
 	"sort"
 	"strings"
 	"testing"
-
-	"github.com/spf13/viper"
 )
 
 func Test_ls_validateTrackSorting(t *testing.T) {
@@ -504,7 +502,7 @@ func Test_newLsSubCommand(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
 	type args struct {
-		v *viper.Viper
+		n *internal.Node
 	}
 	tests := []struct {
 		name                 string
@@ -517,7 +515,7 @@ func Test_newLsSubCommand(t *testing.T) {
 	}{
 		{
 			name:                 "ordinary defaults",
-			args:                 args{v: nil},
+			args:                 args{n: nil},
 			wantIncludeAlbums:    true,
 			wantIncludeArtists:   true,
 			wantIncludeTracks:    false,
@@ -526,7 +524,7 @@ func Test_newLsSubCommand(t *testing.T) {
 		},
 		{
 			name:                 "overridden defaults",
-			args:                 args{v: internal.ReadDefaultsYaml("./mp3")},
+			args:                 args{n: internal.ReadYaml("./mp3")},
 			wantIncludeAlbums:    false,
 			wantIncludeArtists:   false,
 			wantIncludeTracks:    true,
@@ -536,7 +534,7 @@ func Test_newLsSubCommand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ls := newLsSubCommand(tt.args.v, flag.NewFlagSet("ls", flag.ContinueOnError))
+			ls := newLsSubCommand(tt.args.n, flag.NewFlagSet("ls", flag.ContinueOnError))
 			if s := ls.sf.ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-ext", ".mp3"}); s != nil {
 				if *ls.includeAlbums != tt.wantIncludeAlbums {
 					t.Errorf("%s %s: got includeAlbums %t want %t", fnName, tt.name, *ls.includeAlbums, tt.wantIncludeAlbums)

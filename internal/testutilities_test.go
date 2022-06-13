@@ -4,8 +4,6 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
-
-	"github.com/spf13/viper"
 )
 
 func TestCreateAlbumNameForTesting(t *testing.T) {
@@ -236,64 +234,59 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 				// nothing to do
 			},
 			postTest: func(t *testing.T) {
-				v := viper.New()
-				v.SetConfigName(defaultConfigFileBaseName)
-				v.AddConfigPath("./mp3")
-				if err := v.ReadInConfig(); err != nil {
-					t.Errorf("CreateDefaultYamlFile() 'good test': error reading defaults configuration file: %v", err)
-				}
-				if common := v.Sub("common"); common == nil {
-					t.Error("CreateDefaultYamlFile() 'good test': viper does not contain common subtree")
+				n := ReadYaml("./mp3")
+				if common := n.nMap["common"]; common == nil {
+					t.Error("CreateDefaultYamlFile() 'good test': node does not contain common subtree")
 				} else {
-					if got := common.Get("topDir"); got != "." {
+					if got := common.sMap["topDir"]; got != "." {
 						t.Errorf("CreateDefaultYamlFile() 'good test': common.topDir got %s want %s", got, ".")
 					}
-					if got := common.Get("ext"); got != ".mpeg" {
+					if got := common.sMap["ext"]; got != ".mpeg" {
 						t.Errorf("CreateDefaultYamlFile() 'good test': common.ext got %s want %s", got, ".mpeg")
 					}
-					if got := common.Get("albums"); got != "^.*$" {
+					if got := common.sMap["albums"]; got != "^.*$" {
 						t.Errorf("CreateDefaultYamlFile() 'good test': common.albums got %s want %s", got, "^.*$")
 					}
-					if got := common.Get("artists"); got != "^.*$" {
+					if got := common.sMap["artists"]; got != "^.*$" {
 						t.Errorf("CreateDefaultYamlFile() 'good test': common.artists got %s want %s", got, "^.*$")
 					}
 				}
-				if ls := v.Sub("ls"); ls == nil {
-					t.Error("CreateDefaultYamlFile() 'good test': viper does not contain ls subtree")
+				if ls := n.nMap["ls"]; ls == nil {
+					t.Error("CreateDefaultYamlFile() 'good test': node does not contain ls subtree")
 				} else {
-					if got := ls.Get("album"); got != false {
+					if got := ls.bMap["album"]; got != false {
 						t.Errorf("CreateDefaultYamlFile() 'good test': ls.album got %t want %t", got, false)
 					}
-					if got := ls.Get("artist"); got != false {
+					if got := ls.bMap["artist"]; got != false {
 						t.Errorf("CreateDefaultYamlFile() 'good test': ls.artist got %t want %t", got, false)
 					}
-					if got := ls.Get("track"); got != true {
+					if got := ls.bMap["track"]; got != true {
 						t.Errorf("CreateDefaultYamlFile() 'good test': ls.track got %t want %t", got, true)
 					}
-					if got := ls.Get("annotate"); got != true {
+					if got := ls.bMap["annotate"]; got != true {
 						t.Errorf("CreateDefaultYamlFile() 'good test': ls.annotate got %t want %t", got, true)
 					}
-					if got := ls.Get("sort"); got != "alpha" {
+					if got := ls.sMap["sort"]; got != "alpha" {
 						t.Errorf("CreateDefaultYamlFile() 'good test': ls.sort got %s want %s", got, "alpha")
 					}
 				}
-				if check := v.Sub("check"); check == nil {
-					t.Error("CreateDefaultYamlFile() 'good test': viper does not contain check subtree")
+				if check := n.nMap["check"]; check == nil {
+					t.Error("CreateDefaultYamlFile() 'good test': node does not contain check subtree")
 				} else {
-					if got := check.Get("empty"); got != true {
+					if got := check.bMap["empty"]; got != true {
 						t.Errorf("CreateDefaultYamlFile() 'good test': check.empty got %t want %t", got, true)
 					}
-					if got := check.Get("gaps"); got != true {
+					if got := check.bMap["gaps"]; got != true {
 						t.Errorf("CreateDefaultYamlFile() 'good test': check.gaps got %t want %t", got, true)
 					}
-					if got := check.Get("integrity"); got != false {
+					if got := check.bMap["integrity"]; got != false {
 						t.Errorf("CreateDefaultYamlFile() 'good test': check.integrity got %t want %t", got, false)
 					}
 				}
-				if repair := v.Sub("repair"); repair == nil {
-					t.Error("CreateDefaultYamlFile() 'good test': viper does not contain repair subtree")
+				if repair := n.nMap["repair"]; repair == nil {
+					t.Error("CreateDefaultYamlFile() 'good test': node does not contain repair subtree")
 				} else {
-					if got := repair.Get("dryRun"); got != true {
+					if got := repair.bMap["dryRun"]; got != true {
 						t.Errorf("CreateDefaultYamlFile() 'good test': repair.DryRun got %t want %t", got, true)
 					}
 				}
