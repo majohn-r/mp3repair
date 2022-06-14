@@ -24,8 +24,8 @@ func (c *check) name() string {
 	return c.n
 }
 
-func newCheck(n *internal.Node, fSet *flag.FlagSet) CommandProcessor {
-	return newCheckSubCommand(n, fSet)
+func newCheck(c *internal.Configuration, fSet *flag.FlagSet) CommandProcessor {
+	return newCheckSubCommand(c, fSet)
 }
 
 const (
@@ -37,20 +37,20 @@ const (
 	defaultIntegrity            = true
 )
 
-func newCheckSubCommand(n *internal.Node, fSet *flag.FlagSet) *check {
-	subNode := internal.SafeSubNode(n, "check")
+func newCheckSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *check {
+	configuration := c.SubConfiguration("check")
 	return &check{
 		n: fSet.Name(),
 		checkEmptyFolders: fSet.Bool(emptyFoldersFlag,
-			internal.GetBoolDefault(subNode, emptyFoldersFlag, defaultEmptyFolders),
+			configuration.BoolDefault(emptyFoldersFlag, defaultEmptyFolders),
 			"check for empty artist and album folders"),
 		checkGapsInTrackNumbering: fSet.Bool(gapsInTrackNumberingFlag,
-			internal.GetBoolDefault(subNode, gapsInTrackNumberingFlag, defaultGapsInTrackNumbering),
+			configuration.BoolDefault(gapsInTrackNumberingFlag, defaultGapsInTrackNumbering),
 			"check for gaps in track numbers"),
 		checkIntegrity: fSet.Bool(integrityFlag,
-			internal.GetBoolDefault(subNode, integrityFlag, defaultIntegrity),
+			configuration.BoolDefault(integrityFlag, defaultIntegrity),
 			"check for disagreement between the file system and audio file metadata"),
-		sf: files.NewSearchFlags(n, fSet),
+		sf: files.NewSearchFlags(c, fSet),
 	}
 }
 

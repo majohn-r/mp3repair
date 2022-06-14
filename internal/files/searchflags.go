@@ -32,21 +32,21 @@ const (
 
 // NewSearchFlags are used by subCommands to use the common top directory,
 // target extension, and album and artist filter regular expressions.
-func NewSearchFlags(n *internal.Node, fSet *flag.FlagSet) *SearchFlags {
-	subNode := internal.SafeSubNode(n, "common")
+func NewSearchFlags(c *internal.Configuration, fSet *flag.FlagSet) *SearchFlags {
+	configuration := c.SubConfiguration("common")
 	return &SearchFlags{
 		f: fSet,
 		topDirectory: fSet.String(topDirectoryFlag,
-			internal.GetStringDefault(subNode, topDirectoryFlag, "$HOMEPATH/Music"),
+			configuration.StringDefault(topDirectoryFlag, "$HOMEPATH/Music"),
 			"top directory in which to look for music files"),
 		fileExtension: fSet.String(fileExtensionFlag,
-			internal.GetStringDefault(subNode, fileExtensionFlag, defaultFileExtension),
+			configuration.StringDefault(fileExtensionFlag, defaultFileExtension),
 			"extension for music files"),
 		albumRegex: fSet.String(albumRegexFlag,
-			internal.GetStringDefault(subNode, albumRegexFlag, defaultRegex),
+			configuration.StringDefault(albumRegexFlag, defaultRegex),
 			"regular expression of albums to select"),
 		artistRegex: fSet.String(artistRegexFlag,
-			internal.GetStringDefault(subNode, artistRegexFlag, defaultRegex),
+			configuration.StringDefault(artistRegexFlag, defaultRegex),
 			"regular expression of artists to select"),
 	}
 }

@@ -371,13 +371,13 @@ func Test_check_Exec(t *testing.T) {
 	}{
 		{
 			name:  "do nothing",
-			c:     newCheckSubCommand(nil, flag.NewFlagSet("check", flag.ContinueOnError)),
+			c:     newCheckSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError)),
 			args:  args{[]string{"-topDir", topDirName, "-empty=false", "-gaps=false", "-integrity=false"}},
 			wantW: "",
 		},
 		{
 			name: "do something",
-			c:    newCheckSubCommand(nil, flag.NewFlagSet("check", flag.ContinueOnError)),
+			c:    newCheckSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError)),
 			args: args{[]string{"-topDir", topDirName, "-empty=true", "-gaps=false", "-integrity=false"}},
 			wantW: strings.Join([]string{
 				"Test Artist 0",
@@ -444,7 +444,7 @@ func Test_newCheckSubCommand(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
 	type args struct {
-		n *internal.Node
+		c *internal.Configuration
 	}
 	tests := []struct {
 		name                     string
@@ -455,14 +455,14 @@ func Test_newCheckSubCommand(t *testing.T) {
 	}{
 		{
 			name:                     "ordinary defaults",
-			args:                     args{n: nil},
+			args:                     args{c: internal.EmptyConfiguration()},
 			wantEmptyFolders:         false,
 			wantGapsInTrackNumbering: false,
 			wantIntegrity:            true,
 		},
 		{
 			name:                     "overridden defaults",
-			args:                     args{n: internal.ReadYaml("./mp3")},
+			args:                     args{c: internal.ReadConfigurationFile("./mp3")},
 			wantEmptyFolders:         true,
 			wantGapsInTrackNumbering: true,
 			wantIntegrity:            false,
@@ -470,7 +470,7 @@ func Test_newCheckSubCommand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			check := newCheckSubCommand(tt.args.n, flag.NewFlagSet("ls", flag.ContinueOnError))
+			check := newCheckSubCommand(tt.args.c, flag.NewFlagSet("ls", flag.ContinueOnError))
 			if s := check.sf.ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-ext", ".mp3"}); s != nil {
 				if *check.checkEmptyFolders != tt.wantEmptyFolders {
 					t.Errorf("%s %s: got checkEmptyFolders %t want %t", fnName, tt.name, *check.checkEmptyFolders, tt.wantEmptyFolders)

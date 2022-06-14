@@ -30,7 +30,7 @@ func Test_newRepairSubCommand(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
 	type args struct {
-		n *internal.Node
+		c *internal.Configuration
 	}
 	tests := []struct {
 		name       string
@@ -39,18 +39,18 @@ func Test_newRepairSubCommand(t *testing.T) {
 	}{
 		{
 			name:       "ordinary defaults",
-			args:       args{n: nil},
+			args:       args{c: internal.EmptyConfiguration()},
 			wantDryRun: false,
 		},
 		{
 			name:       "overridden defaults",
-			args:       args{n: internal.ReadYaml("./mp3")},
+			args:       args{c: internal.ReadConfigurationFile("./mp3")},
 			wantDryRun: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			repair := newRepairSubCommand(tt.args.n, flag.NewFlagSet("ls", flag.ContinueOnError))
+			repair := newRepairSubCommand(tt.args.c, flag.NewFlagSet("ls", flag.ContinueOnError))
 			if s := repair.sf.ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-ext", ".mp3"}); s != nil {
 				if *repair.dryRun != tt.wantDryRun {
 					t.Errorf("%s %s: got dryRun %t want %t", fnName, tt.name, *repair.dryRun, tt.wantDryRun)
@@ -195,19 +195,19 @@ func Test_repair_Exec(t *testing.T) {
 	}{
 		{
 			name:  "dry run, no usable content",
-			r:     newRepairSubCommand(nil, flag.NewFlagSet("repair", flag.ContinueOnError)),
+			r:     newRepairSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
 			args:  args{[]string{"-topDir", topDirName, "-dryRun"}},
 			wantW: noProblemsFound + "\n",
 		},
 		{
 			name:  "real repair, no usable content",
-			r:     newRepairSubCommand(nil, flag.NewFlagSet("repair", flag.ContinueOnError)),
+			r:     newRepairSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
 			args:  args{[]string{"-topDir", topDirName, "-dryRun=false"}},
 			wantW: noProblemsFound + "\n",
 		},
 		{
 			name: "dry run, usable content",
-			r:    newRepairSubCommand(nil, flag.NewFlagSet("repair", flag.ContinueOnError)),
+			r:    newRepairSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
 			args: args{[]string{"-topDir", topDirWithContent, "-dryRun"}},
 			wantW: strings.Join([]string{
 				"\"new artist\"",
@@ -217,7 +217,7 @@ func Test_repair_Exec(t *testing.T) {
 		},
 		{
 			name: "real repair, usable content",
-			r:    newRepairSubCommand(nil, flag.NewFlagSet("repair", flag.ContinueOnError)),
+			r:    newRepairSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
 			args: args{[]string{"-topDir", topDirWithContent, "-dryRun=false"}},
 			wantW: strings.Join([]string{
 				"The track \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" has been backed up to \"realContent\\\\new artist\\\\new album\\\\pre-repair-backup\\\\1.mp3\".",

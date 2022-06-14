@@ -27,8 +27,8 @@ func (l *ls) name() string {
 	return l.n
 }
 
-func newLs(n *internal.Node, fSet *flag.FlagSet) CommandProcessor {
-	return newLsSubCommand(n, fSet)
+func newLs(c *internal.Configuration, fSet *flag.FlagSet) CommandProcessor {
+	return newLsSubCommand(c, fSet)
 }
 
 const (
@@ -44,26 +44,26 @@ const (
 	defaultAnnotateListings = false
 )
 
-func newLsSubCommand(n *internal.Node, fSet *flag.FlagSet) *ls {
-	subNode := internal.SafeSubNode(n, "ls")
+func newLsSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *ls {
+	configuration := c.SubConfiguration("ls")
 	return &ls{
 		n: fSet.Name(),
 		includeAlbums: fSet.Bool(includeAlbumsFlag,
-			internal.GetBoolDefault(subNode, includeAlbumsFlag, defaultIncludeAlbums),
+			configuration.BoolDefault(includeAlbumsFlag, defaultIncludeAlbums),
 			"include album names in listing"),
 		includeArtists: fSet.Bool(includeArtistsFlag,
-			internal.GetBoolDefault(subNode, includeArtistsFlag, defaultIncludeArtists),
+			configuration.BoolDefault(includeArtistsFlag, defaultIncludeArtists),
 			"include artist names in listing"),
 		includeTracks: fSet.Bool(includeTracksFlag,
-			internal.GetBoolDefault(subNode, includeTracksFlag, defaultIncludeTracks),
+			configuration.BoolDefault(includeTracksFlag, defaultIncludeTracks),
 			"include track names in listing"),
 		trackSorting: fSet.String(trackSortingFlag,
-			internal.GetStringDefault(subNode, trackSortingFlag, defaultTrackSorting),
+			configuration.StringDefault(trackSortingFlag, defaultTrackSorting),
 			"track sorting, 'numeric' in track number order, or 'alpha' in track name order"),
 		annotateListings: fSet.Bool(annotateListingsFlag,
-			internal.GetBoolDefault(subNode, annotateListingsFlag, defaultAnnotateListings),
+			configuration.BoolDefault(annotateListingsFlag, defaultAnnotateListings),
 			"annotate listings with album and artist data"),
-		sf: files.NewSearchFlags(n, fSet),
+		sf: files.NewSearchFlags(c, fSet),
 	}
 }
 

@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"mp3/internal"
-	"path/filepath"
 	"sort"
 	"strings"
 )
@@ -19,7 +18,7 @@ type CommandProcessor interface {
 type subcommandInitializer struct {
 	name              string
 	defaultSubCommand bool
-	initializer       func(*internal.Node, *flag.FlagSet) CommandProcessor
+	initializer       func(*internal.Configuration, *flag.FlagSet) CommandProcessor
 }
 
 func noSuchSubcommandError(commandName string, validNames []string) error {
@@ -35,20 +34,16 @@ func internalErrorIncorrectNumberOfDefaultSubcommands(defaultInitializers int) e
 }
 
 func ProcessCommand(appDataPath string, args []string) (CommandProcessor, []string, error) {
-	configPath := internal.CreateAppSpecificPath(appDataPath)
-	var n *internal.Node
-	if internal.PlainFileExists(filepath.Join(configPath, internal.DefaultConfigFileName)) {
-		n = internal.ReadYaml(configPath)
-	}
+	c := internal.ReadConfigurationFile(internal.CreateAppSpecificPath(appDataPath))
 	var initializers []subcommandInitializer
 	lsSubCommand := subcommandInitializer{name: "ls", defaultSubCommand: true, initializer: newLs}
 	checkSubCommand := subcommandInitializer{name: "check", initializer: newCheck}
 	repairSubCommand := subcommandInitializer{name: "repair", initializer: newRepair}
 	initializers = append(initializers, lsSubCommand, checkSubCommand, repairSubCommand)
-	return selectSubCommand(n, initializers, args)
+	return selectSubCommand(c, initializers, args)
 }
 
-func selectSubCommand(n *internal.Node, i []subcommandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, err error) {
+func selectSubCommand(c *internal.Configuration, i []subcommandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, err error) {
 	if len(i) == 0 {
 		err = internalErrorNoSubCommandInitializers()
 		return
@@ -68,7 +63,7 @@ func selectSubCommand(n *internal.Node, i []subcommandInitializer, args []string
 	processorMap := make(map[string]CommandProcessor)
 	for _, subcommandInitializer := range i {
 		fSet := flag.NewFlagSet(subcommandInitializer.name, flag.ContinueOnError)
-		processorMap[subcommandInitializer.name] = subcommandInitializer.initializer(n, fSet)
+		processorMap[subcommandInitializer.name] = subcommandInitializer.initializer(c, fSet)
 	}
 	if len(args) < 2 {
 		cmd = processorMap[defaultInitializerName]

@@ -29,25 +29,25 @@ func TestProcessCommand(t *testing.T) {
 		{
 			name:            "call ls",
 			args:            args{appDataPath: ".", args: []string{"mp3.exe", "ls", "-track=true"}},
-			wantCmd:         newLs(nil, flag.NewFlagSet("ls", flag.ExitOnError)),
+			wantCmd:         newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
 			wantCallingArgs: []string{"-track=true"},
 		},
 		{
 			name:            "call check",
 			args:            args{appDataPath: ".", args: []string{"mp3.exe", "check", "-integrity=false"}},
-			wantCmd:         newCheck(nil, flag.NewFlagSet("check", flag.ExitOnError)),
+			wantCmd:         newCheck(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ExitOnError)),
 			wantCallingArgs: []string{"-integrity=false"},
 		},
 		{
 			name:            "call repair",
 			args:            args{appDataPath: ".", args: []string{"mp3.exe", "repair", "-target=metadata"}},
-			wantCmd:         newRepair(nil, flag.NewFlagSet("repair", flag.ExitOnError)),
+			wantCmd:         newRepair(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ExitOnError)),
 			wantCallingArgs: []string{"-target=metadata"},
 		},
 		{
 			name:            "call default command",
 			args:            args{appDataPath: ".", args: []string{"mp3.exe"}},
-			wantCmd:         newLs(nil, flag.NewFlagSet("ls", flag.ExitOnError)),
+			wantCmd:         newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
 			wantCallingArgs: []string{"ls"},
 		},
 		{
@@ -58,7 +58,7 @@ func TestProcessCommand(t *testing.T) {
 		{
 			name:            "[#38] pass arguments to default subcommand",
 			args:            args{appDataPath: ".", args: []string{"mp3.exe", "-album", "-artist", "-track"}},
-			wantCmd:         newLs(nil, flag.NewFlagSet("ls", flag.ExitOnError)),
+			wantCmd:         newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
 			wantCallingArgs: []string{"-album", "-artist", "-track"},
 		},
 	}
@@ -101,7 +101,7 @@ func equalErrors(gotErr error, wantErr error) bool {
 func Test_selectSubCommand(t *testing.T) {
 	fnName := "selectSubCommand()"
 	type args struct {
-		n            *internal.Node
+		c            *internal.Configuration
 		initializers []subcommandInitializer
 		args         []string
 	}
@@ -129,7 +129,7 @@ func Test_selectSubCommand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, _, gotErr := selectSubCommand(tt.args.n, tt.args.initializers, tt.args.args)
+			_, _, gotErr := selectSubCommand(tt.args.c, tt.args.initializers, tt.args.args)
 			if !equalErrors(gotErr, tt.wantErr) {
 				t.Errorf("%s gotErr = %v, want %v", fnName, gotErr, tt.wantErr)
 			}

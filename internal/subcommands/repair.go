@@ -23,8 +23,8 @@ func (r *repair) name() string {
 	return r.n
 }
 
-func newRepair(n *internal.Node, fSet *flag.FlagSet) CommandProcessor {
-	return newRepairSubCommand(n, fSet)
+func newRepair(c *internal.Configuration, fSet *flag.FlagSet) CommandProcessor {
+	return newRepairSubCommand(c, fSet)
 }
 
 const (
@@ -32,14 +32,14 @@ const (
 	defaultDryRun = false
 )
 
-func newRepairSubCommand(n *internal.Node, fSet *flag.FlagSet) *repair {
-	subNode := internal.SafeSubNode(n, "repair")
+func newRepairSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *repair {
+	configuration := c.SubConfiguration("repair")
 	return &repair{
 		n: fSet.Name(),
 		dryRun: fSet.Bool(dryRunFlag,
-			internal.GetBoolDefault(subNode, dryRunFlag, defaultDryRun),
+			configuration.BoolDefault(dryRunFlag, defaultDryRun),
 			"if true, output what would have repaired, but make no repairs"),
-		sf: files.NewSearchFlags(n, fSet),
+		sf: files.NewSearchFlags(c, fSet),
 	}
 }
 

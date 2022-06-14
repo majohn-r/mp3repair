@@ -217,8 +217,8 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 				if err := Mkdir("./mp3"); err != nil {
 					t.Errorf("CreateDefaultYamlFile() 'file exists': failed to create directory ./mp3: %v", err)
 				}
-				if err := CreateFileForTestingWithContent("./mp3", DefaultConfigFileName, "who cares?"); err != nil {
-					t.Errorf("CreateDefaultYamlFile() 'file exists': failed to create %q: %v", DefaultConfigFileName, err)
+				if err := CreateFileForTestingWithContent("./mp3", defaultConfigFileName, "who cares?"); err != nil {
+					t.Errorf("CreateDefaultYamlFile() 'file exists': failed to create %q: %v", defaultConfigFileName, err)
 				}
 			},
 			postTest: func(t *testing.T) {
@@ -234,9 +234,9 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 				// nothing to do
 			},
 			postTest: func(t *testing.T) {
-				n := ReadYaml("./mp3")
-				if common := n.nMap["common"]; common == nil {
-					t.Error("CreateDefaultYamlFile() 'good test': node does not contain common subtree")
+				c := ReadConfigurationFile("./mp3")
+				if common := c.cMap["common"]; common == nil {
+					t.Error("CreateDefaultYamlFile() 'good test': configuration does not contain common subtree")
 				} else {
 					if got := common.sMap["topDir"]; got != "." {
 						t.Errorf("CreateDefaultYamlFile() 'good test': common.topDir got %s want %s", got, ".")
@@ -251,8 +251,8 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 						t.Errorf("CreateDefaultYamlFile() 'good test': common.artists got %s want %s", got, "^.*$")
 					}
 				}
-				if ls := n.nMap["ls"]; ls == nil {
-					t.Error("CreateDefaultYamlFile() 'good test': node does not contain ls subtree")
+				if ls := c.cMap["ls"]; ls == nil {
+					t.Error("CreateDefaultYamlFile() 'good test': configuration does not contain ls subtree")
 				} else {
 					if got := ls.bMap["includeAlbums"]; got != false {
 						t.Errorf("CreateDefaultYamlFile() 'good test': ls.album got %t want %t", got, false)
@@ -270,8 +270,8 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 						t.Errorf("CreateDefaultYamlFile() 'good test': ls.sort got %s want %s", got, "alpha")
 					}
 				}
-				if check := n.nMap["check"]; check == nil {
-					t.Error("CreateDefaultYamlFile() 'good test': node does not contain check subtree")
+				if check := c.cMap["check"]; check == nil {
+					t.Error("CreateDefaultYamlFile() 'good test': configuration does not contain check subtree")
 				} else {
 					if got := check.bMap["empty"]; got != true {
 						t.Errorf("CreateDefaultYamlFile() 'good test': check.empty got %t want %t", got, true)
@@ -283,8 +283,8 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 						t.Errorf("CreateDefaultYamlFile() 'good test': check.integrity got %t want %t", got, false)
 					}
 				}
-				if repair := n.nMap["repair"]; repair == nil {
-					t.Error("CreateDefaultYamlFile() 'good test': node does not contain repair subtree")
+				if repair := c.cMap["repair"]; repair == nil {
+					t.Error("CreateDefaultYamlFile() 'good test': configuration does not contain repair subtree")
 				} else {
 					if got := repair.bMap["dryRun"]; got != true {
 						t.Errorf("CreateDefaultYamlFile() 'good test': repair.DryRun got %t want %t", got, true)

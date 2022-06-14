@@ -73,7 +73,7 @@ func Test_NewFileFlags(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
 	type args struct {
-		n *internal.Node
+		c *internal.Configuration
 	}
 	tests := []struct {
 		name            string
@@ -85,7 +85,7 @@ func Test_NewFileFlags(t *testing.T) {
 	}{
 		{
 			name:            "default",
-			args:            args{},
+			args:            args{c: internal.EmptyConfiguration()},
 			wantTopDir:      "./Music",
 			wantExtension:   ".mp3",
 			wantAlbumRegex:  ".*",
@@ -93,7 +93,7 @@ func Test_NewFileFlags(t *testing.T) {
 		},
 		{
 			name:            "overrides",
-			args:            args{n: internal.ReadYaml("./mp3")},
+			args:            args{c: internal.ReadConfigurationFile("./mp3")},
 			wantTopDir:      ".",
 			wantExtension:   ".mpeg",
 			wantAlbumRegex:  "^.*$",
@@ -102,7 +102,7 @@ func Test_NewFileFlags(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewSearchFlags(tt.args.n, flag.NewFlagSet("test", flag.ContinueOnError)); got == nil {
+			if got := NewSearchFlags(tt.args.c, flag.NewFlagSet("test", flag.ContinueOnError)); got == nil {
 				t.Errorf("%s = %v", fnName, got)
 			} else {
 				if err := got.f.Parse([]string{}); err != nil {

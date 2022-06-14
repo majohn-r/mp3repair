@@ -146,7 +146,7 @@ func CreateDefaultYamlFileForTesting() error {
 	if err := Mkdir(path); err != nil {
 		return err
 	}
-	return CreateFileForTestingWithContent(path, DefaultConfigFileName,
+	return CreateFileForTestingWithContent(path, defaultConfigFileName,
 		`---
 common:
     topDir: .      # $HOMEPATH/Music
