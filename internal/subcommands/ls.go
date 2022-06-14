@@ -139,7 +139,7 @@ func (l *ls) outputAlbums(w io.Writer, albums []*files.Album, prefix string) {
 			var name string
 			switch {
 			case !*l.includeArtists && *l.annotateListings:
-				name = album.Name() + " by " + album.RecordingArtistName()
+				name = fmt.Sprintf("%q by %q", album.Name(), album.RecordingArtistName())
 			default:
 				name = album.Name()
 			}
@@ -212,15 +212,25 @@ func (l *ls) outputTracks(w io.Writer, tracks []*files.Track, prefix string) {
 		for _, track := range tracks {
 			var components []string
 			components = append(components, track.Name())
-			if *l.annotateListings {
+			if *l.annotateListings && !(*l.includeAlbums && *l.includeArtists) {
 				if !*l.includeAlbums {
-					components = append(components, fmt.Sprintf("on %s", track.AlbumName()))
+					components = append(components, []string{"on", track.AlbumName()}...)
 					if !*l.includeArtists {
-						components = append(components, fmt.Sprintf("by %s", track.RecordingArtist()))
+						components = append(components, []string{"by", track.RecordingArtist()}...)
 					}
 				}
 			}
-			trackNames = append(trackNames, strings.Join(components, " "))
+			if len(components) > 1 {
+				var c2 []string
+				c2 = append(c2, fmt.Sprintf("%q", components[0]))
+				for k := 1; k < len(components); k += 2 {
+					c2 = append(c2, components[k])
+					c2 = append(c2, fmt.Sprintf("%q", components[k+1]))
+				}
+				trackNames = append(trackNames, strings.Join(c2, " "))
+			} else {
+				trackNames = append(trackNames, components[0])
+			}
 		}
 		sort.Strings(trackNames)
 		for _, trackName := range trackNames {

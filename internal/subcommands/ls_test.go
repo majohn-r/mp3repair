@@ -120,7 +120,7 @@ func generateAlbumListings(testTracks []*testTrack, spacer string, artists, albu
 			albumName := tt.albumName
 			var albumTitle string
 			if annotated && !artists {
-				albumTitle = fmt.Sprintf("%s by %s", albumName, tt.artistName)
+				albumTitle = fmt.Sprintf("%q by %q", albumName, tt.artistName)
 			} else {
 				albumTitle = albumName
 			}
@@ -152,10 +152,10 @@ func generateTrackListings(testTracks []*testTrack, spacer string, artists, albu
 			key := trackName
 			if annotated {
 				if !albums {
+					key = fmt.Sprintf("%q on %q by %q", trackName, tt.albumName, tt.artistName)
 					if !artists {
-						key = fmt.Sprintf("%s on %s by %s", trackName, tt.albumName, tt.artistName)
 					} else {
-						key = fmt.Sprintf("%s on %s", trackName, tt.albumName)
+						key = fmt.Sprintf("%q on %q", trackName, tt.albumName)
 					}
 				}
 			}
