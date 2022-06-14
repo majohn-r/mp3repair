@@ -80,6 +80,12 @@ line argument:
 1. **-dryRun** If true, outputs what the **repair** subcommand would fix.
    **False** by default.
 
+## postRepair
+
+The **postRepair** subcommand provides a means to quickly delete the backup
+directories created by the **repair** subcommand. It has no command line
+arguments.
+
 ### Common Arguments
 
 These arguments are common to all subcommands:

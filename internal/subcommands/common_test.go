@@ -40,9 +40,15 @@ func TestProcessCommand(t *testing.T) {
 		},
 		{
 			name:            "call repair",
-			args:            args{appDataPath: ".", args: []string{"mp3.exe", "repair", "-target=metadata"}},
+			args:            args{appDataPath: ".", args: []string{"mp3.exe", "repair"}},
 			wantCmd:         newRepair(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ExitOnError)),
-			wantCallingArgs: []string{"-target=metadata"},
+			wantCallingArgs: []string{},
+		},
+		{
+			name:            "call postRepair",
+			args:            args{appDataPath: ".", args: []string{"mp3.exe", "postRepair"}},
+			wantCmd:         newPostRepair(internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ExitOnError)),
+			wantCallingArgs: []string{},
 		},
 		{
 			name:            "call default command",
@@ -53,7 +59,7 @@ func TestProcessCommand(t *testing.T) {
 		{
 			name:    "call invalid command",
 			args:    args{appDataPath: ".", args: []string{"mp3.exe", "no such command"}},
-			wantErr: noSuchSubcommandError("no such command", []string{"check", "ls", "repair"}),
+			wantErr: noSuchSubcommandError("no such command", []string{"check", "ls", "postRepair", "repair"}),
 		},
 		{
 			name:            "[#38] pass arguments to default subcommand",

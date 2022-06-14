@@ -39,7 +39,8 @@ func ProcessCommand(appDataPath string, args []string) (CommandProcessor, []stri
 	lsSubCommand := subcommandInitializer{name: "ls", defaultSubCommand: true, initializer: newLs}
 	checkSubCommand := subcommandInitializer{name: "check", initializer: newCheck}
 	repairSubCommand := subcommandInitializer{name: "repair", initializer: newRepair}
-	initializers = append(initializers, lsSubCommand, checkSubCommand, repairSubCommand)
+	postRepairSubCommand := subcommandInitializer{name: "postRepair", initializer: newPostRepair}
+	initializers = append(initializers, lsSubCommand, checkSubCommand, repairSubCommand, postRepairSubCommand)
 	return selectSubCommand(c, initializers, args)
 }
 

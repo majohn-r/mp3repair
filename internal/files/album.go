@@ -31,6 +31,10 @@ func NewAlbum(title string, artist *Artist, albumPath string) *Album {
 	return &Album{name: title, recordingArtist: artist, path: albumPath}
 }
 
+func (a *Album) BackupDirectory() string {
+	return a.subDirectory(backupDirName)
+}
+
 func (a *Album) contents() ([]fs.FileInfo, error) {
 	return readDirectory(a.path)
 }

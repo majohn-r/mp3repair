@@ -8,6 +8,7 @@ const (
 	LOG_NO_DEFAULT_COMMAND_DEFINED        = "internal error: no subcommand initializers defined"
 	LOG_TOO_MANY_DEFAULT_COMMANDS_DEFINED = "internal error: only 1 subcommand should be designated as default; %d were found"
 	LOG_CANNOT_CREATE_DIRECTORY           = "cannot create directory"
+	LOG_CANNOT_DELETE_DIRECTORY           = "cannot delete directory"
 	LOG_CANNOT_DELETE_FILE                = "cannot delete file"
 	LOG_CANNOT_READ_DIRECTORY             = "cannot read directory"
 	LOG_CANNOT_READ_FILE                  = "cannot read file"
@@ -25,6 +26,7 @@ const (
 // for output to user
 const (
 	USER_CANNOT_CREATE_DIRECTORY  = "The directory %q cannot be created: %v.\n"
+	USER_CANNOT_DELETE_DIRECTORY  = "The directory %q cannot be deleted: %v.\n"
 	USER_CANNOT_READ_TOPDIR       = "The -topDir value you specified, %q, cannot be read: %v.\n"
 	USER_EXTENSION_INVALID_FORMAT = "The -ext value you specified, %q, must contain exactly one '.' and '.' must be the first character.\n"
 	USER_EXTENSION_GARBLED        = "The -ext value you specified, %q, cannot be used for file matching: %v.\n"
