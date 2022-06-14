@@ -151,14 +151,14 @@ func CreateDefaultYamlFileForTesting() error {
 common:
     topDir: .      # $HOMEPATH/Music
     ext: .mpeg     # .mp3
-    albums: ^.*$   # .*
-    artists: ^.*$  # .* 
+    albumFilter: ^.*$   # .*
+    artistFilter: ^.*$  # .* 
 ls:
-    album: false   # true
-    artist: false  # true
-    track: true    # false
-    sort: alpha    # numeric
-    annotate: true # false
+    includeAlbums: false  # true
+    includeArtists: false # true
+    includeTracks: true   # false
+    sort: alpha           # numeric
+    annotate: true        # false
 check:
     empty: true      # false
     gaps: true       # false

@@ -75,12 +75,12 @@ func Test_GetBoolDefault(t *testing.T) {
 		},
 		{
 			name:  "boolean value default false",
-			args:  args{n: testN.nMap["ls"], key: "track", defaultValue: false},
+			args:  args{n: testN.nMap["ls"], key: "includeTracks", defaultValue: false},
 			wantB: true,
 		},
 		{
 			name:  "boolean value default true",
-			args:  args{n: testN.nMap["ls"], key: "track", defaultValue: true},
+			args:  args{n: testN.nMap["ls"], key: "includeTracks", defaultValue: true},
 			wantB: true,
 		},
 		{
@@ -180,11 +180,21 @@ func TestReadYaml(t *testing.T) {
 					},
 					"common": {
 						bMap: map[string]bool{},
-						sMap: map[string]string{"albums": "^.*$", "artists": "^.*$", "ext": ".mpeg", "topDir": "."},
+						sMap: map[string]string{
+							"albumFilter":  "^.*$",
+							"artistFilter": "^.*$",
+							"ext":          ".mpeg",
+							"topDir":       ".",
+						},
 						nMap: map[string]*Node{},
 					},
 					"ls": {
-						bMap: map[string]bool{"album": false, "annotate": true, "artist": false, "track": true},
+						bMap: map[string]bool{
+							"annotate":       true,
+							"includeAlbums":  false,
+							"includeArtists": false,
+							"includeTracks":  true,
+						},
 						sMap: map[string]string{"sort": "alpha"},
 						nMap: map[string]*Node{},
 					},

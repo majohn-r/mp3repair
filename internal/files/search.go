@@ -34,7 +34,6 @@ func (s *Search) LoadUnfilteredData() (artists []*Artist) {
 		for _, artistFile := range artistFiles {
 			if artistFile.IsDir() {
 				artist := newArtistFromFile(artistFile, s.topDirectory)
-				// artistDir := filepath.Join(s.topDirectory, artistFile.Name())
 				albumFiles, err := artist.contents()
 				if err == nil {
 					for _, albumFile := range albumFiles {
@@ -155,8 +154,8 @@ func CreateFilteredSearchForTesting(topDir string, artistFilter string, albumFil
 	realFlagSet := flag.NewFlagSet("testing", flag.ContinueOnError)
 	return NewSearchFlags(nil, realFlagSet).ProcessArgs(os.Stdout, []string{
 		"-topDir", topDir,
-		"-artists", artistFilter,
-		"-albums", albumFilter,
+		"-artistFilter", artistFilter,
+		"-albumFilter", albumFilter,
 	})
 }
 

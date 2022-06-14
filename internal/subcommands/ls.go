@@ -32,11 +32,11 @@ func newLs(n *internal.Node, fSet *flag.FlagSet) CommandProcessor {
 }
 
 const (
-	includeAlbumsFlag       = "album"
+	includeAlbumsFlag       = "includeAlbums"
 	defaultIncludeAlbums    = true
-	includeArtistsFlag      = "artist"
+	includeArtistsFlag      = "includeArtists"
 	defaultIncludeArtists   = true
-	includeTracksFlag       = "track"
+	includeTracksFlag       = "includeTracks"
 	defaultIncludeTracks    = false
 	trackSortingFlag        = "sort"
 	defaultTrackSorting     = "numeric"

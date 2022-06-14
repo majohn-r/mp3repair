@@ -8,9 +8,9 @@ Windows. It has three subcommands:
 The **ls** subcommand provides a means for listing mp3 files. It can list
 artists, albums, and tracks, governed by these command line arguments:
 
-1. **-artist** List artist names. **True** by default
-2. **-album** List album names. **True** by default
-3. **-track** List track names. **False** by default
+1. **-includeArtists** List artist names. **True** by default
+2. **-includeAlbums** List album names. **True** by default
+3. **-includeTracks** List track names. **False** by default
 
 In addition, you can specify that track listings can be in numeric or alphabetic
 order:
@@ -33,10 +33,10 @@ which is **false** by default. If **true**, **mp3** provides the following
 annotations:
 
 1. Album names will include the recording artist if artists are not included
-   (**-artist=false**)
+   (**-includeArtists=false**)
 2. Track names will include the album name if albums are not included
-   (**-album=false**), and the recording artist if artists are also not included
-   (**-artist=false**)
+   (**-includeAlbums=false**), and the recording artist if artists are also not included
+   (**-includeArtists=false**)
 
 ## check
 
@@ -44,9 +44,9 @@ The **check** subcommand provides a means to run various checks on the mp3 files
 and their directories, governed by these command line arguments:
 
 1. **-empty** Check for empty _artist_ and _album_ directories. **False** by
-   default. If **true**, **mp3** ignores the **-albums** and **-artists** filter
-   settings. An _artist_ directory is any subdirectory of the **-topDir**
-   directory, and **mp3** considers it to be empty if it contains no
+   default. If **true**, **mp3** ignores the **-albumFilter** and
+   **-artistFilter** settings. An _artist_ directory is any subdirectory of the
+   **-topDir** directory, and **mp3** considers it to be empty if it contains no
    subdirectories. An album directory is any subdirectory of an artist directory
    and **mp3** considers it empty if it contains no mp3 files.
 2. **-gaps** Check for gaps in the numbered mp3 files in an _album_ directory.
@@ -88,8 +88,8 @@ These arguments are common to all subcommands:
    this is **%HOMEPATH%\Music**.
 2. **-ext** The extension used to identify music files. By default, this is
    **.mp3**
-3. **-albums** Filter for which albums to process. By default, **'.*'**
-4. **-artists** Filter foe which artists to process. By default, **'.*'**
+3. **-albumFilter** Filter for which albums to process. By default, **'.*'**
+4. **-artistFilter** Filter foe which artists to process. By default, **'.*'**
 
 ## Overriding Default Arguments
 
@@ -110,18 +110,18 @@ The **defaults.yaml** file may contain four blocks:
 1. **common** The **common** block may have up to four string key-value pairs,
    with each key controlling the default setting for its corresponding
    **common** argument:
-   1. **albums**
-   1. **artists**
+   1. **albumFilter**
+   1. **artistFilter**
    1. **ext**
    1. **topDir**
 1. **ls** The **ls** block may have up to four boolean key-value pairs and one
    string key-value pair, with each key controlling the default setting for its
    corresponding **ls** command argument:
-   1. **album**
    1. **annotate**
-   1. **artists**
+   1. **includeAlbums**
+   1. **includeArtists**
+   1. **includeTracks**
    1. **sort** must be set to **alpha** or **numeric**
-   1. **track**
 1. **repair** The **repair** block may have one boolean key-value pair,
    controlling the default setting for its corresponding **repair** command
    argument:
@@ -137,16 +137,16 @@ check:
     gaps:      false
     integrity: true
 common:
-    albums:  .*
-    artists: .* 
-    ext:     .mp3
-    topDir:  $HOMEPATH/Music
+    albumFilter:  .*
+    artistFilter: .* 
+    ext:          .mp3
+    topDir:       $HOMEPATH/Music
 ls:
-    album:    true
-    artist:   true
-    annotate: false
-    sort:     numeric
-    track:    false
+    annotate:       false
+    includeAlbums:  true
+    includeArtists: true
+    includeTracks:  false
+    sort:           numeric
 repair:
     dryRun: false
 ```

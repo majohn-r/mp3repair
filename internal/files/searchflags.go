@@ -25,8 +25,8 @@ type SearchFlags struct {
 const (
 	topDirectoryFlag  = "topDir"
 	fileExtensionFlag = "ext"
-	albumRegexFlag    = "albums"
-	artistRegexFlag   = "artists"
+	albumRegexFlag    = "albumFilter"
+	artistRegexFlag   = "artistFilter"
 	defaultRegex      = ".*"
 )
 
@@ -131,12 +131,12 @@ func (sf *SearchFlags) validate() (albumsFilter *regexp.Regexp, artistsFilter *r
 	if !sf.validateExtension() {
 		problemsExist = true
 	}
-	if filter, b := validateRegexp(*sf.albumRegex, "-albums"); b {
+	if filter, b := validateRegexp(*sf.albumRegex, "-albumFilter"); b {
 		problemsExist = true
 	} else {
 		albumsFilter = filter
 	}
-	if filter, b := validateRegexp(*sf.artistRegex, "-artists"); b {
+	if filter, b := validateRegexp(*sf.artistRegex, "-artistFilter"); b {
 		problemsExist = true
 	} else {
 		artistsFilter = filter

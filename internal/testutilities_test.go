@@ -244,23 +244,23 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 					if got := common.sMap["ext"]; got != ".mpeg" {
 						t.Errorf("CreateDefaultYamlFile() 'good test': common.ext got %s want %s", got, ".mpeg")
 					}
-					if got := common.sMap["albums"]; got != "^.*$" {
+					if got := common.sMap["albumFilter"]; got != "^.*$" {
 						t.Errorf("CreateDefaultYamlFile() 'good test': common.albums got %s want %s", got, "^.*$")
 					}
-					if got := common.sMap["artists"]; got != "^.*$" {
+					if got := common.sMap["artistFilter"]; got != "^.*$" {
 						t.Errorf("CreateDefaultYamlFile() 'good test': common.artists got %s want %s", got, "^.*$")
 					}
 				}
 				if ls := n.nMap["ls"]; ls == nil {
 					t.Error("CreateDefaultYamlFile() 'good test': node does not contain ls subtree")
 				} else {
-					if got := ls.bMap["album"]; got != false {
+					if got := ls.bMap["includeAlbums"]; got != false {
 						t.Errorf("CreateDefaultYamlFile() 'good test': ls.album got %t want %t", got, false)
 					}
-					if got := ls.bMap["artist"]; got != false {
+					if got := ls.bMap["includeArtists"]; got != false {
 						t.Errorf("CreateDefaultYamlFile() 'good test': ls.artist got %t want %t", got, false)
 					}
-					if got := ls.bMap["track"]; got != true {
+					if got := ls.bMap["includeTracks"]; got != true {
 						t.Errorf("CreateDefaultYamlFile() 'good test': ls.track got %t want %t", got, true)
 					}
 					if got := ls.bMap["annotate"]; got != true {
