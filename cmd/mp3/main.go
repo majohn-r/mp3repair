@@ -46,14 +46,16 @@ func report(w io.Writer, returnValue int) {
 func run(cmdlineArgs []string) (returnValue int) {
 	returnValue = 1
 	startTime := time.Now()
-	logrus.WithFields(logrus.Fields{"version": version, "created": creation}).Info("begin execution")
+	logrus.WithFields(logrus.Fields{
+		internal.FK_VERSION:   version,
+		internal.FK_TIMESTAMP: creation,
+	}).Info(internal.LOG_BEGIN_EXECUTION)
 	defer func() {
-		logrus.WithFields(logrus.Fields{"duration": time.Since(startTime)}).Info("end execution")
+		logrus.WithFields(logrus.Fields{
+			internal.FK_DURATION: time.Since(startTime),
+		}).Info(internal.LOG_END_EXECUTION)
 	}()
-	if cmd, args, err := subcommands.ProcessCommand(internal.ApplicationDataPath(), cmdlineArgs); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		logrus.Error(err)
-	} else {
+	if cmd, args, err := subcommands.ProcessCommand(internal.ApplicationDataPath(), cmdlineArgs); err == nil {
 		cmd.Exec(os.Stdout, args)
 		returnValue = 0
 	}
@@ -62,7 +64,6 @@ func run(cmdlineArgs []string) (returnValue int) {
 
 func initEnv(lookup func() []error) bool {
 	if errors := lookup(); len(errors) > 0 {
-		fmt.Fprintln(os.Stderr, internal.LOG_ENV_ISSUES_DETECTED)
 		for _, e := range errors {
 			fmt.Fprintln(os.Stderr, e)
 		}

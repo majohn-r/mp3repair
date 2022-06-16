@@ -36,7 +36,7 @@ func (p *postrepair) Exec(w io.Writer, args []string) {
 }
 
 func (p *postrepair) logFields() logrus.Fields {
-	return logrus.Fields{internal.LOG_COMMAND_NAME: p.name()}
+	return logrus.Fields{internal.FK_COMMAND_NAME: p.name()}
 }
 
 func (p *postrepair) runSubcommand(w io.Writer, s *files.Search) {
@@ -66,8 +66,8 @@ func (p *postrepair) runSubcommand(w io.Writer, s *files.Search) {
 func removeBackupDirectory(w io.Writer, d string, a *files.Album) {
 	if err := os.RemoveAll(d); err != nil {
 		logrus.WithFields(logrus.Fields{
-			internal.LOG_DIRECTORY: d,
-			internal.LOG_ERROR:     err,
+			internal.FK_DIRECTORY: d,
+			internal.FK_ERROR:     err,
 		}).Warn(internal.LOG_CANNOT_DELETE_DIRECTORY)
 		fmt.Fprintf(w, internal.USER_CANNOT_DELETE_DIRECTORY, d, err)
 	} else {

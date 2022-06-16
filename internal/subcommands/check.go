@@ -60,18 +60,12 @@ func (c *check) Exec(w io.Writer, args []string) {
 	}
 }
 
-const (
-	logEmptyFoldersFlag = "emptyFolders"
-	logIntegrityFlag    = "integrityAnalysis"
-	logTrackGapFlag     = "gapAnalysis"
-)
-
 func (c *check) logFields() logrus.Fields {
 	return logrus.Fields{
-		internal.LOG_COMMAND_NAME: c.name(),
-		logEmptyFoldersFlag:       *c.checkEmptyFolders,
-		logTrackGapFlag:           *c.checkGapsInTrackNumbering,
-		logIntegrityFlag:          *c.checkIntegrity,
+		internal.FK_COMMAND_NAME:            c.name(),
+		internal.FK_EMPTY_FOLDERS_FLAG:      *c.checkEmptyFolders,
+		internal.FK_GAP_ANALYSIS_FLAG:       *c.checkGapsInTrackNumbering,
+		internal.FK_INTEGRITY_ANALYSIS_FLAG: *c.checkIntegrity,
 	}
 }
 
@@ -127,7 +121,7 @@ func (a *artistWithIssues) hasIssues() bool {
 func (c *check) runSubcommand(w io.Writer, s *files.Search) {
 	if !*c.checkEmptyFolders && !*c.checkGapsInTrackNumbering && !*c.checkIntegrity {
 		fmt.Fprintf(os.Stderr, internal.USER_SPECIFIED_NO_WORK, c.name())
-		logrus.WithFields(c.logFields()).Error(internal.LOG_NOTHING_TO_DO)
+		logrus.WithFields(c.logFields()).Warn(internal.LOG_NOTHING_TO_DO)
 	} else {
 		logrus.WithFields(c.logFields()).Info(internal.LOG_EXECUTING_COMMAND)
 		artists, artistsWithEmptyIssues := c.performEmptyFolderAnalysis(w, s)
@@ -322,7 +316,7 @@ func (c *check) performEmptyFolderAnalysis(w io.Writer, s *files.Search) (artist
 	if *c.checkEmptyFolders {
 		artists = s.LoadUnfilteredData()
 		if len(artists) == 0 {
-			logrus.WithFields(s.LogFields(false)).Error(internal.LOG_NO_ARTIST_DIRECTORIES)
+			logrus.WithFields(s.LogFields(false)).Warn(internal.LOG_NO_ARTIST_DIRECTORIES)
 		}
 		conflictedArtists = createBareConflictedIssues(artists)
 		issuesFound := false

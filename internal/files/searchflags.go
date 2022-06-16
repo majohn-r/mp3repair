@@ -83,14 +83,19 @@ func (sf *SearchFlags) NewSearch() (s *Search) {
 func (sf *SearchFlags) validateTopLevelDirectory() bool {
 	if file, err := os.Stat(*sf.topDirectory); err != nil {
 		fmt.Fprintf(os.Stderr, internal.USER_CANNOT_READ_TOPDIR, *sf.topDirectory, err)
-		logrus.WithFields(logrus.Fields{internal.LOG_DIRECTORY: sf.topDirectory, internal.LOG_ERROR: err}).Error(internal.LOG_CANNOT_READ_DIRECTORY)
+		logrus.WithFields(logrus.Fields{
+			internal.FK_TOP_DIR_FLAG: sf.topDirectory,
+			internal.FK_ERROR:        err,
+		}).Warn(internal.LOG_CANNOT_READ_DIRECTORY)
 		return false
 	} else {
 		if file.IsDir() {
 			return true
 		} else {
 			fmt.Fprintf(os.Stderr, internal.USER_TOPDIR_NOT_A_DIRECTORY, *sf.topDirectory)
-			logrus.WithFields(logrus.Fields{internal.LOG_DIRECTORY: sf.topDirectory, internal.LOG_FLAG: "-topDir"}).Error(internal.LOG_NOT_A_DIRECTORY)
+			logrus.WithFields(logrus.Fields{
+				internal.FK_TOP_DIR_FLAG: sf.topDirectory,
+			}).Warn(internal.LOG_NOT_A_DIRECTORY)
 			return false
 		}
 	}
@@ -101,14 +106,19 @@ func (sf *SearchFlags) validateExtension() (valid bool) {
 	if !strings.HasPrefix(*sf.fileExtension, ".") || strings.Contains(strings.TrimPrefix(*sf.fileExtension, "."), ".") {
 		valid = false
 		fmt.Fprintf(os.Stderr, internal.USER_EXTENSION_INVALID_FORMAT, *sf.fileExtension)
-		logrus.WithFields(logrus.Fields{internal.LOG_EXTENSION: sf.fileExtension, internal.LOG_FLAG: "-ext"}).Error(internal.LOG_INVALID_EXTENSION_FORMAT)
+		logrus.WithFields(logrus.Fields{
+			internal.FK_FILE_EXTENSION_FLAG: sf.fileExtension,
+		}).Warn(internal.LOG_INVALID_EXTENSION_FORMAT)
 	}
 	var e error
 	trackNameRegex, e = regexp.Compile("^\\d+[\\s-].+\\." + strings.TrimPrefix(*sf.fileExtension, ".") + "$")
 	if e != nil {
 		valid = false
 		fmt.Fprintf(os.Stderr, internal.USER_EXTENSION_GARBLED, *sf.fileExtension, e)
-		logrus.WithFields(logrus.Fields{internal.LOG_EXTENSION: sf.fileExtension, internal.LOG_FLAG: "-ext", internal.LOG_ERROR: e}).Error(internal.LOG_GARBLED_EXTENSION)
+		logrus.WithFields(logrus.Fields{
+			internal.FK_FILE_EXTENSION_FLAG: sf.fileExtension,
+			internal.FK_ERROR:               e,
+		}).Warn(internal.LOG_GARBLED_EXTENSION)
 	}
 	return
 }
@@ -116,7 +126,10 @@ func (sf *SearchFlags) validateExtension() (valid bool) {
 func validateRegexp(pattern, name string) (filter *regexp.Regexp, badRegex bool) {
 	if f, err := regexp.Compile(pattern); err != nil {
 		fmt.Fprintf(os.Stderr, internal.USER_FILTER_GARBLED, name, pattern, err)
-		logrus.WithFields(logrus.Fields{internal.LOG_FILTER: name, internal.LOG_VALUE: pattern, internal.LOG_ERROR: err}).Error(internal.LOG_GARBLED_FILTER)
+		logrus.WithFields(logrus.Fields{
+			name:              pattern,
+			internal.FK_ERROR: err,
+		}).Warn(internal.LOG_GARBLED_FILTER)
 		badRegex = true
 	} else {
 		filter = f
@@ -131,12 +144,12 @@ func (sf *SearchFlags) validate() (albumsFilter *regexp.Regexp, artistsFilter *r
 	if !sf.validateExtension() {
 		problemsExist = true
 	}
-	if filter, b := validateRegexp(*sf.albumRegex, "-albumFilter"); b {
+	if filter, b := validateRegexp(*sf.albumRegex, internal.FK_ALBUM_FILTER_FLAG); b {
 		problemsExist = true
 	} else {
 		albumsFilter = filter
 	}
-	if filter, b := validateRegexp(*sf.artistRegex, "-artistFilter"); b {
+	if filter, b := validateRegexp(*sf.artistRegex, internal.FK_ARTIST_FILTER_FLAG); b {
 		problemsExist = true
 	} else {
 		artistsFilter = filter

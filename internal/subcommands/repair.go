@@ -50,7 +50,10 @@ func (r *repair) Exec(w io.Writer, args []string) {
 }
 
 func (r *repair) logFields() logrus.Fields {
-	return logrus.Fields{internal.LOG_COMMAND_NAME: r.name(), dryRunFlag: *r.dryRun}
+	return logrus.Fields{
+		internal.FK_COMMAND_NAME: r.name(),
+		internal.FK_DRY_RUN_FLAG: *r.dryRun,
+	}
 }
 
 func (r *repair) runSubcommand(w io.Writer, s *files.Search) {
@@ -125,9 +128,10 @@ func (r *repair) fixTracks(w io.Writer, tracks []*files.Track) {
 			fmt.Fprintf(w, "An error occurred fixing track %q\n", t)
 			logrus.WithFields(logrus.Fields{
 				internal.LOG_EXECUTING_COMMAND: r.name(),
-				internal.LOG_PATH:              t.String(),
-				internal.LOG_ERROR:             err,
-			}).Warn("attempt to edit track failed")
+				internal.FK_DIRECTORY:          t.Directory(),
+				internal.FK_FILE_NAME:          t.FileName(),
+				internal.FK_ERROR:              err,
+			}).Warn(internal.LOG_CANNOT_EDIT_TRACK)
 		} else {
 			fmt.Fprintf(w, "%q fixed\n", t)
 		}
@@ -153,11 +157,11 @@ func (r *repair) backupTrack(w io.Writer, t *files.Track) {
 		if err := t.Copy(destinationPath); err != nil {
 			fmt.Fprintf(w, "The track %q cannot be backed up.\n", t)
 			logrus.WithFields(logrus.Fields{
-				internal.LOG_COMMAND_NAME: r.name(),
-				"source":                  t.String,
-				"destination":             destinationPath,
-				internal.LOG_ERROR:        err,
-			}).Info("error backing up file")
+				internal.FK_COMMAND_NAME: r.name(),
+				internal.FK_SOURCE:       t.Path(),
+				internal.FK_DESTINATION:  destinationPath,
+				internal.FK_ERROR:        err,
+			}).Warn(internal.LOG_CANNOT_COPY_FILE)
 		} else {
 			fmt.Fprintf(w, "The track %q has been backed up to %q.\n", t, destinationPath)
 		}
@@ -171,10 +175,10 @@ func (r *repair) makeBackupDirectories(w io.Writer, paths []string) {
 			if err := internal.Mkdir(newPath); err != nil {
 				fmt.Fprintf(w, internal.USER_CANNOT_CREATE_DIRECTORY, newPath, err)
 				logrus.WithFields(logrus.Fields{
-					internal.LOG_COMMAND_NAME: r.name(),
-					internal.LOG_DIRECTORY:    newPath,
-					internal.LOG_ERROR:        err,
-				}).Info(internal.LOG_CANNOT_CREATE_DIRECTORY)
+					internal.FK_COMMAND_NAME: r.name(),
+					internal.FK_DIRECTORY:    newPath,
+					internal.FK_ERROR:        err,
+				}).Warn(internal.LOG_CANNOT_CREATE_DIRECTORY)
 			}
 		}
 	}

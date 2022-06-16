@@ -73,27 +73,21 @@ func (l *ls) Exec(w io.Writer, args []string) {
 	}
 }
 
-const (
-	logAlbumsFlag  = "includeAlbums"
-	logArtistsFlag = "includeArtists"
-	logSortingFlag = "trackSorting"
-	logTracksFlag  = "includeTracks"
-)
-
 func (l *ls) logFields() logrus.Fields {
 	return logrus.Fields{
-		internal.LOG_COMMAND_NAME: l.name(),
-		logAlbumsFlag:             *l.includeAlbums,
-		logArtistsFlag:            *l.includeArtists,
-		logTracksFlag:             *l.includeTracks,
-		logSortingFlag:            *l.trackSorting,
+		internal.FK_COMMAND_NAME:           l.name(),
+		internal.FK_INCLUDE_ALBUMS_FLAG:    *l.includeAlbums,
+		internal.FK_INCLUDE_ARTISTS_FLAG:   *l.includeArtists,
+		internal.FK_INCLUDE_TRACKS_FLAG:    *l.includeTracks,
+		internal.FK_TRACK_SORTING_FLAG:     *l.trackSorting,
+		internal.FK_ANNOTATE_LISTINGS_FLAG: *l.annotateListings,
 	}
 }
 
 func (l *ls) runSubcommand(w io.Writer, s *files.Search) {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
 		fmt.Fprintf(os.Stderr, internal.USER_SPECIFIED_NO_WORK, l.name())
-		logrus.WithFields(l.logFields()).Error(internal.LOG_NOTHING_TO_DO)
+		logrus.WithFields(l.logFields()).Warn(internal.LOG_NOTHING_TO_DO)
 	} else {
 		logrus.WithFields(l.logFields()).Info(internal.LOG_EXECUTING_COMMAND)
 		if *l.includeTracks {
@@ -165,7 +159,11 @@ func (l *ls) validateTrackSorting() bool {
 	switch *l.trackSorting {
 	case "numeric":
 		if !*l.includeAlbums {
-			logrus.Warn("numeric track sorting does not make sense without listing albums")
+			// TODO: why isn't this presented to the user? it's their fault!
+			logrus.WithFields(logrus.Fields{
+				internal.FK_TRACK_SORTING_FLAG:  *l.trackSorting,
+				internal.FK_INCLUDE_ALBUMS_FLAG: *l.includeAlbums,
+			}).Warn(internal.LOG_SORTING_OPTION_UNACCEPTABLE)
 			preferredValue := "alpha"
 			l.trackSorting = &preferredValue
 			return true
@@ -174,9 +172,8 @@ func (l *ls) validateTrackSorting() bool {
 	default:
 		fmt.Fprintf(os.Stderr, internal.USER_UNRECOGNIZED_VALUE, "-sort", *l.trackSorting)
 		logrus.WithFields(logrus.Fields{
-			internal.LOG_COMMAND_NAME: l.name(),
-			internal.LOG_FLAG:         "-sort",
-			internal.LOG_VALUE:        *l.trackSorting,
+			internal.FK_COMMAND_NAME:       l.name(),
+			internal.FK_TRACK_SORTING_FLAG: *l.trackSorting,
 		}).Warn(internal.LOG_INVALID_FLAG_SETTING)
 		var preferredValue string
 		switch *l.includeAlbums {

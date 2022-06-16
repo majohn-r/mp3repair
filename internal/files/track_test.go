@@ -130,7 +130,7 @@ func TestTrack_setTagReadError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.tr.setTagReadError()
+			tt.tr.setTagReadErrorCode()
 			if tt.tr.track != trackUnknownTagReadError {
 				t.Errorf("Track.setTagReadError() failed to set TaggedTrack: %d", tt.tr.track)
 			}
@@ -147,7 +147,7 @@ func TestTrack_setTagFormatError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.tr.setTagFormatError()
+			tt.tr.setTagFormatErrorCode()
 			if tt.tr.track != trackUnknownFormatError {
 				t.Errorf("Track.setTagFormatError() failed to set TaggedTrack: %d", tt.tr.track)
 			}
@@ -985,6 +985,69 @@ func TestParseTrackNameForTesting(t *testing.T) {
 			}
 			if gotTrackNumber != tt.wantTrackNumber {
 				t.Errorf("ParseTrackNameForTesting() gotTrackNumber = %v, want %v", gotTrackNumber, tt.wantTrackNumber)
+			}
+		})
+	}
+}
+
+func TestTrack_Path(t *testing.T) {
+	tests := []struct {
+		name string
+		tr   *Track
+		want string
+	}{
+		{
+			name: "typical",
+			tr:   &Track{path: "Music/my artist/my album/03 track.mp3"},
+			want: "Music/my artist/my album/03 track.mp3",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.tr.Path(); got != tt.want {
+				t.Errorf("Track.Path() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTrack_Directory(t *testing.T) {
+	tests := []struct {
+		name string
+		tr   *Track
+		want string
+	}{
+		{
+			name: "typical",
+			tr:   &Track{path: "Music/my artist/my album/03 track.mp3"},
+			want: "Music\\my artist\\my album",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.tr.Directory(); got != tt.want {
+				t.Errorf("Track.Directory() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTrack_FileName(t *testing.T) {
+	tests := []struct {
+		name string
+		tr   *Track
+		want string
+	}{
+		{
+			name: "typical",
+			tr:   &Track{path: "Music/my artist/my album/03 track.mp3"},
+			want: "03 track.mp3",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.tr.FileName(); got != tt.want {
+				t.Errorf("Track.FileName() = %v, want %v", got, tt.want)
 			}
 		})
 	}

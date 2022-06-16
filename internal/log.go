@@ -14,29 +14,45 @@ import (
 )
 
 const (
-	logFilePrefix    = "mp3."
+	logFilePrefix    = appName + "."
 	logFileExtension = ".log"
 	logFileTemplate  = logFilePrefix + "%Y%m%d" + logFileExtension
-	symlinkName      = "latest.log"
+	symlinkName      = "latest" + logFileExtension
 	maxLogFiles      = 10
 )
 
-// constants for log fields
+// constants for log field keys
 const (
-	LOG_ALBUM_FILTER  = "albumFilter"
-	LOG_ALBUM_NAME    = "albumName"
-	LOG_ARTIST_FILTER = "artistFilter"
-	LOG_ARTIST_NAME   = "artistName"
-	LOG_COMMAND_NAME  = "command"
-	LOG_DIRECTORY     = "directory"
-	LOG_ERROR         = "error"
-	LOG_EXTENSION     = "extension"
-	LOG_FILE_NAME     = "fileName"
-	LOG_FILTER        = "filter"
-	LOG_FLAG          = "flag"
-	LOG_PATH          = "path"
-	LOG_TRACK_NAME    = "trackName"
-	LOG_VALUE         = "value"
+	FK_ALBUM_FILTER_FLAG       = "-albumFilter"
+	FK_ANNOTATE_LISTINGS_FLAG  = "-annotate"
+	FK_ARTIST_FILTER_FLAG      = "-artistFilter"
+	FK_DRY_RUN_FLAG            = "-dryRun"
+	FK_EMPTY_FOLDERS_FLAG      = "-emptyFolders"
+	FK_FILE_EXTENSION_FLAG     = "-ext"
+	FK_GAP_ANALYSIS_FLAG       = "-gapAnalysis"
+	FK_INCLUDE_ALBUMS_FLAG     = "-includeAlbums"
+	FK_INCLUDE_ARTISTS_FLAG    = "-includeArtists"
+	FK_INCLUDE_TRACKS_FLAG     = "-includeTracks"
+	FK_INTEGRITY_ANALYSIS_FLAG = "-integrityAnalysis"
+	FK_TOP_DIR_FLAG            = "-topDir"
+	FK_TRACK_SORTING_FLAG      = "-trackSorting"
+	FK_ALBUM_NAME              = "albumName"
+	FK_ARTIST_NAME             = "artistName"
+	FK_COMMAND_NAME            = "command"
+	FK_COUNT                   = "count"
+	FK_DESTINATION             = "destination"
+	FK_DIRECTORY               = "directory"
+	FK_DURATION                = "duration"
+	FK_ERROR                   = "error"
+	FK_FILE_NAME               = "fileName"
+	FK_KEY                     = "key"
+	FK_SOURCE                  = "source"
+	FK_TIMESTAMP               = "timeStamp"
+	FK_TRACK_NAME              = "trackName"
+	FK_TRCK_FRAME              = "TRCK"
+	FK_TYPE                    = "type"
+	FK_VALUE                   = "value"
+	FK_VERSION                 = "version"
 )
 
 // ConfigureLogging sets up logging
@@ -49,7 +65,10 @@ func ConfigureLogging(path string) *cronowriter.CronoWriter {
 // CleanupLogFiles cleans up old log files
 func CleanupLogFiles(path string) {
 	if files, err := ioutil.ReadDir(path); err != nil {
-		logrus.WithFields(logrus.Fields{LOG_PATH: path, LOG_ERROR: err}).Warn(LOG_CANNOT_READ_DIRECTORY)
+		logrus.WithFields(logrus.Fields{
+			FK_DIRECTORY: path,
+			FK_ERROR:     err,
+		}).Warn(LOG_CANNOT_READ_DIRECTORY)
 	} else {
 		var fileMap map[time.Time]fs.FileInfo = make(map[time.Time]fs.FileInfo)
 		var times []time.Time
@@ -67,11 +86,19 @@ func CleanupLogFiles(path string) {
 			})
 			limit := len(times) - maxLogFiles
 			for k := 0; k < limit; k++ {
-				logFilePath := filepath.Join(path, fileMap[times[k]].Name())
+				fileName := fileMap[times[k]].Name()
+				logFilePath := filepath.Join(path, fileName)
 				if err := os.Remove(logFilePath); err != nil {
-					logrus.WithFields(logrus.Fields{LOG_PATH: logFilePath, LOG_ERROR: err}).Warn(LOG_CANNOT_DELETE_FILE)
+					logrus.WithFields(logrus.Fields{
+						FK_DIRECTORY: path,
+						FK_FILE_NAME: fileName,
+						FK_ERROR:     err,
+					}).Warn(LOG_CANNOT_DELETE_FILE)
 				} else {
-					logrus.WithFields(logrus.Fields{LOG_PATH: logFilePath}).Info(LOG_FILE_DELETED)
+					logrus.WithFields(logrus.Fields{
+						FK_DIRECTORY: path,
+						FK_FILE_NAME: fileName,
+					}).Info(LOG_FILE_DELETED)
 				}
 			}
 		}

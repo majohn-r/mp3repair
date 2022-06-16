@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"mp3/internal"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
@@ -40,6 +41,21 @@ type Track struct {
 // String returns the track's path (implementation of Stringer interface)
 func (t *Track) String() string {
 	return t.path
+}
+
+// Path returns the track's full path
+func (t *Track) Path() string {
+	return t.path
+}
+
+// Directory returns the track's directory
+func (t *Track) Directory() string {
+	return filepath.Dir(t.path)
+}
+
+// FileName returns the track's full file name
+func (t *Track) FileName() string {
+	return filepath.Base(t.path)
 }
 
 // Name returns the simple name of the track
@@ -141,11 +157,11 @@ func (t *Track) needsTaggedData() bool {
 	return t.track == trackUnknownTagsNotRead
 }
 
-func (t *Track) setTagReadError() {
+func (t *Track) setTagReadErrorCode() {
 	t.track = trackUnknownTagReadError
 }
 
-func (t *Track) setTagFormatError() {
+func (t *Track) setTagFormatErrorCode() {
 	t.track = trackUnknownFormatError
 }
 
@@ -184,10 +200,12 @@ func toTrackNumber(s string) (i int, err error) {
 func (t *Track) SetTags(d *TaggedTrackData) {
 	if trackNumber, err := toTrackNumber(d.track); err != nil {
 		logrus.WithFields(logrus.Fields{
-			internal.LOG_PATH:  t.String,
-			"trackTag":         d.track,
-			internal.LOG_ERROR: err}).Warn("invalid track tag")
-		t.setTagFormatError()
+			internal.FK_DIRECTORY:  filepath.Dir(t.path),
+			internal.FK_FILE_NAME:  filepath.Base(t.path),
+			internal.FK_TRCK_FRAME: d.track,
+			internal.FK_ERROR:      err,
+		}).Warn(internal.LOG_INVALID_FRAME_VALUE)
+		t.setTagFormatErrorCode()
 	} else {
 		t.album = removeLeadingBOMs(d.album)
 		t.artist = removeLeadingBOMs(d.artist)
@@ -335,7 +353,14 @@ func isComparable(p nameTagPair) bool {
 	return true // rune by rune comparison was successful
 }
 
-var stdFrames = []string{"TALB", "TIT2", "TPE1", "TRCK"} // album, title, artist, track, in that order
+const (
+	albumFrame  = "TALB"
+	artistFrame = "TPE1"
+	titleFrame  = "TIT2"
+	trackFrame  = "TRCK"
+)
+
+var stdFrames = []string{albumFrame, artistFrame, titleFrame, trackFrame}
 
 // RawReadTags reads the tag from an MP3 file and collects interesting frame
 // values.
@@ -349,7 +374,7 @@ func RawReadTags(path string) (d *TaggedTrackData, err error) {
 		album:  tag.Album(),
 		artist: tag.Artist(),
 		title:  tag.Title(),
-		track:  tag.GetTextFrame("TRCK").Text,
+		track:  tag.GetTextFrame(trackFrame).Text,
 	}
 	return
 }
@@ -398,8 +423,12 @@ func (t *Track) readTags(reader func(string) (*TaggedTrackData, error)) {
 				<-semaphores // read to release a slot
 			}()
 			if tags, err := reader(t.path); err != nil {
-				logrus.WithFields(logrus.Fields{internal.LOG_PATH: t.String, internal.LOG_ERROR: err}).Warn(internal.LOG_CANNOT_READ_FILE)
-				t.setTagReadError()
+				logrus.WithFields(logrus.Fields{
+					internal.FK_DIRECTORY: filepath.Dir(t.path),
+					internal.FK_FILE_NAME: filepath.Base(t.path),
+					internal.FK_ERROR:     err,
+				}).Warn(internal.LOG_CANNOT_READ_FILE)
+				t.setTagReadErrorCode()
 			} else {
 				t.SetTags(tags)
 			}
@@ -434,7 +463,11 @@ func ParseTrackNameForTesting(name string) (simpleName string, trackNumber int) 
 
 func parseTrackName(name string, album *Album, ext string) (simpleName string, trackNumber int, valid bool) {
 	if !trackNameRegex.MatchString(name) {
-		logrus.WithFields(logrus.Fields{internal.LOG_TRACK_NAME: name, internal.LOG_ALBUM_NAME: album.name, internal.LOG_ARTIST_NAME: album.RecordingArtistName()}).Warn(internal.LOG_INVALID_TRACK_NAME)
+		logrus.WithFields(logrus.Fields{
+			internal.FK_TRACK_NAME:  name,
+			internal.FK_ALBUM_NAME:  album.name,
+			internal.FK_ARTIST_NAME: album.RecordingArtistName(),
+		}).Warn(internal.LOG_INVALID_TRACK_NAME)
 		return
 	}
 	wantDigit := true

@@ -19,19 +19,19 @@ func ReadConfigurationFile(path string) *Configuration {
 	var err error
 	if yfile, err = ioutil.ReadFile(filepath.Join(path, defaultConfigFileName)); err != nil {
 		logrus.WithFields(logrus.Fields{
-			LOG_PATH:      path,
-			LOG_FILE_NAME: defaultConfigFileName,
-			LOG_ERROR:     err,
+			FK_DIRECTORY: path,
+			FK_FILE_NAME: defaultConfigFileName,
+			FK_ERROR:     err,
 		}).Warn(LOG_CANNOT_READ_FILE)
 		return EmptyConfiguration()
 	}
 	data := make(map[string]interface{})
 	if err = yaml.Unmarshal(yfile, &data); err != nil {
 		logrus.WithFields(logrus.Fields{
-			LOG_PATH:      path,
-			LOG_FILE_NAME: defaultConfigFileName,
-			LOG_ERROR:     err,
-		}).Warn("cannot unmarshal configuration data")
+			FK_DIRECTORY: path,
+			FK_FILE_NAME: defaultConfigFileName,
+			FK_ERROR:     err,
+		}).Warn(LOG_CANNOT_UNMARSHAL_YAML)
 		return EmptyConfiguration()
 	}
 	return createConfiguration(data)
@@ -96,10 +96,10 @@ func createConfiguration(data map[string]interface{}) *Configuration {
 			c.cMap[key] = createConfiguration(t)
 		default:
 			logrus.WithFields(logrus.Fields{
-				"key":   key,
-				"value": v,
-				"type":  fmt.Sprintf("%T", v),
-			}).Warn("unexpected value type found")
+				FK_KEY:   key,
+				FK_VALUE: v,
+				FK_TYPE:  fmt.Sprintf("%T", v),
+			}).Warn(LOG_UNEXPECTED_VALUE_TYPE)
 			c.sMap[key] = fmt.Sprintf("%v", v)
 		}
 	}

@@ -66,15 +66,15 @@ func (s *Search) LoadUnfilteredData() (artists []*Artist) {
 func (s *Search) LogFields(includeFilters bool) logrus.Fields {
 	if includeFilters {
 		return logrus.Fields{
-			internal.LOG_DIRECTORY:     s.topDirectory,
-			internal.LOG_EXTENSION:     s.targetExtension,
-			internal.LOG_ALBUM_FILTER:  s.albumFilter,
-			internal.LOG_ARTIST_FILTER: s.artistFilter,
+			internal.FK_TOP_DIR_FLAG:        s.topDirectory,
+			internal.FK_FILE_EXTENSION_FLAG: s.targetExtension,
+			internal.FK_ALBUM_FILTER_FLAG:   s.albumFilter,
+			internal.FK_ARTIST_FILTER_FLAG:  s.artistFilter,
 		}
 	} else {
 		return logrus.Fields{
-			internal.LOG_DIRECTORY: s.topDirectory,
-			internal.LOG_EXTENSION: s.targetExtension,
+			internal.FK_TOP_DIR_FLAG:        s.topDirectory,
+			internal.FK_FILE_EXTENSION_FLAG: s.targetExtension,
 		}
 	}
 }
@@ -165,9 +165,9 @@ func readDirectory(dir string) (files []fs.FileInfo, err error) {
 	files, err = ioutil.ReadDir(dir)
 	if err != nil {
 		logrus.WithFields(logrus.Fields{
-			internal.LOG_DIRECTORY: dir,
-			internal.LOG_ERROR:     err,
-		}).Error(internal.LOG_CANNOT_READ_DIRECTORY)
+			internal.FK_DIRECTORY: dir,
+			internal.FK_ERROR:     err,
+		}).Warn(internal.LOG_CANNOT_READ_DIRECTORY)
 	}
 	return
 }

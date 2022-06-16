@@ -19,8 +19,8 @@ func CreateAppSpecificPath(topDir string) string {
 var (
 	appDataPath   string
 	tmpFolder     string
-	noTempFolder  error = fmt.Errorf(LOG_NO_TEMP_DIRECTORY)
-	noAppDataPath error = fmt.Errorf(LOG_NO_APP_DATA_PATH)
+	noTempFolder  error = fmt.Errorf(ERROR_NO_TEMP_DIRECTORY)
+	noAppDataPath error = fmt.Errorf(ERROR_NO_APP_DATA_PATH)
 )
 
 // ApplicationDataPath returns the application data path
