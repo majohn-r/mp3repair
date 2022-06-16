@@ -10,6 +10,7 @@ const (
 	LI_PARAMETERS_OVERRIDDEN    = "one or more flags were overridden"
 	LI_READING_FILTERED_FILES   = "reading filtered music files"
 	LI_READING_UNFILTERED_FILES = "reading unfiltered music files"
+	LI_CONFIGURATION_FILE_READ  = "read configuration file"
 )
 
 // warning log messages

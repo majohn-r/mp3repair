@@ -38,6 +38,7 @@ const (
 	FK_TRACK_SORTING_FLAG      = "-trackSorting"
 	FK_ALBUM_NAME              = "albumName"
 	FK_ARTIST_NAME             = "artistName"
+	FK_COMMAND_LINE_ARGUMENTS  = "args"
 	FK_COMMAND_NAME            = "command"
 	FK_COUNT                   = "count"
 	FK_DESTINATION             = "destination"

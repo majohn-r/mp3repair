@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
@@ -34,7 +35,27 @@ func ReadConfigurationFile(path string) *Configuration {
 		}).Warn(LW_CANNOT_UNMARSHAL_YAML)
 		return EmptyConfiguration()
 	}
-	return createConfiguration(data)
+	configuration := createConfiguration(data)
+	logrus.WithFields(logrus.Fields{
+		FK_DIRECTORY: path,
+		FK_FILE_NAME: defaultConfigFileName,
+		FK_VALUE:     configuration,
+	}).Info(LI_CONFIGURATION_FILE_READ)
+	return configuration
+}
+
+func (c *Configuration) String() string {
+	var output []string
+	if len(c.bMap) != 0 {
+		output = append(output, fmt.Sprintf("%v", c.bMap))
+	}
+	if len(c.sMap) != 0 {
+		output = append(output, fmt.Sprintf("%v", c.sMap))
+	}
+	if len(c.cMap) != 0 {
+		output = append(output, fmt.Sprintf("%v", c.cMap))
+	}
+	return strings.Join(output, ", ")
 }
 
 func EmptyConfiguration() *Configuration {

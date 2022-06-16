@@ -47,8 +47,9 @@ func run(cmdlineArgs []string) (returnValue int) {
 	returnValue = 1
 	startTime := time.Now()
 	logrus.WithFields(logrus.Fields{
-		internal.FK_VERSION:   version,
-		internal.FK_TIMESTAMP: creation,
+		internal.FK_VERSION:                version,
+		internal.FK_TIMESTAMP:              creation,
+		internal.FK_COMMAND_LINE_ARGUMENTS: cmdlineArgs,
 	}).Info(internal.LI_BEGIN_EXECUTION)
 	defer func() {
 		logrus.WithFields(logrus.Fields{
