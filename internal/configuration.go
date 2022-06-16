@@ -22,7 +22,7 @@ func ReadConfigurationFile(path string) *Configuration {
 			FK_DIRECTORY: path,
 			FK_FILE_NAME: defaultConfigFileName,
 			FK_ERROR:     err,
-		}).Warn(LOG_CANNOT_READ_FILE)
+		}).Warn(LW_CANNOT_READ_FILE)
 		return EmptyConfiguration()
 	}
 	data := make(map[string]interface{})
@@ -31,7 +31,7 @@ func ReadConfigurationFile(path string) *Configuration {
 			FK_DIRECTORY: path,
 			FK_FILE_NAME: defaultConfigFileName,
 			FK_ERROR:     err,
-		}).Warn(LOG_CANNOT_UNMARSHAL_YAML)
+		}).Warn(LW_CANNOT_UNMARSHAL_YAML)
 		return EmptyConfiguration()
 	}
 	return createConfiguration(data)
@@ -99,7 +99,7 @@ func createConfiguration(data map[string]interface{}) *Configuration {
 				FK_KEY:   key,
 				FK_VALUE: v,
 				FK_TYPE:  fmt.Sprintf("%T", v),
-			}).Warn(LOG_UNEXPECTED_VALUE_TYPE)
+			}).Warn(LW_UNEXPECTED_VALUE_TYPE)
 			c.sMap[key] = fmt.Sprintf("%v", v)
 		}
 	}

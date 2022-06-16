@@ -204,7 +204,7 @@ func (t *Track) SetTags(d *TaggedTrackData) {
 			internal.FK_FILE_NAME:  filepath.Base(t.path),
 			internal.FK_TRCK_FRAME: d.track,
 			internal.FK_ERROR:      err,
-		}).Warn(internal.LOG_INVALID_FRAME_VALUE)
+		}).Warn(internal.LW_INVALID_FRAME_VALUE)
 		t.setTagFormatErrorCode()
 	} else {
 		t.album = removeLeadingBOMs(d.album)
@@ -427,7 +427,7 @@ func (t *Track) readTags(reader func(string) (*TaggedTrackData, error)) {
 					internal.FK_DIRECTORY: filepath.Dir(t.path),
 					internal.FK_FILE_NAME: filepath.Base(t.path),
 					internal.FK_ERROR:     err,
-				}).Warn(internal.LOG_CANNOT_READ_FILE)
+				}).Warn(internal.LW_CANNOT_READ_FILE)
 				t.setTagReadErrorCode()
 			} else {
 				t.SetTags(tags)
@@ -467,7 +467,7 @@ func parseTrackName(name string, album *Album, ext string) (simpleName string, t
 			internal.FK_TRACK_NAME:  name,
 			internal.FK_ALBUM_NAME:  album.name,
 			internal.FK_ARTIST_NAME: album.RecordingArtistName(),
-		}).Warn(internal.LOG_INVALID_TRACK_NAME)
+		}).Warn(internal.LW_INVALID_TRACK_NAME)
 		return
 	}
 	wantDigit := true

@@ -121,9 +121,9 @@ func (a *artistWithIssues) hasIssues() bool {
 func (c *check) runSubcommand(w io.Writer, s *files.Search) {
 	if !*c.checkEmptyFolders && !*c.checkGapsInTrackNumbering && !*c.checkIntegrity {
 		fmt.Fprintf(os.Stderr, internal.USER_SPECIFIED_NO_WORK, c.name())
-		logrus.WithFields(c.logFields()).Warn(internal.LOG_NOTHING_TO_DO)
+		logrus.WithFields(c.logFields()).Warn(internal.LW_NOTHING_TO_DO)
 	} else {
-		logrus.WithFields(c.logFields()).Info(internal.LOG_EXECUTING_COMMAND)
+		logrus.WithFields(c.logFields()).Info(internal.LI_EXECUTING_COMMAND)
 		artists, artistsWithEmptyIssues := c.performEmptyFolderAnalysis(w, s)
 		artists = c.filterArtists(s, artists)
 		artistsWithGaps := c.performGapAnalysis(w, artists)
@@ -316,7 +316,7 @@ func (c *check) performEmptyFolderAnalysis(w io.Writer, s *files.Search) (artist
 	if *c.checkEmptyFolders {
 		artists = s.LoadUnfilteredData()
 		if len(artists) == 0 {
-			logrus.WithFields(s.LogFields(false)).Warn(internal.LOG_NO_ARTIST_DIRECTORIES)
+			logrus.WithFields(s.LogFields(false)).Warn(internal.LW_NO_ARTIST_DIRECTORIES)
 		}
 		conflictedArtists = createBareConflictedIssues(artists)
 		issuesFound := false

@@ -1,6 +1,7 @@
 package subcommands
 
 import (
+	"bytes"
 	"flag"
 	"mp3/internal"
 	"reflect"
@@ -20,124 +21,146 @@ func TestProcessCommand(t *testing.T) {
 		args        []string
 	}
 	tests := []struct {
-		name            string
-		args            args
-		wantCmd         CommandProcessor
-		wantCallingArgs []string
-		wantErr         error
+		name  string
+		args  args
+		want  CommandProcessor
+		want1 []string
+		want2 bool
+		wantW string
 	}{
 		{
-			name:            "call ls",
-			args:            args{appDataPath: ".", args: []string{"mp3.exe", "ls", "-track=true"}},
-			wantCmd:         newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
-			wantCallingArgs: []string{"-track=true"},
+			name:  "call ls",
+			args:  args{appDataPath: ".", args: []string{"mp3.exe", "ls", "-track=true"}},
+			want:  newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
+			want1: []string{"-track=true"},
+			want2: true,
+			wantW: "",
 		},
 		{
-			name:            "call check",
-			args:            args{appDataPath: ".", args: []string{"mp3.exe", "check", "-integrity=false"}},
-			wantCmd:         newCheck(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ExitOnError)),
-			wantCallingArgs: []string{"-integrity=false"},
+			name:  "call check",
+			args:  args{appDataPath: ".", args: []string{"mp3.exe", "check", "-integrity=false"}},
+			want:  newCheck(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ExitOnError)),
+			want1: []string{"-integrity=false"},
+			want2: true,
+			wantW: "",
 		},
 		{
-			name:            "call repair",
-			args:            args{appDataPath: ".", args: []string{"mp3.exe", "repair"}},
-			wantCmd:         newRepair(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ExitOnError)),
-			wantCallingArgs: []string{},
+			name:  "call repair",
+			args:  args{appDataPath: ".", args: []string{"mp3.exe", "repair"}},
+			want:  newRepair(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ExitOnError)),
+			want1: []string{},
+			want2: true,
+			wantW: "",
 		},
 		{
-			name:            "call postRepair",
-			args:            args{appDataPath: ".", args: []string{"mp3.exe", "postRepair"}},
-			wantCmd:         newPostRepair(internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ExitOnError)),
-			wantCallingArgs: []string{},
+			name:  "call postRepair",
+			args:  args{appDataPath: ".", args: []string{"mp3.exe", "postRepair"}},
+			want:  newPostRepair(internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ExitOnError)),
+			want1: []string{},
+			want2: true,
+			wantW: "",
 		},
 		{
-			name:            "call default command",
-			args:            args{appDataPath: ".", args: []string{"mp3.exe"}},
-			wantCmd:         newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
-			wantCallingArgs: []string{"ls"},
+			name:  "call default command",
+			args:  args{appDataPath: ".", args: []string{"mp3.exe"}},
+			want:  newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
+			want1: []string{"ls"},
+			want2: true,
+			wantW: "",
 		},
 		{
-			name:    "call invalid command",
-			args:    args{appDataPath: ".", args: []string{"mp3.exe", "no such command"}},
-			wantErr: noSuchSubcommandError("no such command", []string{"check", "ls", "postRepair", "repair"}),
+			name:  "call invalid command",
+			args:  args{appDataPath: ".", args: []string{"mp3.exe", "no such command"}},
+			want:  nil,
+			want1: nil,
+			want2: false,
+			wantW: "There is no command named \"no such command\"; valid commands include [check ls postRepair repair].\n",
 		},
 		{
-			name:            "[#38] pass arguments to default subcommand",
-			args:            args{appDataPath: ".", args: []string{"mp3.exe", "-album", "-artist", "-track"}},
-			wantCmd:         newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
-			wantCallingArgs: []string{"-album", "-artist", "-track"},
+			name:  "pass arguments to default subcommand",
+			args:  args{appDataPath: ".", args: []string{"mp3.exe", "-album", "-artist", "-track"}},
+			want:  newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
+			want1: []string{"-album", "-artist", "-track"},
+			want2: true,
+			wantW: "",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotCmd, gotCallingArgs, gotErr := ProcessCommand(tt.args.appDataPath, tt.args.args)
-			if !equalErrors(gotErr, tt.wantErr) {
-				t.Errorf("%s gotErr = %v, want %v", fnName, gotErr, tt.wantErr)
-			}
-			if gotCmd == nil {
-				if tt.wantCmd != nil {
-					t.Errorf("%s gotCmd = %v, want %v", fnName, gotCmd, tt.wantCmd)
+			w := &bytes.Buffer{}
+			got, got1, got2 := ProcessCommand(w, tt.args.appDataPath, tt.args.args)
+			if got == nil {
+				if tt.want != nil {
+					t.Errorf("%s got = %v, want %v", fnName, got, tt.want)
 				}
 			} else {
-				if tt.wantCmd == nil {
-					t.Errorf("%s gotCmd = %v, want %v", fnName, gotCmd, tt.wantCmd)
+				if tt.want == nil {
+					t.Errorf("%s got = %v, want %v", fnName, got, tt.want)
 				} else {
-					if gotCmd.name() != tt.wantCmd.name() {
-						t.Errorf("%s gotCmd name = %v, want name %v", fnName, gotCmd.name(), tt.wantCmd.name())
+					if got.name() != tt.want.name() {
+						t.Errorf("%s got name = %v, want name %v", fnName, got.name(), tt.want.name())
 					}
 				}
 			}
-			if !reflect.DeepEqual(gotCallingArgs, tt.wantCallingArgs) {
-				t.Errorf("%s gotCallingArgs = %v, want %v", fnName, gotCallingArgs, tt.wantCallingArgs)
+			if !reflect.DeepEqual(got1, tt.want1) {
+				t.Errorf("%s got1 = %v, want %v", fnName, got1, tt.want1)
+			}
+			if got2 != tt.want2 {
+				t.Errorf("%s got2 = %v, want %v", fnName, got2, tt.want2)
+			}
+			if gotW := w.String(); gotW != tt.wantW {
+				t.Errorf("%s gotW = %v, want %v", fnName, gotW, tt.wantW)
 			}
 		})
 	}
 }
 
-func equalErrors(gotErr error, wantErr error) bool {
-	if gotErr == nil {
-		return wantErr == nil
-	}
-	if wantErr == nil {
-		return false
-	}
-	return gotErr.Error() == wantErr.Error()
-}
-
 func Test_selectSubCommand(t *testing.T) {
-	fnName := "selectSubCommand()"
 	type args struct {
-		c            *internal.Configuration
-		initializers []subcommandInitializer
-		args         []string
+		c    *internal.Configuration
+		i    []subcommandInitializer
+		args []string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr error
+		name            string
+		args            args
+		wantCmd         CommandProcessor
+		wantCallingArgs []string
+		wantOk          bool
+		wantW           string
 	}{
 		// only handling error cases here, success cases are handled by TestProcessCommand
 		{
-			name:    "no initializers",
-			args:    args{},
-			wantErr: internalErrorNoSubCommandInitializers(),
+			name:  "no initializers",
+			args:  args{},
+			wantW: "An internal error has occurred: no commands are defined!\n",
 		},
 		{
-			name:    "no default initializers",
-			args:    args{initializers: []subcommandInitializer{{}}},
-			wantErr: internalErrorIncorrectNumberOfDefaultSubcommands(0),
+			name:  "no default initializers",
+			args:  args{i: []subcommandInitializer{{}}},
+			wantW: "An internal error has occurred: there are 0 default commands!\n",
 		},
 		{
-			name:    "no default initializers",
-			args:    args{initializers: []subcommandInitializer{{defaultSubCommand: true}, {defaultSubCommand: true}}},
-			wantErr: internalErrorIncorrectNumberOfDefaultSubcommands(2),
+			name:  "too many default initializers",
+			args:  args{i: []subcommandInitializer{{defaultSubCommand: true}, {defaultSubCommand: true}}},
+			wantW: "An internal error has occurred: there are 2 default commands!\n",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, _, gotErr := selectSubCommand(tt.args.c, tt.args.initializers, tt.args.args)
-			if !equalErrors(gotErr, tt.wantErr) {
-				t.Errorf("%s gotErr = %v, want %v", fnName, gotErr, tt.wantErr)
+			w := &bytes.Buffer{}
+			gotCmd, gotCallingArgs, gotOk := selectSubCommand(w, tt.args.c, tt.args.i, tt.args.args)
+			if !reflect.DeepEqual(gotCmd, tt.wantCmd) {
+				t.Errorf("selectSubCommand() gotCmd = %v, want %v", gotCmd, tt.wantCmd)
+			}
+			if !reflect.DeepEqual(gotCallingArgs, tt.wantCallingArgs) {
+				t.Errorf("selectSubCommand() gotCallingArgs = %v, want %v", gotCallingArgs, tt.wantCallingArgs)
+			}
+			if gotOk != tt.wantOk {
+				t.Errorf("selectSubCommand() gotOk = %v, want %v", gotOk, tt.wantOk)
+			}
+			if gotW := w.String(); gotW != tt.wantW {
+				t.Errorf("selectSubCommand() gotW = %v, want %v", gotW, tt.wantW)
 			}
 		})
 	}

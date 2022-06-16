@@ -2,68 +2,12 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
+	"io"
 	"os"
 	"testing"
 	"time"
 )
-
-func Test_initLogging(t *testing.T) {
-	fnName := "initLogging()"
-	type args struct {
-		parentDir string
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{name: "current directory", args: args{parentDir: "."}, want: true},
-		{name: "non-existent directory", args: args{parentDir: "main_test.go"}, want: false},
-	}
-	defer func() {
-		logger.Close()
-		dirName := "mp3"
-		if err := os.RemoveAll(dirName); err != nil {
-			t.Errorf("%s error destroying test directory %q: %v", fnName, dirName, err)
-		}
-	}()
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := initLogging(tt.args.parentDir); got != tt.want {
-				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_initEnv(t *testing.T) {
-	fnName := "initEnv()"
-	type args struct {
-		lookup func() []error
-	}
-	tests := []struct {
-		name string
-		args args
-		want bool
-	}{
-		{name: "no errors", args: args{lookup: func() []error { return nil }}, want: true},
-		{name: "process errors", args: args{lookup: func() []error {
-			var e []error
-			e = append(e, errors.New("error 1"))
-			e = append(e, errors.New("error 2"))
-			return e
-		}}, want: false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := initEnv(tt.args.lookup); got != tt.want {
-				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
-			}
-		})
-	}
-}
 
 func Test_run(t *testing.T) {
 	type args struct {
@@ -106,6 +50,72 @@ func Test_report(t *testing.T) {
 			report(w, tt.args.returnValue)
 			if gotW := w.String(); gotW != tt.wantW {
 				t.Errorf("report() = %v, want %v", gotW, tt.wantW)
+			}
+		})
+	}
+}
+
+func Test_initEnv(t *testing.T) {
+	type args struct {
+		lookup func(w io.Writer) bool
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  bool
+		wantW string
+	}{
+		{name: "no errors", args: args{lookup: func(w io.Writer) bool { return true }}, want: true},
+		{name: "process errors", args: args{lookup: func(w io.Writer) bool {
+			return false
+		}}, want: false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := &bytes.Buffer{}
+			if got := initEnv(w, tt.args.lookup); got != tt.want {
+				t.Errorf("initEnv() = %v, want %v", got, tt.want)
+			}
+			if gotW := w.String(); gotW != tt.wantW {
+				t.Errorf("initEnv() = %v, want %v", gotW, tt.wantW)
+			}
+		})
+	}
+}
+
+func Test_initLogging(t *testing.T) {
+	defer func() {
+		logger.Close()
+		dirName := "mp3"
+		if err := os.RemoveAll(dirName); err != nil {
+			t.Errorf("initLogging() error destroying test directory %q: %v", dirName, err)
+		}
+	}()
+	type args struct {
+		parentDir string
+	}
+	tests := []struct {
+		name  string
+		args  args
+		want  bool
+		wantW string
+	}{
+		{name: "current directory", args: args{parentDir: "."}, want: true, wantW: ""},
+		{
+			name:  "non-existent directory",
+			args:  args{parentDir: "main_test.go"},
+			want:  false,
+			wantW: `The directory "main_test.go\\mp3\\logs" cannot be created: mkdir main_test.go: The system cannot find the path specified..` + "\n",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			w := &bytes.Buffer{}
+			if got := initLogging(w, tt.args.parentDir); got != tt.want {
+				t.Errorf("initLogging() = %v, want %v", got, tt.want)
+			}
+			if gotW := w.String(); gotW != tt.wantW {
+				t.Errorf("initLogging() = %v, want %v", gotW, tt.wantW)
 			}
 		})
 	}

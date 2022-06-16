@@ -87,12 +87,12 @@ func (l *ls) logFields() logrus.Fields {
 func (l *ls) runSubcommand(w io.Writer, s *files.Search) {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
 		fmt.Fprintf(os.Stderr, internal.USER_SPECIFIED_NO_WORK, l.name())
-		logrus.WithFields(l.logFields()).Warn(internal.LOG_NOTHING_TO_DO)
+		logrus.WithFields(l.logFields()).Warn(internal.LW_NOTHING_TO_DO)
 	} else {
-		logrus.WithFields(l.logFields()).Info(internal.LOG_EXECUTING_COMMAND)
+		logrus.WithFields(l.logFields()).Info(internal.LI_EXECUTING_COMMAND)
 		if *l.includeTracks {
 			if l.validateTrackSorting() {
-				logrus.WithFields(l.logFields()).Info(internal.LOG_PARAMETERS_OVERRIDDEN)
+				logrus.WithFields(l.logFields()).Info(internal.LI_PARAMETERS_OVERRIDDEN)
 			}
 		}
 		artists := s.LoadData()
@@ -163,7 +163,7 @@ func (l *ls) validateTrackSorting() bool {
 			logrus.WithFields(logrus.Fields{
 				internal.FK_TRACK_SORTING_FLAG:  *l.trackSorting,
 				internal.FK_INCLUDE_ALBUMS_FLAG: *l.includeAlbums,
-			}).Warn(internal.LOG_SORTING_OPTION_UNACCEPTABLE)
+			}).Warn(internal.LW_SORTING_OPTION_UNACCEPTABLE)
 			preferredValue := "alpha"
 			l.trackSorting = &preferredValue
 			return true
@@ -174,7 +174,7 @@ func (l *ls) validateTrackSorting() bool {
 		logrus.WithFields(logrus.Fields{
 			internal.FK_COMMAND_NAME:       l.name(),
 			internal.FK_TRACK_SORTING_FLAG: *l.trackSorting,
-		}).Warn(internal.LOG_INVALID_FLAG_SETTING)
+		}).Warn(internal.LW_INVALID_FLAG_SETTING)
 		var preferredValue string
 		switch *l.includeAlbums {
 		case true:

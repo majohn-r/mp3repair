@@ -68,7 +68,7 @@ func CleanupLogFiles(path string) {
 		logrus.WithFields(logrus.Fields{
 			FK_DIRECTORY: path,
 			FK_ERROR:     err,
-		}).Warn(LOG_CANNOT_READ_DIRECTORY)
+		}).Warn(LW_CANNOT_READ_DIRECTORY)
 	} else {
 		var fileMap map[time.Time]fs.FileInfo = make(map[time.Time]fs.FileInfo)
 		var times []time.Time
@@ -93,12 +93,12 @@ func CleanupLogFiles(path string) {
 						FK_DIRECTORY: path,
 						FK_FILE_NAME: fileName,
 						FK_ERROR:     err,
-					}).Warn(LOG_CANNOT_DELETE_FILE)
+					}).Warn(LW_CANNOT_DELETE_FILE)
 				} else {
 					logrus.WithFields(logrus.Fields{
 						FK_DIRECTORY: path,
 						FK_FILE_NAME: fileName,
-					}).Info(LOG_FILE_DELETED)
+					}).Info(LI_FILE_DELETED)
 				}
 			}
 		}

@@ -23,8 +23,8 @@ var (
 
 func main() {
 	returnValue := 1
-	if initEnv(internal.LookupEnvVars) {
-		if initLogging(internal.TemporaryFileFolder()) {
+	if initEnv(os.Stderr, internal.LookupEnvVars) {
+		if initLogging(os.Stderr, internal.TemporaryFileFolder()) {
 			returnValue = run(os.Args)
 		}
 	}
@@ -49,36 +49,30 @@ func run(cmdlineArgs []string) (returnValue int) {
 	logrus.WithFields(logrus.Fields{
 		internal.FK_VERSION:   version,
 		internal.FK_TIMESTAMP: creation,
-	}).Info(internal.LOG_BEGIN_EXECUTION)
+	}).Info(internal.LI_BEGIN_EXECUTION)
 	defer func() {
 		logrus.WithFields(logrus.Fields{
 			internal.FK_DURATION: time.Since(startTime),
-		}).Info(internal.LOG_END_EXECUTION)
+		}).Info(internal.LI_END_EXECUTION)
 	}()
-	if cmd, args, err := subcommands.ProcessCommand(internal.ApplicationDataPath(), cmdlineArgs); err == nil {
+	if cmd, args, ok := subcommands.ProcessCommand(os.Stderr, internal.ApplicationDataPath(), cmdlineArgs); ok {
 		cmd.Exec(os.Stdout, args)
 		returnValue = 0
 	}
 	return
 }
 
-func initEnv(lookup func() []error) bool {
-	if errors := lookup(); len(errors) > 0 {
-		for _, e := range errors {
-			fmt.Fprintln(os.Stderr, e)
-		}
-		return false
-	}
-	return true
+func initEnv(w io.Writer, lookup func(w io.Writer) bool) bool {
+	return lookup(w)
 }
 
 // exposed so that unit tests can close the writer!
 var logger *cronowriter.CronoWriter
 
-func initLogging(parentDir string) bool {
+func initLogging(w io.Writer, parentDir string) bool {
 	path := filepath.Join(internal.CreateAppSpecificPath(parentDir), logDirName)
 	if err := os.MkdirAll(path, 0755); err != nil {
-		fmt.Fprintf(os.Stderr, internal.USER_CANNOT_CREATE_DIRECTORY, path, err)
+		fmt.Fprintf(w, internal.USER_CANNOT_CREATE_DIRECTORY, path, err)
 		return false
 	}
 	logger = internal.ConfigureLogging(path)

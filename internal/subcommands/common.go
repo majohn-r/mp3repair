@@ -1,12 +1,10 @@
 package subcommands
 
 import (
-	"errors"
 	"flag"
 	"fmt"
 	"io"
 	"mp3/internal"
-	"os"
 	"sort"
 	"strings"
 
@@ -24,19 +22,7 @@ type subcommandInitializer struct {
 	initializer       func(*internal.Configuration, *flag.FlagSet) CommandProcessor
 }
 
-func noSuchSubcommandError(commandName string, validNames []string) error {
-	return fmt.Errorf(internal.ERROR_NO_SUCH_COMMAND, commandName, validNames)
-}
-
-func internalErrorNoSubCommandInitializers() error {
-	return errors.New(internal.ERROR_NO_DEFAULT_COMMAND_DEFINED)
-}
-
-func internalErrorIncorrectNumberOfDefaultSubcommands(defaultInitializers int) error {
-	return fmt.Errorf(internal.ERROR_INCORRECT_NUMBER_OF_DEFAULT_COMMANDS_DEFINED, defaultInitializers)
-}
-
-func ProcessCommand(appDataPath string, args []string) (CommandProcessor, []string, error) {
+func ProcessCommand(w io.Writer, appDataPath string, args []string) (CommandProcessor, []string, bool) {
 	c := internal.ReadConfigurationFile(internal.CreateAppSpecificPath(appDataPath))
 	var initializers []subcommandInitializer
 	lsSubCommand := subcommandInitializer{name: "ls", defaultSubCommand: true, initializer: newLs}
@@ -44,16 +30,15 @@ func ProcessCommand(appDataPath string, args []string) (CommandProcessor, []stri
 	repairSubCommand := subcommandInitializer{name: "repair", initializer: newRepair}
 	postRepairSubCommand := subcommandInitializer{name: "postRepair", initializer: newPostRepair}
 	initializers = append(initializers, lsSubCommand, checkSubCommand, repairSubCommand, postRepairSubCommand)
-	return selectSubCommand(c, initializers, args)
+	return selectSubCommand(w, c, initializers, args)
 }
 
-func selectSubCommand(c *internal.Configuration, i []subcommandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, err error) {
+func selectSubCommand(w io.Writer, c *internal.Configuration, i []subcommandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, ok bool) {
 	if len(i) == 0 {
 		logrus.WithFields(logrus.Fields{
 			internal.FK_COUNT: 0,
-		}).Error(internal.LOG_COMMANDS_ERROR)
-		err = internalErrorNoSubCommandInitializers()
-		fmt.Fprintln(os.Stderr, internal.ERROR_NO_DEFAULT_COMMAND_DEFINED)
+		}).Error(internal.LE_COMMAND_COUNT)
+		fmt.Fprint(w, internal.USER_NO_COMMANDS_DEFINED)
 		return
 	}
 	var defaultInitializers int
@@ -67,10 +52,8 @@ func selectSubCommand(c *internal.Configuration, i []subcommandInitializer, args
 	if defaultInitializers != 1 {
 		logrus.WithFields(logrus.Fields{
 			internal.FK_COUNT: defaultInitializers,
-		}).Error(internal.LOG_DEFAULT_COMMANDS_ERROR)
-		err = internalErrorIncorrectNumberOfDefaultSubcommands(defaultInitializers)
-		msg := fmt.Sprintf(internal.ERROR_INCORRECT_NUMBER_OF_DEFAULT_COMMANDS_DEFINED, defaultInitializers)
-		fmt.Fprintln(os.Stderr, msg)
+		}).Error(internal.LE_DEFAULT_COMMAND_COUNT)
+		fmt.Fprintf(w, internal.USER_INCORRECT_NUMBER_OF_DEFAULT_COMMANDS_DEFINED, defaultInitializers)
 		return
 	}
 	processorMap := make(map[string]CommandProcessor)
@@ -81,12 +64,14 @@ func selectSubCommand(c *internal.Configuration, i []subcommandInitializer, args
 	if len(args) < 2 {
 		cmd = processorMap[defaultInitializerName]
 		callingArgs = []string{defaultInitializerName}
+		ok = true
 		return
 	}
 	commandName := args[1]
 	if strings.HasPrefix(commandName, "-") {
 		cmd = processorMap[defaultInitializerName]
 		callingArgs = args[1:]
+		ok = true
 		return
 	}
 	cmd, found := processorMap[commandName]
@@ -95,17 +80,16 @@ func selectSubCommand(c *internal.Configuration, i []subcommandInitializer, args
 		callingArgs = nil
 		logrus.WithFields(logrus.Fields{
 			internal.FK_COMMAND_NAME: commandName,
-		}).Warn(internal.LOG_UNRECOGNIZED_COMMAND)
+		}).Warn(internal.LW_UNRECOGNIZED_COMMAND)
 		var subCommandNames []string
 		for _, initializer := range i {
 			subCommandNames = append(subCommandNames, initializer.name)
 		}
 		sort.Strings(subCommandNames)
-		err = noSuchSubcommandError(commandName, subCommandNames)
-		msg := fmt.Sprintf(internal.ERROR_NO_SUCH_COMMAND, commandName, subCommandNames)
-		fmt.Fprintln(os.Stderr, msg)
+		fmt.Fprintf(w, internal.USER_NO_SUCH_COMMAND, commandName, subCommandNames)
 		return
 	}
 	callingArgs = args[2:]
+	ok = true
 	return
 }

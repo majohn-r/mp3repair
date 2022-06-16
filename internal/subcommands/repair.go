@@ -57,7 +57,7 @@ func (r *repair) logFields() logrus.Fields {
 }
 
 func (r *repair) runSubcommand(w io.Writer, s *files.Search) {
-	logrus.WithFields(r.logFields()).Info(internal.LOG_EXECUTING_COMMAND)
+	logrus.WithFields(r.logFields()).Info(internal.LI_EXECUTING_COMMAND)
 	artists := s.LoadData()
 	files.UpdateTracks(artists, files.RawReadTags)
 	tracksWithConflicts := findConflictedTracks(artists)
@@ -127,11 +127,11 @@ func (r *repair) fixTracks(w io.Writer, tracks []*files.Track) {
 		if err := t.EditTags(); err != nil {
 			fmt.Fprintf(w, "An error occurred fixing track %q\n", t)
 			logrus.WithFields(logrus.Fields{
-				internal.LOG_EXECUTING_COMMAND: r.name(),
-				internal.FK_DIRECTORY:          t.Directory(),
-				internal.FK_FILE_NAME:          t.FileName(),
-				internal.FK_ERROR:              err,
-			}).Warn(internal.LOG_CANNOT_EDIT_TRACK)
+				internal.LI_EXECUTING_COMMAND: r.name(),
+				internal.FK_DIRECTORY:         t.Directory(),
+				internal.FK_FILE_NAME:         t.FileName(),
+				internal.FK_ERROR:             err,
+			}).Warn(internal.LW_CANNOT_EDIT_TRACK)
 		} else {
 			fmt.Fprintf(w, "%q fixed\n", t)
 		}
@@ -161,7 +161,7 @@ func (r *repair) backupTrack(w io.Writer, t *files.Track) {
 				internal.FK_SOURCE:       t.Path(),
 				internal.FK_DESTINATION:  destinationPath,
 				internal.FK_ERROR:        err,
-			}).Warn(internal.LOG_CANNOT_COPY_FILE)
+			}).Warn(internal.LW_CANNOT_COPY_FILE)
 		} else {
 			fmt.Fprintf(w, "The track %q has been backed up to %q.\n", t, destinationPath)
 		}
@@ -178,7 +178,7 @@ func (r *repair) makeBackupDirectories(w io.Writer, paths []string) {
 					internal.FK_COMMAND_NAME: r.name(),
 					internal.FK_DIRECTORY:    newPath,
 					internal.FK_ERROR:        err,
-				}).Warn(internal.LOG_CANNOT_CREATE_DIRECTORY)
+				}).Warn(internal.LW_CANNOT_CREATE_DIRECTORY)
 			}
 		}
 	}

@@ -40,7 +40,7 @@ func (p *postrepair) logFields() logrus.Fields {
 }
 
 func (p *postrepair) runSubcommand(w io.Writer, s *files.Search) {
-	logrus.WithFields(p.logFields()).Info(internal.LOG_EXECUTING_COMMAND)
+	logrus.WithFields(p.logFields()).Info(internal.LI_EXECUTING_COMMAND)
 	artists := s.LoadData()
 	backups := make(map[string]*files.Album)
 	var backupDirectories []string
@@ -68,7 +68,7 @@ func removeBackupDirectory(w io.Writer, d string, a *files.Album) {
 		logrus.WithFields(logrus.Fields{
 			internal.FK_DIRECTORY: d,
 			internal.FK_ERROR:     err,
-		}).Warn(internal.LOG_CANNOT_DELETE_DIRECTORY)
+		}).Warn(internal.LW_CANNOT_DELETE_DIRECTORY)
 		fmt.Fprintf(w, internal.USER_CANNOT_DELETE_DIRECTORY, d, err)
 	} else {
 		fmt.Fprintf(w, "The backup directory for artist %q album %q has been deleted\n",

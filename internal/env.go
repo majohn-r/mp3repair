@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -17,10 +18,8 @@ func CreateAppSpecificPath(topDir string) string {
 }
 
 var (
-	appDataPath   string
-	tmpFolder     string
-	noTempFolder  error = fmt.Errorf(ERROR_NO_TEMP_DIRECTORY)
-	noAppDataPath error = fmt.Errorf(ERROR_NO_APP_DATA_PATH)
+	appDataPath string
+	tmpFolder   string
 )
 
 // ApplicationDataPath returns the application data path
@@ -34,16 +33,19 @@ func TemporaryFileFolder() string {
 }
 
 // LookupEnvVars looks up critical environment variables
-func LookupEnvVars() (errors []error) {
+func LookupEnvVars(w io.Writer) (ok bool) {
+	ok = true
 	var found bool
 	// get temporary folder
 	if tmpFolder, found = os.LookupEnv("TMP"); !found {
 		if tmpFolder, found = os.LookupEnv("TEMP"); !found {
-			errors = append(errors, noTempFolder)
+			fmt.Fprint(w, USER_NO_TEMP_FOLDER)
+			ok = false
 		}
 	}
 	if appDataPath, found = os.LookupEnv("APPDATA"); !found {
-		errors = append(errors, noAppDataPath)
+		fmt.Fprint(w, USER_NO_APPDATA_FOLDER)
+		ok = false
 	}
 	return
 }
