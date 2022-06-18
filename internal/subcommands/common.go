@@ -13,7 +13,7 @@ import (
 
 type CommandProcessor interface {
 	name() string
-	Exec(io.Writer, []string)
+	Exec(io.Writer, io.Writer, []string) bool
 }
 
 type subcommandInitializer struct {
@@ -22,6 +22,8 @@ type subcommandInitializer struct {
 	initializer       func(*internal.Configuration, *flag.FlagSet) CommandProcessor
 }
 
+// ProcessCommand selects which command to be run and returns the relevant
+// CommandProcessor, command line arguments and ok status
 func ProcessCommand(w io.Writer, appDataPath string, args []string) (CommandProcessor, []string, bool) {
 	c := internal.ReadConfigurationFile(internal.CreateAppSpecificPath(appDataPath))
 	var initializers []subcommandInitializer

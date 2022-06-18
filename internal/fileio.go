@@ -56,7 +56,7 @@ func Mkdir(dirName string) (err error) {
 		return
 	}
 	if !status.IsDir() {
-		err = fmt.Errorf("%q exists and is not a directory", dirName)
+		err = fmt.Errorf(ERROR_DIR_IS_FILE)
 	}
 	return
 }

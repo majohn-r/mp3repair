@@ -67,10 +67,14 @@ func newLsSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *ls {
 	}
 }
 
-func (l *ls) Exec(w io.Writer, args []string) {
-	if s := l.sf.ProcessArgs(os.Stderr, args); s != nil {
-		l.runSubcommand(w, s)
+// TODO: rewrite unit test
+func (l *ls) Exec(wOut io.Writer, wErr io.Writer, args []string) (ok bool) {
+	if s := l.sf.ProcessArgs(wErr, args); s != nil {
+		// TODO pass in wErr and have it return bool status
+		l.runSubcommand(wOut, s)
+		ok = true
 	}
+	return
 }
 
 func (l *ls) logFields() logrus.Fields {
@@ -84,6 +88,7 @@ func (l *ls) logFields() logrus.Fields {
 	}
 }
 
+// TODO: should use 2nd writer for error output
 func (l *ls) runSubcommand(w io.Writer, s *files.Search) {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
 		fmt.Fprintf(os.Stderr, internal.USER_SPECIFIED_NO_WORK, l.name())
@@ -155,22 +160,24 @@ func (l *ls) outputAlbums(w io.Writer, albums []*files.Album, prefix string) {
 	}
 }
 
-func (l *ls) validateTrackSorting() bool {
+// TODO: writer should be used for error output
+func (l *ls) validateTrackSorting() (ok bool) {
 	switch *l.trackSorting {
 	case "numeric":
 		if !*l.includeAlbums {
-			// TODO: why isn't this presented to the user? it's their fault!
+			fmt.Fprintf(os.Stderr, internal.USER_INVALID_SORTING_APPLIED,
+				internal.FK_TRACK_SORTING_FLAG, *l.trackSorting, internal.FK_INCLUDE_ALBUMS_FLAG)
 			logrus.WithFields(logrus.Fields{
 				internal.FK_TRACK_SORTING_FLAG:  *l.trackSorting,
 				internal.FK_INCLUDE_ALBUMS_FLAG: *l.includeAlbums,
 			}).Warn(internal.LW_SORTING_OPTION_UNACCEPTABLE)
 			preferredValue := "alpha"
 			l.trackSorting = &preferredValue
-			return true
 		}
 	case "alpha":
+		ok = true
 	default:
-		fmt.Fprintf(os.Stderr, internal.USER_UNRECOGNIZED_VALUE, "-sort", *l.trackSorting)
+		fmt.Fprintf(os.Stderr, internal.USER_UNRECOGNIZED_VALUE, internal.FK_TRACK_SORTING_FLAG, *l.trackSorting)
 		logrus.WithFields(logrus.Fields{
 			internal.FK_COMMAND_NAME:       l.name(),
 			internal.FK_TRACK_SORTING_FLAG: *l.trackSorting,
@@ -183,9 +190,8 @@ func (l *ls) validateTrackSorting() bool {
 			preferredValue = "alpha"
 		}
 		l.trackSorting = &preferredValue
-		return true
 	}
-	return false
+	return
 }
 
 func (l *ls) outputTracks(w io.Writer, tracks []*files.Track, prefix string) {

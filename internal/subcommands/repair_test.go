@@ -228,7 +228,7 @@ func Test_repair_Exec(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w := &bytes.Buffer{}
-			tt.r.Exec(w, tt.args.args)
+			tt.r.Exec(w, os.Stderr, tt.args.args)
 			if gotW := w.String(); gotW != tt.wantW {
 				t.Errorf("%s = %v, want %v", fnName, gotW, tt.wantW)
 			}

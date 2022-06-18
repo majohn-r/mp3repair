@@ -29,10 +29,13 @@ func newPostRepair(c *internal.Configuration, fSet *flag.FlagSet) CommandProcess
 	return newPostRepairSubCommand(c, fSet)
 }
 
-func (p *postrepair) Exec(w io.Writer, args []string) {
-	if s := p.sf.ProcessArgs(os.Stderr, args); s != nil {
-		p.runSubcommand(w, s)
+// TODO: rewrite unit test
+func (p *postrepair) Exec(wOut io.Writer, wErr io.Writer, args []string) (ok bool) {
+	if s := p.sf.ProcessArgs(wErr, args); s != nil {
+		p.runSubcommand(wOut, s)
+		ok = true
 	}
+	return
 }
 
 func (p *postrepair) logFields() logrus.Fields {
@@ -69,6 +72,7 @@ func removeBackupDirectory(w io.Writer, d string, a *files.Album) {
 			internal.FK_DIRECTORY: d,
 			internal.FK_ERROR:     err,
 		}).Warn(internal.LW_CANNOT_DELETE_DIRECTORY)
+		// TODO: should be stderr
 		fmt.Fprintf(w, internal.USER_CANNOT_DELETE_DIRECTORY, d, err)
 	} else {
 		fmt.Fprintf(w, "The backup directory for artist %q album %q has been deleted\n",

@@ -419,7 +419,7 @@ func Test_check_Exec(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w := &bytes.Buffer{}
-			tt.c.Exec(w, tt.args.args)
+			tt.c.Exec(w, os.Stderr, tt.args.args)
 			if gotW := w.String(); gotW != tt.wantW {
 				t.Errorf("%s = %v, want %v", fnName, gotW, tt.wantW)
 			}

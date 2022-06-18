@@ -15,9 +15,13 @@ const defaultConfigFileName = "defaults.yaml"
 
 // ReadConfigurationFile reads defaults.yaml from the specified path and returns
 // a pointer to a cooked Node instance
+// TODO: [#61] needs to return ok status (unmarshalling error is the point of
+// returning false)
 func ReadConfigurationFile(path string) *Configuration {
 	var yfile []byte
 	var err error
+	// TODO: [#59] check if file exists before attempting to read it. If it
+	// doesn't exist, we can just log that at info and be done.
 	if yfile, err = ioutil.ReadFile(filepath.Join(path, defaultConfigFileName)); err != nil {
 		logrus.WithFields(logrus.Fields{
 			FK_DIRECTORY: path,
@@ -33,6 +37,8 @@ func ReadConfigurationFile(path string) *Configuration {
 			FK_FILE_NAME: defaultConfigFileName,
 			FK_ERROR:     err,
 		}).Warn(LW_CANNOT_UNMARSHAL_YAML)
+		// TODO: [#60] this indicates a bad format for the yaml - notify the
+		// user! [#61] return false status
 		return EmptyConfiguration()
 	}
 	configuration := createConfiguration(data)

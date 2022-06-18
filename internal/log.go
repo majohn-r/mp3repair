@@ -23,6 +23,8 @@ const (
 
 // constants for log field keys
 const (
+	// TODO: [#62] the command-specific flags should be defined in the code that
+	// uses them
 	FK_ALBUM_FILTER_FLAG       = "-albumFilter"
 	FK_ANNOTATE_LISTINGS_FLAG  = "-annotate"
 	FK_ARTIST_FILTER_FLAG      = "-artistFilter"
@@ -35,7 +37,7 @@ const (
 	FK_INCLUDE_TRACKS_FLAG     = "-includeTracks"
 	FK_INTEGRITY_ANALYSIS_FLAG = "-integrityAnalysis"
 	FK_TOP_DIR_FLAG            = "-topDir"
-	FK_TRACK_SORTING_FLAG      = "-trackSorting"
+	FK_TRACK_SORTING_FLAG      = "-sort"
 	FK_ALBUM_NAME              = "albumName"
 	FK_ARTIST_NAME             = "artistName"
 	FK_COMMAND_LINE_ARGUMENTS  = "args"
@@ -70,6 +72,7 @@ func CleanupLogFiles(path string) {
 			FK_DIRECTORY: path,
 			FK_ERROR:     err,
 		}).Warn(LW_CANNOT_READ_DIRECTORY)
+		// TODO: [#63] let the user know too
 	} else {
 		var fileMap map[time.Time]fs.FileInfo = make(map[time.Time]fs.FileInfo)
 		var times []time.Time
@@ -95,6 +98,7 @@ func CleanupLogFiles(path string) {
 						FK_FILE_NAME: fileName,
 						FK_ERROR:     err,
 					}).Warn(LW_CANNOT_DELETE_FILE)
+					// TODO: [#63] let the user know too!
 				} else {
 					logrus.WithFields(logrus.Fields{
 						FK_DIRECTORY: path,

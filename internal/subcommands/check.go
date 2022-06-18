@@ -54,10 +54,14 @@ func newCheckSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *check {
 	}
 }
 
-func (c *check) Exec(w io.Writer, args []string) {
-	if s := c.sf.ProcessArgs(os.Stderr, args); s != nil {
-		c.runSubcommand(w, s)
+// TODO: rewrite unit test
+func (c *check) Exec(wOut io.Writer, wErr io.Writer, args []string) (ok bool) {
+	if s := c.sf.ProcessArgs(wErr, args); s != nil {
+		// TODO: pass in wErr and return bool status
+		c.runSubcommand(wOut, s)
+		ok = true
 	}
+	return
 }
 
 func (c *check) logFields() logrus.Fields {
@@ -118,6 +122,7 @@ func (a *artistWithIssues) hasIssues() bool {
 	return false
 }
 
+// TODO: should use a second writer for error output
 func (c *check) runSubcommand(w io.Writer, s *files.Search) {
 	if !*c.checkEmptyFolders && !*c.checkGapsInTrackNumbering && !*c.checkIntegrity {
 		fmt.Fprintf(os.Stderr, internal.USER_SPECIFIED_NO_WORK, c.name())
@@ -312,11 +317,13 @@ func sortArtists(filteredArtists []*artistWithIssues) {
 	}
 }
 
+// TODO: need 2nd writer for errors
 func (c *check) performEmptyFolderAnalysis(w io.Writer, s *files.Search) (artists []*files.Artist, conflictedArtists []*artistWithIssues) {
 	if *c.checkEmptyFolders {
 		artists = s.LoadUnfilteredData()
 		if len(artists) == 0 {
 			logrus.WithFields(s.LogFields(false)).Warn(internal.LW_NO_ARTIST_DIRECTORIES)
+			// TODO: let the user know too. Write to stderr (w)
 		}
 		conflictedArtists = createBareConflictedIssues(artists)
 		issuesFound := false

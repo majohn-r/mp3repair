@@ -5,6 +5,7 @@ import (
 	"flag"
 	"mp3/internal"
 	"mp3/internal/files"
+	"os"
 	"path/filepath"
 	"testing"
 )
@@ -82,7 +83,7 @@ func Test_postrepair_Exec(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w := &bytes.Buffer{}
-			tt.p.Exec(w, tt.args.args)
+			tt.p.Exec(w, os.Stderr, tt.args.args)
 			if gotW := w.String(); gotW != tt.wantW {
 				t.Errorf("%s = %v, want %v", fnName, gotW, tt.wantW)
 			}

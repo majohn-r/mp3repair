@@ -57,8 +57,9 @@ func run(cmdlineArgs []string) (returnValue int) {
 		}).Info(internal.LI_END_EXECUTION)
 	}()
 	if cmd, args, ok := subcommands.ProcessCommand(os.Stderr, internal.ApplicationDataPath(), cmdlineArgs); ok {
-		cmd.Exec(os.Stdout, args)
-		returnValue = 0
+		if cmd.Exec(os.Stdout, os.Stderr, args) {
+			returnValue = 0
+		}
 	}
 	return
 }

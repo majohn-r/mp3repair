@@ -6,7 +6,6 @@ import (
 	"io"
 	"mp3/internal"
 	"mp3/internal/files"
-	"os"
 	"path/filepath"
 	"sort"
 
@@ -43,10 +42,13 @@ func newRepairSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *repair 
 	}
 }
 
-func (r *repair) Exec(w io.Writer, args []string) {
-	if s := r.sf.ProcessArgs(os.Stderr, args); s != nil {
-		r.runSubcommand(w, s)
+// TODO: rewrite unit test
+func (r *repair) Exec(wOut io.Writer, wErr io.Writer, args []string) (ok bool) {
+	if s := r.sf.ProcessArgs(wErr, args); s != nil {
+		r.runSubcommand(wOut, s)
+		ok = true
 	}
+	return
 }
 
 func (r *repair) logFields() logrus.Fields {
@@ -125,6 +127,7 @@ func reportProblem(b bool, problem string) (s string) {
 func (r *repair) fixTracks(w io.Writer, tracks []*files.Track) {
 	for _, t := range tracks {
 		if err := t.EditTags(); err != nil {
+			// TODO: should be a 2nd writer - stderr
 			fmt.Fprintf(w, "An error occurred fixing track %q\n", t)
 			logrus.WithFields(logrus.Fields{
 				internal.LI_EXECUTING_COMMAND: r.name(),
@@ -150,11 +153,13 @@ func (r *repair) backupTracks(w io.Writer, tracks []*files.Track) {
 	}
 }
 
+// TODO: need 2nd writer for errors
 func (r *repair) backupTrack(w io.Writer, t *files.Track) {
 	backupDir := t.BackupDirectory()
 	destinationPath := filepath.Join(backupDir, fmt.Sprintf("%d.mp3", t.Number()))
 	if internal.DirExists(backupDir) && !internal.PlainFileExists(destinationPath) {
 		if err := t.Copy(destinationPath); err != nil {
+			// TODO: use 2nd writer
 			fmt.Fprintf(w, "The track %q cannot be backed up.\n", t)
 			logrus.WithFields(logrus.Fields{
 				internal.FK_COMMAND_NAME: r.name(),
@@ -168,6 +173,7 @@ func (r *repair) backupTrack(w io.Writer, t *files.Track) {
 	}
 }
 
+// TODO: w should be an error output
 func (r *repair) makeBackupDirectories(w io.Writer, paths []string) {
 	for _, path := range paths {
 		newPath := files.CreateBackupPath(path)

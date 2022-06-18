@@ -52,6 +52,7 @@ const (
 	USER_EXTENSION_GARBLED                            = "The -ext value you specified, %q, cannot be used for file matching: %v.\n"
 	USER_FILTER_GARBLED                               = "The %s filter value you specified, %q, cannot be used: %v\n"
 	USER_INCORRECT_NUMBER_OF_DEFAULT_COMMANDS_DEFINED = "An internal error has occurred: there are %d default commands!\n"
+	USER_INVALID_SORTING_APPLIED                      = "The value of the %s flag, '%s', cannot be used unless '%s' is true; track sorting will be alphabetic.\n"
 	USER_NO_APPDATA_FOLDER                            = "The APPDATA environment variable is not defined.\n"
 	USER_NO_COMMANDS_DEFINED                          = "An internal error has occurred: no commands are defined!\n"
 	USER_NO_SUCH_COMMAND                              = "There is no command named %q; valid commands include %v.\n"
@@ -59,4 +60,11 @@ const (
 	USER_SPECIFIED_NO_WORK                            = "You disabled all functionality for the command %q.\n"
 	USER_TOPDIR_NOT_A_DIRECTORY                       = "The -topDir value you specified, %q, is not a directory.\n"
 	USER_UNRECOGNIZED_VALUE                           = "The %q value you specified, %q, is not valid.\n"
+)
+
+const (
+	ERROR_DIR_IS_FILE               = "file exists and is not a directory"
+	ERROR_DOES_NOT_BEGIN_WITH_DIGIT = "first character is not a digit"
+	ERROR_EDIT_UNNECESSARY          = "no edit required"
+	ERROR_ZERO_LENGTH               = "zero length"
 )

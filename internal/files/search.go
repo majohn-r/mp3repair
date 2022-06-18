@@ -161,6 +161,7 @@ func CreateFilteredSearchForTesting(topDir string, artistFilter string, albumFil
 	})
 }
 
+// TODO: [#64] should output message to user and just return bool status
 func readDirectory(dir string) (files []fs.FileInfo, err error) {
 	files, err = ioutil.ReadDir(dir)
 	if err != nil {

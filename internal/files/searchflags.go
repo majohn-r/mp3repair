@@ -52,6 +52,7 @@ func NewSearchFlags(c *internal.Configuration, fSet *flag.FlagSet) *SearchFlags 
 }
 
 // ProcessArgs consumes the command line arguments.
+// TODO: return bool on error [#65]
 func (sf *SearchFlags) ProcessArgs(writer io.Writer, args []string) *Search {
 	dereferencedArgs := make([]string, len(args))
 	for i, arg := range args {
@@ -59,6 +60,7 @@ func (sf *SearchFlags) ProcessArgs(writer io.Writer, args []string) *Search {
 	}
 	sf.f.SetOutput(writer)
 	if err := sf.f.Parse(dereferencedArgs); err != nil {
+		// TODO: [#65] should also present the error to the user!
 		logrus.Error(err)
 		return nil
 	}
@@ -80,6 +82,7 @@ func (sf *SearchFlags) NewSearch() (s *Search) {
 	return
 }
 
+// TODO: [#66] should use writer for error output
 func (sf *SearchFlags) validateTopLevelDirectory() bool {
 	if file, err := os.Stat(*sf.topDirectory); err != nil {
 		fmt.Fprintf(os.Stderr, internal.USER_CANNOT_READ_TOPDIR, *sf.topDirectory, err)
@@ -101,6 +104,7 @@ func (sf *SearchFlags) validateTopLevelDirectory() bool {
 	}
 }
 
+// TODO: [#66] should use writer for error output
 func (sf *SearchFlags) validateExtension() (valid bool) {
 	valid = true
 	if !strings.HasPrefix(*sf.fileExtension, ".") || strings.Contains(strings.TrimPrefix(*sf.fileExtension, "."), ".") {
@@ -123,6 +127,8 @@ func (sf *SearchFlags) validateExtension() (valid bool) {
 	return
 }
 
+// TODO: [#66] should use writer for error output
+// TODO: [#67] badRegex is an anti-pattern - use ok instead
 func validateRegexp(pattern, name string) (filter *regexp.Regexp, badRegex bool) {
 	if f, err := regexp.Compile(pattern); err != nil {
 		fmt.Fprintf(os.Stderr, internal.USER_FILTER_GARBLED, name, pattern, err)

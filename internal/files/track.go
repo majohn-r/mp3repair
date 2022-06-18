@@ -169,7 +169,7 @@ func toTrackNumber(s string) (i int, err error) {
 	// this is more complicated than I wanted, because some mp3 rippers produce
 	// track numbers like "12/14", meaning 12th track of 14
 	if len(s) == 0 {
-		err = fmt.Errorf("invalid format: %q", s)
+		err = fmt.Errorf(internal.ERROR_ZERO_LENGTH)
 		return
 	}
 	s = removeLeadingBOMs(s)
@@ -183,7 +183,7 @@ func toTrackNumber(s string) (i int, err error) {
 		} else {
 			switch j {
 			case 0: // never saw a digit
-				err = fmt.Errorf("invalid format: %q", s)
+				err = fmt.Errorf(internal.ERROR_DOES_NOT_BEGIN_WITH_DIGIT)
 				return
 			default: // found something other than a digit, but read at least one
 				i = n
@@ -200,11 +200,12 @@ func toTrackNumber(s string) (i int, err error) {
 func (t *Track) SetTags(d *TaggedTrackData) {
 	if trackNumber, err := toTrackNumber(d.track); err != nil {
 		logrus.WithFields(logrus.Fields{
-			internal.FK_DIRECTORY:  filepath.Dir(t.path),
-			internal.FK_FILE_NAME:  filepath.Base(t.path),
+			internal.FK_DIRECTORY:  t.Directory(),
+			internal.FK_FILE_NAME:  t.FileName(),
 			internal.FK_TRCK_FRAME: d.track,
 			internal.FK_ERROR:      err,
 		}).Warn(internal.LW_INVALID_FRAME_VALUE)
+		// TODO: [#68] notify the user there was a problem
 		t.setTagFormatErrorCode()
 	} else {
 		t.album = removeLeadingBOMs(d.album)
@@ -384,8 +385,7 @@ func RawReadTags(path string) (d *TaggedTrackData, err error) {
 func (t *Track) EditTags() error {
 	a := t.AnalyzeIssues()
 	if !a.HasTaggingConflicts() {
-		return fmt.Errorf("track %d %q of album %q by artist %q has no tagging conflicts, no edit needed",
-			t.number, t.name, t.containingAlbum.Name(), t.containingAlbum.RecordingArtistName())
+		return fmt.Errorf(internal.ERROR_EDIT_UNNECESSARY)
 	}
 	tag, err := id3v2.Open(t.path, id3v2.Options{Parse: true})
 	if err != nil {
@@ -424,10 +424,11 @@ func (t *Track) readTags(reader func(string) (*TaggedTrackData, error)) {
 			}()
 			if tags, err := reader(t.path); err != nil {
 				logrus.WithFields(logrus.Fields{
-					internal.FK_DIRECTORY: filepath.Dir(t.path),
-					internal.FK_FILE_NAME: filepath.Base(t.path),
+					internal.FK_DIRECTORY: t.Directory(),
+					internal.FK_FILE_NAME: t.FileName(),
 					internal.FK_ERROR:     err,
 				}).Warn(internal.LW_CANNOT_READ_FILE)
+				// TODO: [#69] let user know
 				t.setTagReadErrorCode()
 			} else {
 				t.SetTags(tags)
@@ -468,6 +469,7 @@ func parseTrackName(name string, album *Album, ext string) (simpleName string, t
 			internal.FK_ALBUM_NAME:  album.name,
 			internal.FK_ARTIST_NAME: album.RecordingArtistName(),
 		}).Warn(internal.LW_INVALID_TRACK_NAME)
+		// TODO: [#70] let the user know too
 		return
 	}
 	wantDigit := true
