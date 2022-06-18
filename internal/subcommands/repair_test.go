@@ -416,7 +416,7 @@ func Test_repair_makeBackupDirectories(t *testing.T) {
 			name: "useful case",
 			r:    &repair{dryRun: &fFlag},
 			args: args{paths: []string{topDir, albumDir, albumDir2}},
-			wantW: `The directory "makeBackupDirectories\\album\\pre-repair-backup" cannot be created: "makeBackupDirectories\\album\\pre-repair-backup" exists and is not a directory.
+			wantW: `The directory "makeBackupDirectories\\album\\pre-repair-backup" cannot be created: file exists and is not a directory.
 `,
 		},
 	}
