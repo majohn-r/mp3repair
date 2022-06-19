@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"mp3/internal"
+	"os"
 	"sort"
 	"strings"
 
@@ -24,15 +25,19 @@ type subcommandInitializer struct {
 
 // ProcessCommand selects which command to be run and returns the relevant
 // CommandProcessor, command line arguments and ok status
-func ProcessCommand(w io.Writer, appDataPath string, args []string) (CommandProcessor, []string, bool) {
-	c := internal.ReadConfigurationFile(internal.CreateAppSpecificPath(appDataPath))
+func ProcessCommand(w io.Writer, appDataPath string, args []string) (cmd CommandProcessor, cmdArgs []string, ok bool) {
+	var c *internal.Configuration
+	if c, ok = internal.ReadConfigurationFile(os.Stderr, internal.CreateAppSpecificPath(appDataPath)); !ok {
+		return nil, nil, false
+	}
 	var initializers []subcommandInitializer
 	lsSubCommand := subcommandInitializer{name: "ls", defaultSubCommand: true, initializer: newLs}
 	checkSubCommand := subcommandInitializer{name: "check", initializer: newCheck}
 	repairSubCommand := subcommandInitializer{name: "repair", initializer: newRepair}
 	postRepairSubCommand := subcommandInitializer{name: "postRepair", initializer: newPostRepair}
 	initializers = append(initializers, lsSubCommand, checkSubCommand, repairSubCommand, postRepairSubCommand)
-	return selectSubCommand(w, c, initializers, args)
+	cmd, cmdArgs, ok = selectSubCommand(w, c, initializers, args)
+	return
 }
 
 func selectSubCommand(w io.Writer, c *internal.Configuration, i []subcommandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, ok bool) {

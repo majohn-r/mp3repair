@@ -1,8 +1,11 @@
 package internal
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -15,21 +18,17 @@ const defaultConfigFileName = "defaults.yaml"
 
 // ReadConfigurationFile reads defaults.yaml from the specified path and returns
 // a pointer to a cooked Node instance
-// TODO: [#61] needs to return ok status (unmarshalling error is the point of
-// returning false)
-func ReadConfigurationFile(path string) *Configuration {
-	var yfile []byte
+func ReadConfigurationFile(wErr io.Writer, path string) (*Configuration, bool) {
+	configFile := filepath.Join(path, defaultConfigFileName)
 	var err error
-	// TODO: [#59] check if file exists before attempting to read it. If it
-	// doesn't exist, we can just log that at info and be done.
-	if yfile, err = ioutil.ReadFile(filepath.Join(path, defaultConfigFileName)); err != nil {
-		logrus.WithFields(logrus.Fields{
-			FK_DIRECTORY: path,
-			FK_FILE_NAME: defaultConfigFileName,
-			FK_ERROR:     err,
-		}).Warn(LW_CANNOT_READ_FILE)
-		return EmptyConfiguration()
+	var ok bool
+	if ok, err = verifyFileExists(wErr, configFile); err != nil {
+		return nil, false
 	}
+	if !ok {
+		return EmptyConfiguration(), true
+	}
+	yfile, _ := ioutil.ReadFile(configFile) // only probable error circumvented by verifyFileExists failure
 	data := make(map[string]interface{})
 	if err = yaml.Unmarshal(yfile, &data); err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -38,8 +37,8 @@ func ReadConfigurationFile(path string) *Configuration {
 			FK_ERROR:     err,
 		}).Warn(LW_CANNOT_UNMARSHAL_YAML)
 		// TODO: [#60] this indicates a bad format for the yaml - notify the
-		// user! [#61] return false status
-		return EmptyConfiguration()
+		// user!
+		return nil, false
 	}
 	configuration := createConfiguration(data)
 	logrus.WithFields(logrus.Fields{
@@ -47,7 +46,32 @@ func ReadConfigurationFile(path string) *Configuration {
 		FK_FILE_NAME: defaultConfigFileName,
 		FK_VALUE:     configuration,
 	}).Info(LI_CONFIGURATION_FILE_READ)
-	return configuration
+	return configuration, true
+}
+
+func verifyFileExists(wErr io.Writer, path string) (ok bool, err error) {
+	f, err := os.Stat(path)
+	if err == nil {
+		if f.IsDir() {
+			logrus.WithFields(logrus.Fields{
+				FK_DIRECTORY: filepath.Dir(path),
+				FK_FILE_NAME: filepath.Base(path),
+			}).Error(LE_FILE_IS_DIR)
+			fmt.Fprintf(wErr, USER_CONFIGURATION_FILE_IS_DIR, path)
+			err = fmt.Errorf(ERROR_FILE_IS_DIR)
+			return
+		}
+		ok = true
+		return
+	}
+	if errors.Is(err, os.ErrNotExist) {
+		logrus.WithFields(logrus.Fields{
+			FK_DIRECTORY: filepath.Dir(path),
+			FK_FILE_NAME: filepath.Base(path),
+		}).Info(LI_NO_SUCH_FILE)
+		err = nil
+	}
+	return
 }
 
 func (c *Configuration) String() string {

@@ -234,7 +234,7 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 				// nothing to do
 			},
 			postTest: func(t *testing.T) {
-				c := ReadConfigurationFile("./mp3")
+				c, _ := ReadConfigurationFile(os.Stderr, "./mp3")
 				if common := c.cMap["common"]; common == nil {
 					t.Error("CreateDefaultYamlFile() 'good test': configuration does not contain common subtree")
 				} else {

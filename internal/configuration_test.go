@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"bytes"
+	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -14,7 +16,7 @@ func Test_Configuration_SubConfiguration(t *testing.T) {
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	testConfiguration := ReadConfigurationFile("./mp3")
+	testConfiguration, _ := ReadConfigurationFile(os.Stderr, "./mp3")
 	type args struct {
 		key string
 	}
@@ -48,7 +50,7 @@ func Test_Configuration_BoolDefault(t *testing.T) {
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	testConfiguration := ReadConfigurationFile("./mp3")
+	testConfiguration, _ := ReadConfigurationFile(os.Stderr, "./mp3")
 	type args struct {
 		key          string
 		defaultValue bool
@@ -137,7 +139,7 @@ func Test_Configuration_StringDefault(t *testing.T) {
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	testConfiguration := ReadConfigurationFile("./mp3")
+	testConfiguration, _ := ReadConfigurationFile(os.Stderr, "./mp3")
 	type args struct {
 		key          string
 		defaultValue string
@@ -175,6 +177,77 @@ func Test_Configuration_StringDefault(t *testing.T) {
 	}
 }
 
+// func TestReadConfigurationFile(t *testing.T) {
+// 	type args struct {
+// 		path string
+// 	}
+// 	tests := []struct {
+// 		name string
+// 		args args
+// 		want *Configuration
+// 	}{
+// 	}
+// 	for _, tt := range tests {
+// 		t.Run(tt.name, func(t *testing.T) {
+// 			got, _ := ReadConfigurationFile(os.Stderr, tt.args.path)
+// 			if !reflect.DeepEqual(got, tt.want) {
+// 				t.Errorf("ReadYaml() = %v, want %v", got, tt.want)
+// 			}
+// 		})
+// 	}
+// }
+
+func Test_verifyFileExists(t *testing.T) {
+	type args struct {
+		path string
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantOk   bool
+		wantWErr string
+		wantErr  bool
+	}{
+		{
+			name:     "ordinary success",
+			args:     args{path: "./configuration_test.go"},
+			wantOk:   true,
+			wantWErr: "",
+			wantErr:  false,
+		},
+		{
+			name:     "look for dir!",
+			args:     args{path: "."},
+			wantOk:   false,
+			wantWErr: "The configuration file \".\" is a directory.\n",
+			wantErr:  true,
+		},
+		{
+			name:     "non-existent file",
+			args:     args{path: "./no-such-file.txt"},
+			wantOk:   false,
+			wantWErr: "",
+			wantErr:  false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wErr := &bytes.Buffer{}
+			gotOk, err := verifyFileExists(wErr, tt.args.path)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("verifyFileExists() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if gotOk != tt.wantOk {
+				t.Errorf("verifyFileExists() = %v, want %v", gotOk, tt.wantOk)
+			}
+			if gotWErr := wErr.String(); gotWErr != tt.wantWErr {
+				t.Errorf("verifyFileExists() = %v, want %v", gotWErr, tt.wantWErr)
+			}
+		})
+	}
+}
+
 func TestReadConfigurationFile(t *testing.T) {
 	fnName := "ReadConfigurationFile()"
 	if err := CreateDefaultYamlFileForTesting(); err != nil {
@@ -190,15 +263,21 @@ func TestReadConfigurationFile(t *testing.T) {
 	if err := CreateFileForTestingWithContent(badDir, defaultConfigFileName, "gibberish"); err != nil {
 		t.Errorf("%s error creating non-standard defaults.yaml: %v", fnName, err)
 	}
+	if err := Mkdir("./defaults.yaml"); err != nil {
+		t.Errorf("%s error creating defaults.yaml as directory: %v", fnName, err)
+	}
 	type args struct {
 		path string
 	}
 	tests := []struct {
-		name string
-		args args
-		want *Configuration
+		name     string
+		args     args
+		want     *Configuration
+		wantOk   bool
+		wantWErr string
 	}{
-		{name: "bad", args: args{path: badDir}, want: EmptyConfiguration()},
+		{name: "dir!", args: args{path: "."}, want: nil, wantOk: false, wantWErr: "The configuration file \"defaults.yaml\" is a directory.\n"},
+		{name: "bad", args: args{path: badDir}, want: nil, wantOk: false, wantWErr: ""},
 		{name: "good",
 			args: args{path: "./mp3"},
 			want: &Configuration{
@@ -241,14 +320,23 @@ func TestReadConfigurationFile(t *testing.T) {
 						cMap: map[string]*Configuration{}},
 				},
 			},
+			wantOk: true,
+			wantWErr: "",
 		},
-		{name: "error", args: args{path: "./non-existent-dir"}, want: EmptyConfiguration()},
+		{name: "error", args: args{path: "./non-existent-dir"}, want: EmptyConfiguration(), wantOk: true, wantWErr: ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := ReadConfigurationFile(tt.args.path)
+			wErr := &bytes.Buffer{}
+			got, gotOk := ReadConfigurationFile(wErr, tt.args.path)
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ReadYaml() = %v, want %v", got, tt.want)
+				t.Errorf("ReadConfigurationFile() got = %v, want %v", got, tt.want)
+			}
+			if gotOk != tt.wantOk {
+				t.Errorf("ReadConfigurationFile() gotOk = %v, want %v", gotOk, tt.wantOk)
+			}
+			if gotWErr := wErr.String(); gotWErr != tt.wantWErr {
+				t.Errorf("ReadConfigurationFile() gotWErr = %v, want %v", gotWErr, tt.wantWErr)
 			}
 		})
 	}

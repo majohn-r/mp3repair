@@ -72,6 +72,7 @@ func Test_NewFileFlags(t *testing.T) {
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
+	defaultConfig, _ := internal.ReadConfigurationFile(os.Stderr, "./mp3")
 	type args struct {
 		c *internal.Configuration
 	}
@@ -93,7 +94,7 @@ func Test_NewFileFlags(t *testing.T) {
 		},
 		{
 			name:            "overrides",
-			args:            args{c: internal.ReadConfigurationFile("./mp3")},
+			args:            args{c: defaultConfig},
 			wantTopDir:      ".",
 			wantExtension:   ".mpeg",
 			wantAlbumRegex:  "^.*$",

@@ -7,6 +7,7 @@ const (
 	LI_EXECUTING_COMMAND        = "executing command"
 	LI_FILE_DELETED             = "successfully deleted file"
 	LI_FILTERING_FILES          = "filtering music files"
+	LI_NO_SUCH_FILE             = "file does not exist"
 	LI_PARAMETERS_OVERRIDDEN    = "one or more flags were overridden"
 	LI_READING_FILTERED_FILES   = "reading filtered music files"
 	LI_READING_UNFILTERED_FILES = "reading unfiltered music files"
@@ -39,8 +40,10 @@ const (
 
 // error log messages
 const (
-	LE_COMMAND_COUNT         = "incorrect number of commands"
-	LE_DEFAULT_COMMAND_COUNT = "incorrect number of default commands"
+	LE_CANNOT_DETERMINE_FILE_STATUS = "cannot determine file status"
+	LE_COMMAND_COUNT                = "incorrect number of commands"
+	LE_DEFAULT_COMMAND_COUNT        = "incorrect number of default commands"
+	LE_FILE_IS_DIR                  = "file is a directory"
 )
 
 // for output to user
@@ -48,6 +51,7 @@ const (
 	USER_CANNOT_CREATE_DIRECTORY                      = "The directory %q cannot be created: %v.\n"
 	USER_CANNOT_DELETE_DIRECTORY                      = "The directory %q cannot be deleted: %v.\n"
 	USER_CANNOT_READ_TOPDIR                           = "The -topDir value you specified, %q, cannot be read: %v.\n"
+	USER_CONFIGURATION_FILE_IS_DIR                    = "The configuration file %q is a directory.\n"
 	USER_EXTENSION_INVALID_FORMAT                     = "The -ext value you specified, %q, must contain exactly one '.' and '.' must be the first character.\n"
 	USER_EXTENSION_GARBLED                            = "The -ext value you specified, %q, cannot be used for file matching: %v.\n"
 	USER_FILTER_GARBLED                               = "The %s filter value you specified, %q, cannot be used: %v\n"
@@ -66,5 +70,6 @@ const (
 	ERROR_DIR_IS_FILE               = "file exists and is not a directory"
 	ERROR_DOES_NOT_BEGIN_WITH_DIGIT = "first character is not a digit"
 	ERROR_EDIT_UNNECESSARY          = "no edit required"
+	ERROR_FILE_IS_DIR               = "file exists but is a directory"
 	ERROR_ZERO_LENGTH               = "zero length"
 )

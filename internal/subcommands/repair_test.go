@@ -29,6 +29,7 @@ func Test_newRepairSubCommand(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
+	defaultConfig, _ := internal.ReadConfigurationFile(os.Stderr, "./mp3")
 	type args struct {
 		c *internal.Configuration
 	}
@@ -44,7 +45,7 @@ func Test_newRepairSubCommand(t *testing.T) {
 		},
 		{
 			name:       "overridden defaults",
-			args:       args{c: internal.ReadConfigurationFile("./mp3")},
+			args:       args{c: defaultConfig},
 			wantDryRun: true,
 		},
 	}

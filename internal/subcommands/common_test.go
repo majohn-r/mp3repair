@@ -16,6 +16,12 @@ func TestProcessCommand(t *testing.T) {
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
+	if err := internal.Mkdir("./mp3/mp3"); err != nil {
+		t.Errorf("error creating defective ./mp3/mp3: %v", err)
+	}
+	if err := internal.Mkdir("./mp3/mp3/defaults.yaml"); err != nil {
+		t.Errorf("error creating defective defaults.yaml: %v", err)
+	}
 	type args struct {
 		appDataPath string
 		args        []string
@@ -29,12 +35,14 @@ func TestProcessCommand(t *testing.T) {
 		wantW string
 	}{
 		{
+			name:  "error handling", args:  args{appDataPath: "./mp3", args: nil},
+		},
+		{
 			name:  "call ls",
 			args:  args{appDataPath: ".", args: []string{"mp3.exe", "ls", "-track=true"}},
 			want:  newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
 			want1: []string{"-track=true"},
 			want2: true,
-			wantW: "",
 		},
 		{
 			name:  "call check",
@@ -42,7 +50,6 @@ func TestProcessCommand(t *testing.T) {
 			want:  newCheck(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ExitOnError)),
 			want1: []string{"-integrity=false"},
 			want2: true,
-			wantW: "",
 		},
 		{
 			name:  "call repair",
@@ -50,7 +57,6 @@ func TestProcessCommand(t *testing.T) {
 			want:  newRepair(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ExitOnError)),
 			want1: []string{},
 			want2: true,
-			wantW: "",
 		},
 		{
 			name:  "call postRepair",
@@ -58,7 +64,6 @@ func TestProcessCommand(t *testing.T) {
 			want:  newPostRepair(internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ExitOnError)),
 			want1: []string{},
 			want2: true,
-			wantW: "",
 		},
 		{
 			name:  "call default command",
@@ -66,14 +71,10 @@ func TestProcessCommand(t *testing.T) {
 			want:  newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
 			want1: []string{"ls"},
 			want2: true,
-			wantW: "",
 		},
 		{
 			name:  "call invalid command",
 			args:  args{appDataPath: ".", args: []string{"mp3.exe", "no such command"}},
-			want:  nil,
-			want1: nil,
-			want2: false,
 			wantW: "There is no command named \"no such command\"; valid commands include [check ls postRepair repair].\n",
 		},
 		{
@@ -82,7 +83,6 @@ func TestProcessCommand(t *testing.T) {
 			want:  newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
 			want1: []string{"-album", "-artist", "-track"},
 			want2: true,
-			wantW: "",
 		},
 	}
 	for _, tt := range tests {
