@@ -143,18 +143,20 @@ func (s *Search) LoadData(wErr io.Writer) (artists []*Artist) {
 // used for testing only!
 func CreateSearchForTesting(topDir string) *Search {
 	realFlagSet := flag.NewFlagSet("testing", flag.ContinueOnError)
-	return NewSearchFlags(internal.EmptyConfiguration(), realFlagSet).ProcessArgs(os.Stdout, []string{
+	s, _ := NewSearchFlags(internal.EmptyConfiguration(), realFlagSet).ProcessArgs(os.Stdout, []string{
 		"-topDir", topDir,
 	})
+	return s
 }
 
 func CreateFilteredSearchForTesting(topDir string, artistFilter string, albumFilter string) *Search {
 	realFlagSet := flag.NewFlagSet("testing", flag.ContinueOnError)
-	return NewSearchFlags(internal.EmptyConfiguration(), realFlagSet).ProcessArgs(os.Stdout, []string{
+	s, _ := NewSearchFlags(internal.EmptyConfiguration(), realFlagSet).ProcessArgs(os.Stdout, []string{
 		"-topDir", topDir,
 		"-artistFilter", artistFilter,
 		"-albumFilter", albumFilter,
 	})
+	return s
 }
 
 func readDirectory(wErr io.Writer, dir string) (files []fs.FileInfo, ok bool) {

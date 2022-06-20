@@ -59,7 +59,7 @@ func newCheckSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *check {
 
 // TODO: rewrite unit test
 func (c *check) Exec(wOut io.Writer, wErr io.Writer, args []string) (ok bool) {
-	if s := c.sf.ProcessArgs(wErr, args); s != nil {
+	if s, argsOk := c.sf.ProcessArgs(wErr, args); argsOk {
 		// TODO: pass in wErr and return bool status
 		c.runSubcommand(wOut, s)
 		ok = true

@@ -74,7 +74,7 @@ func newLsSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *ls {
 
 // TODO: rewrite unit test
 func (l *ls) Exec(wOut io.Writer, wErr io.Writer, args []string) (ok bool) {
-	if s := l.sf.ProcessArgs(wErr, args); s != nil {
+	if s, argsOk := l.sf.ProcessArgs(wErr, args); argsOk {
 		// TODO pass in wErr and have it return bool status
 		l.runSubcommand(wOut, s)
 		ok = true

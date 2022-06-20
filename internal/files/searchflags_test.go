@@ -10,55 +10,6 @@ import (
 	"testing"
 )
 
-func TestFileFlags_processArgs(t *testing.T) {
-	fnName := "FileFlags.processArgs()"
-	fs := flag.NewFlagSet("test", flag.ContinueOnError)
-	flags := &SearchFlags{
-		f:             fs,
-		topDirectory:  fs.String("topDir", ".", "top directory in which to look for music files"),
-		fileExtension: fs.String("ext", defaultFileExtension, "extension for music files"),
-		albumRegex:    fs.String("albums", ".*", "regular expression of albums to select"),
-		artistRegex:   fs.String("artists", ".*", "regular expression of artists to select"),
-	}
-	s := &Search{
-		topDirectory:    ".",
-		targetExtension: defaultFileExtension,
-		albumFilter:     regexp.MustCompile(".*"),
-		artistFilter:    regexp.MustCompile(".*"),
-	}
-	savedWriter := fs.Output()
-	usageWriter := &bytes.Buffer{}
-	fs.SetOutput(usageWriter)
-	fs.Usage()
-	usage := usageWriter.String()
-	fs.SetOutput(savedWriter)
-	type args struct {
-		args []string
-	}
-	tests := []struct {
-		name       string
-		sf         *SearchFlags
-		args       args
-		want       *Search
-		wantWriter string
-	}{
-		{name: "good arguments", sf: flags, args: args{args: nil}, want: s, wantWriter: ""},
-		{name: "request help", sf: flags, args: args{args: []string{"-help"}}, want: nil, wantWriter: usage},
-		{name: "request invalid argument", sf: flags, args: args{args: []string{"-foo"}}, want: nil, wantWriter: "flag provided but not defined: -foo\n" + usage},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			writer := &bytes.Buffer{}
-			if got := tt.sf.ProcessArgs(writer, tt.args.args); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
-			}
-			if gotWriter := writer.String(); gotWriter != tt.wantWriter {
-				t.Errorf("%s = %v, want %v", fnName, gotWriter, tt.wantWriter)
-			}
-		})
-	}
-}
-
 func Test_NewFileFlags(t *testing.T) {
 	oldHomePath := os.Getenv("HOMEPATH")
 	defer func() {
@@ -347,6 +298,59 @@ func TestSearchFlags_validateExtension(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if gotValid := tt.sf.validateExtension(); gotValid != tt.wantValid {
 				t.Errorf("%s = %v, want %v", fnName, gotValid, tt.wantValid)
+			}
+		})
+	}
+}
+
+func TestSearchFlags_ProcessArgs(t *testing.T) {
+	fs := flag.NewFlagSet("test", flag.ContinueOnError)
+	flags := &SearchFlags{
+		f:             fs,
+		topDirectory:  fs.String("topDir", ".", "top directory in which to look for music files"),
+		fileExtension: fs.String("ext", defaultFileExtension, "extension for music files"),
+		albumRegex:    fs.String("albums", ".*", "regular expression of albums to select"),
+		artistRegex:   fs.String("artists", ".*", "regular expression of artists to select"),
+	}
+	s := &Search{
+		topDirectory:    ".",
+		targetExtension: defaultFileExtension,
+		albumFilter:     regexp.MustCompile(".*"),
+		artistFilter:    regexp.MustCompile(".*"),
+	}
+	savedWriter := fs.Output()
+	usageWriter := &bytes.Buffer{}
+	fs.SetOutput(usageWriter)
+	fs.Usage()
+	usage := usageWriter.String()
+	fs.SetOutput(savedWriter)
+	type args struct {
+		args []string
+	}
+	tests := []struct {
+		name       string
+		sf         *SearchFlags
+		args       args
+		wantS      *Search
+		wantOk     bool
+		wantWriter string
+	}{
+		{name: "good arguments", sf: flags, args: args{args: nil}, wantS: s, wantOk: true, wantWriter: ""},
+		{name: "request help", sf: flags, args: args{args: []string{"-help"}}, wantS: nil, wantWriter: usage},
+		{name: "request invalid argument", sf: flags, args: args{args: []string{"-foo"}}, wantS: nil, wantWriter: "flag provided but not defined: -foo\n" + usage},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			writer := &bytes.Buffer{}
+			gotS, gotOk := tt.sf.ProcessArgs(writer, tt.args.args)
+			if !reflect.DeepEqual(gotS, tt.wantS) {
+				t.Errorf("SearchFlags.ProcessArgs() gotS = %v, want %v", gotS, tt.wantS)
+			}
+			if gotOk != tt.wantOk {
+				t.Errorf("SearchFlags.ProcessArgs() gotOk = %v, want %v", gotOk, tt.wantOk)
+			}
+			if gotWriter := writer.String(); gotWriter != tt.wantWriter {
+				t.Errorf("SearchFlags.ProcessArgs() gotWriter = %v, want %v", gotWriter, tt.wantWriter)
 			}
 		})
 	}

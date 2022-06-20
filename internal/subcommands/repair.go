@@ -49,7 +49,7 @@ func newRepairSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *repair 
 
 // TODO: rewrite unit test
 func (r *repair) Exec(wOut io.Writer, wErr io.Writer, args []string) (ok bool) {
-	if s := r.sf.ProcessArgs(wErr, args); s != nil {
+	if s, argsOk := r.sf.ProcessArgs(wErr, args); argsOk {
 		r.runSubcommand(wOut, s)
 		ok = true
 	}

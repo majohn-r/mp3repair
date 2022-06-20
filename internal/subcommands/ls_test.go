@@ -599,7 +599,7 @@ func Test_newLsSubCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			ls := newLsSubCommand(tt.args.c, flag.NewFlagSet("ls", flag.ContinueOnError))
-			if s := ls.sf.ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-ext", ".mp3"}); s != nil {
+			if _, ok := ls.sf.ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-ext", ".mp3"}); ok {
 				if *ls.includeAlbums != tt.wantIncludeAlbums {
 					t.Errorf("%s %s: got includeAlbums %t want %t", fnName, tt.name, *ls.includeAlbums, tt.wantIncludeAlbums)
 				}

@@ -28,6 +28,7 @@ const (
 	defaultRegex          = ".*"
 	fileExtensionFlag     = "ext"
 	fkAlbumFilterFlag     = "-" + albumRegexFlag
+	fkArguments           = "arguments"
 	fkArtistFilterFlag    = "-" + artistRegexFlag
 	fkTargetExtensionFlag = "-" + fileExtensionFlag
 	fkTopDirFlag          = "-" + topDirectoryFlag
@@ -56,24 +57,25 @@ func NewSearchFlags(c *internal.Configuration, fSet *flag.FlagSet) *SearchFlags 
 }
 
 // ProcessArgs consumes the command line arguments.
-// TODO: return bool on error [#65]
-func (sf *SearchFlags) ProcessArgs(writer io.Writer, args []string) *Search {
+func (sf *SearchFlags) ProcessArgs(writer io.Writer, args []string) (s *Search, ok bool) {
 	dereferencedArgs := make([]string, len(args))
 	for i, arg := range args {
 		dereferencedArgs[i] = internal.InterpretEnvVarReferences(arg)
 	}
 	sf.f.SetOutput(writer)
+	// note: Parse outputs errors to the user
 	if err := sf.f.Parse(dereferencedArgs); err != nil {
-		// TODO: [#65] should also present the error to the user!
-		logrus.Error(err)
-		return nil
+		logrus.WithFields(logrus.Fields{
+			fkArguments: dereferencedArgs,
+		}).Error(err)
+		return nil, false
 	}
 	return sf.NewSearch()
 }
 
 // NewSearch validates the common search parameters and creates a Search
 // instance based on them.
-func (sf *SearchFlags) NewSearch() (s *Search) {
+func (sf *SearchFlags) NewSearch() (s *Search, ok bool) {
 	albumsFilter, artistsFilter, problemsExist := sf.validate()
 	if !problemsExist {
 		s = &Search{
@@ -82,6 +84,7 @@ func (sf *SearchFlags) NewSearch() (s *Search) {
 			albumFilter:     albumsFilter,
 			artistFilter:    artistsFilter,
 		}
+		ok = true
 	}
 	return
 }
@@ -109,10 +112,10 @@ func (sf *SearchFlags) validateTopLevelDirectory() bool {
 }
 
 // TODO: [#66] should use writer for error output
-func (sf *SearchFlags) validateExtension() (valid bool) {
-	valid = true
+func (sf *SearchFlags) validateExtension() (ok bool) {
+	ok = true
 	if !strings.HasPrefix(*sf.fileExtension, ".") || strings.Contains(strings.TrimPrefix(*sf.fileExtension, "."), ".") {
-		valid = false
+		ok = false
 		fmt.Fprintf(os.Stderr, internal.USER_EXTENSION_INVALID_FORMAT, *sf.fileExtension)
 		logrus.WithFields(logrus.Fields{
 			fkTargetExtensionFlag: sf.fileExtension,
@@ -121,7 +124,7 @@ func (sf *SearchFlags) validateExtension() (valid bool) {
 	var e error
 	trackNameRegex, e = regexp.Compile("^\\d+[\\s-].+\\." + strings.TrimPrefix(*sf.fileExtension, ".") + "$")
 	if e != nil {
-		valid = false
+		ok = false
 		fmt.Fprintf(os.Stderr, internal.USER_EXTENSION_GARBLED, *sf.fileExtension, e)
 		logrus.WithFields(logrus.Fields{
 			fkTargetExtensionFlag: sf.fileExtension,
@@ -146,6 +149,7 @@ func validateRegexp(pattern, name string) (filter *regexp.Regexp, ok bool) {
 	return
 }
 
+// TODO: [#74] should reverse sense of bool return!
 func (sf *SearchFlags) validate() (albumsFilter *regexp.Regexp, artistsFilter *regexp.Regexp, problemsExist bool) {
 	if !sf.validateTopLevelDirectory() {
 		problemsExist = true

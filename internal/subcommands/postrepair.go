@@ -31,7 +31,7 @@ func newPostRepair(c *internal.Configuration, fSet *flag.FlagSet) CommandProcess
 
 // TODO: rewrite unit test
 func (p *postrepair) Exec(wOut io.Writer, wErr io.Writer, args []string) (ok bool) {
-	if s := p.sf.ProcessArgs(wErr, args); s != nil {
+	if s, argsOk := p.sf.ProcessArgs(wErr, args); argsOk {
 		p.runSubcommand(wOut, s)
 		ok = true
 	}
