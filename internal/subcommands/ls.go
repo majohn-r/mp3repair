@@ -32,16 +32,21 @@ func newLs(c *internal.Configuration, fSet *flag.FlagSet) CommandProcessor {
 }
 
 const (
-	includeAlbumsFlag       = "includeAlbums"
+	defaultAnnotateListings = false
 	defaultIncludeAlbums    = true
-	includeArtistsFlag      = "includeArtists"
 	defaultIncludeArtists   = true
-	includeTracksFlag       = "includeTracks"
 	defaultIncludeTracks    = false
-	trackSortingFlag        = "sort"
 	defaultTrackSorting     = "numeric"
 	annotateListingsFlag    = "annotate"
-	defaultAnnotateListings = false
+	fkAnnotateListingsFlag  = "-" + annotateListingsFlag
+	fkIncludeAlbumsFlag     = "-" + includeAlbumsFlag
+	fkIncludeArtistsFlag    = "-" + includeArtistsFlag
+	fkIncludeTracksFlag     = "-" + includeTracksFlag
+	fkTrackSortingFlag      = "-" + trackSortingFlag
+	includeAlbumsFlag       = "includeAlbums"
+	includeArtistsFlag      = "includeArtists"
+	includeTracksFlag       = "includeTracks"
+	trackSortingFlag        = "sort"
 )
 
 func newLsSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *ls {
@@ -79,12 +84,12 @@ func (l *ls) Exec(wOut io.Writer, wErr io.Writer, args []string) (ok bool) {
 
 func (l *ls) logFields() logrus.Fields {
 	return logrus.Fields{
-		internal.FK_COMMAND_NAME:           l.name(),
-		internal.FK_INCLUDE_ALBUMS_FLAG:    *l.includeAlbums,
-		internal.FK_INCLUDE_ARTISTS_FLAG:   *l.includeArtists,
-		internal.FK_INCLUDE_TRACKS_FLAG:    *l.includeTracks,
-		internal.FK_TRACK_SORTING_FLAG:     *l.trackSorting,
-		internal.FK_ANNOTATE_LISTINGS_FLAG: *l.annotateListings,
+		fkCommandName:          l.name(),
+		fkIncludeAlbumsFlag:    *l.includeAlbums,
+		fkIncludeArtistsFlag:   *l.includeArtists,
+		fkIncludeTracksFlag:    *l.includeTracks,
+		fkTrackSortingFlag:     *l.trackSorting,
+		fkAnnotateListingsFlag: *l.annotateListings,
 	}
 }
 
@@ -166,10 +171,10 @@ func (l *ls) validateTrackSorting() (ok bool) {
 	case "numeric":
 		if !*l.includeAlbums {
 			fmt.Fprintf(os.Stderr, internal.USER_INVALID_SORTING_APPLIED,
-				internal.FK_TRACK_SORTING_FLAG, *l.trackSorting, internal.FK_INCLUDE_ALBUMS_FLAG)
+				fkTrackSortingFlag, *l.trackSorting, fkIncludeAlbumsFlag)
 			logrus.WithFields(logrus.Fields{
-				internal.FK_TRACK_SORTING_FLAG:  *l.trackSorting,
-				internal.FK_INCLUDE_ALBUMS_FLAG: *l.includeAlbums,
+				fkTrackSortingFlag:  *l.trackSorting,
+				fkIncludeAlbumsFlag: *l.includeAlbums,
 			}).Warn(internal.LW_SORTING_OPTION_UNACCEPTABLE)
 			preferredValue := "alpha"
 			l.trackSorting = &preferredValue
@@ -177,10 +182,10 @@ func (l *ls) validateTrackSorting() (ok bool) {
 	case "alpha":
 		ok = true
 	default:
-		fmt.Fprintf(os.Stderr, internal.USER_UNRECOGNIZED_VALUE, internal.FK_TRACK_SORTING_FLAG, *l.trackSorting)
+		fmt.Fprintf(os.Stderr, internal.USER_UNRECOGNIZED_VALUE, fkTrackSortingFlag, *l.trackSorting)
 		logrus.WithFields(logrus.Fields{
-			internal.FK_COMMAND_NAME:       l.name(),
-			internal.FK_TRACK_SORTING_FLAG: *l.trackSorting,
+			fkCommandName:      l.name(),
+			fkTrackSortingFlag: *l.trackSorting,
 		}).Warn(internal.LW_INVALID_FLAG_SETTING)
 		var preferredValue string
 		switch *l.includeAlbums {

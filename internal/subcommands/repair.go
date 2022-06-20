@@ -27,8 +27,12 @@ func newRepair(c *internal.Configuration, fSet *flag.FlagSet) CommandProcessor {
 }
 
 const (
-	dryRunFlag    = "dryRun"
-	defaultDryRun = false
+	dryRunFlag      = "dryRun"
+	defaultDryRun   = false
+	fkDestination   = "destination"
+	fkDryRunFlag    = "-" + dryRunFlag
+	fkSource        = "source"
+	noProblemsFound = "No repairable track defects found"
 )
 
 func newRepairSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *repair {
@@ -53,8 +57,8 @@ func (r *repair) Exec(wOut io.Writer, wErr io.Writer, args []string) (ok bool) {
 
 func (r *repair) logFields() logrus.Fields {
 	return logrus.Fields{
-		internal.FK_COMMAND_NAME: r.name(),
-		internal.FK_DRY_RUN_FLAG: *r.dryRun,
+		fkCommandName: r.name(),
+		fkDryRunFlag:  *r.dryRun,
 	}
 }
 
@@ -89,8 +93,6 @@ func findConflictedTracks(artists []*files.Artist) []*files.Track {
 	sort.Sort(files.Tracks(t))
 	return t
 }
-
-const noProblemsFound = "No repairable track defects found"
 
 func reportTracks(w io.Writer, tracks []*files.Track) {
 	lastArtistName := ""
@@ -162,10 +164,10 @@ func (r *repair) backupTrack(w io.Writer, t *files.Track) {
 			// TODO: use 2nd writer
 			fmt.Fprintf(w, "The track %q cannot be backed up.\n", t)
 			logrus.WithFields(logrus.Fields{
-				internal.FK_COMMAND_NAME: r.name(),
-				internal.FK_SOURCE:       t.Path(),
-				internal.FK_DESTINATION:  destinationPath,
-				internal.FK_ERROR:        err,
+				fkCommandName:     r.name(),
+				fkSource:          t.Path(),
+				fkDestination:     destinationPath,
+				internal.FK_ERROR: err,
 			}).Warn(internal.LW_CANNOT_COPY_FILE)
 		} else {
 			fmt.Fprintf(w, "The track %q has been backed up to %q.\n", t, destinationPath)
@@ -181,9 +183,9 @@ func (r *repair) makeBackupDirectories(w io.Writer, paths []string) {
 			if err := internal.Mkdir(newPath); err != nil {
 				fmt.Fprintf(w, internal.USER_CANNOT_CREATE_DIRECTORY, newPath, err)
 				logrus.WithFields(logrus.Fields{
-					internal.FK_COMMAND_NAME: r.name(),
-					internal.FK_DIRECTORY:    newPath,
-					internal.FK_ERROR:        err,
+					fkCommandName:         r.name(),
+					internal.FK_DIRECTORY: newPath,
+					internal.FK_ERROR:     err,
 				}).Warn(internal.LW_CANNOT_CREATE_DIRECTORY)
 			}
 		}

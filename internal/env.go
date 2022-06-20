@@ -10,11 +10,11 @@ import (
 	"strings"
 )
 
-const appName = "mp3"
+const AppName = "mp3"
 
 // CreateAppSpecificPath creates a path string for an app-related directory
 func CreateAppSpecificPath(topDir string) string {
-	return filepath.Join(topDir, appName)
+	return filepath.Join(topDir, AppName)
 }
 
 var (

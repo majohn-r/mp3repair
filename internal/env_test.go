@@ -84,7 +84,7 @@ func TestCreateAppSpecificPath(t *testing.T) {
 		name string
 		args args
 		want string
-	}{{name: "simple test", args: args{topDir: "top"}, want: filepath.Join("top", appName)}}
+	}{{name: "simple test", args: args{topDir: "top"}, want: filepath.Join("top", AppName)}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := CreateAppSpecificPath(tt.args.topDir); got != tt.want {

@@ -29,12 +29,15 @@ func newCheck(c *internal.Configuration, fSet *flag.FlagSet) CommandProcessor {
 }
 
 const (
-	emptyFoldersFlag            = "empty"
 	defaultEmptyFolders         = false
-	gapsInTrackNumberingFlag    = "gaps"
 	defaultGapsInTrackNumbering = false
-	integrityFlag               = "integrity"
 	defaultIntegrity            = true
+	emptyFoldersFlag            = "empty"
+	fkEmptyFoldersFlag          = "-" + emptyFoldersFlag
+	fkGapAnalysisFlag           = "-" + gapsInTrackNumberingFlag
+	fkIntegrityAnalysisFlag     = "-" + integrityFlag
+	gapsInTrackNumberingFlag    = "gaps"
+	integrityFlag               = "integrity"
 )
 
 func newCheckSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *check {
@@ -66,10 +69,10 @@ func (c *check) Exec(wOut io.Writer, wErr io.Writer, args []string) (ok bool) {
 
 func (c *check) logFields() logrus.Fields {
 	return logrus.Fields{
-		internal.FK_COMMAND_NAME:            c.name(),
-		internal.FK_EMPTY_FOLDERS_FLAG:      *c.checkEmptyFolders,
-		internal.FK_GAP_ANALYSIS_FLAG:       *c.checkGapsInTrackNumbering,
-		internal.FK_INTEGRITY_ANALYSIS_FLAG: *c.checkIntegrity,
+		fkCommandName:           c.name(),
+		fkEmptyFoldersFlag:      *c.checkEmptyFolders,
+		fkGapAnalysisFlag:       *c.checkGapsInTrackNumbering,
+		fkIntegrityAnalysisFlag: *c.checkIntegrity,
 	}
 }
 

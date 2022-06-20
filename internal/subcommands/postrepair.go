@@ -39,7 +39,7 @@ func (p *postrepair) Exec(wOut io.Writer, wErr io.Writer, args []string) (ok boo
 }
 
 func (p *postrepair) logFields() logrus.Fields {
-	return logrus.Fields{internal.FK_COMMAND_NAME: p.name()}
+	return logrus.Fields{fkCommandName: p.name()}
 }
 
 func (p *postrepair) runSubcommand(w io.Writer, s *files.Search) {

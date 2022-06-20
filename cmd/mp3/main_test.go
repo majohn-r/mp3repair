@@ -42,7 +42,7 @@ func Test_report(t *testing.T) {
 		wantW string
 	}{
 		{name: "success", args: args{returnValue: 0}, wantW: ""},
-		{name: "failure", args: args{returnValue: 1}, wantW: fmt.Sprintf(statusFormat, version, creation)},
+		{name: "failure", args: args{returnValue: 1}, wantW: fmt.Sprintf(statusFormat, "mp3", version, creation)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

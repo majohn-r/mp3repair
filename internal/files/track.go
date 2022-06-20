@@ -14,12 +14,20 @@ import (
 )
 
 const (
-	rawExtension             = "mp3"
+	albumFrame               = "TALB"
+	artistFrame              = "TPE1"
 	defaultFileExtension     = "." + rawExtension
 	defaultTrackNamePattern  = "^\\d+[\\s-].+\\." + rawExtension + "$"
+	fkAlbumName              = "albumName"
+	fkArtistName             = "artistName"
+	fkTrackName              = "trackName"
+	fkTRCKFrame              = "TRCK"
+	rawExtension             = "mp3"
+	titleFrame               = "TIT2"
 	trackDiffBadTags         = "cannot determine differences, tags were not recognized"
 	trackDiffUnreadableTags  = "cannot determine differences, could not read tags"
 	trackDiffUnreadTags      = "cannot determine differences, tags have not been read"
+	trackFrame               = "TRCK"
 	trackUnknownTagsNotRead  = 0
 	trackUnknownFormatError  = -1
 	trackUnknownTagReadError = -2
@@ -200,10 +208,10 @@ func toTrackNumber(s string) (i int, err error) {
 func (t *Track) SetTags(d *TaggedTrackData) {
 	if trackNumber, err := toTrackNumber(d.track); err != nil {
 		logrus.WithFields(logrus.Fields{
-			internal.FK_DIRECTORY:  t.Directory(),
-			internal.FK_FILE_NAME:  t.FileName(),
-			internal.FK_TRCK_FRAME: d.track,
-			internal.FK_ERROR:      err,
+			internal.FK_DIRECTORY: t.Directory(),
+			internal.FK_FILE_NAME: t.FileName(),
+			fkTRCKFrame:           d.track,
+			internal.FK_ERROR:     err,
 		}).Warn(internal.LW_INVALID_FRAME_VALUE)
 		// TODO: [#68] notify the user there was a problem
 		t.setTagFormatErrorCode()
@@ -354,13 +362,6 @@ func isComparable(p nameTagPair) bool {
 	return true // rune by rune comparison was successful
 }
 
-const (
-	albumFrame  = "TALB"
-	artistFrame = "TPE1"
-	titleFrame  = "TIT2"
-	trackFrame  = "TRCK"
-)
-
 var stdFrames = []string{albumFrame, artistFrame, titleFrame, trackFrame}
 
 // RawReadTags reads the tag from an MP3 file and collects interesting frame
@@ -465,9 +466,9 @@ func ParseTrackNameForTesting(name string) (simpleName string, trackNumber int) 
 func parseTrackName(name string, album *Album, ext string) (simpleName string, trackNumber int, valid bool) {
 	if !trackNameRegex.MatchString(name) {
 		logrus.WithFields(logrus.Fields{
-			internal.FK_TRACK_NAME:  name,
-			internal.FK_ALBUM_NAME:  album.name,
-			internal.FK_ARTIST_NAME: album.RecordingArtistName(),
+			fkTrackName:  name,
+			fkAlbumName:  album.name,
+			fkArtistName: album.RecordingArtistName(),
 		}).Warn(internal.LW_INVALID_TRACK_NAME)
 		// TODO: [#70] let the user know too
 		return

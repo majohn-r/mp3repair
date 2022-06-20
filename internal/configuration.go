@@ -14,7 +14,12 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-const defaultConfigFileName = "defaults.yaml"
+const (
+	defaultConfigFileName = "defaults.yaml"
+	fkKey                 = "key"
+	fkType                = "type"
+	fkValue               = "value"
+)
 
 // ReadConfigurationFile reads defaults.yaml from the specified path and returns
 // a pointer to a cooked Node instance
@@ -43,7 +48,7 @@ func ReadConfigurationFile(wErr io.Writer, path string) (*Configuration, bool) {
 	logrus.WithFields(logrus.Fields{
 		FK_DIRECTORY: path,
 		FK_FILE_NAME: defaultConfigFileName,
-		FK_VALUE:     configuration,
+		fkValue:      configuration,
 	}).Info(LI_CONFIGURATION_FILE_READ)
 	return configuration, true
 }
@@ -146,9 +151,9 @@ func createConfiguration(data map[string]interface{}) *Configuration {
 			c.cMap[key] = createConfiguration(t)
 		default:
 			logrus.WithFields(logrus.Fields{
-				FK_KEY:   key,
-				FK_VALUE: v,
-				FK_TYPE:  fmt.Sprintf("%T", v),
+				fkKey:   key,
+				fkValue: v,
+				fkType:  fmt.Sprintf("%T", v),
 			}).Warn(LW_UNEXPECTED_VALUE_TYPE)
 			c.sMap[key] = fmt.Sprintf("%v", v)
 		}

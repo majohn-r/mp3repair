@@ -33,13 +33,18 @@ func main() {
 }
 
 const (
-	statusFormat = "mp3 version %s, created at %s, failed\n"
-	logDirName   = "logs"
+	fkCommandLineArguments = "args"
+	fkDuration             = "duration"
+	fkExitCode             = "exitCode"
+	fkTimeStamp            = "timeStamp"
+	fkVersion              = "version"
+	logDirName             = "logs"
+	statusFormat           = "%s version %s, created at %s, failed\n"
 )
 
 func report(w io.Writer, returnValue int) {
 	if returnValue != 0 {
-		fmt.Fprintf(w, statusFormat, version, creation)
+		fmt.Fprintf(w, statusFormat, internal.AppName, version, creation)
 	}
 }
 
@@ -47,20 +52,19 @@ func run(cmdlineArgs []string) (returnValue int) {
 	returnValue = 1
 	startTime := time.Now()
 	logrus.WithFields(logrus.Fields{
-		internal.FK_VERSION:                version,
-		internal.FK_TIMESTAMP:              creation,
-		internal.FK_COMMAND_LINE_ARGUMENTS: cmdlineArgs,
+		fkVersion:              version,
+		fkTimeStamp:            creation,
+		fkCommandLineArguments: cmdlineArgs,
 	}).Info(internal.LI_BEGIN_EXECUTION)
-	defer func() {
-		logrus.WithFields(logrus.Fields{
-			internal.FK_DURATION: time.Since(startTime),
-		}).Info(internal.LI_END_EXECUTION)
-	}()
 	if cmd, args, ok := subcommands.ProcessCommand(os.Stderr, internal.ApplicationDataPath(), cmdlineArgs); ok {
 		if cmd.Exec(os.Stdout, os.Stderr, args) {
 			returnValue = 0
 		}
 	}
+	logrus.WithFields(logrus.Fields{
+		fkDuration: time.Since(startTime),
+		fkExitCode: returnValue,
+	}).Info(internal.LI_END_EXECUTION)
 	return
 }
 

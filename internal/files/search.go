@@ -66,15 +66,15 @@ func (s *Search) LoadUnfilteredData() (artists []*Artist) {
 func (s *Search) LogFields(includeFilters bool) logrus.Fields {
 	if includeFilters {
 		return logrus.Fields{
-			internal.FK_TOP_DIR_FLAG:        s.topDirectory,
-			internal.FK_FILE_EXTENSION_FLAG: s.targetExtension,
-			internal.FK_ALBUM_FILTER_FLAG:   s.albumFilter,
-			internal.FK_ARTIST_FILTER_FLAG:  s.artistFilter,
+			fkTopDirFlag:          s.topDirectory,
+			fkTargetExtensionFlag: s.targetExtension,
+			fkAlbumFilterFlag:     s.albumFilter,
+			fkArtistFilterFlag:    s.artistFilter,
 		}
 	} else {
 		return logrus.Fields{
-			internal.FK_TOP_DIR_FLAG:        s.topDirectory,
-			internal.FK_FILE_EXTENSION_FLAG: s.targetExtension,
+			fkTopDirFlag:          s.topDirectory,
+			fkTargetExtensionFlag: s.targetExtension,
 		}
 	}
 }

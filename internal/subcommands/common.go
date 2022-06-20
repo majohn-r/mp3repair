@@ -12,6 +12,11 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	fkCommandName = "command"
+	fkCount       = "count"
+)
+
 type CommandProcessor interface {
 	name() string
 	Exec(io.Writer, io.Writer, []string) bool
@@ -43,7 +48,7 @@ func ProcessCommand(w io.Writer, appDataPath string, args []string) (cmd Command
 func selectSubCommand(w io.Writer, c *internal.Configuration, i []subcommandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, ok bool) {
 	if len(i) == 0 {
 		logrus.WithFields(logrus.Fields{
-			internal.FK_COUNT: 0,
+			fkCount: 0,
 		}).Error(internal.LE_COMMAND_COUNT)
 		fmt.Fprint(w, internal.USER_NO_COMMANDS_DEFINED)
 		return
@@ -58,7 +63,7 @@ func selectSubCommand(w io.Writer, c *internal.Configuration, i []subcommandInit
 	}
 	if defaultInitializers != 1 {
 		logrus.WithFields(logrus.Fields{
-			internal.FK_COUNT: defaultInitializers,
+			fkCount: defaultInitializers,
 		}).Error(internal.LE_DEFAULT_COMMAND_COUNT)
 		fmt.Fprintf(w, internal.USER_INCORRECT_NUMBER_OF_DEFAULT_COMMANDS_DEFINED, defaultInitializers)
 		return
@@ -86,7 +91,7 @@ func selectSubCommand(w io.Writer, c *internal.Configuration, i []subcommandInit
 		cmd = nil
 		callingArgs = nil
 		logrus.WithFields(logrus.Fields{
-			internal.FK_COMMAND_NAME: commandName,
+			fkCommandName: commandName,
 		}).Warn(internal.LW_UNRECOGNIZED_COMMAND)
 		var subCommandNames []string
 		for _, initializer := range i {

@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	logFilePrefix    = appName + "."
+	logFilePrefix    = AppName + "."
 	logFileExtension = ".log"
 	logFileTemplate  = logFilePrefix + "%Y%m%d" + logFileExtension
 	symlinkName      = "latest" + logFileExtension
@@ -23,39 +23,9 @@ const (
 
 // constants for log field keys
 const (
-	// TODO: [#62] the command-specific flags should be defined in the code that
-	// uses them
-	FK_ALBUM_FILTER_FLAG       = "-albumFilter"
-	FK_ANNOTATE_LISTINGS_FLAG  = "-annotate"
-	FK_ARTIST_FILTER_FLAG      = "-artistFilter"
-	FK_DRY_RUN_FLAG            = "-dryRun"
-	FK_EMPTY_FOLDERS_FLAG      = "-emptyFolders"
-	FK_FILE_EXTENSION_FLAG     = "-ext"
-	FK_GAP_ANALYSIS_FLAG       = "-gapAnalysis"
-	FK_INCLUDE_ALBUMS_FLAG     = "-includeAlbums"
-	FK_INCLUDE_ARTISTS_FLAG    = "-includeArtists"
-	FK_INCLUDE_TRACKS_FLAG     = "-includeTracks"
-	FK_INTEGRITY_ANALYSIS_FLAG = "-integrityAnalysis"
-	FK_TOP_DIR_FLAG            = "-topDir"
-	FK_TRACK_SORTING_FLAG      = "-sort"
-	FK_ALBUM_NAME              = "albumName"
-	FK_ARTIST_NAME             = "artistName"
-	FK_COMMAND_LINE_ARGUMENTS  = "args"
-	FK_COMMAND_NAME            = "command"
-	FK_COUNT                   = "count"
-	FK_DESTINATION             = "destination"
-	FK_DIRECTORY               = "directory"
-	FK_DURATION                = "duration"
-	FK_ERROR                   = "error"
-	FK_FILE_NAME               = "fileName"
-	FK_KEY                     = "key"
-	FK_SOURCE                  = "source"
-	FK_TIMESTAMP               = "timeStamp"
-	FK_TRACK_NAME              = "trackName"
-	FK_TRCK_FRAME              = "TRCK"
-	FK_TYPE                    = "type"
-	FK_VALUE                   = "value"
-	FK_VERSION                 = "version"
+	FK_DIRECTORY = "directory"
+	FK_ERROR     = "error"
+	FK_FILE_NAME = "fileName"
 )
 
 // ConfigureLogging sets up logging
