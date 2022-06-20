@@ -36,8 +36,7 @@ func ReadConfigurationFile(wErr io.Writer, path string) (*Configuration, bool) {
 			FK_FILE_NAME: defaultConfigFileName,
 			FK_ERROR:     err,
 		}).Warn(LW_CANNOT_UNMARSHAL_YAML)
-		// TODO: [#60] this indicates a bad format for the yaml - notify the
-		// user!
+		fmt.Fprintf(wErr, USER_CONFIGURATION_FILE_GARBLED, configFile, err)
 		return nil, false
 	}
 	configuration := createConfiguration(data)

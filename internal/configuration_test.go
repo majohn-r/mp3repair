@@ -177,26 +177,6 @@ func Test_Configuration_StringDefault(t *testing.T) {
 	}
 }
 
-// func TestReadConfigurationFile(t *testing.T) {
-// 	type args struct {
-// 		path string
-// 	}
-// 	tests := []struct {
-// 		name string
-// 		args args
-// 		want *Configuration
-// 	}{
-// 	}
-// 	for _, tt := range tests {
-// 		t.Run(tt.name, func(t *testing.T) {
-// 			got, _ := ReadConfigurationFile(os.Stderr, tt.args.path)
-// 			if !reflect.DeepEqual(got, tt.want) {
-// 				t.Errorf("ReadYaml() = %v, want %v", got, tt.want)
-// 			}
-// 		})
-// 	}
-// }
-
 func Test_verifyFileExists(t *testing.T) {
 	type args struct {
 		path string
@@ -277,8 +257,15 @@ func TestReadConfigurationFile(t *testing.T) {
 		wantWErr string
 	}{
 		{name: "dir!", args: args{path: "."}, want: nil, wantOk: false, wantWErr: "The configuration file \"defaults.yaml\" is a directory.\n"},
-		{name: "bad", args: args{path: badDir}, want: nil, wantOk: false, wantWErr: ""},
-		{name: "good",
+		{
+			name:     "bad",
+			args:     args{path: badDir},
+			want:     nil,
+			wantOk:   false,
+			wantWErr: "The configuration file \"mp3\\\\badData\\\\defaults.yaml\" is not well-formed YAML: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}\n",
+		},
+		{
+			name: "good",
 			args: args{path: "./mp3"},
 			want: &Configuration{
 				bMap: map[string]bool{},
@@ -320,7 +307,7 @@ func TestReadConfigurationFile(t *testing.T) {
 						cMap: map[string]*Configuration{}},
 				},
 			},
-			wantOk: true,
+			wantOk:   true,
 			wantWErr: "",
 		},
 		{name: "error", args: args{path: "./non-existent-dir"}, want: EmptyConfiguration(), wantOk: true, wantWErr: ""},
