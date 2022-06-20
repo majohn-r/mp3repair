@@ -6,6 +6,7 @@ import (
 	"io"
 	"mp3/internal"
 	"mp3/internal/files"
+	"os"
 	"path/filepath"
 	"sort"
 
@@ -62,9 +63,10 @@ func (r *repair) logFields() logrus.Fields {
 	}
 }
 
+// TODO: need 2nd writer
 func (r *repair) runSubcommand(w io.Writer, s *files.Search) {
 	logrus.WithFields(r.logFields()).Info(internal.LI_EXECUTING_COMMAND)
-	artists := s.LoadData()
+	artists := s.LoadData(os.Stderr)
 	files.UpdateTracks(artists, files.RawReadTags)
 	tracksWithConflicts := findConflictedTracks(artists)
 	if len(tracksWithConflicts) == 0 {

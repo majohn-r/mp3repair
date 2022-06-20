@@ -216,10 +216,11 @@ func merge(sets [][]*artistWithIssues) []*artistWithIssues {
 	return results
 }
 
+// TODO: need error writer
 func (c *check) filterArtists(s *files.Search, artists []*files.Artist) (filteredArtists []*files.Artist) {
 	if *c.checkGapsInTrackNumbering || *c.checkIntegrity {
 		if len(artists) == 0 {
-			filteredArtists = s.LoadData()
+			filteredArtists = s.LoadData(os.Stderr)
 		} else {
 			filteredArtists = s.FilterArtists(artists)
 		}
@@ -323,7 +324,7 @@ func sortArtists(filteredArtists []*artistWithIssues) {
 // TODO: need 2nd writer for errors
 func (c *check) performEmptyFolderAnalysis(w io.Writer, s *files.Search) (artists []*files.Artist, conflictedArtists []*artistWithIssues) {
 	if *c.checkEmptyFolders {
-		artists = s.LoadUnfilteredData()
+		artists = s.LoadUnfilteredData(os.Stderr)
 		if len(artists) == 0 {
 			logrus.WithFields(s.LogFields(false)).Warn(internal.LW_NO_ARTIST_DIRECTORIES)
 			// TODO: let the user know too. Write to stderr (w)

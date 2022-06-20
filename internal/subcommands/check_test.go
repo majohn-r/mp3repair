@@ -138,8 +138,8 @@ func Test_filterArtists(t *testing.T) {
 		t.Errorf("%s error populating %s: %v", fnName, topDirName, err)
 	}
 	searchStruct := files.CreateSearchForTesting(topDirName)
-	fullArtists := searchStruct.LoadUnfilteredData()
-	filteredArtists := searchStruct.LoadData()
+	fullArtists := searchStruct.LoadUnfilteredData(os.Stderr)
+	filteredArtists := searchStruct.LoadData(os.Stderr)
 	type args struct {
 		s       *files.Search
 		artists []*files.Artist
@@ -314,7 +314,7 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 		{
 			name: "meaningful case",
 			c:    &check{checkIntegrity: &tFlag},
-			args: args{artists: s.LoadUnfilteredData()},
+			args: args{artists: s.LoadUnfilteredData(os.Stderr)},
 			wantConflictedArtists: []*artistWithIssues{
 				{
 					name: "artist",

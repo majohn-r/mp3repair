@@ -50,6 +50,7 @@ const (
 const (
 	USER_CANNOT_CREATE_DIRECTORY                      = "The directory %q cannot be created: %v.\n"
 	USER_CANNOT_DELETE_DIRECTORY                      = "The directory %q cannot be deleted: %v.\n"
+	USER_CANNOT_READ_DIRECTORY                        = "The directory %q cannot be read: %v\n"
 	USER_CANNOT_READ_TOPDIR                           = "The -topDir value you specified, %q, cannot be read: %v.\n"
 	USER_CONFIGURATION_FILE_GARBLED                   = "The configuration file %q is not well-formed YAML: %v\n"
 	USER_CONFIGURATION_FILE_IS_DIR                    = "The configuration file %q is a directory.\n"

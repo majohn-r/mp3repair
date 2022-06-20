@@ -1,6 +1,7 @@
 package files
 
 import (
+	"io"
 	"io/fs"
 	"path/filepath"
 )
@@ -35,8 +36,8 @@ func (a *Album) BackupDirectory() string {
 	return a.subDirectory(backupDirName)
 }
 
-func (a *Album) contents() ([]fs.FileInfo, error) {
-	return readDirectory(a.path)
+func (a *Album) contents(wErr io.Writer) ([]fs.FileInfo, bool) {
+	return readDirectory(wErr, a.path)
 }
 
 // Name returns the album's name

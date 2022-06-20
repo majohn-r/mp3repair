@@ -1,6 +1,7 @@
 package files
 
 import (
+	"bytes"
 	"flag"
 	"io/fs"
 	"mp3/internal"
@@ -9,41 +10,45 @@ import (
 	"testing"
 )
 
-func TestSearch_LoadUnfilteredData(t *testing.T) {
-	fnName := "Search.LoadUnfilteredData()"
+func Test_readDirectory(t *testing.T) {
+	fnName := "readDirectory()"
 	// generate test data
 	topDir := "loadTest"
-	emptyDir := "empty directory"
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, topDir)
-		internal.DestroyDirectoryForTesting(fnName, emptyDir)
-	}()
 	if err := internal.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
 	}
-	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
-		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
-	}
-	if err := internal.Mkdir(emptyDir); err != nil {
-		t.Errorf("%s error creating %s: %v", fnName, emptyDir, err)
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, topDir)
+	}()
+	type args struct {
+		dir string
 	}
 	tests := []struct {
-		name        string
-		s           *Search
-		wantArtists []*Artist
+		name      string
+		args      args
+		wantFiles []fs.FileInfo
+		wantOk    bool
+		wantWErr  string
 	}{
+		{name: "default", args: args{topDir}, wantFiles: []fs.FileInfo{}, wantOk: true},
 		{
-			name:        "read all",
-			s:           CreateSearchForTesting(topDir),
-			wantArtists: CreateAllArtistsForTesting(topDir, true),
+			name:     "non-existent dir",
+			args:     args{"non-existent directory"},
+			wantWErr: "The directory \"non-existent directory\" cannot be read: open non-existent directory: The system cannot find the file specified.\n",
 		},
-		{name: "empty dir", s: CreateSearchForTesting(emptyDir)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotArtists := tt.s.LoadUnfilteredData()
-			if !reflect.DeepEqual(gotArtists, tt.wantArtists) {
-				t.Errorf("%s = %v, want %v", fnName, gotArtists, tt.wantArtists)
+			wErr := &bytes.Buffer{}
+			gotFiles, gotOk := readDirectory(wErr, tt.args.dir)
+			if !reflect.DeepEqual(gotFiles, tt.wantFiles) {
+				t.Errorf("readDirectory() gotFiles = %v, want %v", gotFiles, tt.wantFiles)
+			}
+			if gotOk != tt.wantOk {
+				t.Errorf("readDirectory() gotOk = %v, want %v", gotOk, tt.wantOk)
+			}
+			if gotWErr := wErr.String(); gotWErr != tt.wantWErr {
+				t.Errorf("readDirectory() gotWErr = %v, want %v", gotWErr, tt.wantWErr)
 			}
 		})
 	}
@@ -78,8 +83,8 @@ func TestSearch_FilterArtists(t *testing.T) {
 		{
 			name:        "default",
 			s:           realS,
-			args:        args{unfilteredArtists: realS.LoadUnfilteredData()},
-			wantArtists: realS.LoadData(),
+			args:        args{unfilteredArtists: realS.LoadUnfilteredData(os.Stderr)},
+			wantArtists: realS.LoadData(os.Stderr),
 		},
 	}
 	for _, tt := range tests {
@@ -108,6 +113,7 @@ func TestSearch_LoadData(t *testing.T) {
 		name        string
 		s           *Search
 		wantArtists []*Artist
+		wantWErr    string
 	}{
 		{
 			name:        "read all",
@@ -130,46 +136,56 @@ func TestSearch_LoadData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotArtists := tt.s.LoadData(); !reflect.DeepEqual(gotArtists, tt.wantArtists) {
-				t.Errorf("%s = %v, want %v", fnName, gotArtists, tt.wantArtists)
+			wErr := &bytes.Buffer{}
+			if gotArtists := tt.s.LoadData(wErr); !reflect.DeepEqual(gotArtists, tt.wantArtists) {
+				t.Errorf("Search.LoadData() = %v, want %v", gotArtists, tt.wantArtists)
+			}
+			if gotWErr := wErr.String(); gotWErr != tt.wantWErr {
+				t.Errorf("Search.LoadData() = %v, want %v", gotWErr, tt.wantWErr)
 			}
 		})
 	}
 }
 
-func Test_readDirectory(t *testing.T) {
-	fnName := "readDirectory()"
+func TestSearch_LoadUnfilteredData(t *testing.T) {
+	fnName := "Search.LoadUnfilteredData()"
 	// generate test data
 	topDir := "loadTest"
+	emptyDir := "empty directory"
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, topDir)
+		internal.DestroyDirectoryForTesting(fnName, emptyDir)
+	}()
 	if err := internal.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
 	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, topDir)
-	}()
-	type args struct {
-		dir string
+	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
+		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
+	}
+	if err := internal.Mkdir(emptyDir); err != nil {
+		t.Errorf("%s error creating %s: %v", fnName, emptyDir, err)
 	}
 	tests := []struct {
-		name      string
-		args      args
-		wantFiles []fs.FileInfo
-		wantErr   bool
+		name        string
+		s           *Search
+		wantArtists []*Artist
+		wantWErr    string
 	}{
-		{name: "default", args: args{topDir}, wantFiles: []fs.FileInfo{}, wantErr: false},
-		{name: "non-existent dir", args: args{"non-existent directory"}, wantErr: true},
+		{
+			name:        "read all",
+			s:           CreateSearchForTesting(topDir),
+			wantArtists: CreateAllArtistsForTesting(topDir, true),
+		},
+		{name: "empty dir", s: CreateSearchForTesting(emptyDir)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFiles, err := readDirectory(tt.args.dir)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
-				return
+			wErr := &bytes.Buffer{}
+			if gotArtists := tt.s.LoadUnfilteredData(wErr); !reflect.DeepEqual(gotArtists, tt.wantArtists) {
+				t.Errorf("Search.LoadUnfilteredData() = %v, want %v", gotArtists, tt.wantArtists)
 			}
-			if err == nil {
-				if !reflect.DeepEqual(gotFiles, tt.wantFiles) {
-					t.Errorf("%s = %v, want %v", fnName, gotFiles, tt.wantFiles)
-				}
+			if gotWErr := wErr.String(); gotWErr != tt.wantWErr {
+				t.Errorf("Search.LoadUnfilteredData() = %v, want %v", gotWErr, tt.wantWErr)
 			}
 		})
 	}

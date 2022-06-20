@@ -1,6 +1,7 @@
 package files
 
 import (
+	"io"
 	"io/fs"
 	"path/filepath"
 )
@@ -27,8 +28,8 @@ func NewArtist(n, p string) *Artist {
 	return &Artist{name: n, path: p}
 }
 
-func (a *Artist) contents() ([]fs.FileInfo, error) {
-	return readDirectory(a.path)
+func (a *Artist) contents(wErr io.Writer) ([]fs.FileInfo, bool) {
+	return readDirectory(wErr, a.path)
 }
 
 // Name returns the artist's name

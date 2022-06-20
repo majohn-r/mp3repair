@@ -2,6 +2,8 @@ package files
 
 import (
 	"flag"
+	"fmt"
+	"io"
 	"io/fs"
 	"io/ioutil"
 	"mp3/internal"
@@ -20,29 +22,26 @@ type Search struct {
 	artistFilter    *regexp.Regexp
 }
 
-func (s *Search) contents() ([]fs.FileInfo, error) {
-	return readDirectory(s.topDirectory)
+func (s *Search) contents(wErr io.Writer) ([]fs.FileInfo, bool) {
+	return readDirectory(wErr, s.topDirectory)
 }
 
 // LoadUnfilteredData loads artists, albums, and tracks from the specified top
 // directory, honoring the specified track extension, but ignoring the album and
 // artist filter expressions.
-func (s *Search) LoadUnfilteredData() (artists []*Artist) {
+func (s *Search) LoadUnfilteredData(wErr io.Writer) (artists []*Artist) {
 	logrus.WithFields(s.LogFields(false)).Info(internal.LI_READING_UNFILTERED_FILES)
-	artistFiles, err := s.contents()
-	if err == nil {
+	if artistFiles, ok := s.contents(wErr); ok {
 		for _, artistFile := range artistFiles {
 			if artistFile.IsDir() {
 				artist := newArtistFromFile(artistFile, s.topDirectory)
-				albumFiles, err := artist.contents()
-				if err == nil {
+				if albumFiles, ok := artist.contents(wErr); ok {
 					for _, albumFile := range albumFiles {
 						if !albumFile.IsDir() {
 							continue
 						}
 						album := newAlbumFromFile(albumFile, artist)
-						trackFiles, err := album.contents()
-						if err == nil {
+						if trackFiles, ok := album.contents(wErr); ok {
 							for _, trackFile := range trackFiles {
 								if trackFile.IsDir() || !trackNameRegex.MatchString(trackFile.Name()) {
 									continue
@@ -104,24 +103,21 @@ func (s *Search) FilterArtists(unfilteredArtists []*Artist) (artists []*Artist) 
 
 // LoadData collects the artists, albums, and mp3 tracks, honoring all the
 // search parameters.
-func (s *Search) LoadData() (artists []*Artist) {
+func (s *Search) LoadData(wErr io.Writer) (artists []*Artist) {
 	logrus.WithFields(s.LogFields(true)).Info(internal.LI_READING_FILTERED_FILES)
-	artistFiles, err := s.contents()
-	if err == nil {
+	if artistFiles, ok := s.contents(wErr); ok {
 		for _, artistFile := range artistFiles {
 			if !artistFile.IsDir() || !s.artistFilter.MatchString(artistFile.Name()) {
 				continue
 			}
 			artist := newArtistFromFile(artistFile, s.topDirectory)
-			albumFiles, err := artist.contents()
-			if err == nil {
+			if albumFiles, ok := artist.contents(wErr); ok {
 				for _, albumFile := range albumFiles {
 					if !albumFile.IsDir() || !s.albumFilter.MatchString(albumFile.Name()) {
 						continue
 					}
 					album := newAlbumFromFile(albumFile, artist)
-					trackFiles, err := album.contents()
-					if err == nil {
+					if trackFiles, ok := album.contents(wErr); ok {
 						for _, trackFile := range trackFiles {
 							if trackFile.IsDir() || !trackNameRegex.MatchString(trackFile.Name()) {
 								continue
@@ -161,14 +157,16 @@ func CreateFilteredSearchForTesting(topDir string, artistFilter string, albumFil
 	})
 }
 
-// TODO: [#64] should output message to user and just return bool status
-func readDirectory(dir string) (files []fs.FileInfo, err error) {
-	files, err = ioutil.ReadDir(dir)
-	if err != nil {
+func readDirectory(wErr io.Writer, dir string) (files []fs.FileInfo, ok bool) {
+	var err error
+	if files, err = ioutil.ReadDir(dir); err != nil {
 		logrus.WithFields(logrus.Fields{
 			internal.FK_DIRECTORY: dir,
 			internal.FK_ERROR:     err,
 		}).Warn(internal.LW_CANNOT_READ_DIRECTORY)
+		fmt.Fprintf(wErr, internal.USER_CANNOT_READ_DIRECTORY, dir, err)
+		return
 	}
+	ok = true
 	return
 }

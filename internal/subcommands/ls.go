@@ -105,7 +105,7 @@ func (l *ls) runSubcommand(w io.Writer, s *files.Search) {
 				logrus.WithFields(l.logFields()).Info(internal.LI_PARAMETERS_OVERRIDDEN)
 			}
 		}
-		artists := s.LoadData()
+		artists := s.LoadData(os.Stderr)
 		l.outputArtists(w, artists)
 	}
 }

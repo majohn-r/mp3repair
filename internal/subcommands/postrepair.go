@@ -42,9 +42,10 @@ func (p *postrepair) logFields() logrus.Fields {
 	return logrus.Fields{fkCommandName: p.name()}
 }
 
+// TODO: need 2nd writer
 func (p *postrepair) runSubcommand(w io.Writer, s *files.Search) {
 	logrus.WithFields(p.logFields()).Info(internal.LI_EXECUTING_COMMAND)
-	artists := s.LoadData()
+	artists := s.LoadData(os.Stderr)
 	backups := make(map[string]*files.Album)
 	var backupDirectories []string
 	for _, artist := range artists {
