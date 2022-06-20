@@ -134,10 +134,10 @@ func Test_validateRegexp(t *testing.T) {
 		name    string
 	}
 	tests := []struct {
-		name         string
-		args         args
-		wantFilter   *regexp.Regexp
-		wantBadRegex bool
+		name       string
+		args       args
+		wantFilter *regexp.Regexp
+		wantOk     bool
 	}{
 		{
 			name: "valid filter with regex",
@@ -145,8 +145,8 @@ func Test_validateRegexp(t *testing.T) {
 				pattern: "^.*$",
 				name:    "artist",
 			},
-			wantFilter:   regexp.MustCompile("^.*$"),
-			wantBadRegex: false,
+			wantFilter: regexp.MustCompile("^.*$"),
+			wantOk:     true,
 		},
 		{
 			name: "valid simple filter",
@@ -154,27 +154,19 @@ func Test_validateRegexp(t *testing.T) {
 				pattern: "Beatles",
 				name:    "artist",
 			},
-			wantFilter:   regexp.MustCompile("Beatles"),
-			wantBadRegex: false,
+			wantFilter: regexp.MustCompile("Beatles"),
+			wantOk:     true,
 		},
-		{
-			name: "invalid filter",
-			args: args{
-				pattern: "disc[",
-				name:    "album",
-			},
-			wantFilter:   nil,
-			wantBadRegex: true,
-		},
+		{name: "invalid filter", args: args{pattern: "disc[", name: "album"}},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFilter, gotBadRegex := validateRegexp(tt.args.pattern, tt.args.name)
-			if !tt.wantBadRegex && !reflect.DeepEqual(gotFilter, tt.wantFilter) {
+			gotFilter, gotOk := validateRegexp(tt.args.pattern, tt.args.name)
+			if tt.wantOk && !reflect.DeepEqual(gotFilter, tt.wantFilter) {
 				t.Errorf("%s gotFilter = %v, want %v", fnName, gotFilter, tt.wantFilter)
 			}
-			if gotBadRegex != tt.wantBadRegex {
-				t.Errorf("%s gotBadRegex = %v, want %v", fnName, gotBadRegex, tt.wantBadRegex)
+			if gotOk != tt.wantOk {
+				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 		})
 	}

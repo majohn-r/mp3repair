@@ -132,17 +132,16 @@ func (sf *SearchFlags) validateExtension() (valid bool) {
 }
 
 // TODO: [#66] should use writer for error output
-// TODO: [#67] badRegex is an anti-pattern - use ok instead
-func validateRegexp(pattern, name string) (filter *regexp.Regexp, badRegex bool) {
+func validateRegexp(pattern, name string) (filter *regexp.Regexp, ok bool) {
 	if f, err := regexp.Compile(pattern); err != nil {
 		fmt.Fprintf(os.Stderr, internal.USER_FILTER_GARBLED, name, pattern, err)
 		logrus.WithFields(logrus.Fields{
 			name:              pattern,
 			internal.FK_ERROR: err,
 		}).Warn(internal.LW_GARBLED_FILTER)
-		badRegex = true
 	} else {
 		filter = f
+		ok = true
 	}
 	return
 }
@@ -154,12 +153,12 @@ func (sf *SearchFlags) validate() (albumsFilter *regexp.Regexp, artistsFilter *r
 	if !sf.validateExtension() {
 		problemsExist = true
 	}
-	if filter, b := validateRegexp(*sf.albumRegex, fkAlbumFilterFlag); b {
+	if filter, ok := validateRegexp(*sf.albumRegex, fkAlbumFilterFlag); !ok {
 		problemsExist = true
 	} else {
 		albumsFilter = filter
 	}
-	if filter, b := validateRegexp(*sf.artistRegex, fkArtistFilterFlag); b {
+	if filter, ok := validateRegexp(*sf.artistRegex, fkArtistFilterFlag); !ok {
 		problemsExist = true
 	} else {
 		artistsFilter = filter
