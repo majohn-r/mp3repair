@@ -1,6 +1,8 @@
 package internal
 
 import (
+	"fmt"
+	"io"
 	"io/fs"
 	"io/ioutil"
 	"os"
@@ -36,13 +38,13 @@ func ConfigureLogging(path string) *cronowriter.CronoWriter {
 }
 
 // CleanupLogFiles cleans up old log files
-func CleanupLogFiles(path string) {
+func CleanupLogFiles(wErr io.Writer, path string) {
 	if files, err := ioutil.ReadDir(path); err != nil {
 		logrus.WithFields(logrus.Fields{
 			FK_DIRECTORY: path,
 			FK_ERROR:     err,
 		}).Warn(LW_CANNOT_READ_DIRECTORY)
-		// TODO: [#63] let the user know too
+		fmt.Fprintf(wErr, USER_LOG_DIR_CANNOT_BE_READ, path, err)
 	} else {
 		var fileMap map[time.Time]fs.FileInfo = make(map[time.Time]fs.FileInfo)
 		var times []time.Time
@@ -68,7 +70,7 @@ func CleanupLogFiles(path string) {
 						FK_FILE_NAME: fileName,
 						FK_ERROR:     err,
 					}).Warn(LW_CANNOT_DELETE_FILE)
-					// TODO: [#63] let the user know too!
+					fmt.Fprintf(wErr, USER_LOG_FILE_CANNOT_BE_DELETED, logFilePath, err)
 				} else {
 					logrus.WithFields(logrus.Fields{
 						FK_DIRECTORY: path,

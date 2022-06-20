@@ -58,6 +58,8 @@ const (
 	USER_FILTER_GARBLED                               = "The %s filter value you specified, %q, cannot be used: %v\n"
 	USER_INCORRECT_NUMBER_OF_DEFAULT_COMMANDS_DEFINED = "An internal error has occurred: there are %d default commands!\n"
 	USER_INVALID_SORTING_APPLIED                      = "The value of the %s flag, '%s', cannot be used unless '%s' is true; track sorting will be alphabetic.\n"
+	USER_LOG_DIR_CANNOT_BE_READ                       = "The log file directory %q cannot be read: %v\n"
+	USER_LOG_FILE_CANNOT_BE_DELETED                   = "The log file %q cannot be deleted: %v\n"
 	USER_NO_APPDATA_FOLDER                            = "The APPDATA environment variable is not defined.\n"
 	USER_NO_COMMANDS_DEFINED                          = "An internal error has occurred: no commands are defined!\n"
 	USER_NO_SUCH_COMMAND                              = "There is no command named %q; valid commands include %v.\n"

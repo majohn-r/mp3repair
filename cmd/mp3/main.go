@@ -83,6 +83,6 @@ func initLogging(w io.Writer, parentDir string) bool {
 	}
 	logger = internal.ConfigureLogging(path)
 	logrus.SetOutput(logger)
-	internal.CleanupLogFiles(path)
+	internal.CleanupLogFiles(w, path)
 	return true
 }

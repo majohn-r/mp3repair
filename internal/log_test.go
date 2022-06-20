@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"bytes"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
@@ -70,6 +71,7 @@ func TestCleanupLogFiles(t *testing.T) {
 		lockFiles     bool
 		args          args
 		wantFileCount int
+		wantWErr      string
 	}{
 		{
 			name:          "no work to do",
@@ -92,10 +94,12 @@ func TestCleanupLogFiles(t *testing.T) {
 			lockFiles:     true,
 			args:          args{path: "testlogs"},
 			wantFileCount: maxLogFiles + 2,
+			wantWErr:      "The log file \"testlogs\\\\mp3.00.log\" cannot be deleted: remove testlogs\\mp3.00.log: The process cannot access the file because it is being used by another process.\nThe log file \"testlogs\\\\mp3.01.log\" cannot be deleted: remove testlogs\\mp3.01.log: The process cannot access the file because it is being used by another process.\n",
 		},
 		{
-			name: "missing path",
-			args: args{path: "testlogs"},
+			name:     "missing path",
+			args:     args{path: "testlogs"},
+			wantWErr: "The log file directory \"testlogs\" cannot be read: open testlogs: The system cannot find the file specified.\n",
 		},
 	}
 	for _, tt := range tests {
@@ -133,7 +137,18 @@ func TestCleanupLogFiles(t *testing.T) {
 			}
 		}
 		t.Run(tt.name, func(t *testing.T) {
-			CleanupLogFiles(tt.args.path)
+			wErr := &bytes.Buffer{}
+			CleanupLogFiles(wErr, tt.args.path)
+			gotWErr := wErr.String()
+			if strings.Contains(gotWErr, ".log") {
+				for k := 0; k < tt.fileCount; k++ {
+					// search := fmt.Sprintf("mp3.%02d.log", k)
+					// gotWErr = strings.ReplaceAll(gotWErr, search, "mp3.xx.log")
+				}
+			}
+			if gotWErr != tt.wantWErr {
+				t.Errorf("%s = %v, want %v", fnName, gotWErr, tt.wantWErr)
+			}
 			if tt.createFolder {
 				if files, err := ioutil.ReadDir(tt.args.path); err != nil {
 					t.Errorf("%s: cannot read directory %s: %v", fnName, tt.args.path, err)
