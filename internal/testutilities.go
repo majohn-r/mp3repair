@@ -168,3 +168,26 @@ unused:
 repair:
     dryRun: true # false`)
 }
+
+type SavedEnvVar struct {
+	Name  string
+	Value string
+	Set   bool
+}
+
+func SaveEnvVarForTesting(name string) *SavedEnvVar {
+	s := &SavedEnvVar{Name: name}
+	if value, ok := os.LookupEnv(name); ok {
+		s.Value = value
+		s.Set = true
+	}
+	return s
+}
+
+func (e *SavedEnvVar) RestoreForTesting() {
+	if e.Set {
+		os.Setenv(e.Name, e.Value)
+	} else {
+		os.Unsetenv(e.Name)
+	}
+}

@@ -3,6 +3,8 @@ package internal
 import (
 	"os"
 	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 )
 
@@ -301,6 +303,67 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 				t.Errorf("CreateDefaultYamlFile() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			tt.postTest(t)
+		})
+	}
+}
+
+func TestSaveEnvVarForTesting(t *testing.T) {
+	vars := os.Environ()
+	firstVar := vars[0]
+	i := strings.Index(firstVar, "=")
+	firstVar = firstVar[0:i]
+	testVar1Exists := false
+	name1 := "MP3TEST1"
+	testVar2Exists := false
+	name2 := "MP3TEST2"
+	for _, v := range vars {
+		if strings.HasPrefix(v, name1+"=") {
+			testVar1Exists = true
+		}
+		if strings.HasPrefix(v, name2+"=") {
+			testVar2Exists = true
+		}
+	}
+	firstSaveState := &SavedEnvVar{Name: firstVar, Value: os.Getenv(firstVar), Set: true}
+	os.Unsetenv(firstVar)
+	var saveState1 *SavedEnvVar
+	if testVar1Exists {
+		saveState1 = &SavedEnvVar{Name: name1, Value: os.Getenv(name1), Set: true}
+	} else {
+		saveState1 = &SavedEnvVar{Name: name1}
+	}
+	var saveState2 *SavedEnvVar
+	if testVar2Exists {
+		saveState2 = &SavedEnvVar{Name: name2, Value: os.Getenv(name2), Set: true}
+	} else {
+		saveState2 = &SavedEnvVar{Name: name2}
+	}
+	defer func() {
+		firstSaveState.RestoreForTesting()
+		saveState1.RestoreForTesting()
+		saveState2.RestoreForTesting()
+		if !reflect.DeepEqual(vars, os.Environ()) {
+			t.Errorf("Environment was not safely restored")
+		}
+	}()
+	os.Setenv(name1, "value1")
+	os.Unsetenv(name2)
+	type args struct {
+		name string
+	}
+	tests := []struct {
+		name string
+		args args
+		want *SavedEnvVar
+	}{
+		{name: "set", args: args{name1}, want: &SavedEnvVar{Name: name1, Value: "value1", Set: true}},
+		{name: "unset", args: args{name2}, want: &SavedEnvVar{Name: name2}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := SaveEnvVarForTesting(tt.args.name); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("SaveEnvVarForTesting() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }

@@ -12,7 +12,7 @@ func Test_Configuration_SubConfiguration(t *testing.T) {
 	if err := CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("error creating defaults.yaml: %v", err)
 	}
-	fnName := "Configuration_SubConfiguration()"
+	fnName := "Configuration.SubConfiguration()"
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
