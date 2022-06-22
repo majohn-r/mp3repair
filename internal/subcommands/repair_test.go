@@ -14,6 +14,11 @@ import (
 )
 
 func Test_newRepairSubCommand(t *testing.T) {
+	savedState := internal.SaveEnvVarForTesting("APPDATA")
+	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
+	defer func() {
+		savedState.RestoreForTesting()
+	}()
 	topDir := "loadTest"
 	fnName := "newRepairSubCommand()"
 	if err := internal.Mkdir(topDir); err != nil {
@@ -29,7 +34,7 @@ func Test_newRepairSubCommand(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	defaultConfig, _ := internal.ReadConfigurationFile(os.Stderr, "./mp3")
+	defaultConfig, _ := internal.ReadConfigurationFile(os.Stderr)
 	type args struct {
 		c *internal.Configuration
 	}

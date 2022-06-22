@@ -56,7 +56,7 @@ func run(cmdlineArgs []string) (returnValue int) {
 		fkTimeStamp:            creation,
 		fkCommandLineArguments: cmdlineArgs,
 	}).Info(internal.LI_BEGIN_EXECUTION)
-	if cmd, args, ok := subcommands.ProcessCommand(os.Stderr, internal.ApplicationDataPath(), cmdlineArgs); ok {
+	if cmd, args, ok := subcommands.ProcessCommand(os.Stderr, cmdlineArgs); ok {
 		if cmd.Exec(os.Stdout, os.Stderr, args) {
 			returnValue = 0
 		}

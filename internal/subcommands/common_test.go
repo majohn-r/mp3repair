@@ -22,12 +22,17 @@ func TestProcessCommand(t *testing.T) {
 	if err := internal.Mkdir("./mp3/mp3/defaults.yaml"); err != nil {
 		t.Errorf("error creating defective defaults.yaml: %v", err)
 	}
+	normalDir := internal.SecureAbsolutePathForTesting(".")
+	savedState := internal.SaveEnvVarForTesting("APPDATA")
+	defer func() {
+		savedState.RestoreForTesting()
+	}()
 	type args struct {
-		appDataPath string
-		args        []string
+		args []string
 	}
 	tests := []struct {
 		name  string
+		state *internal.SavedEnvVar
 		args  args
 		want  CommandProcessor
 		want1 []string
@@ -35,51 +40,59 @@ func TestProcessCommand(t *testing.T) {
 		wantW string
 	}{
 		{
-			name:  "error handling", args:  args{appDataPath: "./mp3", args: nil},
+			name:  "problematic input",
+			state: &internal.SavedEnvVar{Name: "APPDATA", Value: internal.SecureAbsolutePathForTesting("./mp3"), Set: true},
 		},
 		{
 			name:  "call ls",
-			args:  args{appDataPath: ".", args: []string{"mp3.exe", "ls", "-track=true"}},
+			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
+			args:  args{args: []string{"mp3.exe", "ls", "-track=true"}},
 			want:  newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
 			want1: []string{"-track=true"},
 			want2: true,
 		},
 		{
 			name:  "call check",
-			args:  args{appDataPath: ".", args: []string{"mp3.exe", "check", "-integrity=false"}},
+			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
+			args:  args{args: []string{"mp3.exe", "check", "-integrity=false"}},
 			want:  newCheck(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ExitOnError)),
 			want1: []string{"-integrity=false"},
 			want2: true,
 		},
 		{
 			name:  "call repair",
-			args:  args{appDataPath: ".", args: []string{"mp3.exe", "repair"}},
+			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
+			args:  args{args: []string{"mp3.exe", "repair"}},
 			want:  newRepair(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ExitOnError)),
 			want1: []string{},
 			want2: true,
 		},
 		{
 			name:  "call postRepair",
-			args:  args{appDataPath: ".", args: []string{"mp3.exe", "postRepair"}},
+			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
+			args:  args{args: []string{"mp3.exe", "postRepair"}},
 			want:  newPostRepair(internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ExitOnError)),
 			want1: []string{},
 			want2: true,
 		},
 		{
 			name:  "call default command",
-			args:  args{appDataPath: ".", args: []string{"mp3.exe"}},
+			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
+			args:  args{args: []string{"mp3.exe"}},
 			want:  newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
 			want1: []string{"ls"},
 			want2: true,
 		},
 		{
 			name:  "call invalid command",
-			args:  args{appDataPath: ".", args: []string{"mp3.exe", "no such command"}},
+			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
+			args:  args{args: []string{"mp3.exe", "no such command"}},
 			wantW: "There is no command named \"no such command\"; valid commands include [check ls postRepair repair].\n",
 		},
 		{
 			name:  "pass arguments to default subcommand",
-			args:  args{appDataPath: ".", args: []string{"mp3.exe", "-album", "-artist", "-track"}},
+			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
+			args:  args{args: []string{"mp3.exe", "-album", "-artist", "-track"}},
 			want:  newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
 			want1: []string{"-album", "-artist", "-track"},
 			want2: true,
@@ -87,8 +100,9 @@ func TestProcessCommand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			tt.state.RestoreForTesting()
 			w := &bytes.Buffer{}
-			got, got1, got2 := ProcessCommand(w, tt.args.appDataPath, tt.args.args)
+			got, got1, got2 := ProcessCommand(w, tt.args.args)
 			if got == nil {
 				if tt.want != nil {
 					t.Errorf("%s got = %v, want %v", fnName, got, tt.want)

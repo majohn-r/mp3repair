@@ -236,7 +236,12 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 				// nothing to do
 			},
 			postTest: func(t *testing.T) {
-				c, _ := ReadConfigurationFile(os.Stderr, "./mp3")
+				savedState := SaveEnvVarForTesting(appDataVar)
+				os.Setenv(appDataVar, SecureAbsolutePathForTesting("."))
+				defer func() {
+					savedState.RestoreForTesting()
+				}()
+				c, _ := ReadConfigurationFile(os.Stderr)
 				if common := c.cMap["common"]; common == nil {
 					t.Error("CreateDefaultYamlFile() 'good test': configuration does not contain common subtree")
 				} else {
@@ -363,6 +368,27 @@ func TestSaveEnvVarForTesting(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := SaveEnvVarForTesting(tt.args.name); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("SaveEnvVarForTesting() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSecureAbsolutePathForTesting(t *testing.T) {
+	type args struct {
+		path string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{name: "simple", args: args{path: "."}, want: true},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := SecureAbsolutePathForTesting(tt.args.path)
+			if tt.want && len(got) == 0 {
+				t.Errorf("SecureAbsolutePathForTesting() = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -11,6 +11,11 @@ import (
 )
 
 func Test_NewFileFlags(t *testing.T) {
+	savedState := internal.SaveEnvVarForTesting("APPDATA")
+	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
+	defer func() {
+		savedState.RestoreForTesting()
+	}()
 	oldHomePath := os.Getenv("HOMEPATH")
 	defer func() {
 		os.Setenv("HOMEPATH", oldHomePath)
@@ -23,7 +28,7 @@ func Test_NewFileFlags(t *testing.T) {
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	defaultConfig, _ := internal.ReadConfigurationFile(os.Stderr, "./mp3")
+	defaultConfig, _ := internal.ReadConfigurationFile(os.Stderr)
 	type args struct {
 		c *internal.Configuration
 	}

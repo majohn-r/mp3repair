@@ -428,6 +428,11 @@ func Test_check_Exec(t *testing.T) {
 }
 
 func Test_newCheckSubCommand(t *testing.T) {
+	savedState := internal.SaveEnvVarForTesting("APPDATA")
+	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
+	defer func() {
+		savedState.RestoreForTesting()
+	}()
 	topDir := "loadTest"
 	fnName := "newCheckSubCommand()"
 	if err := internal.Mkdir(topDir); err != nil {
@@ -443,7 +448,7 @@ func Test_newCheckSubCommand(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	defaultConfig, _ := internal.ReadConfigurationFile(os.Stderr, "./mp3")
+	defaultConfig, _ := internal.ReadConfigurationFile(os.Stderr)
 	type args struct {
 		c *internal.Configuration
 	}

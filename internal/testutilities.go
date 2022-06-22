@@ -191,3 +191,8 @@ func (e *SavedEnvVar) RestoreForTesting() {
 		os.Unsetenv(e.Name)
 	}
 }
+
+func SecureAbsolutePathForTesting(path string) string {
+	absPath, _ := filepath.Abs(path)
+	return absPath
+}

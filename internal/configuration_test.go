@@ -2,6 +2,7 @@ package internal
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -9,6 +10,11 @@ import (
 )
 
 func Test_Configuration_SubConfiguration(t *testing.T) {
+	savedState := SaveEnvVarForTesting(appDataVar)
+	os.Setenv(appDataVar, SecureAbsolutePathForTesting("."))
+	defer func() {
+		savedState.RestoreForTesting()
+	}()
 	if err := CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("error creating defaults.yaml: %v", err)
 	}
@@ -16,7 +22,7 @@ func Test_Configuration_SubConfiguration(t *testing.T) {
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	testConfiguration, _ := ReadConfigurationFile(os.Stderr, "./mp3")
+	testConfiguration, _ := ReadConfigurationFile(os.Stderr)
 	type args struct {
 		key string
 	}
@@ -43,14 +49,19 @@ func Test_Configuration_SubConfiguration(t *testing.T) {
 }
 
 func Test_Configuration_BoolDefault(t *testing.T) {
+	savedState := SaveEnvVarForTesting(appDataVar)
+	os.Setenv(appDataVar, SecureAbsolutePathForTesting("."))
+	defer func() {
+		savedState.RestoreForTesting()
+	}()
 	if err := CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("error creating defaults.yaml: %v", err)
 	}
-	fnName := "Configuration_BoolDefault()"
+	fnName := "Configuration.BoolDefault()"
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	testConfiguration, _ := ReadConfigurationFile(os.Stderr, "./mp3")
+	testConfiguration, _ := ReadConfigurationFile(os.Stderr)
 	type args struct {
 		key          string
 		defaultValue bool
@@ -132,14 +143,19 @@ func Test_Configuration_BoolDefault(t *testing.T) {
 }
 
 func Test_Configuration_StringDefault(t *testing.T) {
+	savedState := SaveEnvVarForTesting(appDataVar)
+	os.Setenv(appDataVar, SecureAbsolutePathForTesting("."))
+	defer func() {
+		savedState.RestoreForTesting()
+	}()
 	if err := CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("error creating defaults.yaml: %v", err)
 	}
-	fnName := "Configuration_StringDefault()"
+	fnName := "Configuration.StringDefault()"
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	testConfiguration, _ := ReadConfigurationFile(os.Stderr, "./mp3")
+	testConfiguration, _ := ReadConfigurationFile(os.Stderr)
 	type args struct {
 		key          string
 		defaultValue string
@@ -229,6 +245,12 @@ func Test_verifyFileExists(t *testing.T) {
 }
 
 func TestReadConfigurationFile(t *testing.T) {
+	savedState := SaveEnvVarForTesting(appDataVar)
+	canonicalPath := SecureAbsolutePathForTesting(".")
+	os.Setenv(appDataVar, canonicalPath)
+	defer func() {
+		savedState.RestoreForTesting()
+	}()
 	fnName := "ReadConfigurationFile()"
 	if err := CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
@@ -236,38 +258,37 @@ func TestReadConfigurationFile(t *testing.T) {
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	badDir := filepath.Join(".", "mp3", "badData")
+	badDir := filepath.Join("./mp3", "fake")
 	if err := Mkdir(badDir); err != nil {
-		t.Errorf("%s error creating non-standard test directory %q: %v", fnName, badDir, err)
+		t.Errorf("%s error creating fake dir: %v", fnName, err)
 	}
-	if err := CreateFileForTestingWithContent(badDir, defaultConfigFileName, "gibberish"); err != nil {
-		t.Errorf("%s error creating non-standard defaults.yaml: %v", fnName, err)
+	badDir2 := filepath.Join(badDir, AppName)
+	if err := Mkdir(badDir2); err != nil {
+		t.Errorf("%s error creating fake dir mp3 folder: %v", fnName, err)
 	}
-	if err := Mkdir("./defaults.yaml"); err != nil {
-		t.Errorf("%s error creating defaults.yaml as directory: %v", fnName, err)
+	badFile := filepath.Join(badDir2, defaultConfigFileName)
+	if err := Mkdir(badFile); err != nil {
+		t.Errorf("%s error creating defaults.yaml as a directory: %v", fnName, err)
 	}
-	type args struct {
-		path string
+	yamlAsDir := SecureAbsolutePathForTesting(badFile)
+	gibberishDir := filepath.Join(badDir2, AppName)
+	if err := Mkdir(gibberishDir); err != nil {
+		t.Errorf("%s error creating gibberish folder: %v", fnName, err)
+	}
+	if err := CreateFileForTestingWithContent(gibberishDir, defaultConfigFileName, "gibberish"); err != nil {
+		t.Errorf("%s error creating gibberish defaults.yaml: %v", fnName, err)
 	}
 	tests := []struct {
 		name     string
-		args     args
-		want     *Configuration
+		state    *SavedEnvVar
+		wantC    *Configuration
 		wantOk   bool
 		wantWErr string
 	}{
-		{name: "dir!", args: args{path: "."}, want: nil, wantOk: false, wantWErr: "The configuration file \"defaults.yaml\" is a directory.\n"},
 		{
-			name:     "bad",
-			args:     args{path: badDir},
-			want:     nil,
-			wantOk:   false,
-			wantWErr: "The configuration file \"mp3\\\\badData\\\\defaults.yaml\" is not well-formed YAML: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}\n",
-		},
-		{
-			name: "good",
-			args: args{path: "./mp3"},
-			want: &Configuration{
+			name:  "good",
+			state: &SavedEnvVar{Name: appDataVar, Value: canonicalPath, Set: true},
+			wantC: &Configuration{
 				bMap: map[string]bool{},
 				sMap: map[string]string{},
 				cMap: map[string]*Configuration{
@@ -307,23 +328,75 @@ func TestReadConfigurationFile(t *testing.T) {
 						cMap: map[string]*Configuration{}},
 				},
 			},
-			wantOk:   true,
-			wantWErr: "",
+			wantOk: true,
 		},
-		{name: "error", args: args{path: "./non-existent-dir"}, want: EmptyConfiguration(), wantOk: true, wantWErr: ""},
+		{name: "APPDATA not set", state: &SavedEnvVar{Name: appDataVar}, wantC: EmptyConfiguration(), wantOk: true},
+		{
+			name:     "defaults.yaml is a directory",
+			state:    &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(badDir), Set: true},
+			wantWErr: fmt.Sprintf("The configuration file %q is a directory.\n", yamlAsDir),
+		},
+		{
+			name:   "missing yaml",
+			state:  &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(yamlAsDir), Set: true},
+			wantC:  EmptyConfiguration(),
+			wantOk: true,
+		},
+		{
+			name:  "malformed yaml",
+			state: &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(badDir2), Set: true},
+			wantWErr: fmt.Sprintf(
+				"The configuration file %q is not well-formed YAML: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}\n",
+				SecureAbsolutePathForTesting(filepath.Join(gibberishDir, defaultConfigFileName))),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			wErr := &bytes.Buffer{}
-			got, gotOk := ReadConfigurationFile(wErr, tt.args.path)
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ReadConfigurationFile() got = %v, want %v", got, tt.want)
+			tt.state.RestoreForTesting()
+			gotC, gotOk := ReadConfigurationFile(wErr)
+			if !reflect.DeepEqual(gotC, tt.wantC) {
+				t.Errorf("ReadConfigurationFile() gotC = %v, want %v", gotC, tt.wantC)
 			}
 			if gotOk != tt.wantOk {
 				t.Errorf("ReadConfigurationFile() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
 			if gotWErr := wErr.String(); gotWErr != tt.wantWErr {
 				t.Errorf("ReadConfigurationFile() gotWErr = %v, want %v", gotWErr, tt.wantWErr)
+			}
+		})
+	}
+}
+
+func Test_appData(t *testing.T) {
+	savedState := SaveEnvVarForTesting(appDataVar)
+	os.Setenv(appDataVar, SecureAbsolutePathForTesting("."))
+	defer func() {
+		savedState.RestoreForTesting()
+	}()
+	tests := []struct {
+		name  string
+		state *SavedEnvVar
+		want  string
+		want1 bool
+	}{
+		{
+			name:  "value is set",
+			state: &SavedEnvVar{Name: appDataVar, Value: "appData!", Set: true},
+			want:  "appData!",
+			want1: true,
+		},
+		{name: "value is not set", state: &SavedEnvVar{Name: appDataVar}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.state.RestoreForTesting()
+			got, got1 := appData()
+			if got != tt.want {
+				t.Errorf("appData() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("appData() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
 	}

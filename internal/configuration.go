@@ -16,22 +16,33 @@ import (
 
 const (
 	defaultConfigFileName = "defaults.yaml"
+	appDataVar            = "APPDATA"
 	fkKey                 = "key"
 	fkType                = "type"
 	fkValue               = "value"
 )
 
 // ReadConfigurationFile reads defaults.yaml from the specified path and returns
-// a pointer to a cooked Node instance
-func ReadConfigurationFile(wErr io.Writer, path string) (*Configuration, bool) {
+// a pointer to a cooked Configuration instance
+func ReadConfigurationFile(wErr io.Writer) (c *Configuration, ok bool) {
+	var appDataValue string
+	var appDataSet bool
+	if appDataValue, appDataSet = appData(); !appDataSet {
+		c = EmptyConfiguration()
+		ok = true
+		return
+	}
+	path := CreateAppSpecificPath(appDataValue)
 	configFile := filepath.Join(path, defaultConfigFileName)
 	var err error
-	var ok bool
-	if ok, err = verifyFileExists(wErr, configFile); err != nil {
-		return nil, false
+	var exists bool
+	if exists, err = verifyFileExists(wErr, configFile); err != nil {
+		return
 	}
-	if !ok {
-		return EmptyConfiguration(), true
+	if !exists {
+		c = EmptyConfiguration()
+		ok = true
+		return
 	}
 	yfile, _ := ioutil.ReadFile(configFile) // only probable error circumvented by verifyFileExists failure
 	data := make(map[string]interface{})
@@ -42,15 +53,26 @@ func ReadConfigurationFile(wErr io.Writer, path string) (*Configuration, bool) {
 			FK_ERROR:     err,
 		}).Warn(LW_CANNOT_UNMARSHAL_YAML)
 		fmt.Fprintf(wErr, USER_CONFIGURATION_FILE_GARBLED, configFile, err)
-		return nil, false
+		return
 	}
-	configuration := createConfiguration(data)
+	c = createConfiguration(data)
+	ok = true
 	logrus.WithFields(logrus.Fields{
 		FK_DIRECTORY: path,
 		FK_FILE_NAME: defaultConfigFileName,
-		fkValue:      configuration,
+		fkValue:      c,
 	}).Info(LI_CONFIGURATION_FILE_READ)
-	return configuration, true
+	return
+}
+
+func appData() (string, bool) {
+	if value, ok := os.LookupEnv(appDataVar); ok {
+		return value, ok
+	}
+	logrus.WithFields(logrus.Fields{
+		fkVarName: appDataVar,
+	}).Info(LI_NOT_SET)
+	return "", false
 }
 
 func verifyFileExists(wErr io.Writer, path string) (ok bool, err error) {

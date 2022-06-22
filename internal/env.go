@@ -18,14 +18,8 @@ func CreateAppSpecificPath(topDir string) string {
 }
 
 var (
-	appDataPath string
-	tmpFolder   string
+	tmpFolder string
 )
-
-// ApplicationDataPath returns the application data path
-func ApplicationDataPath() string {
-	return appDataPath
-}
 
 // TemporaryFileFolder returns the path to the system temporary file folder
 func TemporaryFileFolder() string {
@@ -42,10 +36,6 @@ func LookupEnvVars(w io.Writer) (ok bool) {
 			fmt.Fprint(w, USER_NO_TEMP_FOLDER)
 			ok = false
 		}
-	}
-	if appDataPath, found = os.LookupEnv("APPDATA"); !found {
-		fmt.Fprint(w, USER_NO_APPDATA_FOLDER)
-		ok = false
 	}
 	return
 }

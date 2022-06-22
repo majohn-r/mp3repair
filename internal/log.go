@@ -28,6 +28,7 @@ const (
 	FK_DIRECTORY = "directory"
 	FK_ERROR     = "error"
 	FK_FILE_NAME = "fileName"
+	fkVarName    = "environment variable"
 )
 
 // ConfigureLogging sets up logging

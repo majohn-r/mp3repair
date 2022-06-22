@@ -549,6 +549,11 @@ func Test_ls_Exec(t *testing.T) {
 }
 
 func Test_newLsSubCommand(t *testing.T) {
+	savedState := internal.SaveEnvVarForTesting("APPDATA")
+	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
+	defer func() {
+		savedState.RestoreForTesting()
+	}()
 	topDir := "loadTest"
 	fnName := "newLsSubCommand()"
 	if err := internal.Mkdir(topDir); err != nil {
@@ -564,7 +569,7 @@ func Test_newLsSubCommand(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	defaultConfig, _ := internal.ReadConfigurationFile(os.Stderr, "./mp3")
+	defaultConfig, _ := internal.ReadConfigurationFile(os.Stderr)
 	type args struct {
 		c *internal.Configuration
 	}

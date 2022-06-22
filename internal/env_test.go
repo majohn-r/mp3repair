@@ -101,12 +101,11 @@ func TestLookupEnvVars(t *testing.T) {
 		varSet   bool
 	}
 	var savedStates []envState
-	for _, name := range []string{"TMP", "TEMP", "APPDATA"} {
+	for _, name := range []string{"TMP", "TEMP"} {
 		value, set := os.LookupEnv(name)
 		savedStates = append(savedStates, envState{varName: name, varValue: value, varSet: set})
 	}
 	var savedTmpFolder = TemporaryFileFolder()
-	var savedAppDataPath = ApplicationDataPath()
 	defer func() {
 		for _, ss := range savedStates {
 			if ss.varSet {
@@ -116,7 +115,6 @@ func TestLookupEnvVars(t *testing.T) {
 			}
 		}
 		tmpFolder = savedTmpFolder
-		appDataPath = savedAppDataPath
 	}()
 	tests := []struct {
 		name            string
@@ -131,67 +129,36 @@ func TestLookupEnvVars(t *testing.T) {
 			envs: []envState{
 				{varName: "TMP", varValue: "/tmp", varSet: true},
 				{varName: "TEMP", varValue: "/tmp2", varSet: true},
-				{varName: "APPDATA", varValue: "/users/myUser/AppData/Roaming", varSet: true},
 			},
-			wantOk:          true,
-			wantTmpFolder:   "/tmp",
-			wantAppDataPath: "/users/myUser/AppData/Roaming",
-			wantW:           "",
+			wantOk:        true,
+			wantTmpFolder: "/tmp",
+			wantW:         "",
 		},
 		{
 			name: "missing TMP",
 			envs: []envState{
 				{varName: "TMP"},
 				{varName: "TEMP", varValue: "/tmp2", varSet: true},
-				{varName: "APPDATA", varValue: "/users/myUser/AppData/Roaming", varSet: true},
 			},
-			wantOk:          true,
-			wantTmpFolder:   "/tmp2",
-			wantAppDataPath: "/users/myUser/AppData/Roaming",
-			wantW:           "",
+			wantOk:        true,
+			wantTmpFolder: "/tmp2",
+			wantW:         "",
 		},
 		{
 			name: "missing TMP and TEMP",
 			envs: []envState{
 				{varName: "TMP"},
 				{varName: "TEMP"},
-				{varName: "APPDATA", varValue: "/users/myUser/AppData/Roaming", varSet: true},
 			},
-			wantOk:          false,
-			wantTmpFolder:   "",
-			wantAppDataPath: "/users/myUser/AppData/Roaming",
-			wantW:           "Neither the TMP nor TEMP environment variables are defined.\n",
-		},
-		{
-			name: "missing appDataPath",
-			envs: []envState{
-				{varName: "TMP", varValue: "/tmp", varSet: true},
-				{varName: "TEMP", varValue: "/tmp2", varSet: true},
-				{varName: "APPDATA"},
-			},
-			wantOk:          false,
-			wantTmpFolder:   "/tmp",
-			wantAppDataPath: "",
-			wantW:           "The APPDATA environment variable is not defined.\n",
-		},
-		{
-			name: "missing all vars",
-			envs: []envState{
-				{varName: "TMP"},
-				{varName: "TEMP"},
-				{varName: "APPDATA"},
-			},
-			wantOk:          false,
-			wantTmpFolder:   "",
-			wantAppDataPath: "",
-			wantW:           "Neither the TMP nor TEMP environment variables are defined.\nThe APPDATA environment variable is not defined.\n",
+			wantOk:        false,
+			wantTmpFolder: "",
+			wantW:         "Neither the TMP nor TEMP environment variables are defined.\n",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// clear initial state
 			tmpFolder = ""
-			appDataPath = ""
 			for _, env := range tt.envs {
 				if env.varSet {
 					os.Setenv(env.varName, env.varValue)
@@ -208,9 +175,6 @@ func TestLookupEnvVars(t *testing.T) {
 			}
 			if TemporaryFileFolder() != tt.wantTmpFolder {
 				t.Errorf("LookupEnvVars() TmpFolder = %v, want %v", TemporaryFileFolder(), tt.wantTmpFolder)
-			}
-			if ApplicationDataPath() != tt.wantAppDataPath {
-				t.Errorf("LookupEnvVars() AppDataPath = %v, want %v", ApplicationDataPath(), tt.wantAppDataPath)
 			}
 		})
 	}

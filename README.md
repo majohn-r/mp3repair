@@ -170,11 +170,9 @@ This applies to command line arguments and to defaults defined in
 
 **mp3** depends on the following environment variables being set:
 
-1. **%APPDATA%** - the location of application-specific files, such as
-   configuration files.
 1. **%TMP%** or **%TEMP%** - the system temporary directory. mp3 looks for
    **%TMP%** first, and, if that variable is not defined, then mp3 looks for
-   **%TEMP%**.
+   **%TEMP%**. One of them must be set so that log files can be written.
 
 ## Dependencies
 
