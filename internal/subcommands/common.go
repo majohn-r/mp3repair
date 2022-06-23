@@ -13,8 +13,12 @@ import (
 )
 
 const (
-	fkCommandName = "command"
-	fkCount       = "count"
+	checkCommand      = "check"
+	fkCommandName     = "command"
+	fkCount           = "count"
+	lsCommand         = "ls"
+	postRepairCommand = "postRepair"
+	repairCommand     = "repair"
 )
 
 type CommandProcessor interface {
@@ -35,13 +39,71 @@ func ProcessCommand(w io.Writer, args []string) (cmd CommandProcessor, cmdArgs [
 	if c, ok = internal.ReadConfigurationFile(os.Stderr); !ok {
 		return nil, nil, false
 	}
+	var defaultSettings map[string]bool
+	if defaultSettings, ok = getDefaultSettings(w, c.SubConfiguration("command")); !ok {
+		return nil, nil, false
+	}
 	var initializers []subcommandInitializer
-	lsSubCommand := subcommandInitializer{name: "ls", defaultSubCommand: true, initializer: newLs}
-	checkSubCommand := subcommandInitializer{name: "check", initializer: newCheck}
-	repairSubCommand := subcommandInitializer{name: "repair", initializer: newRepair}
-	postRepairSubCommand := subcommandInitializer{name: "postRepair", initializer: newPostRepair}
+	lsSubCommand := subcommandInitializer{
+		name:              lsCommand,
+		defaultSubCommand: defaultSettings[lsCommand],
+		initializer:       newLs,
+	}
+	checkSubCommand := subcommandInitializer{
+		name:              checkCommand,
+		defaultSubCommand: defaultSettings[checkCommand],
+		initializer:       newCheck,
+	}
+	repairSubCommand := subcommandInitializer{
+		name:              repairCommand,
+		defaultSubCommand: defaultSettings[repairCommand],
+		initializer:       newRepair,
+	}
+	postRepairSubCommand := subcommandInitializer{
+		name:              postRepairCommand,
+		defaultSubCommand: defaultSettings[postRepairCommand],
+		initializer:       newPostRepair,
+	}
 	initializers = append(initializers, lsSubCommand, checkSubCommand, repairSubCommand, postRepairSubCommand)
 	cmd, cmdArgs, ok = selectSubCommand(w, c, initializers, args)
+	return
+}
+
+func getDefaultSettings(wErr io.Writer, c *internal.Configuration) (m map[string]bool, ok bool) {
+	defaultCommand, ok := c.StringValue("default")
+	if !ok { // no definition
+		m = map[string]bool{
+			checkCommand:      false,
+			lsCommand:         true,
+			postRepairCommand: false,
+			repairCommand:     false,
+		}
+		ok = true
+		return
+	}
+	m = map[string]bool{
+		checkCommand:      defaultCommand == checkCommand,
+		lsCommand:         defaultCommand == lsCommand,
+		postRepairCommand: defaultCommand == postRepairCommand,
+		repairCommand:     defaultCommand == repairCommand,
+	}
+	found := false
+	for _, value := range m {
+		if value {
+			found = true
+			break
+		}
+	}
+	if !found {
+		logrus.WithFields(logrus.Fields{
+			fkCommandName: defaultCommand,
+		}).Warn(internal.LW_INVALID_DEFAULT_COMMAND)
+		fmt.Fprintf(wErr, internal.USER_INVALID_DEFAULT_COMMAND, defaultCommand)
+		m = nil
+		ok = false
+		return
+	}
+	ok = true
 	return
 }
 

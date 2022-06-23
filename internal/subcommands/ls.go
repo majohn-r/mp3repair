@@ -50,9 +50,10 @@ const (
 )
 
 func newLsSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *ls {
-	configuration := c.SubConfiguration("ls")
+	name := fSet.Name()
+	configuration := c.SubConfiguration(name)
 	return &ls{
-		n: fSet.Name(),
+		n: name,
 		includeAlbums: fSet.Bool(includeAlbumsFlag,
 			configuration.BoolDefault(includeAlbumsFlag, defaultIncludeAlbums),
 			"include album names in listing"),

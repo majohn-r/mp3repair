@@ -105,7 +105,7 @@ such directory, and the user must create it.
 
 The **YAML** format documentation is here: [https://yaml.org/](https://yaml.org/).
 
-The **defaults.yaml** file may contain four blocks:
+The **defaults.yaml** file may contain five blocks:
 
 1. **check** The **check** block may have up to three boolean key-value pairs,
    with each key controlling the default setting for its corresponding **check**
@@ -113,6 +113,10 @@ The **defaults.yaml** file may contain four blocks:
    1. **empty**
    1. **gaps**
    1. **integrity**
+1. **command** The **command** block may have one string key-value pair:
+   1. **default** the value of this entry must be one of **check**, **ls**,
+      **postRepair**, or **repair**. It causes that command to become the
+      default command when no command is specified on the command line.
 1. **common** The **common** block may have up to four string key-value pairs,
    with each key controlling the default setting for its corresponding
    **common** argument:
@@ -142,6 +146,8 @@ check:
     empty:     false
     gaps:      false
     integrity: true
+command:
+    default: ls
 common:
     albumFilter:  .*
     artistFilter: .* 

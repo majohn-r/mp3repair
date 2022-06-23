@@ -401,3 +401,40 @@ func Test_appData(t *testing.T) {
 		})
 	}
 }
+
+func TestConfiguration_StringValue(t *testing.T) {
+	type args struct {
+		key string
+	}
+	tests := []struct {
+		name      string
+		c         *Configuration
+		args      args
+		wantValue string
+		wantOk    bool
+	}{
+		{
+			name:      "found",
+			c:         &Configuration{sMap: map[string]string{"key": "value"}},
+			args:      args{key: "key"},
+			wantValue: "value",
+			wantOk:    true,
+		},
+		{
+			name: "not found",
+			c:    EmptyConfiguration(),
+			args: args{key: "key"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotValue, gotOk := tt.c.StringValue(tt.args.key)
+			if gotValue != tt.wantValue {
+				t.Errorf("Configuration.StringValue() gotValue = %v, want %v", gotValue, tt.wantValue)
+			}
+			if gotOk != tt.wantOk {
+				t.Errorf("Configuration.StringValue() gotOk = %v, want %v", gotOk, tt.wantOk)
+			}
+		})
+	}
+}

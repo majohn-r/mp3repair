@@ -155,6 +155,13 @@ func (c *Configuration) StringDefault(key string, defaultValue string) (s string
 	return
 }
 
+// StringValue returns the definition of the specified key and ok if the value
+// is defined
+func (c *Configuration) StringValue(key string) (value string, ok bool) {
+	value, ok = c.sMap[key]
+	return
+}
+
 type Configuration struct {
 	sMap map[string]string
 	bMap map[string]bool

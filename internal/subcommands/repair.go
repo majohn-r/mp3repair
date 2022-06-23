@@ -37,9 +37,10 @@ const (
 )
 
 func newRepairSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *repair {
-	configuration := c.SubConfiguration("repair")
+	name := fSet.Name()
+	configuration := c.SubConfiguration(name)
 	return &repair{
-		n: fSet.Name(),
+		n: name,
 		dryRun: fSet.Bool(dryRunFlag,
 			configuration.BoolDefault(dryRunFlag, defaultDryRun),
 			"if true, output what would have repaired, but make no repairs"),

@@ -41,9 +41,10 @@ const (
 )
 
 func newCheckSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *check {
-	configuration := c.SubConfiguration("check")
+	name := fSet.Name()
+	configuration := c.SubConfiguration(name)
 	return &check{
-		n: fSet.Name(),
+		n: name,
 		checkEmptyFolders: fSet.Bool(emptyFoldersFlag,
 			configuration.BoolDefault(emptyFoldersFlag, defaultEmptyFolders),
 			"check for empty artist and album folders"),

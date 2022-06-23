@@ -3,7 +3,10 @@ package subcommands
 import (
 	"bytes"
 	"flag"
+	"fmt"
 	"mp3/internal"
+	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
@@ -22,6 +25,20 @@ func TestProcessCommand(t *testing.T) {
 	if err := internal.Mkdir("./mp3/mp3/defaults.yaml"); err != nil {
 		t.Errorf("error creating defective defaults.yaml: %v", err)
 	}
+	badDir := "badData"
+	if err := internal.Mkdir(badDir); err != nil {
+		t.Errorf("error creating bad data directory: %v", err)
+	}
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, badDir)
+	}()
+	badMp3Dir := filepath.Join(badDir, "mp3")
+	if err := internal.Mkdir(badMp3Dir); err != nil {
+		t.Errorf("error creating bad data mp3 directory: %v", err)
+	}
+	if err := internal.CreateFileForTestingWithContent(badMp3Dir, "defaults.yaml", "command:\n    default: list\n"); err != nil {
+		t.Errorf("error creating bad data defaults.yaml: %v", err)
+	}
 	normalDir := internal.SecureAbsolutePathForTesting(".")
 	savedState := internal.SaveEnvVarForTesting("APPDATA")
 	defer func() {
@@ -39,6 +56,11 @@ func TestProcessCommand(t *testing.T) {
 		want2 bool
 		wantW string
 	}{
+		{
+			name:  "problematic default command",
+			state: &internal.SavedEnvVar{Name: "APPDATA", Value: internal.SecureAbsolutePathForTesting(badDir), Set: true},
+			wantW: "The configuration file specifies \"list\" as the default command. There is no such command.\n",
+		},
 		{
 			name:  "problematic input",
 			state: &internal.SavedEnvVar{Name: "APPDATA", Value: internal.SecureAbsolutePathForTesting("./mp3"), Set: true},
@@ -175,6 +197,94 @@ func Test_selectSubCommand(t *testing.T) {
 			}
 			if gotW := w.String(); gotW != tt.wantW {
 				t.Errorf("selectSubCommand() gotW = %v, want %v", gotW, tt.wantW)
+			}
+		})
+	}
+}
+
+func Test_getDefaultSettings(t *testing.T) {
+	topDir := filepath.Join(".", "defaultSettings")
+	if err := internal.Mkdir(topDir); err != nil {
+		t.Errorf("getDefaultSettings error creating defaultSettings directory: %v", err)
+	}
+	configDir := filepath.Join(topDir, internal.AppName)
+	if err := internal.Mkdir(configDir); err != nil {
+		t.Errorf("getDefaultSettings error creating mp3 directory: %v", err)
+	}
+	savedState := internal.SaveEnvVarForTesting("APPDATA")
+	defer func() {
+		savedState.RestoreForTesting()
+		internal.DestroyDirectoryForTesting("getDefaultSettings", topDir)
+	}()
+	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting(topDir))
+	type args struct {
+		c *internal.Configuration
+	}
+	tests := []struct {
+		name           string
+		includeDefault bool
+		defaultValue   string
+		args           args
+		wantM          map[string]bool
+		wantOk         bool
+		wantWErr       string
+	}{
+		{
+			name: "no value defined",
+			wantM: map[string]bool{
+				lsCommand:         true,
+				checkCommand:      false,
+				repairCommand:     false,
+				postRepairCommand: false,
+			},
+			wantOk: true,
+		},
+		{
+			name:           "good value",
+			includeDefault: true,
+			defaultValue:   "check",
+			wantM: map[string]bool{
+				lsCommand:         false,
+				checkCommand:      true,
+				repairCommand:     false,
+				postRepairCommand: false,
+			},
+			wantOk: true,
+		},
+		{
+			name:           "bad value",
+			includeDefault: true,
+			defaultValue:   "list",
+			wantWErr:       fmt.Sprintf(internal.USER_INVALID_DEFAULT_COMMAND, "list"),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			wErr := &bytes.Buffer{}
+			var content string
+			if tt.includeDefault {
+				content = fmt.Sprintf("command:\n    default: %s\n", tt.defaultValue)
+			} else {
+				content = "command:\n    nodefault: true\n"
+			}
+			os.Remove(filepath.Join(configDir, "defaults.yaml"))
+			if err := internal.CreateFileForTestingWithContent(configDir, "defaults.yaml", content); err != nil {
+				t.Errorf("getDefaultSettings() error creating defaults.yaml")
+			}
+			if c, ok := internal.ReadConfigurationFile(os.Stderr); !ok {
+				t.Errorf("getDefaultSettings() error reading defaults.yaml %q", content)
+			} else {
+				tt.args.c = c.SubConfiguration("command")
+			}
+			gotM, gotOk := getDefaultSettings(wErr, tt.args.c)
+			if !reflect.DeepEqual(gotM, tt.wantM) {
+				t.Errorf("getDefaultSettings() gotM = %v, want %v", gotM, tt.wantM)
+			}
+			if gotOk != tt.wantOk {
+				t.Errorf("getDefaultSettings() gotOk = %v, want %v", gotOk, tt.wantOk)
+			}
+			if gotWErr := wErr.String(); gotWErr != tt.wantWErr {
+				t.Errorf("getDefaultSettings() gotWErr = %v, want %v", gotWErr, tt.wantWErr)
 			}
 		})
 	}
