@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"bytes"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -89,92 +88,6 @@ func TestCreateAppSpecificPath(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := CreateAppSpecificPath(tt.args.topDir); got != tt.want {
 				t.Errorf("CreateAppSpecificPath() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestLookupEnvVars(t *testing.T) {
-	type envState struct {
-		varName  string
-		varValue string
-		varSet   bool
-	}
-	var savedStates []envState
-	for _, name := range []string{"TMP", "TEMP"} {
-		value, set := os.LookupEnv(name)
-		savedStates = append(savedStates, envState{varName: name, varValue: value, varSet: set})
-	}
-	var savedTmpFolder = TemporaryFileFolder()
-	defer func() {
-		for _, ss := range savedStates {
-			if ss.varSet {
-				os.Setenv(ss.varName, ss.varValue)
-			} else {
-				os.Unsetenv(ss.varName)
-			}
-		}
-		tmpFolder = savedTmpFolder
-	}()
-	tests := []struct {
-		name            string
-		envs            []envState
-		wantOk          bool
-		wantTmpFolder   string
-		wantAppDataPath string
-		wantW           string
-	}{
-		{
-			name: "expected use case",
-			envs: []envState{
-				{varName: "TMP", varValue: "/tmp", varSet: true},
-				{varName: "TEMP", varValue: "/tmp2", varSet: true},
-			},
-			wantOk:        true,
-			wantTmpFolder: "/tmp",
-			wantW:         "",
-		},
-		{
-			name: "missing TMP",
-			envs: []envState{
-				{varName: "TMP"},
-				{varName: "TEMP", varValue: "/tmp2", varSet: true},
-			},
-			wantOk:        true,
-			wantTmpFolder: "/tmp2",
-			wantW:         "",
-		},
-		{
-			name: "missing TMP and TEMP",
-			envs: []envState{
-				{varName: "TMP"},
-				{varName: "TEMP"},
-			},
-			wantOk:        false,
-			wantTmpFolder: "",
-			wantW:         "Neither the TMP nor TEMP environment variables are defined.\n",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// clear initial state
-			tmpFolder = ""
-			for _, env := range tt.envs {
-				if env.varSet {
-					os.Setenv(env.varName, env.varValue)
-				} else {
-					os.Unsetenv(env.varName)
-				}
-			}
-			w := &bytes.Buffer{}
-			if gotOk := LookupEnvVars(w); gotOk != tt.wantOk {
-				t.Errorf("LookupEnvVars() = %v, want %v", gotOk, tt.wantOk)
-			}
-			if gotW := w.String(); gotW != tt.wantW {
-				t.Errorf("LookupEnvVars() = %v, want %v", gotW, tt.wantW)
-			}
-			if TemporaryFileFolder() != tt.wantTmpFolder {
-				t.Errorf("LookupEnvVars() TmpFolder = %v, want %v", TemporaryFileFolder(), tt.wantTmpFolder)
 			}
 		})
 	}

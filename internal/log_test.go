@@ -28,7 +28,7 @@ func TestConfigureLogging(t *testing.T) {
 			defer func() {
 				DestroyDirectoryForTesting(fnName, tt.args.path)
 			}()
-			got := ConfigureLogging(tt.args.path)
+			got := configureLogging(tt.args.path)
 			if got == nil {
 				t.Errorf("%s: returned nil cronoWriter.CronoWriter", fnName)
 			}
@@ -138,7 +138,7 @@ func TestCleanupLogFiles(t *testing.T) {
 		}
 		t.Run(tt.name, func(t *testing.T) {
 			wErr := &bytes.Buffer{}
-			CleanupLogFiles(wErr, tt.args.path)
+			cleanupLogFiles(wErr, tt.args.path)
 			gotWErr := wErr.String()
 			if strings.Contains(gotWErr, ".log") {
 				for k := 0; k < tt.fileCount; k++ {
@@ -175,6 +175,74 @@ func TestCleanupLogFiles(t *testing.T) {
 				} else {
 					t.Errorf("%s: expected %s to not exist!", fnName, tt.args.path)
 				}
+			}
+		})
+	}
+}
+
+func TestInitLogging(t *testing.T) {
+	savedStates := []*SavedEnvVar{SaveEnvVarForTesting("TMP"), SaveEnvVarForTesting("TEMP")}
+	dirName := filepath.Join(".", "InitLogging")
+	workDir := SecureAbsolutePathForTesting(dirName)
+	if err := Mkdir(workDir); err != nil {
+		t.Errorf("InitLogging: failed to create test directory")
+	}
+	defer func() {
+		for _, state := range savedStates {
+			state.RestoreForTesting()
+		}
+		logger.Close()
+		if err := os.RemoveAll(workDir); err != nil {
+			t.Errorf("InitLogging() error destroying test directory %q: %v", workDir, err)
+		}
+	}()
+	thisFile := SecureAbsolutePathForTesting("log_test.go")
+	tests := []struct {
+		name  string
+		state []*SavedEnvVar
+		want  bool
+		wantW string
+	}{
+		{
+			name:  "useTmp",
+			state: []*SavedEnvVar{{Name: "TMP", Value: workDir, Set: true}, {Name: "TEMP"}},
+			want:  true,
+		},
+		{
+			name:  "useTemp",
+			state: []*SavedEnvVar{{Name: "TEMP", Value: workDir, Set: true}, {Name: "TEMP"}},
+			want:  true,
+		},
+		{
+			name:  "no temps",
+			state: []*SavedEnvVar{{Name: "TMP"}, {Name: "TEMP"}},
+			wantW: USER_NO_TEMP_FOLDER,
+		},
+		{
+			name:  "cannot create dir",
+			state: []*SavedEnvVar{{Name: "TMP", Value: thisFile, Set: true}, {Name: "TEMP"}},
+			wantW: fmt.Sprintf(
+				"The directory %q cannot be created: mkdir %s: The system cannot find the path specified..\n",
+				filepath.Join(thisFile, AppName, logDirName), thisFile),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if logger != nil {
+				logger.Close()
+			}
+			for _, s := range tt.state {
+				s.RestoreForTesting()
+			}
+			w := &bytes.Buffer{}
+			if got := InitLogging(w); got != tt.want {
+				t.Errorf("InitLogging() = %v, want %v", got, tt.want)
+			}
+			if gotW := w.String(); gotW != tt.wantW {
+				t.Errorf("InitLogging() = %v, want %v", gotW, tt.wantW)
+			}
+			if logger != nil {
+				logger.Close()
 			}
 		})
 	}

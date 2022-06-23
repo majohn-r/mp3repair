@@ -1,8 +1,6 @@
 package internal
 
 import (
-	"fmt"
-	"io"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -15,29 +13,6 @@ const AppName = "mp3"
 // CreateAppSpecificPath creates a path string for an app-related directory
 func CreateAppSpecificPath(topDir string) string {
 	return filepath.Join(topDir, AppName)
-}
-
-var (
-	tmpFolder string
-)
-
-// TemporaryFileFolder returns the path to the system temporary file folder
-func TemporaryFileFolder() string {
-	return tmpFolder
-}
-
-// LookupEnvVars looks up critical environment variables
-func LookupEnvVars(w io.Writer) (ok bool) {
-	ok = true
-	var found bool
-	// get temporary folder
-	if tmpFolder, found = os.LookupEnv("TMP"); !found {
-		if tmpFolder, found = os.LookupEnv("TEMP"); !found {
-			fmt.Fprint(w, USER_NO_TEMP_FOLDER)
-			ok = false
-		}
-	}
-	return
 }
 
 // InterpretEnvVarReferences looks up environment variable references in the

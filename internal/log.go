@@ -16,6 +16,7 @@ import (
 )
 
 const (
+	logDirName       = "logs"
 	logFilePrefix    = AppName + "."
 	logFileExtension = ".log"
 	logFileTemplate  = logFilePrefix + "%Y%m%d" + logFileExtension
@@ -31,15 +32,13 @@ const (
 	fkVarName    = "environment variable"
 )
 
-// ConfigureLogging sets up logging
-func ConfigureLogging(path string) *cronowriter.CronoWriter {
+func configureLogging(path string) *cronowriter.CronoWriter {
 	logFileTemplate := filepath.Join(path, logFileTemplate)
 	symlink := filepath.Join(path, symlinkName)
 	return cronowriter.MustNew(logFileTemplate, cronowriter.WithSymlink(symlink), cronowriter.WithInit())
 }
 
-// CleanupLogFiles cleans up old log files
-func CleanupLogFiles(wErr io.Writer, path string) {
+func cleanupLogFiles(wErr io.Writer, path string) {
 	if files, err := ioutil.ReadDir(path); err != nil {
 		logrus.WithFields(logrus.Fields{
 			FK_DIRECTORY: path,
@@ -81,4 +80,28 @@ func CleanupLogFiles(wErr io.Writer, path string) {
 			}
 		}
 	}
+}
+
+// exposed so that unit tests can close the writer!
+var logger *cronowriter.CronoWriter
+
+// InitLogging sets up logging
+func InitLogging(w io.Writer) bool {
+	var tmpFolder string
+	var found bool
+	if tmpFolder, found = os.LookupEnv("TMP"); !found {
+		if tmpFolder, found = os.LookupEnv("TEMP"); !found {
+			fmt.Fprint(w, USER_NO_TEMP_FOLDER)
+			return false
+		}
+	}
+	path := filepath.Join(CreateAppSpecificPath(tmpFolder), logDirName)
+	if err := os.MkdirAll(path, 0755); err != nil {
+		fmt.Fprintf(w, USER_CANNOT_CREATE_DIRECTORY, path, err)
+		return false
+	}
+	logger = configureLogging(path)
+	logrus.SetOutput(logger)
+	cleanupLogFiles(w, path)
+	return true
 }

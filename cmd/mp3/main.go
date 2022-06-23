@@ -6,11 +6,9 @@ import (
 	"mp3/internal"
 	"mp3/internal/subcommands"
 	"os"
-	"path/filepath"
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"github.com/utahta/go-cronowriter"
 )
 
 // these variables' values are injected by the mage build
@@ -23,10 +21,8 @@ var (
 
 func main() {
 	returnValue := 1
-	if initEnv(os.Stderr, internal.LookupEnvVars) {
-		if initLogging(os.Stderr, internal.TemporaryFileFolder()) {
-			returnValue = run(os.Args)
-		}
+	if internal.InitLogging(os.Stderr) {
+		returnValue = run(os.Args)
 	}
 	report(os.Stderr, returnValue)
 	os.Exit(returnValue)
@@ -38,7 +34,6 @@ const (
 	fkExitCode             = "exitCode"
 	fkTimeStamp            = "timeStamp"
 	fkVersion              = "version"
-	logDirName             = "logs"
 	statusFormat           = "%s version %s, created at %s, failed\n"
 )
 
@@ -66,23 +61,4 @@ func run(cmdlineArgs []string) (returnValue int) {
 		fkExitCode: returnValue,
 	}).Info(internal.LI_END_EXECUTION)
 	return
-}
-
-func initEnv(w io.Writer, lookup func(w io.Writer) bool) bool {
-	return lookup(w)
-}
-
-// exposed so that unit tests can close the writer!
-var logger *cronowriter.CronoWriter
-
-func initLogging(w io.Writer, parentDir string) bool {
-	path := filepath.Join(internal.CreateAppSpecificPath(parentDir), logDirName)
-	if err := os.MkdirAll(path, 0755); err != nil {
-		fmt.Fprintf(w, internal.USER_CANNOT_CREATE_DIRECTORY, path, err)
-		return false
-	}
-	logger = internal.ConfigureLogging(path)
-	logrus.SetOutput(logger)
-	internal.CleanupLogFiles(w, path)
-	return true
 }
