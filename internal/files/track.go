@@ -471,7 +471,7 @@ func parseTrackName(name string, album *Album, ext string) (simpleName string, t
 			fkAlbumName:  album.name,
 			fkArtistName: album.RecordingArtistName(),
 		}).Warn(internal.LW_INVALID_TRACK_NAME)
-		// TODO: [#70] let the user know too
+		fmt.Fprintf(os.Stderr, internal.USER_TRACK_NAME_GARBLED, name, album.name, album.RecordingArtistName())
 		return
 	}
 	wantDigit := true

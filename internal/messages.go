@@ -71,6 +71,7 @@ const (
 	USER_NO_TEMP_FOLDER                               = "Neither the TMP nor TEMP environment variables are defined.\n"
 	USER_SPECIFIED_NO_WORK                            = "You disabled all functionality for the command %q.\n"
 	USER_TOPDIR_NOT_A_DIRECTORY                       = "The -topDir value you specified, %q, is not a directory.\n"
+	USER_TRACK_NAME_GARBLED                           = "The track %q on album %q by artist %q cannot be parsed.\n"
 	USER_UNRECOGNIZED_VALUE                           = "The %q value you specified, %q, is not valid.\n"
 )
 
