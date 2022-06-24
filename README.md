@@ -1,12 +1,12 @@
 # mp3
 
 The purpose of the **mp3** project is to help manage _mp3_ sound files in
-Windows. It has three subcommands:
+Windows. It supports four commands:
 
 ## ls
 
-The **ls** subcommand provides a means for listing mp3 files. It can list
-artists, albums, and tracks, governed by these command line arguments:
+The **ls** command provides a means for listing mp3 files. It can list artists,
+albums, and tracks, governed by these command line arguments:
 
 1. **-includeArtists** List artist names. **True** by default
 2. **-includeAlbums** List album names. **True** by default
@@ -40,7 +40,7 @@ annotations:
 
 ## check
 
-The **check** subcommand provides a means to run various checks on the mp3 files
+The **check** command provides a means to run various checks on the mp3 files
 and their directories, governed by these command line arguments:
 
 1. **-empty** Check for empty _artist_ and _album_ directories. **False** by
@@ -73,22 +73,21 @@ and their directories, governed by these command line arguments:
 
 ## repair
 
-The **repair** subcommand provides a means to repair tracks whose **MP3** _tags_
-do not match the track name, album name, or artist name. It has a single command
+The **repair** command provides a means to repair tracks whose **MP3** _tags_ do
+not match the track name, album name, or artist name. It has a single command
 line argument:
 
-1. **-dryRun** If true, outputs what the **repair** subcommand would fix.
-   **False** by default.
+1. **-dryRun** If true, outputs what the **repair** command would fix. **False**
+   by default.
 
 ## postRepair
 
-The **postRepair** subcommand provides a means to quickly delete the backup
-directories created by the **repair** subcommand. It has no command line
-arguments.
+The **postRepair** command provides a means to quickly delete the backup
+directories created by the **repair** command. It has no command line arguments.
 
 ### Common Arguments
 
-These arguments are common to all subcommands:
+These arguments are common to all commands:
 
 1. **-topDir** The directory whose subdirectories are artist names. By default,
    this is **%HOMEPATH%\Music**.
@@ -109,7 +108,7 @@ The **defaults.yaml** file may contain five blocks:
 
 1. **check** The **check** block may have up to three boolean key-value pairs,
    with each key controlling the default setting for its corresponding **check**
-   subcommand argument:
+   command argument:
    1. **empty**
    1. **gaps**
    1. **integrity**

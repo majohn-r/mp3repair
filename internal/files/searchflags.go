@@ -35,8 +35,8 @@ const (
 	topDirectoryFlag      = "topDir"
 )
 
-// NewSearchFlags are used by subCommands to use the common top directory,
-// target extension, and album and artist filter regular expressions.
+// NewSearchFlags are used by commands to use the common top directory, target
+// extension, and album and artist filter regular expressions.
 func NewSearchFlags(c *internal.Configuration, fSet *flag.FlagSet) *SearchFlags {
 	configuration := c.SubConfiguration("common")
 	return &SearchFlags{

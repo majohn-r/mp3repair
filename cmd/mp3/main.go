@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 	"mp3/internal"
-	"mp3/internal/subcommands"
+	"mp3/internal/commands"
 	"os"
 	"time"
 
@@ -51,7 +51,7 @@ func run(cmdlineArgs []string) (returnValue int) {
 		fkTimeStamp:            creation,
 		fkCommandLineArguments: cmdlineArgs,
 	}).Info(internal.LI_BEGIN_EXECUTION)
-	if cmd, args, ok := subcommands.ProcessCommand(os.Stderr, cmdlineArgs); ok {
+	if cmd, args, ok := commands.ProcessCommand(os.Stderr, cmdlineArgs); ok {
 		if cmd.Exec(os.Stdout, os.Stderr, args) {
 			returnValue = 0
 		}
