@@ -50,6 +50,7 @@ const (
 
 // for output to user
 const (
+	USER_BAD_TRACK_NUMBER                             = "The track number (%s) embedded in track %q is badly formatted: %v\n"
 	USER_CANNOT_CREATE_DIRECTORY                      = "The directory %q cannot be created: %v.\n"
 	USER_CANNOT_DELETE_DIRECTORY                      = "The directory %q cannot be deleted: %v.\n"
 	USER_CANNOT_READ_DIRECTORY                        = "The directory %q cannot be read: %v\n"

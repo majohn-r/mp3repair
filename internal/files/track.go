@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"mp3/internal"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -213,7 +214,7 @@ func (t *Track) SetTags(d *TaggedTrackData) {
 			fkTRCKFrame:           d.track,
 			internal.FK_ERROR:     err,
 		}).Warn(internal.LW_INVALID_FRAME_VALUE)
-		// TODO: [#68] notify the user there was a problem
+		fmt.Fprintf(os.Stderr, internal.USER_BAD_TRACK_NUMBER, d.track, t, err)
 		t.setTagFormatErrorCode()
 	} else {
 		t.album = removeLeadingBOMs(d.album)
