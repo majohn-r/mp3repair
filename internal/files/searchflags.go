@@ -76,8 +76,8 @@ func (sf *SearchFlags) ProcessArgs(writer io.Writer, args []string) (s *Search, 
 // NewSearch validates the common search parameters and creates a Search
 // instance based on them.
 func (sf *SearchFlags) NewSearch() (s *Search, ok bool) {
-	albumsFilter, artistsFilter, problemsExist := sf.validate()
-	if !problemsExist {
+	albumsFilter, artistsFilter, validated := sf.validate()
+	if validated {
 		s = &Search{
 			topDirectory:    *sf.topDirectory,
 			targetExtension: *sf.fileExtension,
@@ -149,21 +149,21 @@ func validateRegexp(pattern, name string) (filter *regexp.Regexp, ok bool) {
 	return
 }
 
-// TODO: [#74] should reverse sense of bool return!
-func (sf *SearchFlags) validate() (albumsFilter *regexp.Regexp, artistsFilter *regexp.Regexp, problemsExist bool) {
+func (sf *SearchFlags) validate() (albumsFilter *regexp.Regexp, artistsFilter *regexp.Regexp, ok bool) {
+	ok = true
 	if !sf.validateTopLevelDirectory() {
-		problemsExist = true
+		ok = false
 	}
 	if !sf.validateExtension() {
-		problemsExist = true
+		ok = false
 	}
-	if filter, ok := validateRegexp(*sf.albumRegex, fkAlbumFilterFlag); !ok {
-		problemsExist = true
+	if filter, regexOk := validateRegexp(*sf.albumRegex, fkAlbumFilterFlag); !regexOk {
+		ok = false
 	} else {
 		albumsFilter = filter
 	}
-	if filter, ok := validateRegexp(*sf.artistRegex, fkArtistFilterFlag); !ok {
-		problemsExist = true
+	if filter, regexOk := validateRegexp(*sf.artistRegex, fkArtistFilterFlag); !regexOk {
+		ok = false
 	} else {
 		artistsFilter = filter
 	}

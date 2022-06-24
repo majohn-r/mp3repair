@@ -141,7 +141,7 @@ func Test_validateSearchParameters(t *testing.T) {
 		args              args
 		wantAlbumsFilter  *regexp.Regexp
 		wantArtistsFilter *regexp.Regexp
-		wantProblemsExist bool
+		wantOk            bool
 	}{
 		{
 			name: "valid input",
@@ -153,7 +153,7 @@ func Test_validateSearchParameters(t *testing.T) {
 			},
 			wantAlbumsFilter:  regexp.MustCompile(".*"),
 			wantArtistsFilter: regexp.MustCompile(".*"),
-			wantProblemsExist: false,
+			wantOk:            true,
 		},
 		{
 			name: "bad extension 1",
@@ -163,7 +163,8 @@ func Test_validateSearchParameters(t *testing.T) {
 				albums:  ".*",
 				artists: ".*",
 			},
-			wantProblemsExist: true,
+			wantAlbumsFilter:  regexp.MustCompile(".*"),
+			wantArtistsFilter: regexp.MustCompile(".*"),
 		},
 		{
 			name: "bad extension 2",
@@ -173,7 +174,8 @@ func Test_validateSearchParameters(t *testing.T) {
 				albums:  ".*",
 				artists: ".*",
 			},
-			wantProblemsExist: true,
+			wantAlbumsFilter:  regexp.MustCompile(".*"),
+			wantArtistsFilter: regexp.MustCompile(".*"),
 		},
 		{
 			name: "bad extension 3",
@@ -183,7 +185,8 @@ func Test_validateSearchParameters(t *testing.T) {
 				albums:  ".*",
 				artists: ".*",
 			},
-			wantProblemsExist: true,
+			wantAlbumsFilter:  regexp.MustCompile(".*"),
+			wantArtistsFilter: regexp.MustCompile(".*"),
 		},
 		{
 			name: "bad album filter",
@@ -194,7 +197,6 @@ func Test_validateSearchParameters(t *testing.T) {
 				artists: ".*",
 			},
 			wantArtistsFilter: regexp.MustCompile(".*"),
-			wantProblemsExist: true,
 		},
 		{
 			name: "bad album filter",
@@ -204,8 +206,7 @@ func Test_validateSearchParameters(t *testing.T) {
 				albums:  ".*",
 				artists: ".[*",
 			},
-			wantAlbumsFilter:  regexp.MustCompile(".*"),
-			wantProblemsExist: true,
+			wantAlbumsFilter: regexp.MustCompile(".*"),
 		},
 		{
 			name: "non-existent directory",
@@ -217,7 +218,6 @@ func Test_validateSearchParameters(t *testing.T) {
 			},
 			wantAlbumsFilter:  regexp.MustCompile(".*"),
 			wantArtistsFilter: regexp.MustCompile(".*"),
-			wantProblemsExist: true,
 		},
 		{
 			name: "directory is not a directory",
@@ -229,7 +229,6 @@ func Test_validateSearchParameters(t *testing.T) {
 			},
 			wantAlbumsFilter:  regexp.MustCompile(".*"),
 			wantArtistsFilter: regexp.MustCompile(".*"),
-			wantProblemsExist: true,
 		},
 	}
 	for _, tt := range tests {
@@ -240,8 +239,8 @@ func Test_validateSearchParameters(t *testing.T) {
 				albumRegex:    &tt.args.albums,
 				artistRegex:   &tt.args.artists,
 			}
-			gotAlbumsFilter, gotArtistsFilter, gotProblemsExist := sf.validate()
-			if !tt.wantProblemsExist {
+			gotAlbumsFilter, gotArtistsFilter, gotOk := sf.validate()
+			if !tt.wantOk {
 				if !reflect.DeepEqual(gotAlbumsFilter, tt.wantAlbumsFilter) {
 					t.Errorf("%s gotAlbumsFilter = %v, want %v", fnName, gotAlbumsFilter, tt.wantAlbumsFilter)
 				}
@@ -249,8 +248,8 @@ func Test_validateSearchParameters(t *testing.T) {
 					t.Errorf("%s gotArtistsFilter = %v, want %v", fnName, gotArtistsFilter, tt.wantArtistsFilter)
 				}
 			}
-			if gotProblemsExist != tt.wantProblemsExist {
-				t.Errorf("%s gotProblemsExist = %v, want %v", fnName, gotProblemsExist, tt.wantProblemsExist)
+			if gotOk != tt.wantOk {
+				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 		})
 	}
