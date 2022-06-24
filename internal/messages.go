@@ -46,6 +46,7 @@ const (
 	LE_COMMAND_COUNT                = "incorrect number of commands"
 	LE_DEFAULT_COMMAND_COUNT        = "incorrect number of default commands"
 	LE_FILE_IS_DIR                  = "file is a directory"
+	LE_INVALID_LOG_LEVEL            = "invalid log level"
 )
 
 // for output to user

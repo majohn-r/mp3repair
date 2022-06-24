@@ -22,10 +22,7 @@ const (
 	logFileTemplate  = logFilePrefix + "%Y%m%d" + logFileExtension
 	symlinkName      = "latest" + logFileExtension
 	maxLogFiles      = 10
-)
-
-// constants for log field keys
-const (
+	// constants for log field keys
 	FK_DIRECTORY = "directory"
 	FK_ERROR     = "error"
 	FK_FILE_NAME = "fileName"
