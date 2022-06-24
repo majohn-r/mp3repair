@@ -55,6 +55,7 @@ const (
 	USER_CANNOT_DELETE_DIRECTORY                      = "The directory %q cannot be deleted: %v.\n"
 	USER_CANNOT_READ_DIRECTORY                        = "The directory %q cannot be read: %v\n"
 	USER_CANNOT_READ_TOPDIR                           = "The -topDir value you specified, %q, cannot be read: %v.\n"
+	USER_CANNOT_READ_TRACK_METADATA                   = "The metadata for track %q cannot be read: %v\n"
 	USER_CONFIGURATION_FILE_GARBLED                   = "The configuration file %q is not well-formed YAML: %v\n"
 	USER_CONFIGURATION_FILE_IS_DIR                    = "The configuration file %q is a directory.\n"
 	USER_EXTENSION_INVALID_FORMAT                     = "The -ext value you specified, %q, must contain exactly one '.' and '.' must be the first character.\n"

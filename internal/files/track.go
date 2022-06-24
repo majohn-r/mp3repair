@@ -430,7 +430,7 @@ func (t *Track) readTags(reader func(string) (*TaggedTrackData, error)) {
 					internal.FK_FILE_NAME: t.FileName(),
 					internal.FK_ERROR:     err,
 				}).Warn(internal.LW_CANNOT_READ_FILE)
-				// TODO: [#69] let user know
+				fmt.Fprintf(os.Stderr, internal.USER_CANNOT_READ_TRACK_METADATA, t, err)
 				t.setTagReadErrorCode()
 			} else {
 				t.SetTags(tags)
