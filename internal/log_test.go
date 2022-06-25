@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"bytes"
 	"fmt"
 	"io/fs"
 	"io/ioutil"
@@ -71,7 +70,9 @@ func TestCleanupLogFiles(t *testing.T) {
 		lockFiles     bool
 		args          args
 		wantFileCount int
-		wantWErr      string
+		wantOut       string
+		wantErr       string
+		wantLog       string
 	}{
 		{
 			name:          "no work to do",
@@ -86,6 +87,8 @@ func TestCleanupLogFiles(t *testing.T) {
 			createFolder:  true,
 			args:          args{path: "testlogs"},
 			wantFileCount: maxLogFiles,
+			wantLog: "level='info' directory='testlogs' fileName='mp3.00.log' msg='successfully deleted file'\n" +
+				"level='info' directory='testlogs' fileName='mp3.01.log' msg='successfully deleted file'\n",
 		},
 		{
 			name:          "locked",
@@ -94,12 +97,15 @@ func TestCleanupLogFiles(t *testing.T) {
 			lockFiles:     true,
 			args:          args{path: "testlogs"},
 			wantFileCount: maxLogFiles + 2,
-			wantWErr:      "The log file \"testlogs\\\\mp3.00.log\" cannot be deleted: remove testlogs\\mp3.00.log: The process cannot access the file because it is being used by another process.\nThe log file \"testlogs\\\\mp3.01.log\" cannot be deleted: remove testlogs\\mp3.01.log: The process cannot access the file because it is being used by another process.\n",
+			wantErr:       "The log file \"testlogs\\\\mp3.00.log\" cannot be deleted: remove testlogs\\mp3.00.log: The process cannot access the file because it is being used by another process.\nThe log file \"testlogs\\\\mp3.01.log\" cannot be deleted: remove testlogs\\mp3.01.log: The process cannot access the file because it is being used by another process.\n",
+			wantLog: "level='warn' directory='testlogs' error='remove testlogs\\mp3.00.log: The process cannot access the file because it is being used by another process.' fileName='mp3.00.log' msg='cannot delete file'\n" +
+				"level='warn' directory='testlogs' error='remove testlogs\\mp3.01.log: The process cannot access the file because it is being used by another process.' fileName='mp3.01.log' msg='cannot delete file'\n",
 		},
 		{
-			name:     "missing path",
-			args:     args{path: "testlogs"},
-			wantWErr: "The log file directory \"testlogs\" cannot be read: open testlogs: The system cannot find the file specified.\n",
+			name:    "missing path",
+			args:    args{path: "testlogs"},
+			wantErr: "The log file directory \"testlogs\" cannot be read: open testlogs: The system cannot find the file specified.\n",
+			wantLog: "level='warn' directory='testlogs' error='open testlogs: The system cannot find the file specified.' msg='cannot read directory'\n",
 		},
 	}
 	for _, tt := range tests {
@@ -137,17 +143,16 @@ func TestCleanupLogFiles(t *testing.T) {
 			}
 		}
 		t.Run(tt.name, func(t *testing.T) {
-			wErr := &bytes.Buffer{}
-			cleanupLogFiles(wErr, tt.args.path)
-			gotWErr := wErr.String()
-			if strings.Contains(gotWErr, ".log") {
-				for k := 0; k < tt.fileCount; k++ {
-					// search := fmt.Sprintf("mp3.%02d.log", k)
-					// gotWErr = strings.ReplaceAll(gotWErr, search, "mp3.xx.log")
-				}
+			outputDevice := NewOutputDeviceForTesting()
+			cleanupLogFiles(outputDevice, tt.args.path)
+			if gotErr := outputDevice.Stderr(); gotErr != tt.wantErr {
+				t.Errorf("%s error = %v, want %v", fnName, gotErr, tt.wantErr)
 			}
-			if gotWErr != tt.wantWErr {
-				t.Errorf("%s = %v, want %v", fnName, gotWErr, tt.wantWErr)
+			if gotOut := outputDevice.Stdout(); gotOut != tt.wantOut {
+				t.Errorf("%s output = %v, want %v", fnName, gotOut, tt.wantOut)
+			}
+			if gotLog := outputDevice.LogOutput(); gotLog != tt.wantLog {
+				t.Errorf("%s log = %v, want %v", fnName, gotLog, tt.wantLog)
 			}
 			if tt.createFolder {
 				if files, err := ioutil.ReadDir(tt.args.path); err != nil {
@@ -198,10 +203,12 @@ func TestInitLogging(t *testing.T) {
 	}()
 	thisFile := SecureAbsolutePathForTesting("log_test.go")
 	tests := []struct {
-		name  string
-		state []*SavedEnvVar
-		want  bool
-		wantW string
+		name    string
+		state   []*SavedEnvVar
+		want    bool
+		wantOut string
+		wantErr string
+		wantLog string
 	}{
 		{
 			name:  "useTmp",
@@ -214,14 +221,14 @@ func TestInitLogging(t *testing.T) {
 			want:  true,
 		},
 		{
-			name:  "no temps",
-			state: []*SavedEnvVar{{Name: "TMP"}, {Name: "TEMP"}},
-			wantW: USER_NO_TEMP_FOLDER,
+			name:    "no temps",
+			state:   []*SavedEnvVar{{Name: "TMP"}, {Name: "TEMP"}},
+			wantErr: USER_NO_TEMP_FOLDER,
 		},
 		{
 			name:  "cannot create dir",
 			state: []*SavedEnvVar{{Name: "TMP", Value: thisFile, Set: true}, {Name: "TEMP"}},
-			wantW: fmt.Sprintf(
+			wantErr: fmt.Sprintf(
 				"The directory %q cannot be created: mkdir %s: The system cannot find the path specified..\n",
 				filepath.Join(thisFile, AppName, logDirName), thisFile),
 		},
@@ -234,12 +241,18 @@ func TestInitLogging(t *testing.T) {
 			for _, s := range tt.state {
 				s.RestoreForTesting()
 			}
-			w := &bytes.Buffer{}
-			if got := InitLogging(w); got != tt.want {
+			outputDevice := NewOutputDeviceForTesting()
+			if got := InitLogging(outputDevice); got != tt.want {
 				t.Errorf("InitLogging() = %v, want %v", got, tt.want)
 			}
-			if gotW := w.String(); gotW != tt.wantW {
-				t.Errorf("InitLogging() = %v, want %v", gotW, tt.wantW)
+			if gotOut := outputDevice.Stdout(); gotOut != tt.wantOut {
+				t.Errorf("InitLogging() output = %v, want %v", gotOut, tt.wantOut)
+			}
+			if gotErr := outputDevice.Stderr(); gotErr != tt.wantErr {
+				t.Errorf("InitLogging() error = %v, want %v", gotErr, tt.wantErr)
+			}
+			if gotLog := outputDevice.LogOutput(); gotLog != tt.wantLog {
+				t.Errorf("InitLogging() log output = %v, want %v", gotLog, tt.wantLog)
 			}
 			if logger != nil {
 				logger.Close()

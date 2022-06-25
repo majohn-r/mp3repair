@@ -21,7 +21,8 @@ var (
 
 func main() {
 	returnValue := 1
-	if internal.InitLogging(os.Stderr) {
+	outputBus := internal.NewOutputDevice(os.Stdout, os.Stderr)
+	if internal.InitLogging(outputBus) {
 		returnValue = run(os.Args)
 	}
 	report(os.Stderr, returnValue)
