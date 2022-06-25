@@ -1,10 +1,14 @@
 package internal
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 )
 
 // NOTE: the functions in this file are strictly for testing purposes. Do not
@@ -195,4 +199,60 @@ func (e *SavedEnvVar) RestoreForTesting() {
 func SecureAbsolutePathForTesting(path string) string {
 	absPath, _ := filepath.Abs(path)
 	return absPath
+}
+
+// testing solution
+
+type OutputDeviceForTesting struct {
+	wOut *bytes.Buffer
+	wErr *bytes.Buffer
+	wLog *bytes.Buffer
+}
+
+func NewOutputDeviceForTesting() *OutputDeviceForTesting {
+	return &OutputDeviceForTesting{
+		wOut: &bytes.Buffer{},
+		wErr: &bytes.Buffer{},
+		wLog: &bytes.Buffer{},
+	}
+}
+
+func (o *OutputDeviceForTesting) OutputWriter() io.Writer {
+	return o.wOut
+}
+
+func (o *OutputDeviceForTesting) ErrorWriter() io.Writer {
+	return o.wErr
+}
+
+func (o *OutputDeviceForTesting) Log(l LogLevel, msg string, fields map[string]interface{}) {
+	var parts []string
+	for k, v := range fields {
+		parts = append(parts, fmt.Sprintf("%s='%v'", k, v))
+	}
+	sort.Strings(parts)
+	var level string
+	switch l {
+	case INFO:
+		level = "info"
+	case WARN:
+		level = "warn"
+	case ERROR:
+		level = "error"
+	default:
+		level = fmt.Sprintf("level unknown (%d)", l)
+	}
+	fmt.Fprintf(o.wLog, "level='%s' %s msg='%s'\n", level, strings.Join(parts, " "), msg)
+}
+
+func (o *OutputDeviceForTesting) Stdout() string {
+	return o.wOut.String()
+}
+
+func (o *OutputDeviceForTesting) Stderr() string {
+	return o.wErr.String()
+}
+
+func (o *OutputDeviceForTesting) LogOutput() string {
+	return o.wLog.String()
 }

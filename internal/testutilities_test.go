@@ -1,6 +1,9 @@
 package internal
 
 import (
+	"bytes"
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -389,6 +392,169 @@ func TestSecureAbsolutePathForTesting(t *testing.T) {
 			got := SecureAbsolutePathForTesting(tt.args.path)
 			if tt.want && len(got) == 0 {
 				t.Errorf("SecureAbsolutePathForTesting() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNewOutputDeviceForTesting(t *testing.T) {
+	tests := []struct {
+		name string
+		want *OutputDeviceForTesting
+	}{
+		{
+			name: "standard",
+			want: &OutputDeviceForTesting{
+				wOut: &bytes.Buffer{},
+				wErr: &bytes.Buffer{},
+				wLog: &bytes.Buffer{},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var got *OutputDeviceForTesting
+			if got = NewOutputDeviceForTesting(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("NewOutputDeviceForTesting() = %v, want %v", got, tt.want)
+			}
+			var o interface{} = got
+			if _, ok := o.(OutputBus); !ok {
+				t.Errorf("NewOutputDeviceForTesting() does not implement OutputBus")
+			}
+		})
+	}
+}
+
+func TestOutputDeviceForTesting_OutputWriter(t *testing.T) {
+	tests := []struct {
+		name string
+		o    *OutputDeviceForTesting
+		want io.Writer
+	}{
+		{name: "standard", o: NewOutputDeviceForTesting(), want: &bytes.Buffer{}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.o.OutputWriter(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("OutputDeviceForTesting.OutputWriter() = %v, want %v", got, tt.want)
+			}
+			fmt.Fprintf(tt.o.OutputWriter(), "test message")
+			if out := tt.o.Stdout(); out != "test message" {
+				t.Errorf("OutputDeviceForTesting.Stdout() = %q, want %q", out, "test message")
+			}
+			if out := tt.o.Stderr(); out != "" {
+				t.Errorf("OutputDeviceForTesting.Stderr() = %q, want %q", out, "")
+			}
+			if out := tt.o.LogOutput(); out != "" {
+				t.Errorf("OutputDeviceForTesting.LogOutput() = %q, want %q", out, "")
+			}
+		})
+	}
+}
+
+func TestOutputDeviceForTesting_ErrorWriter(t *testing.T) {
+	tests := []struct {
+		name string
+		o    *OutputDeviceForTesting
+		want io.Writer
+	}{
+		{name: "standard", o: NewOutputDeviceForTesting(), want: &bytes.Buffer{}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.o.ErrorWriter(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("OutputDeviceForTesting.ErrorWriter() = %v, want %v", got, tt.want)
+			}
+			fmt.Fprintf(tt.o.ErrorWriter(), "test message")
+			if out := tt.o.Stdout(); out != "" {
+				t.Errorf("OutputDeviceForTesting.Stdout() = %q, want %q", out, "")
+			}
+			if out := tt.o.Stderr(); out != "test message" {
+				t.Errorf("OutputDeviceForTesting.Stderr() = %q, want %q", out, "test message")
+			}
+			if out := tt.o.LogOutput(); out != "" {
+				t.Errorf("OutputDeviceForTesting.LogOutput() = %q, want %q", out, "")
+			}
+		})
+	}
+}
+
+func TestOutputDeviceForTesting_Log(t *testing.T) {
+	type args struct {
+		l      LogLevel
+		msg    string
+		fields map[string]interface{}
+	}
+	tests := []struct {
+		name string
+		o    *OutputDeviceForTesting
+		args args
+		want string
+	}{
+		{
+			name: "info",
+			o:    NewOutputDeviceForTesting(),
+			args: args{
+				l:   INFO,
+				msg: "info message",
+				fields: map[string]interface{}{
+					"foo": 1,
+					"bar": []string{"a1", "a2"},
+				},
+			},
+			want: "level='info' bar='[a1 a2]' foo='1' msg='info message'\n",
+		},
+		{
+			name: "warn",
+			o:    NewOutputDeviceForTesting(),
+			args: args{
+				l:   WARN,
+				msg: "warn message",
+				fields: map[string]interface{}{
+					"foo": 1,
+					"bar": []string{"a1", "a2"},
+				},
+			},
+			want: "level='warn' bar='[a1 a2]' foo='1' msg='warn message'\n",
+		},
+		{
+			name: "error",
+			o:    NewOutputDeviceForTesting(),
+			args: args{
+				l:   ERROR,
+				msg: "error message",
+				fields: map[string]interface{}{
+					"foo": 1,
+					"bar": []string{"a1", "a2"},
+				},
+			},
+			want: "level='error' bar='[a1 a2]' foo='1' msg='error message'\n",
+		},
+		{
+			name: "invalid log level",
+			o:    NewOutputDeviceForTesting(),
+			args: args{
+				l:   42,
+				msg: "illegal log level message",
+				fields: map[string]interface{}{
+					"foo": 1,
+					"bar": []string{"a1", "a2"},
+				},
+			},
+			want: "level='level unknown (42)' bar='[a1 a2]' foo='1' msg='illegal log level message'\n",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.o.Log(tt.args.l, tt.args.msg, tt.args.fields)
+			if out := tt.o.Stdout(); out != "" {
+				t.Errorf("OutputDeviceForTesting.Stdout() = %q, want %q", out, "")
+			}
+			if out := tt.o.Stderr(); out != "" {
+				t.Errorf("OutputDeviceForTesting.Stderr() = %q, want %q", out, "")
+			}
+			if out := tt.o.LogOutput(); out != tt.want {
+				t.Errorf("OutputDeviceForTesting.LogOutput() = %q, want %q", out, tt.want)
 			}
 		})
 	}
