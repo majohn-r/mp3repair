@@ -48,18 +48,20 @@ func TestProcessCommand(t *testing.T) {
 		args []string
 	}
 	tests := []struct {
-		name  string
-		state *internal.SavedEnvVar
-		args  args
-		want  CommandProcessor
-		want1 []string
-		want2 bool
-		wantW string
+		name    string
+		state   *internal.SavedEnvVar
+		args    args
+		want    CommandProcessor
+		want1   []string
+		want2   bool
+		wantOut string
+		wantErr string
+		wantLog string
 	}{
 		{
-			name:  "problematic default command",
-			state: &internal.SavedEnvVar{Name: "APPDATA", Value: internal.SecureAbsolutePathForTesting(badDir), Set: true},
-			wantW: "The configuration file specifies \"list\" as the default command. There is no such command.\n",
+			name:    "problematic default command",
+			state:   &internal.SavedEnvVar{Name: "APPDATA", Value: internal.SecureAbsolutePathForTesting(badDir), Set: true},
+			wantErr: "The configuration file specifies \"list\" as the default command. There is no such command.\n",
 		},
 		{
 			name:  "problematic input",
@@ -106,10 +108,10 @@ func TestProcessCommand(t *testing.T) {
 			want2: true,
 		},
 		{
-			name:  "call invalid command",
-			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
-			args:  args{args: []string{"mp3.exe", "no such command"}},
-			wantW: "There is no command named \"no such command\"; valid commands include [check ls postRepair repair].\n",
+			name:    "call invalid command",
+			state:   &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
+			args:    args{args: []string{"mp3.exe", "no such command"}},
+			wantErr: "There is no command named \"no such command\"; valid commands include [check ls postRepair repair].\n",
 		},
 		{
 			name:  "pass arguments to default subcommand",
@@ -123,8 +125,8 @@ func TestProcessCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.state.RestoreForTesting()
-			w := &bytes.Buffer{}
-			got, got1, got2 := ProcessCommand(w, tt.args.args)
+			o := internal.NewOutputDeviceForTesting()
+			got, got1, got2 := ProcessCommand(o, tt.args.args)
 			if got == nil {
 				if tt.want != nil {
 					t.Errorf("%s got = %v, want %v", fnName, got, tt.want)
@@ -144,8 +146,14 @@ func TestProcessCommand(t *testing.T) {
 			if got2 != tt.want2 {
 				t.Errorf("%s got2 = %v, want %v", fnName, got2, tt.want2)
 			}
-			if gotW := w.String(); gotW != tt.wantW {
-				t.Errorf("%s gotW = %v, want %v", fnName, gotW, tt.wantW)
+			if gotOut := o.Stdout(); gotOut != tt.wantOut {
+				t.Errorf("%s console output = %v, want %v", fnName, gotOut, tt.wantErr)
+			}
+			if gotErr := o.Stderr(); gotErr != tt.wantErr {
+				t.Errorf("%s error output = %v, want %v", fnName, gotErr, tt.wantErr)
+			}
+			if gotLog := o.LogOutput(); gotLog != tt.wantLog {
+				t.Errorf("%s log output = %v, want %v", fnName, gotLog, tt.wantLog)
 			}
 		})
 	}

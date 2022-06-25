@@ -73,11 +73,12 @@ func newLsSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *ls {
 	}
 }
 
-// TODO: rewrite unit test
-func (l *ls) Exec(wOut io.Writer, wErr io.Writer, args []string) (ok bool) {
-	if s, argsOk := l.sf.ProcessArgs(wErr, args); argsOk {
-		// TODO pass in wErr and have it return bool status
-		l.runSubcommand(wOut, s)
+func (l *ls) Exec(o internal.OutputBus, args []string) (ok bool) {
+	// TODO: [#77] replace o.ErrorWriter() with o
+	if s, argsOk := l.sf.ProcessArgs(o.ErrorWriter(), args); argsOk {
+		// TODO return bool status
+		// TODO [#77] replace o.OutputWriter() with o
+		l.runSubcommand(o.OutputWriter(), s)
 		ok = true
 	}
 	return

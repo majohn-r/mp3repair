@@ -29,10 +29,11 @@ func newPostRepair(c *internal.Configuration, fSet *flag.FlagSet) CommandProcess
 	return newPostRepairSubCommand(c, fSet)
 }
 
-// TODO: rewrite unit test
-func (p *postrepair) Exec(wOut io.Writer, wErr io.Writer, args []string) (ok bool) {
-	if s, argsOk := p.sf.ProcessArgs(wErr, args); argsOk {
-		p.runSubcommand(wOut, s)
+func (p *postrepair) Exec(o internal.OutputBus, args []string) (ok bool) {
+	// TODO [#77] replace o.ErrorWriter() with o
+	if s, argsOk := p.sf.ProcessArgs(o.ErrorWriter(), args); argsOk {
+		// TODO [#77] replace o.OutputWriter() with o
+		p.runSubcommand(o.OutputWriter(), s)
 		ok = true
 	}
 	return

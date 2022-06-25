@@ -23,7 +23,7 @@ const (
 
 type CommandProcessor interface {
 	name() string
-	Exec(io.Writer, io.Writer, []string) bool
+	Exec(internal.OutputBus, []string) bool
 }
 
 type subcommandInitializer struct {
@@ -34,13 +34,15 @@ type subcommandInitializer struct {
 
 // ProcessCommand selects which command to be run and returns the relevant
 // CommandProcessor, command line arguments and ok status
-func ProcessCommand(w io.Writer, args []string) (cmd CommandProcessor, cmdArgs []string, ok bool) {
+func ProcessCommand(o internal.OutputBus, args []string) (cmd CommandProcessor, cmdArgs []string, ok bool) {
 	var c *internal.Configuration
+	// TODO: [#77] replace os.Stderr with o
 	if c, ok = internal.ReadConfigurationFile(os.Stderr); !ok {
 		return nil, nil, false
 	}
 	var defaultSettings map[string]bool
-	if defaultSettings, ok = getDefaultSettings(w, c.SubConfiguration("command")); !ok {
+	// TODO: [#77] replace o.ErrorWriter() with o
+	if defaultSettings, ok = getDefaultSettings(o.ErrorWriter(), c.SubConfiguration("command")); !ok {
 		return nil, nil, false
 	}
 	var initializers []subcommandInitializer
@@ -65,7 +67,8 @@ func ProcessCommand(w io.Writer, args []string) (cmd CommandProcessor, cmdArgs [
 		initializer:       newPostRepair,
 	}
 	initializers = append(initializers, lsSubCommand, checkSubCommand, repairSubCommand, postRepairSubCommand)
-	cmd, cmdArgs, ok = selectSubCommand(w, c, initializers, args)
+	// TODO: [#77] replace o.ErrorWriter() with o
+	cmd, cmdArgs, ok = selectSubCommand(o.ErrorWriter(), c, initializers, args)
 	return
 }
 

@@ -48,10 +48,11 @@ func newRepairSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *repair 
 	}
 }
 
-// TODO: rewrite unit test
-func (r *repair) Exec(wOut io.Writer, wErr io.Writer, args []string) (ok bool) {
-	if s, argsOk := r.sf.ProcessArgs(wErr, args); argsOk {
-		r.runSubcommand(wOut, s)
+func (r *repair) Exec(o internal.OutputBus, args []string) (ok bool) {
+	// TODO [#77] replace o.ErrorWriter() with o
+	if s, argsOk := r.sf.ProcessArgs(o.ErrorWriter(), args); argsOk {
+		// TODO [#77] replace o.OutputWriter() with o
+		r.runSubcommand(o.OutputWriter(), s)
 		ok = true
 	}
 	return

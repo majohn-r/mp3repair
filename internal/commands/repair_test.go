@@ -194,28 +194,30 @@ func Test_repair_Exec(t *testing.T) {
 		args []string
 	}
 	tests := []struct {
-		name  string
-		r     *repair
-		args  args
-		wantW string
+		name    string
+		r       *repair
+		args    args
+		wantOut string
+		wantErr string
+		wantLog string
 	}{
 		{
-			name:  "dry run, no usable content",
-			r:     newRepairSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDirName, "-dryRun"}},
-			wantW: noProblemsFound + "\n",
+			name:    "dry run, no usable content",
+			r:       newRepairSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
+			args:    args{[]string{"-topDir", topDirName, "-dryRun"}},
+			wantOut: noProblemsFound + "\n",
 		},
 		{
-			name:  "real repair, no usable content",
-			r:     newRepairSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
-			args:  args{[]string{"-topDir", topDirName, "-dryRun=false"}},
-			wantW: noProblemsFound + "\n",
+			name:    "real repair, no usable content",
+			r:       newRepairSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
+			args:    args{[]string{"-topDir", topDirName, "-dryRun=false"}},
+			wantOut: noProblemsFound + "\n",
 		},
 		{
 			name: "dry run, usable content",
 			r:    newRepairSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
 			args: args{[]string{"-topDir", topDirWithContent, "-dryRun"}},
-			wantW: strings.Join([]string{
+			wantOut: strings.Join([]string{
 				"\"new artist\"",
 				"    \"new album\"",
 				"         1 \"new track\" need to fix track numbering; track name; album name; artist name;\n",
@@ -225,7 +227,7 @@ func Test_repair_Exec(t *testing.T) {
 			name: "real repair, usable content",
 			r:    newRepairSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
 			args: args{[]string{"-topDir", topDirWithContent, "-dryRun=false"}},
-			wantW: strings.Join([]string{
+			wantOut: strings.Join([]string{
 				"The track \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" has been backed up to \"realContent\\\\new artist\\\\new album\\\\pre-repair-backup\\\\1.mp3\".",
 				"\"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" fixed\n",
 			}, "\n"),
@@ -233,10 +235,16 @@ func Test_repair_Exec(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := &bytes.Buffer{}
-			tt.r.Exec(w, os.Stderr, tt.args.args)
-			if gotW := w.String(); gotW != tt.wantW {
-				t.Errorf("%s = %v, want %v", fnName, gotW, tt.wantW)
+			o := internal.NewOutputDeviceForTesting()
+			tt.r.Exec(o, tt.args.args)
+			if gotOut := o.Stdout(); gotOut != tt.wantOut {
+				t.Errorf("%s console output = %v, want %v", fnName, gotOut, tt.wantOut)
+			}
+			if gotErr := o.Stderr(); gotErr != tt.wantErr {
+				t.Errorf("%s error output = %v, want %v", fnName, gotErr, tt.wantErr)
+			}
+			if gotLog := o.LogOutput(); gotLog != tt.wantLog {
+				t.Errorf("%s log output = %v, want %v", fnName, gotLog, tt.wantLog)
 			}
 		})
 	}

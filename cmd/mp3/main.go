@@ -2,13 +2,10 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"mp3/internal"
 	"mp3/internal/commands"
 	"os"
 	"time"
-
-	"github.com/sirupsen/logrus"
 )
 
 // these variables' values are injected by the mage build
@@ -21,11 +18,11 @@ var (
 
 func main() {
 	returnValue := 1
-	outputBus := internal.NewOutputDevice(os.Stdout, os.Stderr)
-	if internal.InitLogging(outputBus) {
-		returnValue = run(os.Args)
+	o := internal.NewOutputDevice(os.Stdout, os.Stderr)
+	if internal.InitLogging(o) {
+		returnValue = run(o, os.Args)
 	}
-	report(os.Stderr, returnValue)
+	report(o, returnValue)
 	os.Exit(returnValue)
 }
 
@@ -38,28 +35,28 @@ const (
 	statusFormat           = "%s version %s, created at %s, failed\n"
 )
 
-func report(w io.Writer, returnValue int) {
+func report(o internal.OutputBus, returnValue int) {
 	if returnValue != 0 {
-		fmt.Fprintf(w, statusFormat, internal.AppName, version, creation)
+		fmt.Fprintf(o.ErrorWriter(), statusFormat, internal.AppName, version, creation)
 	}
 }
 
-func run(cmdlineArgs []string) (returnValue int) {
+func run(o internal.OutputBus, cmdlineArgs []string) (returnValue int) {
 	returnValue = 1
 	startTime := time.Now()
-	logrus.WithFields(logrus.Fields{
+	o.Log(internal.INFO, internal.LI_BEGIN_EXECUTION, map[string]interface{}{
 		fkVersion:              version,
 		fkTimeStamp:            creation,
 		fkCommandLineArguments: cmdlineArgs,
-	}).Info(internal.LI_BEGIN_EXECUTION)
-	if cmd, args, ok := commands.ProcessCommand(os.Stderr, cmdlineArgs); ok {
-		if cmd.Exec(os.Stdout, os.Stderr, args) {
+	})
+	if cmd, args, ok := commands.ProcessCommand(o, cmdlineArgs); ok {
+		if cmd.Exec(o, args) {
 			returnValue = 0
 		}
 	}
-	logrus.WithFields(logrus.Fields{
+	o.Log(internal.INFO, internal.LI_END_EXECUTION, map[string]interface{}{
 		fkDuration: time.Since(startTime),
 		fkExitCode: returnValue,
-	}).Info(internal.LI_END_EXECUTION)
+	})
 	return
 }

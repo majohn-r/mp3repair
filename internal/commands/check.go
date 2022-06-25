@@ -58,11 +58,12 @@ func newCheckSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *check {
 	}
 }
 
-// TODO: rewrite unit test
-func (c *check) Exec(wOut io.Writer, wErr io.Writer, args []string) (ok bool) {
-	if s, argsOk := c.sf.ProcessArgs(wErr, args); argsOk {
-		// TODO: pass in wErr and return bool status
-		c.runSubcommand(wOut, s)
+func (c *check) Exec(o internal.OutputBus, args []string) (ok bool) {
+	// TODO: [#77] replace o.ErrorWriter() with o
+	if s, argsOk := c.sf.ProcessArgs(o.ErrorWriter(), args); argsOk {
+		// TODO: return bool status
+		// TODO: [#77] replace o.OutputWriter() with o
+		c.runSubcommand(o.OutputWriter(), s)
 		ok = true
 	}
 	return
