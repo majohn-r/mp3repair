@@ -1,7 +1,6 @@
 package internal
 
 import (
-	"bytes"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -198,38 +197,42 @@ func Test_verifyFileExists(t *testing.T) {
 		path string
 	}
 	tests := []struct {
-		name     string
-		args     args
-		wantOk   bool
-		wantWErr string
-		wantErr  bool
+		name              string
+		args              args
+		wantOk            bool
+		wantErrOutput     string
+		wantConsoleOutput string
+		wantLogOutput     string
+		wantErr           bool
 	}{
 		{
-			name:     "ordinary success",
-			args:     args{path: "./configuration_test.go"},
-			wantOk:   true,
-			wantWErr: "",
-			wantErr:  false,
+			name:          "ordinary success",
+			args:          args{path: "./configuration_test.go"},
+			wantOk:        true,
+			wantErrOutput: "",
+			wantErr:       false,
 		},
 		{
-			name:     "look for dir!",
-			args:     args{path: "."},
-			wantOk:   false,
-			wantWErr: "The configuration file \".\" is a directory.\n",
-			wantErr:  true,
+			name:          "look for dir!",
+			args:          args{path: "."},
+			wantOk:        false,
+			wantErrOutput: "The configuration file \".\" is a directory.\n",
+			wantLogOutput: "level='error' directory='.' fileName='.' msg='file is a directory'\n",
+			wantErr:       true,
 		},
 		{
-			name:     "non-existent file",
-			args:     args{path: "./no-such-file.txt"},
-			wantOk:   false,
-			wantWErr: "",
-			wantErr:  false,
+			name:          "non-existent file",
+			args:          args{path: "./no-such-file.txt"},
+			wantOk:        false,
+			wantErrOutput: "",
+			wantLogOutput: "level='info' directory='.' fileName='no-such-file.txt' msg='file does not exist'\n",
+			wantErr:       false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			wErr := &bytes.Buffer{}
-			gotOk, err := verifyFileExists(wErr, tt.args.path)
+			o := NewOutputDeviceForTesting()
+			gotOk, err := verifyFileExists(o, tt.args.path)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("verifyFileExists() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -237,8 +240,14 @@ func Test_verifyFileExists(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("verifyFileExists() = %v, want %v", gotOk, tt.wantOk)
 			}
-			if gotWErr := wErr.String(); gotWErr != tt.wantWErr {
-				t.Errorf("verifyFileExists() = %v, want %v", gotWErr, tt.wantWErr)
+			if gotOut := o.Stdout(); gotOut != tt.wantConsoleOutput {
+				t.Errorf("verifyFileExists() console output = %v, want %v", gotOut, tt.wantConsoleOutput)
+			}
+			if gotErr := o.Stderr(); gotErr != tt.wantErrOutput {
+				t.Errorf("verifyFileExists() error output = %v, want %v", gotErr, tt.wantErrOutput)
+			}
+			if gotLog := o.LogOutput(); gotLog != tt.wantLogOutput {
+				t.Errorf("verifyFileExists() log output = %v, want %v", gotLog, tt.wantLogOutput)
 			}
 		})
 	}
@@ -346,12 +355,14 @@ func TestReadConfigurationFile(t *testing.T) {
 			name:    "defaults.yaml is a directory",
 			state:   &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(badDir), Set: true},
 			wantErr: fmt.Sprintf("The configuration file %q is a directory.\n", yamlAsDir),
+			wantLog: fmt.Sprintf("level='error' directory='%s' fileName='defaults.yaml' msg='file is a directory'\n", SecureAbsolutePathForTesting(badDir2)),
 		},
 		{
-			name:   "missing yaml",
-			state:  &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(yamlAsDir), Set: true},
-			wantC:  EmptyConfiguration(),
-			wantOk: true,
+			name:    "missing yaml",
+			state:   &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(yamlAsDir), Set: true},
+			wantC:   EmptyConfiguration(),
+			wantLog: fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", SecureAbsolutePathForTesting(filepath.Join(yamlAsDir, AppName))),
+			wantOk:  true,
 		},
 		{
 			name:  "malformed yaml",

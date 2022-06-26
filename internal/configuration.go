@@ -3,14 +3,12 @@ package internal
 import (
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 
-	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
@@ -36,8 +34,7 @@ func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
 	configFile := filepath.Join(path, defaultConfigFileName)
 	var err error
 	var exists bool
-	// TODO [#77] replace o.ErrorWriter() with o
-	if exists, err = verifyFileExists(o.ErrorWriter(), configFile); err != nil {
+	if exists, err = verifyFileExists(o, configFile); err != nil {
 		return
 	}
 	if !exists {
@@ -76,15 +73,15 @@ func appData(o OutputBus) (string, bool) {
 	return "", false
 }
 
-func verifyFileExists(wErr io.Writer, path string) (ok bool, err error) {
+func verifyFileExists(o OutputBus, path string) (ok bool, err error) {
 	f, err := os.Stat(path)
 	if err == nil {
 		if f.IsDir() {
-			logrus.WithFields(logrus.Fields{
+			o.Log(ERROR, LE_FILE_IS_DIR, map[string]interface{}{
 				FK_DIRECTORY: filepath.Dir(path),
 				FK_FILE_NAME: filepath.Base(path),
-			}).Error(LE_FILE_IS_DIR)
-			fmt.Fprintf(wErr, USER_CONFIGURATION_FILE_IS_DIR, path)
+			})
+			fmt.Fprintf(o.ErrorWriter(), USER_CONFIGURATION_FILE_IS_DIR, path)
 			err = fmt.Errorf(ERROR_FILE_IS_DIR)
 			return
 		}
@@ -92,10 +89,10 @@ func verifyFileExists(wErr io.Writer, path string) (ok bool, err error) {
 		return
 	}
 	if errors.Is(err, os.ErrNotExist) {
-		logrus.WithFields(logrus.Fields{
+		o.Log(INFO, LI_NO_SUCH_FILE, map[string]interface{}{
 			FK_DIRECTORY: filepath.Dir(path),
 			FK_FILE_NAME: filepath.Base(path),
-		}).Info(LI_NO_SUCH_FILE)
+		})
 		err = nil
 	}
 	return
