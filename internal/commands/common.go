@@ -3,12 +3,9 @@ package commands
 import (
 	"flag"
 	"fmt"
-	"io"
 	"mp3/internal"
 	"sort"
 	"strings"
-
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -39,8 +36,7 @@ func ProcessCommand(o internal.OutputBus, args []string) (cmd CommandProcessor, 
 		return nil, nil, false
 	}
 	var defaultSettings map[string]bool
-	// TODO: [#77] replace o.ErrorWriter() with o
-	if defaultSettings, ok = getDefaultSettings(o.ErrorWriter(), c.SubConfiguration("command")); !ok {
+	if defaultSettings, ok = getDefaultSettings(o, c.SubConfiguration("command")); !ok {
 		return nil, nil, false
 	}
 	var initializers []subcommandInitializer
@@ -65,12 +61,11 @@ func ProcessCommand(o internal.OutputBus, args []string) (cmd CommandProcessor, 
 		initializer:       newPostRepair,
 	}
 	initializers = append(initializers, lsSubCommand, checkSubCommand, repairSubCommand, postRepairSubCommand)
-	// TODO: [#77] replace o.ErrorWriter() with o
-	cmd, cmdArgs, ok = selectSubCommand(o.ErrorWriter(), c, initializers, args)
+	cmd, cmdArgs, ok = selectSubCommand(o, c, initializers, args)
 	return
 }
 
-func getDefaultSettings(wErr io.Writer, c *internal.Configuration) (m map[string]bool, ok bool) {
+func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[string]bool, ok bool) {
 	defaultCommand, ok := c.StringValue("default")
 	if !ok { // no definition
 		m = map[string]bool{
@@ -96,10 +91,10 @@ func getDefaultSettings(wErr io.Writer, c *internal.Configuration) (m map[string
 		}
 	}
 	if !found {
-		logrus.WithFields(logrus.Fields{
+		o.Log(internal.WARN, internal.LW_INVALID_DEFAULT_COMMAND, map[string]interface{}{
 			fkCommandName: defaultCommand,
-		}).Warn(internal.LW_INVALID_DEFAULT_COMMAND)
-		fmt.Fprintf(wErr, internal.USER_INVALID_DEFAULT_COMMAND, defaultCommand)
+		})
+		fmt.Fprintf(o.ErrorWriter(), internal.USER_INVALID_DEFAULT_COMMAND, defaultCommand)
 		m = nil
 		ok = false
 		return
@@ -108,12 +103,12 @@ func getDefaultSettings(wErr io.Writer, c *internal.Configuration) (m map[string
 	return
 }
 
-func selectSubCommand(w io.Writer, c *internal.Configuration, i []subcommandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, ok bool) {
+func selectSubCommand(o internal.OutputBus, c *internal.Configuration, i []subcommandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, ok bool) {
 	if len(i) == 0 {
-		logrus.WithFields(logrus.Fields{
+		o.Log(internal.ERROR, internal.LE_COMMAND_COUNT, map[string]interface{}{
 			fkCount: 0,
-		}).Error(internal.LE_COMMAND_COUNT)
-		fmt.Fprint(w, internal.USER_NO_COMMANDS_DEFINED)
+		})
+		fmt.Fprint(o.ErrorWriter(), internal.USER_NO_COMMANDS_DEFINED)
 		return
 	}
 	var defaultInitializers int
@@ -125,10 +120,10 @@ func selectSubCommand(w io.Writer, c *internal.Configuration, i []subcommandInit
 		}
 	}
 	if defaultInitializers != 1 {
-		logrus.WithFields(logrus.Fields{
+		o.Log(internal.ERROR, internal.LE_DEFAULT_COMMAND_COUNT, map[string]interface{}{
 			fkCount: defaultInitializers,
-		}).Error(internal.LE_DEFAULT_COMMAND_COUNT)
-		fmt.Fprintf(w, internal.USER_INCORRECT_NUMBER_OF_DEFAULT_COMMANDS_DEFINED, defaultInitializers)
+		})
+		fmt.Fprintf(o.ErrorWriter(), internal.USER_INCORRECT_NUMBER_OF_DEFAULT_COMMANDS_DEFINED, defaultInitializers)
 		return
 	}
 	processorMap := make(map[string]CommandProcessor)
@@ -153,15 +148,15 @@ func selectSubCommand(w io.Writer, c *internal.Configuration, i []subcommandInit
 	if !found {
 		cmd = nil
 		callingArgs = nil
-		logrus.WithFields(logrus.Fields{
+		o.Log(internal.WARN, internal.LW_UNRECOGNIZED_COMMAND, map[string]interface{}{
 			fkCommandName: commandName,
-		}).Warn(internal.LW_UNRECOGNIZED_COMMAND)
+		})
 		var subCommandNames []string
 		for _, initializer := range i {
 			subCommandNames = append(subCommandNames, initializer.name)
 		}
 		sort.Strings(subCommandNames)
-		fmt.Fprintf(w, internal.USER_NO_SUCH_COMMAND, commandName, subCommandNames)
+		fmt.Fprintf(o.ErrorWriter(), internal.USER_NO_SUCH_COMMAND, commandName, subCommandNames)
 		return
 	}
 	callingArgs = args[2:]

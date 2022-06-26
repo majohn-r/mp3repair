@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"mp3/internal"
@@ -62,7 +61,8 @@ func TestProcessCommand(t *testing.T) {
 			name:    "problematic default command",
 			state:   &internal.SavedEnvVar{Name: "APPDATA", Value: internal.SecureAbsolutePathForTesting(badDir), Set: true},
 			wantErr: "The configuration file specifies \"list\" as the default command. There is no such command.\n",
-			wantLog: fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[command:map[default:list]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting(badMp3Dir)),
+			wantLog: fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[command:map[default:list]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting(badMp3Dir)) +
+				"level='warn' command='list' msg='invalid default command'\n",
 		},
 		{
 			name:    "problematic input",
@@ -126,7 +126,8 @@ func TestProcessCommand(t *testing.T) {
 			args:    args{args: []string{"mp3.exe", "no such command"}},
 			wantErr: "There is no command named \"no such command\"; valid commands include [check ls postRepair repair].\n",
 			wantLog: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
-				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
+				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")) +
+				"level='warn' command='no such command' msg='unrecognized command'\n",
 		},
 		{
 			name:  "pass arguments to default subcommand",
@@ -183,34 +184,39 @@ func Test_selectSubCommand(t *testing.T) {
 		args []string
 	}
 	tests := []struct {
-		name            string
-		args            args
-		wantCmd         CommandProcessor
-		wantCallingArgs []string
-		wantOk          bool
-		wantW           string
+		name              string
+		args              args
+		wantCmd           CommandProcessor
+		wantCallingArgs   []string
+		wantOk            bool
+		wantConsoleOutput string
+		wantErrorOutput   string
+		wantLogOutput     string
 	}{
 		// only handling error cases here, success cases are handled by TestProcessCommand
 		{
-			name:  "no initializers",
-			args:  args{},
-			wantW: "An internal error has occurred: no commands are defined!\n",
+			name:            "no initializers",
+			args:            args{},
+			wantErrorOutput: "An internal error has occurred: no commands are defined!\n",
+			wantLogOutput:   "level='error' count='0' msg='incorrect number of commands'\n",
 		},
 		{
-			name:  "no default initializers",
-			args:  args{i: []subcommandInitializer{{}}},
-			wantW: "An internal error has occurred: there are 0 default commands!\n",
+			name:            "no default initializers",
+			args:            args{i: []subcommandInitializer{{}}},
+			wantErrorOutput: "An internal error has occurred: there are 0 default commands!\n",
+			wantLogOutput:   "level='error' count='0' msg='incorrect number of default commands'\n",
 		},
 		{
-			name:  "too many default initializers",
-			args:  args{i: []subcommandInitializer{{defaultSubCommand: true}, {defaultSubCommand: true}}},
-			wantW: "An internal error has occurred: there are 2 default commands!\n",
+			name:            "too many default initializers",
+			args:            args{i: []subcommandInitializer{{defaultSubCommand: true}, {defaultSubCommand: true}}},
+			wantErrorOutput: "An internal error has occurred: there are 2 default commands!\n",
+			wantLogOutput:   "level='error' count='2' msg='incorrect number of default commands'\n",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := &bytes.Buffer{}
-			gotCmd, gotCallingArgs, gotOk := selectSubCommand(w, tt.args.c, tt.args.i, tt.args.args)
+			o := internal.NewOutputDeviceForTesting()
+			gotCmd, gotCallingArgs, gotOk := selectSubCommand(o, tt.args.c, tt.args.i, tt.args.args)
 			if !reflect.DeepEqual(gotCmd, tt.wantCmd) {
 				t.Errorf("selectSubCommand() gotCmd = %v, want %v", gotCmd, tt.wantCmd)
 			}
@@ -220,8 +226,14 @@ func Test_selectSubCommand(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("selectSubCommand() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
-			if gotW := w.String(); gotW != tt.wantW {
-				t.Errorf("selectSubCommand() gotW = %v, want %v", gotW, tt.wantW)
+			if gotConsoleOutput := o.Stdout(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("selectSubCommand() gotConsoleOutput = %v, want %v", gotConsoleOutput, tt.wantConsoleOutput)
+			}
+			if gotErrorOutput := o.Stderr(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("selectSubCommand() gotErrorOutput = %v, want %v", gotErrorOutput, tt.wantErrorOutput)
+			}
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("selectSubCommand() gotLogOutput = %v, want %v", gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}
@@ -246,13 +258,15 @@ func Test_getDefaultSettings(t *testing.T) {
 		c *internal.Configuration
 	}
 	tests := []struct {
-		name           string
-		includeDefault bool
-		defaultValue   string
-		args           args
-		wantM          map[string]bool
-		wantOk         bool
-		wantWErr       string
+		name              string
+		includeDefault    bool
+		defaultValue      string
+		args              args
+		wantM             map[string]bool
+		wantOk            bool
+		wantConsoleOutput string
+		wantErrorOutput   string
+		wantLogOutput     string
 	}{
 		{
 			name: "no value defined",
@@ -277,15 +291,15 @@ func Test_getDefaultSettings(t *testing.T) {
 			wantOk: true,
 		},
 		{
-			name:           "bad value",
-			includeDefault: true,
-			defaultValue:   "list",
-			wantWErr:       fmt.Sprintf(internal.USER_INVALID_DEFAULT_COMMAND, "list"),
+			name:            "bad value",
+			includeDefault:  true,
+			defaultValue:    "list",
+			wantErrorOutput: fmt.Sprintf(internal.USER_INVALID_DEFAULT_COMMAND, "list"),
+			wantLogOutput:   "level='warn' command='list' msg='invalid default command'\n",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			wErr := &bytes.Buffer{}
 			var content string
 			if tt.includeDefault {
 				content = fmt.Sprintf("command:\n    default: %s\n", tt.defaultValue)
@@ -301,15 +315,22 @@ func Test_getDefaultSettings(t *testing.T) {
 			} else {
 				tt.args.c = c.SubConfiguration("command")
 			}
-			gotM, gotOk := getDefaultSettings(wErr, tt.args.c)
+			o := internal.NewOutputDeviceForTesting()
+			gotM, gotOk := getDefaultSettings(o, tt.args.c)
 			if !reflect.DeepEqual(gotM, tt.wantM) {
 				t.Errorf("getDefaultSettings() gotM = %v, want %v", gotM, tt.wantM)
 			}
 			if gotOk != tt.wantOk {
 				t.Errorf("getDefaultSettings() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
-			if gotWErr := wErr.String(); gotWErr != tt.wantWErr {
-				t.Errorf("getDefaultSettings() gotWErr = %v, want %v", gotWErr, tt.wantWErr)
+			if gotConsoleOutput := o.Stdout(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("getDefaultSettings() gotConsoleOutput = %v, want %v", gotConsoleOutput, tt.wantConsoleOutput)
+			}
+			if gotErrorOutput := o.Stderr(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("getDefaultSettings() gotErrorOutput = %v, want %v", gotErrorOutput, tt.wantErrorOutput)
+			}
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("getDefaultSettings() gotLogOutput = %v, want %v", gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}
