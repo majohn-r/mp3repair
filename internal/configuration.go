@@ -24,10 +24,10 @@ const (
 
 // ReadConfigurationFile reads defaults.yaml from the specified path and returns
 // a pointer to a cooked Configuration instance
-func ReadConfigurationFile(wErr io.Writer) (c *Configuration, ok bool) {
+func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
 	var appDataValue string
 	var appDataSet bool
-	if appDataValue, appDataSet = appData(); !appDataSet {
+	if appDataValue, appDataSet = appData(o); !appDataSet {
 		c = EmptyConfiguration()
 		ok = true
 		return
@@ -36,7 +36,8 @@ func ReadConfigurationFile(wErr io.Writer) (c *Configuration, ok bool) {
 	configFile := filepath.Join(path, defaultConfigFileName)
 	var err error
 	var exists bool
-	if exists, err = verifyFileExists(wErr, configFile); err != nil {
+	// TODO [#77] replace o.ErrorWriter() with o
+	if exists, err = verifyFileExists(o.ErrorWriter(), configFile); err != nil {
 		return
 	}
 	if !exists {
@@ -47,31 +48,31 @@ func ReadConfigurationFile(wErr io.Writer) (c *Configuration, ok bool) {
 	yfile, _ := ioutil.ReadFile(configFile) // only probable error circumvented by verifyFileExists failure
 	data := make(map[string]interface{})
 	if err = yaml.Unmarshal(yfile, &data); err != nil {
-		logrus.WithFields(logrus.Fields{
+		o.Log(WARN, LW_CANNOT_UNMARSHAL_YAML, map[string]interface{}{
 			FK_DIRECTORY: path,
 			FK_FILE_NAME: defaultConfigFileName,
 			FK_ERROR:     err,
-		}).Warn(LW_CANNOT_UNMARSHAL_YAML)
-		fmt.Fprintf(wErr, USER_CONFIGURATION_FILE_GARBLED, configFile, err)
+		})
+		fmt.Fprintf(o.ErrorWriter(), USER_CONFIGURATION_FILE_GARBLED, configFile, err)
 		return
 	}
-	c = createConfiguration(data)
+	c = createConfiguration(o, data)
 	ok = true
-	logrus.WithFields(logrus.Fields{
+	o.Log(INFO, LI_CONFIGURATION_FILE_READ, map[string]interface{}{
 		FK_DIRECTORY: path,
 		FK_FILE_NAME: defaultConfigFileName,
 		fkValue:      c,
-	}).Info(LI_CONFIGURATION_FILE_READ)
+	})
 	return
 }
 
-func appData() (string, bool) {
+func appData(o OutputBus) (string, bool) {
 	if value, ok := os.LookupEnv(appDataVar); ok {
 		return value, ok
 	}
-	logrus.WithFields(logrus.Fields{
+	o.Log(INFO, LI_NOT_SET, map[string]interface{}{
 		fkVarName: appDataVar,
-	}).Info(LI_NOT_SET)
+	})
 	return "", false
 }
 
@@ -168,7 +169,7 @@ type Configuration struct {
 	cMap map[string]*Configuration
 }
 
-func createConfiguration(data map[string]interface{}) *Configuration {
+func createConfiguration(o OutputBus, data map[string]interface{}) *Configuration {
 	c := EmptyConfiguration()
 	for key, v := range data {
 		switch t := v.(type) {
@@ -177,13 +178,13 @@ func createConfiguration(data map[string]interface{}) *Configuration {
 		case bool:
 			c.bMap[key] = t
 		case map[string]interface{}:
-			c.cMap[key] = createConfiguration(t)
+			c.cMap[key] = createConfiguration(o, t)
 		default:
-			logrus.WithFields(logrus.Fields{
+			o.Log(WARN, LW_UNEXPECTED_VALUE_TYPE, map[string]interface{}{
 				fkKey:   key,
 				fkValue: v,
 				fkType:  fmt.Sprintf("%T", v),
-			}).Warn(LW_UNEXPECTED_VALUE_TYPE)
+			})
 			c.sMap[key] = fmt.Sprintf("%v", v)
 		}
 	}

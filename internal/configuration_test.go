@@ -22,7 +22,7 @@ func Test_Configuration_SubConfiguration(t *testing.T) {
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	testConfiguration, _ := ReadConfigurationFile(os.Stderr)
+	testConfiguration, _ := ReadConfigurationFile(NewOutputDeviceForTesting())
 	type args struct {
 		key string
 	}
@@ -61,7 +61,7 @@ func Test_Configuration_BoolDefault(t *testing.T) {
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	testConfiguration, _ := ReadConfigurationFile(os.Stderr)
+	testConfiguration, _ := ReadConfigurationFile(NewOutputDeviceForTesting())
 	type args struct {
 		key          string
 		defaultValue bool
@@ -155,7 +155,7 @@ func Test_Configuration_StringDefault(t *testing.T) {
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	testConfiguration, _ := ReadConfigurationFile(os.Stderr)
+	testConfiguration, _ := ReadConfigurationFile(NewOutputDeviceForTesting())
 	type args struct {
 		key          string
 		defaultValue string
@@ -247,6 +247,7 @@ func Test_verifyFileExists(t *testing.T) {
 func TestReadConfigurationFile(t *testing.T) {
 	savedState := SaveEnvVarForTesting(appDataVar)
 	canonicalPath := SecureAbsolutePathForTesting(".")
+	mp3Path := SecureAbsolutePathForTesting("mp3")
 	os.Setenv(appDataVar, canonicalPath)
 	defer func() {
 		savedState.RestoreForTesting()
@@ -279,11 +280,13 @@ func TestReadConfigurationFile(t *testing.T) {
 		t.Errorf("%s error creating gibberish defaults.yaml: %v", fnName, err)
 	}
 	tests := []struct {
-		name     string
-		state    *SavedEnvVar
-		wantC    *Configuration
-		wantOk   bool
-		wantWErr string
+		name    string
+		state   *SavedEnvVar
+		wantC   *Configuration
+		wantOk  bool
+		wantOut string
+		wantErr string
+		wantLog string
 	}{
 		{
 			name:  "good",
@@ -329,12 +332,20 @@ func TestReadConfigurationFile(t *testing.T) {
 				},
 			},
 			wantOk: true,
+			wantLog: fmt.Sprintf("level='warn' key='value' type='int' value='1' msg='unexpected value type'\n"+
+				"level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", mp3Path),
 		},
-		{name: "APPDATA not set", state: &SavedEnvVar{Name: appDataVar}, wantC: EmptyConfiguration(), wantOk: true},
 		{
-			name:     "defaults.yaml is a directory",
-			state:    &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(badDir), Set: true},
-			wantWErr: fmt.Sprintf("The configuration file %q is a directory.\n", yamlAsDir),
+			name:    "APPDATA not set",
+			state:   &SavedEnvVar{Name: appDataVar},
+			wantC:   EmptyConfiguration(),
+			wantOk:  true,
+			wantLog: "level='info' environment variable='APPDATA' msg='not set'\n",
+		},
+		{
+			name:    "defaults.yaml is a directory",
+			state:   &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(badDir), Set: true},
+			wantErr: fmt.Sprintf("The configuration file %q is a directory.\n", yamlAsDir),
 		},
 		{
 			name:   "missing yaml",
@@ -345,24 +356,31 @@ func TestReadConfigurationFile(t *testing.T) {
 		{
 			name:  "malformed yaml",
 			state: &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(badDir2), Set: true},
-			wantWErr: fmt.Sprintf(
+			wantErr: fmt.Sprintf(
 				"The configuration file %q is not well-formed YAML: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}\n",
 				SecureAbsolutePathForTesting(filepath.Join(gibberishDir, defaultConfigFileName))),
+			wantLog: fmt.Sprintf("level='warn' directory='%s' error='yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}' fileName='defaults.yaml' msg='cannot unmarshal yaml content'\n", SecureAbsolutePathForTesting(gibberishDir)),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			wErr := &bytes.Buffer{}
 			tt.state.RestoreForTesting()
-			gotC, gotOk := ReadConfigurationFile(wErr)
+			o := NewOutputDeviceForTesting()
+			gotC, gotOk := ReadConfigurationFile(o)
 			if !reflect.DeepEqual(gotC, tt.wantC) {
 				t.Errorf("ReadConfigurationFile() gotC = %v, want %v", gotC, tt.wantC)
 			}
 			if gotOk != tt.wantOk {
 				t.Errorf("ReadConfigurationFile() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
-			if gotWErr := wErr.String(); gotWErr != tt.wantWErr {
-				t.Errorf("ReadConfigurationFile() gotWErr = %v, want %v", gotWErr, tt.wantWErr)
+			if gotOut := o.Stdout(); gotOut != tt.wantOut {
+				t.Errorf("ReadConfigurationFile() console output = %v, want %v", gotOut, tt.wantOut)
+			}
+			if gotErr := o.Stderr(); gotErr != tt.wantErr {
+				t.Errorf("ReadConfigurationFile() error output = %v, want %v", gotErr, tt.wantErr)
+			}
+			if gotLog := o.LogOutput(); gotLog != tt.wantLog {
+				t.Errorf("ReadConfigurationFile() log output = %v, want %v", gotLog, tt.wantLog)
 			}
 		})
 	}
@@ -375,10 +393,13 @@ func Test_appData(t *testing.T) {
 		savedState.RestoreForTesting()
 	}()
 	tests := []struct {
-		name  string
-		state *SavedEnvVar
-		want  string
-		want1 bool
+		name    string
+		state   *SavedEnvVar
+		want    string
+		want1   bool
+		wantOut string
+		wantErr string
+		wantLog string
 	}{
 		{
 			name:  "value is set",
@@ -386,17 +407,31 @@ func Test_appData(t *testing.T) {
 			want:  "appData!",
 			want1: true,
 		},
-		{name: "value is not set", state: &SavedEnvVar{Name: appDataVar}},
+		{
+			name:    "value is not set",
+			state:   &SavedEnvVar{Name: appDataVar},
+			wantLog: "level='info' environment variable='APPDATA' msg='not set'\n",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.state.RestoreForTesting()
-			got, got1 := appData()
+			o := NewOutputDeviceForTesting()
+			got, got1 := appData(o)
 			if got != tt.want {
 				t.Errorf("appData() got = %v, want %v", got, tt.want)
 			}
 			if got1 != tt.want1 {
 				t.Errorf("appData() got1 = %v, want %v", got1, tt.want1)
+			}
+			if gotOut := o.Stdout(); gotOut != tt.wantOut {
+				t.Errorf("appData() console output = %q, want %q", gotOut, tt.wantOut)
+			}
+			if gotErr := o.Stderr(); gotErr != tt.wantErr {
+				t.Errorf("appData() error output = %q, want %q", gotErr, tt.wantErr)
+			}
+			if gotLog := o.LogOutput(); gotLog != tt.wantLog {
+				t.Errorf("appData() log output = %q, want %q", gotLog, tt.wantLog)
 			}
 		})
 	}

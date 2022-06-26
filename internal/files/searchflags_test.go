@@ -28,7 +28,7 @@ func Test_NewFileFlags(t *testing.T) {
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	defaultConfig, _ := internal.ReadConfigurationFile(os.Stderr)
+	defaultConfig, _ := internal.ReadConfigurationFile(internal.NewOutputDeviceForTesting())
 	type args struct {
 		c *internal.Configuration
 	}

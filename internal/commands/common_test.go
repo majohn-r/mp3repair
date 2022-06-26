@@ -62,10 +62,12 @@ func TestProcessCommand(t *testing.T) {
 			name:    "problematic default command",
 			state:   &internal.SavedEnvVar{Name: "APPDATA", Value: internal.SecureAbsolutePathForTesting(badDir), Set: true},
 			wantErr: "The configuration file specifies \"list\" as the default command. There is no such command.\n",
+			wantLog: fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[command:map[default:list]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting(badMp3Dir)),
 		},
 		{
-			name:  "problematic input",
-			state: &internal.SavedEnvVar{Name: "APPDATA", Value: internal.SecureAbsolutePathForTesting("./mp3"), Set: true},
+			name:    "problematic input",
+			state:   &internal.SavedEnvVar{Name: "APPDATA", Value: internal.SecureAbsolutePathForTesting("./mp3"), Set: true},
+			wantErr: fmt.Sprintf("The configuration file %q is a directory.\n", internal.SecureAbsolutePathForTesting(filepath.Join("./mp3", "mp3", "defaults.yaml"))),
 		},
 		{
 			name:  "call ls",
@@ -74,6 +76,8 @@ func TestProcessCommand(t *testing.T) {
 			want:  newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
 			want1: []string{"-track=true"},
 			want2: true,
+			wantLog: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
+				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
 		},
 		{
 			name:  "call check",
@@ -82,6 +86,8 @@ func TestProcessCommand(t *testing.T) {
 			want:  newCheck(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ExitOnError)),
 			want1: []string{"-integrity=false"},
 			want2: true,
+			wantLog: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
+				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
 		},
 		{
 			name:  "call repair",
@@ -90,6 +96,8 @@ func TestProcessCommand(t *testing.T) {
 			want:  newRepair(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ExitOnError)),
 			want1: []string{},
 			want2: true,
+			wantLog: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
+				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
 		},
 		{
 			name:  "call postRepair",
@@ -98,6 +106,8 @@ func TestProcessCommand(t *testing.T) {
 			want:  newPostRepair(internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ExitOnError)),
 			want1: []string{},
 			want2: true,
+			wantLog: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
+				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
 		},
 		{
 			name:  "call default command",
@@ -106,12 +116,16 @@ func TestProcessCommand(t *testing.T) {
 			want:  newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
 			want1: []string{"ls"},
 			want2: true,
+			wantLog: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
+				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
 		},
 		{
 			name:    "call invalid command",
 			state:   &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
 			args:    args{args: []string{"mp3.exe", "no such command"}},
 			wantErr: "There is no command named \"no such command\"; valid commands include [check ls postRepair repair].\n",
+			wantLog: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
+				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
 		},
 		{
 			name:  "pass arguments to default subcommand",
@@ -120,6 +134,8 @@ func TestProcessCommand(t *testing.T) {
 			want:  newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
 			want1: []string{"-album", "-artist", "-track"},
 			want2: true,
+			wantLog: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
+				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
 		},
 	}
 	for _, tt := range tests {
@@ -279,7 +295,7 @@ func Test_getDefaultSettings(t *testing.T) {
 			if err := internal.CreateFileForTestingWithContent(configDir, "defaults.yaml", content); err != nil {
 				t.Errorf("getDefaultSettings() error creating defaults.yaml")
 			}
-			if c, ok := internal.ReadConfigurationFile(os.Stderr); !ok {
+			if c, ok := internal.ReadConfigurationFile(internal.NewOutputDeviceForTesting()); !ok {
 				t.Errorf("getDefaultSettings() error reading defaults.yaml %q", content)
 			} else {
 				tt.args.c = c.SubConfiguration("command")

@@ -576,7 +576,7 @@ func Test_newLsSubCommand(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	defaultConfig, _ := internal.ReadConfigurationFile(os.Stderr)
+	defaultConfig, _ := internal.ReadConfigurationFile(internal.NewOutputDeviceForTesting())
 	type args struct {
 		c *internal.Configuration
 	}

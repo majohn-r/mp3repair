@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"mp3/internal"
-	"os"
 	"sort"
 	"strings"
 
@@ -36,8 +35,7 @@ type subcommandInitializer struct {
 // CommandProcessor, command line arguments and ok status
 func ProcessCommand(o internal.OutputBus, args []string) (cmd CommandProcessor, cmdArgs []string, ok bool) {
 	var c *internal.Configuration
-	// TODO: [#77] replace os.Stderr with o
-	if c, ok = internal.ReadConfigurationFile(os.Stderr); !ok {
+	if c, ok = internal.ReadConfigurationFile(o); !ok {
 		return nil, nil, false
 	}
 	var defaultSettings map[string]bool

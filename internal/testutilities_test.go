@@ -244,7 +244,7 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 				defer func() {
 					savedState.RestoreForTesting()
 				}()
-				c, _ := ReadConfigurationFile(os.Stderr)
+				c, _ := ReadConfigurationFile(NewOutputDeviceForTesting())
 				if common := c.cMap["common"]; common == nil {
 					t.Error("CreateDefaultYamlFile() 'good test': configuration does not contain common subtree")
 				} else {
