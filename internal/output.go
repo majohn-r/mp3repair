@@ -53,9 +53,7 @@ func (o *OutputDevice) Log(l LogLevel, msg string, fields map[string]interface{}
 	case ERROR:
 		logrus.WithFields(fields).Error(msg)
 	default:
-		logrus.WithFields(fields).Error(msg)
-		logrus.WithFields(logrus.Fields{
-			fkLogLevel: l,
-		}).Error(LE_INVALID_LOG_LEVEL)
+		fields[fkLogLevel] = l
+		logrus.WithFields(fields).Error(msg + "; " + LE_INVALID_LOG_LEVEL)
 	}
 }
