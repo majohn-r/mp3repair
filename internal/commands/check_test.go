@@ -367,6 +367,7 @@ func Test_check_Exec(t *testing.T) {
 		name              string
 		c                 *check
 		args              args
+		wantOk            bool
 		wantConsoleOutput string
 		wantErrorOutput   string
 		wantLogOutput     string
@@ -416,12 +417,15 @@ func Test_check_Exec(t *testing.T) {
 				"  no albums found",
 				"",
 			}, "\n"),
+			wantOk: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
-			tt.c.Exec(o, tt.args.args)
+			if gotOk := tt.c.Exec(o, tt.args.args); gotOk != tt.wantOk {
+				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
+			}
 			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
 				t.Errorf("%s console output = %v, want %v", fnName, gotConsoleOutput, tt.wantConsoleOutput)
 			}

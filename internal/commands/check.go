@@ -61,10 +61,8 @@ func newCheckSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *check {
 func (c *check) Exec(o internal.OutputBus, args []string) (ok bool) {
 	// TODO: [#77] replace o.ErrorWriter() with o
 	if s, argsOk := c.sf.ProcessArgs(o.ErrorWriter(), args); argsOk {
-		// TODO: return bool status
 		// TODO: [#77] replace o.OutputWriter() with o
-		c.runSubcommand(o.OutputWriter(), s)
-		ok = true
+		ok = c.runSubcommand(o.OutputWriter(), s)
 	}
 	return
 }
@@ -127,8 +125,8 @@ func (a *artistWithIssues) hasIssues() bool {
 	return false
 }
 
-// TODO: should use a second writer for error output
-func (c *check) runSubcommand(w io.Writer, s *files.Search) {
+// TODO: should use a second writer for error output; first writer is for console output
+func (c *check) runSubcommand(w io.Writer, s *files.Search) (ok bool) {
 	if !*c.checkEmptyFolders && !*c.checkGapsInTrackNumbering && !*c.checkIntegrity {
 		fmt.Fprintf(os.Stderr, internal.USER_SPECIFIED_NO_WORK, c.name())
 		logrus.WithFields(c.logFields()).Warn(internal.LW_NOTHING_TO_DO)
@@ -139,7 +137,9 @@ func (c *check) runSubcommand(w io.Writer, s *files.Search) {
 		artistsWithGaps := c.performGapAnalysis(w, artists)
 		artistsWithIntegrityIssues := c.performIntegrityCheck(w, artists)
 		reportResults(w, artistsWithEmptyIssues, artistsWithGaps, artistsWithIntegrityIssues)
+		ok = true
 	}
+	return
 }
 
 func reportResults(w io.Writer, artistsWithIssues ...[]*artistWithIssues) {
