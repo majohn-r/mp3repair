@@ -22,12 +22,14 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 	fnName := "performEmptyFolderAnalysis()"
 	emptyDirName := "empty"
 	dirtyDirName := "dirty"
+	goodFolderDirName := "good"
 	if err := internal.Mkdir(emptyDirName); err != nil {
 		t.Errorf("%s error creating %s: %v", fnName, emptyDirName, err)
 	}
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, emptyDirName)
 		internal.DestroyDirectoryForTesting(fnName, dirtyDirName)
+		internal.DestroyDirectoryForTesting(fnName, goodFolderDirName)
 	}()
 	if err := internal.Mkdir(dirtyDirName); err != nil {
 		t.Errorf("%s error creating %s: %v", fnName, dirtyDirName, err)
@@ -35,6 +37,23 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 	if err := internal.PopulateTopDirForTesting(dirtyDirName); err != nil {
 		t.Errorf("%s error populating %s: %v", fnName, dirtyDirName, err)
 	}
+	if err := internal.Mkdir(goodFolderDirName); err != nil {
+		t.Errorf("%s error creating %s: %v", fnName, goodFolderDirName, err)
+	}
+	if err := internal.Mkdir(filepath.Join(goodFolderDirName, "goodArtist")); err != nil {
+		t.Errorf("%s error creating %s: %v", fnName, "goodArtist", err)
+	}
+	if err := internal.Mkdir(filepath.Join(goodFolderDirName, "goodArtist", "goodAlbum")); err != nil {
+		t.Errorf("%s error creating %s: %v", fnName, "good album", err)
+	}
+	if err := internal.CreateFileForTestingWithContent(filepath.Join(goodFolderDirName, "goodArtist", "goodAlbum"), "01 goodTrack.mp3", "good content"); err != nil {
+		t.Errorf("%s error creating %s: %v", fnName, "01 goodTrack.mp3", err)
+	}
+	goodArtist := files.NewArtist("goodArtist", filepath.Join(goodFolderDirName, "goodArtist"))
+	goodAlbum := files.NewAlbum("goodAlbum", goodArtist, filepath.Join(goodFolderDirName, "goodArtist", "goodAlbum"))
+	goodArtist.AddAlbum(goodAlbum)
+	goodTrack := files.NewTrack(goodAlbum, "01 goodTrack.mp3", "goodTrack", 1)
+	goodAlbum.AddTrack(goodTrack)
 	type args struct {
 		s *files.Search
 	}
@@ -48,10 +67,17 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 	}{
 		{name: "no work to do", c: &check{checkEmptyFolders: &fFlag}, args: args{}},
 		{
-			name:  "empty topDir",
-			c:     &check{checkEmptyFolders: &tFlag},
-			args:  args{s: files.CreateSearchForTesting(emptyDirName)},
-			wantW: "Empty Folder Analysis: no empty folders found\n",
+			name: "empty topDir",
+			c:    &check{checkEmptyFolders: &tFlag},
+			args: args{s: files.CreateSearchForTesting(emptyDirName)},
+		},
+		{
+			name:                "folders, no empty folders present",
+			c:                   &check{checkEmptyFolders: &tFlag},
+			args:                args{s: files.CreateSearchForTesting(goodFolderDirName)},
+			wantArtists:         []*files.Artist{goodArtist},
+			wantFilteredArtists: nil,
+			wantW:               "Empty Folder Analysis: no empty folders found\n",
 		},
 		{
 			name:        "empty folders present",
@@ -138,7 +164,7 @@ func Test_filterArtists(t *testing.T) {
 		t.Errorf("%s error populating %s: %v", fnName, topDirName, err)
 	}
 	searchStruct := files.CreateSearchForTesting(topDirName)
-	fullArtists := searchStruct.LoadUnfilteredData(os.Stderr)
+	fullArtists, _ := searchStruct.LoadUnfilteredData(os.Stderr)
 	filteredArtists := searchStruct.LoadData(os.Stderr)
 	type args struct {
 		s       *files.Search
@@ -299,6 +325,7 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 		t.Errorf("error creating track")
 	}
 	s := files.CreateSearchForTesting(topDirName)
+	a, _ := s.LoadUnfilteredData(os.Stderr)
 	type args struct {
 		artists []*files.Artist
 	}
@@ -314,7 +341,7 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 		{
 			name: "meaningful case",
 			c:    &check{checkIntegrity: &tFlag},
-			args: args{artists: s.LoadUnfilteredData(os.Stderr)},
+			args: args{artists: a},
 			wantConflictedArtists: []*artistWithIssues{
 				{
 					name: "artist",

@@ -70,6 +70,7 @@ func TestSearch_FilterArtists(t *testing.T) {
 	realFlagSet := flag.NewFlagSet("real", flag.ContinueOnError)
 	realS, _ := NewSearchFlags(internal.EmptyConfiguration(), realFlagSet).ProcessArgs(
 		internal.NewOutputDeviceForTesting(), []string{"-topDir", topDir})
+	a, _ := realS.LoadUnfilteredData(os.Stderr)
 	type args struct {
 		unfilteredArtists []*Artist
 	}
@@ -82,7 +83,7 @@ func TestSearch_FilterArtists(t *testing.T) {
 		{
 			name:        "default",
 			s:           realS,
-			args:        args{unfilteredArtists: realS.LoadUnfilteredData(os.Stderr)},
+			args:        args{unfilteredArtists: a},
 			wantArtists: realS.LoadData(os.Stderr),
 		},
 	}
@@ -169,19 +170,26 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 		s           *Search
 		wantArtists []*Artist
 		wantWErr    string
+		wantOk      bool
 	}{
 		{
 			name:        "read all",
 			s:           CreateSearchForTesting(topDir),
 			wantArtists: CreateAllArtistsForTesting(topDir, true),
+			wantOk:      true,
 		},
 		{name: "empty dir", s: CreateSearchForTesting(emptyDir)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			wErr := &bytes.Buffer{}
-			if gotArtists := tt.s.LoadUnfilteredData(wErr); !reflect.DeepEqual(gotArtists, tt.wantArtists) {
+			var gotArtists []*Artist
+			var gotOk bool
+			if gotArtists, gotOk = tt.s.LoadUnfilteredData(wErr); !reflect.DeepEqual(gotArtists, tt.wantArtists) {
 				t.Errorf("Search.LoadUnfilteredData() = %v, want %v", gotArtists, tt.wantArtists)
+			}
+			if gotOk != tt.wantOk {
+				t.Errorf("Search.LoadUnfilteredData() ok = %v, want %v", gotOk, tt.wantOk)
 			}
 			if gotWErr := wErr.String(); gotWErr != tt.wantWErr {
 				t.Errorf("Search.LoadUnfilteredData() = %v, want %v", gotWErr, tt.wantWErr)

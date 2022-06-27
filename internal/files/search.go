@@ -28,8 +28,8 @@ func (s *Search) contents(wErr io.Writer) ([]fs.FileInfo, bool) {
 // LoadUnfilteredData loads artists, albums, and tracks from the specified top
 // directory, honoring the specified track extension, but ignoring the album and
 // artist filter expressions.
-// TODO [#81] should return bool, false on returning no artists
-func (s *Search) LoadUnfilteredData(wErr io.Writer) (artists []*Artist) {
+// TODO [#77] use OutputBus
+func (s *Search) LoadUnfilteredData(wErr io.Writer) (artists []*Artist, ok bool) {
 	logrus.WithFields(s.LogFields(false)).Info(internal.LI_READING_UNFILTERED_FILES)
 	if artistFiles, ok := s.contents(wErr); ok {
 		for _, artistFile := range artistFiles {
@@ -57,6 +57,10 @@ func (s *Search) LoadUnfilteredData(wErr io.Writer) (artists []*Artist) {
 				artists = append(artists, artist)
 			}
 		}
+	}
+	ok = len(artists) != 0
+	if !ok {
+		logrus.WithFields(s.LogFields(false)).Warn(internal.LW_NO_ARTIST_DIRECTORIES)
 	}
 	return
 }
@@ -154,10 +158,10 @@ func CreateFilteredSearchForTesting(topDir string, artistFilter string, albumFil
 	realFlagSet := flag.NewFlagSet("testing", flag.ContinueOnError)
 	s, _ := NewSearchFlags(internal.EmptyConfiguration(), realFlagSet).ProcessArgs(
 		internal.NewOutputDeviceForTesting(), []string{
-		"-topDir", topDir,
-		"-artistFilter", artistFilter,
-		"-albumFilter", albumFilter,
-	})
+			"-topDir", topDir,
+			"-artistFilter", artistFilter,
+			"-albumFilter", albumFilter,
+		})
 	return s
 }
 

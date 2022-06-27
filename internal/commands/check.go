@@ -323,30 +323,30 @@ func sortArtists(filteredArtists []*artistWithIssues) {
 }
 
 // TODO [#77] need OutputBus for errors
+// TODO [#81] need to return LoadUnfilteredData boolean status
 func (c *check) performEmptyFolderAnalysis(w io.Writer, s *files.Search) (artists []*files.Artist, conflictedArtists []*artistWithIssues) {
 	if *c.checkEmptyFolders {
-		artists = s.LoadUnfilteredData(os.Stderr)
-		if len(artists) == 0 {
-			// TODO [#81] handle in LoadUnfilteredData
-			logrus.WithFields(s.LogFields(false)).Warn(internal.LW_NO_ARTIST_DIRECTORIES)
-		}
-		conflictedArtists = createBareConflictedIssues(artists)
-		issuesFound := false
-		for _, conflictedArtist := range conflictedArtists {
-			if !conflictedArtist.artist.HasAlbums() {
-				conflictedArtist.issues = append(conflictedArtist.issues, "no albums found")
-				issuesFound = true
-			} else {
-				for _, conflictedAlbum := range conflictedArtist.albums {
-					if !conflictedAlbum.album.HasTracks() {
-						conflictedAlbum.issues = append(conflictedAlbum.issues, "no tracks found")
-						issuesFound = true
+		var ok bool
+		artists, ok = s.LoadUnfilteredData(os.Stderr)
+		if ok {
+			conflictedArtists = createBareConflictedIssues(artists)
+			issuesFound := false
+			for _, conflictedArtist := range conflictedArtists {
+				if !conflictedArtist.artist.HasAlbums() {
+					conflictedArtist.issues = append(conflictedArtist.issues, "no albums found")
+					issuesFound = true
+				} else {
+					for _, conflictedAlbum := range conflictedArtist.albums {
+						if !conflictedAlbum.album.HasTracks() {
+							conflictedAlbum.issues = append(conflictedAlbum.issues, "no tracks found")
+							issuesFound = true
+						}
 					}
 				}
 			}
-		}
-		if !issuesFound {
-			fmt.Fprintln(w, "Empty Folder Analysis: no empty folders found")
+			if !issuesFound {
+				fmt.Fprintln(w, "Empty Folder Analysis: no empty folders found")
+			}
 		}
 	}
 	return
