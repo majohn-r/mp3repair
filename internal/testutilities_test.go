@@ -439,14 +439,14 @@ func TestOutputDeviceForTesting_OutputWriter(t *testing.T) {
 				t.Errorf("OutputDeviceForTesting.OutputWriter() = %v, want %v", got, tt.want)
 			}
 			fmt.Fprintf(tt.o.OutputWriter(), "test message")
-			if out := tt.o.Stdout(); out != "test message" {
-				t.Errorf("OutputDeviceForTesting.Stdout() = %q, want %q", out, "test message")
+			if gotConsoleOutput := tt.o.ConsoleOutput(); gotConsoleOutput != "test message" {
+				t.Errorf("OutputDeviceForTesting.ConsoleOutput() = %q, want %q", gotConsoleOutput, "test message")
 			}
-			if out := tt.o.Stderr(); out != "" {
-				t.Errorf("OutputDeviceForTesting.Stderr() = %q, want %q", out, "")
+			if gotErrorOutput := tt.o.ErrorOutput(); gotErrorOutput != "" {
+				t.Errorf("OutputDeviceForTesting.ErrorOutput() = %q, want %q", gotErrorOutput, "")
 			}
-			if out := tt.o.LogOutput(); out != "" {
-				t.Errorf("OutputDeviceForTesting.LogOutput() = %q, want %q", out, "")
+			if gotLogOutput := tt.o.LogOutput(); gotLogOutput != "" {
+				t.Errorf("OutputDeviceForTesting.LogOutput() = %q, want %q", gotLogOutput, "")
 			}
 		})
 	}
@@ -466,14 +466,14 @@ func TestOutputDeviceForTesting_ErrorWriter(t *testing.T) {
 				t.Errorf("OutputDeviceForTesting.ErrorWriter() = %v, want %v", got, tt.want)
 			}
 			fmt.Fprintf(tt.o.ErrorWriter(), "test message")
-			if out := tt.o.Stdout(); out != "" {
-				t.Errorf("OutputDeviceForTesting.Stdout() = %q, want %q", out, "")
+			if gotConsoleOutput := tt.o.ConsoleOutput(); gotConsoleOutput != "" {
+				t.Errorf("OutputDeviceForTesting.ConsoleOutput() = %q, want %q", gotConsoleOutput, "")
 			}
-			if out := tt.o.Stderr(); out != "test message" {
-				t.Errorf("OutputDeviceForTesting.Stderr() = %q, want %q", out, "test message")
+			if gotErrorOutput := tt.o.ErrorOutput(); gotErrorOutput != "test message" {
+				t.Errorf("OutputDeviceForTesting.ErrorOutput() = %q, want %q", gotErrorOutput, "test message")
 			}
-			if out := tt.o.LogOutput(); out != "" {
-				t.Errorf("OutputDeviceForTesting.LogOutput() = %q, want %q", out, "")
+			if gotLogOutput := tt.o.LogOutput(); gotLogOutput != "" {
+				t.Errorf("OutputDeviceForTesting.LogOutput() = %q, want %q", gotLogOutput, "")
 			}
 		})
 	}
@@ -486,10 +486,10 @@ func TestOutputDeviceForTesting_Log(t *testing.T) {
 		fields map[string]interface{}
 	}
 	tests := []struct {
-		name string
-		o    *OutputDeviceForTesting
-		args args
-		want string
+		name          string
+		o             *OutputDeviceForTesting
+		args          args
+		wantLogOutput string
 	}{
 		{
 			name: "info",
@@ -502,7 +502,7 @@ func TestOutputDeviceForTesting_Log(t *testing.T) {
 					"bar": []string{"a1", "a2"},
 				},
 			},
-			want: "level='info' bar='[a1 a2]' foo='1' msg='info message'\n",
+			wantLogOutput: "level='info' bar='[a1 a2]' foo='1' msg='info message'\n",
 		},
 		{
 			name: "warn",
@@ -515,7 +515,7 @@ func TestOutputDeviceForTesting_Log(t *testing.T) {
 					"bar": []string{"a1", "a2"},
 				},
 			},
-			want: "level='warn' bar='[a1 a2]' foo='1' msg='warn message'\n",
+			wantLogOutput: "level='warn' bar='[a1 a2]' foo='1' msg='warn message'\n",
 		},
 		{
 			name: "error",
@@ -528,7 +528,7 @@ func TestOutputDeviceForTesting_Log(t *testing.T) {
 					"bar": []string{"a1", "a2"},
 				},
 			},
-			want: "level='error' bar='[a1 a2]' foo='1' msg='error message'\n",
+			wantLogOutput: "level='error' bar='[a1 a2]' foo='1' msg='error message'\n",
 		},
 		{
 			name: "invalid log level",
@@ -541,20 +541,20 @@ func TestOutputDeviceForTesting_Log(t *testing.T) {
 					"bar": []string{"a1", "a2"},
 				},
 			},
-			want: "level='level unknown (42)' bar='[a1 a2]' foo='1' msg='illegal log level message'\n",
+			wantLogOutput: "level='level unknown (42)' bar='[a1 a2]' foo='1' msg='illegal log level message'\n",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.o.Log(tt.args.l, tt.args.msg, tt.args.fields)
-			if out := tt.o.Stdout(); out != "" {
-				t.Errorf("OutputDeviceForTesting.Stdout() = %q, want %q", out, "")
+			if gotConsoleOutput := tt.o.ConsoleOutput(); gotConsoleOutput != "" {
+				t.Errorf("OutputDeviceForTesting.ConsoleOutput() = %q, want %q", gotConsoleOutput, "")
 			}
-			if out := tt.o.Stderr(); out != "" {
-				t.Errorf("OutputDeviceForTesting.Stderr() = %q, want %q", out, "")
+			if gotErrorOutput := tt.o.ErrorOutput(); gotErrorOutput != "" {
+				t.Errorf("OutputDeviceForTesting.ErrorOutput() = %q, want %q", gotErrorOutput, "")
 			}
-			if out := tt.o.LogOutput(); out != tt.want {
-				t.Errorf("OutputDeviceForTesting.LogOutput() = %q, want %q", out, tt.want)
+			if gotLogOutput := tt.o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("OutputDeviceForTesting.LogOutput() = %q, want %q", gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}

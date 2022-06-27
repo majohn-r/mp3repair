@@ -52,47 +52,47 @@ func Test_postrepair_Exec(t *testing.T) {
 		args []string
 	}
 	tests := []struct {
-		name    string
-		p       *postrepair
-		args    args
-		wantOut string
-		wantErr string
-		wantLog string
+		name              string
+		p                 *postrepair
+		args              args
+		wantConsoleOutput string
+		wantErrorOutput   string
+		wantLogOutput     string
 	}{
 		{
 			name: "handle bad common arguments",
 			p: newPostRepairSubCommand(
 				internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError)),
-			args:    args{args: []string{"-topDir", "non-existent directory"}},
-			wantOut: "",
+			args:              args{args: []string{"-topDir", "non-existent directory"}},
+			wantConsoleOutput: "",
 		},
 		{
 			name: "handle normal processing with nothing to do",
 			p: newPostRepairSubCommand(
 				internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError)),
-			args:    args{args: []string{"-topDir", topDirName}},
-			wantOut: "There are no backup directories to delete\n",
+			args:              args{args: []string{"-topDir", topDirName}},
+			wantConsoleOutput: "There are no backup directories to delete\n",
 		},
 		{
 			name: "handle normal processing",
 			p: newPostRepairSubCommand(
 				internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError)),
-			args:    args{args: []string{"-topDir", topDir2Name}},
-			wantOut: "The backup directory for artist \"the artist\" album \"the album\" has been deleted\n",
+			args:              args{args: []string{"-topDir", topDir2Name}},
+			wantConsoleOutput: "The backup directory for artist \"the artist\" album \"the album\" has been deleted\n",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			tt.p.Exec(o, tt.args.args)
-			if gotOut := o.Stdout(); gotOut != tt.wantOut {
-				t.Errorf("%s console output = %v, want %v", fnName, gotOut, tt.wantOut)
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("%s console output = %v, want %v", fnName, gotConsoleOutput, tt.wantConsoleOutput)
 			}
-			if gotErr := o.Stderr(); gotErr != tt.wantErr {
-				t.Errorf("%s error output = %v, want %v", fnName, gotErr, tt.wantErr)
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("%s error output = %v, want %v", fnName, gotErrorOutput, tt.wantErrorOutput)
 			}
-			if gotLog := o.LogOutput(); gotLog != tt.wantLog {
-				t.Errorf("%s log output = %v, want %v", fnName, gotLog, tt.wantLog)
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("%s log output = %v, want %v", fnName, gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}

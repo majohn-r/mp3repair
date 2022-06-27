@@ -37,22 +37,22 @@ func Test_run(t *testing.T) {
 		cmdlineArgs []string
 	}
 	tests := []struct {
-		name            string
-		args            args
-		wantReturnValue int
-		wantConsole     string
-		wantErr         string
-		wantLogPrefix   string
-		wantLogSuffix   string
+		name              string
+		args              args
+		wantReturnValue   int
+		wantConsoleOutput string
+		wantErrorOutput   string
+		wantLogPrefix     string
+		wantLogSuffix     string
 	}{
 		{
 			name:            "failure",
 			args:            args{cmdlineArgs: []string{"./mp3", "foo"}},
 			wantReturnValue: 1,
-			wantErr:         "There is no command named \"foo\"; valid commands include [check ls postRepair repair].\n",
+			wantErrorOutput: "There is no command named \"foo\"; valid commands include [check ls postRepair repair].\n",
 			wantLogPrefix: "level='info' args='[./mp3 foo]' timeStamp='' version='unknown version!' msg='execution starts'\n" +
 				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", filepath.Join(thisDir, internal.AppName)) +
-				"level='warn' command='foo' msg='unrecognized command'\n"+
+				"level='warn' command='foo' msg='unrecognized command'\n" +
 				"level='info' duration='",
 			wantLogSuffix: "' exitCode='1' msg='execution ends'\n",
 		},
@@ -63,8 +63,8 @@ func Test_run(t *testing.T) {
 			wantLogPrefix: "level='info' args='[./mp3]' timeStamp='' version='unknown version!' msg='execution starts'\n" +
 				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", filepath.Join(thisDir, internal.AppName)) +
 				"level='info' duration='",
-			wantLogSuffix: "' exitCode='0' msg='execution ends'\n",
-			wantConsole:   "Artist: myArtist\n  Album: myAlbum\n",
+			wantLogSuffix:     "' exitCode='0' msg='execution ends'\n",
+			wantConsoleOutput: "Artist: myArtist\n  Album: myAlbum\n",
 		},
 	}
 	for _, tt := range tests {
@@ -73,11 +73,11 @@ func Test_run(t *testing.T) {
 			if gotReturnValue := run(o, tt.args.cmdlineArgs); gotReturnValue != tt.wantReturnValue {
 				t.Errorf("run() = %v, want %v", gotReturnValue, tt.wantReturnValue)
 			}
-			if gotErr := o.Stderr(); gotErr != tt.wantErr {
-				t.Errorf("run() error output = %v, want %v", gotErr, tt.wantErr)
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("run() error output = %v, want %v", gotErrorOutput, tt.wantErrorOutput)
 			}
-			if gotOut := o.Stdout(); gotOut != tt.wantConsole {
-				t.Errorf("run() console output = %v, want %v", gotOut, tt.wantConsole)
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("run() console output = %v, want %v", gotConsoleOutput, tt.wantConsoleOutput)
 			}
 			gotLog := o.LogOutput()
 			if !strings.HasPrefix(gotLog, tt.wantLogPrefix) {
@@ -97,27 +97,27 @@ func Test_report(t *testing.T) {
 		returnValue int
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantOut string
-		wantErr string
-		wantLog string
+		name              string
+		args              args
+		wantConsoleOutput string
+		wantErrorOutput   string
+		wantLogOutput     string
 	}{
-		{name: "success", args: args{returnValue: 0}, wantErr: ""},
-		{name: "failure", args: args{returnValue: 1}, wantErr: fmt.Sprintf(statusFormat, "mp3", version, creation)},
+		{name: "success", args: args{returnValue: 0}, wantErrorOutput: ""},
+		{name: "failure", args: args{returnValue: 1}, wantErrorOutput: fmt.Sprintf(statusFormat, "mp3", version, creation)},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			report(o, tt.args.returnValue)
-			if gotOut := o.Stdout(); gotOut != tt.wantOut {
-				t.Errorf("report() console output = %v, want %v", gotOut, tt.wantOut)
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("report() console output = %v, want %v", gotConsoleOutput, tt.wantConsoleOutput)
 			}
-			if gotErr := o.Stderr(); gotErr != tt.wantErr {
-				t.Errorf("report() error output = %v, want %v", gotErr, tt.wantErr)
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("report() error output = %v, want %v", gotErrorOutput, tt.wantErrorOutput)
 			}
-			if gotLog := o.LogOutput(); gotLog != tt.wantLog {
-				t.Errorf("report() log output = %v, want %v", gotLog, tt.wantLog)
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("report() log output = %v, want %v", gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}

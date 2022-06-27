@@ -245,11 +245,11 @@ func (o *OutputDeviceForTesting) Log(l LogLevel, msg string, fields map[string]i
 	fmt.Fprintf(o.wLog, "level='%s' %s msg='%s'\n", level, strings.Join(parts, " "), msg)
 }
 
-func (o *OutputDeviceForTesting) Stdout() string {
+func (o *OutputDeviceForTesting) ConsoleOutput() string {
 	return o.wOut.String()
 }
 
-func (o *OutputDeviceForTesting) Stderr() string {
+func (o *OutputDeviceForTesting) ErrorOutput() string {
 	return o.wErr.String()
 }
 

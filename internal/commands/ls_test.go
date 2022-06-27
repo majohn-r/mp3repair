@@ -188,12 +188,12 @@ func Test_ls_Exec(t *testing.T) {
 		args []string
 	}
 	tests := []struct {
-		name    string
-		l       *ls
-		args    args
-		wantOut string
-		wantErr string
-		wantLog string
+		name              string
+		l                 *ls
+		args              args
+		wantConsoleOutput string
+		wantErrorOutput   string
+		wantLogOutput     string
 	}{
 		{
 			name: "no output",
@@ -206,7 +206,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-includeTracks=false",
 				},
 			},
-			wantOut: generateListing(false, false, false, false, false),
+			wantConsoleOutput: generateListing(false, false, false, false, false),
 		},
 		// tracks only
 		{
@@ -221,7 +221,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-annotate=false",
 				},
 			},
-			wantOut: generateListing(false, false, true, false, false),
+			wantConsoleOutput: generateListing(false, false, true, false, false),
 		},
 		{
 			name: "annotated tracks only",
@@ -235,7 +235,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-annotate=true",
 				},
 			},
-			wantOut: generateListing(false, false, true, true, false),
+			wantConsoleOutput: generateListing(false, false, true, true, false),
 		},
 		{
 			name: "unannotated tracks only with numeric sorting",
@@ -250,7 +250,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort=numeric",
 				},
 			},
-			wantOut: generateListing(false, false, true, false, true),
+			wantConsoleOutput: generateListing(false, false, true, false, true),
 		},
 		{
 			name: "annotated tracks only with numeric sorting",
@@ -265,7 +265,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "numeric",
 				},
 			},
-			wantOut: generateListing(false, false, true, true, true),
+			wantConsoleOutput: generateListing(false, false, true, true, true),
 		},
 		// albums only
 		{
@@ -280,7 +280,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-annotate=false",
 				},
 			},
-			wantOut: generateListing(false, true, false, false, false),
+			wantConsoleOutput: generateListing(false, true, false, false, false),
 		},
 		{
 			name: "annotated albums only",
@@ -294,7 +294,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-annotate=true",
 				},
 			},
-			wantOut: generateListing(false, true, false, true, false),
+			wantConsoleOutput: generateListing(false, true, false, true, false),
 		},
 		// artists only
 		{
@@ -309,7 +309,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-annotate=false",
 				},
 			},
-			wantOut: generateListing(true, false, false, false, false),
+			wantConsoleOutput: generateListing(true, false, false, false, false),
 		},
 		{
 			name: "annotated artists only",
@@ -323,7 +323,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-annotate=true",
 				},
 			},
-			wantOut: generateListing(true, false, false, true, false),
+			wantConsoleOutput: generateListing(true, false, false, true, false),
 		},
 		// albums and artists
 		{
@@ -338,7 +338,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-annotate=false",
 				},
 			},
-			wantOut: generateListing(true, true, false, false, false),
+			wantConsoleOutput: generateListing(true, true, false, false, false),
 		},
 		{
 			name: "annotated artists and albums only",
@@ -352,7 +352,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-annotate=true",
 				},
 			},
-			wantOut: generateListing(true, true, false, true, false),
+			wantConsoleOutput: generateListing(true, true, false, true, false),
 		},
 		// albums and tracks
 		{
@@ -368,7 +368,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "alpha",
 				},
 			},
-			wantOut: generateListing(false, true, true, false, false),
+			wantConsoleOutput: generateListing(false, true, true, false, false),
 		},
 		{
 			name: "annotated albums and tracks with alpha sorting",
@@ -383,7 +383,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "alpha",
 				},
 			},
-			wantOut: generateListing(false, true, true, true, false),
+			wantConsoleOutput: generateListing(false, true, true, true, false),
 		},
 		{
 			name: "unannotated albums and tracks with numeric sorting",
@@ -398,7 +398,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "numeric",
 				},
 			},
-			wantOut: generateListing(false, true, true, false, true),
+			wantConsoleOutput: generateListing(false, true, true, false, true),
 		},
 		{
 			name: "annotated albums and tracks with numeric sorting",
@@ -413,7 +413,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "numeric",
 				},
 			},
-			wantOut: generateListing(false, true, true, true, true),
+			wantConsoleOutput: generateListing(false, true, true, true, true),
 		},
 		// artists and tracks
 		{
@@ -429,7 +429,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "alpha",
 				},
 			},
-			wantOut: generateListing(true, false, true, false, false),
+			wantConsoleOutput: generateListing(true, false, true, false, false),
 		},
 		{
 			name: "annotated artists and tracks with alpha sorting",
@@ -444,7 +444,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "alpha",
 				},
 			},
-			wantOut: generateListing(true, false, true, true, false),
+			wantConsoleOutput: generateListing(true, false, true, true, false),
 		},
 		{
 			name: "unannotated artists and tracks with numeric sorting",
@@ -459,7 +459,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "numeric",
 				},
 			},
-			wantOut: generateListing(true, false, true, false, true),
+			wantConsoleOutput: generateListing(true, false, true, false, true),
 		},
 		{
 			name: "annotated artists and tracks with numeric sorting",
@@ -474,7 +474,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "numeric",
 				},
 			},
-			wantOut: generateListing(true, false, true, true, true),
+			wantConsoleOutput: generateListing(true, false, true, true, true),
 		},
 		// albums, artists, and tracks
 		{
@@ -490,7 +490,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "alpha",
 				},
 			},
-			wantOut: generateListing(true, true, true, false, false),
+			wantConsoleOutput: generateListing(true, true, true, false, false),
 		},
 		{
 			name: "annotated artists, albums, and tracks with alpha sorting",
@@ -505,7 +505,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "alpha",
 				},
 			},
-			wantOut: generateListing(true, true, true, true, false),
+			wantConsoleOutput: generateListing(true, true, true, true, false),
 		},
 		{
 			name: "unannotated artists, albums, and tracks with numeric sorting",
@@ -520,7 +520,7 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "numeric",
 				},
 			},
-			wantOut: generateListing(true, true, true, false, true),
+			wantConsoleOutput: generateListing(true, true, true, false, true),
 		},
 		{
 			name: "annotated artists, albums, and tracks with numeric sorting",
@@ -535,21 +535,21 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "numeric",
 				},
 			},
-			wantOut: generateListing(true, true, true, true, true),
+			wantConsoleOutput: generateListing(true, true, true, true, true),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			tt.l.Exec(o, tt.args.args)
-			if gotOut := o.Stdout(); gotOut != tt.wantOut {
-				t.Errorf("%s console output = %v, want %v", fnName, gotOut, tt.wantOut)
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("%s console output = %v, want %v", fnName, gotConsoleOutput, tt.wantConsoleOutput)
 			}
-			if gotErr := o.Stderr(); gotErr != tt.wantErr {
-				t.Errorf("%s error output = %v, want %v", fnName, gotErr, tt.wantErr)
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("%s error output = %v, want %v", fnName, gotErrorOutput, tt.wantErrorOutput)
 			}
-			if gotLog := o.LogOutput(); gotLog != tt.wantLog {
-				t.Errorf("%s log output = %v, want %v", fnName, gotLog, tt.wantLog)
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("%s log output = %v, want %v", fnName, gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}

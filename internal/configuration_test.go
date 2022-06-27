@@ -240,14 +240,14 @@ func Test_verifyFileExists(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("verifyFileExists() = %v, want %v", gotOk, tt.wantOk)
 			}
-			if gotOut := o.Stdout(); gotOut != tt.wantConsoleOutput {
-				t.Errorf("verifyFileExists() console output = %v, want %v", gotOut, tt.wantConsoleOutput)
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("verifyFileExists() console output = %v, want %v", gotConsoleOutput, tt.wantConsoleOutput)
 			}
-			if gotErr := o.Stderr(); gotErr != tt.wantErrOutput {
-				t.Errorf("verifyFileExists() error output = %v, want %v", gotErr, tt.wantErrOutput)
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrOutput {
+				t.Errorf("verifyFileExists() error output = %v, want %v", gotErrorOutput, tt.wantErrOutput)
 			}
-			if gotLog := o.LogOutput(); gotLog != tt.wantLogOutput {
-				t.Errorf("verifyFileExists() log output = %v, want %v", gotLog, tt.wantLogOutput)
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("verifyFileExists() log output = %v, want %v", gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}
@@ -289,13 +289,13 @@ func TestReadConfigurationFile(t *testing.T) {
 		t.Errorf("%s error creating gibberish defaults.yaml: %v", fnName, err)
 	}
 	tests := []struct {
-		name    string
-		state   *SavedEnvVar
-		wantC   *Configuration
-		wantOk  bool
-		wantOut string
-		wantErr string
-		wantLog string
+		name              string
+		state             *SavedEnvVar
+		wantC             *Configuration
+		wantOk            bool
+		wantConsoleOutput string
+		wantErrorOutput   string
+		wantLogOutput     string
 	}{
 		{
 			name:  "good",
@@ -341,36 +341,36 @@ func TestReadConfigurationFile(t *testing.T) {
 				},
 			},
 			wantOk: true,
-			wantLog: fmt.Sprintf("level='warn' key='value' type='int' value='1' msg='unexpected value type'\n"+
+			wantLogOutput: fmt.Sprintf("level='warn' key='value' type='int' value='1' msg='unexpected value type'\n"+
 				"level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", mp3Path),
 		},
 		{
-			name:    "APPDATA not set",
-			state:   &SavedEnvVar{Name: appDataVar},
-			wantC:   EmptyConfiguration(),
-			wantOk:  true,
-			wantLog: "level='info' environment variable='APPDATA' msg='not set'\n",
+			name:          "APPDATA not set",
+			state:         &SavedEnvVar{Name: appDataVar},
+			wantC:         EmptyConfiguration(),
+			wantOk:        true,
+			wantLogOutput: "level='info' environment variable='APPDATA' msg='not set'\n",
 		},
 		{
-			name:    "defaults.yaml is a directory",
-			state:   &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(badDir), Set: true},
-			wantErr: fmt.Sprintf("The configuration file %q is a directory.\n", yamlAsDir),
-			wantLog: fmt.Sprintf("level='error' directory='%s' fileName='defaults.yaml' msg='file is a directory'\n", SecureAbsolutePathForTesting(badDir2)),
+			name:            "defaults.yaml is a directory",
+			state:           &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(badDir), Set: true},
+			wantErrorOutput: fmt.Sprintf("The configuration file %q is a directory.\n", yamlAsDir),
+			wantLogOutput:   fmt.Sprintf("level='error' directory='%s' fileName='defaults.yaml' msg='file is a directory'\n", SecureAbsolutePathForTesting(badDir2)),
 		},
 		{
-			name:    "missing yaml",
-			state:   &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(yamlAsDir), Set: true},
-			wantC:   EmptyConfiguration(),
-			wantLog: fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", SecureAbsolutePathForTesting(filepath.Join(yamlAsDir, AppName))),
-			wantOk:  true,
+			name:          "missing yaml",
+			state:         &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(yamlAsDir), Set: true},
+			wantC:         EmptyConfiguration(),
+			wantLogOutput: fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", SecureAbsolutePathForTesting(filepath.Join(yamlAsDir, AppName))),
+			wantOk:        true,
 		},
 		{
 			name:  "malformed yaml",
 			state: &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(badDir2), Set: true},
-			wantErr: fmt.Sprintf(
+			wantErrorOutput: fmt.Sprintf(
 				"The configuration file %q is not well-formed YAML: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}\n",
 				SecureAbsolutePathForTesting(filepath.Join(gibberishDir, defaultConfigFileName))),
-			wantLog: fmt.Sprintf("level='warn' directory='%s' error='yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}' fileName='defaults.yaml' msg='cannot unmarshal yaml content'\n", SecureAbsolutePathForTesting(gibberishDir)),
+			wantLogOutput: fmt.Sprintf("level='warn' directory='%s' error='yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}' fileName='defaults.yaml' msg='cannot unmarshal yaml content'\n", SecureAbsolutePathForTesting(gibberishDir)),
 		},
 	}
 	for _, tt := range tests {
@@ -384,14 +384,14 @@ func TestReadConfigurationFile(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("ReadConfigurationFile() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
-			if gotOut := o.Stdout(); gotOut != tt.wantOut {
-				t.Errorf("ReadConfigurationFile() console output = %v, want %v", gotOut, tt.wantOut)
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("ReadConfigurationFile() console output = %v, want %v", gotConsoleOutput, tt.wantConsoleOutput)
 			}
-			if gotErr := o.Stderr(); gotErr != tt.wantErr {
-				t.Errorf("ReadConfigurationFile() error output = %v, want %v", gotErr, tt.wantErr)
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("ReadConfigurationFile() error output = %v, want %v", gotErrorOutput, tt.wantErrorOutput)
 			}
-			if gotLog := o.LogOutput(); gotLog != tt.wantLog {
-				t.Errorf("ReadConfigurationFile() log output = %v, want %v", gotLog, tt.wantLog)
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("ReadConfigurationFile() log output = %v, want %v", gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}
@@ -404,13 +404,13 @@ func Test_appData(t *testing.T) {
 		savedState.RestoreForTesting()
 	}()
 	tests := []struct {
-		name    string
-		state   *SavedEnvVar
-		want    string
-		want1   bool
-		wantOut string
-		wantErr string
-		wantLog string
+		name              string
+		state             *SavedEnvVar
+		want              string
+		want1             bool
+		wantConsoleOutput string
+		wantErrorOutput   string
+		wantLogOutput     string
 	}{
 		{
 			name:  "value is set",
@@ -419,9 +419,9 @@ func Test_appData(t *testing.T) {
 			want1: true,
 		},
 		{
-			name:    "value is not set",
-			state:   &SavedEnvVar{Name: appDataVar},
-			wantLog: "level='info' environment variable='APPDATA' msg='not set'\n",
+			name:          "value is not set",
+			state:         &SavedEnvVar{Name: appDataVar},
+			wantLogOutput: "level='info' environment variable='APPDATA' msg='not set'\n",
 		},
 	}
 	for _, tt := range tests {
@@ -435,14 +435,14 @@ func Test_appData(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("appData() got1 = %v, want %v", got1, tt.want1)
 			}
-			if gotOut := o.Stdout(); gotOut != tt.wantOut {
-				t.Errorf("appData() console output = %q, want %q", gotOut, tt.wantOut)
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("appData() console output = %q, want %q", gotConsoleOutput, tt.wantConsoleOutput)
 			}
-			if gotErr := o.Stderr(); gotErr != tt.wantErr {
-				t.Errorf("appData() error output = %q, want %q", gotErr, tt.wantErr)
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("appData() error output = %q, want %q", gotErrorOutput, tt.wantErrorOutput)
 			}
-			if gotLog := o.LogOutput(); gotLog != tt.wantLog {
-				t.Errorf("appData() log output = %q, want %q", gotLog, tt.wantLog)
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("appData() log output = %q, want %q", gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}

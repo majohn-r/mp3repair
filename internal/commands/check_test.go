@@ -364,24 +364,24 @@ func Test_check_Exec(t *testing.T) {
 		args []string
 	}
 	tests := []struct {
-		name    string
-		c       *check
-		args    args
-		wantOut string
-		wantErr string
-		wantLog string
+		name              string
+		c                 *check
+		args              args
+		wantConsoleOutput string
+		wantErrorOutput   string
+		wantLogOutput     string
 	}{
 		{
-			name:    "do nothing",
-			c:       newCheckSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError)),
-			args:    args{[]string{"-topDir", topDirName, "-empty=false", "-gaps=false", "-integrity=false"}},
-			wantOut: "",
+			name:              "do nothing",
+			c:                 newCheckSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError)),
+			args:              args{[]string{"-topDir", topDirName, "-empty=false", "-gaps=false", "-integrity=false"}},
+			wantConsoleOutput: "",
 		},
 		{
 			name: "do something",
 			c:    newCheckSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError)),
 			args: args{[]string{"-topDir", topDirName, "-empty=true", "-gaps=false", "-integrity=false"}},
-			wantOut: strings.Join([]string{
+			wantConsoleOutput: strings.Join([]string{
 				"Test Artist 0",
 				"    Test Album 999",
 				"      no tracks found",
@@ -422,14 +422,14 @@ func Test_check_Exec(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			tt.c.Exec(o, tt.args.args)
-			if gotOut := o.Stdout(); gotOut != tt.wantOut {
-				t.Errorf("%s console output = %v, want %v", fnName, gotOut, tt.wantOut)
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("%s console output = %v, want %v", fnName, gotConsoleOutput, tt.wantConsoleOutput)
 			}
-			if gotErr := o.Stderr(); gotErr != tt.wantErr {
-				t.Errorf("%s error output = %v, want %v", fnName, gotErr, tt.wantErr)
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("%s error output = %v, want %v", fnName, gotErrorOutput, tt.wantErrorOutput)
 			}
-			if gotLog := o.LogOutput(); gotLog != tt.wantLog {
-				t.Errorf("%s log output = %v, want %v", fnName, gotLog, tt.wantLog)
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("%s log output = %v, want %v", fnName, gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}
