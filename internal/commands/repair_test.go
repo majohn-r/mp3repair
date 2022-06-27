@@ -57,7 +57,10 @@ func Test_newRepairSubCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			repair := newRepairSubCommand(tt.args.c, flag.NewFlagSet("repair", flag.ContinueOnError))
-			if _, ok := repair.sf.ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-ext", ".mp3"}); ok {
+			if _, ok := repair.sf.ProcessArgs(internal.NewOutputDeviceForTesting(), []string{
+				"-topDir", topDir,
+				"-ext", ".mp3",
+			}); ok {
 				if *repair.dryRun != tt.wantDryRun {
 					t.Errorf("%s %s: got dryRun %t want %t", fnName, tt.name, *repair.dryRun, tt.wantDryRun)
 				}

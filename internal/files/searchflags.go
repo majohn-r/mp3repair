@@ -3,7 +3,6 @@ package files
 import (
 	"flag"
 	"fmt"
-	"io"
 	"mp3/internal"
 	"os"
 	"regexp"
@@ -57,17 +56,17 @@ func NewSearchFlags(c *internal.Configuration, fSet *flag.FlagSet) *SearchFlags 
 }
 
 // ProcessArgs consumes the command line arguments.
-func (sf *SearchFlags) ProcessArgs(writer io.Writer, args []string) (s *Search, ok bool) {
+func (sf *SearchFlags) ProcessArgs(o internal.OutputBus, args []string) (s *Search, ok bool) {
 	dereferencedArgs := make([]string, len(args))
 	for i, arg := range args {
 		dereferencedArgs[i] = internal.InterpretEnvVarReferences(arg)
 	}
-	sf.f.SetOutput(writer)
-	// note: Parse outputs errors to the user
+	sf.f.SetOutput(o.ErrorWriter())
+	// note: Parse outputs errors to o.ErrorWriter*()
 	if err := sf.f.Parse(dereferencedArgs); err != nil {
-		logrus.WithFields(logrus.Fields{
+		o.Log(internal.ERROR, fmt.Sprintf("%v", err), map[string]interface{}{
 			fkArguments: dereferencedArgs,
-		}).Error(err)
+		})
 		return nil, false
 	}
 	return sf.NewSearch()
@@ -89,7 +88,7 @@ func (sf *SearchFlags) NewSearch() (s *Search, ok bool) {
 	return
 }
 
-// TODO: [#77] should use writer for error output
+// TODO [#77] should use OutputBus for output
 func (sf *SearchFlags) validateTopLevelDirectory() bool {
 	if file, err := os.Stat(*sf.topDirectory); err != nil {
 		fmt.Fprintf(os.Stderr, internal.USER_CANNOT_READ_TOPDIR, *sf.topDirectory, err)
@@ -111,7 +110,7 @@ func (sf *SearchFlags) validateTopLevelDirectory() bool {
 	}
 }
 
-// TODO: [#77] should use writer for error output
+// TODO [#77] should use OutputBus for error output
 func (sf *SearchFlags) validateExtension() (ok bool) {
 	ok = true
 	if !strings.HasPrefix(*sf.fileExtension, ".") || strings.Contains(strings.TrimPrefix(*sf.fileExtension, "."), ".") {
@@ -134,7 +133,7 @@ func (sf *SearchFlags) validateExtension() (ok bool) {
 	return
 }
 
-// TODO: [#77] should use writer for error output
+// TODO [#77] should use OutputBus for error output
 func validateRegexp(pattern, name string) (filter *regexp.Regexp, ok bool) {
 	if f, err := regexp.Compile(pattern); err != nil {
 		fmt.Fprintf(os.Stderr, internal.USER_FILTER_GARBLED, name, pattern, err)

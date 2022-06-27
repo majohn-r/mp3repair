@@ -30,8 +30,7 @@ func newPostRepair(c *internal.Configuration, fSet *flag.FlagSet) CommandProcess
 }
 
 func (p *postrepair) Exec(o internal.OutputBus, args []string) (ok bool) {
-	// TODO [#77] replace o.ErrorWriter() with o
-	if s, argsOk := p.sf.ProcessArgs(o.ErrorWriter(), args); argsOk {
+	if s, argsOk := p.sf.ProcessArgs(o, args); argsOk {
 		// TODO [#77] replace o.OutputWriter() with o
 		p.runSubcommand(o.OutputWriter(), s)
 		ok = true
@@ -43,7 +42,7 @@ func (p *postrepair) logFields() logrus.Fields {
 	return logrus.Fields{fkCommandName: p.name()}
 }
 
-// TODO: need 2nd writer
+// TODO [#77] need 2nd writer
 func (p *postrepair) runSubcommand(w io.Writer, s *files.Search) {
 	logrus.WithFields(p.logFields()).Info(internal.LI_EXECUTING_COMMAND)
 	artists := s.LoadData(os.Stderr)
@@ -74,7 +73,7 @@ func removeBackupDirectory(w io.Writer, d string, a *files.Album) {
 			internal.FK_DIRECTORY: d,
 			internal.FK_ERROR:     err,
 		}).Warn(internal.LW_CANNOT_DELETE_DIRECTORY)
-		// TODO: should be stderr
+		// TODO [#77] should be stderr
 		fmt.Fprintf(w, internal.USER_CANNOT_DELETE_DIRECTORY, d, err)
 	} else {
 		fmt.Fprintf(w, "The backup directory for artist %q album %q has been deleted\n",

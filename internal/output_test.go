@@ -93,23 +93,3 @@ func TestOutputDevice_ErrorWriter(t *testing.T) {
 		})
 	}
 }
-
-func TestOutputDevice_Log(t *testing.T) {
-	type args struct {
-		l      LogLevel
-		msg    string
-		fields map[string]interface{}
-	}
-	tests := []struct {
-		name string
-		o    *OutputDevice
-		args args
-	}{
-		// TODO: Add test cases.
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			tt.o.Log(tt.args.l, tt.args.msg, tt.args.fields)
-		})
-	}
-}

@@ -489,7 +489,10 @@ func Test_newCheckSubCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			check := newCheckSubCommand(tt.args.c, flag.NewFlagSet("check", flag.ContinueOnError))
-			if _, ok := check.sf.ProcessArgs(os.Stdout, []string{"-topDir", topDir, "-ext", ".mp3"}); ok {
+			if _, ok := check.sf.ProcessArgs(internal.NewOutputDeviceForTesting(), []string{
+				"-topDir", topDir,
+				"-ext", ".mp3",
+			}); ok {
 				if *check.checkEmptyFolders != tt.wantEmptyFolders {
 					t.Errorf("%s %s: got checkEmptyFolders %t want %t", fnName, tt.name, *check.checkEmptyFolders, tt.wantEmptyFolders)
 				}

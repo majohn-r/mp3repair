@@ -59,9 +59,8 @@ func newCheckSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *check {
 }
 
 func (c *check) Exec(o internal.OutputBus, args []string) (ok bool) {
-	// TODO: [#77] replace o.ErrorWriter() with o
-	if s, argsOk := c.sf.ProcessArgs(o.ErrorWriter(), args); argsOk {
-		// TODO: [#77] replace o.OutputWriter() with o
+	if s, argsOk := c.sf.ProcessArgs(o, args); argsOk {
+		// TODO [#77] replace o.OutputWriter() with o
 		ok = c.runSubcommand(o.OutputWriter(), s)
 	}
 	return
@@ -125,7 +124,7 @@ func (a *artistWithIssues) hasIssues() bool {
 	return false
 }
 
-// TODO: should use a second writer for error output; first writer is for console output
+// TODO [#77] should use a second writer for error output; first writer is for console output
 func (c *check) runSubcommand(w io.Writer, s *files.Search) (ok bool) {
 	if !*c.checkEmptyFolders && !*c.checkGapsInTrackNumbering && !*c.checkIntegrity {
 		fmt.Fprintf(os.Stderr, internal.USER_SPECIFIED_NO_WORK, c.name())
@@ -218,7 +217,7 @@ func merge(sets [][]*artistWithIssues) []*artistWithIssues {
 	return results
 }
 
-// TODO: need error writer
+// TODO [#77] need OutputBus
 func (c *check) filterArtists(s *files.Search, artists []*files.Artist) (filteredArtists []*files.Artist) {
 	if *c.checkGapsInTrackNumbering || *c.checkIntegrity {
 		if len(artists) == 0 {
@@ -323,13 +322,13 @@ func sortArtists(filteredArtists []*artistWithIssues) {
 	}
 }
 
-// TODO: need 2nd writer for errors
+// TODO [#77] need OutputBus for errors
 func (c *check) performEmptyFolderAnalysis(w io.Writer, s *files.Search) (artists []*files.Artist, conflictedArtists []*artistWithIssues) {
 	if *c.checkEmptyFolders {
 		artists = s.LoadUnfilteredData(os.Stderr)
 		if len(artists) == 0 {
+			// TODO [#81] handle in LoadUnfilteredData
 			logrus.WithFields(s.LogFields(false)).Warn(internal.LW_NO_ARTIST_DIRECTORIES)
-			// TODO: let the user know too. Write to stderr (w)
 		}
 		conflictedArtists = createBareConflictedIssues(artists)
 		issuesFound := false

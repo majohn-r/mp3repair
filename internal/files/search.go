@@ -7,7 +7,6 @@ import (
 	"io/fs"
 	"io/ioutil"
 	"mp3/internal"
-	"os"
 	"regexp"
 
 	"github.com/sirupsen/logrus"
@@ -146,15 +145,15 @@ func (s *Search) LoadData(wErr io.Writer) (artists []*Artist) {
 // used for testing only!
 func CreateSearchForTesting(topDir string) *Search {
 	realFlagSet := flag.NewFlagSet("testing", flag.ContinueOnError)
-	s, _ := NewSearchFlags(internal.EmptyConfiguration(), realFlagSet).ProcessArgs(os.Stdout, []string{
-		"-topDir", topDir,
-	})
+	s, _ := NewSearchFlags(internal.EmptyConfiguration(), realFlagSet).ProcessArgs(
+		internal.NewOutputDeviceForTesting(), []string{"-topDir", topDir})
 	return s
 }
 
 func CreateFilteredSearchForTesting(topDir string, artistFilter string, albumFilter string) *Search {
 	realFlagSet := flag.NewFlagSet("testing", flag.ContinueOnError)
-	s, _ := NewSearchFlags(internal.EmptyConfiguration(), realFlagSet).ProcessArgs(os.Stdout, []string{
+	s, _ := NewSearchFlags(internal.EmptyConfiguration(), realFlagSet).ProcessArgs(
+		internal.NewOutputDeviceForTesting(), []string{
 		"-topDir", topDir,
 		"-artistFilter", artistFilter,
 		"-albumFilter", albumFilter,

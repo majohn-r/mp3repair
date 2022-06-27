@@ -332,29 +332,49 @@ func TestSearchFlags_ProcessArgs(t *testing.T) {
 		args []string
 	}
 	tests := []struct {
-		name       string
-		sf         *SearchFlags
-		args       args
-		wantS      *Search
-		wantOk     bool
-		wantWriter string
+		name              string
+		sf                *SearchFlags
+		args              args
+		wantS             *Search
+		wantOk            bool
+		wantConsoleOutput string
+		wantErrorOutput   string
+		wantLogOutput     string
 	}{
-		{name: "good arguments", sf: flags, args: args{args: nil}, wantS: s, wantOk: true, wantWriter: ""},
-		{name: "request help", sf: flags, args: args{args: []string{"-help"}}, wantS: nil, wantWriter: usage},
-		{name: "request invalid argument", sf: flags, args: args{args: []string{"-foo"}}, wantS: nil, wantWriter: "flag provided but not defined: -foo\n" + usage},
+		{name: "good arguments", sf: flags, args: args{args: nil}, wantS: s, wantOk: true},
+		{
+			name:            "request help",
+			sf:              flags,
+			args:            args{args: []string{"-help"}},
+			wantErrorOutput: usage,
+			wantLogOutput:   "level='error' arguments='[-help]' msg='flag: help requested'\n",
+		},
+		{
+			name:            "request invalid argument",
+			sf:              flags,
+			args:            args{args: []string{"-foo"}},
+			wantErrorOutput: "flag provided but not defined: -foo\n" + usage,
+			wantLogOutput:   "level='error' arguments='[-foo]' msg='flag provided but not defined: -foo'\n",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			writer := &bytes.Buffer{}
-			gotS, gotOk := tt.sf.ProcessArgs(writer, tt.args.args)
+			o := internal.NewOutputDeviceForTesting()
+			gotS, gotOk := tt.sf.ProcessArgs(o, tt.args.args)
 			if !reflect.DeepEqual(gotS, tt.wantS) {
 				t.Errorf("SearchFlags.ProcessArgs() gotS = %v, want %v", gotS, tt.wantS)
 			}
 			if gotOk != tt.wantOk {
 				t.Errorf("SearchFlags.ProcessArgs() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
-			if gotWriter := writer.String(); gotWriter != tt.wantWriter {
-				t.Errorf("SearchFlags.ProcessArgs() gotWriter = %v, want %v", gotWriter, tt.wantWriter)
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("SearchFlags.ProcessArgs() gotConsoleOutput = %v, want %v", gotConsoleOutput, tt.wantConsoleOutput)
+			}
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("SearchFlags.ProcessArgs() gotErrorOutput = %v, want %v", gotErrorOutput, tt.wantErrorOutput)
+			}
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("SearchFlags.ProcessArgs() gotLogOutput = %v, want %v", gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}

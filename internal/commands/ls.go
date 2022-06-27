@@ -74,9 +74,8 @@ func newLsSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *ls {
 }
 
 func (l *ls) Exec(o internal.OutputBus, args []string) (ok bool) {
-	// TODO: [#77] replace o.ErrorWriter() with o
-	if s, argsOk := l.sf.ProcessArgs(o.ErrorWriter(), args); argsOk {
-		// TODO return bool status
+	if s, argsOk := l.sf.ProcessArgs(o, args); argsOk {
+		// TODO [#82] return bool status
 		// TODO [#77] replace o.OutputWriter() with o
 		l.runSubcommand(o.OutputWriter(), s)
 		ok = true
@@ -95,7 +94,7 @@ func (l *ls) logFields() logrus.Fields {
 	}
 }
 
-// TODO: should use 2nd writer for error output
+// TODO [#77] should use 2nd writer for error output
 func (l *ls) runSubcommand(w io.Writer, s *files.Search) {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
 		fmt.Fprintf(os.Stderr, internal.USER_SPECIFIED_NO_WORK, l.name())
@@ -167,7 +166,7 @@ func (l *ls) outputAlbums(w io.Writer, albums []*files.Album, prefix string) {
 	}
 }
 
-// TODO: writer should be used for error output
+// TODO [#77] writer should be used for error output
 func (l *ls) validateTrackSorting() (ok bool) {
 	switch *l.trackSorting {
 	case "numeric":
