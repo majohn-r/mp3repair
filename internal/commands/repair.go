@@ -24,7 +24,7 @@ func (r *repair) name() string {
 }
 
 func newRepair(c *internal.Configuration, fSet *flag.FlagSet) CommandProcessor {
-	return newRepairSubCommand(c, fSet)
+	return newRepairCommand(c, fSet)
 }
 
 const (
@@ -36,7 +36,7 @@ const (
 	noProblemsFound = "No repairable track defects found"
 )
 
-func newRepairSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *repair {
+func newRepairCommand(c *internal.Configuration, fSet *flag.FlagSet) *repair {
 	name := fSet.Name()
 	configuration := c.SubConfiguration(name)
 	return &repair{
@@ -51,7 +51,7 @@ func newRepairSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *repair 
 func (r *repair) Exec(o internal.OutputBus, args []string) (ok bool) {
 	if s, argsOk := r.sf.ProcessArgs(o, args); argsOk {
 		// TODO [#77] replace o.OutputWriter() with o
-		r.runSubcommand(o.OutputWriter(), s)
+		r.runCommand(o.OutputWriter(), s)
 		ok = true
 	}
 	return
@@ -65,7 +65,7 @@ func (r *repair) logFields() logrus.Fields {
 }
 
 // TODO [#77] need 2nd writer
-func (r *repair) runSubcommand(w io.Writer, s *files.Search) {
+func (r *repair) runCommand(w io.Writer, s *files.Search) {
 	logrus.WithFields(r.logFields()).Info(internal.LI_EXECUTING_COMMAND)
 	artists := s.LoadData(os.Stderr)
 	files.UpdateTracks(artists, files.RawReadTags)

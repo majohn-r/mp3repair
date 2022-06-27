@@ -130,7 +130,7 @@ func TestProcessCommand(t *testing.T) {
 				"level='warn' command='no such command' msg='unrecognized command'\n",
 		},
 		{
-			name:  "pass arguments to default subcommand",
+			name:  "pass arguments to default command",
 			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
 			args:  args{args: []string{"mp3.exe", "-album", "-artist", "-track"}},
 			want:  newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
@@ -177,10 +177,10 @@ func TestProcessCommand(t *testing.T) {
 	}
 }
 
-func Test_selectSubCommand(t *testing.T) {
+func Test_selectCommand(t *testing.T) {
 	type args struct {
 		c    *internal.Configuration
-		i    []subcommandInitializer
+		i    []commandInitializer
 		args []string
 	}
 	tests := []struct {
@@ -202,13 +202,13 @@ func Test_selectSubCommand(t *testing.T) {
 		},
 		{
 			name:            "no default initializers",
-			args:            args{i: []subcommandInitializer{{}}},
+			args:            args{i: []commandInitializer{{}}},
 			wantErrorOutput: "An internal error has occurred: there are 0 default commands!\n",
 			wantLogOutput:   "level='error' count='0' msg='incorrect number of default commands'\n",
 		},
 		{
 			name:            "too many default initializers",
-			args:            args{i: []subcommandInitializer{{defaultSubCommand: true}, {defaultSubCommand: true}}},
+			args:            args{i: []commandInitializer{{defaultCommand: true}, {defaultCommand: true}}},
 			wantErrorOutput: "An internal error has occurred: there are 2 default commands!\n",
 			wantLogOutput:   "level='error' count='2' msg='incorrect number of default commands'\n",
 		},
@@ -216,24 +216,24 @@ func Test_selectSubCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
-			gotCmd, gotCallingArgs, gotOk := selectSubCommand(o, tt.args.c, tt.args.i, tt.args.args)
+			gotCmd, gotCallingArgs, gotOk := selectCommand(o, tt.args.c, tt.args.i, tt.args.args)
 			if !reflect.DeepEqual(gotCmd, tt.wantCmd) {
-				t.Errorf("selectSubCommand() gotCmd = %v, want %v", gotCmd, tt.wantCmd)
+				t.Errorf("selectCommand() gotCmd = %v, want %v", gotCmd, tt.wantCmd)
 			}
 			if !reflect.DeepEqual(gotCallingArgs, tt.wantCallingArgs) {
-				t.Errorf("selectSubCommand() gotCallingArgs = %v, want %v", gotCallingArgs, tt.wantCallingArgs)
+				t.Errorf("selectCommand() gotCallingArgs = %v, want %v", gotCallingArgs, tt.wantCallingArgs)
 			}
 			if gotOk != tt.wantOk {
-				t.Errorf("selectSubCommand() gotOk = %v, want %v", gotOk, tt.wantOk)
+				t.Errorf("selectCommand() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
 			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("selectSubCommand() gotConsoleOutput = %v, want %v", gotConsoleOutput, tt.wantConsoleOutput)
+				t.Errorf("selectCommand() gotConsoleOutput = %v, want %v", gotConsoleOutput, tt.wantConsoleOutput)
 			}
 			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("selectSubCommand() gotErrorOutput = %v, want %v", gotErrorOutput, tt.wantErrorOutput)
+				t.Errorf("selectCommand() gotErrorOutput = %v, want %v", gotErrorOutput, tt.wantErrorOutput)
 			}
 			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("selectSubCommand() gotLogOutput = %v, want %v", gotLogOutput, tt.wantLogOutput)
+				t.Errorf("selectCommand() gotLogOutput = %v, want %v", gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}

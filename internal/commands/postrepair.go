@@ -21,18 +21,18 @@ func (p *postrepair) name() string {
 	return p.n
 }
 
-func newPostRepairSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *postrepair {
+func newPostRepairCommand(c *internal.Configuration, fSet *flag.FlagSet) *postrepair {
 	return &postrepair{n: fSet.Name(), sf: files.NewSearchFlags(c, fSet)}
 }
 
 func newPostRepair(c *internal.Configuration, fSet *flag.FlagSet) CommandProcessor {
-	return newPostRepairSubCommand(c, fSet)
+	return newPostRepairCommand(c, fSet)
 }
 
 func (p *postrepair) Exec(o internal.OutputBus, args []string) (ok bool) {
 	if s, argsOk := p.sf.ProcessArgs(o, args); argsOk {
 		// TODO [#77] replace o.OutputWriter() with o
-		p.runSubcommand(o.OutputWriter(), s)
+		p.runCommand(o.OutputWriter(), s)
 		ok = true
 	}
 	return
@@ -43,7 +43,7 @@ func (p *postrepair) logFields() logrus.Fields {
 }
 
 // TODO [#77] need 2nd writer
-func (p *postrepair) runSubcommand(w io.Writer, s *files.Search) {
+func (p *postrepair) runCommand(w io.Writer, s *files.Search) {
 	logrus.WithFields(p.logFields()).Info(internal.LI_EXECUTING_COMMAND)
 	artists := s.LoadData(os.Stderr)
 	backups := make(map[string]*files.Album)

@@ -407,13 +407,13 @@ func Test_check_Exec(t *testing.T) {
 	}{
 		{
 			name:              "do nothing",
-			c:                 newCheckSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError)),
+			c:                 newCheckCommand(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError)),
 			args:              args{[]string{"-topDir", topDirName, "-empty=false", "-gaps=false", "-integrity=false"}},
 			wantConsoleOutput: "",
 		},
 		{
 			name: "do something",
-			c:    newCheckSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError)),
+			c:    newCheckCommand(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError)),
 			args: args{[]string{"-topDir", topDirName, "-empty=true", "-gaps=false", "-integrity=false"}},
 			wantConsoleOutput: strings.Join([]string{
 				"Test Artist 0",
@@ -472,14 +472,14 @@ func Test_check_Exec(t *testing.T) {
 	}
 }
 
-func Test_newCheckSubCommand(t *testing.T) {
+func Test_newCheckCommand(t *testing.T) {
 	savedState := internal.SaveEnvVarForTesting("APPDATA")
 	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
 	defer func() {
 		savedState.RestoreForTesting()
 	}()
 	topDir := "loadTest"
-	fnName := "newCheckSubCommand()"
+	fnName := "newCheckCommand()"
 	if err := internal.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
 	}
@@ -521,7 +521,7 @@ func Test_newCheckSubCommand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			check := newCheckSubCommand(tt.args.c, flag.NewFlagSet("check", flag.ContinueOnError))
+			check := newCheckCommand(tt.args.c, flag.NewFlagSet("check", flag.ContinueOnError))
 			if _, ok := check.sf.ProcessArgs(internal.NewOutputDeviceForTesting(), []string{
 				"-topDir", topDir,
 				"-ext", ".mp3",

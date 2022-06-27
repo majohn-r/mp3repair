@@ -29,7 +29,7 @@ func Test_ls_validateTrackSorting(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fs := flag.NewFlagSet("ls", flag.ContinueOnError)
-			lsCommand := newLsSubCommand(internal.EmptyConfiguration(), fs)
+			lsCommand := newLsCommand(internal.EmptyConfiguration(), fs)
 			lsCommand.trackSorting = &tt.sortingInput
 			lsCommand.includeAlbums = &tt.includeAlbums
 			lsCommand.validateTrackSorting()
@@ -197,7 +197,7 @@ func Test_ls_Exec(t *testing.T) {
 	}{
 		{
 			name: "no output",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -211,7 +211,7 @@ func Test_ls_Exec(t *testing.T) {
 		// tracks only
 		{
 			name: "unannotated tracks only",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -225,7 +225,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "annotated tracks only",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -239,7 +239,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "unannotated tracks only with numeric sorting",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -254,7 +254,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "annotated tracks only with numeric sorting",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -270,7 +270,7 @@ func Test_ls_Exec(t *testing.T) {
 		// albums only
 		{
 			name: "unannotated albums only",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -284,7 +284,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "annotated albums only",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -299,7 +299,7 @@ func Test_ls_Exec(t *testing.T) {
 		// artists only
 		{
 			name: "unannotated artists only",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -313,7 +313,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "annotated artists only",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -328,7 +328,7 @@ func Test_ls_Exec(t *testing.T) {
 		// albums and artists
 		{
 			name: "unannotated artists and albums only",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -342,7 +342,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "annotated artists and albums only",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -357,7 +357,7 @@ func Test_ls_Exec(t *testing.T) {
 		// albums and tracks
 		{
 			name: "unannotated albums and tracks with alpha sorting",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -372,7 +372,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "annotated albums and tracks with alpha sorting",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -387,7 +387,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "unannotated albums and tracks with numeric sorting",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -402,7 +402,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "annotated albums and tracks with numeric sorting",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -418,7 +418,7 @@ func Test_ls_Exec(t *testing.T) {
 		// artists and tracks
 		{
 			name: "unannotated artists and tracks with alpha sorting",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -433,7 +433,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "annotated artists and tracks with alpha sorting",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -448,7 +448,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "unannotated artists and tracks with numeric sorting",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -463,7 +463,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "annotated artists and tracks with numeric sorting",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -479,7 +479,7 @@ func Test_ls_Exec(t *testing.T) {
 		// albums, artists, and tracks
 		{
 			name: "unannotated artists, albums, and tracks with alpha sorting",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -494,7 +494,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "annotated artists, albums, and tracks with alpha sorting",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -509,7 +509,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "unannotated artists, albums, and tracks with numeric sorting",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -524,7 +524,7 @@ func Test_ls_Exec(t *testing.T) {
 		},
 		{
 			name: "annotated artists, albums, and tracks with numeric sorting",
-			l:    newLsSubCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
+			l:    newLsCommand(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ContinueOnError)),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -555,14 +555,14 @@ func Test_ls_Exec(t *testing.T) {
 	}
 }
 
-func Test_newLsSubCommand(t *testing.T) {
+func Test_newLsCommand(t *testing.T) {
 	savedState := internal.SaveEnvVarForTesting("APPDATA")
 	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
 	defer func() {
 		savedState.RestoreForTesting()
 	}()
 	topDir := "loadTest"
-	fnName := "newLsSubCommand()"
+	fnName := "newLsCommand()"
 	if err := internal.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
 	}
@@ -610,7 +610,7 @@ func Test_newLsSubCommand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ls := newLsSubCommand(tt.args.c, flag.NewFlagSet("ls", flag.ContinueOnError))
+			ls := newLsCommand(tt.args.c, flag.NewFlagSet("ls", flag.ContinueOnError))
 			if _, ok := ls.sf.ProcessArgs(internal.NewOutputDeviceForTesting(), []string{
 				"-topDir", topDir,
 				"-ext", ".mp3",

@@ -28,7 +28,7 @@ func (l *ls) name() string {
 }
 
 func newLs(c *internal.Configuration, fSet *flag.FlagSet) CommandProcessor {
-	return newLsSubCommand(c, fSet)
+	return newLsCommand(c, fSet)
 }
 
 const (
@@ -49,7 +49,7 @@ const (
 	trackSortingFlag        = "sort"
 )
 
-func newLsSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *ls {
+func newLsCommand(c *internal.Configuration, fSet *flag.FlagSet) *ls {
 	name := fSet.Name()
 	configuration := c.SubConfiguration(name)
 	return &ls{
@@ -77,7 +77,7 @@ func (l *ls) Exec(o internal.OutputBus, args []string) (ok bool) {
 	if s, argsOk := l.sf.ProcessArgs(o, args); argsOk {
 		// TODO [#82] return bool status
 		// TODO [#77] replace o.OutputWriter() with o
-		l.runSubcommand(o.OutputWriter(), s)
+		l.runCommand(o.OutputWriter(), s)
 		ok = true
 	}
 	return
@@ -95,7 +95,7 @@ func (l *ls) logFields() logrus.Fields {
 }
 
 // TODO [#77] should use 2nd writer for error output
-func (l *ls) runSubcommand(w io.Writer, s *files.Search) {
+func (l *ls) runCommand(w io.Writer, s *files.Search) {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
 		fmt.Fprintf(os.Stderr, internal.USER_SPECIFIED_NO_WORK, l.name())
 		logrus.WithFields(l.logFields()).Warn(internal.LW_NOTHING_TO_DO)

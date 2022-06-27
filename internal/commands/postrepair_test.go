@@ -61,21 +61,21 @@ func Test_postrepair_Exec(t *testing.T) {
 	}{
 		{
 			name: "handle bad common arguments",
-			p: newPostRepairSubCommand(
+			p: newPostRepairCommand(
 				internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError)),
 			args:              args{args: []string{"-topDir", "non-existent directory"}},
 			wantConsoleOutput: "",
 		},
 		{
 			name: "handle normal processing with nothing to do",
-			p: newPostRepairSubCommand(
+			p: newPostRepairCommand(
 				internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError)),
 			args:              args{args: []string{"-topDir", topDirName}},
 			wantConsoleOutput: "There are no backup directories to delete\n",
 		},
 		{
 			name: "handle normal processing",
-			p: newPostRepairSubCommand(
+			p: newPostRepairCommand(
 				internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError)),
 			args:              args{args: []string{"-topDir", topDir2Name}},
 			wantConsoleOutput: "The backup directory for artist \"the artist\" album \"the album\" has been deleted\n",

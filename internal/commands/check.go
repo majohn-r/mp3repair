@@ -25,7 +25,7 @@ func (c *check) name() string {
 }
 
 func newCheck(c *internal.Configuration, fSet *flag.FlagSet) CommandProcessor {
-	return newCheckSubCommand(c, fSet)
+	return newCheckCommand(c, fSet)
 }
 
 const (
@@ -40,7 +40,7 @@ const (
 	integrityFlag               = "integrity"
 )
 
-func newCheckSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *check {
+func newCheckCommand(c *internal.Configuration, fSet *flag.FlagSet) *check {
 	name := fSet.Name()
 	configuration := c.SubConfiguration(name)
 	return &check{
@@ -61,7 +61,7 @@ func newCheckSubCommand(c *internal.Configuration, fSet *flag.FlagSet) *check {
 func (c *check) Exec(o internal.OutputBus, args []string) (ok bool) {
 	if s, argsOk := c.sf.ProcessArgs(o, args); argsOk {
 		// TODO [#77] replace o.OutputWriter() with o
-		ok = c.runSubcommand(o.OutputWriter(), s)
+		ok = c.runCommand(o.OutputWriter(), s)
 	}
 	return
 }
@@ -125,7 +125,7 @@ func (a *artistWithIssues) hasIssues() bool {
 }
 
 // TODO [#77] should use a second writer for error output; first writer is for console output
-func (c *check) runSubcommand(w io.Writer, s *files.Search) (ok bool) {
+func (c *check) runCommand(w io.Writer, s *files.Search) (ok bool) {
 	if !*c.checkEmptyFolders && !*c.checkGapsInTrackNumbering && !*c.checkIntegrity {
 		fmt.Fprintf(os.Stderr, internal.USER_SPECIFIED_NO_WORK, c.name())
 		logrus.WithFields(c.logFields()).Warn(internal.LW_NOTHING_TO_DO)

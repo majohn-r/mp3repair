@@ -22,10 +22,10 @@ type CommandProcessor interface {
 	Exec(internal.OutputBus, []string) bool
 }
 
-type subcommandInitializer struct {
-	name              string
-	defaultSubCommand bool
-	initializer       func(*internal.Configuration, *flag.FlagSet) CommandProcessor
+type commandInitializer struct {
+	name           string
+	defaultCommand bool
+	initializer    func(*internal.Configuration, *flag.FlagSet) CommandProcessor
 }
 
 // ProcessCommand selects which command to be run and returns the relevant
@@ -39,29 +39,29 @@ func ProcessCommand(o internal.OutputBus, args []string) (cmd CommandProcessor, 
 	if defaultSettings, ok = getDefaultSettings(o, c.SubConfiguration("command")); !ok {
 		return nil, nil, false
 	}
-	var initializers []subcommandInitializer
-	lsSubCommand := subcommandInitializer{
-		name:              lsCommand,
-		defaultSubCommand: defaultSettings[lsCommand],
-		initializer:       newLs,
+	var initializers []commandInitializer
+	lsCommand := commandInitializer{
+		name:           lsCommand,
+		defaultCommand: defaultSettings[lsCommand],
+		initializer:    newLs,
 	}
-	checkSubCommand := subcommandInitializer{
-		name:              checkCommand,
-		defaultSubCommand: defaultSettings[checkCommand],
-		initializer:       newCheck,
+	checkCommand := commandInitializer{
+		name:           checkCommand,
+		defaultCommand: defaultSettings[checkCommand],
+		initializer:    newCheck,
 	}
-	repairSubCommand := subcommandInitializer{
-		name:              repairCommand,
-		defaultSubCommand: defaultSettings[repairCommand],
-		initializer:       newRepair,
+	repairCommand := commandInitializer{
+		name:           repairCommand,
+		defaultCommand: defaultSettings[repairCommand],
+		initializer:    newRepair,
 	}
-	postRepairSubCommand := subcommandInitializer{
-		name:              postRepairCommand,
-		defaultSubCommand: defaultSettings[postRepairCommand],
-		initializer:       newPostRepair,
+	postRepairCommand := commandInitializer{
+		name:           postRepairCommand,
+		defaultCommand: defaultSettings[postRepairCommand],
+		initializer:    newPostRepair,
 	}
-	initializers = append(initializers, lsSubCommand, checkSubCommand, repairSubCommand, postRepairSubCommand)
-	cmd, cmdArgs, ok = selectSubCommand(o, c, initializers, args)
+	initializers = append(initializers, lsCommand, checkCommand, repairCommand, postRepairCommand)
+	cmd, cmdArgs, ok = selectCommand(o, c, initializers, args)
 	return
 }
 
@@ -103,7 +103,7 @@ func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[
 	return
 }
 
-func selectSubCommand(o internal.OutputBus, c *internal.Configuration, i []subcommandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, ok bool) {
+func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, ok bool) {
 	if len(i) == 0 {
 		o.Log(internal.ERROR, internal.LE_COMMAND_COUNT, map[string]interface{}{
 			fkCount: 0,
@@ -114,7 +114,7 @@ func selectSubCommand(o internal.OutputBus, c *internal.Configuration, i []subco
 	var defaultInitializers int
 	var defaultInitializerName string
 	for _, initializer := range i {
-		if initializer.defaultSubCommand {
+		if initializer.defaultCommand {
 			defaultInitializers++
 			defaultInitializerName = initializer.name
 		}
@@ -127,9 +127,9 @@ func selectSubCommand(o internal.OutputBus, c *internal.Configuration, i []subco
 		return
 	}
 	processorMap := make(map[string]CommandProcessor)
-	for _, subcommandInitializer := range i {
-		fSet := flag.NewFlagSet(subcommandInitializer.name, flag.ContinueOnError)
-		processorMap[subcommandInitializer.name] = subcommandInitializer.initializer(c, fSet)
+	for _, commandInitializer := range i {
+		fSet := flag.NewFlagSet(commandInitializer.name, flag.ContinueOnError)
+		processorMap[commandInitializer.name] = commandInitializer.initializer(c, fSet)
 	}
 	if len(args) < 2 {
 		cmd = processorMap[defaultInitializerName]
@@ -151,12 +151,12 @@ func selectSubCommand(o internal.OutputBus, c *internal.Configuration, i []subco
 		o.Log(internal.WARN, internal.LW_UNRECOGNIZED_COMMAND, map[string]interface{}{
 			fkCommandName: commandName,
 		})
-		var subCommandNames []string
+		var commandNames []string
 		for _, initializer := range i {
-			subCommandNames = append(subCommandNames, initializer.name)
+			commandNames = append(commandNames, initializer.name)
 		}
-		sort.Strings(subCommandNames)
-		fmt.Fprintf(o.ErrorWriter(), internal.USER_NO_SUCH_COMMAND, commandName, subCommandNames)
+		sort.Strings(commandNames)
+		fmt.Fprintf(o.ErrorWriter(), internal.USER_NO_SUCH_COMMAND, commandName, commandNames)
 		return
 	}
 	callingArgs = args[2:]
