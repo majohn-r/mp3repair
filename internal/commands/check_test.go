@@ -64,6 +64,7 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 		wantArtists         []*files.Artist
 		wantW               string
 		wantFilteredArtists []*artistWithIssues
+		wantOk              bool
 	}{
 		{name: "no work to do", c: &check{checkEmptyFolders: &fFlag}, args: args{}},
 		{
@@ -78,6 +79,7 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 			wantArtists:         []*files.Artist{goodArtist},
 			wantFilteredArtists: nil,
 			wantW:               "Empty Folder Analysis: no empty folders found\n",
+			wantOk:              true,
 		},
 		{
 			name:        "empty folders present",
@@ -130,12 +132,13 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 					issues: []string{"no albums found"},
 				},
 			},
+			wantOk: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			w := &bytes.Buffer{}
-			gotArtists, gotArtistsWithIssues := tt.c.performEmptyFolderAnalysis(w, tt.args.s)
+			gotArtists, gotArtistsWithIssues, gotOk := tt.c.performEmptyFolderAnalysis(w, tt.args.s)
 			if !reflect.DeepEqual(gotArtists, tt.wantArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotArtists, tt.wantArtists)
 			} else {
@@ -143,6 +146,9 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 				if !reflect.DeepEqual(filteredArtists, tt.wantFilteredArtists) {
 					t.Errorf("%s = %v, want %v", fnName, filteredArtists, tt.wantFilteredArtists)
 				}
+			}
+			if gotOk != tt.wantOk {
+				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 			if gotW := w.String(); gotW != tt.wantW {
 				t.Errorf("%s = %v, want %v", fnName, gotW, tt.wantW)

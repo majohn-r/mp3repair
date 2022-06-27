@@ -131,12 +131,14 @@ func (c *check) runSubcommand(w io.Writer, s *files.Search) (ok bool) {
 		logrus.WithFields(c.logFields()).Warn(internal.LW_NOTHING_TO_DO)
 	} else {
 		logrus.WithFields(c.logFields()).Info(internal.LI_EXECUTING_COMMAND)
-		artists, artistsWithEmptyIssues := c.performEmptyFolderAnalysis(w, s)
-		artists = c.filterArtists(s, artists)
-		artistsWithGaps := c.performGapAnalysis(w, artists)
-		artistsWithIntegrityIssues := c.performIntegrityCheck(w, artists)
-		reportResults(w, artistsWithEmptyIssues, artistsWithGaps, artistsWithIntegrityIssues)
-		ok = true
+		artists, artistsWithEmptyIssues, analysisOk := c.performEmptyFolderAnalysis(w, s)
+		if analysisOk {
+			artists = c.filterArtists(s, artists)
+			artistsWithGaps := c.performGapAnalysis(w, artists)
+			artistsWithIntegrityIssues := c.performIntegrityCheck(w, artists)
+			reportResults(w, artistsWithEmptyIssues, artistsWithGaps, artistsWithIntegrityIssues)
+			ok = true
+		}
 	}
 	return
 }
@@ -323,31 +325,32 @@ func sortArtists(filteredArtists []*artistWithIssues) {
 }
 
 // TODO [#77] need OutputBus for errors
-// TODO [#81] need to return LoadUnfilteredData boolean status
-func (c *check) performEmptyFolderAnalysis(w io.Writer, s *files.Search) (artists []*files.Artist, conflictedArtists []*artistWithIssues) {
+func (c *check) performEmptyFolderAnalysis(w io.Writer, s *files.Search) (artists []*files.Artist, conflictedArtists []*artistWithIssues, ok bool) {
 	if *c.checkEmptyFolders {
-		var ok bool
-		artists, ok = s.LoadUnfilteredData(os.Stderr)
-		if ok {
-			conflictedArtists = createBareConflictedIssues(artists)
-			issuesFound := false
-			for _, conflictedArtist := range conflictedArtists {
-				if !conflictedArtist.artist.HasAlbums() {
-					conflictedArtist.issues = append(conflictedArtist.issues, "no albums found")
-					issuesFound = true
-				} else {
-					for _, conflictedAlbum := range conflictedArtist.albums {
-						if !conflictedAlbum.album.HasTracks() {
-							conflictedAlbum.issues = append(conflictedAlbum.issues, "no tracks found")
-							issuesFound = true
-						}
+		var loadedOk bool
+		artists, loadedOk = s.LoadUnfilteredData(os.Stderr)
+		if !loadedOk {
+			return
+		}
+		conflictedArtists = createBareConflictedIssues(artists)
+		issuesFound := false
+		for _, conflictedArtist := range conflictedArtists {
+			if !conflictedArtist.artist.HasAlbums() {
+				conflictedArtist.issues = append(conflictedArtist.issues, "no albums found")
+				issuesFound = true
+			} else {
+				for _, conflictedAlbum := range conflictedArtist.albums {
+					if !conflictedAlbum.album.HasTracks() {
+						conflictedAlbum.issues = append(conflictedAlbum.issues, "no tracks found")
+						issuesFound = true
 					}
 				}
 			}
-			if !issuesFound {
-				fmt.Fprintln(w, "Empty Folder Analysis: no empty folders found")
-			}
 		}
+		if !issuesFound {
+			fmt.Fprintln(w, "Empty Folder Analysis: no empty folders found")
+		}
+		ok = true
 	}
 	return
 }
