@@ -84,8 +84,8 @@ func (s *Search) LogFields(includeFilters bool) logrus.Fields {
 
 // FilterArtists filters out the unwanted artists and albums from the input. The
 // result is a new, filtered, copy of the original slice of Artists.
-// TODO [#81] should return bool, false on returning no artists
-func (s *Search) FilterArtists(unfilteredArtists []*Artist) (artists []*Artist) {
+// TODO [#77] need OutputBus
+func (s *Search) FilterArtists(unfilteredArtists []*Artist) (artists []*Artist, ok bool) {
 	logrus.WithFields(s.LogFields(true)).Info(internal.LI_FILTERING_FILES)
 	for _, unfilteredArtist := range unfilteredArtists {
 		if s.artistFilter.MatchString(unfilteredArtist.Name()) {
@@ -102,6 +102,10 @@ func (s *Search) FilterArtists(unfilteredArtists []*Artist) (artists []*Artist) 
 				artists = append(artists, artist)
 			}
 		}
+		ok = len(artists) != 0
+		if !ok {
+			logrus.WithFields(s.LogFields(false)).Warn(internal.LW_NO_ARTIST_DIRECTORIES)
+		}
 	}
 	return
 }
@@ -109,6 +113,7 @@ func (s *Search) FilterArtists(unfilteredArtists []*Artist) (artists []*Artist) 
 // LoadData collects the artists, albums, and mp3 tracks, honoring all the
 // search parameters.
 // TODO [#81] should return bool, false on returning no artists
+// TODO [#77] need OutputBus
 func (s *Search) LoadData(wErr io.Writer) (artists []*Artist) {
 	logrus.WithFields(s.LogFields(true)).Info(internal.LI_READING_FILTERED_FILES)
 	if artistFiles, ok := s.contents(wErr); ok {

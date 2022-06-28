@@ -70,6 +70,9 @@ func TestSearch_FilterArtists(t *testing.T) {
 	realFlagSet := flag.NewFlagSet("real", flag.ContinueOnError)
 	realS, _ := NewSearchFlags(internal.EmptyConfiguration(), realFlagSet).ProcessArgs(
 		internal.NewOutputDeviceForTesting(), []string{"-topDir", topDir})
+	overFilteredS, _ := NewSearchFlags(internal.EmptyConfiguration(),
+		flag.NewFlagSet("overFiltered", flag.ContinueOnError)).ProcessArgs(
+		internal.NewOutputDeviceForTesting(), []string{"-topDir", topDir, "-artistFilter", "^Filter all out$"})
 	a, _ := realS.LoadUnfilteredData(os.Stderr)
 	type args struct {
 		unfilteredArtists []*Artist
@@ -79,18 +82,31 @@ func TestSearch_FilterArtists(t *testing.T) {
 		s           *Search
 		args        args
 		wantArtists []*Artist
+		wantOk      bool
 	}{
 		{
 			name:        "default",
 			s:           realS,
 			args:        args{unfilteredArtists: a},
 			wantArtists: realS.LoadData(os.Stderr),
+			wantOk:      true,
+		},
+		{
+			name:        "all filtered out",
+			s:           overFilteredS,
+			args:        args{unfilteredArtists: a},
+			wantArtists: nil,
+			wantOk:      false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotArtists := tt.s.FilterArtists(tt.args.unfilteredArtists); !reflect.DeepEqual(gotArtists, tt.wantArtists) {
+			gotArtists, gotOk := tt.s.FilterArtists(tt.args.unfilteredArtists)
+			if !reflect.DeepEqual(gotArtists, tt.wantArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotArtists, tt.wantArtists)
+			}
+			if gotOk != tt.wantOk {
+				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 		})
 	}

@@ -66,7 +66,7 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 		wantFilteredArtists []*artistWithIssues
 		wantOk              bool
 	}{
-		{name: "no work to do", c: &check{checkEmptyFolders: &fFlag}, args: args{}},
+		{name: "no work to do", c: &check{checkEmptyFolders: &fFlag}, args: args{}, wantOk: true},
 		{
 			name: "empty topDir",
 			c:    &check{checkEmptyFolders: &tFlag},

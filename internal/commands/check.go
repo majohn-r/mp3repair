@@ -220,12 +220,14 @@ func merge(sets [][]*artistWithIssues) []*artistWithIssues {
 }
 
 // TODO [#77] need OutputBus
+// TODO [#81] return bool status
 func (c *check) filterArtists(s *files.Search, artists []*files.Artist) (filteredArtists []*files.Artist) {
 	if *c.checkGapsInTrackNumbering || *c.checkIntegrity {
 		if len(artists) == 0 {
 			filteredArtists = s.LoadData(os.Stderr)
 		} else {
-			filteredArtists = s.FilterArtists(artists)
+			// var searchOk bool
+			filteredArtists, _ = s.FilterArtists(artists)
 		}
 	} else {
 		filteredArtists = artists
@@ -326,32 +328,34 @@ func sortArtists(filteredArtists []*artistWithIssues) {
 
 // TODO [#77] need OutputBus for errors
 func (c *check) performEmptyFolderAnalysis(w io.Writer, s *files.Search) (artists []*files.Artist, conflictedArtists []*artistWithIssues, ok bool) {
-	if *c.checkEmptyFolders {
-		var loadedOk bool
-		artists, loadedOk = s.LoadUnfilteredData(os.Stderr)
-		if !loadedOk {
-			return
-		}
-		conflictedArtists = createBareConflictedIssues(artists)
-		issuesFound := false
-		for _, conflictedArtist := range conflictedArtists {
-			if !conflictedArtist.artist.HasAlbums() {
-				conflictedArtist.issues = append(conflictedArtist.issues, "no albums found")
-				issuesFound = true
-			} else {
-				for _, conflictedAlbum := range conflictedArtist.albums {
-					if !conflictedAlbum.album.HasTracks() {
-						conflictedAlbum.issues = append(conflictedAlbum.issues, "no tracks found")
-						issuesFound = true
-					}
+	if !*c.checkEmptyFolders {
+		ok = true
+		return
+	}
+	var loadedOk bool
+	artists, loadedOk = s.LoadUnfilteredData(os.Stderr)
+	if !loadedOk {
+		return
+	}
+	conflictedArtists = createBareConflictedIssues(artists)
+	issuesFound := false
+	for _, conflictedArtist := range conflictedArtists {
+		if !conflictedArtist.artist.HasAlbums() {
+			conflictedArtist.issues = append(conflictedArtist.issues, "no albums found")
+			issuesFound = true
+		} else {
+			for _, conflictedAlbum := range conflictedArtist.albums {
+				if !conflictedAlbum.album.HasTracks() {
+					conflictedAlbum.issues = append(conflictedAlbum.issues, "no tracks found")
+					issuesFound = true
 				}
 			}
 		}
-		if !issuesFound {
-			fmt.Fprintln(w, "Empty Folder Analysis: no empty folders found")
-		}
-		ok = true
 	}
+	if !issuesFound {
+		fmt.Fprintln(w, "Empty Folder Analysis: no empty folders found")
+	}
+	ok = true
 	return
 }
 
