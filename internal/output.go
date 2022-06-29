@@ -2,58 +2,36 @@ package internal
 
 import (
 	"io"
-
-	"github.com/sirupsen/logrus"
 )
-
-const (
-	INFO = iota
-	WARN
-	ERROR
-)
-
-const (
-	fkLogLevel = "level"
-)
-
-type LogLevel int
 
 type OutputBus interface {
 	ConsoleWriter() io.Writer
 	ErrorWriter() io.Writer
-	Log(l LogLevel, msg string, fields map[string]interface{})
+	LogWriter() Logger
 }
 
 type OutputDevice struct {
-	wOut io.Writer
-	wErr io.Writer
+	consoleWriter io.Writer
+	errorWriter   io.Writer
+	logWriter     Logger
 }
 
 func NewOutputDevice(wStdout io.Writer, wStderr io.Writer) *OutputDevice {
 	return &OutputDevice{
-		wOut: wStdout,
-		wErr: wStderr,
+		consoleWriter: wStdout,
+		errorWriter:   wStderr,
+		logWriter:     productionLogger{},
 	}
 }
 
 func (o *OutputDevice) ConsoleWriter() io.Writer {
-	return o.wOut
+	return o.consoleWriter
 }
 
 func (o *OutputDevice) ErrorWriter() io.Writer {
-	return o.wErr
+	return o.errorWriter
 }
 
-func (o *OutputDevice) Log(l LogLevel, msg string, fields map[string]interface{}) {
-	switch l {
-	case INFO:
-		logrus.WithFields(fields).Info(msg)
-	case WARN:
-		logrus.WithFields(fields).Warn(msg)
-	case ERROR:
-		logrus.WithFields(fields).Error(msg)
-	default:
-		fields[fkLogLevel] = l
-		logrus.WithFields(fields).Error(msg + "; " + LE_INVALID_LOG_LEVEL)
-	}
+func (o *OutputDevice) LogWriter() Logger {
+	return o.logWriter
 }

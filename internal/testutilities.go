@@ -204,28 +204,36 @@ func SecureAbsolutePathForTesting(path string) string {
 // testing solution
 
 type OutputDeviceForTesting struct {
-	consoleOut *bytes.Buffer
-	errorOut   *bytes.Buffer
-	logOut     *bytes.Buffer
+	consoleWriter *bytes.Buffer
+	errorWriter   *bytes.Buffer
+	logWriter     testLogger
 }
 
 func NewOutputDeviceForTesting() *OutputDeviceForTesting {
 	return &OutputDeviceForTesting{
-		consoleOut: &bytes.Buffer{},
-		errorOut:   &bytes.Buffer{},
-		logOut:     &bytes.Buffer{},
+		consoleWriter: &bytes.Buffer{},
+		errorWriter:   &bytes.Buffer{},
+		logWriter:     testLogger{writer: &bytes.Buffer{}},
 	}
 }
 
 func (o *OutputDeviceForTesting) ConsoleWriter() io.Writer {
-	return o.consoleOut
+	return o.consoleWriter
 }
 
 func (o *OutputDeviceForTesting) ErrorWriter() io.Writer {
-	return o.errorOut
+	return o.errorWriter
 }
 
-func (o *OutputDeviceForTesting) Log(l LogLevel, msg string, fields map[string]interface{}) {
+func (o *OutputDeviceForTesting) LogWriter() Logger {
+	return o.logWriter
+}
+
+type testLogger struct {
+	writer *bytes.Buffer
+}
+
+func (tl testLogger) Log(l LogLevel, msg string, fields map[string]interface{}) {
 	var parts []string
 	for k, v := range fields {
 		parts = append(parts, fmt.Sprintf("%s='%v'", k, v))
@@ -242,17 +250,17 @@ func (o *OutputDeviceForTesting) Log(l LogLevel, msg string, fields map[string]i
 	default:
 		level = fmt.Sprintf("level unknown (%d)", l)
 	}
-	fmt.Fprintf(o.logOut, "level='%s' %s msg='%s'\n", level, strings.Join(parts, " "), msg)
+	fmt.Fprintf(tl.writer, "level='%s' %s msg='%s'\n", level, strings.Join(parts, " "), msg)
 }
 
 func (o *OutputDeviceForTesting) ConsoleOutput() string {
-	return o.consoleOut.String()
+	return o.consoleWriter.String()
 }
 
 func (o *OutputDeviceForTesting) ErrorOutput() string {
-	return o.errorOut.String()
+	return o.errorWriter.String()
 }
 
 func (o *OutputDeviceForTesting) LogOutput() string {
-	return o.logOut.String()
+	return o.logWriter.writer.String()
 }

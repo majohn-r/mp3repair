@@ -25,6 +25,7 @@ const (
 	FK_DIRECTORY = "directory"
 	FK_ERROR     = "error"
 	FK_FILE_NAME = "fileName"
+	fkLogLevel   = "level"
 	fkVarName    = "environment variable"
 )
 
@@ -36,7 +37,7 @@ func configureLogging(path string) *cronowriter.CronoWriter {
 
 func cleanupLogFiles(o OutputBus, path string) {
 	if files, err := ioutil.ReadDir(path); err != nil {
-		o.Log(WARN, LW_CANNOT_READ_DIRECTORY, map[string]interface{}{
+		o.LogWriter().Log(WARN, LW_CANNOT_READ_DIRECTORY, map[string]interface{}{
 			FK_DIRECTORY: path,
 			FK_ERROR:     err,
 		})
@@ -63,14 +64,14 @@ func cleanupLogFiles(o OutputBus, path string) {
 				fileName := fileMap[times[k]].Name()
 				logFilePath := filepath.Join(path, fileName)
 				if err := os.Remove(logFilePath); err != nil {
-					o.Log(WARN, LW_CANNOT_DELETE_FILE, map[string]interface{}{
+					o.LogWriter().Log(WARN, LW_CANNOT_DELETE_FILE, map[string]interface{}{
 						FK_DIRECTORY: path,
 						FK_FILE_NAME: fileName,
 						FK_ERROR:     err,
 					})
 					fmt.Fprintf(o.ErrorWriter(), USER_LOG_FILE_CANNOT_BE_DELETED, logFilePath, err)
 				} else {
-					o.Log(INFO, LI_FILE_DELETED, map[string]interface{}{
+					o.LogWriter().Log(INFO, LI_FILE_DELETED, map[string]interface{}{
 						FK_DIRECTORY: path,
 						FK_FILE_NAME: fileName,
 					})
@@ -102,4 +103,32 @@ func InitLogging(o OutputBus) bool {
 	logrus.SetOutput(logger)
 	cleanupLogFiles(o, path)
 	return true
+}
+
+type LogLevel int
+
+const (
+	INFO = iota
+	WARN
+	ERROR
+)
+
+type Logger interface {
+	Log(l LogLevel, msg string, fields map[string]interface{})
+}
+
+type productionLogger struct{}
+
+func (productionLogger) Log(l LogLevel, msg string, fields map[string]interface{}) {
+	switch l {
+	case INFO:
+		logrus.WithFields(fields).Info(msg)
+	case WARN:
+		logrus.WithFields(fields).Warn(msg)
+	case ERROR:
+		logrus.WithFields(fields).Error(msg)
+	default:
+		fields[fkLogLevel] = l
+		logrus.WithFields(fields).Error(msg + "; " + LE_INVALID_LOG_LEVEL)
+	}
 }

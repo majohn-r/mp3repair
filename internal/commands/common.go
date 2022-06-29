@@ -91,7 +91,7 @@ func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[
 		}
 	}
 	if !found {
-		o.Log(internal.WARN, internal.LW_INVALID_DEFAULT_COMMAND, map[string]interface{}{
+		o.LogWriter().Log(internal.WARN, internal.LW_INVALID_DEFAULT_COMMAND, map[string]interface{}{
 			fkCommandName: defaultCommand,
 		})
 		fmt.Fprintf(o.ErrorWriter(), internal.USER_INVALID_DEFAULT_COMMAND, defaultCommand)
@@ -105,7 +105,7 @@ func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[
 
 func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, ok bool) {
 	if len(i) == 0 {
-		o.Log(internal.ERROR, internal.LE_COMMAND_COUNT, map[string]interface{}{
+		o.LogWriter().Log(internal.ERROR, internal.LE_COMMAND_COUNT, map[string]interface{}{
 			fkCount: 0,
 		})
 		fmt.Fprint(o.ErrorWriter(), internal.USER_NO_COMMANDS_DEFINED)
@@ -120,7 +120,7 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 		}
 	}
 	if defaultInitializers != 1 {
-		o.Log(internal.ERROR, internal.LE_DEFAULT_COMMAND_COUNT, map[string]interface{}{
+		o.LogWriter().Log(internal.ERROR, internal.LE_DEFAULT_COMMAND_COUNT, map[string]interface{}{
 			fkCount: defaultInitializers,
 		})
 		fmt.Fprintf(o.ErrorWriter(), internal.USER_INCORRECT_NUMBER_OF_DEFAULT_COMMANDS_DEFINED, defaultInitializers)
@@ -148,7 +148,7 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 	if !found {
 		cmd = nil
 		callingArgs = nil
-		o.Log(internal.WARN, internal.LW_UNRECOGNIZED_COMMAND, map[string]interface{}{
+		o.LogWriter().Log(internal.WARN, internal.LW_UNRECOGNIZED_COMMAND, map[string]interface{}{
 			fkCommandName: commandName,
 		})
 		var commandNames []string

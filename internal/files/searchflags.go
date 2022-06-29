@@ -64,7 +64,7 @@ func (sf *SearchFlags) ProcessArgs(o internal.OutputBus, args []string) (s *Sear
 	sf.f.SetOutput(o.ErrorWriter())
 	// note: Parse outputs errors to o.ErrorWriter*()
 	if err := sf.f.Parse(dereferencedArgs); err != nil {
-		o.Log(internal.ERROR, fmt.Sprintf("%v", err), map[string]interface{}{
+		o.LogWriter().Log(internal.ERROR, fmt.Sprintf("%v", err), map[string]interface{}{
 			fkArguments: dereferencedArgs,
 		})
 		return nil, false

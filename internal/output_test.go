@@ -18,7 +18,7 @@ func TestNewOutputDevice(t *testing.T) {
 	}{
 		{
 			name:        "normal",
-			want:        &OutputDevice{wOut: os.Stdout, wErr: os.Stderr},
+			want:        &OutputDevice{consoleWriter: os.Stdout, errorWriter: os.Stderr, logWriter: productionLogger{}},
 			wantWStdout: "hello to console",
 			wantWStderr: "hello to error",
 		},
@@ -44,10 +44,10 @@ func TestNewOutputDevice(t *testing.T) {
 				t.Errorf("NewOutputDevice() does not implement OutputBus")
 			}
 			// exercise log functionality
-			testDevice.Log(INFO, "info message", map[string]interface{}{"foo": INFO})
-			testDevice.Log(WARN, "warn message", map[string]interface{}{"foo": WARN})
-			testDevice.Log(ERROR, "errpr message", map[string]interface{}{"foo": ERROR})
-			testDevice.Log(ERROR+WARN+INFO, "info message", map[string]interface{}{"foo": ERROR + WARN + INFO})
+			testDevice.LogWriter().Log(INFO, "info message", map[string]interface{}{"foo": INFO})
+			testDevice.LogWriter().Log(WARN, "warn message", map[string]interface{}{"foo": WARN})
+			testDevice.LogWriter().Log(ERROR, "errpr message", map[string]interface{}{"foo": ERROR})
+			testDevice.LogWriter().Log(ERROR+WARN+INFO, "info message", map[string]interface{}{"foo": ERROR + WARN + INFO})
 		})
 	}
 }

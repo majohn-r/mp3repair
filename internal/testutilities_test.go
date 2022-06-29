@@ -405,9 +405,9 @@ func TestNewOutputDeviceForTesting(t *testing.T) {
 		{
 			name: "standard",
 			want: &OutputDeviceForTesting{
-				consoleOut: &bytes.Buffer{},
-				errorOut:   &bytes.Buffer{},
-				logOut:     &bytes.Buffer{},
+				consoleWriter: &bytes.Buffer{},
+				errorWriter:   &bytes.Buffer{},
+				logWriter:     testLogger{writer: &bytes.Buffer{}},
 			},
 		},
 	}
@@ -546,7 +546,7 @@ func TestOutputDeviceForTesting_Log(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.o.Log(tt.args.l, tt.args.msg, tt.args.fields)
+			tt.o.LogWriter().Log(tt.args.l, tt.args.msg, tt.args.fields)
 			if gotConsoleOutput := tt.o.ConsoleOutput(); gotConsoleOutput != "" {
 				t.Errorf("OutputDeviceForTesting.ConsoleOutput() = %q, want %q", gotConsoleOutput, "")
 			}
