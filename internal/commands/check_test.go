@@ -418,10 +418,11 @@ func Test_check_Exec(t *testing.T) {
 		wantLogOutput     string
 	}{
 		{
-			name:              "do nothing",
-			c:                 newCheckCommand(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError)),
-			args:              args{[]string{"-topDir", topDirName, "-empty=false", "-gaps=false", "-integrity=false"}},
-			wantConsoleOutput: "",
+			name:            "do nothing",
+			c:               newCheckCommand(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError)),
+			args:            args{[]string{"-topDir", topDirName, "-empty=false", "-gaps=false", "-integrity=false"}},
+			wantErrorOutput: "You disabled all functionality for the command \"check\".\n",
+			wantLogOutput:   "level='warn' -empty='false' -gaps='false' -integrity='false' command='check' msg='the user disabled all functionality'\n",
 		},
 		{
 			name: "do something",
@@ -462,7 +463,8 @@ func Test_check_Exec(t *testing.T) {
 				"  no albums found",
 				"",
 			}, "\n"),
-			wantOk: true,
+			wantLogOutput: "level='info' -empty='true' -gaps='false' -integrity='false' command='check' msg='executing command'\n",
+			wantOk:        true,
 		},
 	}
 	for _, tt := range tests {

@@ -8,8 +8,6 @@ import (
 	"mp3/internal/files"
 	"os"
 	"sort"
-
-	"github.com/sirupsen/logrus"
 )
 
 type check struct {
@@ -60,14 +58,13 @@ func newCheckCommand(c *internal.Configuration, fSet *flag.FlagSet) *check {
 
 func (c *check) Exec(o internal.OutputBus, args []string) (ok bool) {
 	if s, argsOk := c.sf.ProcessArgs(o, args); argsOk {
-		// TODO [#77] replace o.OutputWriter() with o
-		ok = c.runCommand(o.OutputWriter(), s)
+		ok = c.runCommand(o, s)
 	}
 	return
 }
 
-func (c *check) logFields() logrus.Fields {
-	return logrus.Fields{
+func (c *check) logFields() map[string]interface{} {
+	return map[string]interface{}{
 		fkCommandName:           c.name(),
 		fkEmptyFoldersFlag:      *c.checkEmptyFolders,
 		fkGapAnalysisFlag:       *c.checkGapsInTrackNumbering,
@@ -124,20 +121,23 @@ func (a *artistWithIssues) hasIssues() bool {
 	return false
 }
 
-// TODO [#77] should use a second writer for error output; first writer is for console output
-func (c *check) runCommand(w io.Writer, s *files.Search) (ok bool) {
+func (c *check) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 	if !*c.checkEmptyFolders && !*c.checkGapsInTrackNumbering && !*c.checkIntegrity {
-		fmt.Fprintf(os.Stderr, internal.USER_SPECIFIED_NO_WORK, c.name())
-		logrus.WithFields(c.logFields()).Warn(internal.LW_NOTHING_TO_DO)
+		fmt.Fprintf(o.ErrorWriter(), internal.USER_SPECIFIED_NO_WORK, c.name())
+		o.Log(internal.WARN, internal.LW_NOTHING_TO_DO, c.logFields())
 	} else {
-		logrus.WithFields(c.logFields()).Info(internal.LI_EXECUTING_COMMAND)
-		artists, artistsWithEmptyIssues, analysisOk := c.performEmptyFolderAnalysis(w, s)
+		o.Log(internal.INFO, internal.LI_EXECUTING_COMMAND, c.logFields())
+		// TODO [#77] use OutputBus here
+		artists, artistsWithEmptyIssues, analysisOk := c.performEmptyFolderAnalysis(o.OutputWriter(), s)
 		if analysisOk {
 			artists, ok = c.filterArtists(s, artists)
 			if ok {
-				artistsWithGaps := c.performGapAnalysis(w, artists)
-				artistsWithIntegrityIssues := c.performIntegrityCheck(w, artists)
-				reportResults(w, artistsWithEmptyIssues, artistsWithGaps, artistsWithIntegrityIssues)
+				// TODO [#77] use OutputBus here
+				artistsWithGaps := c.performGapAnalysis(o.OutputWriter(), artists)
+				// TODO [#77] use OutputBus here
+				artistsWithIntegrityIssues := c.performIntegrityCheck(o.OutputWriter(), artists)
+				// TODO [#77] use OutputBus here
+				reportResults(o.OutputWriter(), artistsWithEmptyIssues, artistsWithGaps, artistsWithIntegrityIssues)
 			}
 		}
 	}
