@@ -127,8 +127,7 @@ func (c *check) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 		o.LogWriter().Log(internal.WARN, internal.LW_NOTHING_TO_DO, c.logFields())
 	} else {
 		o.LogWriter().Log(internal.INFO, internal.LI_EXECUTING_COMMAND, c.logFields())
-		// TODO [#77] use OutputBus here
-		artists, artistsWithEmptyIssues, analysisOk := c.performEmptyFolderAnalysis(o.ConsoleWriter(), s)
+		artists, artistsWithEmptyIssues, analysisOk := c.performEmptyFolderAnalysis(o, s)
 		if analysisOk {
 			artists, ok = c.filterArtists(s, artists)
 			if ok {
@@ -328,13 +327,14 @@ func sortArtists(filteredArtists []*artistWithIssues) {
 }
 
 // TODO [#77] need OutputBus for errors
-func (c *check) performEmptyFolderAnalysis(w io.Writer, s *files.Search) (artists []*files.Artist, conflictedArtists []*artistWithIssues, ok bool) {
+func (c *check) performEmptyFolderAnalysis(o internal.OutputBus, s *files.Search) (artists []*files.Artist, conflictedArtists []*artistWithIssues, ok bool) {
 	if !*c.checkEmptyFolders {
 		ok = true
 		return
 	}
 	var loadedOk bool
-	artists, loadedOk = s.LoadUnfilteredData(os.Stderr)
+	// TODO [#77] use OutputBus
+	artists, loadedOk = s.LoadUnfilteredData(o.ErrorWriter())
 	if !loadedOk {
 		return
 	}
@@ -354,7 +354,7 @@ func (c *check) performEmptyFolderAnalysis(w io.Writer, s *files.Search) (artist
 		}
 	}
 	if !issuesFound {
-		fmt.Fprintln(w, "Empty Folder Analysis: no empty folders found")
+		fmt.Fprintln(o.ConsoleWriter(), "Empty Folder Analysis: no empty folders found")
 	}
 	ok = true
 	return

@@ -62,7 +62,9 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 		c                   *check
 		args                args
 		wantArtists         []*files.Artist
-		wantW               string
+		wantConsoleOutput   string
+		wantErrorOutput     string
+		wantLogOutput       string
 		wantFilteredArtists []*artistWithIssues
 		wantOk              bool
 	}{
@@ -78,7 +80,7 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 			args:                args{s: files.CreateSearchForTesting(goodFolderDirName)},
 			wantArtists:         []*files.Artist{goodArtist},
 			wantFilteredArtists: nil,
-			wantW:               "Empty Folder Analysis: no empty folders found\n",
+			wantConsoleOutput:   "Empty Folder Analysis: no empty folders found\n",
 			wantOk:              true,
 		},
 		{
@@ -137,8 +139,8 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := &bytes.Buffer{}
-			gotArtists, gotArtistsWithIssues, gotOk := tt.c.performEmptyFolderAnalysis(w, tt.args.s)
+			o := internal.NewOutputDeviceForTesting()
+			gotArtists, gotArtistsWithIssues, gotOk := tt.c.performEmptyFolderAnalysis(o, tt.args.s)
 			if !reflect.DeepEqual(gotArtists, tt.wantArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotArtists, tt.wantArtists)
 			} else {
@@ -150,8 +152,14 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if gotW := w.String(); gotW != tt.wantW {
-				t.Errorf("%s = %v, want %v", fnName, gotW, tt.wantW)
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("%s console output = %v, want %v", fnName, gotConsoleOutput, tt.wantConsoleOutput)
+			}
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("%s error output = %v, want %v", fnName, gotErrorOutput, tt.wantErrorOutput)
+			}
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("%s log output = %v, want %v", fnName, gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}
