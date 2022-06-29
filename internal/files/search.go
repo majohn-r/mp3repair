@@ -104,7 +104,7 @@ func (s *Search) FilterArtists(unfilteredArtists []*Artist) (artists []*Artist, 
 		}
 		ok = len(artists) != 0
 		if !ok {
-			logrus.WithFields(s.LogFields(false)).Warn(internal.LW_NO_ARTIST_DIRECTORIES)
+			logrus.WithFields(s.LogFields(true)).Warn(internal.LW_NO_ARTIST_DIRECTORIES)
 		}
 	}
 	return
@@ -112,9 +112,8 @@ func (s *Search) FilterArtists(unfilteredArtists []*Artist) (artists []*Artist, 
 
 // LoadData collects the artists, albums, and mp3 tracks, honoring all the
 // search parameters.
-// TODO [#81] should return bool, false on returning no artists
 // TODO [#77] need OutputBus
-func (s *Search) LoadData(wErr io.Writer) (artists []*Artist) {
+func (s *Search) LoadData(wErr io.Writer) (artists []*Artist, ok bool) {
 	logrus.WithFields(s.LogFields(true)).Info(internal.LI_READING_FILTERED_FILES)
 	if artistFiles, ok := s.contents(wErr); ok {
 		for _, artistFile := range artistFiles {
@@ -147,6 +146,10 @@ func (s *Search) LoadData(wErr io.Writer) (artists []*Artist) {
 				artists = append(artists, artist)
 			}
 		}
+	}
+	ok = len(artists) != 0
+	if !ok {
+		logrus.WithFields(s.LogFields(true)).Warn(internal.LW_NO_ARTIST_DIRECTORIES)
 	}
 	return
 }

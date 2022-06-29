@@ -266,7 +266,7 @@ func Test_getAlbumPaths(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
 	s := files.CreateFilteredSearchForTesting(topDir, "^.*$", "^.*$")
-	a := s.LoadData(os.Stderr)
+	a, _ := s.LoadData(os.Stderr)
 	var tSlice []*files.Track
 	for _, artist := range a {
 		for _, album := range artist.Albums() {

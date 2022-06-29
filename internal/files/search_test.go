@@ -70,6 +70,7 @@ func TestSearch_FilterArtists(t *testing.T) {
 	realFlagSet := flag.NewFlagSet("real", flag.ContinueOnError)
 	realS, _ := NewSearchFlags(internal.EmptyConfiguration(), realFlagSet).ProcessArgs(
 		internal.NewOutputDeviceForTesting(), []string{"-topDir", topDir})
+	realArtists, _ := realS.LoadData(os.Stderr)
 	overFilteredS, _ := NewSearchFlags(internal.EmptyConfiguration(),
 		flag.NewFlagSet("overFiltered", flag.ContinueOnError)).ProcessArgs(
 		internal.NewOutputDeviceForTesting(), []string{"-topDir", topDir, "-artistFilter", "^Filter all out$"})
@@ -88,7 +89,7 @@ func TestSearch_FilterArtists(t *testing.T) {
 			name:        "default",
 			s:           realS,
 			args:        args{unfilteredArtists: a},
-			wantArtists: realS.LoadData(os.Stderr),
+			wantArtists: realArtists,
 			wantOk:      true,
 		},
 		{
@@ -130,16 +131,19 @@ func TestSearch_LoadData(t *testing.T) {
 		s           *Search
 		wantArtists []*Artist
 		wantWErr    string
+		wantOk      bool
 	}{
 		{
 			name:        "read all",
 			s:           CreateFilteredSearchForTesting(topDir, "^.*$", "^.*$"),
 			wantArtists: CreateAllArtistsForTesting(topDir, false),
+			wantOk:      true,
 		},
 		{
 			name:        "read with filtering",
 			s:           CreateFilteredSearchForTesting(topDir, "^.*[13579]$", "^.*[02468]$"),
 			wantArtists: CreateAllOddArtistsWithEvenAlbumsForTesting(topDir),
+			wantOk:      true,
 		},
 		{
 			name: "read with all artists filtered out",
@@ -153,11 +157,15 @@ func TestSearch_LoadData(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			wErr := &bytes.Buffer{}
-			if gotArtists := tt.s.LoadData(wErr); !reflect.DeepEqual(gotArtists, tt.wantArtists) {
+			gotArtists, gotOk := tt.s.LoadData(wErr)
+			if !reflect.DeepEqual(gotArtists, tt.wantArtists) {
 				t.Errorf("Search.LoadData() = %v, want %v", gotArtists, tt.wantArtists)
 			}
 			if gotWErr := wErr.String(); gotWErr != tt.wantWErr {
 				t.Errorf("Search.LoadData() = %v, want %v", gotWErr, tt.wantWErr)
+			}
+			if gotOk != tt.wantOk {
+				t.Errorf("Search.LoadData() ok = %v, want %v", gotOk, tt.wantOk)
 			}
 		})
 	}

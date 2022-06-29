@@ -65,21 +65,24 @@ func (r *repair) logFields() logrus.Fields {
 }
 
 // TODO [#77] need 2nd writer
-func (r *repair) runCommand(w io.Writer, s *files.Search) {
+func (r *repair) runCommand(w io.Writer, s *files.Search) (ok bool) {
 	logrus.WithFields(r.logFields()).Info(internal.LI_EXECUTING_COMMAND)
-	artists := s.LoadData(os.Stderr)
-	files.UpdateTracks(artists, files.RawReadTags)
-	tracksWithConflicts := findConflictedTracks(artists)
-	if len(tracksWithConflicts) == 0 {
-		fmt.Fprintln(w, noProblemsFound)
-	} else {
-		if *r.dryRun {
-			reportTracks(w, tracksWithConflicts)
+	artists, ok := s.LoadData(os.Stderr)
+	if ok {
+		files.UpdateTracks(artists, files.RawReadTags)
+		tracksWithConflicts := findConflictedTracks(artists)
+		if len(tracksWithConflicts) == 0 {
+			fmt.Fprintln(w, noProblemsFound)
 		} else {
-			r.createBackups(w, tracksWithConflicts)
-			r.fixTracks(w, tracksWithConflicts)
+			if *r.dryRun {
+				reportTracks(w, tracksWithConflicts)
+			} else {
+				r.createBackups(w, tracksWithConflicts)
+				r.fixTracks(w, tracksWithConflicts)
+			}
 		}
 	}
+	return
 }
 
 func findConflictedTracks(artists []*files.Artist) []*files.Track {

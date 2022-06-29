@@ -171,7 +171,7 @@ func Test_filterArtists(t *testing.T) {
 	}
 	searchStruct := files.CreateSearchForTesting(topDirName)
 	fullArtists, _ := searchStruct.LoadUnfilteredData(os.Stderr)
-	filteredArtists := searchStruct.LoadData(os.Stderr)
+	filteredArtists, _ := searchStruct.LoadData(os.Stderr)
 	type args struct {
 		s       *files.Search
 		artists []*files.Artist
@@ -181,53 +181,65 @@ func Test_filterArtists(t *testing.T) {
 		c                   *check
 		args                args
 		wantFilteredArtists []*files.Artist
+		wantOk              bool
 	}{
 		{
-			name: "neither gap analysis nor integrity enabled",
-			c:    &check{checkGapsInTrackNumbering: &fFlag, checkIntegrity: &fFlag},
-			args: args{},
+			name:   "neither gap analysis nor integrity enabled",
+			c:      &check{checkGapsInTrackNumbering: &fFlag, checkIntegrity: &fFlag},
+			args:   args{s: nil, artists: nil},
+			wantOk: true,
 		},
 		{
 			name:                "only gap analysis enabled, no artists supplied",
 			c:                   &check{checkGapsInTrackNumbering: &tFlag, checkIntegrity: &fFlag},
 			args:                args{s: searchStruct},
 			wantFilteredArtists: filteredArtists,
+			wantOk:              true,
 		},
 		{
 			name:                "only gap analysis enabled, artists supplied",
 			c:                   &check{checkGapsInTrackNumbering: &tFlag, checkIntegrity: &fFlag},
 			args:                args{s: searchStruct, artists: fullArtists},
 			wantFilteredArtists: filteredArtists,
+			wantOk:              true,
 		},
 		{
 			name:                "only integrity check enabled, no artists supplied",
 			c:                   &check{checkGapsInTrackNumbering: &fFlag, checkIntegrity: &tFlag},
 			args:                args{s: searchStruct},
 			wantFilteredArtists: filteredArtists,
+			wantOk:              true,
 		},
 		{
 			name:                "only integrity check enabled, artists supplied",
 			c:                   &check{checkGapsInTrackNumbering: &fFlag, checkIntegrity: &tFlag},
 			args:                args{s: searchStruct, artists: fullArtists},
 			wantFilteredArtists: filteredArtists,
+			wantOk:              true,
 		},
 		{
 			name:                "gap analysis and integrity check enabled, no artists supplied",
 			c:                   &check{checkGapsInTrackNumbering: &tFlag, checkIntegrity: &tFlag},
 			args:                args{s: searchStruct},
 			wantFilteredArtists: filteredArtists,
+			wantOk:              true,
 		},
 		{
 			name:                "gap analysis and integrity check enabled, artists supplied",
 			c:                   &check{checkGapsInTrackNumbering: &tFlag, checkIntegrity: &tFlag},
 			args:                args{s: searchStruct, artists: fullArtists},
 			wantFilteredArtists: filteredArtists,
+			wantOk:              true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotFilteredArtists := tt.c.filterArtists(tt.args.s, tt.args.artists); !reflect.DeepEqual(gotFilteredArtists, tt.wantFilteredArtists) {
+			gotFilteredArtists, gotOk := tt.c.filterArtists(tt.args.s, tt.args.artists)
+			if !reflect.DeepEqual(gotFilteredArtists, tt.wantFilteredArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotFilteredArtists, tt.wantFilteredArtists)
+			}
+			if gotOk != tt.wantOk {
+				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 		})
 	}

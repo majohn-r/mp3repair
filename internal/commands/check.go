@@ -133,11 +133,12 @@ func (c *check) runCommand(w io.Writer, s *files.Search) (ok bool) {
 		logrus.WithFields(c.logFields()).Info(internal.LI_EXECUTING_COMMAND)
 		artists, artistsWithEmptyIssues, analysisOk := c.performEmptyFolderAnalysis(w, s)
 		if analysisOk {
-			artists = c.filterArtists(s, artists)
-			artistsWithGaps := c.performGapAnalysis(w, artists)
-			artistsWithIntegrityIssues := c.performIntegrityCheck(w, artists)
-			reportResults(w, artistsWithEmptyIssues, artistsWithGaps, artistsWithIntegrityIssues)
-			ok = true
+			artists, ok = c.filterArtists(s, artists)
+			if ok {
+				artistsWithGaps := c.performGapAnalysis(w, artists)
+				artistsWithIntegrityIssues := c.performIntegrityCheck(w, artists)
+				reportResults(w, artistsWithEmptyIssues, artistsWithGaps, artistsWithIntegrityIssues)
+			}
 		}
 	}
 	return
@@ -220,17 +221,17 @@ func merge(sets [][]*artistWithIssues) []*artistWithIssues {
 }
 
 // TODO [#77] need OutputBus
-// TODO [#81] return bool status
-func (c *check) filterArtists(s *files.Search, artists []*files.Artist) (filteredArtists []*files.Artist) {
+func (c *check) filterArtists(s *files.Search, artists []*files.Artist) (filteredArtists []*files.Artist, ok bool) {
 	if *c.checkGapsInTrackNumbering || *c.checkIntegrity {
 		if len(artists) == 0 {
-			filteredArtists = s.LoadData(os.Stderr)
+			filteredArtists, ok = s.LoadData(os.Stderr)
 		} else {
 			// var searchOk bool
-			filteredArtists, _ = s.FilterArtists(artists)
+			filteredArtists, ok = s.FilterArtists(artists)
 		}
 	} else {
 		filteredArtists = artists
+		ok = true
 	}
 	return
 }

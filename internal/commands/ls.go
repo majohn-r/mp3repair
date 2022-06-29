@@ -75,10 +75,8 @@ func newLsCommand(c *internal.Configuration, fSet *flag.FlagSet) *ls {
 
 func (l *ls) Exec(o internal.OutputBus, args []string) (ok bool) {
 	if s, argsOk := l.sf.ProcessArgs(o, args); argsOk {
-		// TODO [#82] return bool status
 		// TODO [#77] replace o.OutputWriter() with o
-		l.runCommand(o.OutputWriter(), s)
-		ok = true
+		ok = l.runCommand(o.OutputWriter(), s)
 	}
 	return
 }
@@ -95,20 +93,23 @@ func (l *ls) logFields() logrus.Fields {
 }
 
 // TODO [#77] should use 2nd writer for error output
-func (l *ls) runCommand(w io.Writer, s *files.Search) {
+func (l *ls) runCommand(w io.Writer, s *files.Search) (ok bool) {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
 		fmt.Fprintf(os.Stderr, internal.USER_SPECIFIED_NO_WORK, l.name())
 		logrus.WithFields(l.logFields()).Warn(internal.LW_NOTHING_TO_DO)
-	} else {
-		logrus.WithFields(l.logFields()).Info(internal.LI_EXECUTING_COMMAND)
-		if *l.includeTracks {
-			if l.validateTrackSorting() {
-				logrus.WithFields(l.logFields()).Info(internal.LI_PARAMETERS_OVERRIDDEN)
-			}
+		return
+	}
+	logrus.WithFields(l.logFields()).Info(internal.LI_EXECUTING_COMMAND)
+	if *l.includeTracks {
+		if l.validateTrackSorting() {
+			logrus.WithFields(l.logFields()).Info(internal.LI_PARAMETERS_OVERRIDDEN)
 		}
-		artists := s.LoadData(os.Stderr)
+	}
+	artists, ok := s.LoadData(os.Stderr)
+	if ok {
 		l.outputArtists(w, artists)
 	}
+	return
 }
 
 func (l *ls) outputArtists(w io.Writer, artists []*files.Artist) {
