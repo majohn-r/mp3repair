@@ -51,8 +51,7 @@ func newRepairCommand(c *internal.Configuration, fSet *flag.FlagSet) *repair {
 func (r *repair) Exec(o internal.OutputBus, args []string) (ok bool) {
 	if s, argsOk := r.sf.ProcessArgs(o, args); argsOk {
 		// TODO [#77] replace o.OutputWriter() with o
-		r.runCommand(o.OutputWriter(), s)
-		ok = true
+		ok = r.runCommand(o.OutputWriter(), s)
 	}
 	return
 }
