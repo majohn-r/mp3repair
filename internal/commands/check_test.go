@@ -274,21 +274,23 @@ func Test_check_performGapAnalysis(t *testing.T) {
 		name                  string
 		c                     *check
 		args                  args
-		wantW                 string
+		wantConsoleOutput     string
+		wantErrorOutput       string
+		wantLogOutput         string
 		wantConflictedArtists []*artistWithIssues
 	}{
-		{name: "no analysis", c: &check{checkGapsInTrackNumbering: &fFlag}, args: args{}, wantW: ""},
+		{name: "no analysis", c: &check{checkGapsInTrackNumbering: &fFlag}, args: args{}, wantConsoleOutput: ""},
 		{
-			name:  "no content",
-			c:     &check{checkGapsInTrackNumbering: &tFlag},
-			args:  args{},
-			wantW: "Check Gaps: no gaps found\n",
+			name:              "no content",
+			c:                 &check{checkGapsInTrackNumbering: &tFlag},
+			args:              args{},
+			wantConsoleOutput: "Check Gaps: no gaps found\n",
 		},
 		{
-			name:  "good artist",
-			c:     &check{checkGapsInTrackNumbering: &tFlag},
-			args:  args{artists: []*files.Artist{goodArtist}},
-			wantW: "Check Gaps: no gaps found\n",
+			name:              "good artist",
+			c:                 &check{checkGapsInTrackNumbering: &tFlag},
+			args:              args{artists: []*files.Artist{goodArtist}},
+			wantConsoleOutput: "Check Gaps: no gaps found\n",
 		},
 		{
 			name: "bad artist",
@@ -316,10 +318,16 @@ func Test_check_performGapAnalysis(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := &bytes.Buffer{}
-			gotConflictedArtists := filterAndSortArtists(tt.c.performGapAnalysis(w, tt.args.artists))
-			if gotW := w.String(); gotW != tt.wantW {
-				t.Errorf("check.performGapAnalysis() = %v, want %v", gotW, tt.wantW)
+			o := internal.NewOutputDeviceForTesting()
+			gotConflictedArtists := filterAndSortArtists(tt.c.performGapAnalysis(o, tt.args.artists))
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("check.performGapAnalysis() console output = %v, want %v", gotConsoleOutput, tt.wantConsoleOutput)
+			}
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("check.performGapAnalysis() error output = %v, want %v", gotErrorOutput, tt.wantErrorOutput)
+			}
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("check.performGapAnalysis() log output = %v, want %v", gotLogOutput, tt.wantLogOutput)
 			}
 			if !reflect.DeepEqual(gotConflictedArtists, tt.wantConflictedArtists) {
 				t.Errorf("check.performGapAnalysis() = %v, want %v", gotConflictedArtists, tt.wantConflictedArtists)

@@ -131,8 +131,7 @@ func (c *check) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 		if analysisOk {
 			artists, ok = c.filterArtists(s, artists)
 			if ok {
-				// TODO [#77] use OutputBus here
-				artistsWithGaps := c.performGapAnalysis(o.ConsoleWriter(), artists)
+				artistsWithGaps := c.performGapAnalysis(o, artists)
 				// TODO [#77] use OutputBus here
 				artistsWithIntegrityIssues := c.performIntegrityCheck(o.ConsoleWriter(), artists)
 				// TODO [#77] use OutputBus here
@@ -400,7 +399,7 @@ func (c *check) performIntegrityCheck(w io.Writer, artists []*files.Artist) []*a
 	return conflictedArtists
 }
 
-func (c *check) performGapAnalysis(w io.Writer, artists []*files.Artist) []*artistWithIssues {
+func (c *check) performGapAnalysis(o internal.OutputBus, artists []*files.Artist) []*artistWithIssues {
 	conflictedArtists := make([]*artistWithIssues, 0)
 	if *c.checkGapsInTrackNumbering {
 		conflictedArtists = createBareConflictedIssues(artists)
@@ -442,7 +441,7 @@ func (c *check) performGapAnalysis(w io.Writer, artists []*files.Artist) []*arti
 			}
 		}
 		if !issuesFound {
-			fmt.Fprintln(w, "Check Gaps: no gaps found")
+			fmt.Fprintln(o.ConsoleWriter(), "Check Gaps: no gaps found")
 		}
 	}
 	return conflictedArtists
