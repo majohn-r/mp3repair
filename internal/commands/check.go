@@ -128,16 +128,16 @@ func (c *check) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 	} else {
 		o.Log(internal.INFO, internal.LI_EXECUTING_COMMAND, c.logFields())
 		// TODO [#77] use OutputBus here
-		artists, artistsWithEmptyIssues, analysisOk := c.performEmptyFolderAnalysis(o.OutputWriter(), s)
+		artists, artistsWithEmptyIssues, analysisOk := c.performEmptyFolderAnalysis(o.ConsoleWriter(), s)
 		if analysisOk {
 			artists, ok = c.filterArtists(s, artists)
 			if ok {
 				// TODO [#77] use OutputBus here
-				artistsWithGaps := c.performGapAnalysis(o.OutputWriter(), artists)
+				artistsWithGaps := c.performGapAnalysis(o.ConsoleWriter(), artists)
 				// TODO [#77] use OutputBus here
-				artistsWithIntegrityIssues := c.performIntegrityCheck(o.OutputWriter(), artists)
+				artistsWithIntegrityIssues := c.performIntegrityCheck(o.ConsoleWriter(), artists)
 				// TODO [#77] use OutputBus here
-				reportResults(o.OutputWriter(), artistsWithEmptyIssues, artistsWithGaps, artistsWithIntegrityIssues)
+				reportResults(o.ConsoleWriter(), artistsWithEmptyIssues, artistsWithGaps, artistsWithIntegrityIssues)
 			}
 		}
 	}

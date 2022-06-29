@@ -204,25 +204,25 @@ func SecureAbsolutePathForTesting(path string) string {
 // testing solution
 
 type OutputDeviceForTesting struct {
-	wOut *bytes.Buffer
-	wErr *bytes.Buffer
-	wLog *bytes.Buffer
+	consoleOut *bytes.Buffer
+	errorOut   *bytes.Buffer
+	logOut     *bytes.Buffer
 }
 
 func NewOutputDeviceForTesting() *OutputDeviceForTesting {
 	return &OutputDeviceForTesting{
-		wOut: &bytes.Buffer{},
-		wErr: &bytes.Buffer{},
-		wLog: &bytes.Buffer{},
+		consoleOut: &bytes.Buffer{},
+		errorOut:   &bytes.Buffer{},
+		logOut:     &bytes.Buffer{},
 	}
 }
 
-func (o *OutputDeviceForTesting) OutputWriter() io.Writer {
-	return o.wOut
+func (o *OutputDeviceForTesting) ConsoleWriter() io.Writer {
+	return o.consoleOut
 }
 
 func (o *OutputDeviceForTesting) ErrorWriter() io.Writer {
-	return o.wErr
+	return o.errorOut
 }
 
 func (o *OutputDeviceForTesting) Log(l LogLevel, msg string, fields map[string]interface{}) {
@@ -242,17 +242,17 @@ func (o *OutputDeviceForTesting) Log(l LogLevel, msg string, fields map[string]i
 	default:
 		level = fmt.Sprintf("level unknown (%d)", l)
 	}
-	fmt.Fprintf(o.wLog, "level='%s' %s msg='%s'\n", level, strings.Join(parts, " "), msg)
+	fmt.Fprintf(o.logOut, "level='%s' %s msg='%s'\n", level, strings.Join(parts, " "), msg)
 }
 
 func (o *OutputDeviceForTesting) ConsoleOutput() string {
-	return o.wOut.String()
+	return o.consoleOut.String()
 }
 
 func (o *OutputDeviceForTesting) ErrorOutput() string {
-	return o.wErr.String()
+	return o.errorOut.String()
 }
 
 func (o *OutputDeviceForTesting) LogOutput() string {
-	return o.wLog.String()
+	return o.logOut.String()
 }

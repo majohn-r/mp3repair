@@ -32,7 +32,7 @@ func newPostRepair(c *internal.Configuration, fSet *flag.FlagSet) CommandProcess
 func (p *postrepair) Exec(o internal.OutputBus, args []string) (ok bool) {
 	if s, argsOk := p.sf.ProcessArgs(o, args); argsOk {
 		// TODO [#77] replace o.OutputWriter() with o
-		ok = p.runCommand(o.OutputWriter(), s)
+		ok = p.runCommand(o.ConsoleWriter(), s)
 	}
 	return
 }

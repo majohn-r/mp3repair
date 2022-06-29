@@ -76,7 +76,7 @@ func newLsCommand(c *internal.Configuration, fSet *flag.FlagSet) *ls {
 func (l *ls) Exec(o internal.OutputBus, args []string) (ok bool) {
 	if s, argsOk := l.sf.ProcessArgs(o, args); argsOk {
 		// TODO [#77] replace o.OutputWriter() with o
-		ok = l.runCommand(o.OutputWriter(), s)
+		ok = l.runCommand(o.ConsoleWriter(), s)
 	}
 	return
 }

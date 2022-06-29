@@ -19,8 +19,8 @@ func TestNewOutputDevice(t *testing.T) {
 		{
 			name:        "normal",
 			want:        &OutputDevice{wOut: os.Stdout, wErr: os.Stderr},
-			wantWStdout: "hello to stdout",
-			wantWStderr: "hello to stderr",
+			wantWStdout: "hello to console",
+			wantWStderr: "hello to error",
 		},
 	}
 	for _, tt := range tests {
@@ -31,8 +31,8 @@ func TestNewOutputDevice(t *testing.T) {
 			wStdout := &bytes.Buffer{}
 			wStderr := &bytes.Buffer{}
 			testDevice := NewOutputDevice(wStdout, wStderr)
-			fmt.Fprint(testDevice.OutputWriter(), "hello to stdout")
-			fmt.Fprintf(testDevice.ErrorWriter(), "hello to stderr")
+			fmt.Fprint(testDevice.ConsoleWriter(), "hello to console")
+			fmt.Fprintf(testDevice.ErrorWriter(), "hello to error")
 			if gotWStdout := wStdout.String(); gotWStdout != tt.wantWStdout {
 				t.Errorf("NewOutputDevice() = %v, want %v", gotWStdout, tt.wantWStdout)
 			}
@@ -52,7 +52,7 @@ func TestNewOutputDevice(t *testing.T) {
 	}
 }
 
-func TestOutputDevice_OutputWriter(t *testing.T) {
+func TestOutputDevice_ConsoleWriter(t *testing.T) {
 	tests := []struct {
 		name string
 		o    *OutputDevice
@@ -66,8 +66,8 @@ func TestOutputDevice_OutputWriter(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.o.OutputWriter(); got != tt.want {
-				t.Errorf("OutputDevice.OutputWriter() = %v, want %v", got, tt.want)
+			if got := tt.o.ConsoleWriter(); got != tt.want {
+				t.Errorf("OutputDevice.ConsoleWriter() = %v, want %v", got, tt.want)
 			}
 		})
 	}

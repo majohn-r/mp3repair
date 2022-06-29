@@ -19,7 +19,7 @@ const (
 type LogLevel int
 
 type OutputBus interface {
-	OutputWriter() io.Writer
+	ConsoleWriter() io.Writer
 	ErrorWriter() io.Writer
 	Log(l LogLevel, msg string, fields map[string]interface{})
 }
@@ -36,7 +36,7 @@ func NewOutputDevice(wStdout io.Writer, wStderr io.Writer) *OutputDevice {
 	}
 }
 
-func (o *OutputDevice) OutputWriter() io.Writer {
+func (o *OutputDevice) ConsoleWriter() io.Writer {
 	return o.wOut
 }
 
