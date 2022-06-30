@@ -3,13 +3,10 @@ package commands
 import (
 	"flag"
 	"fmt"
-	"io"
 	"mp3/internal"
 	"mp3/internal/files"
 	"os"
 	"sort"
-
-	"github.com/sirupsen/logrus"
 )
 
 type postrepair struct {
@@ -31,20 +28,18 @@ func newPostRepair(c *internal.Configuration, fSet *flag.FlagSet) CommandProcess
 
 func (p *postrepair) Exec(o internal.OutputBus, args []string) (ok bool) {
 	if s, argsOk := p.sf.ProcessArgs(o, args); argsOk {
-		// TODO [#77] replace o.OutputWriter() with o
-		ok = p.runCommand(o.ConsoleWriter(), s)
+		ok = p.runCommand(o, s)
 	}
 	return
 }
 
-func (p *postrepair) logFields() logrus.Fields {
-	return logrus.Fields{fkCommandName: p.name()}
+func (p *postrepair) logFields() map[string]interface{} {
+	return map[string]interface{}{fkCommandName: p.name()}
 }
 
-// TODO [#77] need 2nd writer
-func (p *postrepair) runCommand(w io.Writer, s *files.Search) (ok bool) {
-	logrus.WithFields(p.logFields()).Info(internal.LI_EXECUTING_COMMAND)
-	artists, ok := s.LoadData(os.Stderr)
+func (p *postrepair) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
+	o.LogWriter().Log(internal.INFO, internal.LI_EXECUTING_COMMAND, p.logFields())
+	artists, ok := s.LoadData(o.ErrorWriter())
 	if ok {
 		backups := make(map[string]*files.Album)
 		var backupDirectories []string
@@ -58,27 +53,26 @@ func (p *postrepair) runCommand(w io.Writer, s *files.Search) (ok bool) {
 			}
 		}
 		if len(backupDirectories) == 0 {
-			fmt.Fprintln(w, "There are no backup directories to delete")
+			fmt.Fprintln(o.ConsoleWriter(), "There are no backup directories to delete")
 		} else {
 			sort.Strings(backupDirectories)
 			for _, backupDirectory := range backupDirectories {
-				removeBackupDirectory(w, backupDirectory, backups[backupDirectory])
+				removeBackupDirectory(o, backupDirectory, backups[backupDirectory])
 			}
 		}
 	}
 	return
 }
 
-func removeBackupDirectory(w io.Writer, d string, a *files.Album) {
+func removeBackupDirectory(o internal.OutputBus, d string, a *files.Album) {
 	if err := os.RemoveAll(d); err != nil {
-		logrus.WithFields(logrus.Fields{
+		o.LogWriter().Log(internal.WARN, internal.LW_CANNOT_DELETE_DIRECTORY, map[string]interface{}{
 			internal.FK_DIRECTORY: d,
 			internal.FK_ERROR:     err,
-		}).Warn(internal.LW_CANNOT_DELETE_DIRECTORY)
-		// TODO [#77] should be stderr
-		fmt.Fprintf(w, internal.USER_CANNOT_DELETE_DIRECTORY, d, err)
+		})
+		fmt.Fprintf(o.ErrorWriter(), internal.USER_CANNOT_DELETE_DIRECTORY, d, err)
 	} else {
-		fmt.Fprintf(w, "The backup directory for artist %q album %q has been deleted\n",
+		fmt.Fprintf(o.ConsoleWriter(), "The backup directory for artist %q album %q has been deleted\n",
 			a.RecordingArtistName(), a.Name())
 	}
 }

@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"bytes"
 	"flag"
 	"mp3/internal"
 	"mp3/internal/files"
@@ -63,8 +62,7 @@ func Test_postrepair_Exec(t *testing.T) {
 			name: "handle bad common arguments",
 			p: newPostRepairCommand(
 				internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError)),
-			args:              args{args: []string{"-topDir", "non-existent directory"}},
-			wantConsoleOutput: "",
+			args: args{args: []string{"-topDir", "non-existent directory"}},
 		},
 		{
 			name: "handle normal processing with nothing to do",
@@ -72,6 +70,7 @@ func Test_postrepair_Exec(t *testing.T) {
 				internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError)),
 			args:              args{args: []string{"-topDir", topDirName}},
 			wantConsoleOutput: "There are no backup directories to delete\n",
+			wantLogOutput:     "level='info' command='postRepair' msg='executing command'\n",
 		},
 		{
 			name: "handle normal processing",
@@ -79,6 +78,7 @@ func Test_postrepair_Exec(t *testing.T) {
 				internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError)),
 			args:              args{args: []string{"-topDir", topDir2Name}},
 			wantConsoleOutput: "The backup directory for artist \"the artist\" album \"the album\" has been deleted\n",
+			wantLogOutput:     "level='info' command='postRepair' msg='executing command'\n",
 		},
 	}
 	for _, tt := range tests {
@@ -86,13 +86,13 @@ func Test_postrepair_Exec(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			tt.p.Exec(o, tt.args.args)
 			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("%s console output = %v, want %v", fnName, gotConsoleOutput, tt.wantConsoleOutput)
+				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
 			}
 			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("%s error output = %v, want %v", fnName, gotErrorOutput, tt.wantErrorOutput)
+				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
 			}
 			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("%s log output = %v, want %v", fnName, gotLogOutput, tt.wantLogOutput)
+				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}
@@ -131,27 +131,36 @@ func Test_removeBackupDirectory(t *testing.T) {
 		a *files.Album
 	}
 	tests := []struct {
-		name  string
-		args  args
-		wantW string
+		name              string
+		args              args
+		wantConsoleOutput string
+		wantErrorOutput   string
+		wantLogOutput     string
 	}{
 		{
-			name:  "error case",
-			args:  args{d: "dir/.", a: nil},
-			wantW: "The directory \"dir/.\" cannot be deleted: RemoveAll dir/.: invalid argument.\n",
+			name:            "error case",
+			args:            args{d: "dir/.", a: nil},
+			wantErrorOutput: "The directory \"dir/.\" cannot be deleted: RemoveAll dir/.: invalid argument.\n",
+			wantLogOutput:   "level='warn' directory='dir/.' error='RemoveAll dir/.: invalid argument' msg='cannot delete directory'\n",
 		},
 		{
-			name:  "normal case",
-			args:  args{d: backupDirectory, a: album},
-			wantW: "The backup directory for artist \"the artist\" album \"the album\" has been deleted\n",
+			name:              "normal case",
+			args:              args{d: backupDirectory, a: album},
+			wantConsoleOutput: "The backup directory for artist \"the artist\" album \"the album\" has been deleted\n",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := &bytes.Buffer{}
-			removeBackupDirectory(w, tt.args.d, tt.args.a)
-			if gotW := w.String(); gotW != tt.wantW {
-				t.Errorf("%s = %v, want %v", fnName, gotW, tt.wantW)
+			o := internal.NewOutputDeviceForTesting()
+			removeBackupDirectory(o, tt.args.d, tt.args.a)
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
+			}
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
+			}
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}
