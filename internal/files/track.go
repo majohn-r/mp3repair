@@ -206,6 +206,7 @@ func toTrackNumber(s string) (i int, err error) {
 }
 
 // SetTags sets track frame fields
+// TODO [#77] use OutputBus
 func (t *Track) SetTags(d *TaggedTrackData) {
 	if trackNumber, err := toTrackNumber(d.track); err != nil {
 		logrus.WithFields(logrus.Fields{
@@ -417,6 +418,7 @@ type empty struct{}
 
 var semaphores = make(chan empty, 20) // 20 is a typical limit for open files
 
+// TODO [#77] use OutputBus
 func (t *Track) readTags(reader func(string) (*TaggedTrackData, error)) {
 	if t.needsTaggedData() {
 		semaphores <- empty{} // block while full
@@ -464,6 +466,7 @@ func ParseTrackNameForTesting(name string) (simpleName string, trackNumber int) 
 	return
 }
 
+// TODO [#77] use OutputBus
 func parseTrackName(name string, album *Album, ext string) (simpleName string, trackNumber int, valid bool) {
 	if !trackNameRegex.MatchString(name) {
 		logrus.WithFields(logrus.Fields{

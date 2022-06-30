@@ -105,6 +105,7 @@ func InitLogging(o OutputBus) bool {
 	return true
 }
 
+// TODO [#87] replace with function calls
 type LogLevel int
 
 const (

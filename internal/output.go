@@ -16,6 +16,7 @@ type OutputDevice struct {
 	logWriter     Logger
 }
 
+// TODO [#86] os.Stderr and os.Stdout should be hardwired
 func NewOutputDevice(wStdout io.Writer, wStderr io.Writer) *OutputDevice {
 	return &OutputDevice{
 		consoleWriter: wStdout,

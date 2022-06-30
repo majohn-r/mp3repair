@@ -28,6 +28,7 @@ func NewArtist(n, p string) *Artist {
 	return &Artist{name: n, path: p}
 }
 
+// TODO [#77] use OutputBus
 func (a *Artist) contents(wErr io.Writer) ([]fs.FileInfo, bool) {
 	return readDirectory(wErr, a.path)
 }

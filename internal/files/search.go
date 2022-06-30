@@ -21,6 +21,7 @@ type Search struct {
 	artistFilter    *regexp.Regexp
 }
 
+// TODO [#77] use OutputBus
 func (s *Search) contents(wErr io.Writer) ([]fs.FileInfo, bool) {
 	return readDirectory(wErr, s.topDirectory)
 }
@@ -66,6 +67,7 @@ func (s *Search) LoadUnfilteredData(wErr io.Writer) (artists []*Artist, ok bool)
 }
 
 // LogFields returns an appropriate set of logrus fields
+// TODO [#77] return map[string]interface{}
 func (s *Search) LogFields(includeFilters bool) logrus.Fields {
 	if includeFilters {
 		return logrus.Fields{
@@ -173,6 +175,7 @@ func CreateFilteredSearchForTesting(topDir string, artistFilter string, albumFil
 	return s
 }
 
+// TODO [#77] use OutputBus
 func readDirectory(wErr io.Writer, dir string) (files []fs.FileInfo, ok bool) {
 	var err error
 	if files, err = ioutil.ReadDir(dir); err != nil {

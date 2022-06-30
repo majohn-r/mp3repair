@@ -36,6 +36,7 @@ func (a *Album) BackupDirectory() string {
 	return a.subDirectory(backupDirName)
 }
 
+// TODO [#77] use OutputBus
 func (a *Album) contents(wErr io.Writer) ([]fs.FileInfo, bool) {
 	return readDirectory(wErr, a.path)
 }

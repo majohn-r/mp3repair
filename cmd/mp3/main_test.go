@@ -45,6 +45,7 @@ func Test_run(t *testing.T) {
 		wantLogPrefix     string
 		wantLogSuffix     string
 	}{
+		// TODO [#85] need more tests: explicitly call ls, check, repair, postRepair
 		{
 			name:            "failure",
 			args:            args{cmdlineArgs: []string{"./mp3", "foo"}},
