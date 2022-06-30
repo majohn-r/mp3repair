@@ -3,10 +3,8 @@ package commands
 import (
 	"flag"
 	"fmt"
-	"io"
 	"mp3/internal"
 	"mp3/internal/files"
-	"os"
 	"sort"
 )
 
@@ -129,20 +127,18 @@ func (c *check) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 		o.LogWriter().Log(internal.INFO, internal.LI_EXECUTING_COMMAND, c.logFields())
 		artists, artistsWithEmptyIssues, analysisOk := c.performEmptyFolderAnalysis(o, s)
 		if analysisOk {
-			artists, ok = c.filterArtists(s, artists)
+			artists, ok = c.filterArtists(o, s, artists)
 			if ok {
 				artistsWithGaps := c.performGapAnalysis(o, artists)
-				// TODO [#77] use OutputBus here
-				artistsWithIntegrityIssues := c.performIntegrityCheck(o.ConsoleWriter(), artists)
-				// TODO [#77] use OutputBus here
-				reportResults(o.ConsoleWriter(), artistsWithEmptyIssues, artistsWithGaps, artistsWithIntegrityIssues)
+				artistsWithIntegrityIssues := c.performIntegrityCheck(o, artists)
+				reportResults(o, artistsWithEmptyIssues, artistsWithGaps, artistsWithIntegrityIssues)
 			}
 		}
 	}
 	return
 }
 
-func reportResults(w io.Writer, artistsWithIssues ...[]*artistWithIssues) {
+func reportResults(o internal.OutputBus, artistsWithIssues ...[]*artistWithIssues) {
 	var filteredArtistSets [][]*artistWithIssues
 	for _, artists := range artistsWithIssues {
 		filteredArtistSets = append(filteredArtistSets, filterAndSortArtists(artists))
@@ -150,19 +146,19 @@ func reportResults(w io.Writer, artistsWithIssues ...[]*artistWithIssues) {
 	filteredArtists := merge(filteredArtistSets)
 	if len(filteredArtists) > 0 {
 		for _, artist := range filteredArtists {
-			fmt.Fprintln(w, artist.name)
+			fmt.Fprintln(o.ConsoleWriter(), artist.name)
 			for _, issue := range artist.issues {
-				fmt.Fprintf(w, "  %s\n", issue)
+				fmt.Fprintf(o.ConsoleWriter(), "  %s\n", issue)
 			}
 			for _, album := range artist.albums {
-				fmt.Fprintf(w, "    %s\n", album.name)
+				fmt.Fprintf(o.ConsoleWriter(), "    %s\n", album.name)
 				for _, issue := range album.issues {
-					fmt.Fprintf(w, "      %s\n", issue)
+					fmt.Fprintf(o.ConsoleWriter(), "      %s\n", issue)
 				}
 				for _, track := range album.tracks {
-					fmt.Fprintf(w, "        %2d %s\n", track.number, track.name)
+					fmt.Fprintf(o.ConsoleWriter(), "        %2d %s\n", track.number, track.name)
 					for _, issue := range track.issues {
-						fmt.Fprintf(w, "          %s\n", issue)
+						fmt.Fprintf(o.ConsoleWriter(), "          %s\n", issue)
 					}
 				}
 			}
@@ -218,11 +214,11 @@ func merge(sets [][]*artistWithIssues) []*artistWithIssues {
 	return results
 }
 
-// TODO [#77] need OutputBus
-func (c *check) filterArtists(s *files.Search, artists []*files.Artist) (filteredArtists []*files.Artist, ok bool) {
+func (c *check) filterArtists(o internal.OutputBus, s *files.Search, artists []*files.Artist) (filteredArtists []*files.Artist, ok bool) {
 	if *c.checkGapsInTrackNumbering || *c.checkIntegrity {
 		if len(artists) == 0 {
-			filteredArtists, ok = s.LoadData(os.Stderr)
+			// TODO [#77] need to use OutputBus
+			filteredArtists, ok = s.LoadData(o.ErrorWriter())
 		} else {
 			// var searchOk bool
 			filteredArtists, ok = s.FilterArtists(artists)
@@ -325,7 +321,6 @@ func sortArtists(filteredArtists []*artistWithIssues) {
 	}
 }
 
-// TODO [#77] need OutputBus for errors
 func (c *check) performEmptyFolderAnalysis(o internal.OutputBus, s *files.Search) (artists []*files.Artist, conflictedArtists []*artistWithIssues, ok bool) {
 	if !*c.checkEmptyFolders {
 		ok = true
@@ -375,7 +370,7 @@ func createBareConflictedIssues(artists []*files.Artist) (conflictedArtists []*a
 	return
 }
 
-func (c *check) performIntegrityCheck(w io.Writer, artists []*files.Artist) []*artistWithIssues {
+func (c *check) performIntegrityCheck(o internal.OutputBus, artists []*files.Artist) []*artistWithIssues {
 	conflictedArtists := make([]*artistWithIssues, 0)
 	if *c.checkIntegrity {
 		files.UpdateTracks(artists, files.RawReadTags)
@@ -393,7 +388,7 @@ func (c *check) performIntegrityCheck(w io.Writer, artists []*files.Artist) []*a
 			}
 		}
 		if !issuesFound {
-			fmt.Fprintln(w, "Integrity Analysis: no issues found")
+			fmt.Fprintln(o.ConsoleWriter(), "Integrity Analysis: no issues found")
 		}
 	}
 	return conflictedArtists

@@ -1,7 +1,6 @@
 package commands
 
 import (
-	"bytes"
 	"flag"
 	"mp3/internal"
 	"mp3/internal/files"
@@ -190,6 +189,9 @@ func Test_filterArtists(t *testing.T) {
 		args                args
 		wantFilteredArtists []*files.Artist
 		wantOk              bool
+		wantConsoleOutput   string
+		wantErrorOutput     string
+		wantLogOutput       string
 	}{
 		{
 			name:   "neither gap analysis nor integrity enabled",
@@ -242,12 +244,22 @@ func Test_filterArtists(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFilteredArtists, gotOk := tt.c.filterArtists(tt.args.s, tt.args.artists)
+			o := internal.NewOutputDeviceForTesting()
+			gotFilteredArtists, gotOk := tt.c.filterArtists(o, tt.args.s, tt.args.artists)
 			if !reflect.DeepEqual(gotFilteredArtists, tt.wantFilteredArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotFilteredArtists, tt.wantFilteredArtists)
 			}
 			if gotOk != tt.wantOk {
 				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
+			}
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("%s console output = %v, want %v", fnName, gotConsoleOutput, tt.wantConsoleOutput)
+			}
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("%s error output = %v, want %v", fnName, gotErrorOutput, tt.wantErrorOutput)
+			}
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("%s log output = %v, want %v", fnName, gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}
@@ -367,11 +379,13 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 		name                  string
 		c                     *check
 		args                  args
-		wantW                 string
+		wantConsoleOutput     string
+		wantErrorOutput       string
+		wantLogOutput         string
 		wantConflictedArtists []*artistWithIssues
 	}{
 		{name: "degenerate case", c: &check{checkIntegrity: &fFlag}, args: args{}},
-		{name: "no artists", c: &check{checkIntegrity: &tFlag}, args: args{}, wantW: "Integrity Analysis: no issues found\n"},
+		{name: "no artists", c: &check{checkIntegrity: &tFlag}, args: args{}, wantConsoleOutput: "Integrity Analysis: no issues found\n"},
 		{
 			name: "meaningful case",
 			c:    &check{checkIntegrity: &tFlag},
@@ -397,10 +411,16 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := &bytes.Buffer{}
-			gotConflictedArtists := filterAndSortArtists(tt.c.performIntegrityCheck(w, tt.args.artists))
-			if gotW := w.String(); gotW != tt.wantW {
-				t.Errorf("%s = %v, want %v", fnName, gotW, tt.wantW)
+			o := internal.NewOutputDeviceForTesting()
+			gotConflictedArtists := filterAndSortArtists(tt.c.performIntegrityCheck(o, tt.args.artists))
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("%s console output = %v, want %v", fnName, gotConsoleOutput, tt.wantConsoleOutput)
+			}
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("%s error output = %v, want %v", fnName, gotErrorOutput, tt.wantErrorOutput)
+			}
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("%s log output = %v, want %v", fnName, gotLogOutput, tt.wantLogOutput)
 			}
 			if !reflect.DeepEqual(gotConflictedArtists, tt.wantConflictedArtists) {
 				t.Errorf("check.performGapAnalysis() = %v, want %v", gotConflictedArtists, tt.wantConflictedArtists)
@@ -857,9 +877,11 @@ func Test_reportResults(t *testing.T) {
 		artistsWithIssues [][]*artistWithIssues
 	}
 	tests := []struct {
-		name  string
-		args  args
-		wantW string
+		name              string
+		args              args
+		wantConsoleOutput string
+		wantErrorOutput   string
+		wantLogOutput     string
 	}{
 		{name: "degenerate case", args: args{}},
 		{
@@ -939,7 +961,7 @@ func Test_reportResults(t *testing.T) {
 					},
 				},
 			}},
-			wantW: strings.Join([]string{
+			wantConsoleOutput: strings.Join([]string{
 				"artist1",
 				"  bad artist",
 				"  really awful artist",
@@ -967,10 +989,16 @@ func Test_reportResults(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			w := &bytes.Buffer{}
-			reportResults(w, tt.args.artistsWithIssues...)
-			if gotW := w.String(); gotW != tt.wantW {
-				t.Errorf("reportResults() = %v, want %v", gotW, tt.wantW)
+			o := internal.NewOutputDeviceForTesting()
+			reportResults(o, tt.args.artistsWithIssues...)
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("reportResults() console output = %v, want %v", gotConsoleOutput, tt.wantConsoleOutput)
+			}
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("reportResults() error output = %v, want %v", gotErrorOutput, tt.wantErrorOutput)
+			}
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("reportResults() log output = %v, want %v", gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}
