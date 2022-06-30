@@ -1,8 +1,6 @@
 package internal
 
 import (
-	"bytes"
-	"fmt"
 	"io"
 	"os"
 	"reflect"
@@ -25,20 +23,10 @@ func TestNewOutputDevice(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewOutputDevice(os.Stdout, os.Stderr); !reflect.DeepEqual(got, tt.want) {
+			if got := NewOutputDevice(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewOutputDevice() = %v, want %v", got, tt.want)
 			}
-			wStdout := &bytes.Buffer{}
-			wStderr := &bytes.Buffer{}
-			testDevice := NewOutputDevice(wStdout, wStderr)
-			fmt.Fprint(testDevice.ConsoleWriter(), "hello to console")
-			fmt.Fprintf(testDevice.ErrorWriter(), "hello to error")
-			if gotWStdout := wStdout.String(); gotWStdout != tt.wantWStdout {
-				t.Errorf("NewOutputDevice() = %v, want %v", gotWStdout, tt.wantWStdout)
-			}
-			if gotWStderr := wStderr.String(); gotWStderr != tt.wantWStderr {
-				t.Errorf("NewOutputDevice() = %v, want %v", gotWStderr, tt.wantWStderr)
-			}
+			testDevice := NewOutputDevice()
 			var o interface{} = testDevice
 			if _, ok := o.(OutputBus); !ok {
 				t.Errorf("NewOutputDevice() does not implement OutputBus")
@@ -59,7 +47,7 @@ func TestOutputDevice_ConsoleWriter(t *testing.T) {
 	}{
 		{
 			name: "normal",
-			o:    NewOutputDevice(os.Stdout, os.Stderr),
+			o:    NewOutputDevice(),
 			want: os.Stdout,
 		},
 	}
@@ -80,7 +68,7 @@ func TestOutputDevice_ErrorWriter(t *testing.T) {
 	}{
 		{
 			name: "normal",
-			o:    NewOutputDevice(os.Stdout, os.Stderr),
+			o:    NewOutputDevice(),
 			want: os.Stderr,
 		},
 	}

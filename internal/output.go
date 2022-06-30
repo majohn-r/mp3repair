@@ -2,6 +2,7 @@ package internal
 
 import (
 	"io"
+	"os"
 )
 
 type OutputBus interface {
@@ -16,11 +17,10 @@ type OutputDevice struct {
 	logWriter     Logger
 }
 
-// TODO [#86] os.Stderr and os.Stdout should be hardwired
-func NewOutputDevice(wStdout io.Writer, wStderr io.Writer) *OutputDevice {
+func NewOutputDevice() *OutputDevice {
 	return &OutputDevice{
-		consoleWriter: wStdout,
-		errorWriter:   wStderr,
+		consoleWriter: os.Stdout,
+		errorWriter:   os.Stderr,
 		logWriter:     productionLogger{},
 	}
 }

@@ -18,7 +18,7 @@ var (
 
 func main() {
 	returnValue := 1
-	o := internal.NewOutputDevice(os.Stdout, os.Stderr)
+	o := internal.NewOutputDevice()
 	if internal.InitLogging(o) {
 		returnValue = run(o, os.Args)
 	}
