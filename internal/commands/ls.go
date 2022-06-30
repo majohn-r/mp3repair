@@ -90,13 +90,13 @@ func (l *ls) logFields() map[string]interface{} {
 func (l *ls) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
 		fmt.Fprintf(o.ErrorWriter(), internal.USER_SPECIFIED_NO_WORK, l.name())
-		o.LogWriter().Log(internal.WARN, internal.LW_NOTHING_TO_DO, l.logFields())
+		o.LogWriter().Warn(internal.LW_NOTHING_TO_DO, l.logFields())
 		return
 	}
-	o.LogWriter().Log(internal.INFO, internal.LI_EXECUTING_COMMAND, l.logFields())
+	o.LogWriter().Info(internal.LI_EXECUTING_COMMAND, l.logFields())
 	if *l.includeTracks {
 		if l.validateTrackSorting(o) {
-			o.LogWriter().Log(internal.INFO, internal.LI_PARAMETERS_OVERRIDDEN, l.logFields())
+			o.LogWriter().Info(internal.LI_PARAMETERS_OVERRIDDEN, l.logFields())
 		}
 	}
 	artists, ok := s.LoadData(o.ErrorWriter())
@@ -167,7 +167,7 @@ func (l *ls) validateTrackSorting(o internal.OutputBus) (ok bool) {
 		if !*l.includeAlbums {
 			fmt.Fprintf(o.ErrorWriter(), internal.USER_INVALID_SORTING_APPLIED,
 				fkTrackSortingFlag, *l.trackSorting, fkIncludeAlbumsFlag)
-			o.LogWriter().Log(internal.WARN, internal.LW_SORTING_OPTION_UNACCEPTABLE, map[string]interface{}{
+			o.LogWriter().Warn(internal.LW_SORTING_OPTION_UNACCEPTABLE, map[string]interface{}{
 				fkTrackSortingFlag:  *l.trackSorting,
 				fkIncludeAlbumsFlag: *l.includeAlbums,
 			})
@@ -178,7 +178,7 @@ func (l *ls) validateTrackSorting(o internal.OutputBus) (ok bool) {
 		ok = true
 	default:
 		fmt.Fprintf(o.ErrorWriter(), internal.USER_UNRECOGNIZED_VALUE, fkTrackSortingFlag, *l.trackSorting)
-		o.LogWriter().Log(internal.WARN, internal.LW_INVALID_FLAG_SETTING, map[string]interface{}{
+		o.LogWriter().Warn(internal.LW_INVALID_FLAG_SETTING, map[string]interface{}{
 			fkCommandName:      l.name(),
 			fkTrackSortingFlag: *l.trackSorting,
 		})

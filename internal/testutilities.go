@@ -233,24 +233,25 @@ type testLogger struct {
 	writer *bytes.Buffer
 }
 
-func (tl testLogger) Log(l LogLevel, msg string, fields map[string]interface{}) {
+func (tl testLogger) Info(msg string, fields map[string]interface{}) {
+	tl.log("info", msg, fields)
+}
+
+func (tl testLogger) log(level string, msg string, fields map[string]interface{}) {
 	var parts []string
 	for k, v := range fields {
 		parts = append(parts, fmt.Sprintf("%s='%v'", k, v))
 	}
 	sort.Strings(parts)
-	var level string
-	switch l {
-	case INFO:
-		level = "info"
-	case WARN:
-		level = "warn"
-	case ERROR:
-		level = "error"
-	default:
-		level = fmt.Sprintf("level unknown (%d)", l)
-	}
 	fmt.Fprintf(tl.writer, "level='%s' %s msg='%s'\n", level, strings.Join(parts, " "), msg)
+}
+
+func (tl testLogger) Warn(msg string, fields map[string]interface{}) {
+	tl.log("warn", msg, fields)
+}
+
+func (tl testLogger) Error(msg string, fields map[string]interface{}) {
+	tl.log("error", msg, fields)
 }
 
 func (o *OutputDeviceForTesting) ConsoleOutput() string {

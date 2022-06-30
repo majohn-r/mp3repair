@@ -59,7 +59,7 @@ func (r *repair) logFields() map[string]interface{} {
 }
 
 func (r *repair) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
-	o.LogWriter().Log(internal.INFO, internal.LI_EXECUTING_COMMAND, r.logFields())
+	o.LogWriter().Info(internal.LI_EXECUTING_COMMAND, r.logFields())
 	artists, ok := s.LoadData(o.ErrorWriter())
 	if ok {
 		files.UpdateTracks(artists, files.RawReadTags)
@@ -129,7 +129,7 @@ func (r *repair) fixTracks(o internal.OutputBus, tracks []*files.Track) {
 	for _, t := range tracks {
 		if err := t.EditTags(); err != nil {
 			fmt.Fprintf(o.ErrorWriter(), "An error occurred fixing track %q\n", t)
-			o.LogWriter().Log(internal.WARN, internal.LW_CANNOT_EDIT_TRACK, map[string]interface{}{
+			o.LogWriter().Warn(internal.LW_CANNOT_EDIT_TRACK, map[string]interface{}{
 				internal.LI_EXECUTING_COMMAND: r.name(),
 				internal.FK_DIRECTORY:         t.Directory(),
 				internal.FK_FILE_NAME:         t.FileName(),
@@ -159,7 +159,7 @@ func (r *repair) backupTrack(o internal.OutputBus, t *files.Track) {
 	if internal.DirExists(backupDir) && !internal.PlainFileExists(destinationPath) {
 		if err := t.Copy(destinationPath); err != nil {
 			fmt.Fprintf(o.ErrorWriter(), "The track %q cannot be backed up.\n", t)
-			o.LogWriter().Log(internal.WARN, internal.LW_CANNOT_COPY_FILE, map[string]interface{}{
+			o.LogWriter().Warn(internal.LW_CANNOT_COPY_FILE, map[string]interface{}{
 				fkCommandName:     r.name(),
 				fkSource:          t.Path(),
 				fkDestination:     destinationPath,
@@ -177,7 +177,7 @@ func (r *repair) makeBackupDirectories(o internal.OutputBus, paths []string) {
 		if !internal.DirExists(newPath) {
 			if err := internal.Mkdir(newPath); err != nil {
 				fmt.Fprintf(o.ErrorWriter(), internal.USER_CANNOT_CREATE_DIRECTORY, newPath, err)
-				o.LogWriter().Log(internal.WARN, internal.LW_CANNOT_CREATE_DIRECTORY, map[string]interface{}{
+				o.LogWriter().Warn(internal.LW_CANNOT_CREATE_DIRECTORY, map[string]interface{}{
 					fkCommandName:         r.name(),
 					internal.FK_DIRECTORY: newPath,
 					internal.FK_ERROR:     err,

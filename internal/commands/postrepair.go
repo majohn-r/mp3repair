@@ -38,7 +38,7 @@ func (p *postrepair) logFields() map[string]interface{} {
 }
 
 func (p *postrepair) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
-	o.LogWriter().Log(internal.INFO, internal.LI_EXECUTING_COMMAND, p.logFields())
+	o.LogWriter().Info(internal.LI_EXECUTING_COMMAND, p.logFields())
 	artists, ok := s.LoadData(o.ErrorWriter())
 	if ok {
 		backups := make(map[string]*files.Album)
@@ -66,7 +66,7 @@ func (p *postrepair) runCommand(o internal.OutputBus, s *files.Search) (ok bool)
 
 func removeBackupDirectory(o internal.OutputBus, d string, a *files.Album) {
 	if err := os.RemoveAll(d); err != nil {
-		o.LogWriter().Log(internal.WARN, internal.LW_CANNOT_DELETE_DIRECTORY, map[string]interface{}{
+		o.LogWriter().Warn(internal.LW_CANNOT_DELETE_DIRECTORY, map[string]interface{}{
 			internal.FK_DIRECTORY: d,
 			internal.FK_ERROR:     err,
 		})

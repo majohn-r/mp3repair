@@ -44,10 +44,9 @@ func TestNewOutputDevice(t *testing.T) {
 				t.Errorf("NewOutputDevice() does not implement OutputBus")
 			}
 			// exercise log functionality
-			testDevice.LogWriter().Log(INFO, "info message", map[string]interface{}{"foo": INFO})
-			testDevice.LogWriter().Log(WARN, "warn message", map[string]interface{}{"foo": WARN})
-			testDevice.LogWriter().Log(ERROR, "errpr message", map[string]interface{}{"foo": ERROR})
-			testDevice.LogWriter().Log(ERROR+WARN+INFO, "info message", map[string]interface{}{"foo": ERROR + WARN + INFO})
+			testDevice.LogWriter().Info("info message", map[string]interface{}{"foo": "INFO"})
+			testDevice.LogWriter().Warn("warn message", map[string]interface{}{"foo": "WARN"})
+			testDevice.LogWriter().Error("errpr message", map[string]interface{}{"foo": "ERROR"})
 		})
 	}
 }

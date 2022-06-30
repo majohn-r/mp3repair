@@ -45,7 +45,7 @@ func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
 	yfile, _ := ioutil.ReadFile(configFile) // only probable error circumvented by verifyFileExists failure
 	data := make(map[string]interface{})
 	if err = yaml.Unmarshal(yfile, &data); err != nil {
-		o.LogWriter().Log(WARN, LW_CANNOT_UNMARSHAL_YAML, map[string]interface{}{
+		o.LogWriter().Warn(LW_CANNOT_UNMARSHAL_YAML, map[string]interface{}{
 			FK_DIRECTORY: path,
 			FK_FILE_NAME: defaultConfigFileName,
 			FK_ERROR:     err,
@@ -55,7 +55,7 @@ func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
 	}
 	c = createConfiguration(o, data)
 	ok = true
-	o.LogWriter().Log(INFO, LI_CONFIGURATION_FILE_READ, map[string]interface{}{
+	o.LogWriter().Info(LI_CONFIGURATION_FILE_READ, map[string]interface{}{
 		FK_DIRECTORY: path,
 		FK_FILE_NAME: defaultConfigFileName,
 		fkValue:      c,
@@ -67,7 +67,7 @@ func appData(o OutputBus) (string, bool) {
 	if value, ok := os.LookupEnv(appDataVar); ok {
 		return value, ok
 	}
-	o.LogWriter().Log(INFO, LI_NOT_SET, map[string]interface{}{
+	o.LogWriter().Info(LI_NOT_SET, map[string]interface{}{
 		fkVarName: appDataVar,
 	})
 	return "", false
@@ -77,7 +77,7 @@ func verifyFileExists(o OutputBus, path string) (ok bool, err error) {
 	f, err := os.Stat(path)
 	if err == nil {
 		if f.IsDir() {
-			o.LogWriter().Log(ERROR, LE_FILE_IS_DIR, map[string]interface{}{
+			o.LogWriter().Error(LE_FILE_IS_DIR, map[string]interface{}{
 				FK_DIRECTORY: filepath.Dir(path),
 				FK_FILE_NAME: filepath.Base(path),
 			})
@@ -89,7 +89,7 @@ func verifyFileExists(o OutputBus, path string) (ok bool, err error) {
 		return
 	}
 	if errors.Is(err, os.ErrNotExist) {
-		o.LogWriter().Log(INFO, LI_NO_SUCH_FILE, map[string]interface{}{
+		o.LogWriter().Info(LI_NO_SUCH_FILE, map[string]interface{}{
 			FK_DIRECTORY: filepath.Dir(path),
 			FK_FILE_NAME: filepath.Base(path),
 		})
@@ -177,7 +177,7 @@ func createConfiguration(o OutputBus, data map[string]interface{}) *Configuratio
 		case map[string]interface{}:
 			c.cMap[key] = createConfiguration(o, t)
 		default:
-			o.LogWriter().Log(WARN, LW_UNEXPECTED_VALUE_TYPE, map[string]interface{}{
+			o.LogWriter().Warn(LW_UNEXPECTED_VALUE_TYPE, map[string]interface{}{
 				fkKey:   key,
 				fkValue: v,
 				fkType:  fmt.Sprintf("%T", v),

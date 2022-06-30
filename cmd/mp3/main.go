@@ -44,7 +44,7 @@ func report(o internal.OutputBus, returnValue int) {
 func run(o internal.OutputBus, cmdlineArgs []string) (returnValue int) {
 	returnValue = 1
 	startTime := time.Now()
-	o.LogWriter().Log(internal.INFO, internal.LI_BEGIN_EXECUTION, map[string]interface{}{
+	o.LogWriter().Info(internal.LI_BEGIN_EXECUTION, map[string]interface{}{
 		fkVersion:              version,
 		fkTimeStamp:            creation,
 		fkCommandLineArguments: cmdlineArgs,
@@ -54,7 +54,7 @@ func run(o internal.OutputBus, cmdlineArgs []string) (returnValue int) {
 			returnValue = 0
 		}
 	}
-	o.LogWriter().Log(internal.INFO, internal.LI_END_EXECUTION, map[string]interface{}{
+	o.LogWriter().Info(internal.LI_END_EXECUTION, map[string]interface{}{
 		fkDuration: time.Since(startTime),
 		fkExitCode: returnValue,
 	})
