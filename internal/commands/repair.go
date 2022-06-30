@@ -3,14 +3,10 @@ package commands
 import (
 	"flag"
 	"fmt"
-	"io"
 	"mp3/internal"
 	"mp3/internal/files"
-	"os"
 	"path/filepath"
 	"sort"
-
-	"github.com/sirupsen/logrus"
 )
 
 type repair struct {
@@ -50,34 +46,32 @@ func newRepairCommand(c *internal.Configuration, fSet *flag.FlagSet) *repair {
 
 func (r *repair) Exec(o internal.OutputBus, args []string) (ok bool) {
 	if s, argsOk := r.sf.ProcessArgs(o, args); argsOk {
-		// TODO [#77] replace o.OutputWriter() with o
-		ok = r.runCommand(o.ConsoleWriter(), s)
+		ok = r.runCommand(o, s)
 	}
 	return
 }
 
-func (r *repair) logFields() logrus.Fields {
-	return logrus.Fields{
+func (r *repair) logFields() map[string]interface{} {
+	return map[string]interface{}{
 		fkCommandName: r.name(),
 		fkDryRunFlag:  *r.dryRun,
 	}
 }
 
-// TODO [#77] need 2nd writer
-func (r *repair) runCommand(w io.Writer, s *files.Search) (ok bool) {
-	logrus.WithFields(r.logFields()).Info(internal.LI_EXECUTING_COMMAND)
-	artists, ok := s.LoadData(os.Stderr)
+func (r *repair) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
+	o.LogWriter().Log(internal.INFO, internal.LI_EXECUTING_COMMAND, r.logFields())
+	artists, ok := s.LoadData(o.ErrorWriter())
 	if ok {
 		files.UpdateTracks(artists, files.RawReadTags)
 		tracksWithConflicts := findConflictedTracks(artists)
 		if len(tracksWithConflicts) == 0 {
-			fmt.Fprintln(w, noProblemsFound)
+			fmt.Fprintln(o.ConsoleWriter(), noProblemsFound)
 		} else {
 			if *r.dryRun {
-				reportTracks(w, tracksWithConflicts)
+				reportTracks(o, tracksWithConflicts)
 			} else {
-				r.createBackups(w, tracksWithConflicts)
-				r.fixTracks(w, tracksWithConflicts)
+				r.createBackups(o, tracksWithConflicts)
+				r.fixTracks(o, tracksWithConflicts)
 			}
 		}
 	}
@@ -99,23 +93,23 @@ func findConflictedTracks(artists []*files.Artist) []*files.Track {
 	return t
 }
 
-func reportTracks(w io.Writer, tracks []*files.Track) {
+func reportTracks(o internal.OutputBus, tracks []*files.Track) {
 	lastArtistName := ""
 	lastAlbumName := ""
 	for _, t := range tracks {
 		albumName := t.AlbumName()
 		artistName := t.RecordingArtist()
 		if lastArtistName != artistName {
-			fmt.Fprintf(w, "%q\n", artistName)
+			fmt.Fprintf(o.ConsoleWriter(), "%q\n", artistName)
 			lastArtistName = artistName
 			lastAlbumName = ""
 		}
 		if albumName != lastAlbumName {
-			fmt.Fprintf(w, "    %q\n", albumName)
+			fmt.Fprintf(o.ConsoleWriter(), "    %q\n", albumName)
 			lastAlbumName = albumName
 		}
 		s := t.AnalyzeIssues()
-		fmt.Fprintf(w, "        %2d %q need to fix%s%s%s%s\n",
+		fmt.Fprintf(o.ConsoleWriter(), "        %2d %q need to fix%s%s%s%s\n",
 			t.Number(), t.Name(),
 			reportProblem(s.HasNumberingConflict(), " track numbering;"),
 			reportProblem(s.HasTrackNameConflict(), " track name;"),
@@ -131,67 +125,63 @@ func reportProblem(b bool, problem string) (s string) {
 	return
 }
 
-func (r *repair) fixTracks(w io.Writer, tracks []*files.Track) {
+func (r *repair) fixTracks(o internal.OutputBus, tracks []*files.Track) {
 	for _, t := range tracks {
 		if err := t.EditTags(); err != nil {
-			// TODO [#77] should be a 2nd writer - stderr
-			fmt.Fprintf(w, "An error occurred fixing track %q\n", t)
-			logrus.WithFields(logrus.Fields{
+			fmt.Fprintf(o.ErrorWriter(), "An error occurred fixing track %q\n", t)
+			o.LogWriter().Log(internal.WARN, internal.LW_CANNOT_EDIT_TRACK, map[string]interface{}{
 				internal.LI_EXECUTING_COMMAND: r.name(),
 				internal.FK_DIRECTORY:         t.Directory(),
 				internal.FK_FILE_NAME:         t.FileName(),
 				internal.FK_ERROR:             err,
-			}).Warn(internal.LW_CANNOT_EDIT_TRACK)
+			})
 		} else {
-			fmt.Fprintf(w, "%q fixed\n", t)
+			fmt.Fprintf(o.ConsoleWriter(), "%q fixed\n", t)
 		}
 	}
 }
 
-func (r *repair) createBackups(w io.Writer, tracks []*files.Track) {
+func (r *repair) createBackups(o internal.OutputBus, tracks []*files.Track) {
 	albumPaths := getAlbumPaths(tracks)
-	r.makeBackupDirectories(w, albumPaths)
-	r.backupTracks(w, tracks)
+	r.makeBackupDirectories(o, albumPaths)
+	r.backupTracks(o, tracks)
 }
 
-func (r *repair) backupTracks(w io.Writer, tracks []*files.Track) {
+func (r *repair) backupTracks(o internal.OutputBus, tracks []*files.Track) {
 	for _, track := range tracks {
-		r.backupTrack(w, track)
+		r.backupTrack(o, track)
 	}
 }
 
-// TODO [#77] need 2nd writer for errors
-func (r *repair) backupTrack(w io.Writer, t *files.Track) {
+func (r *repair) backupTrack(o internal.OutputBus, t *files.Track) {
 	backupDir := t.BackupDirectory()
 	destinationPath := filepath.Join(backupDir, fmt.Sprintf("%d.mp3", t.Number()))
 	if internal.DirExists(backupDir) && !internal.PlainFileExists(destinationPath) {
 		if err := t.Copy(destinationPath); err != nil {
-			// TODO [#77] use 2nd writer
-			fmt.Fprintf(w, "The track %q cannot be backed up.\n", t)
-			logrus.WithFields(logrus.Fields{
+			fmt.Fprintf(o.ErrorWriter(), "The track %q cannot be backed up.\n", t)
+			o.LogWriter().Log(internal.WARN, internal.LW_CANNOT_COPY_FILE, map[string]interface{}{
 				fkCommandName:     r.name(),
 				fkSource:          t.Path(),
 				fkDestination:     destinationPath,
 				internal.FK_ERROR: err,
-			}).Warn(internal.LW_CANNOT_COPY_FILE)
+			})
 		} else {
-			fmt.Fprintf(w, "The track %q has been backed up to %q.\n", t, destinationPath)
+			fmt.Fprintf(o.ConsoleWriter(), "The track %q has been backed up to %q.\n", t, destinationPath)
 		}
 	}
 }
 
-// TODO [#77] w should be an error output
-func (r *repair) makeBackupDirectories(w io.Writer, paths []string) {
+func (r *repair) makeBackupDirectories(o internal.OutputBus, paths []string) {
 	for _, path := range paths {
 		newPath := files.CreateBackupPath(path)
 		if !internal.DirExists(newPath) {
 			if err := internal.Mkdir(newPath); err != nil {
-				fmt.Fprintf(w, internal.USER_CANNOT_CREATE_DIRECTORY, newPath, err)
-				logrus.WithFields(logrus.Fields{
+				fmt.Fprintf(o.ErrorWriter(), internal.USER_CANNOT_CREATE_DIRECTORY, newPath, err)
+				o.LogWriter().Log(internal.WARN, internal.LW_CANNOT_CREATE_DIRECTORY, map[string]interface{}{
 					fkCommandName:         r.name(),
 					internal.FK_DIRECTORY: newPath,
 					internal.FK_ERROR:     err,
-				}).Warn(internal.LW_CANNOT_CREATE_DIRECTORY)
+				})
 			}
 		}
 	}
