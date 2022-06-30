@@ -62,6 +62,7 @@ func Test_run(t *testing.T) {
 			wantReturnValue: 0,
 			wantLogPrefix: "level='info' args='[./mp3]' timeStamp='' version='unknown version!' msg='execution starts'\n" +
 				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", filepath.Join(thisDir, internal.AppName)) +
+				"level='info' -annotate='false' -includeAlbums='true' -includeArtists='true' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n" +
 				"level='info' duration='",
 			wantLogSuffix:     "' exitCode='0' msg='execution ends'\n",
 			wantConsoleOutput: "Artist: myArtist\n  Album: myAlbum\n",

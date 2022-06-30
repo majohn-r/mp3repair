@@ -14,27 +14,61 @@ import (
 func Test_ls_validateTrackSorting(t *testing.T) {
 	fnName := "ls.validateTrackSorting()"
 	tests := []struct {
-		name          string
-		sortingInput  string
-		includeAlbums bool
-		wantSorting   string
+		name              string
+		sortingInput      string
+		includeAlbums     bool
+		wantSorting       string
+		wantConsoleOutput string
+		wantErrorOutput   string
+		wantLogOutput     string
 	}{
 		{name: "alpha sorting with albums", sortingInput: "alpha", includeAlbums: true, wantSorting: "alpha"},
 		{name: "alpha sorting without albums", sortingInput: "alpha", includeAlbums: false, wantSorting: "alpha"},
 		{name: "numeric sorting with albums", sortingInput: "numeric", includeAlbums: true, wantSorting: "numeric"},
-		{name: "numeric sorting without albums", sortingInput: "numeric", includeAlbums: false, wantSorting: "alpha"},
-		{name: "invalid sorting with albums", sortingInput: "nonsense", includeAlbums: true, wantSorting: "numeric"},
-		{name: "invalid sorting without albums", sortingInput: "nonsense", includeAlbums: false, wantSorting: "alpha"},
+		{
+			name:            "numeric sorting without albums",
+			sortingInput:    "numeric",
+			includeAlbums:   false,
+			wantSorting:     "alpha",
+			wantErrorOutput: "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+			wantLogOutput:   "level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n",
+		},
+		{
+			name:            "invalid sorting with albums",
+			sortingInput:    "nonsense",
+			includeAlbums:   true,
+			wantSorting:     "numeric",
+			wantErrorOutput: "The \"-sort\" value you specified, \"nonsense\", is not valid.\n",
+			wantLogOutput:   "level='warn' -sort='nonsense' command='ls' msg='flag value is not valid'\n",
+		},
+		{
+			name:            "invalid sorting without albums",
+			sortingInput:    "nonsense",
+			includeAlbums:   false,
+			wantSorting:     "alpha",
+			wantErrorOutput: "The \"-sort\" value you specified, \"nonsense\", is not valid.\n",
+			wantLogOutput:   "level='warn' -sort='nonsense' command='ls' msg='flag value is not valid'\n",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fs := flag.NewFlagSet("ls", flag.ContinueOnError)
+			o := internal.NewOutputDeviceForTesting()
 			lsCommand := newLsCommand(internal.EmptyConfiguration(), fs)
 			lsCommand.trackSorting = &tt.sortingInput
 			lsCommand.includeAlbums = &tt.includeAlbums
-			lsCommand.validateTrackSorting()
+			lsCommand.validateTrackSorting(o)
 			if *lsCommand.trackSorting != tt.wantSorting {
 				t.Errorf("%s: got %q, want %q", fnName, *lsCommand.trackSorting, tt.wantSorting)
+			}
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("%s: console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
+			}
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("%s: error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
+			}
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("%s: log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}
@@ -207,6 +241,8 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(false, false, false, false, false),
+			wantErrorOutput:   "You disabled all functionality for the command \"ls\".\n",
+			wantLogOutput:     "level='warn' -annotate='false' -includeAlbums='false' -includeArtists='false' -includeTracks='false' -sort='numeric' command='ls' msg='the user disabled all functionality'\n",
 		},
 		// tracks only
 		{
@@ -222,6 +258,9 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(false, false, true, false, false),
+			wantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+			wantLogOutput: "level='info' -annotate='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
+				"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n",
 		},
 		{
 			name: "annotated tracks only",
@@ -236,6 +275,9 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(false, false, true, true, false),
+			wantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+			wantLogOutput: "level='info' -annotate='true' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
+				"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n",
 		},
 		{
 			name: "unannotated tracks only with numeric sorting",
@@ -251,6 +293,9 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(false, false, true, false, true),
+			wantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+			wantLogOutput: "level='info' -annotate='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
+				"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n",
 		},
 		{
 			name: "annotated tracks only with numeric sorting",
@@ -266,6 +311,9 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(false, false, true, true, true),
+			wantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+			wantLogOutput: "level='info' -annotate='true' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
+				"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n",
 		},
 		// albums only
 		{
@@ -281,6 +329,7 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(false, true, false, false, false),
+			wantLogOutput:     "level='info' -annotate='false' -includeAlbums='true' -includeArtists='false' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n",
 		},
 		{
 			name: "annotated albums only",
@@ -295,6 +344,7 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(false, true, false, true, false),
+			wantLogOutput:     "level='info' -annotate='true' -includeAlbums='true' -includeArtists='false' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n",
 		},
 		// artists only
 		{
@@ -310,6 +360,7 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(true, false, false, false, false),
+			wantLogOutput:     "level='info' -annotate='false' -includeAlbums='false' -includeArtists='true' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n",
 		},
 		{
 			name: "annotated artists only",
@@ -324,6 +375,7 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(true, false, false, true, false),
+			wantLogOutput:     "level='info' -annotate='true' -includeAlbums='false' -includeArtists='true' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n",
 		},
 		// albums and artists
 		{
@@ -339,6 +391,7 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(true, true, false, false, false),
+			wantLogOutput:     "level='info' -annotate='false' -includeAlbums='true' -includeArtists='true' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n",
 		},
 		{
 			name: "annotated artists and albums only",
@@ -353,6 +406,7 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(true, true, false, true, false),
+			wantLogOutput:     "level='info' -annotate='true' -includeAlbums='true' -includeArtists='true' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n",
 		},
 		// albums and tracks
 		{
@@ -369,6 +423,8 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(false, true, true, false, false),
+			wantLogOutput: "level='info' -annotate='false' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='alpha' command='ls' msg='executing command'\n" +
+				"level='info' -annotate='false' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='alpha' command='ls' msg='one or more flags were overridden'\n",
 		},
 		{
 			name: "annotated albums and tracks with alpha sorting",
@@ -384,6 +440,8 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(false, true, true, true, false),
+			wantLogOutput: "level='info' -annotate='true' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='alpha' command='ls' msg='executing command'\n" +
+				"level='info' -annotate='true' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='alpha' command='ls' msg='one or more flags were overridden'\n",
 		},
 		{
 			name: "unannotated albums and tracks with numeric sorting",
@@ -399,6 +457,7 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(false, true, true, false, true),
+			wantLogOutput:     "level='info' -annotate='false' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n",
 		},
 		{
 			name: "annotated albums and tracks with numeric sorting",
@@ -414,6 +473,7 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(false, true, true, true, true),
+			wantLogOutput:     "level='info' -annotate='true' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n",
 		},
 		// artists and tracks
 		{
@@ -430,6 +490,8 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(true, false, true, false, false),
+			wantLogOutput: "level='info' -annotate='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='executing command'\n" +
+				"level='info' -annotate='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='one or more flags were overridden'\n",
 		},
 		{
 			name: "annotated artists and tracks with alpha sorting",
@@ -445,6 +507,8 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(true, false, true, true, false),
+			wantLogOutput: "level='info' -annotate='true' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='executing command'\n" +
+				"level='info' -annotate='true' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='one or more flags were overridden'\n",
 		},
 		{
 			name: "unannotated artists and tracks with numeric sorting",
@@ -460,6 +524,9 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(true, false, true, false, true),
+			wantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+			wantLogOutput: "level='info' -annotate='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
+				"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n",
 		},
 		{
 			name: "annotated artists and tracks with numeric sorting",
@@ -475,6 +542,9 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(true, false, true, true, true),
+			wantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+			wantLogOutput: "level='info' -annotate='true' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
+				"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n",
 		},
 		// albums, artists, and tracks
 		{
@@ -491,6 +561,8 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(true, true, true, false, false),
+			wantLogOutput: "level='info' -annotate='false' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='executing command'\n" +
+				"level='info' -annotate='false' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='one or more flags were overridden'\n",
 		},
 		{
 			name: "annotated artists, albums, and tracks with alpha sorting",
@@ -506,6 +578,8 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(true, true, true, true, false),
+			wantLogOutput: "level='info' -annotate='true' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='executing command'\n" +
+				"level='info' -annotate='true' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='one or more flags were overridden'\n",
 		},
 		{
 			name: "unannotated artists, albums, and tracks with numeric sorting",
@@ -521,6 +595,7 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(true, true, true, false, true),
+			wantLogOutput:     "level='info' -annotate='false' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n",
 		},
 		{
 			name: "annotated artists, albums, and tracks with numeric sorting",
@@ -536,6 +611,7 @@ func Test_ls_Exec(t *testing.T) {
 				},
 			},
 			wantConsoleOutput: generateListing(true, true, true, true, true),
+			wantLogOutput:     "level='info' -annotate='true' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n",
 		},
 	}
 	for _, tt := range tests {
@@ -543,13 +619,13 @@ func Test_ls_Exec(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			tt.l.Exec(o, tt.args.args)
 			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("%s console output = %v, want %v", fnName, gotConsoleOutput, tt.wantConsoleOutput)
+				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
 			}
 			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("%s error output = %v, want %v", fnName, gotErrorOutput, tt.wantErrorOutput)
+				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
 			}
 			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("%s log output = %v, want %v", fnName, gotLogOutput, tt.wantLogOutput)
+				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}

@@ -3,14 +3,10 @@ package commands
 import (
 	"flag"
 	"fmt"
-	"io"
 	"mp3/internal"
 	"mp3/internal/files"
-	"os"
 	"sort"
 	"strings"
-
-	"github.com/sirupsen/logrus"
 )
 
 type ls struct {
@@ -75,14 +71,13 @@ func newLsCommand(c *internal.Configuration, fSet *flag.FlagSet) *ls {
 
 func (l *ls) Exec(o internal.OutputBus, args []string) (ok bool) {
 	if s, argsOk := l.sf.ProcessArgs(o, args); argsOk {
-		// TODO [#77] replace o.OutputWriter() with o
-		ok = l.runCommand(o.ConsoleWriter(), s)
+		ok = l.runCommand(o, s)
 	}
 	return
 }
 
-func (l *ls) logFields() logrus.Fields {
-	return logrus.Fields{
+func (l *ls) logFields() map[string]interface{} {
+	return map[string]interface{}{
 		fkCommandName:          l.name(),
 		fkIncludeAlbumsFlag:    *l.includeAlbums,
 		fkIncludeArtistsFlag:   *l.includeArtists,
@@ -92,27 +87,26 @@ func (l *ls) logFields() logrus.Fields {
 	}
 }
 
-// TODO [#77] should use 2nd writer for error output
-func (l *ls) runCommand(w io.Writer, s *files.Search) (ok bool) {
+func (l *ls) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
-		fmt.Fprintf(os.Stderr, internal.USER_SPECIFIED_NO_WORK, l.name())
-		logrus.WithFields(l.logFields()).Warn(internal.LW_NOTHING_TO_DO)
+		fmt.Fprintf(o.ErrorWriter(), internal.USER_SPECIFIED_NO_WORK, l.name())
+		o.LogWriter().Log(internal.WARN, internal.LW_NOTHING_TO_DO, l.logFields())
 		return
 	}
-	logrus.WithFields(l.logFields()).Info(internal.LI_EXECUTING_COMMAND)
+	o.LogWriter().Log(internal.INFO, internal.LI_EXECUTING_COMMAND, l.logFields())
 	if *l.includeTracks {
-		if l.validateTrackSorting() {
-			logrus.WithFields(l.logFields()).Info(internal.LI_PARAMETERS_OVERRIDDEN)
+		if l.validateTrackSorting(o) {
+			o.LogWriter().Log(internal.INFO, internal.LI_PARAMETERS_OVERRIDDEN, l.logFields())
 		}
 	}
-	artists, ok := s.LoadData(os.Stderr)
+	artists, ok := s.LoadData(o.ErrorWriter())
 	if ok {
-		l.outputArtists(w, artists)
+		l.outputArtists(o, artists)
 	}
 	return
 }
 
-func (l *ls) outputArtists(w io.Writer, artists []*files.Artist) {
+func (l *ls) outputArtists(o internal.OutputBus, artists []*files.Artist) {
 	switch *l.includeArtists {
 	case true:
 		artistsByArtistNames := make(map[string]*files.Artist)
@@ -123,20 +117,20 @@ func (l *ls) outputArtists(w io.Writer, artists []*files.Artist) {
 		}
 		sort.Strings(artistNames)
 		for _, artistName := range artistNames {
-			fmt.Fprintf(w, "Artist: %s\n", artistName)
+			fmt.Fprintf(o.ConsoleWriter(), "Artist: %s\n", artistName)
 			artist := artistsByArtistNames[artistName]
-			l.outputAlbums(w, artist.Albums(), "  ")
+			l.outputAlbums(o, artist.Albums(), "  ")
 		}
 	case false:
 		var albums []*files.Album
 		for _, artist := range artists {
 			albums = append(albums, artist.Albums()...)
 		}
-		l.outputAlbums(w, albums, "")
+		l.outputAlbums(o, albums, "")
 	}
 }
 
-func (l *ls) outputAlbums(w io.Writer, albums []*files.Album, prefix string) {
+func (l *ls) outputAlbums(o internal.OutputBus, albums []*files.Album, prefix string) {
 	switch *l.includeAlbums {
 	case true:
 		albumsByAlbumName := make(map[string]*files.Album)
@@ -154,41 +148,40 @@ func (l *ls) outputAlbums(w io.Writer, albums []*files.Album, prefix string) {
 		}
 		sort.Strings(albumNames)
 		for _, albumName := range albumNames {
-			fmt.Fprintf(w, "%sAlbum: %s\n", prefix, albumName)
+			fmt.Fprintf(o.ConsoleWriter(), "%sAlbum: %s\n", prefix, albumName)
 			album := albumsByAlbumName[albumName]
-			l.outputTracks(w, album.Tracks(), prefix+"  ")
+			l.outputTracks(o, album.Tracks(), prefix+"  ")
 		}
 	case false:
 		var tracks []*files.Track
 		for _, album := range albums {
 			tracks = append(tracks, album.Tracks()...)
 		}
-		l.outputTracks(w, tracks, prefix)
+		l.outputTracks(o, tracks, prefix)
 	}
 }
 
-// TODO [#77] writer should be used for error output
-func (l *ls) validateTrackSorting() (ok bool) {
+func (l *ls) validateTrackSorting(o internal.OutputBus) (ok bool) {
 	switch *l.trackSorting {
 	case "numeric":
 		if !*l.includeAlbums {
-			fmt.Fprintf(os.Stderr, internal.USER_INVALID_SORTING_APPLIED,
+			fmt.Fprintf(o.ErrorWriter(), internal.USER_INVALID_SORTING_APPLIED,
 				fkTrackSortingFlag, *l.trackSorting, fkIncludeAlbumsFlag)
-			logrus.WithFields(logrus.Fields{
+			o.LogWriter().Log(internal.WARN, internal.LW_SORTING_OPTION_UNACCEPTABLE, map[string]interface{}{
 				fkTrackSortingFlag:  *l.trackSorting,
 				fkIncludeAlbumsFlag: *l.includeAlbums,
-			}).Warn(internal.LW_SORTING_OPTION_UNACCEPTABLE)
+			})
 			preferredValue := "alpha"
 			l.trackSorting = &preferredValue
 		}
 	case "alpha":
 		ok = true
 	default:
-		fmt.Fprintf(os.Stderr, internal.USER_UNRECOGNIZED_VALUE, fkTrackSortingFlag, *l.trackSorting)
-		logrus.WithFields(logrus.Fields{
+		fmt.Fprintf(o.ErrorWriter(), internal.USER_UNRECOGNIZED_VALUE, fkTrackSortingFlag, *l.trackSorting)
+		o.LogWriter().Log(internal.WARN, internal.LW_INVALID_FLAG_SETTING, map[string]interface{}{
 			fkCommandName:      l.name(),
 			fkTrackSortingFlag: *l.trackSorting,
-		}).Warn(internal.LW_INVALID_FLAG_SETTING)
+		})
 		var preferredValue string
 		switch *l.includeAlbums {
 		case true:
@@ -201,7 +194,7 @@ func (l *ls) validateTrackSorting() (ok bool) {
 	return
 }
 
-func (l *ls) outputTracks(w io.Writer, tracks []*files.Track, prefix string) {
+func (l *ls) outputTracks(o internal.OutputBus, tracks []*files.Track, prefix string) {
 	if !*l.includeTracks {
 		return
 	}
@@ -215,7 +208,7 @@ func (l *ls) outputTracks(w io.Writer, tracks []*files.Track, prefix string) {
 		}
 		sort.Ints(trackNumbers)
 		for _, trackNumber := range trackNumbers {
-			fmt.Fprintf(w, "%s%2d. %s\n", prefix, trackNumber, tracksNumeric[trackNumber])
+			fmt.Fprintf(o.ConsoleWriter(), "%s%2d. %s\n", prefix, trackNumber, tracksNumeric[trackNumber])
 		}
 	case "alpha":
 		var trackNames []string
@@ -244,7 +237,7 @@ func (l *ls) outputTracks(w io.Writer, tracks []*files.Track, prefix string) {
 		}
 		sort.Strings(trackNames)
 		for _, trackName := range trackNames {
-			fmt.Fprintf(w, "%s%s\n", prefix, trackName)
+			fmt.Fprintf(o.ConsoleWriter(), "%s%s\n", prefix, trackName)
 		}
 	}
 }
