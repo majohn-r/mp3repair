@@ -1,8 +1,8 @@
 package files
 
 import (
-	"io"
 	"io/fs"
+	"mp3/internal"
 	"path/filepath"
 )
 
@@ -28,9 +28,8 @@ func NewArtist(n, p string) *Artist {
 	return &Artist{name: n, path: p}
 }
 
-// TODO [#77] use OutputBus
-func (a *Artist) contents(wErr io.Writer) ([]fs.FileInfo, bool) {
-	return readDirectory(wErr, a.path)
+func (a *Artist) contents(o internal.OutputBus) ([]fs.FileInfo, bool) {
+	return readDirectory(o.ErrorWriter(), a.path)
 }
 
 // Name returns the artist's name

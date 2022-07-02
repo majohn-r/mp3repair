@@ -35,7 +35,7 @@ func (s *Search) LoadUnfilteredData(o internal.OutputBus) (artists []*Artist, ok
 		for _, artistFile := range artistFiles {
 			if artistFile.IsDir() {
 				artist := newArtistFromFile(artistFile, s.topDirectory)
-				if albumFiles, ok := artist.contents(o.ErrorWriter()); ok {
+				if albumFiles, ok := artist.contents(o); ok {
 					for _, albumFile := range albumFiles {
 						if !albumFile.IsDir() {
 							continue
@@ -67,7 +67,6 @@ func (s *Search) LoadUnfilteredData(o internal.OutputBus) (artists []*Artist, ok
 }
 
 // LogFields returns an appropriate set of logrus fields
-// TODO [#77] return map[string]interface{}
 func (s *Search) LogFields(includeFilters bool) map[string]interface{} {
 	m := map[string]interface{}{
 		fkTopDirFlag:          s.topDirectory,
@@ -118,7 +117,7 @@ func (s *Search) LoadData(o internal.OutputBus) (artists []*Artist, ok bool) {
 				continue
 			}
 			artist := newArtistFromFile(artistFile, s.topDirectory)
-			if albumFiles, ok := artist.contents(o.ErrorWriter()); ok {
+			if albumFiles, ok := artist.contents(o); ok {
 				for _, albumFile := range albumFiles {
 					if !albumFile.IsDir() || !s.albumFilter.MatchString(albumFile.Name()) {
 						continue
