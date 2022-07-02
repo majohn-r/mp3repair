@@ -90,10 +90,13 @@ func Test_validateRegexp(t *testing.T) {
 		name    string
 	}
 	tests := []struct {
-		name       string
-		args       args
-		wantFilter *regexp.Regexp
-		wantOk     bool
+		name              string
+		args              args
+		wantFilter        *regexp.Regexp
+		wantOk            bool
+		wantConsoleOutput string
+		wantErrorOutput   string
+		wantLogOutput     string
 	}{
 		{
 			name: "valid filter with regex",
@@ -113,16 +116,31 @@ func Test_validateRegexp(t *testing.T) {
 			wantFilter: regexp.MustCompile("Beatles"),
 			wantOk:     true,
 		},
-		{name: "invalid filter", args: args{pattern: "disc[", name: "album"}},
+		{
+			name:            "invalid filter",
+			args:            args{pattern: "disc[", name: "album"},
+			wantErrorOutput: "The album filter value you specified, \"disc[\", cannot be used: error parsing regexp: missing closing ]: `[`\n",
+			wantLogOutput:   "level='warn' album='disc[' error='error parsing regexp: missing closing ]: `[`' msg='the filter cannot be parsed as a regular expression'\n",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotFilter, gotOk := validateRegexp(tt.args.pattern, tt.args.name)
+			o := internal.NewOutputDeviceForTesting()
+			gotFilter, gotOk := validateRegexp(o, tt.args.pattern, tt.args.name)
 			if tt.wantOk && !reflect.DeepEqual(gotFilter, tt.wantFilter) {
 				t.Errorf("%s gotFilter = %v, want %v", fnName, gotFilter, tt.wantFilter)
 			}
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
+			}
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
+			}
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
+			}
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}
@@ -142,6 +160,9 @@ func Test_validateSearchParameters(t *testing.T) {
 		wantAlbumsFilter  *regexp.Regexp
 		wantArtistsFilter *regexp.Regexp
 		wantOk            bool
+		wantConsoleOutput string
+		wantErrorOutput   string
+		wantLogOutput     string
 	}{
 		{
 			name: "valid input",
@@ -165,6 +186,8 @@ func Test_validateSearchParameters(t *testing.T) {
 			},
 			wantAlbumsFilter:  regexp.MustCompile(".*"),
 			wantArtistsFilter: regexp.MustCompile(".*"),
+			wantErrorOutput:   "The -ext value you specified, \"mp3\", must contain exactly one '.' and '.' must be the first character.\n",
+			wantLogOutput:     "level='warn' -ext='mp3' msg='the file extension must begin with '.' and contain no other '.' characters'\n",
 		},
 		{
 			name: "bad extension 2",
@@ -176,6 +199,8 @@ func Test_validateSearchParameters(t *testing.T) {
 			},
 			wantAlbumsFilter:  regexp.MustCompile(".*"),
 			wantArtistsFilter: regexp.MustCompile(".*"),
+			wantErrorOutput:   "The -ext value you specified, \".m.p3\", must contain exactly one '.' and '.' must be the first character.\n",
+			wantLogOutput:     "level='warn' -ext='.m.p3' msg='the file extension must begin with '.' and contain no other '.' characters'\n",
 		},
 		{
 			name: "bad extension 3",
@@ -187,9 +212,11 @@ func Test_validateSearchParameters(t *testing.T) {
 			},
 			wantAlbumsFilter:  regexp.MustCompile(".*"),
 			wantArtistsFilter: regexp.MustCompile(".*"),
+			wantErrorOutput:   "The -ext value you specified, \".mp[3\", cannot be used for file matching: error parsing regexp: missing closing ]: `[3$`.\n",
+			wantLogOutput:     "level='warn' -ext='.mp[3' error='error parsing regexp: missing closing ]: `[3$`' msg='the file extension cannot be parsed as a regular expression'\n",
 		},
 		{
-			name: "bad album filter",
+			name: "bad album filter 1",
 			args: args{
 				dir:     ".",
 				ext:     ".mp3",
@@ -197,9 +224,11 @@ func Test_validateSearchParameters(t *testing.T) {
 				artists: ".*",
 			},
 			wantArtistsFilter: regexp.MustCompile(".*"),
+			wantErrorOutput:   "The -albumFilter filter value you specified, \".[*\", cannot be used: error parsing regexp: missing closing ]: `[*`\n",
+			wantLogOutput:     "level='warn' -albumFilter='.[*' error='error parsing regexp: missing closing ]: `[*`' msg='the filter cannot be parsed as a regular expression'\n",
 		},
 		{
-			name: "bad album filter",
+			name: "bad album filter 2",
 			args: args{
 				dir:     ".",
 				ext:     ".mp3",
@@ -207,6 +236,8 @@ func Test_validateSearchParameters(t *testing.T) {
 				artists: ".[*",
 			},
 			wantAlbumsFilter: regexp.MustCompile(".*"),
+			wantErrorOutput:  "The -artistFilter filter value you specified, \".[*\", cannot be used: error parsing regexp: missing closing ]: `[*`\n",
+			wantLogOutput:    "level='warn' -artistFilter='.[*' error='error parsing regexp: missing closing ]: `[*`' msg='the filter cannot be parsed as a regular expression'\n",
 		},
 		{
 			name: "non-existent directory",
@@ -218,6 +249,8 @@ func Test_validateSearchParameters(t *testing.T) {
 			},
 			wantAlbumsFilter:  regexp.MustCompile(".*"),
 			wantArtistsFilter: regexp.MustCompile(".*"),
+			wantErrorOutput:   "The -topDir value you specified, \"no such directory\", cannot be read: CreateFile no such directory: The system cannot find the file specified..\n",
+			wantLogOutput:     "level='warn' -topDir='no such directory' error='CreateFile no such directory: The system cannot find the file specified.' msg='cannot read directory'\n",
 		},
 		{
 			name: "directory is not a directory",
@@ -229,6 +262,8 @@ func Test_validateSearchParameters(t *testing.T) {
 			},
 			wantAlbumsFilter:  regexp.MustCompile(".*"),
 			wantArtistsFilter: regexp.MustCompile(".*"),
+			wantErrorOutput:   "The -topDir value you specified, \"utilities_test.go\", is not a directory.\n",
+			wantLogOutput:     "level='warn' -topDir='utilities_test.go' msg='the file is not a directory'\n",
 		},
 	}
 	for _, tt := range tests {
@@ -239,7 +274,8 @@ func Test_validateSearchParameters(t *testing.T) {
 				albumRegex:    &tt.args.albums,
 				artistRegex:   &tt.args.artists,
 			}
-			gotAlbumsFilter, gotArtistsFilter, gotOk := sf.validate()
+			o := internal.NewOutputDeviceForTesting()
+			gotAlbumsFilter, gotArtistsFilter, gotOk := sf.validate(o)
 			if !tt.wantOk {
 				if !reflect.DeepEqual(gotAlbumsFilter, tt.wantAlbumsFilter) {
 					t.Errorf("%s gotAlbumsFilter = %v, want %v", fnName, gotAlbumsFilter, tt.wantAlbumsFilter)
@@ -251,6 +287,15 @@ func Test_validateSearchParameters(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
+			}
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
+			}
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
+			}
 		})
 	}
 }
@@ -261,18 +306,41 @@ func TestSearchFlags_validateTopLevelDirectory(t *testing.T) {
 	notAFile := "no such file"
 	notADir := "searchflags_test.go"
 	tests := []struct {
-		name string
-		sf   *SearchFlags
-		want bool
+		name              string
+		sf                *SearchFlags
+		want              bool
+		wantConsoleOutput string
+		wantErrorOutput   string
+		wantLogOutput     string
 	}{
 		{name: "is directory", sf: &SearchFlags{topDirectory: &thisDir}, want: true},
-		{name: "non-existent directory", sf: &SearchFlags{topDirectory: &notAFile}, want: false},
-		{name: "file that is not a directory", sf: &SearchFlags{topDirectory: &notADir}, want: false},
+		{
+			name:            "non-existent directory",
+			sf:              &SearchFlags{topDirectory: &notAFile},
+			wantErrorOutput: "The -topDir value you specified, \"no such file\", cannot be read: CreateFile no such file: The system cannot find the file specified..\n",
+			wantLogOutput:   "level='warn' -topDir='no such file' error='CreateFile no such file: The system cannot find the file specified.' msg='cannot read directory'\n",
+		},
+		{
+			name:            "file that is not a directory",
+			sf:              &SearchFlags{topDirectory: &notADir},
+			wantErrorOutput: "The -topDir value you specified, \"searchflags_test.go\", is not a directory.\n",
+			wantLogOutput:   "level='warn' -topDir='searchflags_test.go' msg='the file is not a directory'\n",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.sf.validateTopLevelDirectory(); got != tt.want {
+			o := internal.NewOutputDeviceForTesting()
+			if got := tt.sf.validateTopLevelDirectory(o); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
+			}
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
+			}
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
+			}
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}
@@ -289,19 +357,47 @@ func TestSearchFlags_validateExtension(t *testing.T) {
 	multipleDots := ".m.p3"
 	badChar := ".m[p3"
 	tests := []struct {
-		name      string
-		sf        *SearchFlags
-		wantValid bool
+		name              string
+		sf                *SearchFlags
+		wantValid         bool
+		wantConsoleOutput string
+		wantErrorOutput   string
+		wantLogOutput     string
 	}{
 		{name: "valid extension", sf: &SearchFlags{fileExtension: &defaultExtension}, wantValid: true},
-		{name: "extension does not start with '.'", sf: &SearchFlags{fileExtension: &missingLeadDot}, wantValid: false},
-		{name: "extension contains multiple '.'", sf: &SearchFlags{fileExtension: &multipleDots}, wantValid: false},
-		{name: "extension contains invalid characters", sf: &SearchFlags{fileExtension: &badChar}, wantValid: false},
+		{
+			name:            "extension does not start with '.'",
+			sf:              &SearchFlags{fileExtension: &missingLeadDot},
+			wantErrorOutput: "The -ext value you specified, \"mp3\", must contain exactly one '.' and '.' must be the first character.\n",
+			wantLogOutput:   "level='warn' -ext='mp3' msg='the file extension must begin with '.' and contain no other '.' characters'\n",
+		},
+		{
+			name:            "extension contains multiple '.'",
+			sf:              &SearchFlags{fileExtension: &multipleDots},
+			wantErrorOutput: "The -ext value you specified, \".m.p3\", must contain exactly one '.' and '.' must be the first character.\n",
+			wantLogOutput:   "level='warn' -ext='.m.p3' msg='the file extension must begin with '.' and contain no other '.' characters'\n",
+		},
+		{
+			name:            "extension contains invalid characters",
+			sf:              &SearchFlags{fileExtension: &badChar},
+			wantErrorOutput: "The -ext value you specified, \".m[p3\", cannot be used for file matching: error parsing regexp: missing closing ]: `[p3$`.\n",
+			wantLogOutput:   "level='warn' -ext='.m[p3' error='error parsing regexp: missing closing ]: `[p3$`' msg='the file extension cannot be parsed as a regular expression'\n",
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotValid := tt.sf.validateExtension(); gotValid != tt.wantValid {
+			o := internal.NewOutputDeviceForTesting()
+			if gotValid := tt.sf.validateExtension(o); gotValid != tt.wantValid {
 				t.Errorf("%s = %v, want %v", fnName, gotValid, tt.wantValid)
+			}
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
+			}
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
+			}
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}

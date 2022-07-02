@@ -62,7 +62,9 @@ func Test_postrepair_Exec(t *testing.T) {
 			name: "handle bad common arguments",
 			p: newPostRepairCommand(
 				internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError)),
-			args: args{args: []string{"-topDir", "non-existent directory"}},
+			args:            args{args: []string{"-topDir", "non-existent directory"}},
+			wantErrorOutput: "The -topDir value you specified, \"non-existent directory\", cannot be read: CreateFile non-existent directory: The system cannot find the file specified..\n",
+			wantLogOutput:   "level='warn' -topDir='non-existent directory' error='CreateFile non-existent directory: The system cannot find the file specified.' msg='cannot read directory'\n",
 		},
 		{
 			name: "handle normal processing with nothing to do",

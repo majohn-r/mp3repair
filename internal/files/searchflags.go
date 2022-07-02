@@ -7,8 +7,6 @@ import (
 	"os"
 	"regexp"
 	"strings"
-
-	"github.com/sirupsen/logrus"
 )
 
 // SearchFlags defines the common flags used to specify how the top directory,
@@ -69,13 +67,13 @@ func (sf *SearchFlags) ProcessArgs(o internal.OutputBus, args []string) (s *Sear
 		})
 		return nil, false
 	}
-	return sf.NewSearch()
+	return sf.NewSearch(o)
 }
 
 // NewSearch validates the common search parameters and creates a Search
 // instance based on them.
-func (sf *SearchFlags) NewSearch() (s *Search, ok bool) {
-	albumsFilter, artistsFilter, validated := sf.validate()
+func (sf *SearchFlags) NewSearch(o internal.OutputBus) (s *Search, ok bool) {
+	albumsFilter, artistsFilter, validated := sf.validate(o)
 	if validated {
 		s = &Search{
 			topDirectory:    *sf.topDirectory,
@@ -88,59 +86,56 @@ func (sf *SearchFlags) NewSearch() (s *Search, ok bool) {
 	return
 }
 
-// TODO [#77] should use OutputBus for output
-func (sf *SearchFlags) validateTopLevelDirectory() bool {
+func (sf *SearchFlags) validateTopLevelDirectory(o internal.OutputBus) bool {
 	if file, err := os.Stat(*sf.topDirectory); err != nil {
-		fmt.Fprintf(os.Stderr, internal.USER_CANNOT_READ_TOPDIR, *sf.topDirectory, err)
-		logrus.WithFields(logrus.Fields{
-			fkTopDirFlag:      sf.topDirectory,
+		fmt.Fprintf(o.ErrorWriter(), internal.USER_CANNOT_READ_TOPDIR, *sf.topDirectory, err)
+		o.LogWriter().Warn(internal.LW_CANNOT_READ_DIRECTORY, map[string]interface{}{
+			fkTopDirFlag:      *sf.topDirectory,
 			internal.FK_ERROR: err,
-		}).Warn(internal.LW_CANNOT_READ_DIRECTORY)
+		})
 		return false
 	} else {
 		if file.IsDir() {
 			return true
 		} else {
-			fmt.Fprintf(os.Stderr, internal.USER_TOPDIR_NOT_A_DIRECTORY, *sf.topDirectory)
-			logrus.WithFields(logrus.Fields{
-				fkTopDirFlag: sf.topDirectory,
-			}).Warn(internal.LW_NOT_A_DIRECTORY)
+			fmt.Fprintf(o.ErrorWriter(), internal.USER_TOPDIR_NOT_A_DIRECTORY, *sf.topDirectory)
+			o.LogWriter().Warn(internal.LW_NOT_A_DIRECTORY, map[string]interface{}{
+				fkTopDirFlag: *sf.topDirectory,
+			})
 			return false
 		}
 	}
 }
 
-// TODO [#77] should use OutputBus for error output
-func (sf *SearchFlags) validateExtension() (ok bool) {
+func (sf *SearchFlags) validateExtension(o internal.OutputBus) (ok bool) {
 	ok = true
 	if !strings.HasPrefix(*sf.fileExtension, ".") || strings.Contains(strings.TrimPrefix(*sf.fileExtension, "."), ".") {
 		ok = false
-		fmt.Fprintf(os.Stderr, internal.USER_EXTENSION_INVALID_FORMAT, *sf.fileExtension)
-		logrus.WithFields(logrus.Fields{
-			fkTargetExtensionFlag: sf.fileExtension,
-		}).Warn(internal.LW_INVALID_EXTENSION_FORMAT)
+		fmt.Fprintf(o.ErrorWriter(), internal.USER_EXTENSION_INVALID_FORMAT, *sf.fileExtension)
+		o.LogWriter().Warn(internal.LW_INVALID_EXTENSION_FORMAT, map[string]interface{}{
+			fkTargetExtensionFlag: *sf.fileExtension,
+		})
 	}
 	var e error
 	trackNameRegex, e = regexp.Compile("^\\d+[\\s-].+\\." + strings.TrimPrefix(*sf.fileExtension, ".") + "$")
 	if e != nil {
 		ok = false
-		fmt.Fprintf(os.Stderr, internal.USER_EXTENSION_GARBLED, *sf.fileExtension, e)
-		logrus.WithFields(logrus.Fields{
-			fkTargetExtensionFlag: sf.fileExtension,
+		fmt.Fprintf(o.ErrorWriter(), internal.USER_EXTENSION_GARBLED, *sf.fileExtension, e)
+		o.LogWriter().Warn(internal.LW_GARBLED_EXTENSION, map[string]interface{}{
+			fkTargetExtensionFlag: *sf.fileExtension,
 			internal.FK_ERROR:     e,
-		}).Warn(internal.LW_GARBLED_EXTENSION)
+		})
 	}
 	return
 }
 
-// TODO [#77] should use OutputBus for error output
-func validateRegexp(pattern, name string) (filter *regexp.Regexp, ok bool) {
+func validateRegexp(o internal.OutputBus, pattern string, name string) (filter *regexp.Regexp, ok bool) {
 	if f, err := regexp.Compile(pattern); err != nil {
-		fmt.Fprintf(os.Stderr, internal.USER_FILTER_GARBLED, name, pattern, err)
-		logrus.WithFields(logrus.Fields{
+		fmt.Fprintf(o.ErrorWriter(), internal.USER_FILTER_GARBLED, name, pattern, err)
+		o.LogWriter().Warn(internal.LW_GARBLED_FILTER, map[string]interface{}{
 			name:              pattern,
 			internal.FK_ERROR: err,
-		}).Warn(internal.LW_GARBLED_FILTER)
+		})
 	} else {
 		filter = f
 		ok = true
@@ -148,20 +143,20 @@ func validateRegexp(pattern, name string) (filter *regexp.Regexp, ok bool) {
 	return
 }
 
-func (sf *SearchFlags) validate() (albumsFilter *regexp.Regexp, artistsFilter *regexp.Regexp, ok bool) {
+func (sf *SearchFlags) validate(o internal.OutputBus) (albumsFilter *regexp.Regexp, artistsFilter *regexp.Regexp, ok bool) {
 	ok = true
-	if !sf.validateTopLevelDirectory() {
+	if !sf.validateTopLevelDirectory(o) {
 		ok = false
 	}
-	if !sf.validateExtension() {
+	if !sf.validateExtension(o) {
 		ok = false
 	}
-	if filter, regexOk := validateRegexp(*sf.albumRegex, fkAlbumFilterFlag); !regexOk {
+	if filter, regexOk := validateRegexp(o, *sf.albumRegex, fkAlbumFilterFlag); !regexOk {
 		ok = false
 	} else {
 		albumsFilter = filter
 	}
-	if filter, regexOk := validateRegexp(*sf.artistRegex, fkArtistFilterFlag); !regexOk {
+	if filter, regexOk := validateRegexp(o, *sf.artistRegex, fkArtistFilterFlag); !regexOk {
 		ok = false
 	} else {
 		artistsFilter = filter
