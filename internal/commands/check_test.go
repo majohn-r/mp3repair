@@ -69,10 +69,11 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 	}{
 		{name: "no work to do", c: &check{checkEmptyFolders: &fFlag}, args: args{}, wantOk: true},
 		{
-			name:          "empty topDir",
-			c:             &check{checkEmptyFolders: &tFlag},
-			args:          args{s: files.CreateSearchForTesting(emptyDirName)},
-			wantLogOutput: "level='warn' -ext='.mp3' -topDir='empty' msg='cannot find any artist directories'\n",
+			name:            "empty topDir",
+			c:               &check{checkEmptyFolders: &tFlag},
+			args:            args{s: files.CreateSearchForTesting(emptyDirName)},
+			wantErrorOutput: "No music files could be found using the specified parameters.\n",
+			wantLogOutput:   "level='warn' -ext='.mp3' -topDir='empty' msg='cannot find any artist directories'\n",
 		},
 		{
 			name:                "folders, no empty folders present",

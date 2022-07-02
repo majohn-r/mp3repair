@@ -61,6 +61,7 @@ func (s *Search) LoadUnfilteredData(o internal.OutputBus) (artists []*Artist, ok
 	ok = len(artists) != 0
 	if !ok {
 		o.LogWriter().Warn(internal.LW_NO_ARTIST_DIRECTORIES, s.LogFields(false))
+		fmt.Fprintf(o.ErrorWriter(), internal.USER_NO_MUSIC_FILES_FOUND)
 	}
 	return
 }
@@ -81,8 +82,7 @@ func (s *Search) LogFields(includeFilters bool) map[string]interface{} {
 
 // FilterArtists filters out the unwanted artists and albums from the input. The
 // result is a new, filtered, copy of the original slice of Artists.
-// TODO [#77] need OutputBus
-func (s *Search) FilterArtists(unfilteredArtists []*Artist) (artists []*Artist, ok bool) {
+func (s *Search) FilterArtists(o internal.OutputBus, unfilteredArtists []*Artist) (artists []*Artist, ok bool) {
 	logrus.WithFields(s.LogFields(true)).Info(internal.LI_FILTERING_FILES)
 	for _, unfilteredArtist := range unfilteredArtists {
 		if s.artistFilter.MatchString(unfilteredArtist.Name()) {
@@ -99,10 +99,11 @@ func (s *Search) FilterArtists(unfilteredArtists []*Artist) (artists []*Artist, 
 				artists = append(artists, artist)
 			}
 		}
-		ok = len(artists) != 0
-		if !ok {
-			logrus.WithFields(s.LogFields(true)).Warn(internal.LW_NO_ARTIST_DIRECTORIES)
-		}
+	}
+	ok = len(artists) != 0
+	if !ok {
+		o.LogWriter().Warn(internal.LW_NO_ARTIST_DIRECTORIES, s.LogFields(true))
+		fmt.Fprintf(o.ErrorWriter(), internal.USER_NO_MUSIC_FILES_FOUND)
 	}
 	return
 }
@@ -147,6 +148,7 @@ func (s *Search) LoadData(o internal.OutputBus, logger internal.Logger, wErr io.
 	ok = len(artists) != 0
 	if !ok {
 		o.LogWriter().Warn(internal.LW_NO_ARTIST_DIRECTORIES, s.LogFields(true))
+		fmt.Fprintf(o.ErrorWriter(), internal.USER_NO_MUSIC_FILES_FOUND)
 	}
 	return
 }

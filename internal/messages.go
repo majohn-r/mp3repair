@@ -64,6 +64,7 @@ const (
 	USER_LOG_DIR_CANNOT_BE_READ                       = "The log file directory %q cannot be read: %v\n"
 	USER_LOG_FILE_CANNOT_BE_DELETED                   = "The log file %q cannot be deleted: %v\n"
 	USER_NO_COMMANDS_DEFINED                          = "An internal error has occurred: no commands are defined!\n"
+	USER_NO_MUSIC_FILES_FOUND                         = "No music files could be found using the specified parameters.\n"
 	USER_NO_SUCH_COMMAND                              = "There is no command named %q; valid commands include %v.\n"
 	USER_NO_TEMP_FOLDER                               = "Neither the TMP nor TEMP environment variables are defined.\n"
 	USER_SPECIFIED_NO_WORK                            = "You disabled all functionality for the command %q.\n"

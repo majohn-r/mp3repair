@@ -220,8 +220,7 @@ func (c *check) filterArtists(o internal.OutputBus, s *files.Search, artists []*
 			// TODO [#77] need to use OutputBus
 			filteredArtists, ok = s.LoadData(o, o.LogWriter(), o.ErrorWriter())
 		} else {
-			// var searchOk bool
-			filteredArtists, ok = s.FilterArtists(artists)
+			filteredArtists, ok = s.FilterArtists(o, artists)
 		}
 	} else {
 		filteredArtists = artists

@@ -78,11 +78,14 @@ func TestSearch_FilterArtists(t *testing.T) {
 		unfilteredArtists []*Artist
 	}
 	tests := []struct {
-		name        string
-		s           *Search
-		args        args
-		wantArtists []*Artist
-		wantOk      bool
+		name              string
+		s                 *Search
+		args              args
+		wantArtists       []*Artist
+		wantOk            bool
+		wantConsoleOutput string
+		wantErrorOutput   string
+		wantLogOutput     string
 	}{
 		{
 			name:        "default",
@@ -92,21 +95,33 @@ func TestSearch_FilterArtists(t *testing.T) {
 			wantOk:      true,
 		},
 		{
-			name:        "all filtered out",
-			s:           overFilteredS,
-			args:        args{unfilteredArtists: a},
-			wantArtists: nil,
-			wantOk:      false,
+			name:            "all filtered out",
+			s:               overFilteredS,
+			args:            args{unfilteredArtists: a},
+			wantArtists:     nil,
+			wantOk:          false,
+			wantErrorOutput: "No music files could be found using the specified parameters.\n",
+			wantLogOutput:   "level='warn' -albumFilter='.*' -artistFilter='^Filter all out$' -ext='.mp3' -topDir='loadTest' msg='cannot find any artist directories'\n",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotArtists, gotOk := tt.s.FilterArtists(tt.args.unfilteredArtists)
+			o := internal.NewOutputDeviceForTesting()
+			gotArtists, gotOk := tt.s.FilterArtists(o, tt.args.unfilteredArtists)
 			if !reflect.DeepEqual(gotArtists, tt.wantArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotArtists, tt.wantArtists)
 			}
 			if gotOk != tt.wantOk {
 				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
+			}
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
+			}
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
+			}
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}
@@ -147,14 +162,16 @@ func TestSearch_LoadData(t *testing.T) {
 			wantOk:      true,
 		},
 		{
-			name:          "read with all artists filtered out",
-			s:             CreateFilteredSearchForTesting(topDir, "^.*X$", "^.*$"),
-			wantLogOutput: "level='warn' -albumFilter='^.*$' -artistFilter='^.*X$' -ext='.mp3' -topDir='loadTest' msg='cannot find any artist directories'\n",
+			name:            "read with all artists filtered out",
+			s:               CreateFilteredSearchForTesting(topDir, "^.*X$", "^.*$"),
+			wantErrorOutput: "No music files could be found using the specified parameters.\n",
+			wantLogOutput:   "level='warn' -albumFilter='^.*$' -artistFilter='^.*X$' -ext='.mp3' -topDir='loadTest' msg='cannot find any artist directories'\n",
 		},
 		{
-			name:          "read with all albums filtered out",
-			s:             CreateFilteredSearchForTesting(topDir, "^.*$", "^.*X$"),
-			wantLogOutput: "level='warn' -albumFilter='^.*X$' -artistFilter='^.*$' -ext='.mp3' -topDir='loadTest' msg='cannot find any artist directories'\n",
+			name:            "read with all albums filtered out",
+			s:               CreateFilteredSearchForTesting(topDir, "^.*$", "^.*X$"),
+			wantErrorOutput: "No music files could be found using the specified parameters.\n",
+			wantLogOutput:   "level='warn' -albumFilter='^.*X$' -artistFilter='^.*$' -ext='.mp3' -topDir='loadTest' msg='cannot find any artist directories'\n",
 		},
 	}
 	for _, tt := range tests {
@@ -214,9 +231,10 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 			wantOk:      true,
 		},
 		{
-			name:          "empty dir",
-			s:             CreateSearchForTesting(emptyDir),
-			wantLogOutput: "level='warn' -ext='.mp3' -topDir='empty directory' msg='cannot find any artist directories'\n"},
+			name:            "empty dir",
+			s:               CreateSearchForTesting(emptyDir),
+			wantErrorOutput: "No music files could be found using the specified parameters.\n",
+			wantLogOutput:   "level='warn' -ext='.mp3' -topDir='empty directory' msg='cannot find any artist directories'\n"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
