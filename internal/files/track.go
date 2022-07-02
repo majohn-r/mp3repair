@@ -4,14 +4,12 @@ import (
 	"fmt"
 	"io/fs"
 	"mp3/internal"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"time"
 
 	"github.com/bogem/id3v2/v2"
-	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -22,7 +20,6 @@ const (
 	fkAlbumName              = "albumName"
 	fkArtistName             = "artistName"
 	fkTrackName              = "trackName"
-	fkTRCKFrame              = "TRCK"
 	rawExtension             = "mp3"
 	titleFrame               = "TIT2"
 	trackDiffBadTags         = "cannot determine differences, tags were not recognized"
@@ -206,16 +203,9 @@ func toTrackNumber(s string) (i int, err error) {
 }
 
 // SetTags sets track frame fields
-// TODO [#77] use OutputBus
 func (t *Track) SetTags(d *TaggedTrackData) {
 	if trackNumber, err := toTrackNumber(d.track); err != nil {
-		logrus.WithFields(logrus.Fields{
-			internal.FK_DIRECTORY: t.Directory(),
-			internal.FK_FILE_NAME: t.FileName(),
-			fkTRCKFrame:           d.track,
-			internal.FK_ERROR:     err,
-		}).Warn(internal.LW_INVALID_FRAME_VALUE)
-		fmt.Fprintf(os.Stderr, internal.USER_BAD_TRACK_NUMBER, d.track, t, err)
+		// TODO [#88] need to save the error in the track!
 		t.setTagFormatErrorCode()
 	} else {
 		t.album = removeLeadingBOMs(d.album)
@@ -418,7 +408,6 @@ type empty struct{}
 
 var semaphores = make(chan empty, 20) // 20 is a typical limit for open files
 
-// TODO [#77] use OutputBus
 func (t *Track) readTags(reader func(string) (*TaggedTrackData, error)) {
 	if t.needsTaggedData() {
 		semaphores <- empty{} // block while full
@@ -427,12 +416,6 @@ func (t *Track) readTags(reader func(string) (*TaggedTrackData, error)) {
 				<-semaphores // read to release a slot
 			}()
 			if tags, err := reader(t.path); err != nil {
-				logrus.WithFields(logrus.Fields{
-					internal.FK_DIRECTORY: t.Directory(),
-					internal.FK_FILE_NAME: t.FileName(),
-					internal.FK_ERROR:     err,
-				}).Warn(internal.LW_CANNOT_READ_FILE)
-				fmt.Fprintf(os.Stderr, internal.USER_CANNOT_READ_TRACK_METADATA, t, err)
 				t.setTagReadErrorCode()
 			} else {
 				t.SetTags(tags)
@@ -442,6 +425,7 @@ func (t *Track) readTags(reader func(string) (*TaggedTrackData, error)) {
 }
 
 // UpdateTracks reads the MP3 tags for all the associated tracks.
+// TODO [#88] need a post-mortem as to any problems found
 func UpdateTracks(artists []*Artist, reader func(string) (*TaggedTrackData, error)) {
 	for _, artist := range artists {
 		for _, album := range artist.Albums() {
@@ -462,19 +446,18 @@ func waitForSemaphoresDrained() {
 // ParseTrackNameForTesting parses a name into its simple form (no leading track
 // number, no file extension); it is for testing only
 func ParseTrackNameForTesting(name string) (simpleName string, trackNumber int) {
-	simpleName, trackNumber, _ = parseTrackName(name, nil, defaultFileExtension)
+	simpleName, trackNumber, _ = parseTrackName(nil, name, nil, defaultFileExtension)
 	return
 }
 
-// TODO [#77] use OutputBus
-func parseTrackName(name string, album *Album, ext string) (simpleName string, trackNumber int, valid bool) {
+func parseTrackName(o internal.OutputBus, name string, album *Album, ext string) (simpleName string, trackNumber int, valid bool) {
 	if !trackNameRegex.MatchString(name) {
-		logrus.WithFields(logrus.Fields{
+		o.LogWriter().Warn(internal.LW_INVALID_TRACK_NAME, map[string]interface{}{
 			fkTrackName:  name,
 			fkAlbumName:  album.name,
 			fkArtistName: album.RecordingArtistName(),
-		}).Warn(internal.LW_INVALID_TRACK_NAME)
-		fmt.Fprintf(os.Stderr, internal.USER_TRACK_NAME_GARBLED, name, album.name, album.RecordingArtistName())
+		})
+		fmt.Fprintf(o.ErrorWriter(), internal.USER_TRACK_NAME_GARBLED, name, album.name, album.RecordingArtistName())
 		return
 	}
 	wantDigit := true

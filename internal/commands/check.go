@@ -218,7 +218,7 @@ func (c *check) filterArtists(o internal.OutputBus, s *files.Search, artists []*
 	if *c.checkGapsInTrackNumbering || *c.checkIntegrity {
 		if len(artists) == 0 {
 			// TODO [#77] need to use OutputBus
-			filteredArtists, ok = s.LoadData(o.ErrorWriter())
+			filteredArtists, ok = s.LoadData(o, o.LogWriter(), o.ErrorWriter())
 		} else {
 			// var searchOk bool
 			filteredArtists, ok = s.FilterArtists(artists)
@@ -327,8 +327,7 @@ func (c *check) performEmptyFolderAnalysis(o internal.OutputBus, s *files.Search
 		return
 	}
 	var loadedOk bool
-	// TODO [#77] use OutputBus
-	artists, loadedOk = s.LoadUnfilteredData(o.ErrorWriter())
+	artists, loadedOk = s.LoadUnfilteredData(o)
 	if !loadedOk {
 		return
 	}

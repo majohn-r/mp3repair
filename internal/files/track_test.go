@@ -21,11 +21,14 @@ func Test_parseTrackName(t *testing.T) {
 		ext   string
 	}
 	tests := []struct {
-		name            string
-		args            args
-		wantSimpleName  string
-		wantTrackNumber int
-		wantValid       bool
+		name              string
+		args              args
+		wantSimpleName    string
+		wantTrackNumber   int
+		wantValid         bool
+		wantConsoleOutput string
+		wantErrorOutput   string
+		wantLogOutput     string
 	}{
 		{
 			name:            "expected use case",
@@ -54,6 +57,8 @@ func Test_parseTrackName(t *testing.T) {
 			wantSimpleName:  "track name.mp4",
 			wantTrackNumber: 59,
 			wantValid:       false,
+			wantErrorOutput: "The track \"59 track name.mp4\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
+			wantLogOutput:   "level='warn' albumName='some album' artistName='some artist' trackName='59 track name.mp4' msg='the track name cannot be parsed'\n",
 			args: args{
 				name:  "59 track name.mp4",
 				album: &Album{name: "some album", recordingArtist: &Artist{name: "some artist"}},
@@ -65,6 +70,8 @@ func Test_parseTrackName(t *testing.T) {
 			wantSimpleName:  "name",
 			wantTrackNumber: 0,
 			wantValid:       false,
+			wantErrorOutput: "The track \"track name.mp3\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
+			wantLogOutput:   "level='warn' albumName='some album' artistName='some artist' trackName='track name.mp3' msg='the track name cannot be parsed'\n",
 			args: args{
 				name:  "track name.mp3",
 				album: &Album{name: "some album", recordingArtist: &Artist{name: "some artist"}},
@@ -76,6 +83,8 @@ func Test_parseTrackName(t *testing.T) {
 			wantSimpleName:  "",
 			wantTrackNumber: 0,
 			wantValid:       false,
+			wantErrorOutput: "The track \"trackName.mp3\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
+			wantLogOutput:   "level='warn' albumName='some album' artistName='some artist' trackName='trackName.mp3' msg='the track name cannot be parsed'\n",
 			args: args{
 				name:  "trackName.mp3",
 				album: &Album{name: "some album", recordingArtist: &Artist{name: "some artist"}},
@@ -85,7 +94,8 @@ func Test_parseTrackName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotSimpleName, gotTrackNumber, gotValid := parseTrackName(tt.args.name, tt.args.album, tt.args.ext)
+			o := internal.NewOutputDeviceForTesting()
+			gotSimpleName, gotTrackNumber, gotValid := parseTrackName(o, tt.args.name, tt.args.album, tt.args.ext)
 			if tt.wantValid {
 				if gotSimpleName != tt.wantSimpleName {
 					t.Errorf("%s gotSimpleName = %v, want %v", fnName, gotSimpleName, tt.wantSimpleName)
@@ -96,6 +106,15 @@ func Test_parseTrackName(t *testing.T) {
 			}
 			if gotValid != tt.wantValid {
 				t.Errorf("%s gotValid = %v, want %v", fnName, gotValid, tt.wantValid)
+			}
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("Search.LoadData() console output = %q, want %q", gotConsoleOutput, tt.wantConsoleOutput)
+			}
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("Search.LoadData() error output = %q, want %q", gotErrorOutput, tt.wantErrorOutput)
+			}
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("Search.LoadData() log output = %q, want %q", gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}
@@ -326,13 +345,13 @@ func TestTrack_readTags(t *testing.T) {
 		},
 		{
 			name:       "read error",
-			tr:         &Track{track: trackUnknownTagsNotRead},
+			tr:         &Track{track: trackUnknownTagsNotRead, path: "./unreadable track"},
 			args:       args{brokenReader},
 			wantNumber: trackUnknownTagReadError,
 		},
 		{
 			name:       "format error",
-			tr:         &Track{track: trackUnknownTagsNotRead},
+			tr:         &Track{track: trackUnknownTagsNotRead, path: "./badly formatted track"},
 			args:       args{bentReader},
 			wantNumber: trackUnknownFormatError,
 		},
@@ -655,21 +674,6 @@ func TestTrack_EditTags(t *testing.T) {
 		"TLEN": "1000",
 	}
 	content := CreateTaggedDataForTesting(payload, frames)
-	// // block off tag header
-	// content = append(content, []byte("ID3")...)
-	// content = append(content, []byte{3, 0, 0, 0, 0, 0, 0}...)
-	// // add some text frames
-	// contentLength := len(content) - 10
-	// factor := 128 * 128 * 128
-	// for k := 0; k < 4; k++ {
-	// 	content[6+k] = byte(contentLength / factor)
-	// 	contentLength = contentLength % factor
-	// 	factor = factor / 128
-	// }
-	// // add "music"
-	// for k := 0; k < 256; k++ {
-	// 	content = append(content, byte(k))
-	// }
 	if err := internal.CreateFileForTestingWithContent(topDir, testFileName, string(content)); err != nil {
 		t.Errorf("%s cannot create file %q: %v", fnName, fullPath, err)
 	}

@@ -23,14 +23,12 @@ const (
 	LW_CANNOT_DELETE_FILE          = "cannot delete file"
 	LW_CANNOT_EDIT_TRACK           = "cannot edit track"
 	LW_CANNOT_READ_DIRECTORY       = "cannot read directory"
-	LW_CANNOT_READ_FILE            = "cannot read file"
 	LW_CANNOT_UNMARSHAL_YAML       = "cannot unmarshal yaml content"
 	LW_GARBLED_EXTENSION           = "the file extension cannot be parsed as a regular expression"
 	LW_GARBLED_FILTER              = "the filter cannot be parsed as a regular expression"
 	LW_INVALID_DEFAULT_COMMAND     = "invalid default command"
 	LW_INVALID_EXTENSION_FORMAT    = "the file extension must begin with '.' and contain no other '.' characters"
 	LW_INVALID_FLAG_SETTING        = "flag value is not valid"
-	LW_INVALID_FRAME_VALUE         = "invalid frame value"
 	LW_INVALID_TRACK_NAME          = "the track name cannot be parsed"
 	LW_NO_ARTIST_DIRECTORIES       = "cannot find any artist directories"
 	LW_UNRECOGNIZED_COMMAND        = "unrecognized command"
@@ -51,12 +49,10 @@ const (
 
 // for output to user
 const (
-	USER_BAD_TRACK_NUMBER                             = "The track number (%s) embedded in track %q is badly formatted: %v\n"
 	USER_CANNOT_CREATE_DIRECTORY                      = "The directory %q cannot be created: %v.\n"
 	USER_CANNOT_DELETE_DIRECTORY                      = "The directory %q cannot be deleted: %v.\n"
 	USER_CANNOT_READ_DIRECTORY                        = "The directory %q cannot be read: %v\n"
 	USER_CANNOT_READ_TOPDIR                           = "The -topDir value you specified, %q, cannot be read: %v.\n"
-	USER_CANNOT_READ_TRACK_METADATA                   = "The metadata for track %q cannot be read: %v\n"
 	USER_CONFIGURATION_FILE_GARBLED                   = "The configuration file %q is not well-formed YAML: %v\n"
 	USER_CONFIGURATION_FILE_IS_DIR                    = "The configuration file %q is a directory.\n"
 	USER_EXTENSION_INVALID_FORMAT                     = "The -ext value you specified, %q, must contain exactly one '.' and '.' must be the first character.\n"

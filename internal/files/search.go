@@ -29,25 +29,24 @@ func (s *Search) contents(wErr io.Writer) ([]fs.FileInfo, bool) {
 // LoadUnfilteredData loads artists, albums, and tracks from the specified top
 // directory, honoring the specified track extension, but ignoring the album and
 // artist filter expressions.
-// TODO [#77] use OutputBus
-func (s *Search) LoadUnfilteredData(wErr io.Writer) (artists []*Artist, ok bool) {
+func (s *Search) LoadUnfilteredData(o internal.OutputBus) (artists []*Artist, ok bool) {
 	logrus.WithFields(s.LogFields(false)).Info(internal.LI_READING_UNFILTERED_FILES)
-	if artistFiles, ok := s.contents(wErr); ok {
+	if artistFiles, ok := s.contents(o.ErrorWriter()); ok {
 		for _, artistFile := range artistFiles {
 			if artistFile.IsDir() {
 				artist := newArtistFromFile(artistFile, s.topDirectory)
-				if albumFiles, ok := artist.contents(wErr); ok {
+				if albumFiles, ok := artist.contents(o.ErrorWriter()); ok {
 					for _, albumFile := range albumFiles {
 						if !albumFile.IsDir() {
 							continue
 						}
 						album := newAlbumFromFile(albumFile, artist)
-						if trackFiles, ok := album.contents(wErr); ok {
+						if trackFiles, ok := album.contents(o.ErrorWriter()); ok {
 							for _, trackFile := range trackFiles {
 								if trackFile.IsDir() || !trackNameRegex.MatchString(trackFile.Name()) {
 									continue
 								}
-								if simpleName, trackNumber, valid := parseTrackName(trackFile.Name(), album, s.targetExtension); valid {
+								if simpleName, trackNumber, valid := parseTrackName(o, trackFile.Name(), album, s.targetExtension); valid {
 									album.AddTrack(newTrackFromFile(album, trackFile, simpleName, trackNumber))
 								}
 							}
@@ -61,27 +60,23 @@ func (s *Search) LoadUnfilteredData(wErr io.Writer) (artists []*Artist, ok bool)
 	}
 	ok = len(artists) != 0
 	if !ok {
-		logrus.WithFields(s.LogFields(false)).Warn(internal.LW_NO_ARTIST_DIRECTORIES)
+		o.LogWriter().Warn(internal.LW_NO_ARTIST_DIRECTORIES, s.LogFields(false))
 	}
 	return
 }
 
 // LogFields returns an appropriate set of logrus fields
 // TODO [#77] return map[string]interface{}
-func (s *Search) LogFields(includeFilters bool) logrus.Fields {
-	if includeFilters {
-		return logrus.Fields{
-			fkTopDirFlag:          s.topDirectory,
-			fkTargetExtensionFlag: s.targetExtension,
-			fkAlbumFilterFlag:     s.albumFilter,
-			fkArtistFilterFlag:    s.artistFilter,
-		}
-	} else {
-		return logrus.Fields{
-			fkTopDirFlag:          s.topDirectory,
-			fkTargetExtensionFlag: s.targetExtension,
-		}
+func (s *Search) LogFields(includeFilters bool) map[string]interface{} {
+	m := map[string]interface{}{
+		fkTopDirFlag:          s.topDirectory,
+		fkTargetExtensionFlag: s.targetExtension,
 	}
+	if includeFilters {
+		m[fkAlbumFilterFlag] = s.albumFilter
+		m[fkArtistFilterFlag] = s.artistFilter
+	}
+	return m
 }
 
 // FilterArtists filters out the unwanted artists and albums from the input. The
@@ -115,7 +110,7 @@ func (s *Search) FilterArtists(unfilteredArtists []*Artist) (artists []*Artist, 
 // LoadData collects the artists, albums, and mp3 tracks, honoring all the
 // search parameters.
 // TODO [#77] need OutputBus
-func (s *Search) LoadData(wErr io.Writer) (artists []*Artist, ok bool) {
+func (s *Search) LoadData(o internal.OutputBus, logger internal.Logger, wErr io.Writer) (artists []*Artist, ok bool) {
 	logrus.WithFields(s.LogFields(true)).Info(internal.LI_READING_FILTERED_FILES)
 	if artistFiles, ok := s.contents(wErr); ok {
 		for _, artistFile := range artistFiles {
@@ -134,7 +129,7 @@ func (s *Search) LoadData(wErr io.Writer) (artists []*Artist, ok bool) {
 							if trackFile.IsDir() || !trackNameRegex.MatchString(trackFile.Name()) {
 								continue
 							}
-							if simpleName, trackNumber, valid := parseTrackName(trackFile.Name(), album, s.targetExtension); valid {
+							if simpleName, trackNumber, valid := parseTrackName(o, trackFile.Name(), album, s.targetExtension); valid {
 								album.AddTrack(newTrackFromFile(album, trackFile, simpleName, trackNumber))
 							}
 						}
@@ -151,7 +146,7 @@ func (s *Search) LoadData(wErr io.Writer) (artists []*Artist, ok bool) {
 	}
 	ok = len(artists) != 0
 	if !ok {
-		logrus.WithFields(s.LogFields(true)).Warn(internal.LW_NO_ARTIST_DIRECTORIES)
+		o.LogWriter().Warn(internal.LW_NO_ARTIST_DIRECTORIES, s.LogFields(true))
 	}
 	return
 }

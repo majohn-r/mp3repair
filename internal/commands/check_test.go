@@ -69,9 +69,10 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 	}{
 		{name: "no work to do", c: &check{checkEmptyFolders: &fFlag}, args: args{}, wantOk: true},
 		{
-			name: "empty topDir",
-			c:    &check{checkEmptyFolders: &tFlag},
-			args: args{s: files.CreateSearchForTesting(emptyDirName)},
+			name:          "empty topDir",
+			c:             &check{checkEmptyFolders: &tFlag},
+			args:          args{s: files.CreateSearchForTesting(emptyDirName)},
+			wantLogOutput: "level='warn' -ext='.mp3' -topDir='empty' msg='cannot find any artist directories'\n",
 		},
 		{
 			name:                "folders, no empty folders present",
@@ -152,13 +153,13 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("%s console output = %v, want %v", fnName, gotConsoleOutput, tt.wantConsoleOutput)
+				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
 			}
 			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("%s error output = %v, want %v", fnName, gotErrorOutput, tt.wantErrorOutput)
+				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
 			}
 			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("%s log output = %v, want %v", fnName, gotLogOutput, tt.wantLogOutput)
+				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}
@@ -177,8 +178,8 @@ func Test_filterArtists(t *testing.T) {
 		t.Errorf("%s error populating %s: %v", fnName, topDirName, err)
 	}
 	searchStruct := files.CreateSearchForTesting(topDirName)
-	fullArtists, _ := searchStruct.LoadUnfilteredData(os.Stderr)
-	filteredArtists, _ := searchStruct.LoadData(os.Stderr)
+	fullArtists, _ := searchStruct.LoadUnfilteredData(internal.NewOutputDeviceForTesting())
+	filteredArtists, _ := searchStruct.LoadData(internal.NewOutputDeviceForTesting(), internal.NewOutputDevice().LogWriter(), internal.NewOutputDevice().ErrorWriter())
 	type args struct {
 		s       *files.Search
 		artists []*files.Artist
@@ -371,7 +372,7 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 		t.Errorf("error creating track")
 	}
 	s := files.CreateSearchForTesting(topDirName)
-	a, _ := s.LoadUnfilteredData(os.Stderr)
+	a, _ := s.LoadUnfilteredData(internal.NewOutputDeviceForTesting())
 	type args struct {
 		artists []*files.Artist
 	}

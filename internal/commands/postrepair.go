@@ -39,7 +39,7 @@ func (p *postrepair) logFields() map[string]interface{} {
 
 func (p *postrepair) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 	o.LogWriter().Info(internal.LI_EXECUTING_COMMAND, p.logFields())
-	artists, ok := s.LoadData(o.ErrorWriter())
+	artists, ok := s.LoadData(o, o.LogWriter(), o.ErrorWriter())
 	if ok {
 		backups := make(map[string]*files.Album)
 		var backupDirectories []string

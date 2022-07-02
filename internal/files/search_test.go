@@ -5,7 +5,6 @@ import (
 	"flag"
 	"io/fs"
 	"mp3/internal"
-	"os"
 	"reflect"
 	"testing"
 )
@@ -70,11 +69,11 @@ func TestSearch_FilterArtists(t *testing.T) {
 	realFlagSet := flag.NewFlagSet("real", flag.ContinueOnError)
 	realS, _ := NewSearchFlags(internal.EmptyConfiguration(), realFlagSet).ProcessArgs(
 		internal.NewOutputDeviceForTesting(), []string{"-topDir", topDir})
-	realArtists, _ := realS.LoadData(os.Stderr)
+	realArtists, _ := realS.LoadData(internal.NewOutputDeviceForTesting(), internal.NewOutputDevice().LogWriter(), internal.NewOutputDevice().ErrorWriter())
 	overFilteredS, _ := NewSearchFlags(internal.EmptyConfiguration(),
 		flag.NewFlagSet("overFiltered", flag.ContinueOnError)).ProcessArgs(
 		internal.NewOutputDeviceForTesting(), []string{"-topDir", topDir, "-artistFilter", "^Filter all out$"})
-	a, _ := realS.LoadUnfilteredData(os.Stderr)
+	a, _ := realS.LoadUnfilteredData(internal.NewOutputDeviceForTesting())
 	type args struct {
 		unfilteredArtists []*Artist
 	}
@@ -127,11 +126,13 @@ func TestSearch_LoadData(t *testing.T) {
 		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
 	}
 	tests := []struct {
-		name        string
-		s           *Search
-		wantArtists []*Artist
-		wantWErr    string
-		wantOk      bool
+		name              string
+		s                 *Search
+		wantArtists       []*Artist
+		wantConsoleOutput string
+		wantErrorOutput   string
+		wantLogOutput     string
+		wantOk            bool
 	}{
 		{
 			name:        "read all",
@@ -146,23 +147,31 @@ func TestSearch_LoadData(t *testing.T) {
 			wantOk:      true,
 		},
 		{
-			name: "read with all artists filtered out",
-			s:    CreateFilteredSearchForTesting(topDir, "^.*X$", "^.*$"),
+			name:          "read with all artists filtered out",
+			s:             CreateFilteredSearchForTesting(topDir, "^.*X$", "^.*$"),
+			wantLogOutput: "level='warn' -albumFilter='^.*$' -artistFilter='^.*X$' -ext='.mp3' -topDir='loadTest' msg='cannot find any artist directories'\n",
 		},
 		{
-			name: "read with all albums filtered out",
-			s:    CreateFilteredSearchForTesting(topDir, "^.*$", "^.*X$"),
+			name:          "read with all albums filtered out",
+			s:             CreateFilteredSearchForTesting(topDir, "^.*$", "^.*X$"),
+			wantLogOutput: "level='warn' -albumFilter='^.*X$' -artistFilter='^.*$' -ext='.mp3' -topDir='loadTest' msg='cannot find any artist directories'\n",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			wErr := &bytes.Buffer{}
-			gotArtists, gotOk := tt.s.LoadData(wErr)
+			o := internal.NewOutputDeviceForTesting()
+			gotArtists, gotOk := tt.s.LoadData(o, o.LogWriter(), o.ErrorWriter())
 			if !reflect.DeepEqual(gotArtists, tt.wantArtists) {
 				t.Errorf("Search.LoadData() = %v, want %v", gotArtists, tt.wantArtists)
 			}
-			if gotWErr := wErr.String(); gotWErr != tt.wantWErr {
-				t.Errorf("Search.LoadData() = %v, want %v", gotWErr, tt.wantWErr)
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("Search.LoadData() console output = %q, want %q", gotConsoleOutput, tt.wantConsoleOutput)
+			}
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("Search.LoadData() error output = %q, want %q", gotErrorOutput, tt.wantErrorOutput)
+			}
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("Search.LoadData() log output = %q, want %q", gotLogOutput, tt.wantLogOutput)
 			}
 			if gotOk != tt.wantOk {
 				t.Errorf("Search.LoadData() ok = %v, want %v", gotOk, tt.wantOk)
@@ -190,11 +199,13 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 		t.Errorf("%s error creating %s: %v", fnName, emptyDir, err)
 	}
 	tests := []struct {
-		name        string
-		s           *Search
-		wantArtists []*Artist
-		wantWErr    string
-		wantOk      bool
+		name              string
+		s                 *Search
+		wantArtists       []*Artist
+		wantConsoleOutput string
+		wantLogOutput     string
+		wantErrorOutput   string
+		wantOk            bool
 	}{
 		{
 			name:        "read all",
@@ -202,21 +213,30 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 			wantArtists: CreateAllArtistsForTesting(topDir, true),
 			wantOk:      true,
 		},
-		{name: "empty dir", s: CreateSearchForTesting(emptyDir)},
+		{
+			name:          "empty dir",
+			s:             CreateSearchForTesting(emptyDir),
+			wantLogOutput: "level='warn' -ext='.mp3' -topDir='empty directory' msg='cannot find any artist directories'\n"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			wErr := &bytes.Buffer{}
 			var gotArtists []*Artist
 			var gotOk bool
-			if gotArtists, gotOk = tt.s.LoadUnfilteredData(wErr); !reflect.DeepEqual(gotArtists, tt.wantArtists) {
+			o := internal.NewOutputDeviceForTesting()
+			if gotArtists, gotOk = tt.s.LoadUnfilteredData(o); !reflect.DeepEqual(gotArtists, tt.wantArtists) {
 				t.Errorf("Search.LoadUnfilteredData() = %v, want %v", gotArtists, tt.wantArtists)
 			}
 			if gotOk != tt.wantOk {
 				t.Errorf("Search.LoadUnfilteredData() ok = %v, want %v", gotOk, tt.wantOk)
 			}
-			if gotWErr := wErr.String(); gotWErr != tt.wantWErr {
-				t.Errorf("Search.LoadUnfilteredData() = %v, want %v", gotWErr, tt.wantWErr)
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
+				t.Errorf("Search.LoadUnfilteredData() console output = %q, want %q", gotConsoleOutput, tt.wantConsoleOutput)
+			}
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
+				t.Errorf("Search.LoadUnfilteredData() error output = %q, want %q", gotErrorOutput, tt.wantErrorOutput)
+			}
+			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
+				t.Errorf("Search.LoadUnfilteredData() log output = %q, want %q", gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}

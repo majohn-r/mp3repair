@@ -60,7 +60,7 @@ func (r *repair) logFields() map[string]interface{} {
 
 func (r *repair) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 	o.LogWriter().Info(internal.LI_EXECUTING_COMMAND, r.logFields())
-	artists, ok := s.LoadData(o.ErrorWriter())
+	artists, ok := s.LoadData(o, o.LogWriter(), o.ErrorWriter())
 	if ok {
 		files.UpdateTracks(artists, files.RawReadTags)
 		tracksWithConflicts := findConflictedTracks(artists)
