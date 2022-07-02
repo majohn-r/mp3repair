@@ -41,7 +41,7 @@ func (s *Search) LoadUnfilteredData(o internal.OutputBus) (artists []*Artist, ok
 							continue
 						}
 						album := newAlbumFromFile(albumFile, artist)
-						if trackFiles, ok := album.contents(o.ErrorWriter()); ok {
+						if trackFiles, ok := album.contents(o); ok {
 							for _, trackFile := range trackFiles {
 								if trackFile.IsDir() || !trackNameRegex.MatchString(trackFile.Name()) {
 									continue
@@ -110,22 +110,21 @@ func (s *Search) FilterArtists(o internal.OutputBus, unfilteredArtists []*Artist
 
 // LoadData collects the artists, albums, and mp3 tracks, honoring all the
 // search parameters.
-// TODO [#77] need OutputBus
-func (s *Search) LoadData(o internal.OutputBus, logger internal.Logger, wErr io.Writer) (artists []*Artist, ok bool) {
+func (s *Search) LoadData(o internal.OutputBus) (artists []*Artist, ok bool) {
 	logrus.WithFields(s.LogFields(true)).Info(internal.LI_READING_FILTERED_FILES)
-	if artistFiles, ok := s.contents(wErr); ok {
+	if artistFiles, ok := s.contents(o.ErrorWriter()); ok {
 		for _, artistFile := range artistFiles {
 			if !artistFile.IsDir() || !s.artistFilter.MatchString(artistFile.Name()) {
 				continue
 			}
 			artist := newArtistFromFile(artistFile, s.topDirectory)
-			if albumFiles, ok := artist.contents(wErr); ok {
+			if albumFiles, ok := artist.contents(o.ErrorWriter()); ok {
 				for _, albumFile := range albumFiles {
 					if !albumFile.IsDir() || !s.albumFilter.MatchString(albumFile.Name()) {
 						continue
 					}
 					album := newAlbumFromFile(albumFile, artist)
-					if trackFiles, ok := album.contents(wErr); ok {
+					if trackFiles, ok := album.contents(o); ok {
 						for _, trackFile := range trackFiles {
 							if trackFile.IsDir() || !trackNameRegex.MatchString(trackFile.Name()) {
 								continue

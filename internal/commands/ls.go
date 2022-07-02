@@ -99,7 +99,7 @@ func (l *ls) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 			o.LogWriter().Info(internal.LI_PARAMETERS_OVERRIDDEN, l.logFields())
 		}
 	}
-	artists, ok := s.LoadData(o, o.LogWriter(), o.ErrorWriter())
+	artists, ok := s.LoadData(o)
 	if ok {
 		l.outputArtists(o, artists)
 	}

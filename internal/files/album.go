@@ -1,8 +1,8 @@
 package files
 
 import (
-	"io"
 	"io/fs"
+	"mp3/internal"
 	"path/filepath"
 )
 
@@ -36,9 +36,8 @@ func (a *Album) BackupDirectory() string {
 	return a.subDirectory(backupDirName)
 }
 
-// TODO [#77] use OutputBus
-func (a *Album) contents(wErr io.Writer) ([]fs.FileInfo, bool) {
-	return readDirectory(wErr, a.path)
+func (a *Album) contents(o internal.OutputBus) ([]fs.FileInfo, bool) {
+	return readDirectory(o.ErrorWriter(), a.path)
 }
 
 // Name returns the album's name

@@ -69,7 +69,7 @@ func TestSearch_FilterArtists(t *testing.T) {
 	realFlagSet := flag.NewFlagSet("real", flag.ContinueOnError)
 	realS, _ := NewSearchFlags(internal.EmptyConfiguration(), realFlagSet).ProcessArgs(
 		internal.NewOutputDeviceForTesting(), []string{"-topDir", topDir})
-	realArtists, _ := realS.LoadData(internal.NewOutputDeviceForTesting(), internal.NewOutputDevice().LogWriter(), internal.NewOutputDevice().ErrorWriter())
+	realArtists, _ := realS.LoadData(internal.NewOutputDeviceForTesting())
 	overFilteredS, _ := NewSearchFlags(internal.EmptyConfiguration(),
 		flag.NewFlagSet("overFiltered", flag.ContinueOnError)).ProcessArgs(
 		internal.NewOutputDeviceForTesting(), []string{"-topDir", topDir, "-artistFilter", "^Filter all out$"})
@@ -177,7 +177,7 @@ func TestSearch_LoadData(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
-			gotArtists, gotOk := tt.s.LoadData(o, o.LogWriter(), o.ErrorWriter())
+			gotArtists, gotOk := tt.s.LoadData(o)
 			if !reflect.DeepEqual(gotArtists, tt.wantArtists) {
 				t.Errorf("Search.LoadData() = %v, want %v", gotArtists, tt.wantArtists)
 			}

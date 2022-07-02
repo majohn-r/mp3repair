@@ -217,8 +217,7 @@ func merge(sets [][]*artistWithIssues) []*artistWithIssues {
 func (c *check) filterArtists(o internal.OutputBus, s *files.Search, artists []*files.Artist) (filteredArtists []*files.Artist, ok bool) {
 	if *c.checkGapsInTrackNumbering || *c.checkIntegrity {
 		if len(artists) == 0 {
-			// TODO [#77] need to use OutputBus
-			filteredArtists, ok = s.LoadData(o, o.LogWriter(), o.ErrorWriter())
+			filteredArtists, ok = s.LoadData(o)
 		} else {
 			filteredArtists, ok = s.FilterArtists(o, artists)
 		}

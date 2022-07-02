@@ -180,7 +180,7 @@ func Test_filterArtists(t *testing.T) {
 	}
 	searchStruct := files.CreateSearchForTesting(topDirName)
 	fullArtists, _ := searchStruct.LoadUnfilteredData(internal.NewOutputDeviceForTesting())
-	filteredArtists, _ := searchStruct.LoadData(internal.NewOutputDeviceForTesting(), internal.NewOutputDevice().LogWriter(), internal.NewOutputDevice().ErrorWriter())
+	filteredArtists, _ := searchStruct.LoadData(internal.NewOutputDeviceForTesting())
 	type args struct {
 		s       *files.Search
 		artists []*files.Artist
