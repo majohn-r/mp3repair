@@ -70,7 +70,8 @@ func Test_postrepair_Exec(t *testing.T) {
 				internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError)),
 			args:              args{args: []string{"-topDir", topDirName}},
 			wantConsoleOutput: "There are no backup directories to delete\n",
-			wantLogOutput:     "level='info' command='postRepair' msg='executing command'\n",
+			wantLogOutput: "level='info' command='postRepair' msg='executing command'\n" +
+				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='postRepairExec' msg='reading filtered music files'\n",
 		},
 		{
 			name: "handle normal processing",
@@ -78,7 +79,8 @@ func Test_postrepair_Exec(t *testing.T) {
 				internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError)),
 			args:              args{args: []string{"-topDir", topDir2Name}},
 			wantConsoleOutput: "The backup directory for artist \"the artist\" album \"the album\" has been deleted\n",
-			wantLogOutput:     "level='info' command='postRepair' msg='executing command'\n",
+			wantLogOutput: "level='info' command='postRepair' msg='executing command'\n" +
+				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='postRepairExec2' msg='reading filtered music files'\n",
 		},
 	}
 	for _, tt := range tests {

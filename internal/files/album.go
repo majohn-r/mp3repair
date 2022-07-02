@@ -37,7 +37,7 @@ func (a *Album) BackupDirectory() string {
 }
 
 func (a *Album) contents(o internal.OutputBus) ([]fs.FileInfo, bool) {
-	return readDirectory(o.ErrorWriter(), a.path)
+	return readDirectory(o, a.path)
 }
 
 // Name returns the album's name

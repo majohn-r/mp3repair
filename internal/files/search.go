@@ -3,13 +3,10 @@ package files
 import (
 	"flag"
 	"fmt"
-	"io"
 	"io/fs"
 	"io/ioutil"
 	"mp3/internal"
 	"regexp"
-
-	"github.com/sirupsen/logrus"
 )
 
 // Search encapsulates the parameters used to find mp3 files and filter them by
@@ -21,17 +18,16 @@ type Search struct {
 	artistFilter    *regexp.Regexp
 }
 
-// TODO [#77] use OutputBus
-func (s *Search) contents(wErr io.Writer) ([]fs.FileInfo, bool) {
-	return readDirectory(wErr, s.topDirectory)
+func (s *Search) contents(o internal.OutputBus) ([]fs.FileInfo, bool) {
+	return readDirectory(o, s.topDirectory)
 }
 
 // LoadUnfilteredData loads artists, albums, and tracks from the specified top
 // directory, honoring the specified track extension, but ignoring the album and
 // artist filter expressions.
 func (s *Search) LoadUnfilteredData(o internal.OutputBus) (artists []*Artist, ok bool) {
-	logrus.WithFields(s.LogFields(false)).Info(internal.LI_READING_UNFILTERED_FILES)
-	if artistFiles, ok := s.contents(o.ErrorWriter()); ok {
+	o.LogWriter().Info(internal.LI_READING_UNFILTERED_FILES, s.LogFields(false))
+	if artistFiles, ok := s.contents(o); ok {
 		for _, artistFile := range artistFiles {
 			if artistFile.IsDir() {
 				artist := newArtistFromFile(artistFile, s.topDirectory)
@@ -66,7 +62,7 @@ func (s *Search) LoadUnfilteredData(o internal.OutputBus) (artists []*Artist, ok
 	return
 }
 
-// LogFields returns an appropriate set of logrus fields
+// LogFields returns an appropriate set of fields for logging
 func (s *Search) LogFields(includeFilters bool) map[string]interface{} {
 	m := map[string]interface{}{
 		fkTopDirFlag:          s.topDirectory,
@@ -82,7 +78,7 @@ func (s *Search) LogFields(includeFilters bool) map[string]interface{} {
 // FilterArtists filters out the unwanted artists and albums from the input. The
 // result is a new, filtered, copy of the original slice of Artists.
 func (s *Search) FilterArtists(o internal.OutputBus, unfilteredArtists []*Artist) (artists []*Artist, ok bool) {
-	logrus.WithFields(s.LogFields(true)).Info(internal.LI_FILTERING_FILES)
+	o.LogWriter().Info(internal.LI_FILTERING_FILES, s.LogFields(true))
 	for _, unfilteredArtist := range unfilteredArtists {
 		if s.artistFilter.MatchString(unfilteredArtist.Name()) {
 			artist := copyArtist(unfilteredArtist)
@@ -110,8 +106,8 @@ func (s *Search) FilterArtists(o internal.OutputBus, unfilteredArtists []*Artist
 // LoadData collects the artists, albums, and mp3 tracks, honoring all the
 // search parameters.
 func (s *Search) LoadData(o internal.OutputBus) (artists []*Artist, ok bool) {
-	logrus.WithFields(s.LogFields(true)).Info(internal.LI_READING_FILTERED_FILES)
-	if artistFiles, ok := s.contents(o.ErrorWriter()); ok {
+	o.LogWriter().Info(internal.LI_READING_FILTERED_FILES, s.LogFields(true))
+	if artistFiles, ok := s.contents(o); ok {
 		for _, artistFile := range artistFiles {
 			if !artistFile.IsDir() || !s.artistFilter.MatchString(artistFile.Name()) {
 				continue
@@ -170,15 +166,14 @@ func CreateFilteredSearchForTesting(topDir string, artistFilter string, albumFil
 	return s
 }
 
-// TODO [#77] use OutputBus
-func readDirectory(wErr io.Writer, dir string) (files []fs.FileInfo, ok bool) {
+func readDirectory(o internal.OutputBus, dir string) (files []fs.FileInfo, ok bool) {
 	var err error
 	if files, err = ioutil.ReadDir(dir); err != nil {
-		logrus.WithFields(logrus.Fields{
+		o.LogWriter().Warn(internal.LW_CANNOT_READ_DIRECTORY, map[string]interface{}{
 			internal.FK_DIRECTORY: dir,
 			internal.FK_ERROR:     err,
-		}).Warn(internal.LW_CANNOT_READ_DIRECTORY)
-		fmt.Fprintf(wErr, internal.USER_CANNOT_READ_DIRECTORY, dir, err)
+		})
+		fmt.Fprintf(o.ErrorWriter(), internal.USER_CANNOT_READ_DIRECTORY, dir, err)
 		return
 	}
 	ok = true

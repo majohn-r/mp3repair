@@ -216,14 +216,16 @@ func Test_repair_Exec(t *testing.T) {
 			r:                 newRepairCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
 			args:              args{[]string{"-topDir", topDirName, "-dryRun"}},
 			wantConsoleOutput: noProblemsFound + "\n",
-			wantLogOutput:     "level='info' -dryRun='true' command='repair' msg='executing command'\n",
+			wantLogOutput: "level='info' -dryRun='true' command='repair' msg='executing command'\n" +
+				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='repairExec' msg='reading filtered music files'\n",
 		},
 		{
 			name:              "real repair, no usable content",
 			r:                 newRepairCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
 			args:              args{[]string{"-topDir", topDirName, "-dryRun=false"}},
 			wantConsoleOutput: noProblemsFound + "\n",
-			wantLogOutput:     "level='info' -dryRun='false' command='repair' msg='executing command'\n",
+			wantLogOutput: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
+				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='repairExec' msg='reading filtered music files'\n",
 		},
 		{
 			name: "dry run, usable content",
@@ -234,7 +236,8 @@ func Test_repair_Exec(t *testing.T) {
 				"    \"new album\"",
 				"         1 \"new track\" need to fix track numbering; track name; album name; artist name;\n",
 			}, "\n"),
-			wantLogOutput: "level='info' -dryRun='true' command='repair' msg='executing command'\n",
+			wantLogOutput: "level='info' -dryRun='true' command='repair' msg='executing command'\n" +
+				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n",
 		},
 		{
 			name: "real repair, usable content",
@@ -244,7 +247,8 @@ func Test_repair_Exec(t *testing.T) {
 				"The track \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" has been backed up to \"realContent\\\\new artist\\\\new album\\\\pre-repair-backup\\\\1.mp3\".",
 				"\"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" fixed\n",
 			}, "\n"),
-			wantLogOutput: "level='info' -dryRun='false' command='repair' msg='executing command'\n",
+			wantLogOutput: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
+				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n",
 		},
 	}
 	for _, tt := range tests {

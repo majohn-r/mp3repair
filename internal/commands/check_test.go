@@ -73,7 +73,8 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 			c:               &check{checkEmptyFolders: &tFlag},
 			args:            args{s: files.CreateSearchForTesting(emptyDirName)},
 			wantErrorOutput: "No music files could be found using the specified parameters.\n",
-			wantLogOutput:   "level='warn' -ext='.mp3' -topDir='empty' msg='cannot find any artist directories'\n",
+			wantLogOutput: "level='info' -ext='.mp3' -topDir='empty' msg='reading unfiltered music files'\n" +
+				"level='warn' -ext='.mp3' -topDir='empty' msg='cannot find any artist directories'\n",
 		},
 		{
 			name:                "folders, no empty folders present",
@@ -82,6 +83,7 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 			wantArtists:         []*files.Artist{goodArtist},
 			wantFilteredArtists: nil,
 			wantConsoleOutput:   "Empty Folder Analysis: no empty folders found\n",
+			wantLogOutput:       "level='info' -ext='.mp3' -topDir='good' msg='reading unfiltered music files'\n",
 			wantOk:              true,
 		},
 		{
@@ -135,7 +137,8 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 					issues: []string{"no albums found"},
 				},
 			},
-			wantOk: true,
+			wantOk:        true,
+			wantLogOutput: "level='info' -ext='.mp3' -topDir='dirty' msg='reading unfiltered music files'\n",
 		},
 	}
 	for _, tt := range tests {
@@ -207,6 +210,7 @@ func Test_filterArtists(t *testing.T) {
 			args:                args{s: searchStruct},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
+			wantLogOutput:       "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='reading filtered music files'\n",
 		},
 		{
 			name:                "only gap analysis enabled, artists supplied",
@@ -214,6 +218,7 @@ func Test_filterArtists(t *testing.T) {
 			args:                args{s: searchStruct, artists: fullArtists},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
+			wantLogOutput:       "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='filtering music files'\n",
 		},
 		{
 			name:                "only integrity check enabled, no artists supplied",
@@ -221,6 +226,7 @@ func Test_filterArtists(t *testing.T) {
 			args:                args{s: searchStruct},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
+			wantLogOutput:       "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='reading filtered music files'\n",
 		},
 		{
 			name:                "only integrity check enabled, artists supplied",
@@ -228,6 +234,7 @@ func Test_filterArtists(t *testing.T) {
 			args:                args{s: searchStruct, artists: fullArtists},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
+			wantLogOutput:       "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='filtering music files'\n",
 		},
 		{
 			name:                "gap analysis and integrity check enabled, no artists supplied",
@@ -235,6 +242,7 @@ func Test_filterArtists(t *testing.T) {
 			args:                args{s: searchStruct},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
+			wantLogOutput:       "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='reading filtered music files'\n",
 		},
 		{
 			name:                "gap analysis and integrity check enabled, artists supplied",
@@ -242,6 +250,7 @@ func Test_filterArtists(t *testing.T) {
 			args:                args{s: searchStruct, artists: fullArtists},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
+			wantLogOutput:       "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='filtering music files'\n",
 		},
 	}
 	for _, tt := range tests {
@@ -255,13 +264,13 @@ func Test_filterArtists(t *testing.T) {
 				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("%s console output = %v, want %v", fnName, gotConsoleOutput, tt.wantConsoleOutput)
+				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
 			}
 			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("%s error output = %v, want %v", fnName, gotErrorOutput, tt.wantErrorOutput)
+				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
 			}
 			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("%s log output = %v, want %v", fnName, gotLogOutput, tt.wantLogOutput)
+				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}
@@ -501,8 +510,9 @@ func Test_check_Exec(t *testing.T) {
 				"  no albums found",
 				"",
 			}, "\n"),
-			wantLogOutput: "level='info' -empty='true' -gaps='false' -integrity='false' command='check' msg='executing command'\n",
-			wantOk:        true,
+			wantLogOutput: "level='info' -empty='true' -gaps='false' -integrity='false' command='check' msg='executing command'\n" +
+				"level='info' -ext='.mp3' -topDir='checkExec' msg='reading unfiltered music files'\n",
+			wantOk: true,
 		},
 	}
 	for _, tt := range tests {
@@ -512,13 +522,13 @@ func Test_check_Exec(t *testing.T) {
 				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("%s console output = %v, want %v", fnName, gotConsoleOutput, tt.wantConsoleOutput)
+				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
 			}
 			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("%s error output = %v, want %v", fnName, gotErrorOutput, tt.wantErrorOutput)
+				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
 			}
 			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("%s log output = %v, want %v", fnName, gotLogOutput, tt.wantLogOutput)
+				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
 			}
 		})
 	}
