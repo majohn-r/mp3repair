@@ -35,6 +35,7 @@ const (
 	LW_NOT_A_DIRECTORY             = "the file is not a directory"
 	LW_NOTHING_TO_DO               = "the user disabled all functionality"
 	LW_SORTING_OPTION_UNACCEPTABLE = "numeric track sorting is not applicable"
+	LW_TAG_ERROR                   = "tag error"
 	LW_UNEXPECTED_VALUE_TYPE       = "unexpected value type"
 )
 
@@ -68,6 +69,7 @@ const (
 	USER_NO_SUCH_COMMAND                              = "There is no command named %q; valid commands include %v.\n"
 	USER_NO_TEMP_FOLDER                               = "Neither the TMP nor TEMP environment variables are defined.\n"
 	USER_SPECIFIED_NO_WORK                            = "You disabled all functionality for the command %q.\n"
+	USER_TAG_ERROR                                    = "An error occurred when trying to read tag information for track %q on album %q by artist %q: %q\n"
 	USER_TOPDIR_NOT_A_DIRECTORY                       = "The -topDir value you specified, %q, is not a directory.\n"
 	USER_TRACK_NAME_GARBLED                           = "The track %q on album %q by artist %q cannot be parsed.\n"
 	USER_UNRECOGNIZED_VALUE                           = "The %q value you specified, %q, is not valid.\n"

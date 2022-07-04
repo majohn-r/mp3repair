@@ -216,16 +216,20 @@ func Test_repair_Exec(t *testing.T) {
 			r:                 newRepairCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
 			args:              args{[]string{"-topDir", topDirName, "-dryRun"}},
 			wantConsoleOutput: noProblemsFound + "\n",
+			wantErrorOutput:   generateStandardTrackErrorReport(),
 			wantLogOutput: "level='info' -dryRun='true' command='repair' msg='executing command'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='repairExec' msg='reading filtered music files'\n",
+				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='repairExec' msg='reading filtered music files'\n" +
+				generateStandardTrackLogReport(),
 		},
 		{
 			name:              "real repair, no usable content",
 			r:                 newRepairCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
 			args:              args{[]string{"-topDir", topDirName, "-dryRun=false"}},
 			wantConsoleOutput: noProblemsFound + "\n",
+			wantErrorOutput:   generateStandardTrackErrorReport(),
 			wantLogOutput: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='repairExec' msg='reading filtered music files'\n",
+				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='repairExec' msg='reading filtered music files'\n" +
+				generateStandardTrackLogReport(),
 		},
 		{
 			name: "dry run, usable content",
@@ -266,6 +270,30 @@ func Test_repair_Exec(t *testing.T) {
 			}
 		})
 	}
+}
+
+func generateStandardTrackErrorReport() string {
+	var result []string
+	for artist := 0; artist < 10; artist++ {
+		for album := 0; album < 10; album++ {
+			for track := 0; track < 10; track++ {
+				result = append(result, fmt.Sprintf("An error occurred when trying to read tag information for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"zero length\"\n", track, album, artist))
+			}
+		}
+	}
+	return strings.Join(result, "")
+}
+
+func generateStandardTrackLogReport() string {
+	var result []string
+	for artist := 0; artist < 10; artist++ {
+		for album := 0; album < 10; album++ {
+			for track := 0; track < 10; track++ {
+				result = append(result, fmt.Sprintf("level='warn' albumName='Test Album %d' artistName='Test Artist %d' error='zero length' trackName='Test Track[%02d]' msg='tag error'\n", album, artist, track))
+			}
+		}
+	}
+	return strings.Join(result, "")
 }
 
 func Test_getAlbumPaths(t *testing.T) {

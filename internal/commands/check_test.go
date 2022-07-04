@@ -398,9 +398,11 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 		{name: "degenerate case", c: &check{checkIntegrity: &fFlag}, args: args{}},
 		{name: "no artists", c: &check{checkIntegrity: &tFlag}, args: args{}, wantConsoleOutput: "Integrity Analysis: no issues found\n"},
 		{
-			name: "meaningful case",
-			c:    &check{checkIntegrity: &tFlag},
-			args: args{artists: a},
+			name:            "meaningful case",
+			c:               &check{checkIntegrity: &tFlag},
+			args:            args{artists: a},
+			wantErrorOutput: "An error occurred when trying to read tag information for track \"track\" on album \"album\" by artist \"artist\": \"zero length\"\n",
+			wantLogOutput:   "level='warn' albumName='album' artistName='artist' error='zero length' trackName='track' msg='tag error'\n",
 			wantConflictedArtists: []*artistWithIssues{
 				{
 					name: "artist",
@@ -411,7 +413,7 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 								{
 									name:   "track",
 									number: 1,
-									issues: []string{"cannot determine differences, tags were not recognized"},
+									issues: []string{"cannot determine differences, there was an error reading tags"},
 								},
 							},
 						},
@@ -425,13 +427,13 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			gotConflictedArtists := filterAndSortArtists(tt.c.performIntegrityCheck(o, tt.args.artists))
 			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("%s console output = %v, want %v", fnName, gotConsoleOutput, tt.wantConsoleOutput)
+				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
 			}
 			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("%s error output = %v, want %v", fnName, gotErrorOutput, tt.wantErrorOutput)
+				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
 			}
 			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("%s log output = %v, want %v", fnName, gotLogOutput, tt.wantLogOutput)
+				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
 			}
 			if !reflect.DeepEqual(gotConflictedArtists, tt.wantConflictedArtists) {
 				t.Errorf("check.performGapAnalysis() = %v, want %v", gotConflictedArtists, tt.wantConflictedArtists)

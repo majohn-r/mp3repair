@@ -62,7 +62,7 @@ func (r *repair) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 	o.LogWriter().Info(internal.LI_EXECUTING_COMMAND, r.logFields())
 	artists, ok := s.LoadData(o)
 	if ok {
-		files.UpdateTracks(artists, files.RawReadTags)
+		files.UpdateTracks(o, artists, files.RawReadTags)
 		tracksWithConflicts := findConflictedTracks(artists)
 		if len(tracksWithConflicts) == 0 {
 			fmt.Fprintln(o.ConsoleWriter(), noProblemsFound)

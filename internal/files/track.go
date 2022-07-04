@@ -13,22 +13,19 @@ import (
 )
 
 const (
-	albumFrame               = "TALB"
-	artistFrame              = "TPE1"
-	defaultFileExtension     = "." + rawExtension
-	defaultTrackNamePattern  = "^\\d+[\\s-].+\\." + rawExtension + "$"
-	fkAlbumName              = "albumName"
-	fkArtistName             = "artistName"
-	fkTrackName              = "trackName"
-	rawExtension             = "mp3"
-	titleFrame               = "TIT2"
-	trackDiffBadTags         = "cannot determine differences, tags were not recognized"
-	trackDiffUnreadableTags  = "cannot determine differences, could not read tags"
-	trackDiffUnreadTags      = "cannot determine differences, tags have not been read"
-	trackFrame               = "TRCK"
-	trackUnknownTagsNotRead  = 0
-	trackUnknownFormatError  = -1
-	trackUnknownTagReadError = -2
+	albumFrame              = "TALB"
+	artistFrame             = "TPE1"
+	defaultFileExtension    = "." + rawExtension
+	defaultTrackNamePattern = "^\\d+[\\s-].+\\." + rawExtension + "$"
+	fkAlbumName             = "albumName"
+	fkArtistName            = "artistName"
+	fkTrackName             = "trackName"
+	rawExtension            = "mp3"
+	titleFrame              = "TIT2"
+	trackDiffUnreadTags     = "cannot determine differences, tags have not been read"
+	trackDiffError          = "cannot determine differences, there was an error reading tags"
+	trackFrame              = "TRCK"
+	trackUnknownTagsNotRead = 0
 )
 
 // Track encapsulates data about a track in an album
@@ -38,10 +35,11 @@ type Track struct {
 	number          int    // number of the track
 	containingAlbum *Album
 	// these fields are populated when needed; acquisition is expensive
-	title  string // track title per mp3 tag TIT2 frame
-	track  int    // track number per mp3 tag TRCK frame - initially set to trackUnknownTagsNotRead
-	album  string // album name per mp3 tag TALB frame
-	artist string // artist name per mp3 tag TPE1 frame
+	title    string // track title per mp3 tag TIT2 frame
+	track    int    // track number per mp3 tag TRCK frame - initially set to trackUnknownTagsNotRead
+	album    string // album name per mp3 tag TALB frame
+	artist   string // artist name per mp3 tag TPE1 frame
+	tagError string
 }
 
 // String returns the track's path (implementation of Stringer interface)
@@ -140,6 +138,7 @@ type TaggedTrackData struct {
 	artist string
 	title  string
 	track  string
+	err    string
 }
 
 // NewTaggedTrackData creates a new instance of TaggedTrackData
@@ -149,6 +148,7 @@ func NewTaggedTrackData(albumFrame, artistFrame, titleFrame, numberFrame string)
 		artist: artistFrame,
 		title:  titleFrame,
 		track:  numberFrame,
+		err:    "",
 	}
 }
 
@@ -160,15 +160,11 @@ func (t *Track) BackupDirectory() string {
 }
 
 func (t *Track) needsTaggedData() bool {
-	return t.track == trackUnknownTagsNotRead
+	return t.track == trackUnknownTagsNotRead && !t.hasTagError()
 }
 
-func (t *Track) setTagReadErrorCode() {
-	t.track = trackUnknownTagReadError
-}
-
-func (t *Track) setTagFormatErrorCode() {
-	t.track = trackUnknownFormatError
+func (t *Track) hasTagError() bool {
+	return len(t.tagError) != 0
 }
 
 func toTrackNumber(s string) (i int, err error) {
@@ -204,14 +200,17 @@ func toTrackNumber(s string) (i int, err error) {
 
 // SetTags sets track frame fields
 func (t *Track) SetTags(d *TaggedTrackData) {
-	if trackNumber, err := toTrackNumber(d.track); err != nil {
-		// TODO [#88] need to save the error in the track!
-		t.setTagFormatErrorCode()
+	if len(d.err) != 0 {
+		t.tagError = d.err
 	} else {
-		t.album = removeLeadingBOMs(d.album)
-		t.artist = removeLeadingBOMs(d.artist)
-		t.title = removeLeadingBOMs(d.title)
-		t.track = trackNumber
+		if trackNumber, err := toTrackNumber(d.track); err != nil {
+			t.tagError = fmt.Sprintf("%v", err)
+		} else {
+			t.album = removeLeadingBOMs(d.album)
+			t.artist = removeLeadingBOMs(d.artist)
+			t.title = removeLeadingBOMs(d.title)
+			t.track = trackNumber
+		}
 	}
 }
 
@@ -233,8 +232,7 @@ type nameTagPair struct {
 }
 
 type taggedTrackState struct {
-	tagFormatError     bool
-	tagReadError       bool
+	hasError           bool
 	noTags             bool
 	numberingConflict  bool
 	trackNameConflict  bool
@@ -278,12 +276,11 @@ func (s taggedTrackState) HasTaggingConflicts() bool {
 // AnalyzeIssues determines whether there are problems with the track's
 // frame-based values.
 func (t *Track) AnalyzeIssues() taggedTrackState {
+	if t.hasTagError() {
+		return taggedTrackState{hasError: true}
+	}
 	switch t.track {
-	case trackUnknownFormatError:
-		return taggedTrackState{tagFormatError: true}
-	case trackUnknownTagReadError:
-		return taggedTrackState{tagReadError: true}
-	case trackUnknownTagsNotRead:
+	case 0:
 		return taggedTrackState{noTags: true}
 	default:
 		return taggedTrackState{
@@ -299,11 +296,8 @@ func (t *Track) AnalyzeIssues() taggedTrackState {
 // AnalyzeIssues.
 func (t *Track) FindDifferences() []string {
 	s := t.AnalyzeIssues()
-	if s.tagFormatError {
-		return []string{trackDiffBadTags}
-	}
-	if s.tagReadError {
-		return []string{trackDiffUnreadableTags}
+	if s.hasError {
+		return []string{trackDiffError}
 	}
 	if s.noTags {
 		return []string{trackDiffUnreadTags}
@@ -358,18 +352,19 @@ var stdFrames = []string{albumFrame, artistFrame, titleFrame, trackFrame}
 
 // RawReadTags reads the tag from an MP3 file and collects interesting frame
 // values.
-func RawReadTags(path string) (d *TaggedTrackData, err error) {
+func RawReadTags(path string) (d *TaggedTrackData) {
+	d = &TaggedTrackData{}
 	var tag *id3v2.Tag
+	var err error
 	if tag, err = id3v2.Open(path, id3v2.Options{Parse: true, ParseFrames: stdFrames}); err != nil {
+		d.err = fmt.Sprintf("%v", err)
 		return
 	}
 	defer tag.Close()
-	d = &TaggedTrackData{
-		album:  tag.Album(),
-		artist: tag.Artist(),
-		title:  tag.Title(),
-		track:  tag.GetTextFrame(trackFrame).Text,
-	}
+	d.album = tag.Album()
+	d.artist = tag.Artist()
+	d.title = tag.Title()
+	d.track = tag.GetTextFrame(trackFrame).Text
 	return
 }
 
@@ -408,25 +403,20 @@ type empty struct{}
 
 var semaphores = make(chan empty, 20) // 20 is a typical limit for open files
 
-func (t *Track) readTags(reader func(string) (*TaggedTrackData, error)) {
+func (t *Track) readTags(reader func(string) *TaggedTrackData) {
 	if t.needsTaggedData() {
 		semaphores <- empty{} // block while full
 		go func() {
 			defer func() {
 				<-semaphores // read to release a slot
 			}()
-			if tags, err := reader(t.path); err != nil {
-				t.setTagReadErrorCode()
-			} else {
-				t.SetTags(tags)
-			}
+			t.SetTags(reader(t.path))
 		}()
 	}
 }
 
 // UpdateTracks reads the MP3 tags for all the associated tracks.
-// TODO [#88] need a post-mortem as to any problems found
-func UpdateTracks(artists []*Artist, reader func(string) (*TaggedTrackData, error)) {
+func UpdateTracks(o internal.OutputBus, artists []*Artist, reader func(string) *TaggedTrackData) {
 	for _, artist := range artists {
 		for _, album := range artist.Albums() {
 			for _, track := range album.Tracks() {
@@ -435,6 +425,25 @@ func UpdateTracks(artists []*Artist, reader func(string) (*TaggedTrackData, erro
 		}
 	}
 	waitForSemaphoresDrained()
+	reportTrackErrors(o, artists)
+}
+
+func reportTrackErrors(o internal.OutputBus, artists []*Artist) {
+	for _, artist := range artists {
+		for _, album := range artist.Albums() {
+			for _, track := range album.Tracks() {
+				if track.hasTagError() {
+					fmt.Fprintf(o.ErrorWriter(), internal.USER_TAG_ERROR, track.name, album.name, artist.name, track.tagError)
+					o.LogWriter().Warn(internal.LW_TAG_ERROR, map[string]interface{}{
+						fkTrackName:       track.name,
+						fkAlbumName:       album.name,
+						fkArtistName:      artist.name,
+						internal.FK_ERROR: track.tagError,
+					})
+				}
+			}
+		}
+	}
 }
 
 func waitForSemaphoresDrained() {
