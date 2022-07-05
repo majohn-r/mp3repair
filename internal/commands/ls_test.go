@@ -14,40 +14,44 @@ import (
 func Test_ls_validateTrackSorting(t *testing.T) {
 	fnName := "ls.validateTrackSorting()"
 	tests := []struct {
-		name              string
-		sortingInput      string
-		includeAlbums     bool
-		wantSorting       string
-		wantConsoleOutput string
-		wantErrorOutput   string
-		wantLogOutput     string
+		name          string
+		sortingInput  string
+		includeAlbums bool
+		wantSorting   string
+		internal.WantedOutput
 	}{
 		{name: "alpha sorting with albums", sortingInput: "alpha", includeAlbums: true, wantSorting: "alpha"},
 		{name: "alpha sorting without albums", sortingInput: "alpha", includeAlbums: false, wantSorting: "alpha"},
 		{name: "numeric sorting with albums", sortingInput: "numeric", includeAlbums: true, wantSorting: "numeric"},
 		{
-			name:            "numeric sorting without albums",
-			sortingInput:    "numeric",
-			includeAlbums:   false,
-			wantSorting:     "alpha",
-			wantErrorOutput: "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
-			wantLogOutput:   "level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n",
+			name:          "numeric sorting without albums",
+			sortingInput:  "numeric",
+			includeAlbums: false,
+			wantSorting:   "alpha",
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+				WantLogOutput:   "level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n",
+			},
 		},
 		{
-			name:            "invalid sorting with albums",
-			sortingInput:    "nonsense",
-			includeAlbums:   true,
-			wantSorting:     "numeric",
-			wantErrorOutput: "The \"-sort\" value you specified, \"nonsense\", is not valid.\n",
-			wantLogOutput:   "level='warn' -sort='nonsense' command='ls' msg='flag value is not valid'\n",
+			name:          "invalid sorting with albums",
+			sortingInput:  "nonsense",
+			includeAlbums: true,
+			wantSorting:   "numeric",
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The \"-sort\" value you specified, \"nonsense\", is not valid.\n",
+				WantLogOutput:   "level='warn' -sort='nonsense' command='ls' msg='flag value is not valid'\n",
+			},
 		},
 		{
-			name:            "invalid sorting without albums",
-			sortingInput:    "nonsense",
-			includeAlbums:   false,
-			wantSorting:     "alpha",
-			wantErrorOutput: "The \"-sort\" value you specified, \"nonsense\", is not valid.\n",
-			wantLogOutput:   "level='warn' -sort='nonsense' command='ls' msg='flag value is not valid'\n",
+			name:          "invalid sorting without albums",
+			sortingInput:  "nonsense",
+			includeAlbums: false,
+			wantSorting:   "alpha",
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The \"-sort\" value you specified, \"nonsense\", is not valid.\n",
+				WantLogOutput:   "level='warn' -sort='nonsense' command='ls' msg='flag value is not valid'\n",
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -61,14 +65,10 @@ func Test_ls_validateTrackSorting(t *testing.T) {
 			if *lsCommand.trackSorting != tt.wantSorting {
 				t.Errorf("%s: got %q, want %q", fnName, *lsCommand.trackSorting, tt.wantSorting)
 			}
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("%s: console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("%s: error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("%s: log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
+				}
 			}
 		})
 	}
@@ -222,12 +222,10 @@ func Test_ls_Exec(t *testing.T) {
 		args []string
 	}
 	tests := []struct {
-		name              string
-		l                 *ls
-		args              args
-		wantConsoleOutput string
-		wantErrorOutput   string
-		wantLogOutput     string
+		name string
+		l    *ls
+		args args
+		internal.WantedOutput
 	}{
 		{
 			name: "no output",
@@ -240,9 +238,11 @@ func Test_ls_Exec(t *testing.T) {
 					"-includeTracks=false",
 				},
 			},
-			wantConsoleOutput: generateListing(false, false, false, false, false),
-			wantErrorOutput:   "You disabled all functionality for the command \"ls\".\n",
-			wantLogOutput:     "level='warn' -annotate='false' -includeAlbums='false' -includeArtists='false' -includeTracks='false' -sort='numeric' command='ls' msg='the user disabled all functionality'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(false, false, false, false, false),
+				WantErrorOutput:   "You disabled all functionality for the command \"ls\".\n",
+				WantLogOutput:     "level='warn' -annotate='false' -includeAlbums='false' -includeArtists='false' -includeTracks='false' -sort='numeric' command='ls' msg='the user disabled all functionality'\n",
+			},
 		},
 		// tracks only
 		{
@@ -257,11 +257,13 @@ func Test_ls_Exec(t *testing.T) {
 					"-annotate=false",
 				},
 			},
-			wantConsoleOutput: generateListing(false, false, true, false, false),
-			wantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
-			wantLogOutput: "level='info' -annotate='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
-				"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(false, false, true, false, false),
+				WantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+				WantLogOutput: "level='info' -annotate='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
+					"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 		{
 			name: "annotated tracks only",
@@ -275,11 +277,13 @@ func Test_ls_Exec(t *testing.T) {
 					"-annotate=true",
 				},
 			},
-			wantConsoleOutput: generateListing(false, false, true, true, false),
-			wantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
-			wantLogOutput: "level='info' -annotate='true' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
-				"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(false, false, true, true, false),
+				WantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+				WantLogOutput: "level='info' -annotate='true' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
+					"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 		{
 			name: "unannotated tracks only with numeric sorting",
@@ -294,11 +298,13 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort=numeric",
 				},
 			},
-			wantConsoleOutput: generateListing(false, false, true, false, true),
-			wantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
-			wantLogOutput: "level='info' -annotate='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
-				"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(false, false, true, false, true),
+				WantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+				WantLogOutput: "level='info' -annotate='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
+					"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 		{
 			name: "annotated tracks only with numeric sorting",
@@ -313,11 +319,13 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "numeric",
 				},
 			},
-			wantConsoleOutput: generateListing(false, false, true, true, true),
-			wantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
-			wantLogOutput: "level='info' -annotate='true' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
-				"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(false, false, true, true, true),
+				WantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+				WantLogOutput: "level='info' -annotate='true' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
+					"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 		// albums only
 		{
@@ -332,9 +340,11 @@ func Test_ls_Exec(t *testing.T) {
 					"-annotate=false",
 				},
 			},
-			wantConsoleOutput: generateListing(false, true, false, false, false),
-			wantLogOutput: "level='info' -annotate='false' -includeAlbums='true' -includeArtists='false' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(false, true, false, false, false),
+				WantLogOutput: "level='info' -annotate='false' -includeAlbums='true' -includeArtists='false' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 		{
 			name: "annotated albums only",
@@ -348,9 +358,11 @@ func Test_ls_Exec(t *testing.T) {
 					"-annotate=true",
 				},
 			},
-			wantConsoleOutput: generateListing(false, true, false, true, false),
-			wantLogOutput: "level='info' -annotate='true' -includeAlbums='true' -includeArtists='false' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(false, true, false, true, false),
+				WantLogOutput: "level='info' -annotate='true' -includeAlbums='true' -includeArtists='false' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 		// artists only
 		{
@@ -365,9 +377,11 @@ func Test_ls_Exec(t *testing.T) {
 					"-annotate=false",
 				},
 			},
-			wantConsoleOutput: generateListing(true, false, false, false, false),
-			wantLogOutput: "level='info' -annotate='false' -includeAlbums='false' -includeArtists='true' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(true, false, false, false, false),
+				WantLogOutput: "level='info' -annotate='false' -includeAlbums='false' -includeArtists='true' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 		{
 			name: "annotated artists only",
@@ -381,9 +395,11 @@ func Test_ls_Exec(t *testing.T) {
 					"-annotate=true",
 				},
 			},
-			wantConsoleOutput: generateListing(true, false, false, true, false),
-			wantLogOutput: "level='info' -annotate='true' -includeAlbums='false' -includeArtists='true' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(true, false, false, true, false),
+				WantLogOutput: "level='info' -annotate='true' -includeAlbums='false' -includeArtists='true' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 		// albums and artists
 		{
@@ -398,9 +414,11 @@ func Test_ls_Exec(t *testing.T) {
 					"-annotate=false",
 				},
 			},
-			wantConsoleOutput: generateListing(true, true, false, false, false),
-			wantLogOutput: "level='info' -annotate='false' -includeAlbums='true' -includeArtists='true' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(true, true, false, false, false),
+				WantLogOutput: "level='info' -annotate='false' -includeAlbums='true' -includeArtists='true' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 		{
 			name: "annotated artists and albums only",
@@ -414,9 +432,11 @@ func Test_ls_Exec(t *testing.T) {
 					"-annotate=true",
 				},
 			},
-			wantConsoleOutput: generateListing(true, true, false, true, false),
-			wantLogOutput: "level='info' -annotate='true' -includeAlbums='true' -includeArtists='true' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(true, true, false, true, false),
+				WantLogOutput: "level='info' -annotate='true' -includeAlbums='true' -includeArtists='true' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 		// albums and tracks
 		{
@@ -432,10 +452,12 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "alpha",
 				},
 			},
-			wantConsoleOutput: generateListing(false, true, true, false, false),
-			wantLogOutput: "level='info' -annotate='false' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='alpha' command='ls' msg='executing command'\n" +
-				"level='info' -annotate='false' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='alpha' command='ls' msg='one or more flags were overridden'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(false, true, true, false, false),
+				WantLogOutput: "level='info' -annotate='false' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='alpha' command='ls' msg='executing command'\n" +
+					"level='info' -annotate='false' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='alpha' command='ls' msg='one or more flags were overridden'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 		{
 			name: "annotated albums and tracks with alpha sorting",
@@ -450,10 +472,12 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "alpha",
 				},
 			},
-			wantConsoleOutput: generateListing(false, true, true, true, false),
-			wantLogOutput: "level='info' -annotate='true' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='alpha' command='ls' msg='executing command'\n" +
-				"level='info' -annotate='true' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='alpha' command='ls' msg='one or more flags were overridden'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(false, true, true, true, false),
+				WantLogOutput: "level='info' -annotate='true' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='alpha' command='ls' msg='executing command'\n" +
+					"level='info' -annotate='true' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='alpha' command='ls' msg='one or more flags were overridden'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 		{
 			name: "unannotated albums and tracks with numeric sorting",
@@ -468,9 +492,11 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "numeric",
 				},
 			},
-			wantConsoleOutput: generateListing(false, true, true, false, true),
-			wantLogOutput: "level='info' -annotate='false' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(false, true, true, false, true),
+				WantLogOutput: "level='info' -annotate='false' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 		{
 			name: "annotated albums and tracks with numeric sorting",
@@ -485,9 +511,11 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "numeric",
 				},
 			},
-			wantConsoleOutput: generateListing(false, true, true, true, true),
-			wantLogOutput: "level='info' -annotate='true' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(false, true, true, true, true),
+				WantLogOutput: "level='info' -annotate='true' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 		// artists and tracks
 		{
@@ -503,10 +531,12 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "alpha",
 				},
 			},
-			wantConsoleOutput: generateListing(true, false, true, false, false),
-			wantLogOutput: "level='info' -annotate='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='executing command'\n" +
-				"level='info' -annotate='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='one or more flags were overridden'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(true, false, true, false, false),
+				WantLogOutput: "level='info' -annotate='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='executing command'\n" +
+					"level='info' -annotate='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='one or more flags were overridden'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 		{
 			name: "annotated artists and tracks with alpha sorting",
@@ -521,10 +551,12 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "alpha",
 				},
 			},
-			wantConsoleOutput: generateListing(true, false, true, true, false),
-			wantLogOutput: "level='info' -annotate='true' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='executing command'\n" +
-				"level='info' -annotate='true' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='one or more flags were overridden'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(true, false, true, true, false),
+				WantLogOutput: "level='info' -annotate='true' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='executing command'\n" +
+					"level='info' -annotate='true' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='one or more flags were overridden'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 		{
 			name: "unannotated artists and tracks with numeric sorting",
@@ -539,11 +571,13 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "numeric",
 				},
 			},
-			wantConsoleOutput: generateListing(true, false, true, false, true),
-			wantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
-			wantLogOutput: "level='info' -annotate='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
-				"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(true, false, true, false, true),
+				WantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+				WantLogOutput: "level='info' -annotate='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
+					"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 		{
 			name: "annotated artists and tracks with numeric sorting",
@@ -558,11 +592,13 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "numeric",
 				},
 			},
-			wantConsoleOutput: generateListing(true, false, true, true, true),
-			wantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
-			wantLogOutput: "level='info' -annotate='true' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
-				"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(true, false, true, true, true),
+				WantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+				WantLogOutput: "level='info' -annotate='true' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
+					"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 		// albums, artists, and tracks
 		{
@@ -578,10 +614,12 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "alpha",
 				},
 			},
-			wantConsoleOutput: generateListing(true, true, true, false, false),
-			wantLogOutput: "level='info' -annotate='false' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='executing command'\n" +
-				"level='info' -annotate='false' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='one or more flags were overridden'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(true, true, true, false, false),
+				WantLogOutput: "level='info' -annotate='false' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='executing command'\n" +
+					"level='info' -annotate='false' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='one or more flags were overridden'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 		{
 			name: "annotated artists, albums, and tracks with alpha sorting",
@@ -596,10 +634,12 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "alpha",
 				},
 			},
-			wantConsoleOutput: generateListing(true, true, true, true, false),
-			wantLogOutput: "level='info' -annotate='true' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='executing command'\n" +
-				"level='info' -annotate='true' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='one or more flags were overridden'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(true, true, true, true, false),
+				WantLogOutput: "level='info' -annotate='true' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='executing command'\n" +
+					"level='info' -annotate='true' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='alpha' command='ls' msg='one or more flags were overridden'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 		{
 			name: "unannotated artists, albums, and tracks with numeric sorting",
@@ -614,9 +654,11 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "numeric",
 				},
 			},
-			wantConsoleOutput: generateListing(true, true, true, false, true),
-			wantLogOutput: "level='info' -annotate='false' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(true, true, true, false, true),
+				WantLogOutput: "level='info' -annotate='false' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 		{
 			name: "annotated artists, albums, and tracks with numeric sorting",
@@ -631,23 +673,21 @@ func Test_ls_Exec(t *testing.T) {
 					"-sort", "numeric",
 				},
 			},
-			wantConsoleOutput: generateListing(true, true, true, true, true),
-			wantLogOutput: "level='info' -annotate='true' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: generateListing(true, true, true, true, true),
+				WantLogOutput: "level='info' -annotate='true' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			tt.l.Exec(o, tt.args.args)
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
+				}
 			}
 		})
 	}

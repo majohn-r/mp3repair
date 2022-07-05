@@ -47,28 +47,30 @@ func TestProcessCommand(t *testing.T) {
 		args []string
 	}
 	tests := []struct {
-		name              string
-		state             *internal.SavedEnvVar
-		args              args
-		want              CommandProcessor
-		want1             []string
-		want2             bool
-		wantConsoleOutput string
-		wantErrorOutput   string
-		wantLogOutput     string
+		name  string
+		state *internal.SavedEnvVar
+		args  args
+		want  CommandProcessor
+		want1 []string
+		want2 bool
+		internal.WantedOutput
 	}{
 		{
-			name:            "problematic default command",
-			state:           &internal.SavedEnvVar{Name: "APPDATA", Value: internal.SecureAbsolutePathForTesting(badDir), Set: true},
-			wantErrorOutput: "The configuration file specifies \"list\" as the default command. There is no such command.\n",
-			wantLogOutput: fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[command:map[default:list]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting(badMp3Dir)) +
-				"level='warn' command='list' msg='invalid default command'\n",
+			name:  "problematic default command",
+			state: &internal.SavedEnvVar{Name: "APPDATA", Value: internal.SecureAbsolutePathForTesting(badDir), Set: true},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The configuration file specifies \"list\" as the default command. There is no such command.\n",
+				WantLogOutput: fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[command:map[default:list]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting(badMp3Dir)) +
+					"level='warn' command='list' msg='invalid default command'\n",
+			},
 		},
 		{
-			name:            "problematic input",
-			state:           &internal.SavedEnvVar{Name: "APPDATA", Value: internal.SecureAbsolutePathForTesting("./mp3"), Set: true},
-			wantErrorOutput: fmt.Sprintf("The configuration file %q is a directory.\n", internal.SecureAbsolutePathForTesting(filepath.Join("./mp3", "mp3", "defaults.yaml"))),
-			wantLogOutput:   fmt.Sprintf("level='error' directory='%s' fileName='defaults.yaml' msg='file is a directory'\n", internal.SecureAbsolutePathForTesting(filepath.Join("./mp3", "mp3"))),
+			name:  "problematic input",
+			state: &internal.SavedEnvVar{Name: "APPDATA", Value: internal.SecureAbsolutePathForTesting("./mp3"), Set: true},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: fmt.Sprintf("The configuration file %q is a directory.\n", internal.SecureAbsolutePathForTesting(filepath.Join("./mp3", "mp3", "defaults.yaml"))),
+				WantLogOutput:   fmt.Sprintf("level='error' directory='%s' fileName='defaults.yaml' msg='file is a directory'\n", internal.SecureAbsolutePathForTesting(filepath.Join("./mp3", "mp3"))),
+			},
 		},
 		{
 			name:  "call ls",
@@ -77,8 +79,10 @@ func TestProcessCommand(t *testing.T) {
 			want:  newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
 			want1: []string{"-track=true"},
 			want2: true,
-			wantLogOutput: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
-				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
+			WantedOutput: internal.WantedOutput{
+				WantLogOutput: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
+					fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
+			},
 		},
 		{
 			name:  "call check",
@@ -87,8 +91,10 @@ func TestProcessCommand(t *testing.T) {
 			want:  newCheck(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ExitOnError)),
 			want1: []string{"-integrity=false"},
 			want2: true,
-			wantLogOutput: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
-				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
+			WantedOutput: internal.WantedOutput{
+				WantLogOutput: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
+					fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
+			},
 		},
 		{
 			name:  "call repair",
@@ -97,8 +103,10 @@ func TestProcessCommand(t *testing.T) {
 			want:  newRepair(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ExitOnError)),
 			want1: []string{},
 			want2: true,
-			wantLogOutput: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
-				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
+			WantedOutput: internal.WantedOutput{
+				WantLogOutput: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
+					fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
+			},
 		},
 		{
 			name:  "call postRepair",
@@ -107,8 +115,10 @@ func TestProcessCommand(t *testing.T) {
 			want:  newPostRepair(internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ExitOnError)),
 			want1: []string{},
 			want2: true,
-			wantLogOutput: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
-				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
+			WantedOutput: internal.WantedOutput{
+				WantLogOutput: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
+					fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
+			},
 		},
 		{
 			name:  "call default command",
@@ -117,17 +127,21 @@ func TestProcessCommand(t *testing.T) {
 			want:  newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
 			want1: []string{"ls"},
 			want2: true,
-			wantLogOutput: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
-				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
+			WantedOutput: internal.WantedOutput{
+				WantLogOutput: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
+					fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
+			},
 		},
 		{
-			name:            "call invalid command",
-			state:           &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
-			args:            args{args: []string{"mp3.exe", "no such command"}},
-			wantErrorOutput: "There is no command named \"no such command\"; valid commands include [check ls postRepair repair].\n",
-			wantLogOutput: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
-				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")) +
-				"level='warn' command='no such command' msg='unrecognized command'\n",
+			name:  "call invalid command",
+			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
+			args:  args{args: []string{"mp3.exe", "no such command"}},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "There is no command named \"no such command\"; valid commands include [check ls postRepair repair].\n",
+				WantLogOutput: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
+					fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")) +
+					"level='warn' command='no such command' msg='unrecognized command'\n",
+			},
 		},
 		{
 			name:  "pass arguments to default command",
@@ -136,8 +150,10 @@ func TestProcessCommand(t *testing.T) {
 			want:  newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
 			want1: []string{"-album", "-artist", "-track"},
 			want2: true,
-			wantLogOutput: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
-				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
+			WantedOutput: internal.WantedOutput{
+				WantLogOutput: "level='warn' key='value' type='int' value='1' msg='unexpected value type'\n" +
+					fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -164,14 +180,10 @@ func TestProcessCommand(t *testing.T) {
 			if got2 != tt.want2 {
 				t.Errorf("%s got2 = %v, want %v", fnName, got2, tt.want2)
 			}
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("%s console output = %v, want %v", fnName, gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("%s error output = %v, want %v", fnName, gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("%s log output = %v, want %v", fnName, gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
+				}
 			}
 		})
 	}
@@ -184,33 +196,37 @@ func Test_selectCommand(t *testing.T) {
 		args []string
 	}
 	tests := []struct {
-		name              string
-		args              args
-		wantCmd           CommandProcessor
-		wantCallingArgs   []string
-		wantOk            bool
-		wantConsoleOutput string
-		wantErrorOutput   string
-		wantLogOutput     string
+		name            string
+		args            args
+		wantCmd         CommandProcessor
+		wantCallingArgs []string
+		wantOk          bool
+		internal.WantedOutput
 	}{
 		// only handling error cases here, success cases are handled by TestProcessCommand
 		{
-			name:            "no initializers",
-			args:            args{},
-			wantErrorOutput: "An internal error has occurred: no commands are defined!\n",
-			wantLogOutput:   "level='error' count='0' msg='incorrect number of commands'\n",
+			name: "no initializers",
+			args: args{},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "An internal error has occurred: no commands are defined!\n",
+				WantLogOutput:   "level='error' count='0' msg='incorrect number of commands'\n",
+			},
 		},
 		{
-			name:            "no default initializers",
-			args:            args{i: []commandInitializer{{}}},
-			wantErrorOutput: "An internal error has occurred: there are 0 default commands!\n",
-			wantLogOutput:   "level='error' count='0' msg='incorrect number of default commands'\n",
+			name: "no default initializers",
+			args: args{i: []commandInitializer{{}}},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "An internal error has occurred: there are 0 default commands!\n",
+				WantLogOutput:   "level='error' count='0' msg='incorrect number of default commands'\n",
+			},
 		},
 		{
-			name:            "too many default initializers",
-			args:            args{i: []commandInitializer{{defaultCommand: true}, {defaultCommand: true}}},
-			wantErrorOutput: "An internal error has occurred: there are 2 default commands!\n",
-			wantLogOutput:   "level='error' count='2' msg='incorrect number of default commands'\n",
+			name: "too many default initializers",
+			args: args{i: []commandInitializer{{defaultCommand: true}, {defaultCommand: true}}},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "An internal error has occurred: there are 2 default commands!\n",
+				WantLogOutput:   "level='error' count='2' msg='incorrect number of default commands'\n",
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -226,14 +242,10 @@ func Test_selectCommand(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("selectCommand() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("selectCommand() gotConsoleOutput = %v, want %v", gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("selectCommand() gotErrorOutput = %v, want %v", gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("selectCommand() gotLogOutput = %v, want %v", gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("selectCommand() %s", issue)
+				}
 			}
 		})
 	}
@@ -258,15 +270,13 @@ func Test_getDefaultSettings(t *testing.T) {
 		c *internal.Configuration
 	}
 	tests := []struct {
-		name              string
-		includeDefault    bool
-		defaultValue      string
-		args              args
-		wantM             map[string]bool
-		wantOk            bool
-		wantConsoleOutput string
-		wantErrorOutput   string
-		wantLogOutput     string
+		name           string
+		includeDefault bool
+		defaultValue   string
+		args           args
+		wantM          map[string]bool
+		wantOk         bool
+		internal.WantedOutput
 	}{
 		{
 			name: "no value defined",
@@ -291,11 +301,13 @@ func Test_getDefaultSettings(t *testing.T) {
 			wantOk: true,
 		},
 		{
-			name:            "bad value",
-			includeDefault:  true,
-			defaultValue:    "list",
-			wantErrorOutput: fmt.Sprintf(internal.USER_INVALID_DEFAULT_COMMAND, "list"),
-			wantLogOutput:   "level='warn' command='list' msg='invalid default command'\n",
+			name:           "bad value",
+			includeDefault: true,
+			defaultValue:   "list",
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: fmt.Sprintf(internal.USER_INVALID_DEFAULT_COMMAND, "list"),
+				WantLogOutput:   "level='warn' command='list' msg='invalid default command'\n",
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -323,14 +335,10 @@ func Test_getDefaultSettings(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("getDefaultSettings() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("getDefaultSettings() gotConsoleOutput = %v, want %v", gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("getDefaultSettings() gotErrorOutput = %v, want %v", gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("getDefaultSettings() gotLogOutput = %v, want %v", gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("getDefaultSettings() %s", issue)
+				}
 			}
 		})
 	}

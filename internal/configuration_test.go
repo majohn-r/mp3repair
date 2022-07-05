@@ -197,36 +197,33 @@ func Test_verifyFileExists(t *testing.T) {
 		path string
 	}
 	tests := []struct {
-		name              string
-		args              args
-		wantOk            bool
-		wantErrOutput     string
-		wantConsoleOutput string
-		wantLogOutput     string
-		wantErr           bool
+		name    string
+		args    args
+		wantOk  bool
+		wantErr bool
+		WantedOutput
 	}{
 		{
-			name:          "ordinary success",
-			args:          args{path: "./configuration_test.go"},
-			wantOk:        true,
-			wantErrOutput: "",
-			wantErr:       false,
+			name:         "ordinary success",
+			args:         args{path: "./configuration_test.go"},
+			wantOk:       true,
+			WantedOutput: WantedOutput{},
 		},
 		{
-			name:          "look for dir!",
-			args:          args{path: "."},
-			wantOk:        false,
-			wantErrOutput: "The configuration file \".\" is a directory.\n",
-			wantLogOutput: "level='error' directory='.' fileName='.' msg='file is a directory'\n",
-			wantErr:       true,
+			name:    "look for dir!",
+			args:    args{path: "."},
+			wantErr: true,
+			WantedOutput: WantedOutput{
+				WantErrorOutput: "The configuration file \".\" is a directory.\n",
+				WantLogOutput:   "level='error' directory='.' fileName='.' msg='file is a directory'\n",
+			},
 		},
 		{
-			name:          "non-existent file",
-			args:          args{path: "./no-such-file.txt"},
-			wantOk:        false,
-			wantErrOutput: "",
-			wantLogOutput: "level='info' directory='.' fileName='no-such-file.txt' msg='file does not exist'\n",
-			wantErr:       false,
+			name: "non-existent file",
+			args: args{path: "./no-such-file.txt"},
+			WantedOutput: WantedOutput{
+				WantLogOutput: "level='info' directory='.' fileName='no-such-file.txt' msg='file does not exist'\n",
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -240,14 +237,10 @@ func Test_verifyFileExists(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("verifyFileExists() = %v, want %v", gotOk, tt.wantOk)
 			}
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("verifyFileExists() console output = %v, want %v", gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrOutput {
-				t.Errorf("verifyFileExists() error output = %v, want %v", gotErrorOutput, tt.wantErrOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("verifyFileExists() log output = %v, want %v", gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("verifyFileExists() %s", issue)
+				}
 			}
 		})
 	}
@@ -289,13 +282,11 @@ func TestReadConfigurationFile(t *testing.T) {
 		t.Errorf("%s error creating gibberish defaults.yaml: %v", fnName, err)
 	}
 	tests := []struct {
-		name              string
-		state             *SavedEnvVar
-		wantC             *Configuration
-		wantOk            bool
-		wantConsoleOutput string
-		wantErrorOutput   string
-		wantLogOutput     string
+		name   string
+		state  *SavedEnvVar
+		wantC  *Configuration
+		wantOk bool
+		WantedOutput
 	}{
 		{
 			name:  "good",
@@ -341,36 +332,46 @@ func TestReadConfigurationFile(t *testing.T) {
 				},
 			},
 			wantOk: true,
-			wantLogOutput: fmt.Sprintf("level='warn' key='value' type='int' value='1' msg='unexpected value type'\n"+
-				"level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", mp3Path),
+			WantedOutput: WantedOutput{
+				WantLogOutput: fmt.Sprintf("level='warn' key='value' type='int' value='1' msg='unexpected value type'\n"+
+					"level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", mp3Path),
+			},
 		},
 		{
-			name:          "APPDATA not set",
-			state:         &SavedEnvVar{Name: appDataVar},
-			wantC:         EmptyConfiguration(),
-			wantOk:        true,
-			wantLogOutput: "level='info' environment variable='APPDATA' msg='not set'\n",
+			name:   "APPDATA not set",
+			state:  &SavedEnvVar{Name: appDataVar},
+			wantC:  EmptyConfiguration(),
+			wantOk: true,
+			WantedOutput: WantedOutput{
+				WantLogOutput: "level='info' environment variable='APPDATA' msg='not set'\n",
+			},
 		},
 		{
-			name:            "defaults.yaml is a directory",
-			state:           &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(badDir), Set: true},
-			wantErrorOutput: fmt.Sprintf("The configuration file %q is a directory.\n", yamlAsDir),
-			wantLogOutput:   fmt.Sprintf("level='error' directory='%s' fileName='defaults.yaml' msg='file is a directory'\n", SecureAbsolutePathForTesting(badDir2)),
+			name:  "defaults.yaml is a directory",
+			state: &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(badDir), Set: true},
+			WantedOutput: WantedOutput{
+				WantErrorOutput: fmt.Sprintf("The configuration file %q is a directory.\n", yamlAsDir),
+				WantLogOutput:   fmt.Sprintf("level='error' directory='%s' fileName='defaults.yaml' msg='file is a directory'\n", SecureAbsolutePathForTesting(badDir2)),
+			},
 		},
 		{
-			name:          "missing yaml",
-			state:         &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(yamlAsDir), Set: true},
-			wantC:         EmptyConfiguration(),
-			wantLogOutput: fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", SecureAbsolutePathForTesting(filepath.Join(yamlAsDir, AppName))),
-			wantOk:        true,
+			name:   "missing yaml",
+			state:  &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(yamlAsDir), Set: true},
+			wantC:  EmptyConfiguration(),
+			wantOk: true,
+			WantedOutput: WantedOutput{
+				WantLogOutput: fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", SecureAbsolutePathForTesting(filepath.Join(yamlAsDir, AppName))),
+			},
 		},
 		{
 			name:  "malformed yaml",
 			state: &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(badDir2), Set: true},
-			wantErrorOutput: fmt.Sprintf(
-				"The configuration file %q is not well-formed YAML: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}\n",
-				SecureAbsolutePathForTesting(filepath.Join(gibberishDir, defaultConfigFileName))),
-			wantLogOutput: fmt.Sprintf("level='warn' directory='%s' error='yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}' fileName='defaults.yaml' msg='cannot unmarshal yaml content'\n", SecureAbsolutePathForTesting(gibberishDir)),
+			WantedOutput: WantedOutput{
+				WantErrorOutput: fmt.Sprintf(
+					"The configuration file %q is not well-formed YAML: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}\n",
+					SecureAbsolutePathForTesting(filepath.Join(gibberishDir, defaultConfigFileName))),
+				WantLogOutput: fmt.Sprintf("level='warn' directory='%s' error='yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}' fileName='defaults.yaml' msg='cannot unmarshal yaml content'\n", SecureAbsolutePathForTesting(gibberishDir)),
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -384,14 +385,10 @@ func TestReadConfigurationFile(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("ReadConfigurationFile() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("ReadConfigurationFile() console output = %v, want %v", gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("ReadConfigurationFile() error output = %v, want %v", gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("ReadConfigurationFile() log output = %v, want %v", gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("ReadConfigurationFile() %s", issue)
+				}
 			}
 		})
 	}
@@ -404,24 +401,25 @@ func Test_appData(t *testing.T) {
 		savedState.RestoreForTesting()
 	}()
 	tests := []struct {
-		name              string
-		state             *SavedEnvVar
-		want              string
-		want1             bool
-		wantConsoleOutput string
-		wantErrorOutput   string
-		wantLogOutput     string
+		name  string
+		state *SavedEnvVar
+		want  string
+		want1 bool
+		WantedOutput
 	}{
 		{
-			name:  "value is set",
-			state: &SavedEnvVar{Name: appDataVar, Value: "appData!", Set: true},
-			want:  "appData!",
-			want1: true,
+			name:         "value is set",
+			state:        &SavedEnvVar{Name: appDataVar, Value: "appData!", Set: true},
+			want:         "appData!",
+			want1:        true,
+			WantedOutput: WantedOutput{},
 		},
 		{
-			name:          "value is not set",
-			state:         &SavedEnvVar{Name: appDataVar},
-			wantLogOutput: "level='info' environment variable='APPDATA' msg='not set'\n",
+			name:  "value is not set",
+			state: &SavedEnvVar{Name: appDataVar},
+			WantedOutput: WantedOutput{
+				WantLogOutput: "level='info' environment variable='APPDATA' msg='not set'\n",
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -435,14 +433,10 @@ func Test_appData(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("appData() got1 = %v, want %v", got1, tt.want1)
 			}
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("appData() console output = %q, want %q", gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("appData() error output = %q, want %q", gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("appData() log output = %q, want %q", gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("appData() %s", issue)
+				}
 			}
 		})
 	}

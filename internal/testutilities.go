@@ -265,3 +265,26 @@ func (o *OutputDeviceForTesting) ErrorOutput() string {
 func (o *OutputDeviceForTesting) LogOutput() string {
 	return o.logWriter.writer.String()
 }
+
+type WantedOutput struct {
+	WantConsoleOutput string
+	WantErrorOutput   string
+	WantLogOutput     string
+}
+
+func (o *OutputDeviceForTesting) CheckOutput(w WantedOutput) (issues []string, ok bool) {
+	ok = true
+	if gotConsoleOutput := o.consoleWriter.String(); gotConsoleOutput != w.WantConsoleOutput {
+		issues = append(issues, fmt.Sprintf("console output = %q, want %q", gotConsoleOutput, w.WantConsoleOutput))
+		ok = false
+	}
+	if gotErrorOutput := o.errorWriter.String(); gotErrorOutput != w.WantErrorOutput {
+		issues = append(issues, fmt.Sprintf("error output = %q, want %q", gotErrorOutput, w.WantErrorOutput))
+		ok = false
+	}
+	if gotLogOutput := o.logWriter.writer.String(); gotLogOutput != w.WantLogOutput {
+		issues = append(issues, fmt.Sprintf("log output = %q, want %q", gotLogOutput, w.WantLogOutput))
+		ok = false
+	}
+	return
+}

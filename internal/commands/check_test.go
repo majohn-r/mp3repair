@@ -61,36 +61,38 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 		c                   *check
 		args                args
 		wantArtists         []*files.Artist
-		wantConsoleOutput   string
-		wantErrorOutput     string
-		wantLogOutput       string
 		wantFilteredArtists []*artistWithIssues
 		wantOk              bool
+		internal.WantedOutput
 	}{
 		{name: "no work to do", c: &check{checkEmptyFolders: &fFlag}, args: args{}, wantOk: true},
 		{
-			name:            "empty topDir",
-			c:               &check{checkEmptyFolders: &tFlag},
-			args:            args{s: files.CreateSearchForTesting(emptyDirName)},
-			wantErrorOutput: "No music files could be found using the specified parameters.\n",
-			wantLogOutput: "level='info' -ext='.mp3' -topDir='empty' msg='reading unfiltered music files'\n" +
-				"level='warn' -ext='.mp3' -topDir='empty' msg='cannot find any artist directories'\n",
+			name: "empty topDir",
+			c:    &check{checkEmptyFolders: &tFlag},
+			args: args{s: files.CreateSearchForTesting(emptyDirName)},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "No music files could be found using the specified parameters.\n",
+				WantLogOutput: "level='info' -ext='.mp3' -topDir='empty' msg='reading unfiltered music files'\n" +
+					"level='warn' -ext='.mp3' -topDir='empty' msg='cannot find any artist directories'\n",
+			},
 		},
 		{
-			name:                "folders, no empty folders present",
-			c:                   &check{checkEmptyFolders: &tFlag},
-			args:                args{s: files.CreateSearchForTesting(goodFolderDirName)},
-			wantArtists:         []*files.Artist{goodArtist},
-			wantFilteredArtists: nil,
-			wantConsoleOutput:   "Empty Folder Analysis: no empty folders found\n",
-			wantLogOutput:       "level='info' -ext='.mp3' -topDir='good' msg='reading unfiltered music files'\n",
-			wantOk:              true,
+			name:        "folders, no empty folders present",
+			c:           &check{checkEmptyFolders: &tFlag},
+			args:        args{s: files.CreateSearchForTesting(goodFolderDirName)},
+			wantArtists: []*files.Artist{goodArtist},
+			wantOk:      true,
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: "Empty Folder Analysis: no empty folders found\n",
+				WantLogOutput:     "level='info' -ext='.mp3' -topDir='good' msg='reading unfiltered music files'\n",
+			},
 		},
 		{
 			name:        "empty folders present",
 			c:           &check{checkEmptyFolders: &tFlag},
 			args:        args{s: files.CreateSearchForTesting(dirtyDirName)},
 			wantArtists: files.CreateAllArtistsForTesting(dirtyDirName, true),
+			wantOk:      true,
 			wantFilteredArtists: []*artistWithIssues{
 				{
 					name:   "Test Artist 0",
@@ -137,8 +139,9 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 					issues: []string{"no albums found"},
 				},
 			},
-			wantOk:        true,
-			wantLogOutput: "level='info' -ext='.mp3' -topDir='dirty' msg='reading unfiltered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantLogOutput: "level='info' -ext='.mp3' -topDir='dirty' msg='reading unfiltered music files'\n",
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -156,14 +159,10 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
+				}
 			}
 		})
 	}
@@ -194,9 +193,7 @@ func Test_filterArtists(t *testing.T) {
 		args                args
 		wantFilteredArtists []*files.Artist
 		wantOk              bool
-		wantConsoleOutput   string
-		wantErrorOutput     string
-		wantLogOutput       string
+		internal.WantedOutput
 	}{
 		{
 			name:   "neither gap analysis nor integrity enabled",
@@ -210,7 +207,9 @@ func Test_filterArtists(t *testing.T) {
 			args:                args{s: searchStruct},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
-			wantLogOutput:       "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantLogOutput: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='reading filtered music files'\n",
+			},
 		},
 		{
 			name:                "only gap analysis enabled, artists supplied",
@@ -218,7 +217,9 @@ func Test_filterArtists(t *testing.T) {
 			args:                args{s: searchStruct, artists: fullArtists},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
-			wantLogOutput:       "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='filtering music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantLogOutput: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='filtering music files'\n",
+			},
 		},
 		{
 			name:                "only integrity check enabled, no artists supplied",
@@ -226,7 +227,9 @@ func Test_filterArtists(t *testing.T) {
 			args:                args{s: searchStruct},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
-			wantLogOutput:       "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantLogOutput: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='reading filtered music files'\n",
+			},
 		},
 		{
 			name:                "only integrity check enabled, artists supplied",
@@ -234,7 +237,9 @@ func Test_filterArtists(t *testing.T) {
 			args:                args{s: searchStruct, artists: fullArtists},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
-			wantLogOutput:       "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='filtering music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantLogOutput: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='filtering music files'\n",
+			},
 		},
 		{
 			name:                "gap analysis and integrity check enabled, no artists supplied",
@@ -242,7 +247,9 @@ func Test_filterArtists(t *testing.T) {
 			args:                args{s: searchStruct},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
-			wantLogOutput:       "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantLogOutput: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='reading filtered music files'\n",
+			},
 		},
 		{
 			name:                "gap analysis and integrity check enabled, artists supplied",
@@ -250,7 +257,9 @@ func Test_filterArtists(t *testing.T) {
 			args:                args{s: searchStruct, artists: fullArtists},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
-			wantLogOutput:       "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='filtering music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantLogOutput: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='filtering music files'\n",
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -263,14 +272,10 @@ func Test_filterArtists(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
+				}
 			}
 		})
 	}
@@ -297,23 +302,25 @@ func Test_check_performGapAnalysis(t *testing.T) {
 		name                  string
 		c                     *check
 		args                  args
-		wantConsoleOutput     string
-		wantErrorOutput       string
-		wantLogOutput         string
 		wantConflictedArtists []*artistWithIssues
+		internal.WantedOutput
 	}{
-		{name: "no analysis", c: &check{checkGapsInTrackNumbering: &fFlag}, args: args{}, wantConsoleOutput: ""},
+		{name: "no analysis", c: &check{checkGapsInTrackNumbering: &fFlag}, args: args{}},
 		{
-			name:              "no content",
-			c:                 &check{checkGapsInTrackNumbering: &tFlag},
-			args:              args{},
-			wantConsoleOutput: "Check Gaps: no gaps found\n",
+			name: "no content",
+			c:    &check{checkGapsInTrackNumbering: &tFlag},
+			args: args{},
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: "Check Gaps: no gaps found\n",
+			},
 		},
 		{
-			name:              "good artist",
-			c:                 &check{checkGapsInTrackNumbering: &tFlag},
-			args:              args{artists: []*files.Artist{goodArtist}},
-			wantConsoleOutput: "Check Gaps: no gaps found\n",
+			name: "good artist",
+			c:    &check{checkGapsInTrackNumbering: &tFlag},
+			args: args{artists: []*files.Artist{goodArtist}},
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: "Check Gaps: no gaps found\n",
+			},
 		},
 		{
 			name: "bad artist",
@@ -342,18 +349,13 @@ func Test_check_performGapAnalysis(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
-			gotConflictedArtists := filterAndSortArtists(tt.c.performGapAnalysis(o, tt.args.artists))
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("check.performGapAnalysis() console output = %v, want %v", gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("check.performGapAnalysis() error output = %v, want %v", gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("check.performGapAnalysis() log output = %v, want %v", gotLogOutput, tt.wantLogOutput)
-			}
-			if !reflect.DeepEqual(gotConflictedArtists, tt.wantConflictedArtists) {
+			if gotConflictedArtists := filterAndSortArtists(tt.c.performGapAnalysis(o, tt.args.artists)); !reflect.DeepEqual(gotConflictedArtists, tt.wantConflictedArtists) {
 				t.Errorf("check.performGapAnalysis() = %v, want %v", gotConflictedArtists, tt.wantConflictedArtists)
+			}
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("check.PerformGapAnalysis() %s", issue)
+				}
 			}
 		})
 	}
@@ -390,19 +392,25 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 		name                  string
 		c                     *check
 		args                  args
-		wantConsoleOutput     string
-		wantErrorOutput       string
-		wantLogOutput         string
 		wantConflictedArtists []*artistWithIssues
+		internal.WantedOutput
 	}{
 		{name: "degenerate case", c: &check{checkIntegrity: &fFlag}, args: args{}},
-		{name: "no artists", c: &check{checkIntegrity: &tFlag}, args: args{}, wantConsoleOutput: "Integrity Analysis: no issues found\n"},
 		{
-			name:            "meaningful case",
-			c:               &check{checkIntegrity: &tFlag},
-			args:            args{artists: a},
-			wantErrorOutput: "An error occurred when trying to read tag information for track \"track\" on album \"album\" by artist \"artist\": \"zero length\"\n",
-			wantLogOutput:   "level='warn' albumName='album' artistName='artist' error='zero length' trackName='track' msg='tag error'\n",
+			name: "no artists",
+			c:    &check{checkIntegrity: &tFlag},
+			args: args{},
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: "Integrity Analysis: no issues found\n"},
+		},
+		{
+			name: "meaningful case",
+			c:    &check{checkIntegrity: &tFlag},
+			args: args{artists: a},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "An error occurred when trying to read tag information for track \"track\" on album \"album\" by artist \"artist\": \"zero length\"\n",
+				WantLogOutput:   "level='warn' albumName='album' artistName='artist' error='zero length' trackName='track' msg='tag error'\n",
+			},
 			wantConflictedArtists: []*artistWithIssues{
 				{
 					name: "artist",
@@ -425,18 +433,13 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
-			gotConflictedArtists := filterAndSortArtists(tt.c.performIntegrityCheck(o, tt.args.artists))
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
-			}
-			if !reflect.DeepEqual(gotConflictedArtists, tt.wantConflictedArtists) {
+			if gotConflictedArtists := filterAndSortArtists(tt.c.performIntegrityCheck(o, tt.args.artists)); !reflect.DeepEqual(gotConflictedArtists, tt.wantConflictedArtists) {
 				t.Errorf("check.performGapAnalysis() = %v, want %v", gotConflictedArtists, tt.wantConflictedArtists)
+			}
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
+				}
 			}
 		})
 	}
@@ -458,63 +461,65 @@ func Test_check_Exec(t *testing.T) {
 		args []string
 	}
 	tests := []struct {
-		name              string
-		c                 *check
-		args              args
-		wantOk            bool
-		wantConsoleOutput string
-		wantErrorOutput   string
-		wantLogOutput     string
+		name   string
+		c      *check
+		args   args
+		wantOk bool
+		internal.WantedOutput
 	}{
 		{
-			name:            "do nothing",
-			c:               newCheckCommand(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError)),
-			args:            args{[]string{"-topDir", topDirName, "-empty=false", "-gaps=false", "-integrity=false"}},
-			wantErrorOutput: "You disabled all functionality for the command \"check\".\n",
-			wantLogOutput:   "level='warn' -empty='false' -gaps='false' -integrity='false' command='check' msg='the user disabled all functionality'\n",
+			name: "do nothing",
+			c:    newCheckCommand(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError)),
+			args: args{[]string{"-topDir", topDirName, "-empty=false", "-gaps=false", "-integrity=false"}},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "You disabled all functionality for the command \"check\".\n",
+				WantLogOutput:   "level='warn' -empty='false' -gaps='false' -integrity='false' command='check' msg='the user disabled all functionality'\n",
+			},
 		},
 		{
-			name: "do something",
-			c:    newCheckCommand(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError)),
-			args: args{[]string{"-topDir", topDirName, "-empty=true", "-gaps=false", "-integrity=false"}},
-			wantConsoleOutput: strings.Join([]string{
-				"Test Artist 0",
-				"    Test Album 999",
-				"      no tracks found",
-				"Test Artist 1",
-				"    Test Album 999",
-				"      no tracks found",
-				"Test Artist 2",
-				"    Test Album 999",
-				"      no tracks found",
-				"Test Artist 3",
-				"    Test Album 999",
-				"      no tracks found",
-				"Test Artist 4",
-				"    Test Album 999",
-				"      no tracks found",
-				"Test Artist 5",
-				"    Test Album 999",
-				"      no tracks found",
-				"Test Artist 6",
-				"    Test Album 999",
-				"      no tracks found",
-				"Test Artist 7",
-				"    Test Album 999",
-				"      no tracks found",
-				"Test Artist 8",
-				"    Test Album 999",
-				"      no tracks found",
-				"Test Artist 9",
-				"    Test Album 999",
-				"      no tracks found",
-				"Test Artist 999",
-				"  no albums found",
-				"",
-			}, "\n"),
-			wantLogOutput: "level='info' -empty='true' -gaps='false' -integrity='false' command='check' msg='executing command'\n" +
-				"level='info' -ext='.mp3' -topDir='checkExec' msg='reading unfiltered music files'\n",
+			name:   "do something",
+			c:      newCheckCommand(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError)),
+			args:   args{[]string{"-topDir", topDirName, "-empty=true", "-gaps=false", "-integrity=false"}},
 			wantOk: true,
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: strings.Join([]string{
+					"Test Artist 0",
+					"    Test Album 999",
+					"      no tracks found",
+					"Test Artist 1",
+					"    Test Album 999",
+					"      no tracks found",
+					"Test Artist 2",
+					"    Test Album 999",
+					"      no tracks found",
+					"Test Artist 3",
+					"    Test Album 999",
+					"      no tracks found",
+					"Test Artist 4",
+					"    Test Album 999",
+					"      no tracks found",
+					"Test Artist 5",
+					"    Test Album 999",
+					"      no tracks found",
+					"Test Artist 6",
+					"    Test Album 999",
+					"      no tracks found",
+					"Test Artist 7",
+					"    Test Album 999",
+					"      no tracks found",
+					"Test Artist 8",
+					"    Test Album 999",
+					"      no tracks found",
+					"Test Artist 9",
+					"    Test Album 999",
+					"      no tracks found",
+					"Test Artist 999",
+					"  no albums found",
+					"",
+				}, "\n"),
+				WantLogOutput: "level='info' -empty='true' -gaps='false' -integrity='false' command='check' msg='executing command'\n" +
+					"level='info' -ext='.mp3' -topDir='checkExec' msg='reading unfiltered music files'\n",
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -523,14 +528,10 @@ func Test_check_Exec(t *testing.T) {
 			if gotOk := tt.c.Exec(o, tt.args.args); gotOk != tt.wantOk {
 				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
+				}
 			}
 		})
 	}
@@ -891,11 +892,9 @@ func Test_reportResults(t *testing.T) {
 		artistsWithIssues [][]*artistWithIssues
 	}
 	tests := []struct {
-		name              string
-		args              args
-		wantConsoleOutput string
-		wantErrorOutput   string
-		wantLogOutput     string
+		name string
+		args args
+		internal.WantedOutput
 	}{
 		{name: "degenerate case", args: args{}},
 		{
@@ -975,44 +974,42 @@ func Test_reportResults(t *testing.T) {
 					},
 				},
 			}},
-			wantConsoleOutput: strings.Join([]string{
-				"artist1",
-				"  bad artist",
-				"  really awful artist",
-				"    album1",
-				"      bad cover art",
-				"      skips badly",
-				"         1 track1",
-				"          inaudible",
-				"          plays backwards!",
-				"         2 track2",
-				"          truly insipid",
-				"    album2",
-				"      horrible sequel",
-				"         3 track3",
-				"          singer is dreadful, band is worse",
-				"artist2",
-				"  tone deaf",
-				"    album34",
-				"      worst album I own",
-				"        40 track40",
-				"          singer died in mid act and that improved the track",
-				"",
-			}, "\n"),
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: strings.Join([]string{
+					"artist1",
+					"  bad artist",
+					"  really awful artist",
+					"    album1",
+					"      bad cover art",
+					"      skips badly",
+					"         1 track1",
+					"          inaudible",
+					"          plays backwards!",
+					"         2 track2",
+					"          truly insipid",
+					"    album2",
+					"      horrible sequel",
+					"         3 track3",
+					"          singer is dreadful, band is worse",
+					"artist2",
+					"  tone deaf",
+					"    album34",
+					"      worst album I own",
+					"        40 track40",
+					"          singer died in mid act and that improved the track",
+					"",
+				}, "\n"),
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			reportResults(o, tt.args.artistsWithIssues...)
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("reportResults() console output = %v, want %v", gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("reportResults() error output = %v, want %v", gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("reportResults() log output = %v, want %v", gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("reportResults() %s", issue)
+				}
 			}
 		})
 	}

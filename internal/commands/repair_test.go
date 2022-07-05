@@ -124,37 +124,35 @@ func Test_reportTracks(t *testing.T) {
 		tracks []*files.Track
 	}
 	tests := []struct {
-		name              string
-		args              args
-		wantConsoleOutput string
-		wantErrorOutput   string
-		wantLogOutput     string
+		name string
+		args args
+		internal.WantedOutput
 	}{
 		{name: "no tracks", args: args{}},
-		{name: "multiple tracks", args: args{tracks: []*files.Track{t1, t2, t3, t4}}, wantConsoleOutput: `"artist1"
-    "album1"
-         1 "track1" need to fix track name; album name; artist name;
-         2 "track2" need to fix track numbering; album name; artist name;
-    "album2"
-         1 "track1" need to fix track name; album name; artist name;
-"artist2"
-    "album1"
-         1 "track1" need to fix track name; album name; artist name;
-`,
+		{
+			name: "multiple tracks",
+			args: args{tracks: []*files.Track{t1, t2, t3, t4}},
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: "\"artist1\"\n" +
+					"    \"album1\"\n" +
+					"         1 \"track1\" need to fix track name; album name; artist name;\n" +
+					"         2 \"track2\" need to fix track numbering; album name; artist name;\n" +
+					"    \"album2\"\n" +
+					"         1 \"track1\" need to fix track name; album name; artist name;\n" +
+					"\"artist2\"\n" +
+					"    \"album1\"\n" +
+					"         1 \"track1\" need to fix track name; album name; artist name;\n",
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			reportTracks(o, tt.args.tracks)
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("reportTracks() console output = %q, want %q", gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("reportTracks() error output = %q, want %q", gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("reportTracks() log output = %q, want %q", gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("reportTracks() %s", issue)
+				}
 			}
 		})
 	}
@@ -204,69 +202,71 @@ func Test_repair_Exec(t *testing.T) {
 		args []string
 	}
 	tests := []struct {
-		name              string
-		r                 *repair
-		args              args
-		wantConsoleOutput string
-		wantErrorOutput   string
-		wantLogOutput     string
+		name string
+		r    *repair
+		args args
+		internal.WantedOutput
 	}{
 		{
-			name:              "dry run, no usable content",
-			r:                 newRepairCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
-			args:              args{[]string{"-topDir", topDirName, "-dryRun"}},
-			wantConsoleOutput: noProblemsFound + "\n",
-			wantErrorOutput:   generateStandardTrackErrorReport(),
-			wantLogOutput: "level='info' -dryRun='true' command='repair' msg='executing command'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='repairExec' msg='reading filtered music files'\n" +
-				generateStandardTrackLogReport(),
+			name: "dry run, no usable content",
+			r:    newRepairCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
+			args: args{[]string{"-topDir", topDirName, "-dryRun"}},
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: noProblemsFound + "\n",
+				WantErrorOutput:   generateStandardTrackErrorReport(),
+				WantLogOutput: "level='info' -dryRun='true' command='repair' msg='executing command'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='repairExec' msg='reading filtered music files'\n" +
+					generateStandardTrackLogReport(),
+			},
 		},
 		{
-			name:              "real repair, no usable content",
-			r:                 newRepairCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
-			args:              args{[]string{"-topDir", topDirName, "-dryRun=false"}},
-			wantConsoleOutput: noProblemsFound + "\n",
-			wantErrorOutput:   generateStandardTrackErrorReport(),
-			wantLogOutput: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='repairExec' msg='reading filtered music files'\n" +
-				generateStandardTrackLogReport(),
+			name: "real repair, no usable content",
+			r:    newRepairCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
+			args: args{[]string{"-topDir", topDirName, "-dryRun=false"}},
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: noProblemsFound + "\n",
+				WantErrorOutput:   generateStandardTrackErrorReport(),
+				WantLogOutput: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='repairExec' msg='reading filtered music files'\n" +
+					generateStandardTrackLogReport(),
+			},
 		},
 		{
 			name: "dry run, usable content",
 			r:    newRepairCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
 			args: args{[]string{"-topDir", topDirWithContent, "-dryRun"}},
-			wantConsoleOutput: strings.Join([]string{
-				"\"new artist\"",
-				"    \"new album\"",
-				"         1 \"new track\" need to fix track numbering; track name; album name; artist name;\n",
-			}, "\n"),
-			wantLogOutput: "level='info' -dryRun='true' command='repair' msg='executing command'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: strings.Join([]string{
+					"\"new artist\"",
+					"    \"new album\"",
+					"         1 \"new track\" need to fix track numbering; track name; album name; artist name;\n",
+				}, "\n"),
+				WantLogOutput: "level='info' -dryRun='true' command='repair' msg='executing command'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n",
+			},
 		},
 		{
 			name: "real repair, usable content",
 			r:    newRepairCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
 			args: args{[]string{"-topDir", topDirWithContent, "-dryRun=false"}},
-			wantConsoleOutput: strings.Join([]string{
-				"The track \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" has been backed up to \"realContent\\\\new artist\\\\new album\\\\pre-repair-backup\\\\1.mp3\".",
-				"\"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" fixed\n",
-			}, "\n"),
-			wantLogOutput: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: strings.Join([]string{
+					"The track \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" has been backed up to \"realContent\\\\new artist\\\\new album\\\\pre-repair-backup\\\\1.mp3\".",
+					"\"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" fixed\n",
+				}, "\n"),
+				WantLogOutput: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n",
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			tt.r.Exec(o, tt.args.args)
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
+				}
 			}
 		})
 	}
@@ -466,35 +466,30 @@ func Test_repair_makeBackupDirectories(t *testing.T) {
 		paths []string
 	}
 	tests := []struct {
-		name              string
-		r                 *repair
-		args              args
-		wantConsoleOutput string
-		wantErrorOutput   string
-		wantLogOutput     string
+		name string
+		r    *repair
+		args args
+		internal.WantedOutput
 	}{
 		{name: "degenerate case", r: &repair{dryRun: &fFlag}, args: args{paths: nil}},
 		{
 			name: "useful case",
 			r:    &repair{dryRun: &fFlag},
 			args: args{paths: []string{topDir, albumDir, albumDir2}},
-			wantErrorOutput: `The directory "makeBackupDirectories\\album\\pre-repair-backup" cannot be created: file exists and is not a directory.
-`,
-			wantLogOutput: "level='warn' command='' directory='makeBackupDirectories\\album\\pre-repair-backup' error='file exists and is not a directory' msg='cannot create directory'\n",
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The directory \"makeBackupDirectories\\\\album\\\\pre-repair-backup\" cannot be created: file exists and is not a directory.\n",
+				WantLogOutput:   "level='warn' command='' directory='makeBackupDirectories\\album\\pre-repair-backup' error='file exists and is not a directory' msg='cannot create directory'\n",
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			tt.r.makeBackupDirectories(o, tt.args.paths)
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
+				}
 			}
 		})
 	}
@@ -524,12 +519,10 @@ func Test_repair_backupTracks(t *testing.T) {
 		tracks []*files.Track
 	}
 	tests := []struct {
-		name              string
-		r                 *repair
-		args              args
-		wantConsoleOutput string
-		wantErrorOutput   string
-		wantLogOutput     string
+		name string
+		r    *repair
+		args args
+		internal.WantedOutput
 	}{
 		{name: "degenerate case", r: &repair{dryRun: &fFlag}, args: args{tracks: nil}},
 		{
@@ -542,23 +535,21 @@ func Test_repair_backupTracks(t *testing.T) {
 					files.NewTrack(files.NewAlbum("", nil, topDir), goodTrackName, "", 2),
 				},
 			},
-			wantConsoleOutput: fmt.Sprintf("The track %q has been backed up to %q.\n", filepath.Join(topDir, goodTrackName), filepath.Join(files.CreateBackupPath(topDir), "1.mp3")),
-			wantLogOutput:     "level='warn' command='repair' destination='backupTracks\\pre-repair-backup\\2.mp3' error='open backupTracks\\pre-repair-backup\\2.mp3: is a directory' source='backupTracks\\1 good track.mp3' msg='error copying file'\n",
-			wantErrorOutput:   fmt.Sprintf("The track %q cannot be backed up.\n", filepath.Join(topDir, goodTrackName)),
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: fmt.Sprintf("The track %q has been backed up to %q.\n", filepath.Join(topDir, goodTrackName), filepath.Join(files.CreateBackupPath(topDir), "1.mp3")),
+				WantLogOutput:     "level='warn' command='repair' destination='backupTracks\\pre-repair-backup\\2.mp3' error='open backupTracks\\pre-repair-backup\\2.mp3: is a directory' source='backupTracks\\1 good track.mp3' msg='error copying file'\n",
+				WantErrorOutput:   fmt.Sprintf("The track %q cannot be backed up.\n", filepath.Join(topDir, goodTrackName)),
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			tt.r.backupTracks(o, tt.args.tracks)
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
+				}
 			}
 		})
 	}
@@ -605,14 +596,12 @@ func Test_repair_fixTracks(t *testing.T) {
 		tracks []*files.Track
 	}
 	tests := []struct {
-		name              string
-		r                 *repair
-		args              args
-		wantConsoleOutput string
-		wantErrorOutput   string
-		wantLogOutput     string
+		name string
+		r    *repair
+		args args
+		internal.WantedOutput
 	}{
-		{name: "degenerate case", r: &repair{dryRun: &fFlag}, args: args{tracks: nil}, wantConsoleOutput: ""},
+		{name: "degenerate case", r: &repair{dryRun: &fFlag}, args: args{tracks: nil}},
 		{
 			name: "actual tracks",
 			r:    &repair{dryRun: &fFlag},
@@ -622,23 +611,21 @@ func Test_repair_fixTracks(t *testing.T) {
 					"non-existent-track", "", 0),
 				trackWithData,
 			}},
-			wantConsoleOutput: fmt.Sprintf("%q fixed\n", filepath.Join(topDir, goodFileName)),
-			wantErrorOutput:   fmt.Sprintf("An error occurred fixing track %q\n", filepath.Join(topDir, "non-existent-track")),
-			wantLogOutput:     "level='warn' directory='fixTracks' error='no edit required' executing command='' fileName='non-existent-track' msg='cannot edit track'\n",
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: fmt.Sprintf("%q fixed\n", filepath.Join(topDir, goodFileName)),
+				WantErrorOutput:   fmt.Sprintf("An error occurred fixing track %q\n", filepath.Join(topDir, "non-existent-track")),
+				WantLogOutput:     "level='warn' directory='fixTracks' error='no edit required' executing command='' fileName='non-existent-track' msg='cannot edit track'\n",
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			tt.r.fixTracks(o, tt.args.tracks)
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
+				}
 			}
 		})
 	}

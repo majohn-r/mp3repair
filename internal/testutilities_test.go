@@ -478,3 +478,45 @@ func TestOutputDeviceForTesting_ErrorWriter(t *testing.T) {
 		})
 	}
 }
+
+func TestCheckOutput(t *testing.T) {
+	type args struct {
+		o *OutputDeviceForTesting
+		w WantedOutput
+	}
+	tests := []struct {
+		name       string
+		args       args
+		wantIssues []string
+		wantOk     bool
+	}{
+		{name: "normal", args: args{o: NewOutputDeviceForTesting(), w: WantedOutput{}}, wantOk: true},
+		{
+			name: "errors",
+			args: args{
+				o: NewOutputDeviceForTesting(),
+				w: WantedOutput{
+					WantConsoleOutput: "unexpected console output",
+					WantErrorOutput:   "unexpected error output",
+					WantLogOutput:     "unexpected log output",
+				},
+			},
+			wantIssues: []string{
+				"console output = \"\", want \"unexpected console output\"",
+				"error output = \"\", want \"unexpected error output\"",
+				"log output = \"\", want \"unexpected log output\"",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotIssues, gotOk := tt.args.o.CheckOutput(tt.args.w)
+			if !reflect.DeepEqual(gotIssues, tt.wantIssues) {
+				t.Errorf("CheckOutput() gotIssues = %v, want %v", gotIssues, tt.wantIssues)
+			}
+			if gotOk != tt.wantOk {
+				t.Errorf("CheckOutput() gotOk = %v, want %v", gotOk, tt.wantOk)
+			}
+		})
+	}
+}

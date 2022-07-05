@@ -51,52 +51,52 @@ func Test_postrepair_Exec(t *testing.T) {
 		args []string
 	}
 	tests := []struct {
-		name              string
-		p                 *postrepair
-		args              args
-		wantConsoleOutput string
-		wantErrorOutput   string
-		wantLogOutput     string
+		name string
+		p    *postrepair
+		args args
+		internal.WantedOutput
 	}{
 		{
 			name: "handle bad common arguments",
 			p: newPostRepairCommand(
 				internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError)),
-			args:            args{args: []string{"-topDir", "non-existent directory"}},
-			wantErrorOutput: "The -topDir value you specified, \"non-existent directory\", cannot be read: CreateFile non-existent directory: The system cannot find the file specified..\n",
-			wantLogOutput:   "level='warn' -topDir='non-existent directory' error='CreateFile non-existent directory: The system cannot find the file specified.' msg='cannot read directory'\n",
+			args: args{args: []string{"-topDir", "non-existent directory"}},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The -topDir value you specified, \"non-existent directory\", cannot be read: CreateFile non-existent directory: The system cannot find the file specified..\n",
+				WantLogOutput:   "level='warn' -topDir='non-existent directory' error='CreateFile non-existent directory: The system cannot find the file specified.' msg='cannot read directory'\n",
+			},
 		},
 		{
 			name: "handle normal processing with nothing to do",
 			p: newPostRepairCommand(
 				internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError)),
-			args:              args{args: []string{"-topDir", topDirName}},
-			wantConsoleOutput: "There are no backup directories to delete\n",
-			wantLogOutput: "level='info' command='postRepair' msg='executing command'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='postRepairExec' msg='reading filtered music files'\n",
+			args: args{args: []string{"-topDir", topDirName}},
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: "There are no backup directories to delete\n",
+				WantLogOutput: "level='info' command='postRepair' msg='executing command'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='postRepairExec' msg='reading filtered music files'\n",
+			},
 		},
 		{
 			name: "handle normal processing",
 			p: newPostRepairCommand(
 				internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError)),
-			args:              args{args: []string{"-topDir", topDir2Name}},
-			wantConsoleOutput: "The backup directory for artist \"the artist\" album \"the album\" has been deleted\n",
-			wantLogOutput: "level='info' command='postRepair' msg='executing command'\n" +
-				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='postRepairExec2' msg='reading filtered music files'\n",
+			args: args{args: []string{"-topDir", topDir2Name}},
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: "The backup directory for artist \"the artist\" album \"the album\" has been deleted\n",
+				WantLogOutput: "level='info' command='postRepair' msg='executing command'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='postRepairExec2' msg='reading filtered music files'\n",
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			tt.p.Exec(o, tt.args.args)
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
+				}
 			}
 		})
 	}
@@ -135,36 +135,34 @@ func Test_removeBackupDirectory(t *testing.T) {
 		a *files.Album
 	}
 	tests := []struct {
-		name              string
-		args              args
-		wantConsoleOutput string
-		wantErrorOutput   string
-		wantLogOutput     string
+		name string
+		args args
+		internal.WantedOutput
 	}{
 		{
-			name:            "error case",
-			args:            args{d: "dir/.", a: nil},
-			wantErrorOutput: "The directory \"dir/.\" cannot be deleted: RemoveAll dir/.: invalid argument.\n",
-			wantLogOutput:   "level='warn' directory='dir/.' error='RemoveAll dir/.: invalid argument' msg='cannot delete directory'\n",
+			name: "error case",
+			args: args{d: "dir/.", a: nil},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The directory \"dir/.\" cannot be deleted: RemoveAll dir/.: invalid argument.\n",
+				WantLogOutput:   "level='warn' directory='dir/.' error='RemoveAll dir/.: invalid argument' msg='cannot delete directory'\n",
+			},
 		},
 		{
-			name:              "normal case",
-			args:              args{d: backupDirectory, a: album},
-			wantConsoleOutput: "The backup directory for artist \"the artist\" album \"the album\" has been deleted\n",
+			name: "normal case",
+			args: args{d: backupDirectory, a: album},
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: "The backup directory for artist \"the artist\" album \"the album\" has been deleted\n",
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			removeBackupDirectory(o, tt.args.d, tt.args.a)
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
+				}
 			}
 		})
 	}

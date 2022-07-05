@@ -22,14 +22,12 @@ func Test_parseTrackName(t *testing.T) {
 		ext   string
 	}
 	tests := []struct {
-		name              string
-		args              args
-		wantSimpleName    string
-		wantTrackNumber   int
-		wantValid         bool
-		wantConsoleOutput string
-		wantErrorOutput   string
-		wantLogOutput     string
+		name            string
+		args            args
+		wantSimpleName  string
+		wantTrackNumber int
+		wantValid       bool
+		internal.WantedOutput
 	}{
 		{
 			name:            "expected use case",
@@ -57,9 +55,10 @@ func Test_parseTrackName(t *testing.T) {
 			name:            "wrong extension",
 			wantSimpleName:  "track name.mp4",
 			wantTrackNumber: 59,
-			wantValid:       false,
-			wantErrorOutput: "The track \"59 track name.mp4\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
-			wantLogOutput:   "level='warn' albumName='some album' artistName='some artist' trackName='59 track name.mp4' msg='the track name cannot be parsed'\n",
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The track \"59 track name.mp4\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
+				WantLogOutput:   "level='warn' albumName='some album' artistName='some artist' trackName='59 track name.mp4' msg='the track name cannot be parsed'\n",
+			},
 			args: args{
 				name:  "59 track name.mp4",
 				album: &Album{name: "some album", recordingArtist: &Artist{name: "some artist"}},
@@ -67,12 +66,12 @@ func Test_parseTrackName(t *testing.T) {
 			},
 		},
 		{
-			name:            "missing track number",
-			wantSimpleName:  "name",
-			wantTrackNumber: 0,
-			wantValid:       false,
-			wantErrorOutput: "The track \"track name.mp3\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
-			wantLogOutput:   "level='warn' albumName='some album' artistName='some artist' trackName='track name.mp3' msg='the track name cannot be parsed'\n",
+			name:           "missing track number",
+			wantSimpleName: "name",
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The track \"track name.mp3\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
+				WantLogOutput:   "level='warn' albumName='some album' artistName='some artist' trackName='track name.mp3' msg='the track name cannot be parsed'\n",
+			},
 			args: args{
 				name:  "track name.mp3",
 				album: &Album{name: "some album", recordingArtist: &Artist{name: "some artist"}},
@@ -80,12 +79,11 @@ func Test_parseTrackName(t *testing.T) {
 			},
 		},
 		{
-			name:            "missing track number, simple name",
-			wantSimpleName:  "",
-			wantTrackNumber: 0,
-			wantValid:       false,
-			wantErrorOutput: "The track \"trackName.mp3\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
-			wantLogOutput:   "level='warn' albumName='some album' artistName='some artist' trackName='trackName.mp3' msg='the track name cannot be parsed'\n",
+			name: "missing track number, simple name",
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The track \"trackName.mp3\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
+				WantLogOutput:   "level='warn' albumName='some album' artistName='some artist' trackName='trackName.mp3' msg='the track name cannot be parsed'\n",
+			},
 			args: args{
 				name:  "trackName.mp3",
 				album: &Album{name: "some album", recordingArtist: &Artist{name: "some artist"}},
@@ -108,14 +106,10 @@ func Test_parseTrackName(t *testing.T) {
 			if gotValid != tt.wantValid {
 				t.Errorf("%s gotValid = %v, want %v", fnName, gotValid, tt.wantValid)
 			}
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("Search.LoadData() console output = %q, want %q", gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("Search.LoadData() error output = %q, want %q", gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("Search.LoadData() log output = %q, want %q", gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
+				}
 			}
 		})
 	}
@@ -451,13 +445,13 @@ func TestUpdateTracks(t *testing.T) {
 		return &TaggedTrackData{err: "read error"}
 	}
 	var artists2 []*Artist
-	for k := 0; k < 5; k++ {
+	for k := 0; k < 500; k++ {
 		artist := NewArtist(fmt.Sprintf("artist %d", k), "")
 		artists2 = append(artists2, artist)
-		for m := 0; m < 2; m++ {
+		for m := 0; m < 20; m++ {
 			album := NewAlbum(fmt.Sprintf("album %d-%d", k, m), artist, "")
 			artist.AddAlbum(album)
-			for n := 0; n < 5; n++ {
+			for n := 0; n < 50; n++ {
 				track := &Track{
 					name:            fmt.Sprintf("track %d-%d-%d", k, m, n),
 					track:           trackUnknownTagsNotRead,
@@ -482,19 +476,19 @@ func TestUpdateTracks(t *testing.T) {
 		reader  func(string) *TaggedTrackData
 	}
 	tests := []struct {
-		name              string
-		args              args
-		checkTrackNumber  bool
-		wantConsoleOutput string
-		wantErrorOutput   string
-		wantLogOutput     string
+		name             string
+		args             args
+		checkTrackNumber bool
+		internal.WantedOutput
 	}{
 		{name: "big test", args: args{artists: artists, reader: normalReader}, checkTrackNumber: true},
 		{
-			name:            "massive failure",
-			args:            args{artists: artists2, reader: badReader},
-			wantErrorOutput: strings.Join(errors, ""),
-			wantLogOutput:   strings.Join(logs, ""),
+			name: "massive failure",
+			args: args{artists: artists2, reader: badReader},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: strings.Join(errors, ""),
+				WantLogOutput:   strings.Join(logs, ""),
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -512,14 +506,10 @@ func TestUpdateTracks(t *testing.T) {
 					}
 				}
 			}
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("UpdateTracks() console output = %q, want %q", gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("UpdateTracks() error output = %q, want %q", gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("UpdateTracks() log output = %q, want %q", gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("UpdateTracks() %s", issue)
+				}
 			}
 		})
 	}

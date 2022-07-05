@@ -100,27 +100,27 @@ func Test_report(t *testing.T) {
 		returnValue int
 	}
 	tests := []struct {
-		name              string
-		args              args
-		wantConsoleOutput string
-		wantErrorOutput   string
-		wantLogOutput     string
+		name string
+		args args
+		internal.WantedOutput
 	}{
-		{name: "success", args: args{returnValue: 0}, wantErrorOutput: ""},
-		{name: "failure", args: args{returnValue: 1}, wantErrorOutput: fmt.Sprintf(statusFormat, "mp3", version, creation)},
+		{name: "success", args: args{returnValue: 0}, WantedOutput: internal.WantedOutput{WantErrorOutput: ""}},
+		{
+			name: "failure",
+			args: args{returnValue: 1},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: fmt.Sprintf(statusFormat, "mp3", version, creation),
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			report(o, tt.args.returnValue)
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("report() console output = %v, want %v", gotConsoleOutput, tt.wantConsoleOutput)
-			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("report() error output = %v, want %v", gotErrorOutput, tt.wantErrorOutput)
-			}
-			if gotLogOutput := o.LogOutput(); gotLogOutput != tt.wantLogOutput {
-				t.Errorf("report() log output = %v, want %v", gotLogOutput, tt.wantLogOutput)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("report() %s", issue)
+				}
 			}
 		})
 	}
