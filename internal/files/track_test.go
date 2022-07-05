@@ -273,7 +273,7 @@ func TestTrack_readTags(t *testing.T) {
 	}{
 		{
 			name:       "normal",
-			tr:         &Track{track: trackUnknownTagsNotRead},
+			tr:         &Track{},
 			args:       args{normalReader},
 			wantAlbum:  "beautiful album",
 			wantArtist: "great artist",
@@ -433,7 +433,6 @@ func TestUpdateTracks(t *testing.T) {
 			for n := 0; n < 50; n++ {
 				track := &Track{
 					name:            fmt.Sprintf("track %d-%d-%d", k, m, n),
-					track:           trackUnknownTagsNotRead,
 					containingAlbum: album,
 				}
 				album.AddTrack(track)
@@ -461,7 +460,6 @@ func TestUpdateTracks(t *testing.T) {
 			for n := 0; n < 50; n++ {
 				track := &Track{
 					name:            fmt.Sprintf("track %d-%d-%d", k, m, n),
-					track:           trackUnknownTagsNotRead,
 					containingAlbum: album,
 				}
 				album.AddTrack(track)
@@ -688,7 +686,6 @@ func TestTrack_EditTags(t *testing.T) {
 			tr: &Track{
 				number:          1,
 				name:            "defective track",
-				track:           trackUnknownTagsNotRead,
 				containingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
 			},
 			wantErr: true,

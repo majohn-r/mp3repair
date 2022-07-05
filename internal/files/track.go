@@ -25,7 +25,6 @@ const (
 	trackDiffUnreadTags     = "cannot determine differences, tags have not been read"
 	trackDiffError          = "cannot determine differences, there was an error reading tags"
 	trackFrame              = "TRCK"
-	trackUnknownTagsNotRead = 0
 )
 
 // Track encapsulates data about a track in an album
@@ -95,7 +94,6 @@ func NewTrack(a *Album, fullName string, simpleName string, trackNumber int) *Tr
 		path:            a.subDirectory(fullName),
 		name:            simpleName,
 		number:          trackNumber,
-		track:           trackUnknownTagsNotRead,
 		containingAlbum: a,
 	}
 }
@@ -160,7 +158,7 @@ func (t *Track) BackupDirectory() string {
 }
 
 func (t *Track) needsTaggedData() bool {
-	return t.track == trackUnknownTagsNotRead && !t.hasTagError()
+	return t.track == 0 && !t.hasTagError()
 }
 
 func (t *Track) hasTagError() bool {
