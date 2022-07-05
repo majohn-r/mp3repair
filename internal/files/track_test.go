@@ -97,10 +97,10 @@ func Test_parseTrackName(t *testing.T) {
 			gotSimpleName, gotTrackNumber, gotValid := parseTrackName(o, tt.args.name, tt.args.album, tt.args.ext)
 			if tt.wantValid {
 				if gotSimpleName != tt.wantSimpleName {
-					t.Errorf("%s gotSimpleName = %v, want %v", fnName, gotSimpleName, tt.wantSimpleName)
+					t.Errorf("%s gotSimpleName = %q, want %q", fnName, gotSimpleName, tt.wantSimpleName)
 				}
 				if gotTrackNumber != tt.wantTrackNumber {
-					t.Errorf("%s gotTrackNumber = %v, want %v", fnName, gotTrackNumber, tt.wantTrackNumber)
+					t.Errorf("%s gotTrackNumber = %d, want %d", fnName, gotTrackNumber, tt.wantTrackNumber)
 				}
 			}
 			if gotValid != tt.wantValid {
@@ -116,6 +116,7 @@ func Test_parseTrackName(t *testing.T) {
 }
 
 func TestTrack_needsTaggedData(t *testing.T) {
+	fnName := "Track.needsTaggedData()"
 	tests := []struct {
 		name string
 		tr   *Track
@@ -128,13 +129,14 @@ func TestTrack_needsTaggedData(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.tr.needsTaggedData(); got != tt.want {
-				t.Errorf("Track.needsTaggedData() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func Test_toTrackNumber(t *testing.T) {
+	fnName := "toTrackNumber()"
 	type args struct {
 		s string
 	}
@@ -155,17 +157,18 @@ func Test_toTrackNumber(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotI, err := toTrackNumber(tt.args.s)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("toTrackNumber() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
 				return
 			}
 			if err == nil && gotI != tt.wantI {
-				t.Errorf("toTrackNumber() = %v, want %v", gotI, tt.wantI)
+				t.Errorf("%s = %d, want %d", fnName, gotI, tt.wantI)
 			}
 		})
 	}
 }
 
-func TestTrack_setTags(t *testing.T) {
+func TestTrack_SetTags(t *testing.T) {
+	fnName := "track.SetTags()"
 	type args struct {
 		d *TaggedTrackData
 	}
@@ -218,17 +221,17 @@ func TestTrack_setTags(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.tr.SetTags(tt.args.d)
 			if tt.tr.track != tt.wantNumber {
-				t.Errorf("track.SetTags() tagged track = %d, want %d ", tt.tr.track, tt.wantNumber)
+				t.Errorf("%s tagged track = %d, want %d ", fnName, tt.tr.track, tt.wantNumber)
 			}
 			if tt.wantNumber != 0 {
 				if tt.tr.album != tt.wantAlbum {
-					t.Errorf("track.SetTags() tagged album = %q, want %q", tt.tr.album, tt.wantAlbum)
+					t.Errorf("%s tagged album = %q, want %q", fnName, tt.tr.album, tt.wantAlbum)
 				}
 				if tt.tr.artist != tt.wantArtist {
-					t.Errorf("track.SetTags() tagged artist = %q, want %q", tt.tr.artist, tt.wantArtist)
+					t.Errorf("%s tagged artist = %q, want %q", fnName, tt.tr.artist, tt.wantArtist)
 				}
 				if tt.tr.title != tt.wantTitle {
-					t.Errorf("track.SetTags() tagged title = %q, want %q", tt.tr.title, tt.wantTitle)
+					t.Errorf("%s tagged title = %q, want %q", fnName, tt.tr.title, tt.wantTitle)
 				}
 			}
 		})
@@ -236,6 +239,7 @@ func TestTrack_setTags(t *testing.T) {
 }
 
 func TestTrack_readTags(t *testing.T) {
+	fnName := "track.readTags()"
 	normalReader := func(path string) *TaggedTrackData {
 		return &TaggedTrackData{
 			album:  "beautiful album",
@@ -306,17 +310,17 @@ func TestTrack_readTags(t *testing.T) {
 			tt.tr.readTags(tt.args.reader)
 			waitForSemaphoresDrained()
 			if tt.tr.track != tt.wantNumber {
-				t.Errorf("track.readTags() tagged track = %d, want %d ", tt.tr.track, tt.wantNumber)
+				t.Errorf("%s tagged track = %d, want %d ", fnName, tt.tr.track, tt.wantNumber)
 			}
 			if tt.wantNumber >= 0 {
 				if tt.tr.album != tt.wantAlbum {
-					t.Errorf("track.readTags() tagged album = %q, want %q", tt.tr.album, tt.wantAlbum)
+					t.Errorf("%s tagged album = %q, want %q", fnName, tt.tr.album, tt.wantAlbum)
 				}
 				if tt.tr.artist != tt.wantArtist {
-					t.Errorf("track.readTags() tagged artist = %q, want %q", tt.tr.artist, tt.wantArtist)
+					t.Errorf("%s tagged artist = %q, want %q", fnName, tt.tr.artist, tt.wantArtist)
 				}
 				if tt.tr.title != tt.wantTitle {
-					t.Errorf("track.readTags() tagged title = %q, want %q", tt.tr.title, tt.wantTitle)
+					t.Errorf("%s tagged title = %q, want %q", fnName, tt.tr.title, tt.wantTitle)
 				}
 			}
 		})
@@ -324,6 +328,7 @@ func TestTrack_readTags(t *testing.T) {
 }
 
 func Test_isComparable(t *testing.T) {
+	fnName := "isComparable()"
 	type args struct {
 		p nameTagPair
 	}
@@ -343,13 +348,14 @@ func Test_isComparable(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := isComparable(tt.args.p); got != tt.want {
-				t.Errorf("isComparable() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestTrack_FindDifferences(t *testing.T) {
+	fnName := "Track.FindDifferences()"
 	tests := []struct {
 		name string
 		tr   *Track
@@ -408,13 +414,14 @@ func TestTrack_FindDifferences(t *testing.T) {
 			sort.Strings(got)
 			sort.Strings(tt.want)
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Track.FindDifferences() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestUpdateTracks(t *testing.T) {
+	fnName := "UpdateTracks()"
 	// 500 artists, 20 albums each, 50 tracks apiece ... total: 500,000 tracks
 	var artists []*Artist
 	for k := 0; k < 500; k++ {
@@ -500,7 +507,7 @@ func TestUpdateTracks(t *testing.T) {
 					for _, album := range artist.Albums() {
 						for _, track := range album.Tracks() {
 							if track.track != 1 {
-								t.Errorf("UpdateTracks() %q track = %d", track.name, track.track)
+								t.Errorf("%s %q track = %d", fnName, track.name, track.track)
 							}
 						}
 					}
@@ -508,7 +515,7 @@ func TestUpdateTracks(t *testing.T) {
 			}
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
-					t.Errorf("UpdateTracks() %s", issue)
+					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 		})
@@ -516,12 +523,13 @@ func TestUpdateTracks(t *testing.T) {
 }
 
 func TestRawReadTags(t *testing.T) {
+	fnName := "RawReadTags()"
 	if err := internal.CreateFileForTesting(".", "goodFile.mp3"); err != nil {
-		t.Errorf("failed to create ./goodFile.mp3")
+		t.Errorf("%s failed to create ./goodFile.mp3: %v", fnName, err)
 	}
 	defer func() {
 		if err := os.Remove("./goodFile.mp3"); err != nil {
-			t.Errorf("failed to delete ./goodFile.mp3")
+			t.Errorf("%s failed to delete ./goodFile.mp3: %v", fnName, err)
 		}
 	}()
 	type args struct {
@@ -540,16 +548,17 @@ func TestRawReadTags(t *testing.T) {
 			gotD := RawReadTags(tt.args.path)
 			if len(gotD.err) != 0 {
 				if len(tt.wantD.err) == 0 {
-					t.Errorf("RawReadTags() = %v, want %v", gotD, tt.wantD)
+					t.Errorf("%s = %v, want %v", fnName, gotD, tt.wantD)
 				}
 			} else if len(tt.wantD.err) != 0 {
-				t.Errorf("RawReadTags() = %v, want %v", gotD, tt.wantD)
+				t.Errorf("%s = %v, want %v", fnName, gotD, tt.wantD)
 			}
 		})
 	}
 }
 
 func Test_removeLeadingBOMs(t *testing.T) {
+	fnName := "removeLeadingBOMs()"
 	type args struct {
 		s string
 	}
@@ -566,13 +575,14 @@ func Test_removeLeadingBOMs(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := removeLeadingBOMs(tt.args.s); got != tt.want {
-				t.Errorf("removeLeadingBOMs() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func Test_sortTracks(t *testing.T) {
+	fnName := "sortTracks()"
 	tests := []struct {
 		name   string
 		tracks []*Track
@@ -621,15 +631,15 @@ func Test_sortTracks(t *testing.T) {
 			artist1 := album1.RecordingArtistName()
 			artist2 := album2.RecordingArtistName()
 			if artist1 > artist2 {
-				t.Errorf("Sort(Tracks) track[%d] artist name %q comes after track[%d] artist name %q", i-1, artist1, i, artist2)
+				t.Errorf("%s track[%d] artist name %q comes after track[%d] artist name %q", fnName, i-1, artist1, i, artist2)
 			} else {
 				if artist1 == artist2 {
 					if album1.Name() > album2.Name() {
-						t.Errorf("Sort(Tracks) track[%d] album name %q comes after track[%d] album name %q", i-1, album1.Name(), i, album2.Name())
+						t.Errorf("%s track[%d] album name %q comes after track[%d] album name %q", fnName, i-1, album1.Name(), i, album2.Name())
 					} else {
 						if album1.Name() == album2.Name() {
 							if track1.number > track2.number {
-								t.Errorf("Sort(Tracks) track[%d] track %d comes after track[%d] track %d", i-1, track1.number, i, track2.number)
+								t.Errorf("%s track[%d] track %d comes after track[%d] track %d", fnName, i-1, track1.number, i, track2.number)
 							}
 						}
 					}
@@ -715,7 +725,7 @@ func TestTrack_EditTags(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.tr.EditTags(); (err != nil) != tt.wantErr {
-				t.Errorf("Track.EditTags() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
 			}
 		})
 	}
@@ -754,6 +764,7 @@ func TestTrack_EditTags(t *testing.T) {
 }
 
 func TestTrack_BackupDirectory(t *testing.T) {
+	fnName := "Track.BackupDirectory()"
 	tests := []struct {
 		name string
 		tr   *Track
@@ -768,13 +779,14 @@ func TestTrack_BackupDirectory(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.tr.BackupDirectory(); got != tt.want {
-				t.Errorf("Track.BackupDirectory() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestTrack_AlbumPath(t *testing.T) {
+	fnName := "Track.AlbumPath()"
 	tests := []struct {
 		name string
 		tr   *Track
@@ -786,13 +798,14 @@ func TestTrack_AlbumPath(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.tr.AlbumPath(); got != tt.want {
-				t.Errorf("Track.AlbumPath() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestNewTaggedTrackData(t *testing.T) {
+	fnName := "NewTaggedTrackData()"
 	type args struct {
 		albumFrame  string
 		artistFrame string
@@ -824,7 +837,7 @@ func TestNewTaggedTrackData(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := NewTaggedTrackData(tt.args.albumFrame, tt.args.artistFrame, tt.args.titleFrame, tt.args.numberFrame)
 			if got.album != tt.want.album || got.artist != tt.want.artist || got.title != tt.want.title || got.track != tt.want.track {
-				t.Errorf("NewTaggedTrackData() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}
@@ -834,7 +847,7 @@ func TestTrack_Copy(t *testing.T) {
 	fnName := "Track.Copy()"
 	topDir := "copies"
 	if err := internal.Mkdir(topDir); err != nil {
-		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
+		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
@@ -842,7 +855,7 @@ func TestTrack_Copy(t *testing.T) {
 	srcName := "source.mp3"
 	srcPath := filepath.Join(topDir, srcName)
 	if err := internal.CreateFileForTesting(topDir, srcName); err != nil {
-		t.Errorf("%s error creating %s: %v", fnName, srcPath, err)
+		t.Errorf("%s error creating %q: %v", fnName, srcPath, err)
 	}
 	type args struct {
 		destination string
@@ -869,13 +882,14 @@ func TestTrack_Copy(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := tt.tr.Copy(tt.args.destination); (err != nil) != tt.wantErr {
-				t.Errorf("Track.Copy() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
 			}
 		})
 	}
 }
 
 func TestTrack_String(t *testing.T) {
+	fnName := "Track.String()"
 	tests := []struct {
 		name string
 		tr   *Track
@@ -884,13 +898,14 @@ func TestTrack_String(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.tr.String(); got != tt.want {
-				t.Errorf("Track.String() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestTrack_Name(t *testing.T) {
+	fnName := "Track.Name()"
 	tests := []struct {
 		name string
 		tr   *Track
@@ -899,13 +914,14 @@ func TestTrack_Name(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.tr.Name(); got != tt.want {
-				t.Errorf("Track.Name() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %q want %q", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestTrack_Number(t *testing.T) {
+	fnName := "Track.Number()"
 	tests := []struct {
 		name string
 		tr   *Track
@@ -914,13 +930,14 @@ func TestTrack_Number(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.tr.Number(); got != tt.want {
-				t.Errorf("Track.Number() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %d, want %d", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestTrack_AlbumName(t *testing.T) {
+	fnName := "Track.AlbumName()"
 	tests := []struct {
 		name string
 		tr   *Track
@@ -932,13 +949,14 @@ func TestTrack_AlbumName(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.tr.AlbumName(); got != tt.want {
-				t.Errorf("Track.AlbumName() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestTrack_RecordingArtist(t *testing.T) {
+	fnName := "Track.RecordingArtist()"
 	tests := []struct {
 		name string
 		tr   *Track
@@ -954,13 +972,14 @@ func TestTrack_RecordingArtist(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.tr.RecordingArtist(); got != tt.want {
-				t.Errorf("Track.RecordingArtist() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestParseTrackNameForTesting(t *testing.T) {
+	fnName := "ParseTrackNameForTesting()"
 	type args struct {
 		name string
 	}
@@ -977,16 +996,17 @@ func TestParseTrackNameForTesting(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotSimpleName, gotTrackNumber := ParseTrackNameForTesting(tt.args.name)
 			if gotSimpleName != tt.wantSimpleName {
-				t.Errorf("ParseTrackNameForTesting() gotSimpleName = %v, want %v", gotSimpleName, tt.wantSimpleName)
+				t.Errorf("%s gotSimpleName = %q, want %q", fnName, gotSimpleName, tt.wantSimpleName)
 			}
 			if gotTrackNumber != tt.wantTrackNumber {
-				t.Errorf("ParseTrackNameForTesting() gotTrackNumber = %v, want %v", gotTrackNumber, tt.wantTrackNumber)
+				t.Errorf("%s gotTrackNumber = %d, want %d", fnName, gotTrackNumber, tt.wantTrackNumber)
 			}
 		})
 	}
 }
 
 func TestTrack_Path(t *testing.T) {
+	fnName := "Track.Path()"
 	tests := []struct {
 		name string
 		tr   *Track
@@ -1001,13 +1021,14 @@ func TestTrack_Path(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.tr.Path(); got != tt.want {
-				t.Errorf("Track.Path() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestTrack_Directory(t *testing.T) {
+	fnName := "Track.Directory()"
 	tests := []struct {
 		name string
 		tr   *Track
@@ -1022,13 +1043,14 @@ func TestTrack_Directory(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.tr.Directory(); got != tt.want {
-				t.Errorf("Track.Directory() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestTrack_FileName(t *testing.T) {
+	fnName := "Track.FileName()"
 	tests := []struct {
 		name string
 		tr   *Track
@@ -1043,7 +1065,7 @@ func TestTrack_FileName(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.tr.FileName(); got != tt.want {
-				t.Errorf("Track.FileName() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})
 	}

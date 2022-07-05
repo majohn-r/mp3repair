@@ -30,13 +30,14 @@ func TestMkdir(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := Mkdir(tt.args.dirName); (err != nil) != tt.wantErr {
-				t.Errorf("%q error = %v, wantErr %v", fnName, err, tt.wantErr)
+				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
 			}
 		})
 	}
 }
 
 func TestPlainFileExists(t *testing.T) {
+	fnName := "PlainFileExists()"
 	type args struct {
 		path string
 	}
@@ -52,13 +53,14 @@ func TestPlainFileExists(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := PlainFileExists(tt.args.path); got != tt.want {
-				t.Errorf("PlainFileExists() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestDirExists(t *testing.T) {
+	fnName := "DirExists()"
 	type args struct {
 		path string
 	}
@@ -74,7 +76,7 @@ func TestDirExists(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := DirExists(tt.args.path); got != tt.want {
-				t.Errorf("DirExists() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}
@@ -84,7 +86,7 @@ func TestCopyFile(t *testing.T) {
 	fnName := "CopyFile()"
 	topDir := "copies"
 	if err := Mkdir(topDir); err != nil {
-		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
+		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	defer func() {
 		DestroyDirectoryForTesting(fnName, topDir)
@@ -92,7 +94,7 @@ func TestCopyFile(t *testing.T) {
 	srcName := "source.txt"
 	srcPath := filepath.Join(topDir, srcName)
 	if err := CreateFileForTesting(topDir, srcName); err != nil {
-		t.Errorf("%s error creating %s: %v", fnName, srcPath, err)
+		t.Errorf("%s error creating %q: %v", fnName, srcPath, err)
 	}
 	type args struct {
 		src  string

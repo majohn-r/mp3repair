@@ -8,6 +8,7 @@ import (
 )
 
 func TestNewOutputDevice(t *testing.T) {
+	fnName := "NewOutputDevice()"
 	tests := []struct {
 		name        string
 		want        *OutputDevice
@@ -24,12 +25,12 @@ func TestNewOutputDevice(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := NewOutputDevice(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewOutputDevice() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 			testDevice := NewOutputDevice()
 			var o interface{} = testDevice
 			if _, ok := o.(OutputBus); !ok {
-				t.Errorf("NewOutputDevice() does not implement OutputBus")
+				t.Errorf("%s: does not implement OutputBus", fnName)
 			}
 			// exercise log functionality
 			testDevice.LogWriter().Info("info message", map[string]interface{}{"foo": "INFO"})
@@ -40,6 +41,7 @@ func TestNewOutputDevice(t *testing.T) {
 }
 
 func TestOutputDevice_ConsoleWriter(t *testing.T) {
+	fnName := "OutputDevice.ConsoleWriter()"
 	tests := []struct {
 		name string
 		o    *OutputDevice
@@ -54,13 +56,14 @@ func TestOutputDevice_ConsoleWriter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.o.ConsoleWriter(); got != tt.want {
-				t.Errorf("OutputDevice.ConsoleWriter() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestOutputDevice_ErrorWriter(t *testing.T) {
+	fnName := "OutputDevice.ErrorWriter()"
 	tests := []struct {
 		name string
 		o    *OutputDevice
@@ -75,7 +78,7 @@ func TestOutputDevice_ErrorWriter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.o.ErrorWriter(); got != tt.want {
-				t.Errorf("OutputDevice.ErrorWriter() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}

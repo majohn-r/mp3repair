@@ -28,7 +28,7 @@ func TestCreateAlbumNameForTesting(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := CreateAlbumNameForTesting(tt.args.k); got != tt.want {
-				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
+				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})
 	}
@@ -51,7 +51,7 @@ func TestCreateArtistNameForTesting(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := CreateArtistNameForTesting(tt.args.k); got != tt.want {
-				t.Errorf("%q = %v, want %v", fnName, got, tt.want)
+				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})
 	}
@@ -74,7 +74,7 @@ func TestCreateTrackNameForTesting(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := CreateTrackNameForTesting(tt.args.k); got != tt.want {
-				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
+				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})
 	}
@@ -196,6 +196,7 @@ func TestPopulateTopDirForTesting(t *testing.T) {
 }
 
 func TestCreateDefaultYamlFileForTesting(t *testing.T) {
+	fnName := "CreateDefaultYamlFileForTesting()"
 	tests := []struct {
 		name     string
 		preTest  func(t *testing.T)
@@ -206,12 +207,12 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 			name: "dir blocked",
 			preTest: func(t *testing.T) {
 				if err := CreateFileForTestingWithContent(".", "mp3", "oops"); err != nil {
-					t.Errorf("CreateDefaultYamlFile() 'dir blocked': failed to create file ./mp3: %v", err)
+					t.Errorf("%s 'dir blocked': failed to create file ./mp3: %v", fnName, err)
 				}
 			},
 			postTest: func(t *testing.T) {
 				if err := os.Remove("./mp3"); err != nil {
-					t.Errorf("CreateDefaultYamlFile() 'dir blocked': failed to delete ./mp3: %v", err)
+					t.Errorf("%s 'dir blocked': failed to delete ./mp3: %v", fnName, err)
 				}
 			},
 			wantErr: true,
@@ -220,15 +221,15 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 			name: "file exists",
 			preTest: func(t *testing.T) {
 				if err := Mkdir("./mp3"); err != nil {
-					t.Errorf("CreateDefaultYamlFile() 'file exists': failed to create directory ./mp3: %v", err)
+					t.Errorf("%s 'file exists': failed to create directory ./mp3: %v", fnName, err)
 				}
 				if err := CreateFileForTestingWithContent("./mp3", defaultConfigFileName, "who cares?"); err != nil {
-					t.Errorf("CreateDefaultYamlFile() 'file exists': failed to create %q: %v", defaultConfigFileName, err)
+					t.Errorf("%s 'file exists': failed to create %q: %v", fnName, defaultConfigFileName, err)
 				}
 			},
 			postTest: func(t *testing.T) {
 				if err := os.RemoveAll("./mp3"); err != nil {
-					t.Errorf("CreateDefaultYamlFile() 'file exists': failed to remove directory ./mp3: %v", err)
+					t.Errorf("%s 'file exists': failed to remove directory ./mp3: %v", fnName, err)
 				}
 			},
 			wantErr: true,
@@ -246,58 +247,58 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 				}()
 				c, _ := ReadConfigurationFile(NewOutputDeviceForTesting())
 				if common := c.cMap["common"]; common == nil {
-					t.Error("CreateDefaultYamlFile() 'good test': configuration does not contain common subtree")
+					t.Errorf("%s 'good test': configuration does not contain common subtree", fnName)
 				} else {
 					if got := common.sMap["topDir"]; got != "." {
-						t.Errorf("CreateDefaultYamlFile() 'good test': common.topDir got %s want %s", got, ".")
+						t.Errorf("%s 'good test': common.topDir got %q want %q", fnName, got, ".")
 					}
 					if got := common.sMap["ext"]; got != ".mpeg" {
-						t.Errorf("CreateDefaultYamlFile() 'good test': common.ext got %s want %s", got, ".mpeg")
+						t.Errorf("%s 'good test': common.ext got %q want %q", fnName, got, ".mpeg")
 					}
 					if got := common.sMap["albumFilter"]; got != "^.*$" {
-						t.Errorf("CreateDefaultYamlFile() 'good test': common.albums got %s want %s", got, "^.*$")
+						t.Errorf("%s 'good test': common.albums got %q want %q", fnName, got, "^.*$")
 					}
 					if got := common.sMap["artistFilter"]; got != "^.*$" {
-						t.Errorf("CreateDefaultYamlFile() 'good test': common.artists got %s want %s", got, "^.*$")
+						t.Errorf("%s 'good test': common.artists got %q want %q", fnName, got, "^.*$")
 					}
 				}
 				if ls := c.cMap["ls"]; ls == nil {
-					t.Error("CreateDefaultYamlFile() 'good test': configuration does not contain ls subtree")
+					t.Errorf("%s 'good test': configuration does not contain ls subtree", fnName)
 				} else {
 					if got := ls.bMap["includeAlbums"]; got != false {
-						t.Errorf("CreateDefaultYamlFile() 'good test': ls.album got %t want %t", got, false)
+						t.Errorf("%s 'good test': ls.album got %t want %t", fnName, got, false)
 					}
 					if got := ls.bMap["includeArtists"]; got != false {
-						t.Errorf("CreateDefaultYamlFile() 'good test': ls.artist got %t want %t", got, false)
+						t.Errorf("%s 'good test': ls.artist got %t want %t", fnName, got, false)
 					}
 					if got := ls.bMap["includeTracks"]; got != true {
-						t.Errorf("CreateDefaultYamlFile() 'good test': ls.track got %t want %t", got, true)
+						t.Errorf("%s 'good test': ls.track got %t want %t", fnName, got, true)
 					}
 					if got := ls.bMap["annotate"]; got != true {
-						t.Errorf("CreateDefaultYamlFile() 'good test': ls.annotate got %t want %t", got, true)
+						t.Errorf("%s 'good test': ls.annotate got %t want %t", fnName, got, true)
 					}
 					if got := ls.sMap["sort"]; got != "alpha" {
-						t.Errorf("CreateDefaultYamlFile() 'good test': ls.sort got %s want %s", got, "alpha")
+						t.Errorf("%s 'good test': ls.sort got %s want %s", fnName, got, "alpha")
 					}
 				}
 				if check := c.cMap["check"]; check == nil {
-					t.Error("CreateDefaultYamlFile() 'good test': configuration does not contain check subtree")
+					t.Errorf("%s 'good test': configuration does not contain check subtree", fnName)
 				} else {
 					if got := check.bMap["empty"]; got != true {
-						t.Errorf("CreateDefaultYamlFile() 'good test': check.empty got %t want %t", got, true)
+						t.Errorf("%s 'good test': check.empty got %t want %t", fnName, got, true)
 					}
 					if got := check.bMap["gaps"]; got != true {
-						t.Errorf("CreateDefaultYamlFile() 'good test': check.gaps got %t want %t", got, true)
+						t.Errorf("%s 'good test': check.gaps got %t want %t", fnName, got, true)
 					}
 					if got := check.bMap["integrity"]; got != false {
-						t.Errorf("CreateDefaultYamlFile() 'good test': check.integrity got %t want %t", got, false)
+						t.Errorf("%s 'good test': check.integrity got %t want %t", fnName, got, false)
 					}
 				}
 				if repair := c.cMap["repair"]; repair == nil {
-					t.Error("CreateDefaultYamlFile() 'good test': configuration does not contain repair subtree")
+					t.Errorf("%s 'good test': configuration does not contain repair subtree", fnName)
 				} else {
 					if got := repair.bMap["dryRun"]; got != true {
-						t.Errorf("CreateDefaultYamlFile() 'good test': repair.DryRun got %t want %t", got, true)
+						t.Errorf("%s 'good test': repair.DryRun got %t want %t", fnName, got, true)
 					}
 				}
 				DestroyDirectoryForTesting("CreateDefaultYamlFile()", "./mp3")
@@ -308,7 +309,7 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.preTest(t)
 			if err := CreateDefaultYamlFileForTesting(); (err != nil) != tt.wantErr {
-				t.Errorf("CreateDefaultYamlFile() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
 			}
 			tt.postTest(t)
 		})
@@ -316,6 +317,7 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 }
 
 func TestSaveEnvVarForTesting(t *testing.T) {
+	fnName := "SaveEnvVarForTesting()"
 	vars := os.Environ()
 	firstVar := vars[0]
 	i := strings.Index(firstVar, "=")
@@ -351,7 +353,7 @@ func TestSaveEnvVarForTesting(t *testing.T) {
 		saveState1.RestoreForTesting()
 		saveState2.RestoreForTesting()
 		if !reflect.DeepEqual(vars, os.Environ()) {
-			t.Errorf("Environment was not safely restored")
+			t.Errorf("%s environment was not safely restored", fnName)
 		}
 	}()
 	os.Setenv(name1, "value1")
@@ -370,13 +372,14 @@ func TestSaveEnvVarForTesting(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := SaveEnvVarForTesting(tt.args.name); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("SaveEnvVarForTesting() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestSecureAbsolutePathForTesting(t *testing.T) {
+	fnName := "SecureAbsolutePathForTesting()"
 	type args struct {
 		path string
 	}
@@ -391,13 +394,14 @@ func TestSecureAbsolutePathForTesting(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := SecureAbsolutePathForTesting(tt.args.path)
 			if tt.want && len(got) == 0 {
-				t.Errorf("SecureAbsolutePathForTesting() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestNewOutputDeviceForTesting(t *testing.T) {
+	fnName := "NewOutputDeviceForTesting()"
 	tests := []struct {
 		name string
 		want *OutputDeviceForTesting
@@ -415,17 +419,18 @@ func TestNewOutputDeviceForTesting(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var got *OutputDeviceForTesting
 			if got = NewOutputDeviceForTesting(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("NewOutputDeviceForTesting() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 			var o interface{} = got
 			if _, ok := o.(OutputBus); !ok {
-				t.Errorf("NewOutputDeviceForTesting() does not implement OutputBus")
+				t.Errorf("%s does not implement OutputBus", fnName)
 			}
 		})
 	}
 }
 
 func TestOutputDeviceForTesting_OutputWriter(t *testing.T) {
+	fnName := "OutputDeviceForTesting.OutputWriter()"
 	tests := []struct {
 		name string
 		o    *OutputDeviceForTesting
@@ -436,23 +441,24 @@ func TestOutputDeviceForTesting_OutputWriter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.o.ConsoleWriter(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("OutputDeviceForTesting.OutputWriter() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 			fmt.Fprintf(tt.o.ConsoleWriter(), "test message")
 			if gotConsoleOutput := tt.o.ConsoleOutput(); gotConsoleOutput != "test message" {
-				t.Errorf("OutputDeviceForTesting.ConsoleOutput() = %q, want %q", gotConsoleOutput, "test message")
+				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, "test message")
 			}
 			if gotErrorOutput := tt.o.ErrorOutput(); gotErrorOutput != "" {
-				t.Errorf("OutputDeviceForTesting.ErrorOutput() = %q, want %q", gotErrorOutput, "")
+				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, "")
 			}
 			if gotLogOutput := tt.o.LogOutput(); gotLogOutput != "" {
-				t.Errorf("OutputDeviceForTesting.LogOutput() = %q, want %q", gotLogOutput, "")
+				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, "")
 			}
 		})
 	}
 }
 
 func TestOutputDeviceForTesting_ErrorWriter(t *testing.T) {
+	fnName := "OutputDeviceForTesting.ErrorWriter()"
 	tests := []struct {
 		name string
 		o    *OutputDeviceForTesting
@@ -463,23 +469,24 @@ func TestOutputDeviceForTesting_ErrorWriter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.o.ErrorWriter(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("OutputDeviceForTesting.ErrorWriter() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 			fmt.Fprintf(tt.o.ErrorWriter(), "test message")
 			if gotConsoleOutput := tt.o.ConsoleOutput(); gotConsoleOutput != "" {
-				t.Errorf("OutputDeviceForTesting.ConsoleOutput() = %q, want %q", gotConsoleOutput, "")
+				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, "")
 			}
 			if gotErrorOutput := tt.o.ErrorOutput(); gotErrorOutput != "test message" {
-				t.Errorf("OutputDeviceForTesting.ErrorOutput() = %q, want %q", gotErrorOutput, "test message")
+				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, "test message")
 			}
 			if gotLogOutput := tt.o.LogOutput(); gotLogOutput != "" {
-				t.Errorf("OutputDeviceForTesting.LogOutput() = %q, want %q", gotLogOutput, "")
+				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, "")
 			}
 		})
 	}
 }
 
 func TestCheckOutput(t *testing.T) {
+	fnName := "CheckOutput()"
 	type args struct {
 		o *OutputDeviceForTesting
 		w WantedOutput
@@ -512,10 +519,10 @@ func TestCheckOutput(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotIssues, gotOk := tt.args.o.CheckOutput(tt.args.w)
 			if !reflect.DeepEqual(gotIssues, tt.wantIssues) {
-				t.Errorf("CheckOutput() gotIssues = %v, want %v", gotIssues, tt.wantIssues)
+				t.Errorf("%s gotIssues = %v, want %v", fnName, gotIssues, tt.wantIssues)
 			}
 			if gotOk != tt.wantOk {
-				t.Errorf("CheckOutput() gotOk = %v, want %v", gotOk, tt.wantOk)
+				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 		})
 	}

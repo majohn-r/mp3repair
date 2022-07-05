@@ -11,6 +11,7 @@ import (
 )
 
 func Test_NewFileFlags(t *testing.T) {
+	fnName := "NewFileFlags()"
 	savedState := internal.SaveEnvVarForTesting("APPDATA")
 	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
 	defer func() {
@@ -21,9 +22,8 @@ func Test_NewFileFlags(t *testing.T) {
 		os.Setenv("HOMEPATH", oldHomePath)
 	}()
 	os.Setenv("HOMEPATH", ".")
-	fnName := "NewFileFlags()"
 	if err := internal.CreateDefaultYamlFileForTesting(); err != nil {
-		t.Errorf("error creating defaults.yaml: %v", err)
+		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
@@ -66,16 +66,16 @@ func Test_NewFileFlags(t *testing.T) {
 					t.Errorf("%s error parsing flags: %v", fnName, err)
 				} else {
 					if *got.topDirectory != tt.wantTopDir {
-						t.Errorf("%s %s got top directory %q want %q", fnName, tt.name, *got.topDirectory, tt.wantTopDir)
+						t.Errorf("%s %q got top directory %q want %q", fnName, tt.name, *got.topDirectory, tt.wantTopDir)
 					}
 					if *got.fileExtension != tt.wantExtension {
-						t.Errorf("%s %s got extension %q want %q", fnName, tt.name, *got.fileExtension, tt.wantExtension)
+						t.Errorf("%s %q got extension %q want %q", fnName, tt.name, *got.fileExtension, tt.wantExtension)
 					}
 					if *got.albumRegex != tt.wantAlbumRegex {
-						t.Errorf("%s %s got album regex %q want %q", fnName, tt.name, *got.albumRegex, tt.wantAlbumRegex)
+						t.Errorf("%s %q got album regex %q want %q", fnName, tt.name, *got.albumRegex, tt.wantAlbumRegex)
 					}
 					if *got.artistRegex != tt.wantArtistRegex {
-						t.Errorf("%s %s got artist regex %q want %q", fnName, tt.name, *got.artistRegex, tt.wantArtistRegex)
+						t.Errorf("%s %q got artist regex %q want %q", fnName, tt.name, *got.artistRegex, tt.wantArtistRegex)
 					}
 				}
 			}
@@ -349,11 +349,11 @@ func TestSearchFlags_validateTopLevelDirectory(t *testing.T) {
 }
 
 func TestSearchFlags_validateExtension(t *testing.T) {
+	fnName := "SearchFlags.validateExtension()"
 	originalRegex := trackNameRegex
 	defer func() {
 		trackNameRegex = originalRegex
 	}()
-	fnName := "SearchFlags.validateExtension()"
 	defaultExtension := defaultFileExtension
 	missingLeadDot := "mp3"
 	multipleDots := ".m.p3"
@@ -406,6 +406,7 @@ func TestSearchFlags_validateExtension(t *testing.T) {
 }
 
 func TestSearchFlags_ProcessArgs(t *testing.T) {
+	fnName := "SearchFlags.ProcessArgs()"
 	fs := flag.NewFlagSet("test", flag.ContinueOnError)
 	flags := &SearchFlags{
 		f:             fs,
@@ -462,14 +463,14 @@ func TestSearchFlags_ProcessArgs(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			gotS, gotOk := tt.sf.ProcessArgs(o, tt.args.args)
 			if !reflect.DeepEqual(gotS, tt.wantS) {
-				t.Errorf("SearchFlags.ProcessArgs() gotS = %v, want %v", gotS, tt.wantS)
+				t.Errorf("%s gotS = %v, want %v", fnName, gotS, tt.wantS)
 			}
 			if gotOk != tt.wantOk {
-				t.Errorf("SearchFlags.ProcessArgs() gotOk = %v, want %v", gotOk, tt.wantOk)
+				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
-					t.Errorf("SearchFlags.ProcessArgs() %s", issue)
+					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 		})

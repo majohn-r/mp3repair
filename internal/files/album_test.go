@@ -3,6 +3,7 @@ package files
 import "testing"
 
 func TestAlbum_RecordingArtistName(t *testing.T) {
+	fnName := "Album.RecordingArtistName()"
 	tests := []struct {
 		name string
 		a    *Album
@@ -14,7 +15,7 @@ func TestAlbum_RecordingArtistName(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.a.RecordingArtistName(); got != tt.want {
-				t.Errorf("Album.RecordingArtistName() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})
 	}

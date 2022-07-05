@@ -11,13 +11,14 @@ import (
 )
 
 func Test_run(t *testing.T) {
+	fnName := "run()"
 	savedState1 := internal.SaveEnvVarForTesting("APPDATA")
 	savedState2 := internal.SaveEnvVarForTesting("HOMEPATH")
 	if err := internal.Mkdir("Music"); err != nil {
-		t.Errorf("error creating Music: %v", err)
+		t.Errorf("%s error creating Music: %v", fnName, err)
 	}
 	defer func() {
-		internal.DestroyDirectoryForTesting("run()", "Music")
+		internal.DestroyDirectoryForTesting(fnName, "Music")
 		savedState1.RestoreForTesting()
 		savedState2.RestoreForTesting()
 	}()
@@ -25,13 +26,13 @@ func Test_run(t *testing.T) {
 	os.Setenv("APPDATA", thisDir)
 	os.Setenv("HOMEPATH", thisDir)
 	if err := internal.Mkdir("Music/myArtist"); err != nil {
-		t.Errorf("error creating Music/myArtist: %v", err)
+		t.Errorf("%s error creating Music/myArtist: %v", fnName, err)
 	}
 	if err := internal.Mkdir("Music/myArtist/myAlbum"); err != nil {
-		t.Errorf("error creating Music/myArtist/myAlbum: %v", err)
+		t.Errorf("%s error creating Music/myArtist/myAlbum: %v", fnName, err)
 	}
 	if err := internal.CreateFileForTestingWithContent("Music/myArtist/myAlbum", "01 myTrack.mp3", "no real content"); err != nil {
-		t.Errorf("error creating Music/myArtist/myAlbum/01 myTrack.mp3: %v", err)
+		t.Errorf("%s error creating Music/myArtist/myAlbum/01 myTrack.mp3: %v", fnName, err)
 	}
 	type args struct {
 		cmdlineArgs []string
@@ -74,26 +75,27 @@ func Test_run(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			if gotReturnValue := run(o, tt.args.cmdlineArgs); gotReturnValue != tt.wantReturnValue {
-				t.Errorf("run() = %v, want %v", gotReturnValue, tt.wantReturnValue)
+				t.Errorf("%s = %d, want %d", fnName, gotReturnValue, tt.wantReturnValue)
 			}
 			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("run() error output = %q, want %q", gotErrorOutput, tt.wantErrorOutput)
+				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
 			}
 			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("run() console output = %q, want %q", gotConsoleOutput, tt.wantConsoleOutput)
+				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
 			}
 			gotLog := o.LogOutput()
 			if !strings.HasPrefix(gotLog, tt.wantLogPrefix) {
-				t.Errorf("run() log output %q does not start with %q", gotLog, tt.wantLogPrefix)
+				t.Errorf("%s log output %q does not start with %q", fnName, gotLog, tt.wantLogPrefix)
 			}
 			if !strings.HasSuffix(gotLog, tt.wantLogSuffix) {
-				t.Errorf("run() log output %q does not end with %q", gotLog, tt.wantLogSuffix)
+				t.Errorf("%s log output %q does not end with %q", fnName, gotLog, tt.wantLogSuffix)
 			}
 		})
 	}
 }
 
 func Test_report(t *testing.T) {
+	fnName := "report()"
 	creation = time.Now().Format(time.RFC3339)
 	version = "test"
 	type args struct {
@@ -119,7 +121,7 @@ func Test_report(t *testing.T) {
 			report(o, tt.args.returnValue)
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
-					t.Errorf("report() %s", issue)
+					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 		})

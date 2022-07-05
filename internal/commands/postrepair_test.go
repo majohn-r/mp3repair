@@ -13,39 +13,39 @@ func Test_postrepair_Exec(t *testing.T) {
 	topDirName := "postRepairExec"
 	topDir2Name := "postRepairExec2"
 	if err := internal.Mkdir(topDirName); err != nil {
-		t.Errorf("%s error creating directory %q", fnName, topDirName)
+		t.Errorf("%s error creating directory %q: %v", fnName, topDirName, err)
 	}
 	if err := internal.Mkdir(topDir2Name); err != nil {
-		t.Errorf("%s error creating directory %q", fnName, topDir2Name)
+		t.Errorf("%s error creating directory %q: %v", fnName, topDir2Name, err)
 	}
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, topDirName)
 		internal.DestroyDirectoryForTesting(fnName, topDir2Name)
 	}()
 	if err := internal.PopulateTopDirForTesting(topDirName); err != nil {
-		t.Errorf("%s error populating directory %q", fnName, topDirName)
+		t.Errorf("%s error populating directory %q: %v", fnName, topDirName, err)
 	}
 	artistDir := "the artist"
 	artistPath := filepath.Join(topDir2Name, artistDir)
 	if err := internal.Mkdir(artistPath); err != nil {
-		t.Errorf("%s error creating directory %q", fnName, artistPath)
+		t.Errorf("%s error creating directory %q: %v", fnName, artistPath, err)
 	}
 	artist := files.NewArtist(artistDir, artistPath)
 	albumDir := "the album"
 	albumPath := filepath.Join(artistPath, albumDir)
 	if err := internal.Mkdir(albumPath); err != nil {
-		t.Errorf("%s error creating directory %q", fnName, albumPath)
+		t.Errorf("%s error creating directory %q: %v", fnName, albumPath, err)
 	}
 	album := files.NewAlbum(albumDir, artist, albumPath)
 	if err := internal.CreateFileForTesting(albumPath, "01 the track.mp3"); err != nil {
-		t.Errorf("%s error creating file in album directory %q", fnName, "01 the track.mp3")
+		t.Errorf("%s error creating file in album directory %q: %v", fnName, "01 the track.mp3", err)
 	}
 	backupDirectory := album.BackupDirectory()
 	if err := internal.Mkdir(backupDirectory); err != nil {
-		t.Errorf("%s error creating directory %q", fnName, backupDirectory)
+		t.Errorf("%s error creating directory %q: %v", fnName, backupDirectory, err)
 	}
 	if err := internal.CreateFileForTesting(backupDirectory, "1.mp3"); err != nil {
-		t.Errorf("%s error creating file in backup directory %q", fnName, "1.mp3")
+		t.Errorf("%s error creating file in backup directory %q: %v", fnName, "1.mp3", err)
 	}
 	type args struct {
 		args []string
@@ -106,7 +106,7 @@ func Test_removeBackupDirectory(t *testing.T) {
 	fnName := "removeBackupDirectory()"
 	topDirName := "removeBackup"
 	if err := internal.Mkdir(topDirName); err != nil {
-		t.Errorf("%s error creating directory %q", fnName, topDirName)
+		t.Errorf("%s error creating directory %q: %v", fnName, topDirName, err)
 	}
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, topDirName)
@@ -114,21 +114,21 @@ func Test_removeBackupDirectory(t *testing.T) {
 	artistDir := "the artist"
 	artistPath := filepath.Join(topDirName, artistDir)
 	if err := internal.Mkdir(artistPath); err != nil {
-		t.Errorf("%s error creating directory %q", fnName, artistPath)
+		t.Errorf("%s error creating directory %q: %v", fnName, artistPath, err)
 	}
 	artist := files.NewArtist(artistDir, artistPath)
 	albumDir := "the album"
 	albumPath := filepath.Join(artistPath, albumDir)
 	if err := internal.Mkdir(albumPath); err != nil {
-		t.Errorf("%s error creating directory %q", fnName, albumPath)
+		t.Errorf("%s error creating directory %q: %v", fnName, albumPath, err)
 	}
 	album := files.NewAlbum(albumDir, artist, albumPath)
 	backupDirectory := album.BackupDirectory()
 	if err := internal.Mkdir(backupDirectory); err != nil {
-		t.Errorf("%s error creating directory %q", fnName, backupDirectory)
+		t.Errorf("%s error creating directory %q: %v", fnName, backupDirectory, err)
 	}
 	if err := internal.CreateFileForTesting(backupDirectory, "1.mp3"); err != nil {
-		t.Errorf("%s error creating file in backup directory %q", fnName, "1.mp3")
+		t.Errorf("%s error creating file in backup directory %q: %v", fnName, "1.mp3", err)
 	}
 	type args struct {
 		d string

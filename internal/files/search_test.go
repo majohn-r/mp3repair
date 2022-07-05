@@ -13,7 +13,7 @@ func Test_readDirectory(t *testing.T) {
 	// generate test data
 	topDir := "loadTest"
 	if err := internal.Mkdir(topDir); err != nil {
-		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
+		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
@@ -43,14 +43,14 @@ func Test_readDirectory(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			gotFiles, gotOk := readDirectory(o, tt.args.dir)
 			if !reflect.DeepEqual(gotFiles, tt.wantFiles) {
-				t.Errorf("readDirectory() gotFiles = %v, want %v", gotFiles, tt.wantFiles)
+				t.Errorf("%s gotFiles = %v, want %v", fnName, gotFiles, tt.wantFiles)
 			}
 			if gotOk != tt.wantOk {
-				t.Errorf("readDirectory() gotOk = %v, want %v", gotOk, tt.wantOk)
+				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
-					t.Errorf("readDirectory() %s", issue)
+					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 		})
@@ -62,13 +62,13 @@ func TestSearch_FilterArtists(t *testing.T) {
 	// generate test data
 	topDir := "loadTest"
 	if err := internal.Mkdir(topDir); err != nil {
-		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
+		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
-		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
+		t.Errorf("%s error populating %q: %v", fnName, topDir, err)
 	}
 	realFlagSet := flag.NewFlagSet("real", flag.ContinueOnError)
 	realS, _ := NewSearchFlags(internal.EmptyConfiguration(), realFlagSet).ProcessArgs(
@@ -134,13 +134,13 @@ func TestSearch_LoadData(t *testing.T) {
 	// generate test data
 	topDir := "loadTest"
 	if err := internal.Mkdir(topDir); err != nil {
-		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
+		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
-		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
+		t.Errorf("%s error populating %q: %v", fnName, topDir, err)
 	}
 	tests := []struct {
 		name        string
@@ -191,15 +191,15 @@ func TestSearch_LoadData(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			gotArtists, gotOk := tt.s.LoadData(o)
 			if !reflect.DeepEqual(gotArtists, tt.wantArtists) {
-				t.Errorf("Search.LoadData() = %v, want %v", gotArtists, tt.wantArtists)
+				t.Errorf("%s = %v, want %v", fnName, gotArtists, tt.wantArtists)
 			}
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
-					t.Errorf("Search.LoadData() %s", issue)
+					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 			if gotOk != tt.wantOk {
-				t.Errorf("Search.LoadData() ok = %v, want %v", gotOk, tt.wantOk)
+				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 		})
 	}
@@ -215,13 +215,13 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, emptyDir)
 	}()
 	if err := internal.Mkdir(topDir); err != nil {
-		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
+		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
-		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
+		t.Errorf("%s error populating %q: %v", fnName, topDir, err)
 	}
 	if err := internal.Mkdir(emptyDir); err != nil {
-		t.Errorf("%s error creating %s: %v", fnName, emptyDir, err)
+		t.Errorf("%s error creating %q: %v", fnName, emptyDir, err)
 	}
 	tests := []struct {
 		name        string
@@ -254,14 +254,14 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 			var gotOk bool
 			o := internal.NewOutputDeviceForTesting()
 			if gotArtists, gotOk = tt.s.LoadUnfilteredData(o); !reflect.DeepEqual(gotArtists, tt.wantArtists) {
-				t.Errorf("Search.LoadUnfilteredData() = %v, want %v", gotArtists, tt.wantArtists)
+				t.Errorf("%s = %v, want %v", fnName, gotArtists, tt.wantArtists)
 			}
 			if gotOk != tt.wantOk {
-				t.Errorf("Search.LoadUnfilteredData() ok = %v, want %v", gotOk, tt.wantOk)
+				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
-					t.Errorf("Search.LoadUnfilteredData() %s", issue)
+					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 		})

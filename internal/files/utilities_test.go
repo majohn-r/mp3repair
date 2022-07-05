@@ -6,6 +6,7 @@ import (
 )
 
 func Test_isIllegalRuneForFileNames(t *testing.T) {
+	fnName := "isIllegalRuneForFileNames()"
 	type args struct {
 		r rune
 	}
@@ -165,13 +166,14 @@ func Test_isIllegalRuneForFileNames(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := isIllegalRuneForFileNames(tt.args.r); got != tt.want {
-				t.Errorf("isIllegalRuneForFileNames() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestCreateBackupPath(t *testing.T) {
+	fnName := "CreateBackupPath()"
 	type args struct {
 		topDir string
 	}
@@ -189,7 +191,7 @@ func TestCreateBackupPath(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := CreateBackupPath(tt.args.topDir); got != tt.want {
-				t.Errorf("CreateBackupPath() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})
 	}

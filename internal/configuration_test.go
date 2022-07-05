@@ -9,15 +9,15 @@ import (
 )
 
 func Test_Configuration_SubConfiguration(t *testing.T) {
+	fnName := "Configuration.SubConfiguration()"
 	savedState := SaveEnvVarForTesting(appDataVar)
 	os.Setenv(appDataVar, SecureAbsolutePathForTesting("."))
 	defer func() {
 		savedState.RestoreForTesting()
 	}()
 	if err := CreateDefaultYamlFileForTesting(); err != nil {
-		t.Errorf("error creating defaults.yaml: %v", err)
+		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
-	fnName := "Configuration.SubConfiguration()"
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
@@ -48,15 +48,15 @@ func Test_Configuration_SubConfiguration(t *testing.T) {
 }
 
 func Test_Configuration_BoolDefault(t *testing.T) {
+	fnName := "Configuration.BoolDefault()"
 	savedState := SaveEnvVarForTesting(appDataVar)
 	os.Setenv(appDataVar, SecureAbsolutePathForTesting("."))
 	defer func() {
 		savedState.RestoreForTesting()
 	}()
 	if err := CreateDefaultYamlFileForTesting(); err != nil {
-		t.Errorf("error creating defaults.yaml: %v", err)
+		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
-	fnName := "Configuration.BoolDefault()"
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
@@ -142,15 +142,15 @@ func Test_Configuration_BoolDefault(t *testing.T) {
 }
 
 func Test_Configuration_StringDefault(t *testing.T) {
+	fnName := "Configuration.StringDefault()"
 	savedState := SaveEnvVarForTesting(appDataVar)
 	os.Setenv(appDataVar, SecureAbsolutePathForTesting("."))
 	defer func() {
 		savedState.RestoreForTesting()
 	}()
 	if err := CreateDefaultYamlFileForTesting(); err != nil {
-		t.Errorf("error creating defaults.yaml: %v", err)
+		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
-	fnName := "Configuration.StringDefault()"
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
@@ -193,6 +193,7 @@ func Test_Configuration_StringDefault(t *testing.T) {
 }
 
 func Test_verifyFileExists(t *testing.T) {
+	fnName := "verifyFileExists()"
 	type args struct {
 		path string
 	}
@@ -231,15 +232,15 @@ func Test_verifyFileExists(t *testing.T) {
 			o := NewOutputDeviceForTesting()
 			gotOk, err := verifyFileExists(o, tt.args.path)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("verifyFileExists() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
 				return
 			}
 			if gotOk != tt.wantOk {
-				t.Errorf("verifyFileExists() = %v, want %v", gotOk, tt.wantOk)
+				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
-					t.Errorf("verifyFileExists() %s", issue)
+					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 		})
@@ -247,6 +248,7 @@ func Test_verifyFileExists(t *testing.T) {
 }
 
 func TestReadConfigurationFile(t *testing.T) {
+	fnName := "ReadConfigurationFile()"
 	savedState := SaveEnvVarForTesting(appDataVar)
 	canonicalPath := SecureAbsolutePathForTesting(".")
 	mp3Path := SecureAbsolutePathForTesting("mp3")
@@ -254,7 +256,6 @@ func TestReadConfigurationFile(t *testing.T) {
 	defer func() {
 		savedState.RestoreForTesting()
 	}()
-	fnName := "ReadConfigurationFile()"
 	if err := CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
@@ -380,14 +381,14 @@ func TestReadConfigurationFile(t *testing.T) {
 			o := NewOutputDeviceForTesting()
 			gotC, gotOk := ReadConfigurationFile(o)
 			if !reflect.DeepEqual(gotC, tt.wantC) {
-				t.Errorf("ReadConfigurationFile() gotC = %v, want %v", gotC, tt.wantC)
+				t.Errorf("%s gotC = %v, want %v", fnName, gotC, tt.wantC)
 			}
 			if gotOk != tt.wantOk {
-				t.Errorf("ReadConfigurationFile() gotOk = %v, want %v", gotOk, tt.wantOk)
+				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
-					t.Errorf("ReadConfigurationFile() %s", issue)
+					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 		})
@@ -395,6 +396,7 @@ func TestReadConfigurationFile(t *testing.T) {
 }
 
 func Test_appData(t *testing.T) {
+	fnName := "appData()"
 	savedState := SaveEnvVarForTesting(appDataVar)
 	os.Setenv(appDataVar, SecureAbsolutePathForTesting("."))
 	defer func() {
@@ -428,14 +430,14 @@ func Test_appData(t *testing.T) {
 			o := NewOutputDeviceForTesting()
 			got, got1 := appData(o)
 			if got != tt.want {
-				t.Errorf("appData() got = %v, want %v", got, tt.want)
+				t.Errorf("%s got = %q, want %q", fnName, got, tt.want)
 			}
 			if got1 != tt.want1 {
-				t.Errorf("appData() got1 = %v, want %v", got1, tt.want1)
+				t.Errorf("%s got1 = %v, want %v", fnName, got1, tt.want1)
 			}
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
-					t.Errorf("appData() %s", issue)
+					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 		})
@@ -443,6 +445,7 @@ func Test_appData(t *testing.T) {
 }
 
 func TestConfiguration_StringValue(t *testing.T) {
+	fnName := "Configuration.StringValue()"
 	type args struct {
 		key string
 	}
@@ -470,10 +473,10 @@ func TestConfiguration_StringValue(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			gotValue, gotOk := tt.c.StringValue(tt.args.key)
 			if gotValue != tt.wantValue {
-				t.Errorf("Configuration.StringValue() gotValue = %v, want %v", gotValue, tt.wantValue)
+				t.Errorf("%s gotValue = %q, want %q", fnName, gotValue, tt.wantValue)
 			}
 			if gotOk != tt.wantOk {
-				t.Errorf("Configuration.StringValue() gotOk = %v, want %v", gotOk, tt.wantOk)
+				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 		})
 	}

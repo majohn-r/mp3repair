@@ -210,13 +210,13 @@ func Test_ls_Exec(t *testing.T) {
 	// generate test data
 	topDir := "loadTest"
 	if err := internal.Mkdir(topDir); err != nil {
-		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
+		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
-		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
+		t.Errorf("%s error populating %q: %v", fnName, topDir, err)
 	}
 	type args struct {
 		args []string
@@ -694,21 +694,21 @@ func Test_ls_Exec(t *testing.T) {
 }
 
 func Test_newLsCommand(t *testing.T) {
+	fnName := "newLsCommand()"
 	savedState := internal.SaveEnvVarForTesting("APPDATA")
 	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
 	defer func() {
 		savedState.RestoreForTesting()
 	}()
 	topDir := "loadTest"
-	fnName := "newLsCommand()"
 	if err := internal.Mkdir(topDir); err != nil {
-		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
+		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
-		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
+		t.Errorf("%s error populating %q: %v", fnName, topDir, err)
 	}
 	if err := internal.CreateDefaultYamlFileForTesting(); err != nil {
-		t.Errorf("error creating defaults.yaml: %v", err)
+		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
@@ -754,22 +754,22 @@ func Test_newLsCommand(t *testing.T) {
 				"-ext", ".mp3",
 			}); ok {
 				if *ls.includeAlbums != tt.wantIncludeAlbums {
-					t.Errorf("%s %s: got includeAlbums %t want %t", fnName, tt.name, *ls.includeAlbums, tt.wantIncludeAlbums)
+					t.Errorf("%s %q: got includeAlbums %t want %t", fnName, tt.name, *ls.includeAlbums, tt.wantIncludeAlbums)
 				}
 				if *ls.includeArtists != tt.wantIncludeArtists {
-					t.Errorf("%s %s: got includeArtists %t want %t", fnName, tt.name, *ls.includeArtists, tt.wantIncludeArtists)
+					t.Errorf("%s %q: got includeArtists %t want %t", fnName, tt.name, *ls.includeArtists, tt.wantIncludeArtists)
 				}
 				if *ls.includeTracks != tt.wantIncludeTracks {
-					t.Errorf("%s %s: got includeTracks %t want %t", fnName, tt.name, *ls.includeTracks, tt.wantIncludeTracks)
+					t.Errorf("%s %q: got includeTracks %t want %t", fnName, tt.name, *ls.includeTracks, tt.wantIncludeTracks)
 				}
 				if *ls.annotateListings != tt.wantAnnotateListings {
-					t.Errorf("%s %s: got annotateListings %t want %t", fnName, tt.name, *ls.annotateListings, tt.wantAnnotateListings)
+					t.Errorf("%s %q: got annotateListings %t want %t", fnName, tt.name, *ls.annotateListings, tt.wantAnnotateListings)
 				}
 				if *ls.trackSorting != tt.wantTrackSorting {
-					t.Errorf("%s %s: got trackSorting %q want %q", fnName, tt.name, *ls.trackSorting, tt.wantTrackSorting)
+					t.Errorf("%s %q: got trackSorting %q want %q", fnName, tt.name, *ls.trackSorting, tt.wantTrackSorting)
 				}
 			} else {
-				t.Errorf("%s %s: error processing arguments", fnName, tt.name)
+				t.Errorf("%s %q: error processing arguments", fnName, tt.name)
 			}
 		})
 	}

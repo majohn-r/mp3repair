@@ -31,22 +31,22 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, goodFolderDirName)
 	}()
 	if err := internal.Mkdir(dirtyDirName); err != nil {
-		t.Errorf("%s error creating %s: %v", fnName, dirtyDirName, err)
+		t.Errorf("%s error creating %q: %v", fnName, dirtyDirName, err)
 	}
 	if err := internal.PopulateTopDirForTesting(dirtyDirName); err != nil {
-		t.Errorf("%s error populating %s: %v", fnName, dirtyDirName, err)
+		t.Errorf("%s error populating %q: %v", fnName, dirtyDirName, err)
 	}
 	if err := internal.Mkdir(goodFolderDirName); err != nil {
-		t.Errorf("%s error creating %s: %v", fnName, goodFolderDirName, err)
+		t.Errorf("%s error creating %q: %v", fnName, goodFolderDirName, err)
 	}
 	if err := internal.Mkdir(filepath.Join(goodFolderDirName, "goodArtist")); err != nil {
-		t.Errorf("%s error creating %s: %v", fnName, "goodArtist", err)
+		t.Errorf("%s error creating %q: %v", fnName, "goodArtist", err)
 	}
 	if err := internal.Mkdir(filepath.Join(goodFolderDirName, "goodArtist", "goodAlbum")); err != nil {
-		t.Errorf("%s error creating %s: %v", fnName, "good album", err)
+		t.Errorf("%s error creating %q: %v", fnName, "good album", err)
 	}
 	if err := internal.CreateFileForTestingWithContent(filepath.Join(goodFolderDirName, "goodArtist", "goodAlbum"), "01 goodTrack.mp3", "good content"); err != nil {
-		t.Errorf("%s error creating %s: %v", fnName, "01 goodTrack.mp3", err)
+		t.Errorf("%s error creating %q: %v", fnName, "01 goodTrack.mp3", err)
 	}
 	goodArtist := files.NewArtist("goodArtist", filepath.Join(goodFolderDirName, "goodArtist"))
 	goodAlbum := files.NewAlbum("goodAlbum", goodArtist, filepath.Join(goodFolderDirName, "goodArtist", "goodAlbum"))
@@ -172,13 +172,13 @@ func Test_filterArtists(t *testing.T) {
 	fnName := "filterArtists()"
 	topDirName := "filterArtists"
 	if err := internal.Mkdir(topDirName); err != nil {
-		t.Errorf("%s error creating %s: %v", fnName, topDirName, err)
+		t.Errorf("%s error creating %q: %v", fnName, topDirName, err)
 	}
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, topDirName)
 	}()
 	if err := internal.PopulateTopDirForTesting(topDirName); err != nil {
-		t.Errorf("%s error populating %s: %v", fnName, topDirName, err)
+		t.Errorf("%s error populating %q: %v", fnName, topDirName, err)
 	}
 	searchStruct := files.CreateSearchForTesting(topDirName)
 	fullArtists, _ := searchStruct.LoadUnfilteredData(internal.NewOutputDeviceForTesting())
@@ -282,6 +282,7 @@ func Test_filterArtists(t *testing.T) {
 }
 
 func Test_check_performGapAnalysis(t *testing.T) {
+	fnName := "check.performGapAnalysis()"
 	goodArtist := files.NewArtist("My Good Artist", "")
 	goodAlbum := files.NewAlbum("An Excellent Album", goodArtist, "")
 	goodArtist.AddAlbum(goodAlbum)
@@ -350,11 +351,11 @@ func Test_check_performGapAnalysis(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			if gotConflictedArtists := filterAndSortArtists(tt.c.performGapAnalysis(o, tt.args.artists)); !reflect.DeepEqual(gotConflictedArtists, tt.wantConflictedArtists) {
-				t.Errorf("check.performGapAnalysis() = %v, want %v", gotConflictedArtists, tt.wantConflictedArtists)
+				t.Errorf("%s = %v, want %v", fnName, gotConflictedArtists, tt.wantConflictedArtists)
 			}
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
-					t.Errorf("check.PerformGapAnalysis() %s", issue)
+					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 		})
@@ -366,7 +367,7 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 	// create some data to work with
 	topDirName := "integrity"
 	if err := internal.Mkdir(topDirName); err != nil {
-		t.Errorf("cannot create %q: %v", topDirName, err)
+		t.Errorf("%s cannot create %q: %v", fnName, topDirName, err)
 	}
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, topDirName)
@@ -374,14 +375,14 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 	// keep it simple: one artist, one album, one track
 	artistPath := filepath.Join(topDirName, "artist")
 	if err := internal.Mkdir(artistPath); err != nil {
-		t.Errorf("error creating artist folder")
+		t.Errorf("%s error creating artist folder", fnName)
 	}
 	albumPath := filepath.Join(artistPath, "album")
 	if err := internal.Mkdir(albumPath); err != nil {
-		t.Errorf("error creating album folder")
+		t.Errorf("%s error creating album folder", fnName)
 	}
 	if err := internal.CreateFileForTestingWithContent(albumPath, "01 track.mp3", ""); err != nil {
-		t.Errorf("error creating track")
+		t.Errorf("%s error creating track", fnName)
 	}
 	s := files.CreateSearchForTesting(topDirName)
 	a, _ := s.LoadUnfilteredData(internal.NewOutputDeviceForTesting())
@@ -434,7 +435,7 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			if gotConflictedArtists := filterAndSortArtists(tt.c.performIntegrityCheck(o, tt.args.artists)); !reflect.DeepEqual(gotConflictedArtists, tt.wantConflictedArtists) {
-				t.Errorf("check.performGapAnalysis() = %v, want %v", gotConflictedArtists, tt.wantConflictedArtists)
+				t.Errorf("%s = %v, want %v", fnName, gotConflictedArtists, tt.wantConflictedArtists)
 			}
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
@@ -446,16 +447,16 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 }
 
 func Test_check_Exec(t *testing.T) {
+	fnName := "check.Exec()"
 	topDirName := "checkExec"
 	if err := internal.Mkdir(topDirName); err != nil {
-		t.Errorf("error creating directory %q", topDirName)
+		t.Errorf("%s error creating directory %q: %v", fnName, topDirName, err)
 	}
-	fnName := "check.Exec()"
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, topDirName)
 	}()
 	if err := internal.PopulateTopDirForTesting(topDirName); err != nil {
-		t.Errorf("error populating directory %q", topDirName)
+		t.Errorf("%s error populating directory %q: %v", fnName, topDirName, err)
 	}
 	type args struct {
 		args []string
@@ -538,21 +539,21 @@ func Test_check_Exec(t *testing.T) {
 }
 
 func Test_newCheckCommand(t *testing.T) {
+	fnName := "newCheckCommand()"
 	savedState := internal.SaveEnvVarForTesting("APPDATA")
 	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
 	defer func() {
 		savedState.RestoreForTesting()
 	}()
 	topDir := "loadTest"
-	fnName := "newCheckCommand()"
 	if err := internal.Mkdir(topDir); err != nil {
-		t.Errorf("%s error creating %s: %v", fnName, topDir, err)
+		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
-		t.Errorf("%s error populating %s: %v", fnName, topDir, err)
+		t.Errorf("%s error populating %q: %v", fnName, topDir, err)
 	}
 	if err := internal.CreateDefaultYamlFileForTesting(); err != nil {
-		t.Errorf("error creating defaults.yaml: %v", err)
+		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
@@ -592,22 +593,23 @@ func Test_newCheckCommand(t *testing.T) {
 				"-ext", ".mp3",
 			}); ok {
 				if *check.checkEmptyFolders != tt.wantEmptyFolders {
-					t.Errorf("%s %s: got checkEmptyFolders %t want %t", fnName, tt.name, *check.checkEmptyFolders, tt.wantEmptyFolders)
+					t.Errorf("%s %q: got checkEmptyFolders %t want %t", fnName, tt.name, *check.checkEmptyFolders, tt.wantEmptyFolders)
 				}
 				if *check.checkGapsInTrackNumbering != tt.wantGapsInTrackNumbering {
-					t.Errorf("%s %s: got checkGapsInTrackNumbering %t want %t", fnName, tt.name, *check.checkGapsInTrackNumbering, tt.wantGapsInTrackNumbering)
+					t.Errorf("%s %q: got checkGapsInTrackNumbering %t want %t", fnName, tt.name, *check.checkGapsInTrackNumbering, tt.wantGapsInTrackNumbering)
 				}
 				if *check.checkIntegrity != tt.wantIntegrity {
-					t.Errorf("%s %s: got checkIntegrity %t want %t", fnName, tt.name, *check.checkIntegrity, tt.wantIntegrity)
+					t.Errorf("%s %q: got checkIntegrity %t want %t", fnName, tt.name, *check.checkIntegrity, tt.wantIntegrity)
 				}
 			} else {
-				t.Errorf("%s %s: error processing arguments", fnName, tt.name)
+				t.Errorf("%s %q: error processing arguments", fnName, tt.name)
 			}
 		})
 	}
 }
 
 func Test_merge(t *testing.T) {
+	fnName := "merge()"
 	type args struct {
 		sets [][]*artistWithIssues
 	}
@@ -752,43 +754,43 @@ func Test_merge(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := merge(tt.args.sets)
 			if len(got) != len(tt.want) {
-				t.Errorf("merge() artist len = %d, want %d", len(got), len(tt.want))
+				t.Errorf("%s artist len = %d, want %d", fnName, len(got), len(tt.want))
 			} else {
 				for i := range got {
 					gotArtist := got[i]
 					wantArtist := tt.want[i]
 					if gotArtist.name != wantArtist.name {
-						t.Errorf("merge() artist[%d] name %q, want %q", i, gotArtist.name, wantArtist.name)
+						t.Errorf("%s artist[%d] name %q, want %q", fnName, i, gotArtist.name, wantArtist.name)
 					}
 					if !reflect.DeepEqual(gotArtist.issues, wantArtist.issues) {
-						t.Errorf("merge() artist[%d] issues %v, want %v", i, gotArtist.issues, wantArtist.issues)
+						t.Errorf("%s artist[%d] issues %v, want %v", fnName, i, gotArtist.issues, wantArtist.issues)
 					}
 					if len(gotArtist.albums) != len(wantArtist.albums) {
-						t.Errorf("merge() artist[%d] albums len = %d, want %d", i, len(gotArtist.albums), len(wantArtist.albums))
+						t.Errorf("%s artist[%d] albums len = %d, want %d", fnName, i, len(gotArtist.albums), len(wantArtist.albums))
 					} else {
 						for j := range gotArtist.albums {
 							gotAlbum := gotArtist.albums[j]
 							wantAlbum := wantArtist.albums[j]
 							if gotAlbum.name != wantAlbum.name {
-								t.Errorf("merge() artist[%d] album[%d] name %q, want %q", i, j, gotAlbum.name, wantAlbum.name)
+								t.Errorf("%s artist[%d] album[%d] name %q, want %q", fnName, i, j, gotAlbum.name, wantAlbum.name)
 							}
 							if !reflect.DeepEqual(gotAlbum.issues, wantAlbum.issues) {
-								t.Errorf("merge() artist[%d] album[%d] issues %v, want %v", i, j, gotAlbum.issues, wantAlbum.issues)
+								t.Errorf("%s artist[%d] album[%d] issues %v, want %v", fnName, i, j, gotAlbum.issues, wantAlbum.issues)
 							}
 							if len(gotAlbum.tracks) != len(wantAlbum.tracks) {
-								t.Errorf("merge() artist[%d] album[%d] tracks len = %d, want %d", i, j, len(gotAlbum.tracks), len(wantAlbum.tracks))
+								t.Errorf("%s artist[%d] album[%d] tracks len = %d, want %d", fnName, i, j, len(gotAlbum.tracks), len(wantAlbum.tracks))
 							} else {
 								for k := range gotAlbum.tracks {
 									gotTrack := gotAlbum.tracks[k]
 									wantTrack := wantAlbum.tracks[k]
 									if gotTrack.number != wantTrack.number {
-										t.Errorf("merge() artist[%d] album[%d] track[%d] number %d, want %d", i, j, k, gotTrack.number, wantTrack.number)
+										t.Errorf("%s artist[%d] album[%d] track[%d] number %d, want %d", fnName, i, j, k, gotTrack.number, wantTrack.number)
 									}
 									if gotTrack.name != wantTrack.name {
-										t.Errorf("merge() artist[%d] album[%d] track[%d] name %q, want %q", i, j, k, gotTrack.name, wantTrack.name)
+										t.Errorf("%s artist[%d] album[%d] track[%d] name %q, want %q", fnName, i, j, k, gotTrack.name, wantTrack.name)
 									}
 									if !reflect.DeepEqual(gotTrack.issues, wantTrack.issues) {
-										t.Errorf("merge() artist[%d] album[%d] track[%d] issues %v, want %v", i, j, k, gotTrack.issues, wantTrack.issues)
+										t.Errorf("%s artist[%d] album[%d] track[%d] issues %v, want %v", fnName, i, j, k, gotTrack.issues, wantTrack.issues)
 									}
 								}
 							}
@@ -801,6 +803,7 @@ func Test_merge(t *testing.T) {
 }
 
 func Test_sortArtistsWithIssues(t *testing.T) {
+	fnName := "sortArtistsWithIssues()"
 	tests := []struct {
 		name  string
 		input artistSlice
@@ -822,7 +825,7 @@ func Test_sortArtistsWithIssues(t *testing.T) {
 					continue
 				}
 				if tt.input[i-1].name > tt.input[i].name {
-					t.Errorf("sortArtistsWithIssues artist[%d] with name %q comes before artist[%d] with name %q", i-1, tt.input[i-1].name, i, tt.input[i].name)
+					t.Errorf("%s artist[%d] with name %q comes before artist[%d] with name %q", fnName, i-1, tt.input[i-1].name, i, tt.input[i].name)
 				}
 			}
 		})
@@ -830,6 +833,7 @@ func Test_sortArtistsWithIssues(t *testing.T) {
 }
 
 func Test_sortAlbumsWithIssues(t *testing.T) {
+	fnName := "sortAlbumsWithIssues()"
 	tests := []struct {
 		name  string
 		input albumSlice
@@ -851,7 +855,7 @@ func Test_sortAlbumsWithIssues(t *testing.T) {
 					continue
 				}
 				if tt.input[i-1].name > tt.input[i].name {
-					t.Errorf("sortAlbumsWithIssues album[%d] with name %q comes before album[%d] with name %q", i-1, tt.input[i-1].name, i, tt.input[i].name)
+					t.Errorf("%s album[%d] with name %q comes before album[%d] with name %q", fnName, i-1, tt.input[i-1].name, i, tt.input[i].name)
 				}
 			}
 		})
@@ -859,6 +863,7 @@ func Test_sortAlbumsWithIssues(t *testing.T) {
 }
 
 func Test_sortTracksWithIssues(t *testing.T) {
+	fnName := "sortTracksWithIssues()"
 	tests := []struct {
 		name  string
 		input trackSlice
@@ -880,7 +885,7 @@ func Test_sortTracksWithIssues(t *testing.T) {
 					continue
 				}
 				if tt.input[i-1].number > tt.input[i].number {
-					t.Errorf("sortTracksWithIssues track[%d] with number %d comes before track[%d] with number %d", i-1, tt.input[i-1].number, i, tt.input[i].number)
+					t.Errorf("%s track[%d] with number %d comes before track[%d] with number %d", fnName, i-1, tt.input[i-1].number, i, tt.input[i].number)
 				}
 			}
 		})
@@ -888,6 +893,7 @@ func Test_sortTracksWithIssues(t *testing.T) {
 }
 
 func Test_reportResults(t *testing.T) {
+	fnName := "reportResults()"
 	type args struct {
 		artistsWithIssues [][]*artistWithIssues
 	}
@@ -1008,7 +1014,7 @@ func Test_reportResults(t *testing.T) {
 			reportResults(o, tt.args.artistsWithIssues...)
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
-					t.Errorf("reportResults() %s", issue)
+					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 		})

@@ -8,6 +8,7 @@ import (
 )
 
 func Test_findReferences(t *testing.T) {
+	fnName := "findReferences()"
 	type args struct {
 		s string
 	}
@@ -26,13 +27,14 @@ func Test_findReferences(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := findReferences(tt.args.s); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("findReferences() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestInterpretEnvVarReferences(t *testing.T) {
+	fnName := "InterpretEnvVarReferences()"
 	originalExtension := os.Getenv("EXTENSION")
 	originalFileName := os.Getenv("FILENAME")
 	originalPath := os.Getenv("PATH")
@@ -69,13 +71,14 @@ func TestInterpretEnvVarReferences(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := InterpretEnvVarReferences(tt.args.s); got != tt.want {
-				t.Errorf("InterpretEnvVarReferences() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
 func TestCreateAppSpecificPath(t *testing.T) {
+	fnName := "CreateAppSpecificPath()"
 	type args struct {
 		topDir string
 	}
@@ -87,7 +90,7 @@ func TestCreateAppSpecificPath(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := CreateAppSpecificPath(tt.args.topDir); got != tt.want {
-				t.Errorf("CreateAppSpecificPath() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})
 	}

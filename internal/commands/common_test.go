@@ -11,32 +11,32 @@ import (
 )
 
 func TestProcessCommand(t *testing.T) {
-	if err := internal.CreateDefaultYamlFileForTesting(); err != nil {
-		t.Errorf("error creating defaults.yaml: %v", err)
-	}
 	fnName := "ProcessCommand()"
+	if err := internal.CreateDefaultYamlFileForTesting(); err != nil {
+		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
+	}
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
 	if err := internal.Mkdir("./mp3/mp3"); err != nil {
-		t.Errorf("error creating defective ./mp3/mp3: %v", err)
+		t.Errorf("%s error creating defective ./mp3/mp3: %v", fnName, err)
 	}
 	if err := internal.Mkdir("./mp3/mp3/defaults.yaml"); err != nil {
-		t.Errorf("error creating defective defaults.yaml: %v", err)
+		t.Errorf("%s error creating defective defaults.yaml: %v", fnName, err)
 	}
 	badDir := "badData"
 	if err := internal.Mkdir(badDir); err != nil {
-		t.Errorf("error creating bad data directory: %v", err)
+		t.Errorf("%s error creating bad data directory: %v", fnName, err)
 	}
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, badDir)
 	}()
 	badMp3Dir := filepath.Join(badDir, "mp3")
 	if err := internal.Mkdir(badMp3Dir); err != nil {
-		t.Errorf("error creating bad data mp3 directory: %v", err)
+		t.Errorf("%s error creating bad data mp3 directory: %v", fnName, err)
 	}
 	if err := internal.CreateFileForTestingWithContent(badMp3Dir, "defaults.yaml", "command:\n    default: list\n"); err != nil {
-		t.Errorf("error creating bad data defaults.yaml: %v", err)
+		t.Errorf("%s error creating bad data defaults.yaml: %v", fnName, err)
 	}
 	normalDir := internal.SecureAbsolutePathForTesting(".")
 	savedState := internal.SaveEnvVarForTesting("APPDATA")
@@ -170,7 +170,7 @@ func TestProcessCommand(t *testing.T) {
 					t.Errorf("%s got = %v, want %v", fnName, got, tt.want)
 				} else {
 					if got.name() != tt.want.name() {
-						t.Errorf("%s got name = %v, want name %v", fnName, got.name(), tt.want.name())
+						t.Errorf("%s got name = %q, want name %q", fnName, got.name(), tt.want.name())
 					}
 				}
 			}
@@ -190,6 +190,7 @@ func TestProcessCommand(t *testing.T) {
 }
 
 func Test_selectCommand(t *testing.T) {
+	fnName := "selectCommand()"
 	type args struct {
 		c    *internal.Configuration
 		i    []commandInitializer
@@ -234,17 +235,17 @@ func Test_selectCommand(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			gotCmd, gotCallingArgs, gotOk := selectCommand(o, tt.args.c, tt.args.i, tt.args.args)
 			if !reflect.DeepEqual(gotCmd, tt.wantCmd) {
-				t.Errorf("selectCommand() gotCmd = %v, want %v", gotCmd, tt.wantCmd)
+				t.Errorf("%s gotCmd = %v, want %v", fnName, gotCmd, tt.wantCmd)
 			}
 			if !reflect.DeepEqual(gotCallingArgs, tt.wantCallingArgs) {
-				t.Errorf("selectCommand() gotCallingArgs = %v, want %v", gotCallingArgs, tt.wantCallingArgs)
+				t.Errorf("%s gotCallingArgs = %v, want %v", fnName, gotCallingArgs, tt.wantCallingArgs)
 			}
 			if gotOk != tt.wantOk {
-				t.Errorf("selectCommand() gotOk = %v, want %v", gotOk, tt.wantOk)
+				t.Errorf("%s  gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
-					t.Errorf("selectCommand() %s", issue)
+					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 		})
@@ -252,13 +253,14 @@ func Test_selectCommand(t *testing.T) {
 }
 
 func Test_getDefaultSettings(t *testing.T) {
+	fnName := "getDefaultSettings()"
 	topDir := filepath.Join(".", "defaultSettings")
 	if err := internal.Mkdir(topDir); err != nil {
-		t.Errorf("getDefaultSettings error creating defaultSettings directory: %v", err)
+		t.Errorf("%s error creating defaultSettings directory: %v", fnName, err)
 	}
 	configDir := filepath.Join(topDir, internal.AppName)
 	if err := internal.Mkdir(configDir); err != nil {
-		t.Errorf("getDefaultSettings error creating mp3 directory: %v", err)
+		t.Errorf("%s error creating mp3 directory: %v", fnName, err)
 	}
 	savedState := internal.SaveEnvVarForTesting("APPDATA")
 	defer func() {
@@ -320,24 +322,24 @@ func Test_getDefaultSettings(t *testing.T) {
 			}
 			os.Remove(filepath.Join(configDir, "defaults.yaml"))
 			if err := internal.CreateFileForTestingWithContent(configDir, "defaults.yaml", content); err != nil {
-				t.Errorf("getDefaultSettings() error creating defaults.yaml")
+				t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 			}
 			if c, ok := internal.ReadConfigurationFile(internal.NewOutputDeviceForTesting()); !ok {
-				t.Errorf("getDefaultSettings() error reading defaults.yaml %q", content)
+				t.Errorf("%s error reading defaults.yaml %q", fnName, content)
 			} else {
 				tt.args.c = c.SubConfiguration("command")
 			}
 			o := internal.NewOutputDeviceForTesting()
 			gotM, gotOk := getDefaultSettings(o, tt.args.c)
 			if !reflect.DeepEqual(gotM, tt.wantM) {
-				t.Errorf("getDefaultSettings() gotM = %v, want %v", gotM, tt.wantM)
+				t.Errorf("%s gotM = %v, want %v", fnName, gotM, tt.wantM)
 			}
 			if gotOk != tt.wantOk {
-				t.Errorf("getDefaultSettings() gotOk = %v, want %v", gotOk, tt.wantOk)
+				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
-					t.Errorf("getDefaultSettings() %s", issue)
+					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 		})

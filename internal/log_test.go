@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-func TestConfigureLogging(t *testing.T) {
+func Test_configureLogging(t *testing.T) {
 	fnName := "configureLogging()"
 	type args struct {
 		path string
@@ -29,13 +29,13 @@ func TestConfigureLogging(t *testing.T) {
 			}()
 			got := configureLogging(tt.args.path)
 			if got == nil {
-				t.Errorf("%s: returned nil cronoWriter.CronoWriter", fnName)
+				t.Errorf("%s returned nil cronoWriter.CronoWriter", fnName)
 			}
 			got.Close()
 			var latestFound bool
 			var mp3logFound bool
 			if files, err := ioutil.ReadDir(tt.args.path); err != nil {
-				t.Errorf("%s: cannot read path %v: %v", fnName, tt.args.path, err)
+				t.Errorf("%s cannot read path %q: %v", fnName, tt.args.path, err)
 			} else {
 				for _, file := range files {
 					mode := file.Mode()
@@ -49,10 +49,10 @@ func TestConfigureLogging(t *testing.T) {
 				}
 			}
 			if !latestFound {
-				t.Errorf("%s: %s not found", fnName, symlinkName)
+				t.Errorf("%s %q not found", fnName, symlinkName)
 			}
 			if !mp3logFound {
-				t.Errorf("%s: no %s*%s files found", fnName, logFilePrefix, logFileExtension)
+				t.Errorf("%s no %s*%s files found", fnName, logFilePrefix, logFileExtension)
 			}
 		})
 	}
@@ -119,17 +119,17 @@ func TestCleanupLogFiles(t *testing.T) {
 		var filesToClose []*os.File
 		if tt.createFolder {
 			if err := os.MkdirAll(tt.args.path, 0755); err != nil {
-				t.Errorf("%s: cannot create %v: %v", fnName, tt.args.path, err)
+				t.Errorf("%s cannot create %q: %v", fnName, tt.args.path, err)
 			}
 			// create required files
 			for k := 0; k < tt.fileCount; k++ {
 				filename := filepath.Join(tt.args.path, logFilePrefix+fmt.Sprintf("%02d", k)+logFileExtension)
 				if file, err := os.Create(filename); err != nil {
-					t.Errorf("%s: cannot create log file %q: %v", fnName, filename, err)
+					t.Errorf("%s cannot create log file %q: %v", fnName, filename, err)
 				} else {
 					tm := time.Now().Add(time.Hour * time.Duration(k))
 					if err := os.Chtimes(filename, tm, tm); err != nil {
-						t.Errorf("%s: cannot set access and modification times on %s: %v", fnName, filename, err)
+						t.Errorf("%s cannot set access and modification times on %q: %v", fnName, filename, err)
 					}
 					if !tt.lockFiles {
 						file.Close()
@@ -156,7 +156,7 @@ func TestCleanupLogFiles(t *testing.T) {
 			}
 			if tt.createFolder {
 				if files, err := ioutil.ReadDir(tt.args.path); err != nil {
-					t.Errorf("%s: cannot read directory %s: %v", fnName, tt.args.path, err)
+					t.Errorf("%s cannot read directory %q: %v", fnName, tt.args.path, err)
 				} else {
 					var gotFileCount int
 					for _, file := range files {
@@ -166,7 +166,7 @@ func TestCleanupLogFiles(t *testing.T) {
 						}
 					}
 					if gotFileCount != tt.wantFileCount {
-						t.Errorf("%s: file count got %d, want %d", fnName, gotFileCount, tt.wantFileCount)
+						t.Errorf("%s file count got %d, want %d", fnName, gotFileCount, tt.wantFileCount)
 					}
 				}
 				for _, file := range filesToClose {
@@ -175,10 +175,10 @@ func TestCleanupLogFiles(t *testing.T) {
 			} else {
 				if _, err := os.Stat(tt.args.path); err != nil {
 					if !os.IsNotExist(err) {
-						t.Errorf("%s: expected %s to not exist, but got error %v", fnName, tt.args.path, err)
+						t.Errorf("%s expected %q to not exist, but got error %v", fnName, tt.args.path, err)
 					}
 				} else {
-					t.Errorf("%s: expected %s to not exist!", fnName, tt.args.path)
+					t.Errorf("%s expected %q to not exist!", fnName, tt.args.path)
 				}
 			}
 		})
@@ -186,11 +186,12 @@ func TestCleanupLogFiles(t *testing.T) {
 }
 
 func TestInitLogging(t *testing.T) {
+	fnName := "InitLogging()"
 	savedStates := []*SavedEnvVar{SaveEnvVarForTesting("TMP"), SaveEnvVarForTesting("TEMP")}
 	dirName := filepath.Join(".", "InitLogging")
 	workDir := SecureAbsolutePathForTesting(dirName)
 	if err := Mkdir(workDir); err != nil {
-		t.Errorf("InitLogging: failed to create test directory")
+		t.Errorf("%s failed to create test directory: %v", fnName, err)
 	}
 	defer func() {
 		for _, state := range savedStates {
@@ -198,7 +199,7 @@ func TestInitLogging(t *testing.T) {
 		}
 		logger.Close()
 		if err := os.RemoveAll(workDir); err != nil {
-			t.Errorf("InitLogging() error destroying test directory %q: %v", workDir, err)
+			t.Errorf("%s error destroying test directory %q: %v", fnName, workDir, err)
 		}
 	}()
 	thisFile := SecureAbsolutePathForTesting("log_test.go")
@@ -247,11 +248,11 @@ func TestInitLogging(t *testing.T) {
 			}
 			o := NewOutputDeviceForTesting()
 			if got := InitLogging(o); got != tt.want {
-				t.Errorf("InitLogging() = %v, want %v", got, tt.want)
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
-					t.Errorf("InitLogging() %s", issue)
+					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 			if logger != nil {
