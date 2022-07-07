@@ -19,12 +19,16 @@ const (
 	defaultTrackNamePattern = "^\\d+[\\s-].+\\." + rawExtension + "$"
 	fkAlbumName             = "albumName"
 	fkArtistName            = "artistName"
+	fkFieldName             = "field"
+	fkSettings              = "settings"
 	fkTrackName             = "trackName"
+	genreFrame              = "TCON"
 	rawExtension            = "mp3"
 	titleFrame              = "TIT2"
 	trackDiffUnreadTags     = "cannot determine differences, tags have not been read"
 	trackDiffError          = "cannot determine differences, there was an error reading tags"
 	trackFrame              = "TRCK"
+	yearFrame               = "TYER"
 )
 
 // Track encapsulates data about a track in an album
@@ -34,11 +38,7 @@ type Track struct {
 	number          int    // number of the track
 	containingAlbum *Album
 	// these fields are populated when needed; acquisition is expensive
-	title    string // track title per mp3 tag TIT2 frame
-	track    int    // track number per mp3 tag TRCK frame - initially set to trackUnknownTagsNotRead
-	album    string // album name per mp3 tag TALB frame
-	artist   string // artist name per mp3 tag TPE1 frame
-	tagError string
+	TaggedTrackData
 }
 
 // String returns the track's path (implementation of Stringer interface)
@@ -76,10 +76,7 @@ func copyTrack(t *Track, a *Album) *Track {
 		path:            t.path,
 		name:            t.name,
 		number:          t.number,
-		album:           t.album,
-		artist:          t.artist,
-		title:           t.title,
-		track:           t.track,
+		TaggedTrackData: t.TaggedTrackData,
 		containingAlbum: a, // do not use source track's album!
 	}
 }
@@ -135,17 +132,19 @@ type TaggedTrackData struct {
 	album  string
 	artist string
 	title  string
-	track  string
+	genre  string
+	year   string
+	track  int
 	err    string
 }
 
 // NewTaggedTrackData creates a new instance of TaggedTrackData
-func NewTaggedTrackData(albumFrame, artistFrame, titleFrame, numberFrame string) *TaggedTrackData {
+func NewTaggedTrackData(albumFrame string, artistFrame string, titleFrame string, evaluatedNumberFrame int) *TaggedTrackData {
 	return &TaggedTrackData{
 		album:  albumFrame,
 		artist: artistFrame,
 		title:  titleFrame,
-		track:  numberFrame,
+		track:  evaluatedNumberFrame,
 		err:    "",
 	}
 }
@@ -162,7 +161,7 @@ func (t *Track) needsTaggedData() bool {
 }
 
 func (t *Track) hasTagError() bool {
-	return len(t.tagError) != 0
+	return len(t.TaggedTrackData.err) != 0
 }
 
 func toTrackNumber(s string) (i int, err error) {
@@ -198,18 +197,7 @@ func toTrackNumber(s string) (i int, err error) {
 
 // SetTags sets track frame fields
 func (t *Track) SetTags(d *TaggedTrackData) {
-	if len(d.err) != 0 {
-		t.tagError = d.err
-	} else {
-		if trackNumber, err := toTrackNumber(d.track); err != nil {
-			t.tagError = fmt.Sprintf("%v", err)
-		} else {
-			t.album = removeLeadingBOMs(d.album)
-			t.artist = removeLeadingBOMs(d.artist)
-			t.title = removeLeadingBOMs(d.title)
-			t.track = trackNumber
-		}
-	}
+	t.TaggedTrackData = *d
 }
 
 // depending on encoding, frame values may begin with a BOM (byte order mark)
@@ -236,6 +224,8 @@ type taggedTrackState struct {
 	trackNameConflict  bool
 	albumNameConflict  bool
 	artistNameConflict bool
+	genreConflict      bool
+	yearConflict       bool
 }
 
 // HasNumberingConflict returns true if there is a conflict between the track
@@ -268,7 +258,19 @@ func (s taggedTrackState) HasArtistNameConflict() bool {
 // HasTaggingConflicts returns true if there are any conflicts between the
 // track's frame values and their corresponding file-based values.
 func (s taggedTrackState) HasTaggingConflicts() bool {
-	return s.numberingConflict || s.trackNameConflict || s.albumNameConflict || s.artistNameConflict
+	return s.numberingConflict || s.trackNameConflict || s.albumNameConflict || s.artistNameConflict || s.genreConflict || s.yearConflict
+}
+
+// HasGenreConflict returs true if there is conflict between the track's album's
+// genre and the value of the track's TCON frame
+func (s taggedTrackState) HasGenreConflict() bool {
+	return s.genreConflict
+}
+
+// HasYearConflict returs true if there is conflict between the track's album's
+// year and the value of the track's TYER frame
+func (s taggedTrackState) HasYearConflict() bool {
+	return s.yearConflict
 }
 
 // AnalyzeIssues determines whether there are problems with the track's
@@ -286,6 +288,8 @@ func (t *Track) AnalyzeIssues() taggedTrackState {
 			trackNameConflict:  !isComparable(nameTagPair{name: t.name, tag: t.title}),
 			albumNameConflict:  !isComparable(nameTagPair{name: t.containingAlbum.Name(), tag: t.album}),
 			artistNameConflict: !isComparable(nameTagPair{name: t.containingAlbum.RecordingArtistName(), tag: t.artist}),
+			genreConflict:      t.TaggedTrackData.genre != t.containingAlbum.genre,
+			yearConflict:       t.TaggedTrackData.year != t.containingAlbum.year,
 		}
 	}
 }
@@ -320,6 +324,14 @@ func (t *Track) FindDifferences() []string {
 		differences = append(differences,
 			fmt.Sprintf("artist %q does not agree with artist tag %q", t.containingAlbum.RecordingArtistName(), t.artist))
 	}
+	if s.HasGenreConflict() {
+		differences = append(differences,
+			fmt.Sprintf("genre %q does not agree with album genre %q", t.TaggedTrackData.genre, t.containingAlbum.genre))
+	}
+	if s.HasYearConflict() {
+		differences = append(differences,
+			fmt.Sprintf("year %q does not agree with album year %q", t.TaggedTrackData.year, t.containingAlbum.year))
+	}
 	return differences
 }
 
@@ -346,7 +358,7 @@ func isComparable(p nameTagPair) bool {
 	return true // rune by rune comparison was successful
 }
 
-var stdFrames = []string{albumFrame, artistFrame, titleFrame, trackFrame}
+var stdFrames = []string{albumFrame, artistFrame, genreFrame, titleFrame, trackFrame, yearFrame}
 
 // RawReadTags reads the tag from an MP3 file and collects interesting frame
 // values.
@@ -359,10 +371,16 @@ func RawReadTags(path string) (d *TaggedTrackData) {
 		return
 	}
 	defer tag.Close()
-	d.album = tag.Album()
-	d.artist = tag.Artist()
-	d.title = tag.Title()
-	d.track = tag.GetTextFrame(trackFrame).Text
+	if trackNumber, err := toTrackNumber(tag.GetTextFrame(trackFrame).Text); err != nil {
+		d.err = fmt.Sprintf("%v", err)
+	} else {
+		d.album = removeLeadingBOMs(tag.Album())
+		d.artist = removeLeadingBOMs(tag.Artist())
+		d.genre = removeLeadingBOMs(tag.Genre())
+		d.title = removeLeadingBOMs(tag.Title())
+		d.track = trackNumber
+		d.year = removeLeadingBOMs(tag.Year())
+	}
 	return
 }
 
@@ -390,6 +408,12 @@ func (t *Track) EditTags() error {
 	}
 	if a.HasNumberingConflict() {
 		tag.AddTextFrame("TRCK", tag.DefaultEncoding(), fmt.Sprintf("%d", t.number))
+	}
+	if a.HasGenreConflict() {
+		tag.SetGenre(t.containingAlbum.genre)
+	}
+	if a.HasYearConflict() {
+		tag.SetYear(t.containingAlbum.year)
 	}
 	return tag.Save()
 }
@@ -423,7 +447,68 @@ func UpdateTracks(o internal.OutputBus, artists []*Artist, reader func(string) *
 		}
 	}
 	waitForSemaphoresDrained()
+	processAlbumRelatedFrames(o, artists)
 	reportTrackErrors(o, artists)
+}
+
+func processAlbumRelatedFrames(o internal.OutputBus, artists []*Artist) {
+	for _, artist := range artists {
+		for _, album := range artist.Albums() {
+			genres := make(map[string]int)
+			years := make(map[string]int)
+			for _, track := range album.Tracks() {
+				genre := strings.ToLower(track.TaggedTrackData.genre)
+				if len(genre) > 0 && !strings.HasPrefix(genre, "unknown") {
+					genres[track.TaggedTrackData.genre]++
+				}
+				if len(track.TaggedTrackData.year) != 0 {
+					years[track.TaggedTrackData.year]++
+				}
+			}
+			if chosenGenre, ok := pickKey(genres); !ok {
+				o.LogWriter().Warn(internal.LW_AMBIGUOUS_VALUE, map[string]interface{}{
+					fkFieldName:  "genre",
+					fkSettings:   genres,
+					fkAlbumName:  album.Name(),
+					fkArtistName: artist.Name(),
+				})
+			} else {
+				album.genre = chosenGenre
+			}
+			if chosenYear, ok := pickKey(years); !ok {
+				o.LogWriter().Warn(internal.LW_AMBIGUOUS_VALUE, map[string]interface{}{
+					fkFieldName:  "year",
+					fkSettings:   years,
+					fkAlbumName:  album.Name(),
+					fkArtistName: artist.Name(),
+				})
+			} else {
+				album.year = chosenYear
+			}
+		}
+	}
+}
+
+func pickKey(m map[string]int) (s string, ok bool) {
+	// add up the total votes, divide by 2, force rounding up
+	if len(m) == 0 {
+		ok = true
+		return
+	}
+	total := 0
+	for _, v := range m {
+		total += v
+	}
+	majority := 1 + (total / 2)
+	// look for the one entry that equals or exceeds the majority vote
+	for k, v := range m {
+		if v >= majority {
+			s = k
+			ok = true
+			return
+		}
+	}
+	return
 }
 
 func reportTrackErrors(o internal.OutputBus, artists []*Artist) {
@@ -431,12 +516,12 @@ func reportTrackErrors(o internal.OutputBus, artists []*Artist) {
 		for _, album := range artist.Albums() {
 			for _, track := range album.Tracks() {
 				if track.hasTagError() {
-					fmt.Fprintf(o.ErrorWriter(), internal.USER_TAG_ERROR, track.name, album.name, artist.name, track.tagError)
+					fmt.Fprintf(o.ErrorWriter(), internal.USER_TAG_ERROR, track.name, album.name, artist.name, track.TaggedTrackData.err)
 					o.LogWriter().Warn(internal.LW_TAG_ERROR, map[string]interface{}{
 						fkTrackName:       track.name,
 						fkAlbumName:       album.name,
 						fkArtistName:      artist.name,
-						internal.FK_ERROR: track.tagError,
+						internal.FK_ERROR: track.TaggedTrackData.err,
 					})
 				}
 			}

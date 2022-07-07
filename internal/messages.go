@@ -17,6 +17,7 @@ const (
 
 // warning log messages
 const (
+	LW_AMBIGUOUS_VALUE             = "no value has a majority of instances"
 	LW_CANNOT_COPY_FILE            = "error copying file"
 	LW_CANNOT_CREATE_DIRECTORY     = "cannot create directory"
 	LW_CANNOT_DELETE_DIRECTORY     = "cannot delete directory"

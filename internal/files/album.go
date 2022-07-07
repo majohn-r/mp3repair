@@ -12,6 +12,8 @@ type Album struct {
 	tracks          []*Track
 	recordingArtist *Artist
 	path            string
+	genre           string
+	year            string
 }
 
 func newAlbumFromFile(file fs.FileInfo, artist *Artist) *Album {
@@ -24,6 +26,8 @@ func copyAlbum(a *Album, artist *Artist) *Album {
 	for _, t := range a.tracks {
 		a2.AddTrack(copyTrack(t, a2))
 	}
+	a2.genre = a.genre
+	a2.year = a.year
 	return a2
 }
 
