@@ -337,11 +337,11 @@ func TestTrack_FindDifferences(t *testing.T) {
 	problematicAlbum.genre = "hard rock"
 	problematicAlbum.year = "1999"
 	problematicTrack := NewTrack(problematicAlbum, "03 bad track.mp3", "bad track", 3)
-	problematicTrack.TaggedTrackData.genre = "unknown"
-	problematicTrack.TaggedTrackData.year = "2001"
-	problematicTrack.TaggedTrackData.track = 3
-	problematicTrack.TaggedTrackData.album = "problematic album"
-	problematicTrack.TaggedTrackData.title = "bad track"
+	problematicTrack.genre = "unknown"
+	problematicTrack.year = "2001"
+	problematicTrack.track = 3
+	problematicTrack.album = "problematic album"
+	problematicTrack.title = "bad track"
 	problematicAlbum.AddTrack(problematicTrack)
 	tests := []struct {
 		name string
@@ -372,7 +372,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 				TaggedTrackData: TaggedTrackData{
 					track:  1,
 					title:  "track:name",
-					album:  "album:name",
+					album:  "album name",
 					artist: "artist:name",
 				},
 			},
@@ -1178,80 +1178,92 @@ func Test_processAlbumRelatedFrames(t *testing.T) {
 	var artists1 []*Artist
 	artist1 := NewArtist("good artist", "")
 	artists1 = append(artists1, artist1)
-	album1 := NewAlbum("good album", artist1, "")
+	album1 := NewAlbum("good-album", artist1, "")
 	artist1.AddAlbum(album1)
 	track1 := NewTrack(album1, "01 track1.mp3", "track1", 1)
-	track1.TaggedTrackData.genre = "pop"
-	track1.TaggedTrackData.year = "2022"
+	track1.genre = "pop"
+	track1.year = "2022"
+	track1.album = "good:album"
 	album1.AddTrack(track1)
 	// more interesting test data
 	var artists2 []*Artist
 	artist2 := NewArtist("another good artist", "")
 	artists2 = append(artists2, artist2)
-	album2 := NewAlbum("another good album", artist2, "")
+	album2 := NewAlbum("another good_album", artist2, "")
 	artist2.AddAlbum(album2)
 	track2a := NewTrack(album2, "01 track1.mp3", "track1", 1)
-	track2a.TaggedTrackData.genre = "unknown"
-	track2a.TaggedTrackData.year = ""
+	track2a.genre = "unknown"
+	track2a.year = ""
+	track2a.album = "unknown album"
 	album2.AddTrack(track2a)
 	track2b := NewTrack(album1, "02 track2.mp3", "track2", 2)
-	track2b.TaggedTrackData.genre = "pop"
-	track2b.TaggedTrackData.year = "2022"
+	track2b.genre = "pop"
+	track2b.year = "2022"
+	track2b.album = "another good:album"
 	album2.AddTrack(track2b)
 	track2c := NewTrack(album1, "03 track3.mp3", "track3", 3)
-	track2c.TaggedTrackData.genre = "pop"
-	track2c.TaggedTrackData.year = "2022"
+	track2c.genre = "pop"
+	track2c.year = "2022"
+	track2c.album = "another good:album"
 	album2.AddTrack(track2c)
 	// error case data
 	var artists3 []*Artist
 	artist3 := NewArtist("problematic artist", "")
 	artists3 = append(artists3, artist3)
-	album3 := NewAlbum("problematic album", artist3, "")
+	album3 := NewAlbum("problematic_album", artist3, "")
 	artist3.AddAlbum(album3)
 	track3a := NewTrack(album2, "01 track1.mp3", "track1", 1)
-	track3a.TaggedTrackData.genre = "rock"
-	track3a.TaggedTrackData.year = "2023"
+	track3a.genre = "rock"
+	track3a.year = "2023"
+	track3a.album = "problematic:album"
 	album3.AddTrack(track3a)
 	track3b := NewTrack(album1, "02 track2.mp3", "track2", 2)
-	track3b.TaggedTrackData.genre = "pop"
-	track3b.TaggedTrackData.year = "2022"
+	track3b.genre = "pop"
+	track3b.year = "2022"
+	track3b.album = "problematic:Album"
 	album3.AddTrack(track3b)
 	track3c := NewTrack(album1, "03 track3.mp3", "track3", 3)
-	track3c.TaggedTrackData.genre = "folk"
-	track3c.TaggedTrackData.year = "2021"
+	track3c.genre = "folk"
+	track3c.year = "2021"
+	track3c.album = "Problematic:album"
 	album3.AddTrack(track3c)
 	type args struct {
 		artists []*Artist
 	}
 	tests := []struct {
-		name      string
-		args      args
-		album     *Album
-		wantGenre string
-		wantYear  string
+		name           string
+		args           args
+		album          *Album
+		wantGenre      string
+		wantYear       string
+		wantAlbumTitle string
 		internal.WantedOutput
 	}{
 		{
-			name:      "ordinary test",
-			args:      args{artists: artists1},
-			album:     album1,
-			wantGenre: "pop",
-			wantYear:  "2022",
+			name:           "ordinary test",
+			args:           args{artists: artists1},
+			album:          album1,
+			wantGenre:      "pop",
+			wantYear:       "2022",
+			wantAlbumTitle: "good:album",
 		},
 		{
-			name:      "typical use case",
-			args:      args{artists: artists2},
-			album:     album2,
-			wantGenre: "pop",
-			wantYear:  "2022",
+			name:           "typical use case",
+			args:           args{artists: artists2},
+			album:          album2,
+			wantGenre:      "pop",
+			wantYear:       "2022",
+			wantAlbumTitle: "another good:album",
 		},
 		{
-			name:  "errors",
-			args:  args{artists: artists3},
-			album: album3,
+			name:           "errors",
+			args:           args{artists: artists3},
+			album:          album3,
+			wantAlbumTitle: "problematic_album",
 			WantedOutput: internal.WantedOutput{
-				WantLogOutput: "level='warn' albumName='problematic album' artistName='problematic artist' field='genre' settings='map[folk:1 pop:1 rock:1]' msg='no value has a majority of instances'\n" +
-					"level='warn' albumName='problematic album' artistName='problematic artist' field='year' settings='map[2021:1 2022:1 2023:1]' msg='no value has a majority of instances'\n",
+				WantLogOutput: "level='warn' albumName='problematic_album' artistName='problematic artist' field='genre' settings='map[folk:1 pop:1 rock:1]' msg='no value has a majority of instances'\n" +
+					"level='warn' albumName='problematic_album' artistName='problematic artist' field='year' settings='map[2021:1 2022:1 2023:1]' msg='no value has a majority of instances'\n" +
+					"level='warn' albumName='problematic_album' artistName='problematic artist' field='album title' settings='map[Problematic:album:1 problematic:Album:1 problematic:album:1]' msg='no value has a majority of instances'\n",
 			},
 		},
 	}

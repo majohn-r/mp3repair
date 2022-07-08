@@ -161,7 +161,7 @@ func (t *Track) needsTaggedData() bool {
 }
 
 func (t *Track) hasTagError() bool {
-	return len(t.TaggedTrackData.err) != 0
+	return len(t.err) != 0
 }
 
 func toTrackNumber(s string) (i int, err error) {
@@ -286,10 +286,10 @@ func (t *Track) AnalyzeIssues() taggedTrackState {
 		return taggedTrackState{
 			numberingConflict:  t.track != t.number,
 			trackNameConflict:  !isComparable(nameTagPair{name: t.name, tag: t.title}),
-			albumNameConflict:  !isComparable(nameTagPair{name: t.containingAlbum.Name(), tag: t.album}),
+			albumNameConflict:  t.containingAlbum.canonicalTitle != t.album,
 			artistNameConflict: !isComparable(nameTagPair{name: t.containingAlbum.RecordingArtistName(), tag: t.artist}),
-			genreConflict:      t.TaggedTrackData.genre != t.containingAlbum.genre,
-			yearConflict:       t.TaggedTrackData.year != t.containingAlbum.year,
+			genreConflict:      t.genre != t.containingAlbum.genre,
+			yearConflict:       t.year != t.containingAlbum.year,
 		}
 	}
 }
@@ -318,7 +318,7 @@ func (t *Track) FindDifferences() []string {
 	}
 	if s.HasAlbumNameConflict() {
 		differences = append(differences,
-			fmt.Sprintf("album %q does not agree with album tag %q", t.containingAlbum.Name(), t.album))
+			fmt.Sprintf("album %q does not agree with album tag %q", t.containingAlbum.canonicalTitle, t.album))
 	}
 	if s.HasArtistNameConflict() {
 		differences = append(differences,
@@ -326,11 +326,11 @@ func (t *Track) FindDifferences() []string {
 	}
 	if s.HasGenreConflict() {
 		differences = append(differences,
-			fmt.Sprintf("genre %q does not agree with album genre %q", t.TaggedTrackData.genre, t.containingAlbum.genre))
+			fmt.Sprintf("genre %q does not agree with album genre %q", t.genre, t.containingAlbum.genre))
 	}
 	if s.HasYearConflict() {
 		differences = append(differences,
-			fmt.Sprintf("year %q does not agree with album year %q", t.TaggedTrackData.year, t.containingAlbum.year))
+			fmt.Sprintf("year %q does not agree with album year %q", t.year, t.containingAlbum.year))
 	}
 	return differences
 }
@@ -398,7 +398,7 @@ func (t *Track) EditTags() error {
 	defer tag.Close()
 	tag.SetDefaultEncoding(id3v2.EncodingUTF8)
 	if a.HasAlbumNameConflict() {
-		tag.SetAlbum(t.containingAlbum.Name())
+		tag.SetAlbum(t.containingAlbum.canonicalTitle)
 	}
 	if a.HasArtistNameConflict() {
 		tag.SetArtist(t.containingAlbum.RecordingArtistName())
@@ -456,13 +456,17 @@ func processAlbumRelatedFrames(o internal.OutputBus, artists []*Artist) {
 		for _, album := range artist.Albums() {
 			genres := make(map[string]int)
 			years := make(map[string]int)
+			albumTitles := make(map[string]int)
 			for _, track := range album.Tracks() {
-				genre := strings.ToLower(track.TaggedTrackData.genre)
+				genre := strings.ToLower(track.genre)
 				if len(genre) > 0 && !strings.HasPrefix(genre, "unknown") {
-					genres[track.TaggedTrackData.genre]++
+					genres[track.genre]++
 				}
-				if len(track.TaggedTrackData.year) != 0 {
-					years[track.TaggedTrackData.year]++
+				if len(track.year) != 0 {
+					years[track.year]++
+				}
+				if isComparable(nameTagPair{name: album.name, tag: track.album}) {
+					albumTitles[track.album]++
 				}
 			}
 			if chosenGenre, ok := pickKey(genres); !ok {
@@ -484,6 +488,18 @@ func processAlbumRelatedFrames(o internal.OutputBus, artists []*Artist) {
 				})
 			} else {
 				album.year = chosenYear
+			}
+			if chosenAlbumTitle, ok := pickKey(albumTitles); !ok {
+				o.LogWriter().Warn(internal.LW_AMBIGUOUS_VALUE, map[string]interface{}{
+					fkFieldName:  "album title",
+					fkSettings:   albumTitles,
+					fkAlbumName:  album.Name(),
+					fkArtistName: artist.Name(),
+				})
+			} else {
+				if len(chosenAlbumTitle) != 0 {
+					album.canonicalTitle = chosenAlbumTitle
+				}
 			}
 		}
 	}
@@ -516,12 +532,12 @@ func reportTrackErrors(o internal.OutputBus, artists []*Artist) {
 		for _, album := range artist.Albums() {
 			for _, track := range album.Tracks() {
 				if track.hasTagError() {
-					fmt.Fprintf(o.ErrorWriter(), internal.USER_TAG_ERROR, track.name, album.name, artist.name, track.TaggedTrackData.err)
+					fmt.Fprintf(o.ErrorWriter(), internal.USER_TAG_ERROR, track.name, album.name, artist.name, track.err)
 					o.LogWriter().Warn(internal.LW_TAG_ERROR, map[string]interface{}{
 						fkTrackName:       track.name,
 						fkAlbumName:       album.name,
 						fkArtistName:      artist.name,
-						internal.FK_ERROR: track.TaggedTrackData.err,
+						internal.FK_ERROR: track.err,
 					})
 				}
 			}

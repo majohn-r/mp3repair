@@ -14,6 +14,7 @@ type Album struct {
 	path            string
 	genre           string
 	year            string
+	canonicalTitle  string // this is what the tracks will record as their title
 }
 
 func newAlbumFromFile(file fs.FileInfo, artist *Artist) *Album {
@@ -28,12 +29,13 @@ func copyAlbum(a *Album, artist *Artist) *Album {
 	}
 	a2.genre = a.genre
 	a2.year = a.year
+	a2.canonicalTitle = a.canonicalTitle
 	return a2
 }
 
 // NewAlbum creates a new Album instance
 func NewAlbum(title string, artist *Artist, albumPath string) *Album {
-	return &Album{name: title, recordingArtist: artist, path: albumPath}
+	return &Album{name: title, recordingArtist: artist, path: albumPath, canonicalTitle: title}
 }
 
 func (a *Album) BackupDirectory() string {
