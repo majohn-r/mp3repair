@@ -287,7 +287,7 @@ func (t *Track) AnalyzeIssues() taggedTrackState {
 			numberingConflict:  t.track != t.number,
 			trackNameConflict:  !isComparable(nameTagPair{name: t.name, tag: t.title}),
 			albumNameConflict:  t.containingAlbum.canonicalTitle != t.album,
-			artistNameConflict: !isComparable(nameTagPair{name: t.containingAlbum.RecordingArtistName(), tag: t.artist}),
+			artistNameConflict: t.containingAlbum.recordingArtist.canonicalName != t.artist,
 			genreConflict:      t.genre != t.containingAlbum.genre,
 			yearConflict:       t.year != t.containingAlbum.year,
 		}
@@ -322,7 +322,7 @@ func (t *Track) FindDifferences() []string {
 	}
 	if s.HasArtistNameConflict() {
 		differences = append(differences,
-			fmt.Sprintf("artist %q does not agree with artist tag %q", t.containingAlbum.RecordingArtistName(), t.artist))
+			fmt.Sprintf("artist %q does not agree with artist tag %q", t.containingAlbum.recordingArtist.canonicalName, t.artist))
 	}
 	if s.HasGenreConflict() {
 		differences = append(differences,
@@ -401,7 +401,7 @@ func (t *Track) EditTags() error {
 		tag.SetAlbum(t.containingAlbum.canonicalTitle)
 	}
 	if a.HasArtistNameConflict() {
-		tag.SetArtist(t.containingAlbum.RecordingArtistName())
+		tag.SetArtist(t.containingAlbum.recordingArtist.canonicalName)
 	}
 	if a.HasTrackNameConflict() {
 		tag.SetTitle(t.name)
@@ -448,7 +448,32 @@ func UpdateTracks(o internal.OutputBus, artists []*Artist, reader func(string) *
 	}
 	waitForSemaphoresDrained()
 	processAlbumRelatedFrames(o, artists)
+	processArtistRelatedFrames(o, artists)
 	reportTrackErrors(o, artists)
+}
+
+func processArtistRelatedFrames(o internal.OutputBus, artists []*Artist) {
+	for _, artist := range artists {
+		names := make(map[string]int)
+		for _, album := range artist.Albums() {
+			for _, track := range album.Tracks() {
+				if isComparable(nameTagPair{name: artist.name, tag: track.artist}) {
+					names[track.artist]++
+				}
+			}
+		}
+		if chosenName, ok := pickKey(names); !ok {
+			o.LogWriter().Warn(internal.LW_AMBIGUOUS_VALUE, map[string]interface{}{
+				fkFieldName:  "artist name",
+				fkSettings:   names,
+				fkArtistName: artist.Name(),
+			})
+		} else {
+			if len(chosenName) > 0 {
+				artist.canonicalName = chosenName
+			}
+		}
+	}
 }
 
 func processAlbumRelatedFrames(o internal.OutputBus, artists []*Artist) {

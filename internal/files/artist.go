@@ -9,9 +9,10 @@ import (
 // Artist encapsulates information about a recording artist (a solo performer, a
 // duo, a band, etc.)
 type Artist struct {
-	name   string
-	albums []*Album
-	path   string
+	name          string
+	albums        []*Album
+	path          string
+	canonicalName string
 }
 
 func newArtistFromFile(f fs.FileInfo, dir string) *Artist {
@@ -20,12 +21,14 @@ func newArtistFromFile(f fs.FileInfo, dir string) *Artist {
 }
 
 func copyArtist(a *Artist) *Artist {
-	return NewArtist(a.name, a.path)
+	a2 := NewArtist(a.name, a.path)
+	a2.canonicalName = a.canonicalName
+	return a2
 }
 
 // NewArtist creates a new instance of Artist
 func NewArtist(n, p string) *Artist {
-	return &Artist{name: n, path: p}
+	return &Artist{name: n, path: p, canonicalName: n}
 }
 
 func (a *Artist) contents(o internal.OutputBus) ([]fs.FileInfo, bool) {

@@ -333,16 +333,19 @@ func Test_isComparable(t *testing.T) {
 
 func TestTrack_FindDifferences(t *testing.T) {
 	fnName := "Track.FindDifferences()"
-	problematicAlbum := NewAlbum("problematic album", nil, "")
+	problematicArtist := NewArtist("problematic:artist", "")
+	problematicAlbum := NewAlbum("problematic:album", problematicArtist, "")
 	problematicAlbum.genre = "hard rock"
 	problematicAlbum.year = "1999"
 	problematicTrack := NewTrack(problematicAlbum, "03 bad track.mp3", "bad track", 3)
 	problematicTrack.genre = "unknown"
 	problematicTrack.year = "2001"
 	problematicTrack.track = 3
-	problematicTrack.album = "problematic album"
+	problematicTrack.album = "problematicAlbum"
+	problematicTrack.artist = "problematicArtist"
 	problematicTrack.title = "bad track"
 	problematicAlbum.AddTrack(problematicTrack)
+	problematicArtist.AddAlbum(problematicAlbum)
 	tests := []struct {
 		name string
 		tr   *Track
@@ -373,7 +376,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 					track:  1,
 					title:  "track:name",
 					album:  "album name",
-					artist: "artist:name",
+					artist: "artist name",
 				},
 			},
 			want: nil,
@@ -409,9 +412,11 @@ func TestTrack_FindDifferences(t *testing.T) {
 			want: []string{trackDiffError},
 		},
 		{
-			name: "track with genre and year issues",
+			name: "track with tag frame differences",
 			tr:   problematicTrack,
 			want: []string{
+				"album \"problematic:album\" does not agree with album tag \"problematicAlbum\"",
+				"artist \"problematic:artist\" does not agree with artist tag \"problematicArtist\"",
 				"genre \"unknown\" does not agree with album genre \"hard rock\"",
 				"year \"2001\" does not agree with album year \"1999\"",
 			},
@@ -1277,6 +1282,74 @@ func Test_processAlbumRelatedFrames(t *testing.T) {
 			if tt.album.year != tt.wantYear {
 				t.Errorf("%s want year %q, got %q", fnName, tt.album.year, tt.wantYear)
 			}
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
+				}
+			}
+		})
+	}
+}
+
+func Test_processArtistRelatedFrames(t *testing.T) {
+	fnName := "processArtistRelatedFrames"
+	artist1 := NewArtist("artist_name", "")
+	album1 := NewAlbum("album1", artist1, "")
+	artist1.AddAlbum(album1)
+	for k := 1; k <= 10; k++ {
+		track := NewTrack(album1, fmt.Sprintf("%02d track%d.mp3", k, k), fmt.Sprintf("track%d", k), k)
+		track.artist = "artist:name"
+		album1.AddTrack(track)
+	}
+	artist2 := NewArtist("artist_name", "")
+	album2 := NewAlbum("album2", artist2, "")
+	artist2.AddAlbum(album2)
+	for k := 1; k <= 10; k++ {
+		track := NewTrack(album2, fmt.Sprintf("%02d track%d.mp3", k, k), fmt.Sprintf("track%d", k), k)
+		track.artist = "unknown artist"
+		album2.AddTrack(track)
+	}
+	artist3 := NewArtist("artist_name", "")
+	album3 := NewAlbum("album3", artist3, "")
+	artist3.AddAlbum(album3)
+	for k := 1; k <= 10; k++ {
+		track := NewTrack(album3, fmt.Sprintf("%02d track%d.mp3", k, k), fmt.Sprintf("track%d", k), k)
+		if k%2 == 0 {
+			track.artist = "artist:name"
+		} else {
+			track.artist = "artist_name"
+		}
+		album3.AddTrack(track)
+	}
+	tests := []struct {
+		name               string
+		artist             *Artist
+		wantCanonicalTitle string
+		internal.WantedOutput
+	}{
+		{
+			name:               "unanimous choice",
+			artist:             artist1,
+			wantCanonicalTitle: "artist:name",
+		},
+		{
+			name:               "unknown choice",
+			artist:             artist2,
+			wantCanonicalTitle: "artist_name",
+		},
+		{
+			name:               "ambiguous choice",
+			artist:             artist3,
+			wantCanonicalTitle: "artist_name",
+			WantedOutput: internal.WantedOutput{
+				WantLogOutput: "level='warn' artistName='artist_name' field='artist name' settings='map[artist:name:5 artist_name:5]' msg='no value has a majority of instances'\n",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			o := internal.NewOutputDeviceForTesting()
+			processArtistRelatedFrames(o, []*Artist{tt.artist})
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
