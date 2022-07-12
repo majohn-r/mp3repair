@@ -736,7 +736,7 @@ var frameDescriptions = map[string]string{
 	"WXXX": "User defined URL link frame",
 }
 
-func (t *Track) Diagnostics() (enc string, f []*TrackFrame, e error) {
+func (t *Track) Diagnostics() (version byte, enc string, f []*TrackFrame, e error) {
 	var tag *id3v2.Tag
 	var err error
 	if tag, err = id3v2.Open(t.path, id3v2.Options{Parse: true, ParseFrames: nil}); err != nil {
@@ -760,9 +760,30 @@ func (t *Track) Diagnostics() (enc string, f []*TrackFrame, e error) {
 		if strings.HasPrefix(n, "T") {
 			f = append(f, &TrackFrame{name: n, description: d, value: removeLeadingBOMs(tag.GetTextFrame(n).Text)})
 		} else {
-			f = append(f, &TrackFrame{name: n, description: d, value: fmt.Sprintf("%v", frames[n])})
+			f = append(f, &TrackFrame{name: n, description: d, value: stringifyFramerArray(frames[n])})
 		}
 	}
 	enc = tag.DefaultEncoding().Name
+	version = tag.Version()
 	return
+}
+
+func stringifyFramerArray(f []id3v2.Framer) string {
+	var substrings []string
+	if len(f) == 1 {
+		if data, ok := f[0].(id3v2.UnknownFrame); ok {
+			substrings = append(substrings, fmt.Sprintf("%#v", data.Body))
+		} else {
+			substrings = append(substrings, fmt.Sprintf("%#v", f[0]))
+		}
+	} else {
+		for k, framer := range f {
+			if data, ok := framer.(id3v2.UnknownFrame); ok {
+				substrings = append(substrings, fmt.Sprintf("[%d %#v]", k, data.Body))
+			} else {
+				substrings = append(substrings, fmt.Sprintf("[%d %#v]", k, framer))
+			}
+		}
+	}
+	return fmt.Sprintf("<<%s>>", strings.Join(substrings, ", "))
 }

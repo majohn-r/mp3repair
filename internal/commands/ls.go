@@ -263,13 +263,14 @@ func (l *ls) outputTracks(o internal.OutputBus, tracks []*files.Track, prefix st
 
 func (l *ls) outputTrackDiagnostics(o internal.OutputBus, t *files.Track, prefix string) {
 	if *l.diagnostics {
-		if enc, frames, err := t.Diagnostics(); err != nil {
+		if version, enc, frames, err := t.Diagnostics(); err != nil {
 			o.LogWriter().Warn(internal.LW_TAG_ERROR, map[string]interface{}{
 				internal.FK_ERROR: err,
 				fkTrack:           t.String(),
 			})
 			fmt.Fprintf(o.ErrorWriter(), internal.USER_TAG_ERROR, t.Name(), t.AlbumName(), t.RecordingArtist(), fmt.Sprintf("%v", err))
 		} else {
+			fmt.Fprintf(o.ConsoleWriter(), "%sVersion: %v\n", prefix, version)
 			fmt.Fprintf(o.ConsoleWriter(), "%sEncoding: %q\n", prefix, enc)
 			for _, frame := range frames {
 				fmt.Fprintf(o.ConsoleWriter(), "%s%s\n", prefix, frame.String())

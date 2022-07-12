@@ -846,7 +846,8 @@ func Test_ls_outputTrackDiagnostics(t *testing.T) {
 			l:    makeLs(),
 			args: args{t: goodTrack, prefix: "      "},
 			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "      Encoding: \"ISO-8859-1\"\n" +
+				WantConsoleOutput: "      Version: 3\n" +
+					"      Encoding: \"ISO-8859-1\"\n" +
 					"      TALB = \"unknown album\" // The 'Album/Movie/Show title' frame is intended for the title of the recording(/source of sound) which the audio in the file is taken from.\n" +
 					"      TCOM = \"a couple of idiots\" // The 'Composer(s)' frame is intended for the name of the composer(s).\n" +
 					"      TCON = \"dance music\" // The 'Content type', which previously was stored as a one byte numeric value only, is now a numeric string.\n" +

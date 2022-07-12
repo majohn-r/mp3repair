@@ -3,6 +3,7 @@ package files
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"mp3/internal"
 	"os"
 	"path/filepath"
@@ -1387,11 +1388,12 @@ func TestTrack_Diagnostics(t *testing.T) {
 		}
 	}()
 	tests := []struct {
-		name    string
-		tr      *Track
-		wantEnc string
-		wantF   []*TrackFrame
-		wantErr bool
+		name        string
+		tr          *Track
+		wantEnc     string
+		wantVersion byte
+		wantF       []*TrackFrame
+		wantErr     bool
 	}{
 		{
 			name:    "error case",
@@ -1399,11 +1401,12 @@ func TestTrack_Diagnostics(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:    "good case",
-			tr:      &Track{path: "./goodfile.mp3"},
-			wantEnc: "ISO-8859-1",
+			name:        "good case",
+			tr:          &Track{path: "./goodfile.mp3"},
+			wantEnc:     "ISO-8859-1",
+			wantVersion: 3,
 			wantF: []*TrackFrame{
-				NewTrackFrame("Fake", "frame name not recognized - unknown purpose", "[{[0 117 109 109 109]}]"),
+				NewTrackFrame("Fake", "frame name not recognized - unknown purpose", "<<[]byte{0x0, 0x75, 0x6d, 0x6d, 0x6d}>>"),
 				NewTrackFrame("T???", "frame name not recognized - unknown purpose", "who knows?"),
 				NewTrackFrame("TALB", "The 'Album/Movie/Show title' frame is intended for the title of the recording(/source of sound) which the audio in the file is taken from.", "unknown album"),
 				NewTrackFrame("TCOM", "The 'Composer(s)' frame is intended for the name of the composer(s).", "a couple of idiots"),
@@ -1417,13 +1420,16 @@ func TestTrack_Diagnostics(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotEnc, gotF, err := tt.tr.Diagnostics()
+			gotVersion, gotEnc, gotF, err := tt.tr.Diagnostics()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
 				return
 			}
 			if gotEnc != tt.wantEnc {
 				t.Errorf("%s gotEnc = %q, want %q", fnName, gotEnc, tt.wantEnc)
+			}
+			if gotVersion != tt.wantVersion {
+				t.Errorf("%s gotVersion = %d, want %d", fnName, gotVersion, tt.wantVersion)
 			}
 			if !reflect.DeepEqual(gotF, tt.wantF) {
 				t.Errorf("%s gotF = %v, want %v", fnName, gotF, tt.wantF)
@@ -1443,6 +1449,66 @@ func TestTrackFrame_String(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.f.String(); got != tt.want {
 				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
+			}
+		})
+	}
+}
+
+// this struct implements idev2.Framer as a means to provide an unexpected kind
+// of Framer
+type unspecifiedFrame struct {
+	content string
+}
+
+func (u unspecifiedFrame) Size() int {
+	return len(u.content)
+}
+
+func (u unspecifiedFrame) UniqueIdentifier() string {
+	return ""
+}
+
+func (u unspecifiedFrame) WriteTo(w io.Writer) (n int64, err error) {
+	var count int
+	count, err = w.Write([]byte(u.content))
+	n = int64(count)
+	return
+}
+
+func Test_stringifyFramerArray(t *testing.T) {
+	type args struct {
+		f []id3v2.Framer
+	}
+	tests := []struct {
+		name string
+		args args
+		want string
+	}{
+		{
+			name: "single UnknownFrame",
+			args: args{f: []id3v2.Framer{id3v2.UnknownFrame{Body: []byte{0, 1, 2}}}},
+			want: "<<[]byte{0x0, 0x1, 0x2}>>",
+		},
+		{
+			name: "single unexpected frame",
+			args: args{f: []id3v2.Framer{unspecifiedFrame{content: "hello world"}}},
+			want: "<<files.unspecifiedFrame{content:\"hello world\"}>>",
+		},
+		{
+			name: "multiple frames",
+			args: args{
+				f: []id3v2.Framer{
+					id3v2.UnknownFrame{Body: []byte{0, 1, 2}},
+					unspecifiedFrame{content: "hello world"},
+				},
+			},
+			want: "<<[0 []byte{0x0, 0x1, 0x2}], [1 files.unspecifiedFrame{content:\"hello world\"}]>>",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := stringifyFramerArray(tt.args.f); got != tt.want {
+				t.Errorf("stringifyFramerArray() = %q, want %q", got, tt.want)
 			}
 		})
 	}
