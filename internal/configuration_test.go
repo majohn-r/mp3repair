@@ -279,7 +279,7 @@ func TestReadConfigurationFile(t *testing.T) {
 	if err := Mkdir(gibberishDir); err != nil {
 		t.Errorf("%s error creating gibberish folder: %v", fnName, err)
 	}
-	if err := CreateFileForTestingWithContent(gibberishDir, defaultConfigFileName, "gibberish"); err != nil {
+	if err := CreateFileForTestingWithContent(gibberishDir, defaultConfigFileName, []byte("gibberish")); err != nil {
 		t.Errorf("%s error creating gibberish defaults.yaml: %v", fnName, err)
 	}
 	tests := []struct {

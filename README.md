@@ -38,6 +38,9 @@ annotations:
    (**-includeAlbums=false**), and the recording artist if artists are also not included
    (**-includeArtists=false**)
 
+The boolean **-diagnostic** flag adds detailed internal data to each track, if
+tracks are listed (**-includeTracks=true**).
+
 ## check
 
 The **check** command provides a means to run various checks on the mp3 files
@@ -127,6 +130,7 @@ The **defaults.yaml** file may contain five blocks:
    string key-value pair, with each key controlling the default setting for its
    corresponding **ls** command argument:
    1. **annotate**
+   1. **diagnostic**
    1. **includeAlbums**
    1. **includeArtists**
    1. **includeTracks**
@@ -154,6 +158,7 @@ common:
     topDir:       $HOMEPATH/Music
 ls:
     annotate:       false
+    diagnostic:     false
     includeAlbums:  true
     includeArtists: true
     includeTracks:  false

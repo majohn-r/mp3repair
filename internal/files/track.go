@@ -6,6 +6,7 @@ import (
 	"mp3/internal"
 	"path/filepath"
 	"regexp"
+	"sort"
 	"strings"
 	"time"
 
@@ -640,4 +641,128 @@ func (t *Track) RecordingArtist() string {
 // Copy copies the track to a specified destination path
 func (t *Track) Copy(destination string) error {
 	return internal.CopyFile(t.path, destination)
+}
+
+type TrackFrame struct {
+	name        string
+	description string
+	value       string
+}
+
+func NewTrackFrame(name, description, value string) *TrackFrame {
+	return &TrackFrame{name: name, description: description, value: value}
+}
+
+func (f *TrackFrame) String() string {
+	return fmt.Sprintf("%s = %q // %s", f.name, f.value, f.description)
+}
+
+// data from https://id3.org/id3v2.3.0#Declared_ID3v2_frames and
+// https://id3.org/id3v2.3.0#Text_information_frames_-_details
+var frameDescriptions = map[string]string{
+	"AENC": "Audio encryption",
+	"APIC": "Attached picture",
+	"COMM": "Comments",
+	"COMR": "Commercial frame",
+	"ENCR": "Encryption method registration",
+	"EQUA": "Equalization",
+	"ETCO": "Event timing codes",
+	"GEOB": "General encapsulated object",
+	"GRID": "Group identification registration",
+	"IPLS": "Involved people list",
+	"LINK": "Linked information",
+	"MCDI": "Music CD identifier",
+	"MLLT": "MPEG location lookup table",
+	"OWNE": "Ownership frame",
+	"PRIV": "Private frame",
+	"PCNT": "Play counter",
+	"POPM": "Popularimeter",
+	"POSS": "Position synchronisation frame",
+	"RBUF": "Recommended buffer size",
+	"RVAD": "Relative volume adjustment",
+	"RVRB": "Reverb",
+	"SYLT": "Synchronized lyric/text",
+	"SYTC": "Synchronized tempo codes",
+	"TALB": "The 'Album/Movie/Show title' frame is intended for the title of the recording(/source of sound) which the audio in the file is taken from.",
+	"TBPM": "The 'BPM' frame contains the number of beats per minute in the mainpart of the audio.",
+	"TCOM": "The 'Composer(s)' frame is intended for the name of the composer(s).",
+	"TCON": "The 'Content type', which previously was stored as a one byte numeric value only, is now a numeric string.",
+	"TCOP": "The 'Copyright message' frame, which must begin with a year and a space character (making five characters), is intended for the copyright holder of the original sound, not the audio file itself.",
+	"TDAT": "The 'Date' frame is a numeric string in the DDMM format containing the date for the recording.",
+	"TDLY": "The 'Playlist delay' defines the numbers of milliseconds of silence between every song in a playlist.",
+	"TENC": "The 'Encoded by' frame contains the name of the person or organisation that encoded the audio file.",
+	"TEXT": "The 'Lyricist(s)/Text writer(s)' frame is intended for the writer(s) of the text or lyrics in the recording.",
+	"TFLT": "The 'File type' frame indicates which type of audio this tag defines.",
+	"TIME": "The 'Time' frame is a numeric string in the HHMM format containing the time for the recording.",
+	"TIT1": "The 'Content group description' frame is used if the sound belongs to a larger category of sounds/music.",
+	"TIT2": "The 'Title/Songname/Content description' frame is the actual name of the piece (e.g. 'Adagio', 'Hurricane Donna').",
+	"TIT3": "The 'Subtitle/Description refinement' frame is used for information directly related to the contents title (e.g. 'Op. 16' or 'Performed live at Wembley').",
+	"TKEY": "The 'Initial key' frame contains the musical key in which the sound starts.",
+	"TLAN": "The 'Language(s)' frame should contain the languages of the text or lyrics spoken or sung in the audio.",
+	"TLEN": "The 'Length' frame contains the length of the audiofile in milliseconds, represented as a numeric string.",
+	"TMED": "The 'Media type' frame describes from which media the sound originated.",
+	"TOAL": "The 'Original album/movie/show title' frame is intended for the title of the original recording (or source of sound), if for example the music in the file should be a cover of a previously released song.",
+	"TOFN": "The 'Original filename' frame contains the preferred filename for the file, since some media doesn't allow the desired length of the filename.",
+	"TOLY": "The 'Original lyricist(s)/text writer(s)' frame is intended for the text writer(s) of the original recording, if for example the music in the file should be a cover of a previously released song.",
+	"TOPE": "The 'Original artist(s)/performer(s)' frame is intended for the performer(s) of the original recording, if for example the music in the file should be a cover of a previously released song.",
+	"TORY": "The 'Original release year' frame is intended for the year when the original recording, if for example the music in the file should be a cover of a previously released song, was released.",
+	"TOWN": "The 'File owner/licensee' frame contains the name of the owner or licensee of the file and it's contents.",
+	"TPE1": "The 'Lead artist(s)/Lead performer(s)/Soloist(s)/Performing group' is used for the main artist(s).",
+	"TPE2": "The 'Band/Orchestra/Accompaniment' frame is used for additional information about the performers in the recording.",
+	"TPE3": "The 'Conductor' frame is used for the name of the conductor.",
+	"TPE4": "The 'Interpreted, remixed, or otherwise modified by' frame contains more information about the people behind a remix and similar interpretations of another existing piece.",
+	"TPOS": "The 'Part of a set' frame is a numeric string that describes which part of a set the audio came from.",
+	"TPUB": "The 'Publisher' frame simply contains the name of the label or publisher.",
+	"TRCK": "The 'Track number/Position in set' frame is a numeric string containing the order number of the audio-file on its original recording.",
+	"TRDA": "The 'Recording dates' frame is a intended to be used as complement to the 'TYER', 'TDAT' and 'TIME' frames.",
+	"TRSN": "The 'Internet radio station name' frame contains the name of the internet radio station from which the audio is streamed.",
+	"TRSO": "The 'Internet radio station owner' frame contains the name of the owner of the internet radio station from which the audio is streamed.",
+	"TSIZ": "The 'Size' frame contains the size of the audiofile in bytes, excluding the ID3v2 tag, represented as a numeric string.",
+	"TSRC": "The 'ISRC' frame should contain the International Standard Recording Code (ISRC) (12 characters).",
+	"TSSE": "The 'Software/Hardware and settings used for encoding' frame includes the used audio encoder and its settings when the file was encoded.",
+	"TYER": "The 'Year' frame is a numeric string with a year of the recording.",
+	"TXXX": "User defined text information frame",
+	"UFID": "Unique file identifier",
+	"USER": "Terms of use",
+	"USLT": "Unsychronized lyric/text transcription",
+	"WCOM": "Commercial information",
+	"WCOP": "Copyright/Legal information",
+	"WOAF": "Official audio file webpage",
+	"WOAR": "Official artist/performer webpage",
+	"WOAS": "Official audio source webpage",
+	"WORS": "Official internet radio station homepage",
+	"WPAY": "Payment",
+	"WPUB": "Publishers official webpage",
+	"WXXX": "User defined URL link frame",
+}
+
+func (t *Track) Diagnostics() (enc string, f []*TrackFrame, e error) {
+	var tag *id3v2.Tag
+	var err error
+	if tag, err = id3v2.Open(t.path, id3v2.Options{Parse: true, ParseFrames: nil}); err != nil {
+		e = err
+		return
+	}
+	defer tag.Close()
+	frames := tag.AllFrames()
+	var frameNames []string
+	for k := range frames {
+		frameNames = append(frameNames, k)
+	}
+	sort.Strings(frameNames)
+	for _, n := range frameNames {
+		var d string
+		if k, ok := frameDescriptions[n]; !ok {
+			d = "frame name not recognized - unknown purpose"
+		} else {
+			d = k
+		}
+		if strings.HasPrefix(n, "T") {
+			f = append(f, &TrackFrame{name: n, description: d, value: removeLeadingBOMs(tag.GetTextFrame(n).Text)})
+		} else {
+			f = append(f, &TrackFrame{name: n, description: d, value: fmt.Sprintf("%v", frames[n])})
+		}
+	}
+	enc = tag.DefaultEncoding().Name
+	return
 }

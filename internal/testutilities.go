@@ -123,26 +123,26 @@ func createArtistDirForTesting(topDir string, k int, withContent bool) error {
 }
 
 // CreateNamedFileForTesting creates a specified name with the specified content.
-func CreateNamedFileForTesting(fileName, content string) (err error) {
+func CreateNamedFileForTesting(fileName string, content []byte) (err error) {
 	_, err = os.Stat(fileName)
 	if err == nil {
 		err = fmt.Errorf("file %q already exists", fileName)
 	} else {
 		if errors.Is(err, os.ErrNotExist) {
-			err = os.WriteFile(fileName, []byte(content), 0644)
+			err = os.WriteFile(fileName, content, 0644)
 		}
 	}
 	return
 }
 
 // CreateFileForTestingWithContent creates a file in a specified directory.
-func CreateFileForTestingWithContent(dir, name, content string) error {
+func CreateFileForTestingWithContent(dir string, name string, content []byte) error {
 	fileName := filepath.Join(dir, name)
 	return CreateNamedFileForTesting(fileName, content)
 }
 
 func CreateFileForTesting(dir, name string) (err error) {
-	return CreateFileForTestingWithContent(dir, name, "file contents for "+name)
+	return CreateFileForTestingWithContent(dir, name, []byte("file contents for "+name))
 }
 
 func CreateDefaultYamlFileForTesting() error {
@@ -150,8 +150,7 @@ func CreateDefaultYamlFileForTesting() error {
 	if err := Mkdir(path); err != nil {
 		return err
 	}
-	return CreateFileForTestingWithContent(path, defaultConfigFileName,
-		`---
+	json := `---
 common:
     topDir: .      # $HOMEPATH/Music
     ext: .mpeg     # .mp3
@@ -170,7 +169,8 @@ check:
 unused:
     value: 1
 repair:
-    dryRun: true # false`)
+    dryRun: true # false`
+	return CreateFileForTestingWithContent(path, defaultConfigFileName, []byte(json))
 }
 
 type SavedEnvVar struct {

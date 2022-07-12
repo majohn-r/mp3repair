@@ -31,7 +31,7 @@ func Test_run(t *testing.T) {
 	if err := internal.Mkdir("Music/myArtist/myAlbum"); err != nil {
 		t.Errorf("%s error creating Music/myArtist/myAlbum: %v", fnName, err)
 	}
-	if err := internal.CreateFileForTestingWithContent("Music/myArtist/myAlbum", "01 myTrack.mp3", "no real content"); err != nil {
+	if err := internal.CreateFileForTestingWithContent("Music/myArtist/myAlbum", "01 myTrack.mp3", []byte("no real content")); err != nil {
 		t.Errorf("%s error creating Music/myArtist/myAlbum/01 myTrack.mp3: %v", fnName, err)
 	}
 	type args struct {
@@ -64,7 +64,7 @@ func Test_run(t *testing.T) {
 			wantReturnValue: 0,
 			wantLogPrefix: "level='info' args='[./mp3 -topDir ./Music]' timeStamp='' version='unknown version!' msg='execution starts'\n" +
 				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", filepath.Join(thisDir, internal.AppName)) +
-				"level='info' -annotate='false' -includeAlbums='true' -includeArtists='true' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n" +
+				"level='info' -annotate='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n" +
 				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='./Music' msg='reading filtered music files'\n" +
 				"level='info' duration='",
 			wantLogSuffix:     "' exitCode='0' msg='execution ends'\n",

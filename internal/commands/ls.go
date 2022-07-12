@@ -16,6 +16,7 @@ type ls struct {
 	includeTracks    *bool
 	trackSorting     *string
 	annotateListings *bool
+	diagnostics      *bool
 	sf               *files.SearchFlags
 }
 
@@ -28,21 +29,27 @@ func newLs(c *internal.Configuration, fSet *flag.FlagSet) CommandProcessor {
 }
 
 const (
-	defaultAnnotateListings = false
-	defaultIncludeAlbums    = true
-	defaultIncludeArtists   = true
-	defaultIncludeTracks    = false
-	defaultTrackSorting     = "numeric"
-	annotateListingsFlag    = "annotate"
-	fkAnnotateListingsFlag  = "-" + annotateListingsFlag
-	fkIncludeAlbumsFlag     = "-" + includeAlbumsFlag
-	fkIncludeArtistsFlag    = "-" + includeArtistsFlag
-	fkIncludeTracksFlag     = "-" + includeTracksFlag
-	fkTrackSortingFlag      = "-" + trackSortingFlag
-	includeAlbumsFlag       = "includeAlbums"
-	includeArtistsFlag      = "includeArtists"
-	includeTracksFlag       = "includeTracks"
-	trackSortingFlag        = "sort"
+	defaultAnnotateListings  = false
+	defaultDiagnosticListing = false
+	defaultIncludeAlbums     = true
+	defaultIncludeArtists    = true
+	defaultIncludeTracks     = false
+	alphabeticSorting        = "alpha"
+	numericSorting           = "numeric"
+	defaultTrackSorting      = numericSorting
+	annotateListingsFlag     = "annotate"
+	diagnosticListingFlag    = "diagnostic"
+	includeAlbumsFlag        = "includeAlbums"
+	includeArtistsFlag       = "includeArtists"
+	includeTracksFlag        = "includeTracks"
+	trackSortingFlag         = "sort"
+	fkAnnotateListingsFlag   = "-" + annotateListingsFlag
+	fkDiagnosticListingFlag  = "-" + diagnosticListingFlag
+	fkIncludeAlbumsFlag      = "-" + includeAlbumsFlag
+	fkIncludeArtistsFlag     = "-" + includeArtistsFlag
+	fkIncludeTracksFlag      = "-" + includeTracksFlag
+	fkTrackSortingFlag       = "-" + trackSortingFlag
+	fkTrack                  = "track"
 )
 
 func newLsCommand(c *internal.Configuration, fSet *flag.FlagSet) *ls {
@@ -65,6 +72,9 @@ func newLsCommand(c *internal.Configuration, fSet *flag.FlagSet) *ls {
 		annotateListings: fSet.Bool(annotateListingsFlag,
 			configuration.BoolDefault(annotateListingsFlag, defaultAnnotateListings),
 			"annotate listings with album and artist data"),
+		diagnostics: fSet.Bool(diagnosticListingFlag,
+			configuration.BoolDefault(diagnosticListingFlag, defaultDiagnosticListing),
+			"include diagnostic information with tracks"),
 		sf: files.NewSearchFlags(c, fSet),
 	}
 }
@@ -78,12 +88,13 @@ func (l *ls) Exec(o internal.OutputBus, args []string) (ok bool) {
 
 func (l *ls) logFields() map[string]interface{} {
 	return map[string]interface{}{
-		fkCommandName:          l.name(),
-		fkIncludeAlbumsFlag:    *l.includeAlbums,
-		fkIncludeArtistsFlag:   *l.includeArtists,
-		fkIncludeTracksFlag:    *l.includeTracks,
-		fkTrackSortingFlag:     *l.trackSorting,
-		fkAnnotateListingsFlag: *l.annotateListings,
+		fkCommandName:           l.name(),
+		fkIncludeAlbumsFlag:     *l.includeAlbums,
+		fkIncludeArtistsFlag:    *l.includeArtists,
+		fkIncludeTracksFlag:     *l.includeTracks,
+		fkTrackSortingFlag:      *l.trackSorting,
+		fkAnnotateListingsFlag:  *l.annotateListings,
+		fkDiagnosticListingFlag: *l.diagnostics,
 	}
 }
 
@@ -163,7 +174,7 @@ func (l *ls) outputAlbums(o internal.OutputBus, albums []*files.Album, prefix st
 
 func (l *ls) validateTrackSorting(o internal.OutputBus) (ok bool) {
 	switch *l.trackSorting {
-	case "numeric":
+	case numericSorting:
 		if !*l.includeAlbums {
 			fmt.Fprintf(o.ErrorWriter(), internal.USER_INVALID_SORTING_APPLIED,
 				fkTrackSortingFlag, *l.trackSorting, fkIncludeAlbumsFlag)
@@ -171,10 +182,10 @@ func (l *ls) validateTrackSorting(o internal.OutputBus) (ok bool) {
 				fkTrackSortingFlag:  *l.trackSorting,
 				fkIncludeAlbumsFlag: *l.includeAlbums,
 			})
-			preferredValue := "alpha"
+			preferredValue := alphabeticSorting
 			l.trackSorting = &preferredValue
 		}
-	case "alpha":
+	case alphabeticSorting:
 		ok = true
 	default:
 		fmt.Fprintf(o.ErrorWriter(), internal.USER_UNRECOGNIZED_VALUE, fkTrackSortingFlag, *l.trackSorting)
@@ -185,9 +196,9 @@ func (l *ls) validateTrackSorting(o internal.OutputBus) (ok bool) {
 		var preferredValue string
 		switch *l.includeAlbums {
 		case true:
-			preferredValue = "numeric"
+			preferredValue = numericSorting
 		case false:
-			preferredValue = "alpha"
+			preferredValue = alphabeticSorting
 		}
 		l.trackSorting = &preferredValue
 	}
@@ -199,19 +210,23 @@ func (l *ls) outputTracks(o internal.OutputBus, tracks []*files.Track, prefix st
 		return
 	}
 	switch *l.trackSorting {
-	case "numeric":
-		tracksNumeric := make(map[int]string)
+	case numericSorting:
+		trackNamesNumeric := make(map[int]string)
+		tracksNumeric := make(map[int]*files.Track)
 		var trackNumbers []int
 		for _, track := range tracks {
 			trackNumbers = append(trackNumbers, track.Number())
-			tracksNumeric[track.Number()] = track.Name()
+			trackNamesNumeric[track.Number()] = track.Name()
+			tracksNumeric[track.Number()] = track
 		}
 		sort.Ints(trackNumbers)
 		for _, trackNumber := range trackNumbers {
-			fmt.Fprintf(o.ConsoleWriter(), "%s%2d. %s\n", prefix, trackNumber, tracksNumeric[trackNumber])
+			fmt.Fprintf(o.ConsoleWriter(), "%s%2d. %s\n", prefix, trackNumber, trackNamesNumeric[trackNumber])
+			l.outputTrackDiagnostics(o, tracksNumeric[trackNumber], prefix+"  ")
 		}
-	case "alpha":
+	case alphabeticSorting:
 		var trackNames []string
+		tracksByName := make(map[string]*files.Track)
 		for _, track := range tracks {
 			var components []string
 			components = append(components, track.Name())
@@ -223,6 +238,7 @@ func (l *ls) outputTracks(o internal.OutputBus, tracks []*files.Track, prefix st
 					}
 				}
 			}
+			var trackName string
 			if len(components) > 1 {
 				var c2 []string
 				c2 = append(c2, fmt.Sprintf("%q", components[0]))
@@ -230,14 +246,34 @@ func (l *ls) outputTracks(o internal.OutputBus, tracks []*files.Track, prefix st
 					c2 = append(c2, components[k])
 					c2 = append(c2, fmt.Sprintf("%q", components[k+1]))
 				}
-				trackNames = append(trackNames, strings.Join(c2, " "))
+				trackName = strings.Join(c2, " ")
 			} else {
-				trackNames = append(trackNames, components[0])
+				trackName = components[0]
 			}
+			trackNames = append(trackNames, trackName)
+			tracksByName[trackName] = track
 		}
 		sort.Strings(trackNames)
 		for _, trackName := range trackNames {
 			fmt.Fprintf(o.ConsoleWriter(), "%s%s\n", prefix, trackName)
+			l.outputTrackDiagnostics(o, tracksByName[trackName], prefix+"  ")
+		}
+	}
+}
+
+func (l *ls) outputTrackDiagnostics(o internal.OutputBus, t *files.Track, prefix string) {
+	if *l.diagnostics {
+		if enc, frames, err := t.Diagnostics(); err != nil {
+			o.LogWriter().Warn(internal.LW_TAG_ERROR, map[string]interface{}{
+				internal.FK_ERROR: err,
+				fkTrack:           t.String(),
+			})
+			fmt.Fprintf(o.ErrorWriter(), internal.USER_TAG_ERROR, t.Name(), t.AlbumName(), t.RecordingArtist(), fmt.Sprintf("%v", err))
+		} else {
+			fmt.Fprintf(o.ConsoleWriter(), "%sEncoding: %q\n", prefix, enc)
+			for _, frame := range frames {
+				fmt.Fprintf(o.ConsoleWriter(), "%s%s\n", prefix, frame.String())
+			}
 		}
 	}
 }

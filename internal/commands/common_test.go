@@ -35,7 +35,7 @@ func TestProcessCommand(t *testing.T) {
 	if err := internal.Mkdir(badMp3Dir); err != nil {
 		t.Errorf("%s error creating bad data mp3 directory: %v", fnName, err)
 	}
-	if err := internal.CreateFileForTestingWithContent(badMp3Dir, "defaults.yaml", "command:\n    default: list\n"); err != nil {
+	if err := internal.CreateFileForTestingWithContent(badMp3Dir, "defaults.yaml", []byte("command:\n    default: list\n")); err != nil {
 		t.Errorf("%s error creating bad data defaults.yaml: %v", fnName, err)
 	}
 	normalDir := internal.SecureAbsolutePathForTesting(".")
@@ -321,7 +321,7 @@ func Test_getDefaultSettings(t *testing.T) {
 				content = "command:\n    nodefault: true\n"
 			}
 			os.Remove(filepath.Join(configDir, "defaults.yaml"))
-			if err := internal.CreateFileForTestingWithContent(configDir, "defaults.yaml", content); err != nil {
+			if err := internal.CreateFileForTestingWithContent(configDir, "defaults.yaml", []byte(content)); err != nil {
 				t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 			}
 			if c, ok := internal.ReadConfigurationFile(internal.NewOutputDeviceForTesting()); !ok {

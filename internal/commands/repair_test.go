@@ -197,7 +197,7 @@ func Test_repair_Exec(t *testing.T) {
 	}
 	content := createTaggedContent(frames)
 	trackName := "01 new track.mp3"
-	if err := internal.CreateFileForTestingWithContent(filepath.Join(topDirWithContent, artist, album), trackName, string(content)); err != nil {
+	if err := internal.CreateFileForTestingWithContent(filepath.Join(topDirWithContent, artist, album), trackName, content); err != nil {
 		t.Errorf("%s error creating file %q: %v", fnName, filepath.Join(topDirWithContent, artist, album, trackName), err)
 	}
 	type args struct {
@@ -456,7 +456,7 @@ func Test_repair_makeBackupDirectories(t *testing.T) {
 	if err := internal.Mkdir(albumDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, albumDir, err)
 	}
-	if err := internal.CreateNamedFileForTesting(files.CreateBackupPath(albumDir), "nonsense content"); err != nil {
+	if err := internal.CreateNamedFileForTesting(files.CreateBackupPath(albumDir), []byte("nonsense content")); err != nil {
 		t.Errorf("%s error creating file %q in %q: %v", fnName, files.CreateBackupPath(albumDir), albumDir, err)
 	}
 	albumDir2 := filepath.Join(topDir, "album2")
@@ -589,7 +589,7 @@ func Test_repair_fixTracks(t *testing.T) {
 	content := createTaggedContent(frames)
 	trackName := "repairable track"
 	goodFileName := "01 " + trackName + ".mp3"
-	if err := internal.CreateFileForTestingWithContent(topDir, goodFileName, string(content)); err != nil {
+	if err := internal.CreateFileForTestingWithContent(topDir, goodFileName, content); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, filepath.Join(topDir, goodFileName), err)
 	}
 	trackWithData := files.NewTrack(files.NewAlbum("ok album", files.NewArtist("beautiful singer", ""), topDir), goodFileName, trackName, 1)

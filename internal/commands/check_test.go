@@ -45,7 +45,7 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 	if err := internal.Mkdir(filepath.Join(goodFolderDirName, "goodArtist", "goodAlbum")); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, "good album", err)
 	}
-	if err := internal.CreateFileForTestingWithContent(filepath.Join(goodFolderDirName, "goodArtist", "goodAlbum"), "01 goodTrack.mp3", "good content"); err != nil {
+	if err := internal.CreateFileForTestingWithContent(filepath.Join(goodFolderDirName, "goodArtist", "goodAlbum"), "01 goodTrack.mp3", []byte("good content")); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, "01 goodTrack.mp3", err)
 	}
 	goodArtist := files.NewArtist("goodArtist", filepath.Join(goodFolderDirName, "goodArtist"))
@@ -381,7 +381,7 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 	if err := internal.Mkdir(albumPath); err != nil {
 		t.Errorf("%s error creating album folder", fnName)
 	}
-	if err := internal.CreateFileForTestingWithContent(albumPath, "01 track.mp3", ""); err != nil {
+	if err := internal.CreateFileForTestingWithContent(albumPath, "01 track.mp3", nil); err != nil {
 		t.Errorf("%s error creating track", fnName)
 	}
 	s := files.CreateSearchForTesting(topDirName)

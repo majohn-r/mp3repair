@@ -206,7 +206,7 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 		{
 			name: "dir blocked",
 			preTest: func(t *testing.T) {
-				if err := CreateFileForTestingWithContent(".", "mp3", "oops"); err != nil {
+				if err := CreateFileForTestingWithContent(".", "mp3", []byte("oops")); err != nil {
 					t.Errorf("%s 'dir blocked': failed to create file ./mp3: %v", fnName, err)
 				}
 			},
@@ -223,7 +223,7 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 				if err := Mkdir("./mp3"); err != nil {
 					t.Errorf("%s 'file exists': failed to create directory ./mp3: %v", fnName, err)
 				}
-				if err := CreateFileForTestingWithContent("./mp3", defaultConfigFileName, "who cares?"); err != nil {
+				if err := CreateFileForTestingWithContent("./mp3", defaultConfigFileName, []byte("who cares?")); err != nil {
 					t.Errorf("%s 'file exists': failed to create %q: %v", fnName, defaultConfigFileName, err)
 				}
 			},

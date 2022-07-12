@@ -551,11 +551,11 @@ func TestRawReadTags(t *testing.T) {
 		"TLEN": "1000",
 	}
 	content := CreateTaggedDataForTesting(payload, frames)
-	if err := internal.CreateFileForTestingWithContent(".", "goodFile.mp3", string(content)); err != nil {
+	if err := internal.CreateFileForTestingWithContent(".", "goodFile.mp3", content); err != nil {
 		t.Errorf("%s failed to create ./goodFile.mp3: %v", fnName, err)
 	}
 	frames["TRCK"] = "oops"
-	if err := internal.CreateFileForTestingWithContent(".", "badFile.mp3", string(CreateTaggedDataForTesting(payload, frames))); err != nil {
+	if err := internal.CreateFileForTestingWithContent(".", "badFile.mp3", CreateTaggedDataForTesting(payload, frames)); err != nil {
 		t.Errorf("%s failed to create ./badFile.mp3: %v", fnName, err)
 	}
 	defer func() {
@@ -725,7 +725,7 @@ func TestTrack_EditTags(t *testing.T) {
 		"TLEN": "1000",
 	}
 	content := CreateTaggedDataForTesting(payload, frames)
-	if err := internal.CreateFileForTestingWithContent(topDir, testFileName, string(content)); err != nil {
+	if err := internal.CreateFileForTestingWithContent(topDir, testFileName, content); err != nil {
 		t.Errorf("%s cannot create file %q: %v", fnName, fullPath, err)
 	}
 	tests := []struct {
@@ -1354,6 +1354,95 @@ func Test_processArtistRelatedFrames(t *testing.T) {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
+			}
+		})
+	}
+}
+
+func TestTrack_Diagnostics(t *testing.T) {
+	fnName := "Track.Diagnostics()"
+	payload := make([]byte, 0)
+	for k := 0; k < 256; k++ {
+		payload = append(payload, byte(k))
+	}
+	frames := map[string]string{
+		"TYER": "2022",
+		"TALB": "unknown album",
+		"TRCK": "2",
+		"TCON": "dance music",
+		"TCOM": "a couple of idiots",
+		"TIT2": "unknown track",
+		"TPE1": "unknown artist",
+		"TLEN": "1000",
+		"T???": "who knows?",
+		"Fake": "ummm",
+	}
+	content := CreateTaggedDataForTesting(payload, frames)
+	if err := internal.CreateFileForTestingWithContent(".", "goodFile.mp3", content); err != nil {
+		t.Errorf("%s failed to create ./goodFile.mp3: %v", fnName, err)
+	}
+	defer func() {
+		if err := os.Remove("./goodFile.mp3"); err != nil {
+			t.Errorf("%s failed to delete ./goodFile.mp3: %v", fnName, err)
+		}
+	}()
+	tests := []struct {
+		name    string
+		tr      *Track
+		wantEnc string
+		wantF   []*TrackFrame
+		wantErr bool
+	}{
+		{
+			name:    "error case",
+			tr:      &Track{path: "./no such file"},
+			wantErr: true,
+		},
+		{
+			name:    "good case",
+			tr:      &Track{path: "./goodfile.mp3"},
+			wantEnc: "ISO-8859-1",
+			wantF: []*TrackFrame{
+				NewTrackFrame("Fake", "frame name not recognized - unknown purpose", "[{[0 117 109 109 109]}]"),
+				NewTrackFrame("T???", "frame name not recognized - unknown purpose", "who knows?"),
+				NewTrackFrame("TALB", "The 'Album/Movie/Show title' frame is intended for the title of the recording(/source of sound) which the audio in the file is taken from.", "unknown album"),
+				NewTrackFrame("TCOM", "The 'Composer(s)' frame is intended for the name of the composer(s).", "a couple of idiots"),
+				NewTrackFrame("TCON", "The 'Content type', which previously was stored as a one byte numeric value only, is now a numeric string.", "dance music"),
+				NewTrackFrame("TIT2", "The 'Title/Songname/Content description' frame is the actual name of the piece (e.g. 'Adagio', 'Hurricane Donna').", "unknown track"),
+				NewTrackFrame("TLEN", "The 'Length' frame contains the length of the audiofile in milliseconds, represented as a numeric string.", "1000"),
+				NewTrackFrame("TPE1", "The 'Lead artist(s)/Lead performer(s)/Soloist(s)/Performing group' is used for the main artist(s).", "unknown artist"),
+				NewTrackFrame("TRCK", "The 'Track number/Position in set' frame is a numeric string containing the order number of the audio-file on its original recording.", "2"),
+				NewTrackFrame("TYER", "The 'Year' frame is a numeric string with a year of the recording.", "2022")},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotEnc, gotF, err := tt.tr.Diagnostics()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
+				return
+			}
+			if gotEnc != tt.wantEnc {
+				t.Errorf("%s gotEnc = %q, want %q", fnName, gotEnc, tt.wantEnc)
+			}
+			if !reflect.DeepEqual(gotF, tt.wantF) {
+				t.Errorf("%s gotF = %v, want %v", fnName, gotF, tt.wantF)
+			}
+		})
+	}
+}
+
+func TestTrackFrame_String(t *testing.T) {
+	fnName := "TrackFrame.String()"
+	tests := []struct {
+		name string
+		f    *TrackFrame
+		want string
+	}{{name: "usual", f: NewTrackFrame("T1", "D1", "V1"), want: "T1 = \"V1\" // D1"}}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.f.String(); got != tt.want {
+				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})
 	}
