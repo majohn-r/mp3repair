@@ -17,13 +17,7 @@ var (
 )
 
 func main() {
-	returnValue := 1
-	o := internal.NewOutputDevice()
-	if internal.InitLogging(o) {
-		returnValue = run(o, os.Args)
-	}
-	report(o, returnValue)
-	os.Exit(returnValue)
+	os.Exit(exec(internal.InitLogging, os.Args))
 }
 
 const (
@@ -34,6 +28,16 @@ const (
 	fkVersion              = "version"
 	statusFormat           = "%s version %s, created at %s, failed\n"
 )
+
+func exec(logInit func(internal.OutputBus) bool, cmdLine []string) (returnValue int) {
+	returnValue = 1
+	o := internal.NewOutputDevice()
+	if logInit(o) {
+		returnValue = run(o, cmdLine)
+	}
+	report(o, returnValue)
+	return
+}
 
 func report(o internal.OutputBus, returnValue int) {
 	if returnValue != 0 {

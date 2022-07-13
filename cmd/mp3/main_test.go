@@ -127,3 +127,53 @@ func Test_report(t *testing.T) {
 		})
 	}
 }
+
+func Test_exec(t *testing.T) {
+	fnName := "exec()"
+	type args struct {
+		logInit func(internal.OutputBus) bool
+		cmdLine []string
+	}
+	tests := []struct {
+		name            string
+		args            args
+		wantReturnValue int
+	}{
+		{
+			name: "init logging fails",
+			args: args{
+				logInit: func(internal.OutputBus) bool {
+					return false
+				},
+			},
+			wantReturnValue: 1,
+		},
+		{
+			name: "run fails",
+			args: args{
+				logInit: func(internal.OutputBus) bool {
+					return true
+				},
+				cmdLine: []string{"mp3", "no-such-command"},
+			},
+			wantReturnValue: 1,
+		},
+		{
+			name: "success",
+			args: args{
+				logInit: func(internal.OutputBus) bool {
+					return true
+				},
+				cmdLine: []string{"mp3"},
+			},
+			wantReturnValue: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotReturnValue := exec(tt.args.logInit, tt.args.cmdLine); gotReturnValue != tt.wantReturnValue {
+				t.Errorf("%s = %d, want %d", fnName, gotReturnValue, tt.wantReturnValue)
+			}
+		})
+	}
+}
