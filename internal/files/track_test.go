@@ -345,6 +345,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 	problematicTrack.album = "problematicAlbum"
 	problematicTrack.artist = "problematicArtist"
 	problematicTrack.title = "bad track"
+	problematicTrack.musicCDIdentifier = id3v2.UnknownFrame{Body: []byte{1, 3, 5}}
 	problematicAlbum.AddTrack(problematicTrack)
 	problematicArtist.AddAlbum(problematicAlbum)
 	tests := []struct {
@@ -416,6 +417,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 			name: "track with tag frame differences",
 			tr:   problematicTrack,
 			want: []string{
+				"MCDI frame \"\\x01\\x03\\x05\" does not agree with album MCDI data \"\"",
 				"album \"problematic:album\" does not agree with album tag \"problematicAlbum\"",
 				"artist \"problematic:artist\" does not agree with artist tag \"problematicArtist\"",
 				"genre \"unknown\" does not agree with album genre \"hard rock\"",
@@ -767,12 +769,13 @@ func TestTrack_EditTags(t *testing.T) {
 				path:            fullPath,
 				containingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
 				TaggedTrackData: TaggedTrackData{
-					track:  2,
-					title:  "unknown track",
-					album:  "unknown album",
-					artist: "unknown artist",
-					genre:  "unknown genre",
-					year:   "2022",
+					track:             2,
+					title:             "unknown track",
+					album:             "unknown album",
+					artist:            "unknown artist",
+					genre:             "unknown genre",
+					year:              "2022",
+					musicCDIdentifier: id3v2.UnknownFrame{Body: []byte{1, 2, 3}},
 				},
 			},
 			wantErr: false,
@@ -867,6 +870,7 @@ func TestNewTaggedTrackData(t *testing.T) {
 		artistFrame          string
 		titleFrame           string
 		evaluatedNumberFrame int
+		musicCDIdentifier    []byte
 	}
 	tests := []struct {
 		name string
@@ -880,19 +884,25 @@ func TestNewTaggedTrackData(t *testing.T) {
 				artistFrame:          "the artist",
 				titleFrame:           "the title",
 				evaluatedNumberFrame: 1,
+				musicCDIdentifier:    []byte{0, 1, 2},
 			},
 			want: &TaggedTrackData{
-				album:  "the album",
-				artist: "the artist",
-				title:  "the title",
-				track:  1,
+				album:             "the album",
+				artist:            "the artist",
+				title:             "the title",
+				track:             1,
+				musicCDIdentifier: id3v2.UnknownFrame{Body: []byte{0, 1, 2}},
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewTaggedTrackData(tt.args.albumFrame, tt.args.artistFrame, tt.args.titleFrame, tt.args.evaluatedNumberFrame)
-			if got.album != tt.want.album || got.artist != tt.want.artist || got.title != tt.want.title || got.track != tt.want.track {
+			got := NewTaggedTrackData(tt.args.albumFrame, tt.args.artistFrame, tt.args.titleFrame, tt.args.evaluatedNumberFrame, tt.args.musicCDIdentifier)
+			if got.album != tt.want.album ||
+				got.artist != tt.want.artist ||
+				got.title != tt.want.title ||
+				got.track != tt.want.track ||
+				string(got.musicCDIdentifier.Body) != string(tt.want.musicCDIdentifier.Body) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
@@ -1222,16 +1232,19 @@ func Test_processAlbumRelatedFrames(t *testing.T) {
 	track3a.genre = "rock"
 	track3a.year = "2023"
 	track3a.album = "problematic:album"
+	track3a.musicCDIdentifier = id3v2.UnknownFrame{Body: []byte{1, 2, 3}}
 	album3.AddTrack(track3a)
 	track3b := NewTrack(album1, "02 track2.mp3", "track2", 2)
 	track3b.genre = "pop"
 	track3b.year = "2022"
 	track3b.album = "problematic:Album"
+	track3b.musicCDIdentifier = id3v2.UnknownFrame{Body: []byte{1, 2, 3, 4}}
 	album3.AddTrack(track3b)
 	track3c := NewTrack(album1, "03 track3.mp3", "track3", 3)
 	track3c.genre = "folk"
 	track3c.year = "2021"
 	track3c.album = "Problematic:album"
+	track3c.musicCDIdentifier = id3v2.UnknownFrame{Body: []byte{1, 2, 3, 4, 5}}
 	album3.AddTrack(track3c)
 	type args struct {
 		artists []*Artist
@@ -1269,7 +1282,8 @@ func Test_processAlbumRelatedFrames(t *testing.T) {
 			WantedOutput: internal.WantedOutput{
 				WantLogOutput: "level='warn' albumName='problematic_album' artistName='problematic artist' field='genre' settings='map[folk:1 pop:1 rock:1]' msg='no value has a majority of instances'\n" +
 					"level='warn' albumName='problematic_album' artistName='problematic artist' field='year' settings='map[2021:1 2022:1 2023:1]' msg='no value has a majority of instances'\n" +
-					"level='warn' albumName='problematic_album' artistName='problematic artist' field='album title' settings='map[Problematic:album:1 problematic:Album:1 problematic:album:1]' msg='no value has a majority of instances'\n",
+					"level='warn' albumName='problematic_album' artistName='problematic artist' field='album title' settings='map[Problematic:album:1 problematic:Album:1 problematic:album:1]' msg='no value has a majority of instances'\n" +
+					"level='warn' albumName='problematic_album' artistName='problematic artist' field='mcdi frame' settings='map[\x01\x02\x03:1 \x01\x02\x03\x04:1 \x01\x02\x03\x04\x05:1]' msg='no value has a majority of instances'\n",
 			},
 		},
 	}
@@ -1509,6 +1523,59 @@ func Test_stringifyFramerArray(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := stringifyFramerArray(tt.args.f); got != tt.want {
 				t.Errorf("stringifyFramerArray() = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_selectUnknownFrame(t *testing.T) {
+	fnName := "selectUnknownFrame()"
+	type args struct {
+		mcdiFramers []id3v2.Framer
+	}
+	tests := []struct {
+		name string
+		args args
+		want id3v2.UnknownFrame
+	}{
+		{
+			name: "degenerate case",
+			args: args{mcdiFramers: nil},
+			want: id3v2.UnknownFrame{Body: []byte{0}},
+		},
+		{
+			name: "too many framers",
+			args: args{
+				mcdiFramers: []id3v2.Framer{
+					id3v2.UnknownFrame{Body: []byte{1, 2, 3}},
+					id3v2.UnknownFrame{Body: []byte{4, 5, 6}},
+				},
+			},
+			want: id3v2.UnknownFrame{Body: []byte{0}},
+		},
+		{
+			name: "wrong kind of framer",
+			args: args{
+				mcdiFramers: []id3v2.Framer{
+					unspecifiedFrame{content: "no good"},
+				},
+			},
+			want: id3v2.UnknownFrame{Body: []byte{0}},
+		},
+		{
+			name: "desired use case",
+			args: args{
+				mcdiFramers: []id3v2.Framer{
+					id3v2.UnknownFrame{Body: []byte{0, 1, 2}},
+				},
+			},
+			want: id3v2.UnknownFrame{Body: []byte{0, 1, 2}},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := selectUnknownFrame(tt.args.mcdiFramers); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}

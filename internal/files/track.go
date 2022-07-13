@@ -14,8 +14,6 @@ import (
 )
 
 const (
-	albumFrame              = "TALB"
-	artistFrame             = "TPE1"
 	defaultFileExtension    = "." + rawExtension
 	defaultTrackNamePattern = "^\\d+[\\s-].+\\." + rawExtension + "$"
 	fkAlbumName             = "albumName"
@@ -23,13 +21,11 @@ const (
 	fkFieldName             = "field"
 	fkSettings              = "settings"
 	fkTrackName             = "trackName"
-	genreFrame              = "TCON"
+	mcdiFrame               = "MCDI"
 	rawExtension            = "mp3"
-	titleFrame              = "TIT2"
 	trackDiffUnreadTags     = "cannot determine differences, tags have not been read"
 	trackDiffError          = "cannot determine differences, there was an error reading tags"
 	trackFrame              = "TRCK"
-	yearFrame               = "TYER"
 )
 
 // Track encapsulates data about a track in an album
@@ -130,23 +126,25 @@ func (t Tracks) Swap(i, j int) {
 
 // TaggedTrackData contains raw tag frames data
 type TaggedTrackData struct {
-	album  string
-	artist string
-	title  string
-	genre  string
-	year   string
-	track  int
-	err    string
+	album             string
+	artist            string
+	title             string
+	genre             string
+	year              string
+	track             int
+	musicCDIdentifier id3v2.UnknownFrame
+	err               string
 }
 
 // NewTaggedTrackData creates a new instance of TaggedTrackData
-func NewTaggedTrackData(albumFrame string, artistFrame string, titleFrame string, evaluatedNumberFrame int) *TaggedTrackData {
+func NewTaggedTrackData(albumFrame string, artistFrame string, titleFrame string, evaluatedNumberFrame int, mcdi []byte) *TaggedTrackData {
 	return &TaggedTrackData{
-		album:  albumFrame,
-		artist: artistFrame,
-		title:  titleFrame,
-		track:  evaluatedNumberFrame,
-		err:    "",
+		album:             albumFrame,
+		artist:            artistFrame,
+		title:             titleFrame,
+		track:             evaluatedNumberFrame,
+		musicCDIdentifier: id3v2.UnknownFrame{Body: mcdi},
+		err:               "",
 	}
 }
 
@@ -227,6 +225,7 @@ type taggedTrackState struct {
 	artistNameConflict bool
 	genreConflict      bool
 	yearConflict       bool
+	mcdiConflict       bool
 }
 
 // HasNumberingConflict returns true if there is a conflict between the track
@@ -259,16 +258,28 @@ func (s taggedTrackState) HasArtistNameConflict() bool {
 // HasTaggingConflicts returns true if there are any conflicts between the
 // track's frame values and their corresponding file-based values.
 func (s taggedTrackState) HasTaggingConflicts() bool {
-	return s.numberingConflict || s.trackNameConflict || s.albumNameConflict || s.artistNameConflict || s.genreConflict || s.yearConflict
+	return s.numberingConflict ||
+		s.trackNameConflict ||
+		s.albumNameConflict ||
+		s.artistNameConflict ||
+		s.genreConflict ||
+		s.yearConflict ||
+		s.mcdiConflict
 }
 
-// HasGenreConflict returs true if there is conflict between the track's album's
-// genre and the value of the track's TCON frame
+// HasMCDIConflict returns true if there is conflict between the track's album's
+// music CD identifier and the value of the track's MCDI frame
+func (s taggedTrackState) HasMCDIConflict() bool {
+	return s.mcdiConflict
+}
+
+// HasGenreConflict returns true if there is conflict between the track's
+// album's genre and the value of the track's TCON frame
 func (s taggedTrackState) HasGenreConflict() bool {
 	return s.genreConflict
 }
 
-// HasYearConflict returs true if there is conflict between the track's album's
+// HasYearConflict returns true if there is conflict between the track's album's
 // year and the value of the track's TYER frame
 func (s taggedTrackState) HasYearConflict() bool {
 	return s.yearConflict
@@ -291,6 +302,7 @@ func (t *Track) AnalyzeIssues() taggedTrackState {
 			artistNameConflict: t.containingAlbum.recordingArtist.canonicalName != t.artist,
 			genreConflict:      t.genre != t.containingAlbum.genre,
 			yearConflict:       t.year != t.containingAlbum.year,
+			mcdiConflict:       string(t.musicCDIdentifier.Body) != string(t.containingAlbum.musicCDIdentifier.Body),
 		}
 	}
 }
@@ -333,6 +345,12 @@ func (t *Track) FindDifferences() []string {
 		differences = append(differences,
 			fmt.Sprintf("year %q does not agree with album year %q", t.year, t.containingAlbum.year))
 	}
+	if s.HasMCDIConflict() {
+		differences = append(differences,
+			fmt.Sprintf("MCDI frame %q does not agree with album MCDI data %q",
+				string(t.musicCDIdentifier.Body),
+				string(t.containingAlbum.musicCDIdentifier.Body)))
+	}
 	return differences
 }
 
@@ -359,15 +377,13 @@ func isComparable(p nameTagPair) bool {
 	return true // rune by rune comparison was successful
 }
 
-var stdFrames = []string{albumFrame, artistFrame, genreFrame, titleFrame, trackFrame, yearFrame}
-
 // RawReadTags reads the tag from an MP3 file and collects interesting frame
 // values.
 func RawReadTags(path string) (d *TaggedTrackData) {
 	d = &TaggedTrackData{}
 	var tag *id3v2.Tag
 	var err error
-	if tag, err = id3v2.Open(path, id3v2.Options{Parse: true, ParseFrames: stdFrames}); err != nil {
+	if tag, err = id3v2.Open(path, id3v2.Options{Parse: true, ParseFrames: nil}); err != nil {
 		d.err = fmt.Sprintf("%v", err)
 		return
 	}
@@ -381,8 +397,21 @@ func RawReadTags(path string) (d *TaggedTrackData) {
 		d.title = removeLeadingBOMs(tag.Title())
 		d.track = trackNumber
 		d.year = removeLeadingBOMs(tag.Year())
+		mcdiFramers := tag.AllFrames()[mcdiFrame]
+		d.musicCDIdentifier = selectUnknownFrame(mcdiFramers)
 	}
 	return
+}
+
+func selectUnknownFrame(mcdiFramers []id3v2.Framer) id3v2.UnknownFrame {
+	uf := id3v2.UnknownFrame{Body: []byte{0}}
+	if len(mcdiFramers) == 1 {
+		frame := mcdiFramers[0]
+		if f, ok := frame.(id3v2.UnknownFrame); ok {
+			uf = f
+		}
+	}
+	return uf
 }
 
 // EditTags rewrites tag frames to match file-based values and saves (re-writes)
@@ -415,6 +444,10 @@ func (t *Track) EditTags() error {
 	}
 	if a.HasYearConflict() {
 		tag.SetYear(t.containingAlbum.year)
+	}
+	if a.HasMCDIConflict() {
+		tag.DeleteFrames(mcdiFrame)
+		tag.AddFrame(mcdiFrame, t.containingAlbum.musicCDIdentifier)
 	}
 	return tag.Save()
 }
@@ -480,6 +513,8 @@ func processArtistRelatedFrames(o internal.OutputBus, artists []*Artist) {
 func processAlbumRelatedFrames(o internal.OutputBus, artists []*Artist) {
 	for _, artist := range artists {
 		for _, album := range artist.Albums() {
+			mcdis := make(map[string]int)
+			mcdiFrames := make(map[string]id3v2.UnknownFrame)
 			genres := make(map[string]int)
 			years := make(map[string]int)
 			albumTitles := make(map[string]int)
@@ -494,6 +529,9 @@ func processAlbumRelatedFrames(o internal.OutputBus, artists []*Artist) {
 				if isComparable(nameTagPair{name: album.name, tag: track.album}) {
 					albumTitles[track.album]++
 				}
+				mcdiKey := string(track.musicCDIdentifier.Body)
+				mcdis[mcdiKey]++
+				mcdiFrames[mcdiKey] = track.musicCDIdentifier
 			}
 			if chosenGenre, ok := pickKey(genres); !ok {
 				o.LogWriter().Warn(internal.LW_AMBIGUOUS_VALUE, map[string]interface{}{
@@ -526,6 +564,16 @@ func processAlbumRelatedFrames(o internal.OutputBus, artists []*Artist) {
 				if len(chosenAlbumTitle) != 0 {
 					album.canonicalTitle = chosenAlbumTitle
 				}
+			}
+			if chosenMCDI, ok := pickKey(mcdis); !ok {
+				o.LogWriter().Warn(internal.LW_AMBIGUOUS_VALUE, map[string]interface{}{
+					fkFieldName:  "mcdi frame",
+					fkSettings:   mcdis,
+					fkAlbumName:  album.Name(),
+					fkArtistName: artist.Name(),
+				})
+			} else {
+				album.musicCDIdentifier = mcdiFrames[chosenMCDI]
 			}
 		}
 	}

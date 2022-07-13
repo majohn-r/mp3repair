@@ -4,17 +4,20 @@ import (
 	"io/fs"
 	"mp3/internal"
 	"path/filepath"
+
+	"github.com/bogem/id3v2/v2"
 )
 
 // Album encapsulates information about a music album
 type Album struct {
-	name            string
-	tracks          []*Track
-	recordingArtist *Artist
-	path            string
-	genre           string
-	year            string
-	canonicalTitle  string // this is what the tracks will record as their title
+	name              string
+	tracks            []*Track
+	recordingArtist   *Artist
+	path              string
+	genre             string
+	year              string
+	canonicalTitle    string             // this is what the tracks will record as their title
+	musicCDIdentifier id3v2.UnknownFrame // MCDI frame value
 }
 
 func newAlbumFromFile(file fs.FileInfo, artist *Artist) *Album {
@@ -30,6 +33,7 @@ func copyAlbum(a *Album, artist *Artist) *Album {
 	a2.genre = a.genre
 	a2.year = a.year
 	a2.canonicalTitle = a.canonicalTitle
+	a2.musicCDIdentifier = a.musicCDIdentifier
 	return a2
 }
 
