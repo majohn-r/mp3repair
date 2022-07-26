@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -103,6 +104,9 @@ func (c *Configuration) String() string {
 	if len(c.bMap) != 0 {
 		output = append(output, fmt.Sprintf("%v", c.bMap))
 	}
+	if len(c.iMap) != 0 {
+		output = append(output, fmt.Sprintf("%v", c.iMap))
+	}
 	if len(c.sMap) != 0 {
 		output = append(output, fmt.Sprintf("%v", c.sMap))
 	}
@@ -115,6 +119,7 @@ func (c *Configuration) String() string {
 func EmptyConfiguration() *Configuration {
 	return &Configuration{
 		bMap: make(map[string]bool),
+		iMap: make(map[string]int),
 		sMap: make(map[string]string),
 		cMap: make(map[string]*Configuration),
 	}
@@ -144,6 +149,49 @@ func (c *Configuration) BoolDefault(key string, defaultValue bool) (b bool) {
 	return
 }
 
+type IntBounds struct {
+	minValue     int
+	defaultValue int
+	maxValue     int
+}
+
+func NewIntBounds(v1, v2, v3 int) *IntBounds {
+	is := []int{v1, v2, v3}
+	sort.Ints(is)
+	return &IntBounds{
+		minValue:     is[0],
+		defaultValue: is[1],
+		maxValue:     is[2],
+	}
+}
+
+func (c *Configuration) IntDefault(key string, sortedBounds *IntBounds) (i int) {
+	i = sortedBounds.defaultValue
+	if value, ok := c.iMap[key]; ok {
+		if value < sortedBounds.minValue {
+			i = sortedBounds.minValue
+		} else if value > sortedBounds.maxValue {
+			i = sortedBounds.maxValue
+		} else {
+			i = value
+		}
+	} else {
+		if value, ok := c.sMap[key]; ok {
+			rawValue := InterpretEnvVarReferences(value)
+			if cookedValue, e := strconv.Atoi(rawValue); e == nil {
+				if cookedValue < sortedBounds.minValue {
+					i = sortedBounds.minValue
+				} else if cookedValue > sortedBounds.maxValue {
+					i = sortedBounds.maxValue
+				} else {
+					i = cookedValue
+				}
+			}
+		}
+	}
+	return
+}
+
 // StringDefault returns a string value for a specified key
 func (c *Configuration) StringDefault(key string, defaultValue string) (s string) {
 	s = InterpretEnvVarReferences(defaultValue)
@@ -163,6 +211,7 @@ func (c *Configuration) StringValue(key string) (value string, ok bool) {
 type Configuration struct {
 	sMap map[string]string
 	bMap map[string]bool
+	iMap map[string]int
 	cMap map[string]*Configuration
 }
 
@@ -174,6 +223,8 @@ func createConfiguration(o OutputBus, data map[string]interface{}) *Configuratio
 			c.sMap[key] = t
 		case bool:
 			c.bMap[key] = t
+		case int:
+			c.iMap[key] = t
 		case map[string]interface{}:
 			c.cMap[key] = createConfiguration(o, t)
 		default:

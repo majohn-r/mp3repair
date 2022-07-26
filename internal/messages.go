@@ -3,16 +3,18 @@ package internal
 // informational log messages
 const (
 	LI_BEGIN_EXECUTION          = "execution starts"
+	LI_CONFIGURATION_FILE_READ  = "read configuration file"
 	LI_END_EXECUTION            = "execution ends"
 	LI_EXECUTING_COMMAND        = "executing command"
 	LI_FILE_DELETED             = "successfully deleted file"
 	LI_FILTERING_FILES          = "filtering music files"
+	LI_NO_FILES_FOUND           = "no files found"
 	LI_NO_SUCH_FILE             = "file does not exist"
 	LI_NOT_SET                  = "not set"
 	LI_PARAMETERS_OVERRIDDEN    = "one or more flags were overridden"
 	LI_READING_FILTERED_FILES   = "reading filtered music files"
 	LI_READING_UNFILTERED_FILES = "reading unfiltered music files"
-	LI_CONFIGURATION_FILE_READ  = "read configuration file"
+	LI_SERVICE_STATUS           = "service status"
 )
 
 // warning log messages
@@ -35,6 +37,8 @@ const (
 	LW_UNRECOGNIZED_COMMAND        = "unrecognized command"
 	LW_NOT_A_DIRECTORY             = "the file is not a directory"
 	LW_NOTHING_TO_DO               = "the user disabled all functionality"
+	LW_SERVICE_ISSUE               = "service issue"
+	LW_SERVICE_MANAGER_ISSUE       = "service manager issue"
 	LW_SORTING_OPTION_UNACCEPTABLE = "numeric track sorting is not applicable"
 	LW_TAG_ERROR                   = "tag error"
 	LW_UNEXPECTED_VALUE_TYPE       = "unexpected value type"
@@ -53,8 +57,11 @@ const (
 const (
 	USER_CANNOT_CREATE_DIRECTORY                      = "The directory %q cannot be created: %v.\n"
 	USER_CANNOT_DELETE_DIRECTORY                      = "The directory %q cannot be deleted: %v.\n"
+	USER_CANNOT_DELETE_FILE                           = "The file %q cannot be deleted: %v.\n"
+	USER_CANNOT_QUERY_SERVICE                         = "The status for the service %q cannot be obtained: %v\n"
 	USER_CANNOT_READ_DIRECTORY                        = "The directory %q cannot be read: %v\n"
 	USER_CANNOT_READ_TOPDIR                           = "The -topDir value you specified, %q, cannot be read: %v.\n"
+	USER_CANNOT_STOP_SERVICE                          = "The service %q cannot be stopped: %v\n"
 	USER_CONFIGURATION_FILE_GARBLED                   = "The configuration file %q is not well-formed YAML: %v\n"
 	USER_CONFIGURATION_FILE_IS_DIR                    = "The configuration file %q is a directory.\n"
 	USER_EXTENSION_INVALID_FORMAT                     = "The -ext value you specified, %q, must contain exactly one '.' and '.' must be the first character.\n"
@@ -69,6 +76,8 @@ const (
 	USER_NO_MUSIC_FILES_FOUND                         = "No music files could be found using the specified parameters.\n"
 	USER_NO_SUCH_COMMAND                              = "There is no command named %q; valid commands include %v.\n"
 	USER_NO_TEMP_FOLDER                               = "Neither the TMP nor TEMP environment variables are defined.\n"
+	USER_SERVICE_MGR_CONNECION_FAILED                 = "The service manager cannot be accessed. Try running the program again as an administrator. Error: %v\n"
+	USER_SERVICE_STOP_TIMED_OUT                       = "The service %q could not be stopped within the %d second timeout."
 	USER_SPECIFIED_NO_WORK                            = "You disabled all functionality for the command %q.\n"
 	USER_TAG_ERROR                                    = "An error occurred when trying to read tag information for track %q on album %q by artist %q: %q\n"
 	USER_TOPDIR_NOT_A_DIRECTORY                       = "The -topDir value you specified, %q, is not a directory.\n"

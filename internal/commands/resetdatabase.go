@@ -1,0 +1,383 @@
+package commands
+
+import (
+	"flag"
+	"fmt"
+	"io/fs"
+	"mp3/internal"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+	"time"
+
+	"golang.org/x/sys/windows/svc"
+	"golang.org/x/sys/windows/svc/mgr"
+)
+
+const (
+	timeoutFlag           = "timeout"
+	minTimeout            = 1
+	defaultTimeout        = 10
+	maxTimeout            = 60
+	serviceFlag           = "service"
+	defaultService        = "WMPNetworkSVC" // Windows Media Player Network Sharing Service
+	metadataFlag          = "metadata"
+	extensionFlag         = "extension"
+	defaultExtension      = ".wmdb"
+	fkServiceFlag         = "-" + serviceFlag
+	fkTimeoutFlag         = "-" + timeoutFlag
+	fkMetadataFlag        = "-" + metadataFlag
+	fkExtensionFlag       = "-" + extensionFlag
+	fkFileExtension       = "file extension"
+	fkOperation           = "operation"
+	fkService             = "service"
+	fkServiceStatus       = "status"
+	fkTimeout             = "timeout in seconds"
+	opConnect             = "connect to service manager"
+	opListServices        = "list services"
+	opOpenService         = "open service"
+	opQueryService        = "query service status"
+	opStopService         = "stop service"
+	statusContinuePending = "continue pending"
+	statusPaused          = "paused"
+	statusPausePending    = "pause pending"
+	statusRunning         = "running"
+	statusStartPending    = "start pending"
+	statusStopped         = "stopped"
+	statusStopPending     = "stop pending"
+	errTimeout            = "operation timed out"
+)
+
+var defaultMetadata = filepath.Join("%Userprofile%", "AppData", "Local", "Microsoft", "Media Player")
+
+type resetDatabase struct {
+	n         string
+	timeout   *int
+	service   *string
+	metadata  *string
+	extension *string
+	f         *flag.FlagSet
+}
+
+func (r *resetDatabase) name() string {
+	return r.n
+}
+
+func newResetDatabase(c *internal.Configuration, fSet *flag.FlagSet) CommandProcessor {
+	return newResetDatabaseCommand(c, fSet)
+}
+
+func newResetDatabaseCommand(c *internal.Configuration, fSet *flag.FlagSet) *resetDatabase {
+	name := fSet.Name()
+	configuration := c.SubConfiguration(name)
+	return &resetDatabase{
+		n: name,
+		timeout: fSet.Int(timeoutFlag,
+			configuration.IntDefault(timeoutFlag, internal.NewIntBounds(minTimeout, defaultTimeout, maxTimeout)),
+			fmt.Sprintf("timeout in seconds (minimum %d, maximum %d) for stopping the media player service",
+				minTimeout, maxTimeout)),
+		service: fSet.String(serviceFlag,
+			configuration.StringDefault(serviceFlag, defaultService),
+			"name of the media player service"),
+		metadata: fSet.String(metadataFlag,
+			configuration.StringDefault(metadataFlag, defaultMetadata),
+			"directory where the media player service metadata files are stored"),
+		extension: fSet.String(extensionFlag,
+			c.StringDefault(extensionFlag, defaultExtension),
+			"extension for metadata files"),
+		f: fSet,
+	}
+}
+
+func (r *resetDatabase) Exec(o internal.OutputBus, args []string) (ok bool) {
+	if internal.ProcessArgs(o, r.f, args) {
+		ok = r.runCommand(o, connectToManager)
+	}
+	return
+}
+
+type service interface {
+	close()
+	query() (svc.Status, error)
+	control(svc.Cmd) (svc.Status, error)
+}
+
+type manager interface {
+	disconnect()
+	listServices() ([]string, error)
+	openService(string) (service, error)
+}
+
+func (r *resetDatabase) runCommand(o internal.OutputBus, connect func() (manager, error)) (ok bool) {
+	o.LogWriter().Info(internal.LI_EXECUTING_COMMAND, map[string]interface{}{
+		fkCommandName:   r.name(),
+		fkServiceFlag:   *r.service,
+		fkTimeoutFlag:   *r.timeout,
+		fkMetadataFlag:  *r.metadata,
+		fkExtensionFlag: *r.extension,
+	})
+	if !r.stopService(o, connect) {
+		return
+	}
+	return r.deleteMetadata(o)
+}
+
+func (r *resetDatabase) deleteMetadata(o internal.OutputBus) bool {
+	var files []fs.FileInfo
+	var ok bool
+	if files, ok = internal.ReadDirectory(o, *r.metadata); !ok {
+		return false
+	}
+	pathsToDelete := r.filterMetadataFiles(files)
+	if len(pathsToDelete) > 0 {
+		return r.deleteMetadataFiles(o, pathsToDelete)
+	}
+	fmt.Fprintf(o.ConsoleWriter(), "No metadata files were found in %q.\n", *r.metadata)
+	o.LogWriter().Info(internal.LI_NO_FILES_FOUND, map[string]interface{}{
+		internal.FK_DIRECTORY: *r.metadata,
+		fkFileExtension:       *r.extension,
+	})
+	return true
+}
+
+func (r *resetDatabase) deleteMetadataFiles(o internal.OutputBus, paths []string) bool {
+	var count int
+	for _, path := range paths {
+		if err := os.Remove(path); err != nil {
+			fmt.Fprintf(o.ErrorWriter(), internal.USER_CANNOT_DELETE_FILE, path, err)
+			o.LogWriter().Warn(internal.LW_CANNOT_DELETE_FILE, map[string]interface{}{
+				internal.FK_FILE_NAME: path,
+				internal.FK_ERROR:     err,
+			})
+		} else {
+			count++
+		}
+	}
+	fmt.Fprintf(o.ConsoleWriter(), "%d out of %d metadata files have been deleted from %q.\n", count, len(paths), *r.metadata)
+	return count == len(paths)
+}
+
+func (r *resetDatabase) filterMetadataFiles(files []fs.FileInfo) []string{
+	var paths []string
+	for _, file := range files {
+		if strings.HasSuffix(file.Name(), *r.extension) {
+			path := filepath.Join(*r.metadata, file.Name())
+			if internal.PlainFileExists(path) {
+				paths = append(paths, path)
+			}
+		}
+	}
+	return paths
+}
+
+var stateToStatus = map[svc.State]string{
+	svc.Stopped:         statusStopped,
+	svc.StartPending:    statusStartPending,
+	svc.StopPending:     statusStopPending,
+	svc.Running:         statusRunning,
+	svc.ContinuePending: statusContinuePending,
+	svc.PausePending:    statusPausePending,
+	svc.Paused:          statusPaused,
+}
+
+// returns true unless the service was detected in a running state and could not
+// be stopped within the specified timeout
+func (r *resetDatabase) stopService(o internal.OutputBus, connect func() (manager, error)) bool {
+	// this is a privileged operation and fails if the user is not an administrator
+	m, err := connect()
+	if err != nil {
+		fmt.Fprintf(o.ErrorWriter(), internal.USER_SERVICE_MGR_CONNECION_FAILED, err)
+		o.LogWriter().Warn(internal.LW_SERVICE_MANAGER_ISSUE, map[string]interface{}{
+			internal.FK_ERROR: err,
+			fkOperation:       opConnect,
+		})
+		return true
+	}
+	defer func() {
+		m.disconnect() // ignore error
+	}()
+	s := r.openService(o, m)
+	if s == nil {
+		// something unhappy happened, but, fine, we're done and we're not preventing progress
+		return true
+	}
+	defer s.close()
+	status, err := s.query()
+	if err != nil {
+		fmt.Fprintf(o.ErrorWriter(), internal.USER_CANNOT_QUERY_SERVICE, *r.service, err)
+		o.LogWriter().Warn("service issue", map[string]interface{}{
+			internal.FK_ERROR: err,
+			fkService:         *r.service,
+			fkOperation:       opQueryService,
+		})
+		return true
+	}
+	if status.State == svc.Stopped {
+		r.logServiceStopped(o)
+		return true
+	}
+	ok := status.State != svc.Running
+	status, err = s.control(svc.Stop)
+	if err == nil {
+		timeout := time.Now().Add(time.Duration(*r.timeout) * time.Second)
+		if stopped := r.waitForStop(o, s, status, timeout, 100*time.Millisecond); stopped {
+			ok = true
+		}
+	} else {
+		fmt.Fprintf(o.ErrorWriter(), internal.USER_CANNOT_STOP_SERVICE, *r.service, err)
+		o.LogWriter().Warn(internal.LW_SERVICE_ISSUE, map[string]interface{}{
+			internal.FK_ERROR: err,
+			fkService:         *r.service,
+			fkOperation:       opStopService,
+		})
+	}
+	return ok
+}
+
+func (r *resetDatabase) logServiceStopped(o internal.OutputBus) {
+	o.LogWriter().Info(internal.LI_SERVICE_STATUS, map[string]interface{}{
+		fkService:       *r.service,
+		fkServiceStatus: statusStopped,
+	})
+}
+
+func (r *resetDatabase) openService(o internal.OutputBus, m manager) service {
+	s, err := m.openService(*r.service)
+	if err != nil {
+		fmt.Fprintf(o.ConsoleWriter(), "The service %q cannot be opened: %v\n", *r.service, err)
+		o.LogWriter().Warn(internal.LW_SERVICE_ISSUE, map[string]interface{}{
+			internal.FK_ERROR: err,
+			fkService:         *r.service,
+			fkOperation:       opOpenService,
+		})
+		services, err := m.listServices()
+		if err != nil {
+			fmt.Fprintf(o.ErrorWriter(), "error listing services: %v", err)
+			o.LogWriter().Warn(internal.LW_SERVICE_MANAGER_ISSUE, map[string]interface{}{
+				internal.FK_ERROR: err,
+				fkOperation:       opListServices,
+			})
+		} else {
+			listAvailableServices(o, m, services)
+		}
+		return nil
+	}
+	return s
+}
+
+func (r *resetDatabase) waitForStop(o internal.OutputBus, s service, status svc.Status, timeout time.Time, checkFreq time.Duration) (ok bool) {
+	if status.State == svc.Stopped {
+		r.logServiceStopped(o)
+		ok = true
+		return
+	}
+	for !ok {
+		if timeout.Before(time.Now()) {
+			fmt.Fprintf(o.ErrorWriter(), internal.USER_SERVICE_STOP_TIMED_OUT, *r.service, *r.timeout)
+			o.LogWriter().Warn(internal.LW_SERVICE_ISSUE, map[string]interface{}{
+				fkService:         *r.service,
+				fkTimeout:         *r.timeout,
+				fkOperation:       opStopService,
+				internal.FK_ERROR: errTimeout,
+			})
+			break
+		}
+		time.Sleep(checkFreq)
+		status, err := s.query()
+		if err != nil {
+			fmt.Fprintf(o.ErrorWriter(), internal.USER_CANNOT_QUERY_SERVICE, *r.service, err)
+			o.LogWriter().Warn("service issue", map[string]interface{}{
+				internal.FK_ERROR: err,
+				fkService:         *r.service,
+				fkOperation:       opQueryService,
+			})
+			break
+		}
+		if status.State == svc.Stopped {
+			r.logServiceStopped(o)
+			ok = true
+		}
+	}
+	return
+}
+
+func listAvailableServices(o internal.OutputBus, m manager, services []string) {
+	fmt.Fprintln(o.ConsoleWriter(), "The following services are available")
+	if len(services) == 0 {
+		fmt.Fprintln(o.ConsoleWriter(), "  - none -")
+		return
+	}
+	sort.Strings(services)
+	sMap := make(map[string][]string)
+	for _, service := range services {
+		if s, err := m.openService(service); err == nil {
+			if stat, err := s.query(); err == nil {
+				key := stateToStatus[stat.State]
+				sMap[key] = append(sMap[key], service)
+			} else {
+				e := fmt.Sprintf("%v", err)
+				sMap[e] = append(sMap[e], service)
+			}
+			s.close()
+		} else {
+			e := fmt.Sprintf("%v", err)
+			sMap[e] = append(sMap[e], service)
+		}
+	}
+	var states []string
+	for k := range sMap {
+		states = append(states, k)
+	}
+	sort.Strings(states)
+	for _, state := range states {
+		fmt.Fprintf(o.ConsoleWriter(), "  State %q:\n", state)
+		for _, service := range sMap[state] {
+			fmt.Fprintf(o.ConsoleWriter(), "    %q\n", service)
+		}
+	}
+}
+
+type sysMgr struct {
+	m *mgr.Mgr
+}
+
+func (m *sysMgr) disconnect() {
+	_ = m.m.Disconnect()
+}
+
+func (m *sysMgr) openService(name string) (service, error) {
+	svc, err := m.m.OpenService(name)
+	if err == nil {
+		return &sysService{s: svc}, nil
+	}
+	return nil, err
+}
+
+func (m *sysMgr) listServices() ([]string, error) {
+	return m.m.ListServices()
+}
+
+type sysService struct {
+	s *mgr.Service
+}
+
+func (s *sysService) close() {
+	s.s.Close()
+}
+
+func (s *sysService) query() (svc.Status, error) {
+	return s.s.Query()
+}
+
+func (s *sysService) control(c svc.Cmd) (svc.Status, error) {
+	return s.s.Control(c)
+}
+
+func connectToManager() (manager, error) {
+	m, err := mgr.Connect()
+	if err != nil {
+		return nil, err
+	}
+	return &sysMgr{m: m}, err
+}

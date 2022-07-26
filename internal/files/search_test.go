@@ -2,60 +2,10 @@ package files
 
 import (
 	"flag"
-	"io/fs"
 	"mp3/internal"
 	"reflect"
 	"testing"
 )
-
-func Test_readDirectory(t *testing.T) {
-	fnName := "readDirectory()"
-	// generate test data
-	topDir := "loadTest"
-	if err := internal.Mkdir(topDir); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
-	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, topDir)
-	}()
-	type args struct {
-		dir string
-	}
-	tests := []struct {
-		name      string
-		args      args
-		wantFiles []fs.FileInfo
-		wantOk    bool
-		internal.WantedOutput
-	}{
-		{name: "default", args: args{topDir}, wantFiles: []fs.FileInfo{}, wantOk: true},
-		{
-			name: "non-existent dir",
-			args: args{"non-existent directory"},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The directory \"non-existent directory\" cannot be read: open non-existent directory: The system cannot find the file specified.\n",
-				WantLogOutput:   "level='warn' directory='non-existent directory' error='open non-existent directory: The system cannot find the file specified.' msg='cannot read directory'\n",
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
-			gotFiles, gotOk := readDirectory(o, tt.args.dir)
-			if !reflect.DeepEqual(gotFiles, tt.wantFiles) {
-				t.Errorf("%s gotFiles = %v, want %v", fnName, gotFiles, tt.wantFiles)
-			}
-			if gotOk != tt.wantOk {
-				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
-			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
-				for _, issue := range issues {
-					t.Errorf("%s %s", fnName, issue)
-				}
-			}
-		})
-	}
-}
 
 func TestSearch_FilterArtists(t *testing.T) {
 	fnName := "Search.FilterArtists()"

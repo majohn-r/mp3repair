@@ -51,7 +51,7 @@ func Test_run(t *testing.T) {
 			name:            "failure",
 			args:            args{cmdlineArgs: []string{"./mp3", "foo"}},
 			wantReturnValue: 1,
-			wantErrorOutput: "There is no command named \"foo\"; valid commands include [check ls postRepair repair].\n",
+			wantErrorOutput: "There is no command named \"foo\"; valid commands include [check ls postRepair repair resetDatabase].\n",
 			wantLogPrefix: "level='info' args='[./mp3 foo]' timeStamp='' version='unknown version!' msg='execution starts'\n" +
 				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", filepath.Join(thisDir, internal.AppName)) +
 				"level='warn' command='foo' msg='unrecognized command'\n" +

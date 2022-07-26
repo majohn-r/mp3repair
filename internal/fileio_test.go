@@ -1,8 +1,10 @@
 package internal
 
 import (
+	"io/fs"
 	"os"
 	"path/filepath"
+	"reflect"
 	"testing"
 )
 
@@ -117,6 +119,55 @@ func TestCopyFile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if err := CopyFile(tt.args.src, tt.args.dest); (err != nil) != tt.wantErr {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestReadDirectory(t *testing.T) {
+	fnName := "ReadDirectory()"
+	// generate test data
+	topDir := "loadTest"
+	if err := Mkdir(topDir); err != nil {
+		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
+	}
+	defer func() {
+		DestroyDirectoryForTesting(fnName, topDir)
+	}()
+	type args struct {
+		dir string
+	}
+	tests := []struct {
+		name      string
+		args      args
+		wantFiles []fs.FileInfo
+		wantOk    bool
+		WantedOutput
+	}{
+		{name: "default", args: args{topDir}, wantFiles: []fs.FileInfo{}, wantOk: true},
+		{
+			name: "non-existent dir",
+			args: args{"non-existent directory"},
+			WantedOutput: WantedOutput{
+				WantErrorOutput: "The directory \"non-existent directory\" cannot be read: open non-existent directory: The system cannot find the file specified.\n",
+				WantLogOutput:   "level='warn' directory='non-existent directory' error='open non-existent directory: The system cannot find the file specified.' msg='cannot read directory'\n",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			o := NewOutputDeviceForTesting()
+			gotFiles, gotOk := ReadDirectory(o, tt.args.dir)
+			if !reflect.DeepEqual(gotFiles, tt.wantFiles) {
+				t.Errorf("%s gotFiles = %v, want %v", fnName, gotFiles, tt.wantFiles)
+			}
+			if gotOk != tt.wantOk {
+				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
+			}
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
+				}
 			}
 		})
 	}

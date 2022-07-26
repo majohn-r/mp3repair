@@ -61,6 +61,8 @@ func Test_Configuration_BoolDefault(t *testing.T) {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
 	testConfiguration, _ := ReadConfigurationFile(NewOutputDeviceForTesting())
+	altConfiguration := EmptyConfiguration()
+	altConfiguration.sMap["foo"] = "1"
 	type args struct {
 		key          string
 		defaultValue bool
@@ -71,6 +73,12 @@ func Test_Configuration_BoolDefault(t *testing.T) {
 		args  args
 		wantB bool
 	}{
+		{
+			name:  "string to bool",
+			c:     altConfiguration,
+			args:  args{key: "foo", defaultValue: false},
+			wantB: true,
+		},
 		{
 			name:  "empty configuration default false",
 			c:     EmptyConfiguration(),
@@ -129,7 +137,7 @@ func Test_Configuration_BoolDefault(t *testing.T) {
 			name:  "boolean (string) value default false",
 			c:     testConfiguration.cMap["unused"],
 			args:  args{key: "value", defaultValue: false},
-			wantB: true,
+			wantB: false,
 		},
 	}
 	for _, tt := range tests {
@@ -294,15 +302,18 @@ func TestReadConfigurationFile(t *testing.T) {
 			state: &SavedEnvVar{Name: appDataVar, Value: canonicalPath, Set: true},
 			wantC: &Configuration{
 				bMap: map[string]bool{},
+				iMap: map[string]int{},
 				sMap: map[string]string{},
 				cMap: map[string]*Configuration{
 					"check": {
 						bMap: map[string]bool{"empty": true, "gaps": true, "integrity": false},
+						iMap: map[string]int{},
 						sMap: map[string]string{},
 						cMap: map[string]*Configuration{},
 					},
 					"common": {
 						bMap: map[string]bool{},
+						iMap: map[string]int{},
 						sMap: map[string]string{
 							"albumFilter":  "^.*$",
 							"artistFilter": "^.*$",
@@ -318,24 +329,27 @@ func TestReadConfigurationFile(t *testing.T) {
 							"includeArtists": false,
 							"includeTracks":  true,
 						},
+						iMap: map[string]int{},
 						sMap: map[string]string{"sort": "alpha"},
 						cMap: map[string]*Configuration{},
 					},
 					"repair": {
 						bMap: map[string]bool{"dryRun": true},
+						iMap: map[string]int{},
 						sMap: map[string]string{},
 						cMap: map[string]*Configuration{},
 					},
 					"unused": {
 						bMap: map[string]bool{},
-						sMap: map[string]string{"value": "1"},
+						iMap: map[string]int{},
+						sMap: map[string]string{"value": "1.25"},
 						cMap: map[string]*Configuration{}},
 				},
 			},
 			wantOk: true,
 			WantedOutput: WantedOutput{
-				WantLogOutput: fmt.Sprintf("level='warn' key='value' type='int' value='1' msg='unexpected value type'\n"+
-					"level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1]]' msg='read configuration file'\n", mp3Path),
+				WantLogOutput: fmt.Sprintf("level='warn' key='value' type='float64' value='1.25' msg='unexpected value type'\n"+
+					"level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1.25]]' msg='read configuration file'\n", mp3Path),
 			},
 		},
 		{
@@ -477,6 +491,218 @@ func TestConfiguration_StringValue(t *testing.T) {
 			}
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
+			}
+		})
+	}
+}
+
+func TestConfiguration_String(t *testing.T) {
+	fnName := "Configuration.String()"
+	tests := []struct {
+		name string
+		c    *Configuration
+		want string
+	}{
+		{
+			name: "empty case",
+			c:    EmptyConfiguration(),
+		},
+		{
+			name: "busy case",
+			c: &Configuration{
+				bMap: map[string]bool{
+					"f": false,
+					"t": true,
+				},
+				iMap: map[string]int{
+					"zero": 0,
+					"one":  1,
+				},
+				sMap: map[string]string{
+					"foo": "bar",
+					"bar": "foo",
+				},
+				cMap: map[string]*Configuration{
+					"empty": EmptyConfiguration(),
+				},
+			},
+			want: "map[f:false t:true], map[one:1 zero:0], map[bar:foo foo:bar], map[empty:]",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.c.String(); got != tt.want {
+				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestNewIntBounds(t *testing.T) {
+	fnName := "NewIntBounds()"
+	type args struct {
+		v1 int
+		v2 int
+		v3 int
+	}
+	tests := []struct {
+		name string
+		args args
+		want *IntBounds
+	}{
+		{
+			name: "case 1",
+			args: args{v1: 1, v2: 2, v3: 3},
+			want: &IntBounds{minValue: 1, defaultValue: 2, maxValue: 3},
+		},
+		{
+			name: "case 2",
+			args: args{v1: 1, v2: 3, v3: 2},
+			want: &IntBounds{minValue: 1, defaultValue: 2, maxValue: 3},
+		},
+		{
+			name: "case 3",
+			args: args{v1: 2, v2: 1, v3: 3},
+			want: &IntBounds{minValue: 1, defaultValue: 2, maxValue: 3},
+		},
+		{
+			name: "case 4",
+			args: args{v1: 2, v2: 3, v3: 1},
+			want: &IntBounds{minValue: 1, defaultValue: 2, maxValue: 3},
+		},
+		{
+			name: "case 5",
+			args: args{v1: 3, v2: 1, v3: 2},
+			want: &IntBounds{minValue: 1, defaultValue: 2, maxValue: 3},
+		},
+		{
+			name: "case 6",
+			args: args{v1: 3, v2: 2, v3: 1},
+			want: &IntBounds{minValue: 1, defaultValue: 2, maxValue: 3},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := NewIntBounds(tt.args.v1, tt.args.v2, tt.args.v3); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestConfiguration_IntDefault(t *testing.T) {
+	fnName := "Configuration.IntDefault()"
+	type args struct {
+		key          string
+		sortedBounds *IntBounds
+	}
+	tests := []struct {
+		name  string
+		c     *Configuration
+		args  args
+		wantI int
+	}{
+		{
+			name:  "miss",
+			c:     EmptyConfiguration(),
+			args:  args{key: "k", sortedBounds: NewIntBounds(1, 2, 3)},
+			wantI: 2,
+		},
+		{
+			name:  "hit int value too low",
+			c:     &Configuration{iMap: map[string]int{"k": -1}},
+			args:  args{key: "k", sortedBounds: NewIntBounds(1, 2, 3)},
+			wantI: 1,
+		},
+		{
+			name:  "hit int value too high",
+			c:     &Configuration{iMap: map[string]int{"k": 10}},
+			args:  args{key: "k", sortedBounds: NewIntBounds(1, 2, 3)},
+			wantI: 3,
+		},
+		{
+			name:  "hit int value in the middle",
+			c:     &Configuration{iMap: map[string]int{"k": 15}},
+			args:  args{key: "k", sortedBounds: NewIntBounds(10, 20, 30)},
+			wantI: 15,
+		},
+		{
+			name:  "hit string value too low",
+			c:     &Configuration{iMap: map[string]int{}, sMap: map[string]string{"k": "-1"}},
+			args:  args{key: "k", sortedBounds: NewIntBounds(1, 2, 3)},
+			wantI: 1,
+		},
+		{
+			name:  "hit string value too high",
+			c:     &Configuration{iMap: map[string]int{}, sMap: map[string]string{"k": "10"}},
+			args:  args{key: "k", sortedBounds: NewIntBounds(1, 2, 3)},
+			wantI: 3,
+		},
+		{
+			name:  "hit string value in the middle",
+			c:     &Configuration{iMap: map[string]int{}, sMap: map[string]string{"k": "15"}},
+			args:  args{key: "k", sortedBounds: NewIntBounds(10, 20, 30)},
+			wantI: 15,
+		},
+		{
+			name: "hit invalid string value",
+			c:     &Configuration{iMap: map[string]int{}, sMap: map[string]string{"k": "foo"}},
+			args:  args{key: "k", sortedBounds: NewIntBounds(10, 20, 30)},
+			wantI: 20,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if gotI := tt.c.IntDefault(tt.args.key, tt.args.sortedBounds); gotI != tt.wantI {
+				t.Errorf("%s = %d, want %d", fnName, gotI, tt.wantI)
+			}
+		})
+	}
+}
+
+func Test_createConfiguration(t *testing.T) {
+	fnName := "createConfiguration()"
+	type args struct {
+		data map[string]interface{}
+	}
+	tests := []struct {
+		name string
+		args args
+		want *Configuration
+		WantedOutput
+	}{
+		{
+			name: "busy!",
+			args: args{
+				data: map[string]interface{}{
+					"boolValue":   true,
+					"intValue":    1,
+					"stringValue": "foo",
+					"weirdValue":  1.2345,
+					"mapValue":    map[string]interface{}{},
+				},
+			},
+			want: &Configuration{
+				bMap: map[string]bool{"boolValue": true},
+				iMap: map[string]int{"intValue": 1},
+				sMap: map[string]string{"stringValue": "foo", "weirdValue": "1.2345"},
+				cMap: map[string]*Configuration{"mapValue": EmptyConfiguration()},
+			},
+			WantedOutput: WantedOutput{
+				WantLogOutput: "level='warn' key='weirdValue' type='float64' value='1.2345' msg='unexpected value type'\n",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			o := NewOutputDeviceForTesting()
+			if got := createConfiguration(o, tt.args.data); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
+			}
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
+				}
 			}
 		})
 	}

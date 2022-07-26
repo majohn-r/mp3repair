@@ -9,12 +9,13 @@ import (
 )
 
 const (
-	checkCommand      = "check"
-	fkCommandName     = "command"
-	fkCount           = "count"
-	lsCommand         = "ls"
-	postRepairCommand = "postRepair"
-	repairCommand     = "repair"
+	checkCommand         = "check"
+	fkCommandName        = "command"
+	fkCount              = "count"
+	lsCommand            = "ls"
+	postRepairCommand    = "postRepair"
+	repairCommand        = "repair"
+	resetDatabaseCommand = "resetDatabase"
 )
 
 type CommandProcessor interface {
@@ -40,27 +41,31 @@ func ProcessCommand(o internal.OutputBus, args []string) (cmd CommandProcessor, 
 		return nil, nil, false
 	}
 	var initializers []commandInitializer
-	lsCommand := commandInitializer{
+	initializers = append(initializers, commandInitializer{
 		name:           lsCommand,
 		defaultCommand: defaultSettings[lsCommand],
 		initializer:    newLs,
-	}
-	checkCommand := commandInitializer{
+	})
+	initializers = append(initializers, commandInitializer{
 		name:           checkCommand,
 		defaultCommand: defaultSettings[checkCommand],
 		initializer:    newCheck,
-	}
-	repairCommand := commandInitializer{
+	})
+	initializers = append(initializers, commandInitializer{
 		name:           repairCommand,
 		defaultCommand: defaultSettings[repairCommand],
 		initializer:    newRepair,
-	}
-	postRepairCommand := commandInitializer{
+	})
+	initializers = append(initializers, commandInitializer{
 		name:           postRepairCommand,
 		defaultCommand: defaultSettings[postRepairCommand],
 		initializer:    newPostRepair,
-	}
-	initializers = append(initializers, lsCommand, checkCommand, repairCommand, postRepairCommand)
+	})
+	initializers = append(initializers, commandInitializer{
+		name:           resetDatabaseCommand,
+		defaultCommand: defaultSettings[resetDatabaseCommand],
+		initializer:    newResetDatabase,
+	})
 	cmd, cmdArgs, ok = selectCommand(o, c, initializers, args)
 	return
 }
@@ -69,19 +74,21 @@ func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[
 	defaultCommand, ok := c.StringValue("default")
 	if !ok { // no definition
 		m = map[string]bool{
-			checkCommand:      false,
-			lsCommand:         true,
-			postRepairCommand: false,
-			repairCommand:     false,
+			checkCommand:         false,
+			lsCommand:            true,
+			postRepairCommand:    false,
+			repairCommand:        false,
+			resetDatabaseCommand: false,
 		}
 		ok = true
 		return
 	}
 	m = map[string]bool{
-		checkCommand:      defaultCommand == checkCommand,
-		lsCommand:         defaultCommand == lsCommand,
-		postRepairCommand: defaultCommand == postRepairCommand,
-		repairCommand:     defaultCommand == repairCommand,
+		checkCommand:         defaultCommand == checkCommand,
+		lsCommand:            defaultCommand == lsCommand,
+		postRepairCommand:    defaultCommand == postRepairCommand,
+		repairCommand:        defaultCommand == repairCommand,
+		resetDatabaseCommand: defaultCommand == resetDatabaseCommand,
 	}
 	found := false
 	for _, value := range m {

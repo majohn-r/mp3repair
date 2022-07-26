@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"mp3/internal"
 	"regexp"
 )
@@ -19,7 +18,7 @@ type Search struct {
 }
 
 func (s *Search) contents(o internal.OutputBus) ([]fs.FileInfo, bool) {
-	return readDirectory(o, s.topDirectory)
+	return internal.ReadDirectory(o, s.topDirectory)
 }
 
 // LoadUnfilteredData loads artists, albums, and tracks from the specified top
@@ -164,18 +163,4 @@ func CreateFilteredSearchForTesting(topDir string, artistFilter string, albumFil
 			"-albumFilter", albumFilter,
 		})
 	return s
-}
-
-func readDirectory(o internal.OutputBus, dir string) (files []fs.FileInfo, ok bool) {
-	var err error
-	if files, err = ioutil.ReadDir(dir); err != nil {
-		o.LogWriter().Warn(internal.LW_CANNOT_READ_DIRECTORY, map[string]interface{}{
-			internal.FK_DIRECTORY: dir,
-			internal.FK_ERROR:     err,
-		})
-		fmt.Fprintf(o.ErrorWriter(), internal.USER_CANNOT_READ_DIRECTORY, dir, err)
-		return
-	}
-	ok = true
-	return
 }

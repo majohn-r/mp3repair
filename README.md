@@ -88,9 +88,27 @@ line argument:
 The **postRepair** command provides a means to quickly delete the backup
 directories created by the **repair** command. It has no command line arguments.
 
+## resetDatabase
+
+The **resetDatabase** command provides a means to reset the database that the
+Windows Media Player uses to catalogue the albums, artists, and tracks. The
+Windows Media Player will not recognize the effects of the **repair** command
+until that database is reset. The command has the following command line
+arguments:
+
+1. **-extension** the extension of the files to delete; defaults to **.wmdb**.
+2. **-metadata** the directory where the metadata files are found; defaults to
+   **%Userprofile%\AppData\Local\Microsoft\Media Player\**.
+3. **-service** the name of the media player sharing service, which, if running,
+   needs to be stopped before deleting the metadata files; defaults to
+   **WMPNetworkSVC**.
+4. **-timeout** the time, in seconds, in which the command will attempt to stop
+   the media player sharing service before giving up; the minimum value is
+   **1**, the maximum value is **60**, and the default value is **10**.
+
 ### Common Arguments
 
-These arguments are common to all commands:
+These arguments are common to all commands except the **resetDatabase** command:
 
 1. **-topDir** The directory whose subdirectories are artist names. By default,
    this is **%HOMEPATH%\Music**.
@@ -107,7 +125,7 @@ such directory, and the user must create it.
 
 The **YAML** format documentation is here: [https://yaml.org/](https://yaml.org/).
 
-The **defaults.yaml** file may contain five blocks:
+The **defaults.yaml** file may contain six blocks:
 
 1. **check** The **check** block may have up to three boolean key-value pairs,
    with each key controlling the default setting for its corresponding **check**
@@ -117,8 +135,9 @@ The **defaults.yaml** file may contain five blocks:
    1. **integrity**
 1. **command** The **command** block may have one string key-value pair:
    1. **default** the value of this entry must be one of **check**, **ls**,
-      **postRepair**, or **repair**. It causes that command to become the
-      default command when no command is specified on the command line.
+      **postRepair**, **repair**, or **resetDatabase**. It causes that command
+      to become the default command when no command is specified on the command
+      line.
 1. **common** The **common** block may have up to four string key-value pairs,
    with each key controlling the default setting for its corresponding
    **common** argument:
@@ -139,6 +158,13 @@ The **defaults.yaml** file may contain five blocks:
    controlling the default setting for its corresponding **repair** command
    argument:
    1. **dryRun**
+1. **resetDatabase** The **resetDatabase** block may have three string key-value
+   pairs and on numeric key-value pair, with each key controlling the default
+   setting for its corresponding **resetDatabase** command argument:
+   1. **extension**
+   1. **metadata**
+   1. **service**
+   1. **timeout**
 
 Here is the **yaml** content corresponding to the standard out of the box
 default values:
@@ -165,6 +191,11 @@ ls:
     sort:           numeric
 repair:
     dryRun: false
+resetDatabase:
+    extension: .wmbd
+    metadata:  $Userprofile/AppData/Local/Microsoft/Media Player/
+    service:   WMPNetworkSVC
+    timeout:   10
 ```
 
 ## Argument Values

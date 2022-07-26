@@ -167,7 +167,7 @@ check:
     gaps: true       # false
     integrity: false # true
 unused:
-    value: 1
+    value: 1.25
 repair:
     dryRun: true # false`
 	return CreateFileForTestingWithContent(path, defaultConfigFileName, []byte(json))

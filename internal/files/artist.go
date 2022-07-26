@@ -32,7 +32,7 @@ func NewArtist(n, p string) *Artist {
 }
 
 func (a *Artist) contents(o internal.OutputBus) ([]fs.FileInfo, bool) {
-	return readDirectory(o, a.path)
+	return internal.ReadDirectory(o, a.path)
 }
 
 // Name returns the artist's name

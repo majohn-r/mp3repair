@@ -25,7 +25,6 @@ const (
 	defaultRegex          = ".*"
 	fileExtensionFlag     = "ext"
 	fkAlbumFilterFlag     = "-" + albumRegexFlag
-	fkArguments           = "arguments"
 	fkArtistFilterFlag    = "-" + artistRegexFlag
 	fkTargetExtensionFlag = "-" + fileExtensionFlag
 	fkTopDirFlag          = "-" + topDirectoryFlag
@@ -55,19 +54,10 @@ func NewSearchFlags(c *internal.Configuration, fSet *flag.FlagSet) *SearchFlags 
 
 // ProcessArgs consumes the command line arguments.
 func (sf *SearchFlags) ProcessArgs(o internal.OutputBus, args []string) (s *Search, ok bool) {
-	dereferencedArgs := make([]string, len(args))
-	for i, arg := range args {
-		dereferencedArgs[i] = internal.InterpretEnvVarReferences(arg)
+	if ok = internal.ProcessArgs(o, sf.f, args); ok {
+		s, ok = sf.NewSearch(o)
 	}
-	sf.f.SetOutput(o.ErrorWriter())
-	// note: Parse outputs errors to o.ErrorWriter*()
-	if err := sf.f.Parse(dereferencedArgs); err != nil {
-		o.LogWriter().Error(fmt.Sprintf("%v", err), map[string]interface{}{
-			fkArguments: dereferencedArgs,
-		})
-		return nil, false
-	}
-	return sf.NewSearch(o)
+	return
 }
 
 // NewSearch validates the common search parameters and creates a Search
