@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"golang.org/x/sys/windows/svc"
-	"golang.org/x/sys/windows/svc/mgr"
 )
 
 type testService struct {
@@ -39,17 +38,11 @@ type testManager struct {
 	desiredError error
 }
 
-func (t *testManager) disconnect() {
+func (t *testManager) Disconnect() error {
+	return nil
 }
 
-func (m *testManager) openService(name string) (service, error) {
-	if s, ok := m.serviceMap[name]; ok {
-		return s, nil
-	}
-	return nil, fmt.Errorf("access denied")
-}
-
-func (m *testManager) listServices() ([]string, error) {
+func (m *testManager) ListServices() ([]string, error) {
 	if m.desiredError != nil {
 		return nil, m.desiredError
 	}
@@ -61,10 +54,21 @@ func (m *testManager) listServices() ([]string, error) {
 	return services, nil
 }
 
+func (m *testManager) manager() manager {
+	return m
+}
+
+func (m *testManager) openService(name string) (service, error) {
+	if s, ok := m.serviceMap[name]; ok {
+		return s, nil
+	}
+	return nil, fmt.Errorf("access denied")
+}
+
 func Test_listAvailableServices(t *testing.T) {
 	fnName := "listAvailableServices()"
 	type args struct {
-		m        manager
+		sM       serviceGateway
 		services []string
 	}
 	tests := []struct {
@@ -83,7 +87,7 @@ func Test_listAvailableServices(t *testing.T) {
 		{
 			name: "several services available",
 			args: args{
-				m: &testManager{
+				sM: &testManager{
 					serviceMap: map[string]service{
 						"svc1": &testService{desiredQueryStatus: svc.Status{State: svc.Running}},
 						"svc2": &testService{desiredQueryError: fmt.Errorf("access denied")},
@@ -104,7 +108,7 @@ func Test_listAvailableServices(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
-			listAvailableServices(o, tt.args.m, tt.args.services)
+			listAvailableServices(o, tt.args.sM, tt.args.services)
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
@@ -178,7 +182,7 @@ func Test_resetDatabase_waitForStop(t *testing.T) {
 				checkFreq: 1 * time.Millisecond,
 			},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The status for the service \"test service\" cannot be obtained: access denied\n",
+				WantErrorOutput: "The status for the service \"test service\" cannot be obtained: access denied.\n",
 				WantLogOutput:   "level='warn' error='access denied' operation='query service status' service='test service' msg='service issue'\n",
 			},
 		},
@@ -198,82 +202,12 @@ func Test_resetDatabase_waitForStop(t *testing.T) {
 	}
 }
 
-func Test_resetDatabase_openService(t *testing.T) {
-	fnName := "resetDatabase.openService()"
-	serviceName := "media player service"
-	s := testService{}
-	type args struct {
-		m manager
-	}
-	tests := []struct {
-		name string
-		r    *resetDatabase
-		want service
-		args
-		internal.WantedOutput
-	}{
-		{
-			name: "success",
-			r:    &resetDatabase{service: &serviceName},
-			want: &s,
-			args: args{
-				m: &testManager{
-					serviceMap: map[string]service{serviceName: &s},
-				},
-			},
-		},
-		{
-			name: "error on open",
-			r:    &resetDatabase{service: &serviceName},
-			args: args{
-				m: &testManager{
-					serviceMap:   map[string]service{},
-					desiredError: fmt.Errorf("access impermissible"),
-				},
-			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "The service \"media player service\" cannot be opened: access denied\n",
-				WantErrorOutput:   "error listing services: access impermissible",
-				WantLogOutput: "level='warn' error='access denied' operation='open service' service='media player service' msg='service issue'\n" +
-					"level='warn' error='access impermissible' operation='list services' msg='service manager issue'\n",
-			},
-		},
-		{
-			name: "error on open, but service listing works",
-			r:    &resetDatabase{service: &serviceName},
-			args: args{
-				m: &testManager{
-					serviceMap: map[string]service{},
-				},
-			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "The service \"media player service\" cannot be opened: access denied\n" +
-					"The following services are available\n  - none -\n",
-				WantLogOutput: "level='warn' error='access denied' operation='open service' service='media player service' msg='service issue'\n",
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
-			if got := tt.r.openService(o, tt.args.m); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
-			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
-				for _, issue := range issues {
-					t.Errorf("%s %s", fnName, issue)
-				}
-			}
-		})
-	}
-}
-
 func Test_resetDatabase_stopService(t *testing.T) {
 	fnName := "resetDatabase.stopService()"
 	serviceName := "mp3 management service"
 	fastTimeout := -1
 	type args struct {
-		connect func() (manager, error)
+		connect func() (serviceGateway, error)
 	}
 	tests := []struct {
 		name string
@@ -287,12 +221,12 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			r:    &resetDatabase{},
 			want: true,
 			args: args{
-				connect: func() (manager, error) {
+				connect: func() (serviceGateway, error) {
 					return nil, fmt.Errorf("access denied")
 				},
 			},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The service manager cannot be accessed. Try running the program again as an administrator. Error: access denied\n",
+				WantErrorOutput: "The service manager cannot be accessed. Try running the program again as an administrator. Error: access denied.\n",
 				WantLogOutput:   "level='warn' error='access denied' operation='connect to service manager' msg='service manager issue'\n",
 			},
 		},
@@ -303,7 +237,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			},
 			want: true,
 			args: args{
-				connect: func() (manager, error) {
+				connect: func() (serviceGateway, error) {
 					return &testManager{
 						serviceMap: map[string]service{},
 					}, nil
@@ -322,7 +256,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			},
 			want: true,
 			args: args{
-				connect: func() (manager, error) {
+				connect: func() (serviceGateway, error) {
 					return &testManager{
 						serviceMap: map[string]service{
 							serviceName: &testService{
@@ -333,7 +267,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 				},
 			},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The status for the service \"mp3 management service\" cannot be obtained: query failure\n",
+				WantErrorOutput: "The status for the service \"mp3 management service\" cannot be obtained: query failure.\n",
 				WantLogOutput:   "level='warn' error='query failure' operation='query service status' service='mp3 management service' msg='service issue'\n",
 			},
 		},
@@ -344,7 +278,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			},
 			want: true,
 			args: args{
-				connect: func() (manager, error) {
+				connect: func() (serviceGateway, error) {
 					return &testManager{
 						serviceMap: map[string]service{
 							serviceName: &testService{
@@ -367,7 +301,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			},
 			want: true,
 			args: args{
-				connect: func() (manager, error) {
+				connect: func() (serviceGateway, error) {
 					return &testManager{
 						serviceMap: map[string]service{
 							serviceName: &testService{
@@ -381,7 +315,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 				},
 			},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The service \"mp3 management service\" cannot be stopped: stop command rejected\n",
+				WantErrorOutput: "The service \"mp3 management service\" cannot be stopped: stop command rejected.\n",
 				WantLogOutput:   "level='warn' error='stop command rejected' operation='stop service' service='mp3 management service' msg='service issue'\n",
 			},
 		},
@@ -391,7 +325,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 				service: &serviceName,
 			},
 			args: args{
-				connect: func() (manager, error) {
+				connect: func() (serviceGateway, error) {
 					return &testManager{
 						serviceMap: map[string]service{
 							serviceName: &testService{
@@ -405,7 +339,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 				},
 			},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The service \"mp3 management service\" cannot be stopped: stop command rejected\n",
+				WantErrorOutput: "The service \"mp3 management service\" cannot be stopped: stop command rejected.\n",
 				WantLogOutput:   "level='warn' error='stop command rejected' operation='stop service' service='mp3 management service' msg='service issue'\n",
 			},
 		},
@@ -417,7 +351,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			},
 			want: true,
 			args: args{
-				connect: func() (manager, error) {
+				connect: func() (serviceGateway, error) {
 					return &testManager{
 						serviceMap: map[string]service{
 							serviceName: &testService{
@@ -444,7 +378,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 				timeout: &fastTimeout,
 			},
 			args: args{
-				connect: func() (manager, error) {
+				connect: func() (serviceGateway, error) {
 					return &testManager{
 						serviceMap: map[string]service{
 							serviceName: &testService{
@@ -472,7 +406,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			},
 			want: true,
 			args: args{
-				connect: func() (manager, error) {
+				connect: func() (serviceGateway, error) {
 					return &testManager{
 						serviceMap: map[string]service{
 							serviceName: &testService{
@@ -499,7 +433,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			},
 			want: true,
 			args: args{
-				connect: func() (manager, error) {
+				connect: func() (serviceGateway, error) {
 					return &testManager{
 						serviceMap: map[string]service{
 							serviceName: &testService{
@@ -715,7 +649,7 @@ func Test_resetDatabase_deleteMetadata(t *testing.T) {
 			name: "dir read failure",
 			r:    &resetDatabase{metadata: &fnName},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The directory \"resetDatabase.deleteMetadata()\" cannot be read: open resetDatabase.deleteMetadata(): The system cannot find the file specified.\n",
+				WantErrorOutput: "The directory \"resetDatabase.deleteMetadata()\" cannot be read: open resetDatabase.deleteMetadata(): The system cannot find the file specified..\n",
 				WantLogOutput:   "level='warn' directory='resetDatabase.deleteMetadata()' error='open resetDatabase.deleteMetadata(): The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
 		},
@@ -772,7 +706,7 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 		}
 	}
 	type args struct {
-		connect func() (manager, error)
+		connect func() (serviceGateway, error)
 	}
 	tests := []struct {
 		name string
@@ -791,7 +725,7 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 				extension: &ext,
 			},
 			args: args{
-				connect: func() (manager, error) {
+				connect: func() (serviceGateway, error) {
 					return &testManager{
 						serviceMap: map[string]service{
 							serviceName: &testService{
@@ -805,7 +739,7 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 				},
 			},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The service \"mp3 service\" cannot be stopped: stop command rejected\n",
+				WantErrorOutput: "The service \"mp3 service\" cannot be stopped: stop command rejected.\n",
 				WantLogOutput: "level='info' -extension='.wmdb' -metadata='runCommand' -service='mp3 service' -timeout='-1' command='resetDatabase' msg='executing command'\n" +
 					"level='warn' error='stop command rejected' operation='stop service' service='mp3 service' msg='service issue'\n",
 			},
@@ -820,13 +754,13 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 				extension: &ext,
 			},
 			args: args{
-				connect: func() (manager, error) {
+				connect: func() (serviceGateway, error) {
 					return nil, fmt.Errorf("access denied")
 				},
 			},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The service manager cannot be accessed. Try running the program again as an administrator. Error: access denied\n" +
-					"The directory \"resetdatabase_test.go\" cannot be read: readdir resetdatabase_test.go: The system cannot find the path specified.\n",
+				WantErrorOutput: "The service manager cannot be accessed. Try running the program again as an administrator. Error: access denied.\n" +
+					"The directory \"resetdatabase_test.go\" cannot be read: readdir resetdatabase_test.go: The system cannot find the path specified..\n",
 				WantLogOutput: "level='info' -extension='.wmdb' -metadata='resetdatabase_test.go' -service='mp3 service' -timeout='-1' command='resetDatabase' msg='executing command'\n" +
 					"level='warn' error='access denied' operation='connect to service manager' msg='service manager issue'\n" +
 					"level='warn' directory='resetdatabase_test.go' error='readdir resetdatabase_test.go: The system cannot find the path specified.' msg='cannot read directory'\n",
@@ -842,14 +776,14 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 				extension: &ext,
 			},
 			args: args{
-				connect: func() (manager, error) {
+				connect: func() (serviceGateway, error) {
 					return nil, fmt.Errorf("access denied")
 				},
 			},
 			wantOk: true,
 			WantedOutput: internal.WantedOutput{
 				WantConsoleOutput: "10 out of 10 metadata files have been deleted from \"runCommand\".\n",
-				WantErrorOutput:   "The service manager cannot be accessed. Try running the program again as an administrator. Error: access denied\n",
+				WantErrorOutput:   "The service manager cannot be accessed. Try running the program again as an administrator. Error: access denied.\n",
 				WantLogOutput: "level='info' -extension='.wmdb' -metadata='runCommand' -service='mp3 service' -timeout='-1' command='resetDatabase' msg='executing command'\n" +
 					"level='warn' error='access denied' operation='connect to service manager' msg='service manager issue'\n",
 			},
@@ -927,8 +861,8 @@ func Test_resetDatabase_Exec(t *testing.T) {
 				args: []string{"-metadata", "no such dir"},
 			},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The service manager cannot be accessed. Try running the program again as an administrator. Error: Access is denied.\n" +
-					"The directory \"no such dir\" cannot be read: open no such dir: The system cannot find the file specified.\n",
+				WantErrorOutput: "The service manager cannot be accessed. Try running the program again as an administrator. Error: Access is denied..\n" +
+					"The directory \"no such dir\" cannot be read: open no such dir: The system cannot find the file specified..\n",
 				WantLogOutput: "level='info' -extension='.wmdb' -metadata='no such dir' -service='WMPNetworkSVC' -timeout='10' command='resetDatabase' msg='executing command'\n" +
 					"level='warn' error='Access is denied.' operation='connect to service manager' msg='service manager issue'\n" +
 					"level='warn' directory='no such dir' error='open no such dir: The system cannot find the file specified.' msg='cannot read directory'\n",
@@ -945,7 +879,7 @@ func Test_resetDatabase_Exec(t *testing.T) {
 			wantOk: true,
 			WantedOutput: internal.WantedOutput{
 				WantConsoleOutput: "No metadata files were found in \"Exec\".\n",
-				WantErrorOutput:   "The service manager cannot be accessed. Try running the program again as an administrator. Error: Access is denied.\n",
+				WantErrorOutput:   "The service manager cannot be accessed. Try running the program again as an administrator. Error: Access is denied..\n",
 				WantLogOutput: "level='info' -extension='.wmdb' -metadata='Exec' -service='WMPNetworkSVC' -timeout='10' command='resetDatabase' msg='executing command'\n" +
 					"level='warn' error='Access is denied.' operation='connect to service manager' msg='service manager issue'\n" +
 					"level='info' directory='Exec' file extension='.wmdb' msg='no files found'\n",
@@ -967,13 +901,113 @@ func Test_resetDatabase_Exec(t *testing.T) {
 	}
 }
 
-func Test_experimental(t *testing.T) {
-	type m interface {
-		Disconnect() error
-		ListServices() ([]string, error)
+func Test_resetDatabase_openService(t *testing.T) {
+	fnName := "resetDatabase.openService()"
+	serviceName := "mp3 management service"
+	fastTimeout := -1
+	type args struct {
+		connect func() (serviceGateway, error)
 	}
-	var i2 interface{} = &mgr.Mgr{}
-	if _, ok := i2.(m); !ok {
-		t.Errorf("*mgr.Mgr does not implement test interface m")
+	tests := []struct {
+		name string
+		r    *resetDatabase
+		args
+		wantM bool
+		wantS bool
+		internal.WantedOutput
+	}{
+		{
+			name: "fail to connect to manager",
+			r:    &resetDatabase{service: &serviceName, timeout: &fastTimeout},
+			args: args{
+				connect: func() (serviceGateway, error) {
+					return nil, fmt.Errorf("access denied")
+				},
+			},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The service manager cannot be accessed. Try running the program again as an administrator. Error: access denied.\n",
+				WantLogOutput:   "level='warn' error='access denied' operation='connect to service manager' msg='service manager issue'\n",
+			},
+		},
+		{
+			name: "connected to manager, cannot connect to service or list services",
+			r:    &resetDatabase{service: &serviceName, timeout: &fastTimeout},
+			args: args{
+				connect: func() (serviceGateway, error) {
+					return &testManager{
+						serviceMap:   map[string]service{},
+						desiredError: fmt.Errorf("cannot list services"),
+					}, nil
+				},
+			},
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: "The service \"mp3 management service\" cannot be opened: access denied\n",
+				WantErrorOutput:   "The list of available services cannot be obtained: cannot list services.\n",
+				WantLogOutput: "level='warn' error='access denied' operation='open service' service='mp3 management service' msg='service issue'\n" +
+					"level='warn' error='cannot list services' operation='list services' msg='service manager issue'\n",
+			},
+		},
+		{
+			name: "connected to manager, cannot connect to service, but can list services",
+			r:    &resetDatabase{service: &serviceName, timeout: &fastTimeout},
+			args: args{
+				connect: func() (serviceGateway, error) {
+					return &testManager{
+						serviceMap: map[string]service{
+							"other service": &testService{
+								desiredQueryStatus: svc.Status{
+									State: svc.Running,
+								},
+							},
+						},
+					}, nil
+				},
+			},
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: "The service \"mp3 management service\" cannot be opened: access denied\n" +
+					"The following services are available\n" +
+					"  State \"running\":\n" +
+					"    \"other service\"\n",
+				WantLogOutput: "level='warn' error='access denied' operation='open service' service='mp3 management service' msg='service issue'\n",
+			},
+		},
+		{
+			name: "open manager and specified service",
+			r:    &resetDatabase{service: &serviceName, timeout: &fastTimeout},
+			args: args{
+				connect: func() (serviceGateway, error) {
+					return &testManager{
+						serviceMap: map[string]service{
+							serviceName: &testService{
+								desiredQueryStatus: svc.Status{
+									State: svc.Running,
+								},
+							},
+						},
+					}, nil
+				},
+			},
+			wantM: true,
+			wantS: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			o := internal.NewOutputDeviceForTesting()
+			returnedM, returnedS := tt.r.openService(o, tt.args.connect)
+			gotM := returnedM != nil
+			gotS := returnedS != nil
+			if gotM != tt.wantM {
+				t.Errorf("%s gotM = %t, want %t", fnName, gotM, tt.wantM)
+			}
+			if gotS != tt.wantS {
+				t.Errorf("%s gotS = %t, want %t", fnName, gotS, tt.wantS)
+			}
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
+				}
+			}
+		})
 	}
 }

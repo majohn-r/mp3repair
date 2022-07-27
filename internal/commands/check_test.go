@@ -409,7 +409,7 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 			c:    &check{checkIntegrity: &tFlag},
 			args: args{artists: a},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "An error occurred when trying to read tag information for track \"track\" on album \"album\" by artist \"artist\": \"zero length\"\n",
+				WantErrorOutput: "An error occurred when trying to read tag information for track \"track\" on album \"album\" by artist \"artist\": \"zero length\".\n",
 				WantLogOutput:   "level='warn' albumName='album' artistName='artist' error='zero length' trackName='track' msg='tag error'\n",
 			},
 			wantConflictedArtists: []*artistWithIssues{

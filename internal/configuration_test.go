@@ -383,7 +383,7 @@ func TestReadConfigurationFile(t *testing.T) {
 			state: &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(badDir2), Set: true},
 			WantedOutput: WantedOutput{
 				WantErrorOutput: fmt.Sprintf(
-					"The configuration file %q is not well-formed YAML: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}\n",
+					"The configuration file %q is not well-formed YAML: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}.\n",
 					SecureAbsolutePathForTesting(filepath.Join(gibberishDir, defaultConfigFileName))),
 				WantLogOutput: fmt.Sprintf("level='warn' directory='%s' error='yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}' fileName='defaults.yaml' msg='cannot unmarshal yaml content'\n", SecureAbsolutePathForTesting(gibberishDir)),
 			},
@@ -645,7 +645,7 @@ func TestConfiguration_IntDefault(t *testing.T) {
 			wantI: 15,
 		},
 		{
-			name: "hit invalid string value",
+			name:  "hit invalid string value",
 			c:     &Configuration{iMap: map[string]int{}, sMap: map[string]string{"k": "foo"}},
 			args:  args{key: "k", sortedBounds: NewIntBounds(10, 20, 30)},
 			wantI: 20,

@@ -98,7 +98,8 @@ func TestCleanupLogFiles(t *testing.T) {
 			args:          args{path: "testlogs"},
 			wantFileCount: maxLogFiles + 2,
 			WantedOutput: WantedOutput{
-				WantErrorOutput: "The log file \"testlogs\\\\mp3.00.log\" cannot be deleted: remove testlogs\\mp3.00.log: The process cannot access the file because it is being used by another process.\nThe log file \"testlogs\\\\mp3.01.log\" cannot be deleted: remove testlogs\\mp3.01.log: The process cannot access the file because it is being used by another process.\n",
+				WantErrorOutput: "The log file \"testlogs\\\\mp3.00.log\" cannot be deleted: remove testlogs\\mp3.00.log: The process cannot access the file because it is being used by another process..\n" +
+					"The log file \"testlogs\\\\mp3.01.log\" cannot be deleted: remove testlogs\\mp3.01.log: The process cannot access the file because it is being used by another process..\n",
 				WantLogOutput: "level='warn' directory='testlogs' error='remove testlogs\\mp3.00.log: The process cannot access the file because it is being used by another process.' fileName='mp3.00.log' msg='cannot delete file'\n" +
 					"level='warn' directory='testlogs' error='remove testlogs\\mp3.01.log: The process cannot access the file because it is being used by another process.' fileName='mp3.01.log' msg='cannot delete file'\n",
 			},
@@ -107,7 +108,7 @@ func TestCleanupLogFiles(t *testing.T) {
 			name: "missing path",
 			args: args{path: "testlogs"},
 			WantedOutput: WantedOutput{
-				WantErrorOutput: "The log file directory \"testlogs\" cannot be read: open testlogs: The system cannot find the file specified.\n",
+				WantErrorOutput: "The log file directory \"testlogs\" cannot be read: open testlogs: The system cannot find the file specified..\n",
 				WantLogOutput:   "level='warn' directory='testlogs' error='open testlogs: The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
 		},

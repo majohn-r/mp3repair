@@ -51,17 +51,14 @@ const (
 
 var defaultMetadata = filepath.Join("%Userprofile%", "AppData", "Local", "Microsoft", "Media Player")
 
-type resetDatabase struct {
-	n         string
-	timeout   *int
-	service   *string
-	metadata  *string
-	extension *string
-	f         *flag.FlagSet
-}
-
-func (r *resetDatabase) name() string {
-	return r.n
+var stateToStatus = map[svc.State]string{
+	svc.Stopped:         statusStopped,
+	svc.StartPending:    statusStartPending,
+	svc.StopPending:     statusStopPending,
+	svc.Running:         statusRunning,
+	svc.ContinuePending: statusContinuePending,
+	svc.PausePending:    statusPausePending,
+	svc.Paused:          statusPaused,
 }
 
 func newResetDatabase(c *internal.Configuration, fSet *flag.FlagSet) CommandProcessor {
@@ -90,26 +87,33 @@ func newResetDatabaseCommand(c *internal.Configuration, fSet *flag.FlagSet) *res
 	}
 }
 
+type resetDatabase struct {
+	n         string
+	timeout   *int
+	service   *string
+	metadata  *string
+	extension *string
+	f         *flag.FlagSet
+}
+
+func (r *resetDatabase) name() string {
+	return r.n
+}
+
 func (r *resetDatabase) Exec(o internal.OutputBus, args []string) (ok bool) {
 	if internal.ProcessArgs(o, r.f, args) {
-		ok = r.runCommand(o, connectToManager)
+		ok = r.runCommand(o, func()(serviceGateway, error){
+			m, err := mgr.Connect()
+			if err != nil {
+				return nil, err
+			}
+			return &sysMgr{m: m}, err
+		})
 	}
 	return
 }
 
-type service interface {
-	Close() error
-	Query() (svc.Status, error)
-	Control(c svc.Cmd) (svc.Status, error)
-}
-
-type manager interface {
-	disconnect()
-	listServices() ([]string, error)
-	openService(string) (service, error)
-}
-
-func (r *resetDatabase) runCommand(o internal.OutputBus, connect func() (manager, error)) (ok bool) {
+func (r *resetDatabase) runCommand(o internal.OutputBus, connect func() (serviceGateway, error)) (ok bool) {
 	o.LogWriter().Info(internal.LI_EXECUTING_COMMAND, map[string]interface{}{
 		fkCommandName:   r.name(),
 		fkServiceFlag:   *r.service,
@@ -171,38 +175,19 @@ func (r *resetDatabase) filterMetadataFiles(files []fs.FileInfo) []string {
 	return paths
 }
 
-var stateToStatus = map[svc.State]string{
-	svc.Stopped:         statusStopped,
-	svc.StartPending:    statusStartPending,
-	svc.StopPending:     statusStopPending,
-	svc.Running:         statusRunning,
-	svc.ContinuePending: statusContinuePending,
-	svc.PausePending:    statusPausePending,
-	svc.Paused:          statusPaused,
-}
-
 // returns true unless the service was detected in a running state and could not
 // be stopped within the specified timeout
-func (r *resetDatabase) stopService(o internal.OutputBus, connect func() (manager, error)) bool {
+func (r *resetDatabase) stopService(o internal.OutputBus, connect func() (serviceGateway, error)) bool {
 	// this is a privileged operation and fails if the user is not an administrator
-	m, err := connect()
-	if err != nil {
-		fmt.Fprintf(o.ErrorWriter(), internal.USER_SERVICE_MGR_CONNECION_FAILED, err)
-		o.LogWriter().Warn(internal.LW_SERVICE_MANAGER_ISSUE, map[string]interface{}{
-			internal.FK_ERROR: err,
-			fkOperation:       opConnect,
-		})
-		return true
-	}
-	defer func() {
-		m.disconnect() // ignore error
-	}()
-	s := r.openService(o, m)
+	sM, s := r.openService(o, connect)
 	if s == nil {
 		// something unhappy happened, but, fine, we're done and we're not preventing progress
 		return true
 	}
-	defer s.Close()
+	defer func() {
+		_ = sM.manager().Disconnect()
+		_ = s.Close()
+	}()
 	status, err := s.Query()
 	if err != nil {
 		fmt.Fprintf(o.ErrorWriter(), internal.USER_CANNOT_QUERY_SERVICE, *r.service, err)
@@ -242,28 +227,39 @@ func (r *resetDatabase) logServiceStopped(o internal.OutputBus) {
 	})
 }
 
-func (r *resetDatabase) openService(o internal.OutputBus, m manager) service {
-	s, err := m.openService(*r.service)
+func (r *resetDatabase) openService(o internal.OutputBus, connect func() (serviceGateway, error)) (sM serviceGateway, s service) {
+	sM, err := connect()
 	if err != nil {
-		fmt.Fprintf(o.ConsoleWriter(), "The service %q cannot be opened: %v\n", *r.service, err)
-		o.LogWriter().Warn(internal.LW_SERVICE_ISSUE, map[string]interface{}{
+		fmt.Fprintf(o.ErrorWriter(), internal.USER_SERVICE_MGR_CONNECION_FAILED, err)
+		o.LogWriter().Warn(internal.LW_SERVICE_MANAGER_ISSUE, map[string]interface{}{
 			internal.FK_ERROR: err,
-			fkService:         *r.service,
-			fkOperation:       opOpenService,
+			fkOperation:       opConnect,
 		})
-		services, err := m.listServices()
+	} else {
+		s, err = sM.openService(*r.service)
 		if err != nil {
-			fmt.Fprintf(o.ErrorWriter(), "error listing services: %v", err)
-			o.LogWriter().Warn(internal.LW_SERVICE_MANAGER_ISSUE, map[string]interface{}{
+			fmt.Fprintf(o.ConsoleWriter(), "The service %q cannot be opened: %v\n", *r.service, err)
+			o.LogWriter().Warn(internal.LW_SERVICE_ISSUE, map[string]interface{}{
 				internal.FK_ERROR: err,
-				fkOperation:       opListServices,
+				fkService:         *r.service,
+				fkOperation:       opOpenService,
 			})
-		} else {
-			listAvailableServices(o, m, services)
+			services, err := sM.manager().ListServices()
+			if err != nil {
+				fmt.Fprintf(o.ErrorWriter(), internal.USER_CANNOT_LIST_SERVICES, err)
+				o.LogWriter().Warn(internal.LW_SERVICE_MANAGER_ISSUE, map[string]interface{}{
+					internal.FK_ERROR: err,
+					fkOperation:       opListServices,
+				})
+			} else {
+				listAvailableServices(o, sM, services)
+			}
+			_ = sM.manager().Disconnect()
+			sM = nil
+			s = nil
 		}
-		return nil
 	}
-	return s
+	return
 }
 
 func (r *resetDatabase) waitForStop(o internal.OutputBus, s service, status svc.Status, timeout time.Time, checkFreq time.Duration) (ok bool) {
@@ -302,7 +298,7 @@ func (r *resetDatabase) waitForStop(o internal.OutputBus, s service, status svc.
 	return
 }
 
-func listAvailableServices(o internal.OutputBus, m manager, services []string) {
+func listAvailableServices(o internal.OutputBus, sM serviceGateway, services []string) {
 	fmt.Fprintln(o.ConsoleWriter(), "The following services are available")
 	if len(services) == 0 {
 		fmt.Fprintln(o.ConsoleWriter(), "  - none -")
@@ -311,7 +307,7 @@ func listAvailableServices(o internal.OutputBus, m manager, services []string) {
 	sort.Strings(services)
 	sMap := make(map[string][]string)
 	for _, service := range services {
-		if s, err := m.openService(service); err == nil {
+		if s, err := sM.openService(service); err == nil {
 			if stat, err := s.Query(); err == nil {
 				key := stateToStatus[stat.State]
 				sMap[key] = append(sMap[key], service)
@@ -338,26 +334,37 @@ func listAvailableServices(o internal.OutputBus, m manager, services []string) {
 	}
 }
 
-type sysMgr struct {
-	m *mgr.Mgr
+// interface for methods on a service - allows for real services and for test
+// implementations
+type service interface {
+	Close() error
+	Query() (svc.Status, error)
+	Control(c svc.Cmd) (svc.Status, error)
 }
 
-func (m *sysMgr) disconnect() {
-	_ = m.m.Disconnect()
+// interface for methods on a service manager - allows for real manager and for
+// test implementations
+type manager interface {
+	Disconnect() error
+	ListServices() ([]string, error)
+}
+
+// interface to obtain a manager and to open a service. The real manager returns
+// a specific struct and its OpenService call cannot be easily forced into a
+// generic call
+type serviceGateway interface {
+	openService(string) (service, error)
+	manager() manager
+}
+
+type sysMgr struct {
+	m *mgr.Mgr
 }
 
 func (m *sysMgr) openService(name string) (service, error) {
 	return m.m.OpenService(name)
 }
 
-func (m *sysMgr) listServices() ([]string, error) {
-	return m.m.ListServices()
-}
-
-func connectToManager() (manager, error) {
-	m, err := mgr.Connect()
-	if err != nil {
-		return nil, err
-	}
-	return &sysMgr{m: m}, err
+func (m *sysMgr) manager() manager {
+	return m.m
 }

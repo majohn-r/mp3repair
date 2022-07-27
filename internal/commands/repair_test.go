@@ -279,7 +279,7 @@ func generateStandardTrackErrorReport() string {
 	for artist := 0; artist < 10; artist++ {
 		for album := 0; album < 10; album++ {
 			for track := 0; track < 10; track++ {
-				result = append(result, fmt.Sprintf("An error occurred when trying to read tag information for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"zero length\"\n", track, album, artist))
+				result = append(result, fmt.Sprintf("An error occurred when trying to read tag information for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"zero length\".\n", track, album, artist))
 			}
 		}
 	}

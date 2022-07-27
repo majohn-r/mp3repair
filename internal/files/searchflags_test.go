@@ -118,7 +118,7 @@ func Test_validateRegexp(t *testing.T) {
 			name: "invalid filter",
 			args: args{pattern: "disc[", name: "album"},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The album filter value you specified, \"disc[\", cannot be used: error parsing regexp: missing closing ]: `[`\n",
+				WantErrorOutput: "The album filter value you specified, \"disc[\", cannot be used: error parsing regexp: missing closing ]: `[`.\n",
 				WantLogOutput:   "level='warn' album='disc[' error='error parsing regexp: missing closing ]: `[`' msg='the filter cannot be parsed as a regular expression'\n",
 			},
 		},
@@ -225,7 +225,7 @@ func Test_validateSearchParameters(t *testing.T) {
 			},
 			wantArtistsFilter: regexp.MustCompile(".*"),
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The -albumFilter filter value you specified, \".[*\", cannot be used: error parsing regexp: missing closing ]: `[*`\n",
+				WantErrorOutput: "The -albumFilter filter value you specified, \".[*\", cannot be used: error parsing regexp: missing closing ]: `[*`.\n",
 				WantLogOutput:   "level='warn' -albumFilter='.[*' error='error parsing regexp: missing closing ]: `[*`' msg='the filter cannot be parsed as a regular expression'\n",
 			},
 		},
@@ -239,7 +239,7 @@ func Test_validateSearchParameters(t *testing.T) {
 			},
 			wantAlbumsFilter: regexp.MustCompile(".*"),
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The -artistFilter filter value you specified, \".[*\", cannot be used: error parsing regexp: missing closing ]: `[*`\n",
+				WantErrorOutput: "The -artistFilter filter value you specified, \".[*\", cannot be used: error parsing regexp: missing closing ]: `[*`.\n",
 				WantLogOutput:   "level='warn' -artistFilter='.[*' error='error parsing regexp: missing closing ]: `[*`' msg='the filter cannot be parsed as a regular expression'\n",
 			},
 		},

@@ -837,7 +837,7 @@ func Test_ls_outputTrackDiagnostics(t *testing.T) {
 			l:    makeLs(),
 			args: args{t: badTrack},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "An error occurred when trying to read tag information for track \"bad track\" on album \"bad album\" by artist \"bad artist\": \"open BadAlbum\\\\01 bad track.mp3: The system cannot find the path specified.\"\n",
+				WantErrorOutput: "An error occurred when trying to read tag information for track \"bad track\" on album \"bad album\" by artist \"bad artist\": \"open BadAlbum\\\\01 bad track.mp3: The system cannot find the path specified.\".\n",
 				WantLogOutput:   "level='warn' error='open BadAlbum\\01 bad track.mp3: The system cannot find the path specified.' track='BadAlbum\\01 bad track.mp3' msg='tag error'\n",
 			},
 		},
