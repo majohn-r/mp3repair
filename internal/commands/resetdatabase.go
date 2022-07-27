@@ -98,9 +98,9 @@ func (r *resetDatabase) Exec(o internal.OutputBus, args []string) (ok bool) {
 }
 
 type service interface {
-	close()
-	query() (svc.Status, error)
-	control(svc.Cmd) (svc.Status, error)
+	Close() error
+	Query() (svc.Status, error)
+	Control(c svc.Cmd) (svc.Status, error)
 }
 
 type manager interface {
@@ -158,7 +158,7 @@ func (r *resetDatabase) deleteMetadataFiles(o internal.OutputBus, paths []string
 	return count == len(paths)
 }
 
-func (r *resetDatabase) filterMetadataFiles(files []fs.FileInfo) []string{
+func (r *resetDatabase) filterMetadataFiles(files []fs.FileInfo) []string {
 	var paths []string
 	for _, file := range files {
 		if strings.HasSuffix(file.Name(), *r.extension) {
@@ -202,8 +202,8 @@ func (r *resetDatabase) stopService(o internal.OutputBus, connect func() (manage
 		// something unhappy happened, but, fine, we're done and we're not preventing progress
 		return true
 	}
-	defer s.close()
-	status, err := s.query()
+	defer s.Close()
+	status, err := s.Query()
 	if err != nil {
 		fmt.Fprintf(o.ErrorWriter(), internal.USER_CANNOT_QUERY_SERVICE, *r.service, err)
 		o.LogWriter().Warn("service issue", map[string]interface{}{
@@ -218,7 +218,7 @@ func (r *resetDatabase) stopService(o internal.OutputBus, connect func() (manage
 		return true
 	}
 	ok := status.State != svc.Running
-	status, err = s.control(svc.Stop)
+	status, err = s.Control(svc.Stop)
 	if err == nil {
 		timeout := time.Now().Add(time.Duration(*r.timeout) * time.Second)
 		if stopped := r.waitForStop(o, s, status, timeout, 100*time.Millisecond); stopped {
@@ -284,7 +284,7 @@ func (r *resetDatabase) waitForStop(o internal.OutputBus, s service, status svc.
 			break
 		}
 		time.Sleep(checkFreq)
-		status, err := s.query()
+		status, err := s.Query()
 		if err != nil {
 			fmt.Fprintf(o.ErrorWriter(), internal.USER_CANNOT_QUERY_SERVICE, *r.service, err)
 			o.LogWriter().Warn("service issue", map[string]interface{}{
@@ -312,14 +312,14 @@ func listAvailableServices(o internal.OutputBus, m manager, services []string) {
 	sMap := make(map[string][]string)
 	for _, service := range services {
 		if s, err := m.openService(service); err == nil {
-			if stat, err := s.query(); err == nil {
+			if stat, err := s.Query(); err == nil {
 				key := stateToStatus[stat.State]
 				sMap[key] = append(sMap[key], service)
 			} else {
 				e := fmt.Sprintf("%v", err)
 				sMap[e] = append(sMap[e], service)
 			}
-			s.close()
+			s.Close()
 		} else {
 			e := fmt.Sprintf("%v", err)
 			sMap[e] = append(sMap[e], service)
@@ -347,31 +347,11 @@ func (m *sysMgr) disconnect() {
 }
 
 func (m *sysMgr) openService(name string) (service, error) {
-	svc, err := m.m.OpenService(name)
-	if err == nil {
-		return &sysService{s: svc}, nil
-	}
-	return nil, err
+	return m.m.OpenService(name)
 }
 
 func (m *sysMgr) listServices() ([]string, error) {
 	return m.m.ListServices()
-}
-
-type sysService struct {
-	s *mgr.Service
-}
-
-func (s *sysService) close() {
-	s.s.Close()
-}
-
-func (s *sysService) query() (svc.Status, error) {
-	return s.s.Query()
-}
-
-func (s *sysService) control(c svc.Cmd) (svc.Status, error) {
-	return s.s.Control(c)
 }
 
 func connectToManager() (manager, error) {

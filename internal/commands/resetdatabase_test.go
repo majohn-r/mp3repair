@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"golang.org/x/sys/windows/svc"
+	"golang.org/x/sys/windows/svc/mgr"
 )
 
 type testService struct {
@@ -21,14 +22,15 @@ type testService struct {
 	desiredControlError  error
 }
 
-func (t *testService) close() {
+func (t *testService) Close() error {
+	return nil
 }
 
-func (t *testService) query() (svc.Status, error) {
+func (t *testService) Query() (svc.Status, error) {
 	return t.desiredQueryStatus, t.desiredQueryError
 }
 
-func (t *testService) control(c svc.Cmd) (svc.Status, error) {
+func (t *testService) Control(c svc.Cmd) (svc.Status, error) {
 	return t.desiredControlStatus, t.desiredControlError
 }
 
@@ -962,5 +964,16 @@ func Test_resetDatabase_Exec(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func Test_experimental(t *testing.T) {
+	type m interface {
+		Disconnect() error
+		ListServices() ([]string, error)
+	}
+	var i2 interface{} = &mgr.Mgr{}
+	if _, ok := i2.(m); !ok {
+		t.Errorf("*mgr.Mgr does not implement test interface m")
 	}
 }
