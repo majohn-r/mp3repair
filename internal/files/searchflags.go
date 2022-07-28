@@ -2,7 +2,6 @@ package files
 
 import (
 	"flag"
-	"fmt"
 	"mp3/internal"
 	"os"
 	"regexp"
@@ -78,7 +77,7 @@ func (sf *SearchFlags) NewSearch(o internal.OutputBus) (s *Search, ok bool) {
 
 func (sf *SearchFlags) validateTopLevelDirectory(o internal.OutputBus) bool {
 	if file, err := os.Stat(*sf.topDirectory); err != nil {
-		fmt.Fprintf(o.ErrorWriter(), internal.USER_CANNOT_READ_TOPDIR, *sf.topDirectory, err)
+		o.WriteError(internal.USER_CANNOT_READ_TOPDIR, *sf.topDirectory, err)
 		o.LogWriter().Warn(internal.LW_CANNOT_READ_DIRECTORY, map[string]interface{}{
 			fkTopDirFlag:      *sf.topDirectory,
 			internal.FK_ERROR: err,
@@ -88,7 +87,7 @@ func (sf *SearchFlags) validateTopLevelDirectory(o internal.OutputBus) bool {
 		if file.IsDir() {
 			return true
 		} else {
-			fmt.Fprintf(o.ErrorWriter(), internal.USER_TOPDIR_NOT_A_DIRECTORY, *sf.topDirectory)
+			o.WriteError(internal.USER_TOPDIR_NOT_A_DIRECTORY, *sf.topDirectory)
 			o.LogWriter().Warn(internal.LW_NOT_A_DIRECTORY, map[string]interface{}{
 				fkTopDirFlag: *sf.topDirectory,
 			})
@@ -101,7 +100,7 @@ func (sf *SearchFlags) validateExtension(o internal.OutputBus) (ok bool) {
 	ok = true
 	if !strings.HasPrefix(*sf.fileExtension, ".") || strings.Contains(strings.TrimPrefix(*sf.fileExtension, "."), ".") {
 		ok = false
-		fmt.Fprintf(o.ErrorWriter(), internal.USER_EXTENSION_INVALID_FORMAT, *sf.fileExtension)
+		o.WriteError(internal.USER_EXTENSION_INVALID_FORMAT, *sf.fileExtension)
 		o.LogWriter().Warn(internal.LW_INVALID_EXTENSION_FORMAT, map[string]interface{}{
 			fkTargetExtensionFlag: *sf.fileExtension,
 		})
@@ -110,7 +109,7 @@ func (sf *SearchFlags) validateExtension(o internal.OutputBus) (ok bool) {
 	trackNameRegex, e = regexp.Compile("^\\d+[\\s-].+\\." + strings.TrimPrefix(*sf.fileExtension, ".") + "$")
 	if e != nil {
 		ok = false
-		fmt.Fprintf(o.ErrorWriter(), internal.USER_EXTENSION_GARBLED, *sf.fileExtension, e)
+		o.WriteError(internal.USER_EXTENSION_GARBLED, *sf.fileExtension, e)
 		o.LogWriter().Warn(internal.LW_GARBLED_EXTENSION, map[string]interface{}{
 			fkTargetExtensionFlag: *sf.fileExtension,
 			internal.FK_ERROR:     e,
@@ -121,7 +120,7 @@ func (sf *SearchFlags) validateExtension(o internal.OutputBus) (ok bool) {
 
 func validateRegexp(o internal.OutputBus, pattern string, name string) (filter *regexp.Regexp, ok bool) {
 	if f, err := regexp.Compile(pattern); err != nil {
-		fmt.Fprintf(o.ErrorWriter(), internal.USER_FILTER_GARBLED, name, pattern, err)
+		o.WriteError(internal.USER_FILTER_GARBLED, name, pattern, err)
 		o.LogWriter().Warn(internal.LW_GARBLED_FILTER, map[string]interface{}{
 			name:              pattern,
 			internal.FK_ERROR: err,

@@ -229,6 +229,10 @@ func (o *OutputDeviceForTesting) LogWriter() Logger {
 	return o.logWriter
 }
 
+func (o *OutputDeviceForTesting) WriteError(format string, a ...any) {
+	fmt.Fprintln(o.errorWriter, createErrorOutput(format, a...))
+}
+
 type testLogger struct {
 	writer *bytes.Buffer
 }

@@ -606,7 +606,7 @@ func reportTrackErrors(o internal.OutputBus, artists []*Artist) {
 		for _, album := range artist.Albums() {
 			for _, track := range album.Tracks() {
 				if track.hasTagError() {
-					fmt.Fprintf(o.ErrorWriter(), internal.USER_TAG_ERROR, track.name, album.name, artist.name, track.err)
+					o.WriteError(internal.USER_TAG_ERROR, track.name, album.name, artist.name, track.err)
 					o.LogWriter().Warn(internal.LW_TAG_ERROR, map[string]interface{}{
 						fkTrackName:       track.name,
 						fkAlbumName:       album.name,
@@ -639,7 +639,7 @@ func parseTrackName(o internal.OutputBus, name string, album *Album, ext string)
 			fkAlbumName:  album.name,
 			fkArtistName: album.RecordingArtistName(),
 		})
-		fmt.Fprintf(o.ErrorWriter(), internal.USER_TRACK_NAME_GARBLED, name, album.name, album.RecordingArtistName())
+		o.WriteError(internal.USER_TRACK_NAME_GARBLED, name, album.name, album.RecordingArtistName())
 		return
 	}
 	wantDigit := true

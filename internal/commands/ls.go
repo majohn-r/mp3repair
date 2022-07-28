@@ -100,7 +100,7 @@ func (l *ls) logFields() map[string]interface{} {
 
 func (l *ls) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
-		fmt.Fprintf(o.ErrorWriter(), internal.USER_SPECIFIED_NO_WORK, l.name())
+		o.WriteError(internal.USER_SPECIFIED_NO_WORK, l.name())
 		o.LogWriter().Warn(internal.LW_NOTHING_TO_DO, l.logFields())
 		return
 	}
@@ -176,8 +176,7 @@ func (l *ls) validateTrackSorting(o internal.OutputBus) (ok bool) {
 	switch *l.trackSorting {
 	case numericSorting:
 		if !*l.includeAlbums {
-			fmt.Fprintf(o.ErrorWriter(), internal.USER_INVALID_SORTING_APPLIED,
-				fkTrackSortingFlag, *l.trackSorting, fkIncludeAlbumsFlag)
+			o.WriteError(internal.USER_INVALID_SORTING_APPLIED, fkTrackSortingFlag, *l.trackSorting, fkIncludeAlbumsFlag)
 			o.LogWriter().Warn(internal.LW_SORTING_OPTION_UNACCEPTABLE, map[string]interface{}{
 				fkTrackSortingFlag:  *l.trackSorting,
 				fkIncludeAlbumsFlag: *l.includeAlbums,
@@ -188,7 +187,7 @@ func (l *ls) validateTrackSorting(o internal.OutputBus) (ok bool) {
 	case alphabeticSorting:
 		ok = true
 	default:
-		fmt.Fprintf(o.ErrorWriter(), internal.USER_UNRECOGNIZED_VALUE, fkTrackSortingFlag, *l.trackSorting)
+		o.WriteError(internal.USER_UNRECOGNIZED_VALUE, fkTrackSortingFlag, *l.trackSorting)
 		o.LogWriter().Warn(internal.LW_INVALID_FLAG_SETTING, map[string]interface{}{
 			fkCommandName:      l.name(),
 			fkTrackSortingFlag: *l.trackSorting,
@@ -268,7 +267,7 @@ func (l *ls) outputTrackDiagnostics(o internal.OutputBus, t *files.Track, prefix
 				internal.FK_ERROR: err,
 				fkTrack:           t.String(),
 			})
-			fmt.Fprintf(o.ErrorWriter(), internal.USER_TAG_ERROR, t.Name(), t.AlbumName(), t.RecordingArtist(), fmt.Sprintf("%v", err))
+			o.WriteError(internal.USER_TAG_ERROR, t.Name(), t.AlbumName(), t.RecordingArtist(), fmt.Sprintf("%v", err))
 		} else {
 			fmt.Fprintf(o.ConsoleWriter(), "%sVersion: %v\n", prefix, version)
 			fmt.Fprintf(o.ConsoleWriter(), "%sEncoding: %q\n", prefix, enc)

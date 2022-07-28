@@ -71,7 +71,7 @@ func ReadDirectory(o OutputBus, dir string) (files []fs.FileInfo, ok bool) {
 			FK_DIRECTORY: dir,
 			FK_ERROR:     err,
 		})
-		fmt.Fprintf(o.ErrorWriter(), USER_CANNOT_READ_DIRECTORY, dir, err)
+		o.WriteError(USER_CANNOT_READ_DIRECTORY, dir, err)
 		return
 	}
 	ok = true

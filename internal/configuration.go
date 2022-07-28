@@ -51,7 +51,7 @@ func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
 			FK_FILE_NAME: defaultConfigFileName,
 			FK_ERROR:     err,
 		})
-		fmt.Fprintf(o.ErrorWriter(), USER_CONFIGURATION_FILE_GARBLED, configFile, err)
+		o.WriteError(USER_CONFIGURATION_FILE_GARBLED, configFile, err)
 		return
 	}
 	c = createConfiguration(o, data)
@@ -82,7 +82,7 @@ func verifyFileExists(o OutputBus, path string) (ok bool, err error) {
 				FK_DIRECTORY: filepath.Dir(path),
 				FK_FILE_NAME: filepath.Base(path),
 			})
-			fmt.Fprintf(o.ErrorWriter(), USER_CONFIGURATION_FILE_IS_DIR, path)
+			o.WriteError(USER_CONFIGURATION_FILE_IS_DIR, path)
 			err = fmt.Errorf(ERROR_FILE_IS_DIR)
 			return
 		}

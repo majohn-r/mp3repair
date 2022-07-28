@@ -2,7 +2,6 @@ package files
 
 import (
 	"flag"
-	"fmt"
 	"io/fs"
 	"mp3/internal"
 	"regexp"
@@ -56,7 +55,7 @@ func (s *Search) LoadUnfilteredData(o internal.OutputBus) (artists []*Artist, ok
 	ok = len(artists) != 0
 	if !ok {
 		o.LogWriter().Warn(internal.LW_NO_ARTIST_DIRECTORIES, s.LogFields(false))
-		fmt.Fprintf(o.ErrorWriter(), internal.USER_NO_MUSIC_FILES_FOUND)
+		o.WriteError(internal.USER_NO_MUSIC_FILES_FOUND)
 	}
 	return
 }
@@ -97,7 +96,7 @@ func (s *Search) FilterArtists(o internal.OutputBus, unfilteredArtists []*Artist
 	ok = len(artists) != 0
 	if !ok {
 		o.LogWriter().Warn(internal.LW_NO_ARTIST_DIRECTORIES, s.LogFields(true))
-		fmt.Fprintf(o.ErrorWriter(), internal.USER_NO_MUSIC_FILES_FOUND)
+		o.WriteError(internal.USER_NO_MUSIC_FILES_FOUND)
 	}
 	return
 }
@@ -141,7 +140,7 @@ func (s *Search) LoadData(o internal.OutputBus) (artists []*Artist, ok bool) {
 	ok = len(artists) != 0
 	if !ok {
 		o.LogWriter().Warn(internal.LW_NO_ARTIST_DIRECTORIES, s.LogFields(true))
-		fmt.Fprintf(o.ErrorWriter(), internal.USER_NO_MUSIC_FILES_FOUND)
+		o.WriteError(internal.USER_NO_MUSIC_FILES_FOUND)
 	}
 	return
 }

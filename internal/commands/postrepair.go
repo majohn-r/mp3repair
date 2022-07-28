@@ -70,7 +70,7 @@ func removeBackupDirectory(o internal.OutputBus, d string, a *files.Album) {
 			internal.FK_DIRECTORY: d,
 			internal.FK_ERROR:     err,
 		})
-		fmt.Fprintf(o.ErrorWriter(), internal.USER_CANNOT_DELETE_DIRECTORY, d, err)
+		o.WriteError(internal.USER_CANNOT_DELETE_DIRECTORY, d, err)
 	} else {
 		fmt.Fprintf(o.ConsoleWriter(), "The backup directory for artist %q album %q has been deleted\n",
 			a.RecordingArtistName(), a.Name())

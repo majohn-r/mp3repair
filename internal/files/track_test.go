@@ -488,7 +488,7 @@ func TestUpdateTracks(t *testing.T) {
 	for _, artist := range artists2 {
 		for _, album := range artist.Albums() {
 			for _, track := range album.Tracks() {
-				errors = append(errors, fmt.Sprintf(internal.USER_TAG_ERROR, track.name, album.name, artist.name, "read error"))
+				errors = append(errors, "An error occurred when trying to read tag information for track \""+track.name+"\" on album \""+album.name+"\" by artist \""+artist.name+"\": \"read error\".\n")
 				logs = append(logs, fmt.Sprintf("level='warn' albumName='%s' artistName='%s' error='read error' trackName='%s' msg='tag error'\n", album.name, artist.name, track.name))
 			}
 		}

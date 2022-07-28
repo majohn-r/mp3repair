@@ -527,3 +527,35 @@ func TestCheckOutput(t *testing.T) {
 		})
 	}
 }
+
+func TestOutputDeviceForTesting_WriteError(t *testing.T) {
+	fnName := "OutputDeviceForTesting.WriteError()"
+	type args struct {
+		format string
+		a      []any
+	}
+	tests := []struct {
+		name string
+		o    *OutputDeviceForTesting
+		args
+		want string
+	}{
+		{
+			name: "broad test",
+			o:    NewOutputDeviceForTesting(),
+			args: args{
+				format: "test format %d %q %v\n\n\n\n",
+				a:      []any{25, "foo", 1.245},
+			},
+			want: "Test format 25 \"foo\" 1.245.\n",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.o.WriteError(tt.args.format, tt.args.a...)
+			if got := tt.o.errorWriter.String(); got != tt.want {
+				t.Errorf("%s got %q want %q", fnName, got, tt.want)
+			}
+		})
+	}
+}

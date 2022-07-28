@@ -154,7 +154,7 @@ func Test_resetDatabase_waitForStop(t *testing.T) {
 				timeout: time.Now().Add(-1 * time.Second),
 			},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The service \"test service\" could not be stopped within the 10 second timeout.",
+				WantErrorOutput: "The service \"test service\" could not be stopped within the 10 second timeout.\n",
 				WantLogOutput:   "level='warn' error='operation timed out' operation='stop service' service='test service' timeout in seconds='10' msg='service issue'\n",
 			},
 		},
@@ -367,7 +367,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 				},
 			},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The service \"mp3 management service\" could not be stopped within the -1 second timeout.",
+				WantErrorOutput: "The service \"mp3 management service\" could not be stopped within the -1 second timeout.\n",
 				WantLogOutput:   "level='warn' error='operation timed out' operation='stop service' service='mp3 management service' timeout in seconds='-1' msg='service issue'\n",
 			},
 		},
@@ -394,7 +394,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 				},
 			},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The service \"mp3 management service\" could not be stopped within the -1 second timeout.",
+				WantErrorOutput: "The service \"mp3 management service\" could not be stopped within the -1 second timeout.\n",
 				WantLogOutput:   "level='warn' error='operation timed out' operation='stop service' service='mp3 management service' timeout in seconds='-1' msg='service issue'\n",
 			},
 		},
@@ -586,7 +586,7 @@ func Test_resetDatabase_deleteMetadataFiles(t *testing.T) {
 			want: false,
 			WantedOutput: internal.WantedOutput{
 				WantConsoleOutput: "8 out of 9 metadata files have been deleted from \"deleteMetadataFiles\".\n",
-				WantErrorOutput:   "The file \"deleteMetadataFiles\\\\file8.wmdb\" cannot be deleted: remove deleteMetadataFiles\\file8.wmdb: The directory is not empty..\n",
+				WantErrorOutput:   "The file \"deleteMetadataFiles\\\\file8.wmdb\" cannot be deleted: remove deleteMetadataFiles\\file8.wmdb: The directory is not empty.\n",
 				WantLogOutput:     "level='warn' error='remove deleteMetadataFiles\\file8.wmdb: The directory is not empty.' fileName='deleteMetadataFiles\\file8.wmdb' msg='cannot delete file'\n",
 			},
 		},
@@ -649,7 +649,7 @@ func Test_resetDatabase_deleteMetadata(t *testing.T) {
 			name: "dir read failure",
 			r:    &resetDatabase{metadata: &fnName},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The directory \"resetDatabase.deleteMetadata()\" cannot be read: open resetDatabase.deleteMetadata(): The system cannot find the file specified..\n",
+				WantErrorOutput: "The directory \"resetDatabase.deleteMetadata()\" cannot be read: open resetDatabase.deleteMetadata(): The system cannot find the file specified.\n",
 				WantLogOutput:   "level='warn' directory='resetDatabase.deleteMetadata()' error='open resetDatabase.deleteMetadata(): The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
 		},
@@ -760,7 +760,7 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The service manager cannot be accessed. Try running the program again as an administrator. Error: access denied.\n" +
-					"The directory \"resetdatabase_test.go\" cannot be read: readdir resetdatabase_test.go: The system cannot find the path specified..\n",
+					"The directory \"resetdatabase_test.go\" cannot be read: readdir resetdatabase_test.go: The system cannot find the path specified.\n",
 				WantLogOutput: "level='info' -extension='.wmdb' -metadata='resetdatabase_test.go' -service='mp3 service' -timeout='-1' command='resetDatabase' msg='executing command'\n" +
 					"level='warn' error='access denied' operation='connect to service manager' msg='service manager issue'\n" +
 					"level='warn' directory='resetdatabase_test.go' error='readdir resetdatabase_test.go: The system cannot find the path specified.' msg='cannot read directory'\n",
@@ -861,8 +861,8 @@ func Test_resetDatabase_Exec(t *testing.T) {
 				args: []string{"-metadata", "no such dir"},
 			},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The service manager cannot be accessed. Try running the program again as an administrator. Error: Access is denied..\n" +
-					"The directory \"no such dir\" cannot be read: open no such dir: The system cannot find the file specified..\n",
+				WantErrorOutput: "The service manager cannot be accessed. Try running the program again as an administrator. Error: Access is denied.\n" +
+					"The directory \"no such dir\" cannot be read: open no such dir: The system cannot find the file specified.\n",
 				WantLogOutput: "level='info' -extension='.wmdb' -metadata='no such dir' -service='WMPNetworkSVC' -timeout='10' command='resetDatabase' msg='executing command'\n" +
 					"level='warn' error='Access is denied.' operation='connect to service manager' msg='service manager issue'\n" +
 					"level='warn' directory='no such dir' error='open no such dir: The system cannot find the file specified.' msg='cannot read directory'\n",
@@ -879,7 +879,7 @@ func Test_resetDatabase_Exec(t *testing.T) {
 			wantOk: true,
 			WantedOutput: internal.WantedOutput{
 				WantConsoleOutput: "No metadata files were found in \"Exec\".\n",
-				WantErrorOutput:   "The service manager cannot be accessed. Try running the program again as an administrator. Error: Access is denied..\n",
+				WantErrorOutput:   "The service manager cannot be accessed. Try running the program again as an administrator. Error: Access is denied.\n",
 				WantLogOutput: "level='info' -extension='.wmdb' -metadata='Exec' -service='WMPNetworkSVC' -timeout='10' command='resetDatabase' msg='executing command'\n" +
 					"level='warn' error='Access is denied.' operation='connect to service manager' msg='service manager issue'\n" +
 					"level='info' directory='Exec' file extension='.wmdb' msg='no files found'\n",

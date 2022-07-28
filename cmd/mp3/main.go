@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"mp3/internal"
 	"mp3/internal/commands"
 	"os"
@@ -26,7 +25,7 @@ const (
 	fkExitCode             = "exitCode"
 	fkTimeStamp            = "timeStamp"
 	fkVersion              = "version"
-	statusFormat           = "%s version %s, created at %s, failed\n"
+	statusFormat           = "%q version %s, created at %s, failed"
 )
 
 func exec(logInit func(internal.OutputBus) bool, cmdLine []string) (returnValue int) {
@@ -41,7 +40,7 @@ func exec(logInit func(internal.OutputBus) bool, cmdLine []string) (returnValue 
 
 func report(o internal.OutputBus, returnValue int) {
 	if returnValue != 0 {
-		fmt.Fprintf(o.ErrorWriter(), statusFormat, internal.AppName, version, creation)
+		o.WriteError(statusFormat, internal.AppName, version, creation)
 	}
 }
 

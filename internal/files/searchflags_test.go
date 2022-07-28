@@ -254,7 +254,7 @@ func Test_validateSearchParameters(t *testing.T) {
 			wantAlbumsFilter:  regexp.MustCompile(".*"),
 			wantArtistsFilter: regexp.MustCompile(".*"),
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The -topDir value you specified, \"no such directory\", cannot be read: CreateFile no such directory: The system cannot find the file specified..\n",
+				WantErrorOutput: "The -topDir value you specified, \"no such directory\", cannot be read: CreateFile no such directory: The system cannot find the file specified.\n",
 				WantLogOutput:   "level='warn' -topDir='no such directory' error='CreateFile no such directory: The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
 		},
@@ -320,7 +320,7 @@ func TestSearchFlags_validateTopLevelDirectory(t *testing.T) {
 			name: "non-existent directory",
 			sf:   &SearchFlags{topDirectory: &notAFile},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The -topDir value you specified, \"no such file\", cannot be read: CreateFile no such file: The system cannot find the file specified..\n",
+				WantErrorOutput: "The -topDir value you specified, \"no such file\", cannot be read: CreateFile no such file: The system cannot find the file specified.\n",
 				WantLogOutput:   "level='warn' -topDir='no such file' error='CreateFile no such file: The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
 		},

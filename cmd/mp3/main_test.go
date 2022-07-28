@@ -97,7 +97,7 @@ func Test_run(t *testing.T) {
 func Test_report(t *testing.T) {
 	fnName := "report()"
 	creation = time.Now().Format(time.RFC3339)
-	version = "test"
+	version = "1.2.3"
 	type args struct {
 		returnValue int
 	}
@@ -111,7 +111,7 @@ func Test_report(t *testing.T) {
 			name: "failure",
 			args: args{returnValue: 1},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: fmt.Sprintf(statusFormat, "mp3", version, creation),
+				WantErrorOutput: "\"mp3\" version 1.2.3, created at " + creation + ", failed.\n",
 			},
 		},
 	}

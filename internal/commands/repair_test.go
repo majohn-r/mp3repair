@@ -615,7 +615,7 @@ func Test_repair_fixTracks(t *testing.T) {
 			}},
 			WantedOutput: internal.WantedOutput{
 				WantConsoleOutput: fmt.Sprintf("%q fixed\n", filepath.Join(topDir, goodFileName)),
-				WantErrorOutput:   fmt.Sprintf("An error occurred fixing track %q\n", filepath.Join(topDir, "non-existent-track")),
+				WantErrorOutput:   "An error occurred repairing track \"fixTracks\\\\non-existent-track\".\n",
 				WantLogOutput:     "level='warn' directory='fixTracks' error='no edit required' executing command='' fileName='non-existent-track' msg='cannot edit track'\n",
 			},
 		},

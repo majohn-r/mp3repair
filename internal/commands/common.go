@@ -2,7 +2,6 @@ package commands
 
 import (
 	"flag"
-	"fmt"
 	"mp3/internal"
 	"sort"
 	"strings"
@@ -101,7 +100,7 @@ func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[
 		o.LogWriter().Warn(internal.LW_INVALID_DEFAULT_COMMAND, map[string]interface{}{
 			fkCommandName: defaultCommand,
 		})
-		fmt.Fprintf(o.ErrorWriter(), internal.USER_INVALID_DEFAULT_COMMAND, defaultCommand)
+		o.WriteError(internal.USER_INVALID_DEFAULT_COMMAND, defaultCommand)
 		m = nil
 		ok = false
 		return
@@ -115,7 +114,7 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 		o.LogWriter().Error(internal.LE_COMMAND_COUNT, map[string]interface{}{
 			fkCount: 0,
 		})
-		fmt.Fprint(o.ErrorWriter(), internal.USER_NO_COMMANDS_DEFINED)
+		o.WriteError(internal.USER_NO_COMMANDS_DEFINED)
 		return
 	}
 	var defaultInitializers int
@@ -130,7 +129,7 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 		o.LogWriter().Error(internal.LE_DEFAULT_COMMAND_COUNT, map[string]interface{}{
 			fkCount: defaultInitializers,
 		})
-		fmt.Fprintf(o.ErrorWriter(), internal.USER_INCORRECT_NUMBER_OF_DEFAULT_COMMANDS_DEFINED, defaultInitializers)
+		o.WriteError(internal.USER_INCORRECT_NUMBER_OF_DEFAULT_COMMANDS_DEFINED, defaultInitializers)
 		return
 	}
 	processorMap := make(map[string]CommandProcessor)
@@ -163,7 +162,7 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 			commandNames = append(commandNames, initializer.name)
 		}
 		sort.Strings(commandNames)
-		fmt.Fprintf(o.ErrorWriter(), internal.USER_NO_SUCH_COMMAND, commandName, commandNames)
+		o.WriteError(internal.USER_NO_SUCH_COMMAND, commandName, commandNames)
 		return
 	}
 	callingArgs = args[2:]

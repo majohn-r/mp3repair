@@ -62,7 +62,7 @@ func Test_postrepair_Exec(t *testing.T) {
 				internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError)),
 			args: args{args: []string{"-topDir", "non-existent directory"}},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The -topDir value you specified, \"non-existent directory\", cannot be read: CreateFile non-existent directory: The system cannot find the file specified..\n",
+				WantErrorOutput: "The -topDir value you specified, \"non-existent directory\", cannot be read: CreateFile non-existent directory: The system cannot find the file specified.\n",
 				WantLogOutput:   "level='warn' -topDir='non-existent directory' error='CreateFile non-existent directory: The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
 		},

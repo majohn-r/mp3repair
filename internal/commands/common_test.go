@@ -309,7 +309,7 @@ func Test_getDefaultSettings(t *testing.T) {
 			includeDefault: true,
 			defaultValue:   "list",
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: fmt.Sprintf(internal.USER_INVALID_DEFAULT_COMMAND, "list"),
+				WantErrorOutput: "The configuration file specifies \"list\" as the default command. There is no such command.\n",
 				WantLogOutput:   "level='warn' command='list' msg='invalid default command'\n",
 			},
 		},

@@ -121,7 +121,7 @@ func (a *artistWithIssues) hasIssues() bool {
 
 func (c *check) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 	if !*c.checkEmptyFolders && !*c.checkGapsInTrackNumbering && !*c.checkIntegrity {
-		fmt.Fprintf(o.ErrorWriter(), internal.USER_SPECIFIED_NO_WORK, c.name())
+		o.WriteError(internal.USER_SPECIFIED_NO_WORK, c.name())
 		o.LogWriter().Warn(internal.LW_NOTHING_TO_DO, c.logFields())
 	} else {
 		o.LogWriter().Info(internal.LI_EXECUTING_COMMAND, c.logFields())
