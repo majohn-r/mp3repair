@@ -80,7 +80,7 @@ func Test_listAvailableServices(t *testing.T) {
 			name: "no services available",
 			args: args{},
 			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "The following services are available\n" +
+				WantConsoleOutput: "The following services are available:\n" +
 					"  - none -\n",
 			},
 		},
@@ -96,7 +96,7 @@ func Test_listAvailableServices(t *testing.T) {
 				services: []string{"svc1", "svc2", "svc3"},
 			},
 			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "The following services are available\n" +
+				WantConsoleOutput: "The following services are available:\n" +
 					"  State \"access denied\":\n" +
 					"    \"svc2\"\n" +
 					"    \"svc3\"\n" +
@@ -244,8 +244,8 @@ func Test_resetDatabase_stopService(t *testing.T) {
 				},
 			},
 			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "The service \"mp3 management service\" cannot be opened: access denied\n" +
-					"The following services are available\n  - none -\n",
+				WantConsoleOutput: "The service \"mp3 management service\" cannot be opened: access denied.\n" +
+					"The following services are available:\n  - none -\n",
 				WantLogOutput: "level='warn' error='access denied' operation='open service' service='mp3 management service' msg='service issue'\n",
 			},
 		},
@@ -941,7 +941,7 @@ func Test_resetDatabase_openService(t *testing.T) {
 				},
 			},
 			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "The service \"mp3 management service\" cannot be opened: access denied\n",
+				WantConsoleOutput: "The service \"mp3 management service\" cannot be opened: access denied.\n",
 				WantErrorOutput:   "The list of available services cannot be obtained: cannot list services.\n",
 				WantLogOutput: "level='warn' error='access denied' operation='open service' service='mp3 management service' msg='service issue'\n" +
 					"level='warn' error='cannot list services' operation='list services' msg='service manager issue'\n",
@@ -964,8 +964,8 @@ func Test_resetDatabase_openService(t *testing.T) {
 				},
 			},
 			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "The service \"mp3 management service\" cannot be opened: access denied\n" +
-					"The following services are available\n" +
+				WantConsoleOutput: "The service \"mp3 management service\" cannot be opened: access denied.\n" +
+					"The following services are available:\n" +
 					"  State \"running\":\n" +
 					"    \"other service\"\n",
 				WantLogOutput: "level='warn' error='access denied' operation='open service' service='mp3 management service' msg='service issue'\n",

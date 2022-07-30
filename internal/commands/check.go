@@ -146,19 +146,19 @@ func reportResults(o internal.OutputBus, artistsWithIssues ...[]*artistWithIssue
 	filteredArtists := merge(filteredArtistSets)
 	if len(filteredArtists) > 0 {
 		for _, artist := range filteredArtists {
-			fmt.Fprintln(o.ConsoleWriter(), artist.name)
+			o.WriteConsole(false, "%s\n", artist.name)
 			for _, issue := range artist.issues {
-				fmt.Fprintf(o.ConsoleWriter(), "  %s\n", issue)
+				o.WriteConsole(false, "  %s\n", issue)
 			}
 			for _, album := range artist.albums {
-				fmt.Fprintf(o.ConsoleWriter(), "    %s\n", album.name)
+				o.WriteConsole(false, "    %s\n", album.name)
 				for _, issue := range album.issues {
-					fmt.Fprintf(o.ConsoleWriter(), "      %s\n", issue)
+					o.WriteConsole(false, "      %s\n", issue)
 				}
 				for _, track := range album.tracks {
-					fmt.Fprintf(o.ConsoleWriter(), "        %2d %s\n", track.number, track.name)
+					o.WriteConsole(false, "        %2d %s\n", track.number, track.name)
 					for _, issue := range track.issues {
-						fmt.Fprintf(o.ConsoleWriter(), "          %s\n", issue)
+						o.WriteConsole(false, "          %s\n", issue)
 					}
 				}
 			}
@@ -345,7 +345,7 @@ func (c *check) performEmptyFolderAnalysis(o internal.OutputBus, s *files.Search
 		}
 	}
 	if !issuesFound {
-		fmt.Fprintln(o.ConsoleWriter(), "Empty Folder Analysis: no empty folders found")
+		o.WriteConsole(true, "Empty Folder Analysis: no empty folders found")
 	}
 	ok = true
 	return
@@ -385,7 +385,7 @@ func (c *check) performIntegrityCheck(o internal.OutputBus, artists []*files.Art
 			}
 		}
 		if !issuesFound {
-			fmt.Fprintln(o.ConsoleWriter(), "Integrity Analysis: no issues found")
+			o.WriteConsole(true, "Integrity Analysis: no issues found")
 		}
 	}
 	return conflictedArtists
@@ -433,7 +433,7 @@ func (c *check) performGapAnalysis(o internal.OutputBus, artists []*files.Artist
 			}
 		}
 		if !issuesFound {
-			fmt.Fprintln(o.ConsoleWriter(), "Check Gaps: no gaps found")
+			o.WriteConsole(true, "Check Gaps: no gaps found")
 		}
 	}
 	return conflictedArtists

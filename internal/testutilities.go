@@ -217,10 +217,6 @@ func NewOutputDeviceForTesting() *OutputDeviceForTesting {
 	}
 }
 
-func (o *OutputDeviceForTesting) ConsoleWriter() io.Writer {
-	return o.consoleWriter
-}
-
 func (o *OutputDeviceForTesting) ErrorWriter() io.Writer {
 	return o.errorWriter
 }
@@ -230,7 +226,11 @@ func (o *OutputDeviceForTesting) LogWriter() Logger {
 }
 
 func (o *OutputDeviceForTesting) WriteError(format string, a ...any) {
-	fmt.Fprintln(o.errorWriter, createErrorOutput(format, a...))
+	fmt.Fprintln(o.errorWriter, createStrictOutput(format, a...))
+}
+
+func (o *OutputDeviceForTesting) WriteConsole(strict bool, format string, a ...any) {
+	fmt.Fprint(o.consoleWriter, createConsoleOutput(strict, format, a...))
 }
 
 type testLogger struct {

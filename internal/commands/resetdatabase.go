@@ -137,7 +137,7 @@ func (r *resetDatabase) deleteMetadata(o internal.OutputBus) bool {
 	if len(pathsToDelete) > 0 {
 		return r.deleteMetadataFiles(o, pathsToDelete)
 	}
-	fmt.Fprintf(o.ConsoleWriter(), "No metadata files were found in %q.\n", *r.metadata)
+	o.WriteConsole(true, "No metadata files were found in %q", *r.metadata)
 	o.LogWriter().Info(internal.LI_NO_FILES_FOUND, map[string]interface{}{
 		internal.FK_DIRECTORY: *r.metadata,
 		fkFileExtension:       *r.extension,
@@ -158,7 +158,7 @@ func (r *resetDatabase) deleteMetadataFiles(o internal.OutputBus, paths []string
 			count++
 		}
 	}
-	fmt.Fprintf(o.ConsoleWriter(), "%d out of %d metadata files have been deleted from %q.\n", count, len(paths), *r.metadata)
+	o.WriteConsole(true, "%d out of %d metadata files have been deleted from %q", count, len(paths), *r.metadata)
 	return count == len(paths)
 }
 
@@ -238,7 +238,7 @@ func (r *resetDatabase) openService(o internal.OutputBus, connect func() (servic
 	} else {
 		s, err = sM.openService(*r.service)
 		if err != nil {
-			fmt.Fprintf(o.ConsoleWriter(), "The service %q cannot be opened: %v\n", *r.service, err)
+			o.WriteConsole(true, "The service %q cannot be opened: %v", *r.service, err)
 			o.LogWriter().Warn(internal.LW_SERVICE_ISSUE, map[string]interface{}{
 				internal.FK_ERROR: err,
 				fkService:         *r.service,
@@ -299,9 +299,9 @@ func (r *resetDatabase) waitForStop(o internal.OutputBus, s service, status svc.
 }
 
 func listAvailableServices(o internal.OutputBus, sM serviceGateway, services []string) {
-	fmt.Fprintln(o.ConsoleWriter(), "The following services are available")
+	o.WriteConsole(false, "The following services are available:\n")
 	if len(services) == 0 {
-		fmt.Fprintln(o.ConsoleWriter(), "  - none -")
+		o.WriteConsole(false, "  - none -\n")
 		return
 	}
 	sort.Strings(services)
@@ -327,9 +327,9 @@ func listAvailableServices(o internal.OutputBus, sM serviceGateway, services []s
 	}
 	sort.Strings(states)
 	for _, state := range states {
-		fmt.Fprintf(o.ConsoleWriter(), "  State %q:\n", state)
+		o.WriteConsole(false, "  State %q:\n", state)
 		for _, service := range sMap[state] {
-			fmt.Fprintf(o.ConsoleWriter(), "    %q\n", service)
+			o.WriteConsole(false, "    %q\n", service)
 		}
 	}
 }

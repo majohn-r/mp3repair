@@ -65,7 +65,7 @@ func (r *repair) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 		files.UpdateTracks(o, artists, files.RawReadTags)
 		tracksWithConflicts := findConflictedTracks(artists)
 		if len(tracksWithConflicts) == 0 {
-			fmt.Fprintln(o.ConsoleWriter(), noProblemsFound)
+			o.WriteConsole(true, noProblemsFound)
 		} else {
 			if *r.dryRun {
 				reportTracks(o, tracksWithConflicts)
@@ -100,16 +100,16 @@ func reportTracks(o internal.OutputBus, tracks []*files.Track) {
 		albumName := t.AlbumName()
 		artistName := t.RecordingArtist()
 		if lastArtistName != artistName {
-			fmt.Fprintf(o.ConsoleWriter(), "%q\n", artistName)
+			o.WriteConsole(false, "%q\n", artistName)
 			lastArtistName = artistName
 			lastAlbumName = ""
 		}
 		if albumName != lastAlbumName {
-			fmt.Fprintf(o.ConsoleWriter(), "    %q\n", albumName)
+			o.WriteConsole(false, "    %q\n", albumName)
 			lastAlbumName = albumName
 		}
 		s := t.AnalyzeIssues()
-		fmt.Fprintf(o.ConsoleWriter(), "        %2d %q need to fix%s%s%s%s\n",
+		o.WriteConsole(false, "        %2d %q need to repair%s%s%s%s\n",
 			t.Number(), t.Name(),
 			reportProblem(s.HasNumberingConflict(), " track numbering;"),
 			reportProblem(s.HasTrackNameConflict(), " track name;"),
@@ -136,7 +136,7 @@ func (r *repair) fixTracks(o internal.OutputBus, tracks []*files.Track) {
 				internal.FK_ERROR:             err,
 			})
 		} else {
-			fmt.Fprintf(o.ConsoleWriter(), "%q fixed\n", t)
+			o.WriteConsole(false, "%q repaired.\n", t)
 		}
 	}
 }
@@ -166,7 +166,7 @@ func (r *repair) backupTrack(o internal.OutputBus, t *files.Track) {
 				internal.FK_ERROR: err,
 			})
 		} else {
-			fmt.Fprintf(o.ConsoleWriter(), "The track %q has been backed up to %q.\n", t, destinationPath)
+			o.WriteConsole(true, "The track %q has been backed up to %q", t, destinationPath)
 		}
 	}
 }

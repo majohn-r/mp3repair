@@ -41,28 +41,6 @@ func TestNewOutputDevice(t *testing.T) {
 	}
 }
 
-func TestOutputDevice_ConsoleWriter(t *testing.T) {
-	fnName := "OutputDevice.ConsoleWriter()"
-	tests := []struct {
-		name string
-		o    *OutputDevice
-		want io.Writer
-	}{
-		{
-			name: "normal",
-			o:    NewOutputDevice(),
-			want: os.Stdout,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.o.ConsoleWriter(); got != tt.want {
-				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
-			}
-		})
-	}
-}
-
 func TestOutputDevice_ErrorWriter(t *testing.T) {
 	fnName := "OutputDevice.ErrorWriter()"
 	tests := []struct {
@@ -122,6 +100,51 @@ func TestOutputDevice_WriteError(t *testing.T) {
 			o.WriteError(tt.args.format, tt.args.a...)
 			if got := tt.w.String(); got != tt.want {
 				t.Errorf("%s got %q want %q", fnName, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestOutputDevice_WriteConsole(t *testing.T) {
+	fnName := "OutputDevice.WriteConsole()"
+	type args struct {
+		strict bool
+		format string
+		a      []any
+	}
+	tests := []struct {
+		name string
+		w    *bytes.Buffer
+		args
+		want string
+	}{
+		{
+			name: "strict rules",
+			w:    &bytes.Buffer{},
+			args: args{
+				strict: true,
+				format: "test %s...\n\n",
+				a:      []any{"foo."},
+			},
+			want: "Test foo.\n",
+		},
+		{
+			name: "lax rules",
+			w:    &bytes.Buffer{},
+			args: args{
+				strict: false,
+				format: "test %s...\n\n",
+				a:      []any{"foo."},
+			},
+			want: "test foo....\n\n",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			o := &OutputDevice{consoleWriter: tt.w}
+			o.WriteConsole(tt.args.strict, tt.args.format, tt.args.a...)
+			if got := tt.w.String(); got != tt.want {
+				t.Errorf("%s: got %q want %q", fnName, got, tt.want)
 			}
 		})
 	}

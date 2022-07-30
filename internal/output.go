@@ -8,7 +8,7 @@ import (
 )
 
 type OutputBus interface {
-	ConsoleWriter() io.Writer
+	WriteConsole(bool, string, ...any)
 	WriteError(string, ...any)
 	ErrorWriter() io.Writer
 	LogWriter() Logger
@@ -28,10 +28,6 @@ func NewOutputDevice() *OutputDevice {
 	}
 }
 
-func (o *OutputDevice) ConsoleWriter() io.Writer {
-	return o.consoleWriter
-}
-
 func (o *OutputDevice) ErrorWriter() io.Writer {
 	return o.errorWriter
 }
@@ -41,10 +37,21 @@ func (o *OutputDevice) LogWriter() Logger {
 }
 
 func (o *OutputDevice) WriteError(format string, a ...any) {
-	fmt.Fprintln(o.errorWriter, createErrorOutput(format, a...))
+	fmt.Fprintln(o.errorWriter, createStrictOutput(format, a...))
 }
 
-func createErrorOutput(format string, a ...any) string {
+func (o *OutputDevice) WriteConsole(strict bool, format string, a ...any) {
+	fmt.Fprint(o.consoleWriter, createConsoleOutput(strict, format, a...))
+}
+
+func createConsoleOutput(strict bool, format string, a ...any) string {
+	if strict {
+		return createStrictOutput(format, a...) + "\n"
+	}
+	return fmt.Sprintf(format, a...)
+}
+
+func createStrictOutput(format string, a ...any) string {
 	s := fmt.Sprintf(format, a...)
 	// strip off trailing newlines
 	for strings.HasSuffix(s, "\n") {

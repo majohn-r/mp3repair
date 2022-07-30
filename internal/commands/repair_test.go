@@ -137,13 +137,13 @@ func Test_reportTracks(t *testing.T) {
 			WantedOutput: internal.WantedOutput{
 				WantConsoleOutput: "\"artist1\"\n" +
 					"    \"album1\"\n" +
-					"         1 \"track1\" need to fix track name; album name; artist name;\n" +
-					"         2 \"track2\" need to fix track numbering; album name; artist name;\n" +
+					"         1 \"track1\" need to repair track name; album name; artist name;\n" +
+					"         2 \"track2\" need to repair track numbering; album name; artist name;\n" +
 					"    \"album2\"\n" +
-					"         1 \"track1\" need to fix track name; album name; artist name;\n" +
+					"         1 \"track1\" need to repair track name; album name; artist name;\n" +
 					"\"artist2\"\n" +
 					"    \"album1\"\n" +
-					"         1 \"track1\" need to fix track name; album name; artist name;\n",
+					"         1 \"track1\" need to repair track name; album name; artist name;\n",
 			},
 		},
 	}
@@ -214,7 +214,7 @@ func Test_repair_Exec(t *testing.T) {
 			r:    newRepairCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
 			args: args{[]string{"-topDir", topDirName, "-dryRun"}},
 			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: noProblemsFound + "\n",
+				WantConsoleOutput: noProblemsFound + ".\n",
 				WantErrorOutput:   generateStandardTrackErrorReport(),
 				WantLogOutput: "level='info' -dryRun='true' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='repairExec' msg='reading filtered music files'\n" +
@@ -226,7 +226,7 @@ func Test_repair_Exec(t *testing.T) {
 			r:    newRepairCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
 			args: args{[]string{"-topDir", topDirName, "-dryRun=false"}},
 			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: noProblemsFound + "\n",
+				WantConsoleOutput: noProblemsFound + ".\n",
 				WantErrorOutput:   generateStandardTrackErrorReport(),
 				WantLogOutput: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='repairExec' msg='reading filtered music files'\n" +
@@ -241,7 +241,7 @@ func Test_repair_Exec(t *testing.T) {
 				WantConsoleOutput: strings.Join([]string{
 					"\"new artist\"",
 					"    \"new album\"",
-					"         1 \"new track\" need to fix track numbering; track name; album name; artist name;\n",
+					"         1 \"new track\" need to repair track numbering; track name; album name; artist name;\n",
 				}, "\n"),
 				WantLogOutput: "level='info' -dryRun='true' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n",
@@ -254,7 +254,7 @@ func Test_repair_Exec(t *testing.T) {
 			WantedOutput: internal.WantedOutput{
 				WantConsoleOutput: strings.Join([]string{
 					"The track \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" has been backed up to \"realContent\\\\new artist\\\\new album\\\\pre-repair-backup\\\\1.mp3\".",
-					"\"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" fixed\n",
+					"\"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" repaired.\n",
 				}, "\n"),
 				WantLogOutput: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n",
@@ -614,7 +614,7 @@ func Test_repair_fixTracks(t *testing.T) {
 				trackWithData,
 			}},
 			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: fmt.Sprintf("%q fixed\n", filepath.Join(topDir, goodFileName)),
+				WantConsoleOutput: fmt.Sprintf("%q repaired.\n", filepath.Join(topDir, goodFileName)),
 				WantErrorOutput:   "An error occurred repairing track \"fixTracks\\\\non-existent-track\".\n",
 				WantLogOutput:     "level='warn' directory='fixTracks' error='no edit required' executing command='' fileName='non-existent-track' msg='cannot edit track'\n",
 			},

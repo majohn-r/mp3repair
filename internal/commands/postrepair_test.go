@@ -72,7 +72,7 @@ func Test_postrepair_Exec(t *testing.T) {
 				internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError)),
 			args: args{args: []string{"-topDir", topDirName}},
 			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "There are no backup directories to delete\n",
+				WantConsoleOutput: "There are no backup directories to delete.\n",
 				WantLogOutput: "level='info' command='postRepair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='postRepairExec' msg='reading filtered music files'\n",
 			},
@@ -83,7 +83,7 @@ func Test_postrepair_Exec(t *testing.T) {
 				internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError)),
 			args: args{args: []string{"-topDir", topDir2Name}},
 			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "The backup directory for artist \"the artist\" album \"the album\" has been deleted\n",
+				WantConsoleOutput: "The backup directory for artist \"the artist\" album \"the album\" has been deleted.\n",
 				WantLogOutput: "level='info' command='postRepair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='postRepairExec2' msg='reading filtered music files'\n",
 			},
@@ -151,7 +151,7 @@ func Test_removeBackupDirectory(t *testing.T) {
 			name: "normal case",
 			args: args{d: backupDirectory, a: album},
 			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "The backup directory for artist \"the artist\" album \"the album\" has been deleted\n",
+				WantConsoleOutput: "The backup directory for artist \"the artist\" album \"the album\" has been deleted.\n",
 			},
 		},
 	}

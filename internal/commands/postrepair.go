@@ -2,7 +2,6 @@ package commands
 
 import (
 	"flag"
-	"fmt"
 	"mp3/internal"
 	"mp3/internal/files"
 	"os"
@@ -53,7 +52,7 @@ func (p *postrepair) runCommand(o internal.OutputBus, s *files.Search) (ok bool)
 			}
 		}
 		if len(backupDirectories) == 0 {
-			fmt.Fprintln(o.ConsoleWriter(), "There are no backup directories to delete")
+			o.WriteConsole(true, "There are no backup directories to delete")
 		} else {
 			sort.Strings(backupDirectories)
 			for _, backupDirectory := range backupDirectories {
@@ -72,7 +71,6 @@ func removeBackupDirectory(o internal.OutputBus, d string, a *files.Album) {
 		})
 		o.WriteError(internal.USER_CANNOT_DELETE_DIRECTORY, d, err)
 	} else {
-		fmt.Fprintf(o.ConsoleWriter(), "The backup directory for artist %q album %q has been deleted\n",
-			a.RecordingArtistName(), a.Name())
+		o.WriteConsole(true, "The backup directory for artist %q album %q has been deleted\n", a.RecordingArtistName(), a.Name())
 	}
 }

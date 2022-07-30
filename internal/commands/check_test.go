@@ -83,7 +83,7 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 			wantArtists: []*files.Artist{goodArtist},
 			wantOk:      true,
 			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "Empty Folder Analysis: no empty folders found\n",
+				WantConsoleOutput: "Empty Folder Analysis: no empty folders found.\n",
 				WantLogOutput:     "level='info' -ext='.mp3' -topDir='good' msg='reading unfiltered music files'\n",
 			},
 		},
@@ -312,7 +312,7 @@ func Test_check_performGapAnalysis(t *testing.T) {
 			c:    &check{checkGapsInTrackNumbering: &tFlag},
 			args: args{},
 			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "Check Gaps: no gaps found\n",
+				WantConsoleOutput: "Check Gaps: no gaps found.\n",
 			},
 		},
 		{
@@ -320,7 +320,7 @@ func Test_check_performGapAnalysis(t *testing.T) {
 			c:    &check{checkGapsInTrackNumbering: &tFlag},
 			args: args{artists: []*files.Artist{goodArtist}},
 			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "Check Gaps: no gaps found\n",
+				WantConsoleOutput: "Check Gaps: no gaps found.\n",
 			},
 		},
 		{
@@ -402,7 +402,7 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 			c:    &check{checkIntegrity: &tFlag},
 			args: args{},
 			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "Integrity Analysis: no issues found\n"},
+				WantConsoleOutput: "Integrity Analysis: no issues found.\n"},
 		},
 		{
 			name: "meaningful case",

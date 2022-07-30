@@ -429,34 +429,6 @@ func TestNewOutputDeviceForTesting(t *testing.T) {
 	}
 }
 
-func TestOutputDeviceForTesting_OutputWriter(t *testing.T) {
-	fnName := "OutputDeviceForTesting.OutputWriter()"
-	tests := []struct {
-		name string
-		o    *OutputDeviceForTesting
-		want io.Writer
-	}{
-		{name: "standard", o: NewOutputDeviceForTesting(), want: &bytes.Buffer{}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.o.ConsoleWriter(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
-			}
-			fmt.Fprintf(tt.o.ConsoleWriter(), "test message")
-			if gotConsoleOutput := tt.o.ConsoleOutput(); gotConsoleOutput != "test message" {
-				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, "test message")
-			}
-			if gotErrorOutput := tt.o.ErrorOutput(); gotErrorOutput != "" {
-				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, "")
-			}
-			if gotLogOutput := tt.o.LogOutput(); gotLogOutput != "" {
-				t.Errorf("%s log output = %q, want %q", fnName, gotLogOutput, "")
-			}
-		})
-	}
-}
-
 func TestOutputDeviceForTesting_ErrorWriter(t *testing.T) {
 	fnName := "OutputDeviceForTesting.ErrorWriter()"
 	tests := []struct {
@@ -554,6 +526,50 @@ func TestOutputDeviceForTesting_WriteError(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.o.WriteError(tt.args.format, tt.args.a...)
 			if got := tt.o.errorWriter.String(); got != tt.want {
+				t.Errorf("%s got %q want %q", fnName, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestOutputDeviceForTesting_WriteConsole(t *testing.T) {
+	fnName := "OutputDeviceForTesting.WriteConsole()"
+	type args struct {
+		strict bool
+		format string
+		a      []any
+	}
+	tests := []struct {
+		name string
+		o    *OutputDeviceForTesting
+		args
+		want string
+	}{
+		{
+			name: "strict",
+			o:    NewOutputDeviceForTesting(),
+			args: args{
+				strict: true,
+				format: "test easy %s...!",
+				a:      []any{"hah!"},
+			},
+			want: "Test easy hah!\n",
+		},
+		{
+			name: "lax",
+			o:    NewOutputDeviceForTesting(),
+			args: args{
+				strict: false,
+				format: "test easy %s...!",
+				a:      []any{"hah!"},
+			},
+			want: "test easy hah!...!",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.o.WriteConsole(tt.args.strict, tt.args.format, tt.args.a...)
+			if got := tt.o.consoleWriter.String(); got != tt.want {
 				t.Errorf("%s got %q want %q", fnName, got, tt.want)
 			}
 		})

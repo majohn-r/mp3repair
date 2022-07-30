@@ -128,7 +128,7 @@ func (l *ls) outputArtists(o internal.OutputBus, artists []*files.Artist) {
 		}
 		sort.Strings(artistNames)
 		for _, artistName := range artistNames {
-			fmt.Fprintf(o.ConsoleWriter(), "Artist: %s\n", artistName)
+			o.WriteConsole(false, "Artist: %s\n", artistName)
 			artist := artistsByArtistNames[artistName]
 			l.outputAlbums(o, artist.Albums(), "  ")
 		}
@@ -159,7 +159,7 @@ func (l *ls) outputAlbums(o internal.OutputBus, albums []*files.Album, prefix st
 		}
 		sort.Strings(albumNames)
 		for _, albumName := range albumNames {
-			fmt.Fprintf(o.ConsoleWriter(), "%sAlbum: %s\n", prefix, albumName)
+			o.WriteConsole(false, "%sAlbum: %s\n", prefix, albumName)
 			album := albumsByAlbumName[albumName]
 			l.outputTracks(o, album.Tracks(), prefix+"  ")
 		}
@@ -220,7 +220,7 @@ func (l *ls) outputTracks(o internal.OutputBus, tracks []*files.Track, prefix st
 		}
 		sort.Ints(trackNumbers)
 		for _, trackNumber := range trackNumbers {
-			fmt.Fprintf(o.ConsoleWriter(), "%s%2d. %s\n", prefix, trackNumber, trackNamesNumeric[trackNumber])
+			o.WriteConsole(false, "%s%2d. %s\n", prefix, trackNumber, trackNamesNumeric[trackNumber])
 			l.outputTrackDiagnostics(o, tracksNumeric[trackNumber], prefix+"  ")
 		}
 	case alphabeticSorting:
@@ -254,7 +254,7 @@ func (l *ls) outputTracks(o internal.OutputBus, tracks []*files.Track, prefix st
 		}
 		sort.Strings(trackNames)
 		for _, trackName := range trackNames {
-			fmt.Fprintf(o.ConsoleWriter(), "%s%s\n", prefix, trackName)
+			o.WriteConsole(false, "%s%s\n", prefix, trackName)
 			l.outputTrackDiagnostics(o, tracksByName[trackName], prefix+"  ")
 		}
 	}
@@ -269,10 +269,10 @@ func (l *ls) outputTrackDiagnostics(o internal.OutputBus, t *files.Track, prefix
 			})
 			o.WriteError(internal.USER_TAG_ERROR, t.Name(), t.AlbumName(), t.RecordingArtist(), fmt.Sprintf("%v", err))
 		} else {
-			fmt.Fprintf(o.ConsoleWriter(), "%sVersion: %v\n", prefix, version)
-			fmt.Fprintf(o.ConsoleWriter(), "%sEncoding: %q\n", prefix, enc)
+			o.WriteConsole(false, "%sVersion: %v\n", prefix, version)
+			o.WriteConsole(false, "%sEncoding: %q\n", prefix, enc)
 			for _, frame := range frames {
-				fmt.Fprintf(o.ConsoleWriter(), "%s%s\n", prefix, frame.String())
+				o.WriteConsole(false, "%s%s\n", prefix, frame.String())
 			}
 		}
 	}
