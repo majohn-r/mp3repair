@@ -172,10 +172,8 @@ Argument Name   | Value   | Default Value | Description
 ----------------|---------|---------------|-------------
  **-extension** | String  | **.wmdb**     | The extension of the files to delete
  **-metadata**  | String  | **%Userprofile%\\AppData\\Local\\Microsoft\\Media Player\\** | The directory where the metadata files are found
- **-service**   | String  | **WMPNetworkSVC** | The name of the media player sharing service, which, if running,
-   needs to be stopped before deleting the metadata files
- **-timeout**   | Numeric | 10            | The time, in seconds, in which the command will attempt to stop
-   the media player sharing service before giving up
+ **-service**   | String  | **WMPNetworkSVC** | The name of the media player sharing service, which, if running, needs to be stopped before deleting the metadata files
+ **-timeout**   | Numeric | 10            | The time, in seconds, in which the command will attempt to stop the media player sharing service before giving up
 
 #### resetDatabase Argument Details
 
