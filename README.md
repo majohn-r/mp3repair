@@ -179,7 +179,7 @@ Argument Name   | Value   | Default Value | Description
 
 ##### -timeout
 
-The minimum value is 1 and the maximum value is 60. Values below 1 are placed
+The minimum value is 1 and the maximum value is 60. Values below 1 are replaced
 with 1 and values above 60 are replaced with 60.
 
 ## Command Arguments
