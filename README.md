@@ -4,10 +4,19 @@
   - [Purpose](#purpose)
   - [Commands](#commands)
     - [check](#check)
+      - [check Argument Details](#check-argument-details)
+        - [-empty](#-empty)
+        - [-gaps](#-gaps)
+        - [-integrity](#-integrity)
     - [ls](#ls)
+      - [ls Argument Details](#ls-argument-details)
+        - [-annotate](#-annotate)
+        - [-sort](#-sort)
     - [postRepair](#postrepair)
     - [repair](#repair)
     - [resetDatabase](#resetdatabase)
+      - [resetDatabase Argument Details](#resetdatabase-argument-details)
+        - [-timeout](#-timeout)
   - [Command Arguments](#command-arguments)
     - [Common Command Arguments](#common-command-arguments)
     - [Specifying Command Line Arguments](#specifying-command-line-arguments)
@@ -23,73 +32,97 @@
 ## Purpose
 
 The purpose of the **mp3** project is to help manage _mp3_ sound files in
-Windows. It supports five commands:
+Windows.
 
 ## Commands
 
-The **mp3** program supports five commands.
+The **mp3** program supports the following commands:
 
 ### check
 
 The **check** command provides a means to run various checks on the mp3 files
 and their directories, governed by these command arguments:
 
-1. **-empty** Check for empty _artist_ and _album_ directories. **False** by
-   default. If **true**, **mp3** ignores the **-albumFilter** and
-   **-artistFilter** settings. An _artist_ directory is any subdirectory of the
-   **-topDir** directory, and **mp3** considers it to be empty if it contains no
-   subdirectories. An album directory is any subdirectory of an artist directory
-   and **mp3** considers it empty if it contains no mp3 files.
-2. **-gaps** Check for gaps in the numbered mp3 files in an _album_ directory.
-   **False** by default. **mp3** assumes that the mp3 files in an album
-   directory are numbered as tracks, starting with **1** and ending with **N**
-   where **N** is the number of mp3 files in the directory. If any mp3 files
-   have an associated track number outside the range of **1..N**, **mp3** lists
-   them in the output, as well as any track numbers in the expected range that
-   are not associated with any mp3 files in the directory.
-3. **-integrity** Check for differences between the _tags_ in an mp3 file and
-   the associated file and directory names. **True** by default. **mp3** expects
-   each mp3 file to have a file name consisting of a track number, a delimiter
-   character (space or punctuation mark), and a track title. **mp3** expects the
-   file's _TRCK_ (track number/position in set) tag and _TIT2_
-   (title/songname/content description) tag to match the file's track number and
-   track title. **mp3** expects the file's _TALB_ (album/movie/show title) tag
-   to match the name of the _album_ directory that contains the file. **mp3**
-   expects the file's _TPE1_ (lead artist/lead performer/soloist/performing
-   group) tag to match the name of the _artist_ directory that contains the
-   _album_ directory that contains the file. The matching takes into account the
-   fact that the tags may contain characters that are illegal in file and
-   directory names and are, therefore, replaced by other characters (typically
-   punctuation marks). All differences found are output.
+Argument Name   | Value   | Default Value | Description
+----------------|---------|---------------|-------------
+ **-empty**     | Boolean | false         | Check for empty _artist_ and _album_ directories
+ **-gaps**      | Boolean | false         | Check for gaps in the numbered mp3 files in an _album_ directory
+ **-integrity** | Boolean | true          | Check for discrepancies between the _tag frames_ in the mp3 files
+
+#### check Argument Details
+
+##### -empty
+
+If **true**, **mp3** ignores the **-albumFilter** and **-artistFilter**
+settings. An _artist_ directory is any subdirectory of the **-topDir**
+directory, and **mp3** considers it to be empty if it contains no
+subdirectories. An album directory is any subdirectory of an artist directory
+and **mp3** considers it empty if it contains no mp3 files.
+
+##### -gaps
+
+**mp3** assumes that the mp3 files in an album directory are numbered as tracks,
+starting with **1** and ending with **N** where **N** is the number of mp3 files
+in the directory. If any mp3 files have an associated track number outside the
+range of **1..N**, **mp3** lists them in the output, as well as any track
+numbers in the expected range that are not associated with any mp3 files in the
+directory.
+
+##### -integrity
+
+**mp3** reads the **mp3 tag frames** for each track file; the **-integrity** check looks for discrepancies between that data and the files:
+
+- Verify that the track file name begins with the track number encoded in the
+  _TRCK_ (track number/position in set) frame and that the rest of the track
+  name matches the value encoded in the _TIT2_ (title/songname/content
+  description) frame.
+- Verify that the _TALB_ (album/movie/show title) frame value matches the
+  containing album directory's name.
+- Verify that the _TPE1_ (lead artist/lead performer/soloist/performing group)
+  frame value matches the containing artist directory's name and that all mp3
+  files within an artist directory use the same _TPE1_ frame value.
+- Verify that all the mp3 files in an album contain the same _TYER_ (year) frame
+  contents.
+- Verify that all the mp3 files in an album contain the same _TCON_ (content
+  type, aka genre) frame contents.
+- Verify that all the mp3 files in an album contain the same _MCDI_ (music CD
+  identifier) frame contents.
+
+File names and their corresponding frame values cannot always be identical, as
+some characters in the frame may not be legal file name characters and end up
+being replaced with, typically, punctuation characters. The matching algorithm
+takes those differences into account. The following characters are known to be
+illegal in WIndows file names:
+
+- asterisk (**\***)
+- backward slash (**\\**)
+- colon (**:**)
+- forward slash (**/**)
+- less than (**<**)
+- greater than (**\>**)
+- question mark (**?**)
+- quotation mark (**"**)
+- vertical bar (**|**)
 
 ### ls
 
 The **ls** command provides a means for listing mp3 files. It can list artists,
 albums, and tracks, governed by these command arguments:
 
-1. **-includeArtists** List artist names. **True** by default
-2. **-includeAlbums** List album names. **True** by default
-3. **-includeTracks** List track names. **False** by default
+Argument Name        | Value   | Default Value | Description
+---------------------|---------|---------------|-------------
+ **-annotate**       | Boolean | false         | Annotate track and album names
+ **-diagnostic**     | Boolean | false         | Include diagnostic data for tracks
+ **-includeArtists** | Boolean | true          | List album artists
+ **-includeAlbums**  | Boolean | true          | List album names
+ **-includeTracks**  | Boolean | false         | List track names
+ **-sort**           | String  | **numeric**   | How to sort tracks, if listed
 
-In addition, you can specify that track listings can be in numeric or alphabetic
-order:
+#### ls Argument Details
 
-1. **-sort** Allowed values are **numeric** (default) and **alpha**
+##### -annotate
 
-If **numeric** sorting is reqested, track and album listing must both be
-enabled; otherwise, it makes no sense.
-
-If any value other than **numeric** or **alpha** is used, **mp3** will be
-replace it with an appropriate value as follows:
-
-1. If tracks are not listed, **mp3** ignores the value.
-2. If tracks and albums are listed, **mp3** replaces the value with **numeric**.
-3. If tracks are listed but albums are not listed, **mp3** replaces the value
-   with **alpha**.
-
-Track and album names can be annotated with the boolean **-annotate** flag,
-which is **false** by default. If **true**, **mp3** provides the following
-annotations:
+If true, **mp3** provides the following annotations:
 
 1. Album names will include the recording artist if artists are not included
    (**-includeArtists=false**)
@@ -97,8 +130,21 @@ annotations:
    (**-includeAlbums=false**), and the recording artist if artists are also not included
    (**-includeArtists=false**)
 
-The boolean **-diagnostic** flag adds detailed internal data to each track, if
-tracks are listed (**-includeTracks=true**).
+##### -sort
+
+Allowed values are **numeric** and **alpha**. If **numeric** sorting is
+reqested, track and album listing must both be enabled; otherwise, it makes no
+sense.
+
+If any value other than **numeric** or **alpha** is used, **mp3** will be
+replace it with an appropriate value as follows:
+
+1. If tracks are not listed (**-includeTracks=false**), **mp3** ignores the
+   value.
+2. If tracks and albums are listed (**-includeTracks=true** and
+   **-includeAlbums=true**), **mp3** replaces the value with **numeric**.
+3. If tracks are listed (**-includeTracks=true**) but albums are not listed
+   (**-includeAlbums=false**), **mp3** replaces the value with **alpha**.
 
 ### postRepair
 
@@ -111,8 +157,9 @@ The **repair** command provides a means to repair tracks whose **MP3** _tags_ do
 not match the track name, album name, or artist name. It has a single command
 argument:
 
-1. **-dryRun** If true, outputs what the **repair** command would fix. **False**
-   by default.
+Argument Name | Value   | Default Value | Description
+--------------|---------|---------------|-------------
+ **-dryRun**  | Boolean | false         | If ture, output what the command would repair, but take no action
 
 ### resetDatabase
 
@@ -121,15 +168,21 @@ Windows Media Player uses to catalogue the albums, artists, and tracks. The
 Windows Media Player will not recognize the effects of the **repair** command
 until that database is reset. The command has the following command arguments:
 
-1. **-extension** the extension of the files to delete; defaults to **.wmdb**.
-2. **-metadata** the directory where the metadata files are found; defaults to
-   **%Userprofile%\AppData\Local\Microsoft\Media Player\**.
-3. **-service** the name of the media player sharing service, which, if running,
-   needs to be stopped before deleting the metadata files; defaults to
-   **WMPNetworkSVC**.
-4. **-timeout** the time, in seconds, in which the command will attempt to stop
-   the media player sharing service before giving up; the minimum value is
-   **1**, the maximum value is **60**, and the default value is **10**.
+Argument Name   | Value   | Default Value | Description
+----------------|---------|---------------|-------------
+ **-extension** | String  | **.wmdb**     | The extension of the files to delete
+ **-metadata**  | String  | **%Userprofile%\\AppData\\Local\\Microsoft\\Media Player\\** | The directory where the metadata files are found
+ **-service**   | String  | **WMPNetworkSVC** | The name of the media player sharing service, which, if running,
+   needs to be stopped before deleting the metadata files
+ **-timeout**   | Numeric | 10            | The time, in seconds, in which the command will attempt to stop
+   the media player sharing service before giving up
+
+#### resetDatabase Argument Details
+
+##### -timeout
+
+The minimum value is 1 and the maximum value is 60. Values below 1 are placed
+with 1 and values above 60 are replaced with 60.
 
 ## Command Arguments
 
@@ -143,12 +196,12 @@ above.
 These command arguments are common to all commands except the **resetDatabase**
 command:
 
-1. **-topDir** The directory whose subdirectories are artist names. By default,
-   this is **%HOMEPATH%\Music**.
-2. **-ext** The extension used to identify music files. By default, this is
-   **.mp3**
-3. **-albumFilter** Filter for which albums to process. By default, **'.*'**
-4. **-artistFilter** Filter foe which artists to process. By default, **'.*'**
+Argument Name      | Value   | Default Value | Description
+-------------------|---------|---------------|-------------
+ **-topDir**       | String  | **%HOMEPATH%\\Music** | The directory whose subdirectories are artist names
+ **-ext**          | String  | **.mp3**      | The extension used to identify music files
+ **-albumFilter**  | String  | **'.\*'**     | Filter for which album directories to process
+ **-artistFilter** | String  | **'.\*'**     | Filter for which artist directories to process
 
 ### Specifying Command Line Arguments
 
