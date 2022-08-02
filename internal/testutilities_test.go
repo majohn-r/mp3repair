@@ -223,8 +223,8 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 				if err := Mkdir("./mp3"); err != nil {
 					t.Errorf("%s 'file exists': failed to create directory ./mp3: %v", fnName, err)
 				}
-				if err := CreateFileForTestingWithContent("./mp3", defaultConfigFileName, []byte("who cares?")); err != nil {
-					t.Errorf("%s 'file exists': failed to create %q: %v", fnName, defaultConfigFileName, err)
+				if err := CreateFileForTestingWithContent("./mp3", DefaultConfigFileName, []byte("who cares?")); err != nil {
+					t.Errorf("%s 'file exists': failed to create %q: %v", fnName, DefaultConfigFileName, err)
 				}
 			},
 			postTest: func(t *testing.T) {

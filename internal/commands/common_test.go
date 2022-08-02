@@ -10,6 +10,26 @@ import (
 	"testing"
 )
 
+func makeCheck() CommandProcessor {
+	cp, _ := newCheck(internal.NewOutputDeviceForTesting(), internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ExitOnError))
+	return cp
+}
+
+func makeLs() CommandProcessor {
+	ls, _ := newLs(internal.NewOutputDeviceForTesting(), internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError))
+	return ls
+}
+
+func makeRepair() CommandProcessor {
+	r, _ := newRepair(internal.NewOutputDeviceForTesting(), internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ExitOnError))
+	return r
+}
+
+func makePostRepair() CommandProcessor {
+	pr, _ := newPostRepair(internal.NewOutputDeviceForTesting(), internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ExitOnError))
+	return pr
+}
+
 func TestProcessCommand(t *testing.T) {
 	fnName := "ProcessCommand()"
 	if err := internal.CreateDefaultYamlFileForTesting(); err != nil {
@@ -76,7 +96,7 @@ func TestProcessCommand(t *testing.T) {
 			name:  "call ls",
 			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
 			args:  args{args: []string{"mp3.exe", "ls", "-track=true"}},
-			want:  newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
+			want:  makeLs(),
 			want1: []string{"-track=true"},
 			want2: true,
 			WantedOutput: internal.WantedOutput{
@@ -88,7 +108,7 @@ func TestProcessCommand(t *testing.T) {
 			name:  "call check",
 			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
 			args:  args{args: []string{"mp3.exe", "check", "-integrity=false"}},
-			want:  newCheck(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ExitOnError)),
+			want:  makeCheck(),
 			want1: []string{"-integrity=false"},
 			want2: true,
 			WantedOutput: internal.WantedOutput{
@@ -100,7 +120,7 @@ func TestProcessCommand(t *testing.T) {
 			name:  "call repair",
 			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
 			args:  args{args: []string{"mp3.exe", "repair"}},
-			want:  newRepair(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ExitOnError)),
+			want:  makeRepair(),
 			want1: []string{},
 			want2: true,
 			WantedOutput: internal.WantedOutput{
@@ -112,7 +132,7 @@ func TestProcessCommand(t *testing.T) {
 			name:  "call postRepair",
 			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
 			args:  args{args: []string{"mp3.exe", "postRepair"}},
-			want:  newPostRepair(internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ExitOnError)),
+			want:  makePostRepair(),
 			want1: []string{},
 			want2: true,
 			WantedOutput: internal.WantedOutput{
@@ -124,7 +144,7 @@ func TestProcessCommand(t *testing.T) {
 			name:  "call default command",
 			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
 			args:  args{args: []string{"mp3.exe"}},
-			want:  newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
+			want:  makeLs(),
 			want1: []string{"ls"},
 			want2: true,
 			WantedOutput: internal.WantedOutput{
@@ -147,7 +167,7 @@ func TestProcessCommand(t *testing.T) {
 			name:  "pass arguments to default command",
 			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
 			args:  args{args: []string{"mp3.exe", "-album", "-artist", "-track"}},
-			want:  newLs(internal.EmptyConfiguration(), flag.NewFlagSet("ls", flag.ExitOnError)),
+			want:  makeLs(),
 			want1: []string{"-album", "-artist", "-track"},
 			want2: true,
 			WantedOutput: internal.WantedOutput{
@@ -227,6 +247,25 @@ func Test_selectCommand(t *testing.T) {
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "An internal error has occurred: there are 2 default commands!\n",
 				WantLogOutput:   "level='error' count='2' msg='incorrect number of default commands'\n",
+			},
+		},
+		{
+			name: "unfortunate defaults",
+			args: args{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
+					"ls": map[string]interface{}{
+						"includeTracks": "no!!",
+					},
+				}),
+				i: []commandInitializer{{
+					name:           "ls",
+					defaultCommand: true,
+					initializer:    newLs,
+				}},
+			},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"ls\": invalid boolean value \"no!!\" for -includeTracks: parse error.\n",
+				WantLogOutput:   "level='warn' error='invalid boolean value \"no!!\" for -includeTracks: parse error' section='ls' msg='invalid content in configuration file'\n",
 			},
 		},
 	}

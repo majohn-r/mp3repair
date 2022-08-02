@@ -38,33 +38,62 @@ func Test_newRepairCommand(t *testing.T) {
 		c *internal.Configuration
 	}
 	tests := []struct {
-		name       string
-		args       args
+		name string
+		args
 		wantDryRun bool
+		wantOk     bool
+		internal.WantedOutput
 	}{
 		{
 			name:       "ordinary defaults",
 			args:       args{c: internal.EmptyConfiguration()},
 			wantDryRun: false,
+			wantOk:     true,
 		},
 		{
 			name:       "overridden defaults",
 			args:       args{c: defaultConfig},
 			wantDryRun: true,
+			wantOk:     true,
+		},
+		{
+			name: "bad dryRun default",
+			args: args{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
+					"repair": map[string]interface{}{
+						"dryRun": 42,
+					},
+				}),
+			},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"repair\": invalid boolean value \"42\" for -dryRun: parse error.\n",
+				WantLogOutput:   "level='warn' error='invalid boolean value \"42\" for -dryRun: parse error' section='repair' msg='invalid content in configuration file'\n",
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			repair := newRepairCommand(tt.args.c, flag.NewFlagSet("repair", flag.ContinueOnError))
-			if _, ok := repair.sf.ProcessArgs(internal.NewOutputDeviceForTesting(), []string{
-				"-topDir", topDir,
-				"-ext", ".mp3",
-			}); ok {
-				if *repair.dryRun != tt.wantDryRun {
-					t.Errorf("%s %q: got dryRun %t want %t", fnName, tt.name, *repair.dryRun, tt.wantDryRun)
+			o := internal.NewOutputDeviceForTesting()
+			repair, gotOk := newRepairCommand(o, tt.args.c, flag.NewFlagSet("repair", flag.ContinueOnError))
+			if gotOk != tt.wantOk {
+				t.Errorf("%s gotOk %t wantOk %t", fnName, gotOk, tt.wantOk)
+			}
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
 				}
-			} else {
-				t.Errorf("%s %q: error processing arguments", fnName, tt.name)
+			}
+			if repair != nil {
+				if _, ok := repair.sf.ProcessArgs(internal.NewOutputDeviceForTesting(), []string{
+					"-topDir", topDir,
+					"-ext", ".mp3",
+				}); ok {
+					if *repair.dryRun != tt.wantDryRun {
+						t.Errorf("%s %q: got dryRun %t want %t", fnName, tt.name, *repair.dryRun, tt.wantDryRun)
+					}
+				} else {
+					t.Errorf("%s %q: error processing arguments", fnName, tt.name)
+				}
 			}
 		})
 	}
@@ -160,6 +189,11 @@ func Test_reportTracks(t *testing.T) {
 	}
 }
 
+func newRepairForTesting() *repair {
+	r, _ := newRepairCommand(internal.NewOutputDeviceForTesting(), internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError))
+	return r
+}
+
 func Test_repair_Exec(t *testing.T) {
 	fnName := "repair.Exec()"
 	topDirName := "repairExec"
@@ -211,7 +245,7 @@ func Test_repair_Exec(t *testing.T) {
 	}{
 		{
 			name: "dry run, no usable content",
-			r:    newRepairCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
+			r:    newRepairForTesting(),
 			args: args{[]string{"-topDir", topDirName, "-dryRun"}},
 			WantedOutput: internal.WantedOutput{
 				WantConsoleOutput: noProblemsFound + ".\n",
@@ -223,7 +257,7 @@ func Test_repair_Exec(t *testing.T) {
 		},
 		{
 			name: "real repair, no usable content",
-			r:    newRepairCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
+			r:    newRepairForTesting(),
 			args: args{[]string{"-topDir", topDirName, "-dryRun=false"}},
 			WantedOutput: internal.WantedOutput{
 				WantConsoleOutput: noProblemsFound + ".\n",
@@ -235,7 +269,7 @@ func Test_repair_Exec(t *testing.T) {
 		},
 		{
 			name: "dry run, usable content",
-			r:    newRepairCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
+			r:    newRepairForTesting(),
 			args: args{[]string{"-topDir", topDirWithContent, "-dryRun"}},
 			WantedOutput: internal.WantedOutput{
 				WantConsoleOutput: strings.Join([]string{
@@ -249,7 +283,7 @@ func Test_repair_Exec(t *testing.T) {
 		},
 		{
 			name: "real repair, usable content",
-			r:    newRepairCommand(internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError)),
+			r:    newRepairForTesting(),
 			args: args{[]string{"-topDir", topDirWithContent, "-dryRun=false"}},
 			WantedOutput: internal.WantedOutput{
 				WantConsoleOutput: strings.Join([]string{

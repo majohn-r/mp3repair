@@ -24,8 +24,8 @@ func (l *ls) name() string {
 	return l.n
 }
 
-func newLs(c *internal.Configuration, fSet *flag.FlagSet) CommandProcessor {
-	return newLsCommand(c, fSet)
+func newLs(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
+	return newLsCommand(o, c, fSet)
 }
 
 const (
@@ -52,31 +52,50 @@ const (
 	fkTrack                  = "track"
 )
 
-func newLsCommand(c *internal.Configuration, fSet *flag.FlagSet) *ls {
+func newLsCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*ls, bool) {
+	ok := true
 	name := fSet.Name()
 	configuration := c.SubConfiguration(name)
-	return &ls{
-		n: name,
-		includeAlbums: fSet.Bool(includeAlbumsFlag,
-			configuration.BoolDefault(includeAlbumsFlag, defaultIncludeAlbums),
-			"include album names in listing"),
-		includeArtists: fSet.Bool(includeArtistsFlag,
-			configuration.BoolDefault(includeArtistsFlag, defaultIncludeArtists),
-			"include artist names in listing"),
-		includeTracks: fSet.Bool(includeTracksFlag,
-			configuration.BoolDefault(includeTracksFlag, defaultIncludeTracks),
-			"include track names in listing"),
-		trackSorting: fSet.String(trackSortingFlag,
-			configuration.StringDefault(trackSortingFlag, defaultTrackSorting),
-			"track sorting, 'numeric' in track number order, or 'alpha' in track name order"),
-		annotateListings: fSet.Bool(annotateListingsFlag,
-			configuration.BoolDefault(annotateListingsFlag, defaultAnnotateListings),
-			"annotate listings with album and artist data"),
-		diagnostics: fSet.Bool(diagnosticListingFlag,
-			configuration.BoolDefault(diagnosticListingFlag, defaultDiagnosticListing),
-			"include diagnostic information with tracks"),
-		sf: files.NewSearchFlags(c, fSet),
+	defIncludeAlbums, err := configuration.BoolDefault(includeAlbumsFlag, defaultIncludeAlbums)
+	if err != nil {
+		reportBadDefault(o, name, err)
+		ok = false
 	}
+	defIncludeArtists, err := configuration.BoolDefault(includeArtistsFlag, defaultIncludeArtists)
+	if err != nil {
+		reportBadDefault(o, name, err)
+		ok = false
+	}
+	defIncludeTracks, err := configuration.BoolDefault(includeTracksFlag, defaultIncludeTracks)
+	if err != nil {
+		reportBadDefault(o, name, err)
+		ok = false
+	}
+	defAnnotateTracks, err := configuration.BoolDefault(annotateListingsFlag, defaultAnnotateListings)
+	if err != nil {
+		reportBadDefault(o, name, err)
+		ok = false
+	}
+	defDiagnostics, err := configuration.BoolDefault(diagnosticListingFlag, defaultDiagnosticListing)
+	if err != nil {
+		reportBadDefault(o, name, err)
+		ok = false
+	}
+	if ok {
+		return &ls{
+			n:              name,
+			includeAlbums:  fSet.Bool(includeAlbumsFlag, defIncludeAlbums, "include album names in listing"),
+			includeArtists: fSet.Bool(includeArtistsFlag, defIncludeArtists, "include artist names in listing"),
+			includeTracks:  fSet.Bool(includeTracksFlag, defIncludeTracks, "include track names in listing"),
+			trackSorting: fSet.String(trackSortingFlag,
+				configuration.StringDefault(trackSortingFlag, defaultTrackSorting),
+				"track sorting, 'numeric' in track number order, or 'alpha' in track name order"),
+			annotateListings: fSet.Bool(annotateListingsFlag, defAnnotateTracks, "annotate listings with album and artist data"),
+			diagnostics:      fSet.Bool(diagnosticListingFlag, defDiagnostics, "include diagnostic information with tracks"),
+			sf:               files.NewSearchFlags(c, fSet),
+		}, true
+	}
+	return nil, false
 }
 
 func (l *ls) Exec(o internal.OutputBus, args []string) (ok bool) {

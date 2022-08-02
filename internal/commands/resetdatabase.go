@@ -61,8 +61,8 @@ var stateToStatus = map[svc.State]string{
 	svc.Paused:          statusPaused,
 }
 
-func newResetDatabase(c *internal.Configuration, fSet *flag.FlagSet) CommandProcessor {
-	return newResetDatabaseCommand(c, fSet)
+func newResetDatabase(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
+	return newResetDatabaseCommand(c, fSet), true
 }
 
 func newResetDatabaseCommand(c *internal.Configuration, fSet *flag.FlagSet) *resetDatabase {

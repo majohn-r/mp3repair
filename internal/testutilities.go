@@ -170,7 +170,7 @@ unused:
     value: 1.25
 repair:
     dryRun: true # false`
-	return CreateFileForTestingWithContent(path, defaultConfigFileName, []byte(json))
+	return CreateFileForTestingWithContent(path, DefaultConfigFileName, []byte(json))
 }
 
 type SavedEnvVar struct {

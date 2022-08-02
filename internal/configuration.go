@@ -14,7 +14,7 @@ import (
 )
 
 const (
-	defaultConfigFileName = "defaults.yaml"
+	DefaultConfigFileName = "defaults.yaml"
 	appDataVar            = "APPDATA"
 	fkKey                 = "key"
 	fkType                = "type"
@@ -32,7 +32,7 @@ func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
 		return
 	}
 	path := CreateAppSpecificPath(appDataValue)
-	configFile := filepath.Join(path, defaultConfigFileName)
+	configFile := filepath.Join(path, DefaultConfigFileName)
 	var err error
 	var exists bool
 	if exists, err = verifyFileExists(o, configFile); err != nil {
@@ -48,17 +48,17 @@ func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
 	if err = yaml.Unmarshal(yfile, &data); err != nil {
 		o.LogWriter().Warn(LW_CANNOT_UNMARSHAL_YAML, map[string]interface{}{
 			FK_DIRECTORY: path,
-			FK_FILE_NAME: defaultConfigFileName,
+			FK_FILE_NAME: DefaultConfigFileName,
 			FK_ERROR:     err,
 		})
 		o.WriteError(USER_CONFIGURATION_FILE_GARBLED, configFile, err)
 		return
 	}
-	c = createConfiguration(o, data)
+	c = CreateConfiguration(o, data)
 	ok = true
 	o.LogWriter().Info(LI_CONFIGURATION_FILE_READ, map[string]interface{}{
 		FK_DIRECTORY: path,
-		FK_FILE_NAME: defaultConfigFileName,
+		FK_FILE_NAME: DefaultConfigFileName,
 		fkValue:      c,
 	})
 	return
@@ -134,15 +134,30 @@ func (c *Configuration) SubConfiguration(key string) *Configuration {
 }
 
 // BoolDefault returns a boolean value for a specified key
-func (c *Configuration) BoolDefault(key string, defaultValue bool) (b bool) {
+func (c *Configuration) BoolDefault(key string, defaultValue bool) (b bool, err error) {
 	b = defaultValue
 	if value, ok := c.bMap[key]; ok {
 		b = value
 	} else {
-		if value, ok := c.sMap[key]; ok {
-			rawValue := InterpretEnvVarReferences(value)
-			if cookedValue, e := strconv.ParseBool(rawValue); e == nil {
-				b = cookedValue
+		if value, ok := c.iMap[key]; ok {
+			switch value {
+			case 0:
+				b = false
+			case 1:
+				b = true
+			default:
+				err = fmt.Errorf("invalid boolean value \"%d\" for -%s: parse error", value, key)
+			}
+		} else {
+			// True values may be specified as "t", "T", "true", "TRUE", or "True"
+			// False values may be specified as "f", "F", "false", "FALSE", or "False"_."
+			if value, ok := c.sMap[key]; ok {
+				rawValue := InterpretEnvVarReferences(value)
+				if cookedValue, e := strconv.ParseBool(rawValue); e == nil {
+					b = cookedValue
+				} else {
+					err = fmt.Errorf("invalid boolean value %q for -%s: parse error", value, key)
+				}
 			}
 		}
 	}
@@ -186,7 +201,7 @@ func (c *Configuration) IntDefault(key string, sortedBounds *IntBounds) (i int) 
 				} else {
 					i = cookedValue
 				}
-			}
+			} // else 'invalid value "flopsy" for flag -timeout: parse error'
 		}
 	}
 	return
@@ -215,7 +230,7 @@ type Configuration struct {
 	cMap map[string]*Configuration
 }
 
-func createConfiguration(o OutputBus, data map[string]interface{}) *Configuration {
+func CreateConfiguration(o OutputBus, data map[string]interface{}) *Configuration {
 	c := EmptyConfiguration()
 	for key, v := range data {
 		switch t := v.(type) {
@@ -226,7 +241,7 @@ func createConfiguration(o OutputBus, data map[string]interface{}) *Configuratio
 		case int:
 			c.iMap[key] = t
 		case map[string]interface{}:
-			c.cMap[key] = createConfiguration(o, t)
+			c.cMap[key] = CreateConfiguration(o, t)
 		default:
 			o.LogWriter().Warn(LW_UNEXPECTED_VALUE_TYPE, map[string]interface{}{
 				fkKey:   key,

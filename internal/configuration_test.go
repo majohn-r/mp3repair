@@ -61,8 +61,6 @@ func Test_Configuration_BoolDefault(t *testing.T) {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
 	testConfiguration, _ := ReadConfigurationFile(NewOutputDeviceForTesting())
-	altConfiguration := EmptyConfiguration()
-	altConfiguration.sMap["foo"] = "1"
 	type args struct {
 		key          string
 		defaultValue bool
@@ -72,12 +70,19 @@ func Test_Configuration_BoolDefault(t *testing.T) {
 		c     *Configuration
 		args  args
 		wantB bool
+		wantE bool
 	}{
 		{
-			name:  "string to bool",
-			c:     altConfiguration,
+			name:  "string '1' to bool",
+			c:     &Configuration{sMap: map[string]string{"foo": "1"}},
 			args:  args{key: "foo", defaultValue: false},
 			wantB: true,
+		},
+		{
+			name:  "string '0' to bool",
+			c:     &Configuration{sMap: map[string]string{"foo": "0"}},
+			args:  args{key: "foo", defaultValue: true},
+			wantB: false,
 		},
 		{
 			name:  "empty configuration default false",
@@ -128,22 +133,99 @@ func Test_Configuration_BoolDefault(t *testing.T) {
 			wantB: true,
 		},
 		{
-			name:  "boolean (string) value default true",
+			name:  "boolean (string) value not parseable",
 			c:     testConfiguration.cMap["unused"],
 			args:  args{key: "value", defaultValue: true},
+			wantE: true,
+		},
+		{
+			name:  "boolean true from numeric",
+			c:     &Configuration{iMap: map[string]int{"myKey": 1}},
+			args:  args{key: "myKey", defaultValue: false},
 			wantB: true,
 		},
 		{
-			name:  "boolean (string) value default false",
-			c:     testConfiguration.cMap["unused"],
-			args:  args{key: "value", defaultValue: false},
+			name:  "boolean false from numeric",
+			c:     &Configuration{iMap: map[string]int{"myKey": 0}},
+			args:  args{key: "myKey", defaultValue: true},
+			wantB: false,
+		},
+		{
+			name:  "boolean true from invalid numeric",
+			c:     &Configuration{iMap: map[string]int{"myKey": 10}},
+			args:  args{key: "myKey", defaultValue: false},
+			wantE: true,
+		},
+		{
+			name:  "boolean true from string 't'",
+			c:     &Configuration{sMap: map[string]string{"myKey": "t"}},
+			args:  args{key: "myKey", defaultValue: false},
+			wantB: true,
+		},
+		{
+			name:  "boolean true from string 'T'",
+			c:     &Configuration{sMap: map[string]string{"myKey": "T"}},
+			args:  args{key: "myKey", defaultValue: false},
+			wantB: true,
+		},
+		{
+			name:  "boolean true from string 'true'",
+			c:     &Configuration{sMap: map[string]string{"myKey": "true"}},
+			args:  args{key: "myKey", defaultValue: false},
+			wantB: true,
+		},
+		{
+			name:  "boolean true from string 'TRUE'",
+			c:     &Configuration{sMap: map[string]string{"myKey": "TRUE"}},
+			args:  args{key: "myKey", defaultValue: false},
+			wantB: true,
+		},
+		{
+			name:  "boolean true from string 'True'",
+			c:     &Configuration{sMap: map[string]string{"myKey": "True"}},
+			args:  args{key: "myKey", defaultValue: false},
+			wantB: true,
+		},
+		{
+			name:  "boolean true from string 'f'",
+			c:     &Configuration{sMap: map[string]string{"myKey": "f"}},
+			args:  args{key: "myKey", defaultValue: true},
+			wantB: false,
+		},
+		{
+			name:  "boolean true from string 'F'",
+			c:     &Configuration{sMap: map[string]string{"myKey": "F"}},
+			args:  args{key: "myKey", defaultValue: true},
+			wantB: false,
+		},
+		{
+			name:  "boolean true from string 'false'",
+			c:     &Configuration{sMap: map[string]string{"myKey": "false"}},
+			args:  args{key: "myKey", defaultValue: true},
+			wantB: false,
+		},
+		{
+			name:  "boolean true from string 'FALSE'",
+			c:     &Configuration{sMap: map[string]string{"myKey": "FALSE"}},
+			args:  args{key: "myKey", defaultValue: true},
+			wantB: false,
+		},
+		{
+			name:  "boolean true from string 'False'",
+			c:     &Configuration{sMap: map[string]string{"myKey": "False"}},
+			args:  args{key: "myKey", defaultValue: true},
 			wantB: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotB := tt.c.BoolDefault(tt.args.key, tt.args.defaultValue); gotB != tt.wantB {
-				t.Errorf("%s = %v, want %v", fnName, gotB, tt.wantB)
+			gotB, e := tt.c.BoolDefault(tt.args.key, tt.args.defaultValue)
+			gotE := e != nil
+			if gotE != tt.wantE {
+				t.Errorf("%s gotE %t, want %t", fnName, gotE, tt.wantE)
+			}
+			if !gotE && gotB != tt.wantB {
+				t.Errorf("%s = %t, want %t", fnName, gotB, tt.wantB)
 			}
 		})
 	}
@@ -278,7 +360,7 @@ func TestReadConfigurationFile(t *testing.T) {
 	if err := Mkdir(badDir2); err != nil {
 		t.Errorf("%s error creating fake dir mp3 folder: %v", fnName, err)
 	}
-	badFile := filepath.Join(badDir2, defaultConfigFileName)
+	badFile := filepath.Join(badDir2, DefaultConfigFileName)
 	if err := Mkdir(badFile); err != nil {
 		t.Errorf("%s error creating defaults.yaml as a directory: %v", fnName, err)
 	}
@@ -287,7 +369,7 @@ func TestReadConfigurationFile(t *testing.T) {
 	if err := Mkdir(gibberishDir); err != nil {
 		t.Errorf("%s error creating gibberish folder: %v", fnName, err)
 	}
-	if err := CreateFileForTestingWithContent(gibberishDir, defaultConfigFileName, []byte("gibberish")); err != nil {
+	if err := CreateFileForTestingWithContent(gibberishDir, DefaultConfigFileName, []byte("gibberish")); err != nil {
 		t.Errorf("%s error creating gibberish defaults.yaml: %v", fnName, err)
 	}
 	tests := []struct {
@@ -384,7 +466,7 @@ func TestReadConfigurationFile(t *testing.T) {
 			WantedOutput: WantedOutput{
 				WantErrorOutput: fmt.Sprintf(
 					"The configuration file %q is not well-formed YAML: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}.\n",
-					SecureAbsolutePathForTesting(filepath.Join(gibberishDir, defaultConfigFileName))),
+					SecureAbsolutePathForTesting(filepath.Join(gibberishDir, DefaultConfigFileName))),
 				WantLogOutput: fmt.Sprintf("level='warn' directory='%s' error='yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}' fileName='defaults.yaml' msg='cannot unmarshal yaml content'\n", SecureAbsolutePathForTesting(gibberishDir)),
 			},
 		},
@@ -696,7 +778,7 @@ func Test_createConfiguration(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := NewOutputDeviceForTesting()
-			if got := createConfiguration(o, tt.args.data); !reflect.DeepEqual(got, tt.want) {
+			if got := CreateConfiguration(o, tt.args.data); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {

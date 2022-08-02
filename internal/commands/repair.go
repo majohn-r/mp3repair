@@ -19,8 +19,8 @@ func (r *repair) name() string {
 	return r.n
 }
 
-func newRepair(c *internal.Configuration, fSet *flag.FlagSet) CommandProcessor {
-	return newRepairCommand(c, fSet)
+func newRepair(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
+	return newRepairCommand(o, c, fSet)
 }
 
 const (
@@ -32,16 +32,23 @@ const (
 	noProblemsFound = "No repairable track defects found"
 )
 
-func newRepairCommand(c *internal.Configuration, fSet *flag.FlagSet) *repair {
+func newRepairCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*repair, bool) {
 	name := fSet.Name()
 	configuration := c.SubConfiguration(name)
-	return &repair{
-		n: name,
-		dryRun: fSet.Bool(dryRunFlag,
-			configuration.BoolDefault(dryRunFlag, defaultDryRun),
-			"if true, output what would have repaired, but make no repairs"),
-		sf: files.NewSearchFlags(c, fSet),
+	ok := true
+	defDryRun, err := configuration.BoolDefault(dryRunFlag, defaultDryRun)
+	if err != nil {
+		reportBadDefault(o, name, err)
+		ok = false
 	}
+	if ok {
+		return &repair{
+			n:      name,
+			dryRun: fSet.Bool(dryRunFlag, defDryRun, "if true, output what would have repaired, but make no repairs"),
+			sf:     files.NewSearchFlags(c, fSet),
+		}, true
+	}
+	return nil, false
 }
 
 func (r *repair) Exec(o internal.OutputBus, args []string) (ok bool) {

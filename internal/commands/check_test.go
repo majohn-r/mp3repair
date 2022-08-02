@@ -446,6 +446,11 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 	}
 }
 
+func makeCheckCommand() *check {
+	c, _ := newCheckCommand(internal.NewOutputDeviceForTesting(), internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError))
+	return c
+}
+
 func Test_check_Exec(t *testing.T) {
 	fnName := "check.Exec()"
 	topDirName := "checkExec"
@@ -470,7 +475,7 @@ func Test_check_Exec(t *testing.T) {
 	}{
 		{
 			name: "do nothing",
-			c:    newCheckCommand(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError)),
+			c:    makeCheckCommand(),
 			args: args{[]string{"-topDir", topDirName, "-empty=false", "-gaps=false", "-integrity=false"}},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "You disabled all functionality for the command \"check\".\n",
@@ -479,7 +484,7 @@ func Test_check_Exec(t *testing.T) {
 		},
 		{
 			name:   "do something",
-			c:      newCheckCommand(internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError)),
+			c:      makeCheckCommand(),
 			args:   args{[]string{"-topDir", topDirName, "-empty=true", "-gaps=false", "-integrity=false"}},
 			wantOk: true,
 			WantedOutput: internal.WantedOutput{
@@ -564,11 +569,13 @@ func Test_newCheckCommand(t *testing.T) {
 		c *internal.Configuration
 	}
 	tests := []struct {
-		name                     string
-		args                     args
+		name string
+		args
 		wantEmptyFolders         bool
 		wantGapsInTrackNumbering bool
 		wantIntegrity            bool
+		wantOk                   bool
+		internal.WantedOutput
 	}{
 		{
 			name:                     "ordinary defaults",
@@ -576,6 +583,7 @@ func Test_newCheckCommand(t *testing.T) {
 			wantEmptyFolders:         false,
 			wantGapsInTrackNumbering: false,
 			wantIntegrity:            true,
+			wantOk:                   true,
 		},
 		{
 			name:                     "overridden defaults",
@@ -583,26 +591,83 @@ func Test_newCheckCommand(t *testing.T) {
 			wantEmptyFolders:         true,
 			wantGapsInTrackNumbering: true,
 			wantIntegrity:            false,
+			wantOk:                   true,
+		},
+		{
+			name: "bad default empty folder",
+			args: args{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
+					"check": map[string]interface{}{
+						emptyFoldersFlag: "Empty!!",
+					},
+				}),
+			},
+			wantOk: false,
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"check\": invalid boolean value \"Empty!!\" for -empty: parse error.\n",
+				WantLogOutput:   "level='warn' error='invalid boolean value \"Empty!!\" for -empty: parse error' section='check' msg='invalid content in configuration file'\n",
+			},
+		},
+		{
+			name: "bad default gaps",
+			args: args{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
+					"check": map[string]interface{}{
+						gapsInTrackNumberingFlag: "No",
+					},
+				}),
+			},
+			wantOk: false,
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"check\": invalid boolean value \"No\" for -gaps: parse error.\n",
+				WantLogOutput:   "level='warn' error='invalid boolean value \"No\" for -gaps: parse error' section='check' msg='invalid content in configuration file'\n",
+			},
+		},
+		{
+			name: "bad default integrity",
+			args: args{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
+					"check": map[string]interface{}{
+						integrityFlag: "Off",
+					},
+				}),
+			},
+			wantOk: false,
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"check\": invalid boolean value \"Off\" for -integrity: parse error.\n",
+				WantLogOutput:   "level='warn' error='invalid boolean value \"Off\" for -integrity: parse error' section='check' msg='invalid content in configuration file'\n",
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			check := newCheckCommand(tt.args.c, flag.NewFlagSet("check", flag.ContinueOnError))
-			if _, ok := check.sf.ProcessArgs(internal.NewOutputDeviceForTesting(), []string{
-				"-topDir", topDir,
-				"-ext", ".mp3",
-			}); ok {
-				if *check.checkEmptyFolders != tt.wantEmptyFolders {
-					t.Errorf("%s %q: got checkEmptyFolders %t want %t", fnName, tt.name, *check.checkEmptyFolders, tt.wantEmptyFolders)
+			o := internal.NewOutputDeviceForTesting()
+			check, gotOk := newCheckCommand(o, tt.args.c, flag.NewFlagSet("check", flag.ContinueOnError))
+			if gotOk != tt.wantOk {
+				t.Errorf("%s gotOk %t wantOk %t", fnName, gotOk, tt.wantOk)
+			}
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
 				}
-				if *check.checkGapsInTrackNumbering != tt.wantGapsInTrackNumbering {
-					t.Errorf("%s %q: got checkGapsInTrackNumbering %t want %t", fnName, tt.name, *check.checkGapsInTrackNumbering, tt.wantGapsInTrackNumbering)
+			}
+			if check != nil {
+				if _, ok := check.sf.ProcessArgs(internal.NewOutputDeviceForTesting(), []string{
+					"-topDir", topDir,
+					"-ext", ".mp3",
+				}); ok {
+					if *check.checkEmptyFolders != tt.wantEmptyFolders {
+						t.Errorf("%s %q: got checkEmptyFolders %t want %t", fnName, tt.name, *check.checkEmptyFolders, tt.wantEmptyFolders)
+					}
+					if *check.checkGapsInTrackNumbering != tt.wantGapsInTrackNumbering {
+						t.Errorf("%s %q: got checkGapsInTrackNumbering %t want %t", fnName, tt.name, *check.checkGapsInTrackNumbering, tt.wantGapsInTrackNumbering)
+					}
+					if *check.checkIntegrity != tt.wantIntegrity {
+						t.Errorf("%s %q: got checkIntegrity %t want %t", fnName, tt.name, *check.checkIntegrity, tt.wantIntegrity)
+					}
+				} else {
+					t.Errorf("%s %q: error processing arguments", fnName, tt.name)
 				}
-				if *check.checkIntegrity != tt.wantIntegrity {
-					t.Errorf("%s %q: got checkIntegrity %t want %t", fnName, tt.name, *check.checkIntegrity, tt.wantIntegrity)
-				}
-			} else {
-				t.Errorf("%s %q: error processing arguments", fnName, tt.name)
 			}
 		})
 	}

@@ -21,8 +21,8 @@ func newPostRepairCommand(c *internal.Configuration, fSet *flag.FlagSet) *postre
 	return &postrepair{n: fSet.Name(), sf: files.NewSearchFlags(c, fSet)}
 }
 
-func newPostRepair(c *internal.Configuration, fSet *flag.FlagSet) CommandProcessor {
-	return newPostRepairCommand(c, fSet)
+func newPostRepair(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
+	return newPostRepairCommand(c, fSet), true
 }
 
 func (p *postrepair) Exec(o internal.OutputBus, args []string) (ok bool) {

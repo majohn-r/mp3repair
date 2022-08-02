@@ -20,8 +20,8 @@ func (c *check) name() string {
 	return c.n
 }
 
-func newCheck(c *internal.Configuration, fSet *flag.FlagSet) CommandProcessor {
-	return newCheckCommand(c, fSet)
+func newCheck(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
+	return newCheckCommand(o, c, fSet)
 }
 
 const (
@@ -36,22 +36,35 @@ const (
 	integrityFlag               = "integrity"
 )
 
-func newCheckCommand(c *internal.Configuration, fSet *flag.FlagSet) *check {
+func newCheckCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*check, bool) {
+	ok := true
 	name := fSet.Name()
 	configuration := c.SubConfiguration(name)
-	return &check{
-		n: name,
-		checkEmptyFolders: fSet.Bool(emptyFoldersFlag,
-			configuration.BoolDefault(emptyFoldersFlag, defaultEmptyFolders),
-			"check for empty artist and album folders"),
-		checkGapsInTrackNumbering: fSet.Bool(gapsInTrackNumberingFlag,
-			configuration.BoolDefault(gapsInTrackNumberingFlag, defaultGapsInTrackNumbering),
-			"check for gaps in track numbers"),
-		checkIntegrity: fSet.Bool(integrityFlag,
-			configuration.BoolDefault(integrityFlag, defaultIntegrity),
-			"check for disagreement between the file system and audio file metadata"),
-		sf: files.NewSearchFlags(c, fSet),
+	defaultEmpty, err := configuration.BoolDefault(emptyFoldersFlag, defaultEmptyFolders)
+	if err != nil {
+		reportBadDefault(o, name, err)
+		ok = false
 	}
+	defaultGaps, err := configuration.BoolDefault(gapsInTrackNumberingFlag, defaultGapsInTrackNumbering)
+	if err != nil {
+		reportBadDefault(o, name, err)
+		ok = false
+	}
+	defaultIntegritySetting, err := configuration.BoolDefault(integrityFlag, defaultIntegrity)
+	if err != nil {
+		reportBadDefault(o, name, err)
+		ok = false
+	}
+	if ok {
+		return &check{
+			n:                         name,
+			checkEmptyFolders:         fSet.Bool(emptyFoldersFlag, defaultEmpty, "check for empty artist and album folders"),
+			checkGapsInTrackNumbering: fSet.Bool(gapsInTrackNumberingFlag, defaultGaps, "check for gaps in track numbers"),
+			checkIntegrity:            fSet.Bool(integrityFlag, defaultIntegritySetting, "check for disagreement between the file system and audio file metadata"),
+			sf:                        files.NewSearchFlags(c, fSet),
+		}, ok
+	}
+	return nil, ok
 }
 
 func (c *check) Exec(o internal.OutputBus, args []string) (ok bool) {

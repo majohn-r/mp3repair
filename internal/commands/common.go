@@ -11,6 +11,7 @@ const (
 	checkCommand         = "check"
 	fkCommandName        = "command"
 	fkCount              = "count"
+	fkSection            = "section"
 	lsCommand            = "ls"
 	postRepairCommand    = "postRepair"
 	repairCommand        = "repair"
@@ -25,7 +26,7 @@ type CommandProcessor interface {
 type commandInitializer struct {
 	name           string
 	defaultCommand bool
-	initializer    func(*internal.Configuration, *flag.FlagSet) CommandProcessor
+	initializer    func(internal.OutputBus, *internal.Configuration, *flag.FlagSet) (CommandProcessor, bool)
 }
 
 // ProcessCommand selects which command to be run and returns the relevant
@@ -133,9 +134,18 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 		return
 	}
 	processorMap := make(map[string]CommandProcessor)
+	allCommandsOk := true
 	for _, commandInitializer := range i {
 		fSet := flag.NewFlagSet(commandInitializer.name, flag.ContinueOnError)
-		processorMap[commandInitializer.name] = commandInitializer.initializer(c, fSet)
+		command, cOk := commandInitializer.initializer(o, c, fSet)
+		if cOk {
+			processorMap[commandInitializer.name] = command
+		} else {
+			allCommandsOk = false
+		}
+	}
+	if !allCommandsOk {
+		return
 	}
 	if len(args) < 2 {
 		cmd = processorMap[defaultInitializerName]
@@ -168,4 +178,13 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 	callingArgs = args[2:]
 	ok = true
 	return
+}
+
+func reportBadDefault(o internal.OutputBus, section string, err error) {
+	o.WriteError(internal.USER_CONFIGURATION_FILE_INVALID, internal.DefaultConfigFileName, section, err)
+	o.LogWriter().Warn(internal.LW_INVALID_CONFIGURATION_DATA, map[string]interface{}{
+		fkSection:         section,
+		internal.FK_ERROR: err,
+	})
+
 }
