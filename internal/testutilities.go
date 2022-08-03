@@ -150,7 +150,7 @@ func CreateDefaultYamlFileForTesting() error {
 	if err := Mkdir(path); err != nil {
 		return err
 	}
-	json := `---
+	yamlInput := `---
 common:
     topDir: .      # $HOMEPATH/Music
     ext: .mpeg     # .mp3
@@ -170,7 +170,7 @@ unused:
     value: 1.25
 repair:
     dryRun: true # false`
-	return CreateFileForTestingWithContent(path, DefaultConfigFileName, []byte(json))
+	return CreateFileForTestingWithContent(path, DefaultConfigFileName, []byte(yamlInput))
 }
 
 type SavedEnvVar struct {

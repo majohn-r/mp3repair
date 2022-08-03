@@ -237,7 +237,7 @@ override the default command argument values by placing a text file named
 **defaults.yaml** in the **%APPDATA%\mp3** directory. By default, there is no
 such directory, and the user must create it.
 
-The **YAML** format documentation is here: [https://yaml.org/](https://yaml.org/).
+The **YAML** specification is here: [https://yaml.org/spec/1.2.2/](https://yaml.org/spec/1.2.2/).
 
 The **defaults.yaml** file may contain six blocks, all of which are optional:
 
@@ -286,30 +286,30 @@ default values:
 ```yaml
 ---
 check:
-    empty:     false
-    gaps:      false
-    integrity: true
+ empty:     false
+ gaps:      false
+ integrity: true
 command:
-    default: ls
+ default: ls
 common:
-    albumFilter:  .*
-    artistFilter: .* 
-    ext:          .mp3
-    topDir:       $HOMEPATH/Music
+ albumFilter:  .*
+ artistFilter: .* 
+ ext:          .mp3
+ topDir:       $HOMEPATH/Music
 ls:
-    annotate:       false
-    diagnostic:     false
-    includeAlbums:  true
-    includeArtists: true
-    includeTracks:  false
-    sort:           numeric
+ annotate:       false
+ diagnostic:     false
+ includeAlbums:  true
+ includeArtists: true
+ includeTracks:  false
+ sort:           numeric
 repair:
-    dryRun: false
+ dryRun: false
 resetDatabase:
-    extension: .wmbd
-    metadata:  $Userprofile/AppData/Local/Microsoft/Media Player/
-    service:   WMPNetworkSVC
-    timeout:   10
+ extension: .wmbd
+ metadata:  $Userprofile/AppData/Local/Microsoft/Media Player/
+ service:   WMPNetworkSVC
+ timeout:   10
 ```
 
 ### Argument Values

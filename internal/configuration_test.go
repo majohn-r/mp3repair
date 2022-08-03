@@ -679,10 +679,11 @@ func TestConfiguration_IntDefault(t *testing.T) {
 		sortedBounds *IntBounds
 	}
 	tests := []struct {
-		name  string
-		c     *Configuration
-		args  args
-		wantI int
+		name string
+		c    *Configuration
+		args
+		wantI   int
+		wantErr bool
 	}{
 		{
 			name:  "miss",
@@ -727,15 +728,20 @@ func TestConfiguration_IntDefault(t *testing.T) {
 			wantI: 15,
 		},
 		{
-			name:  "hit invalid string value",
-			c:     &Configuration{iMap: map[string]int{}, sMap: map[string]string{"k": "foo"}},
-			args:  args{key: "k", sortedBounds: NewIntBounds(10, 20, 30)},
-			wantI: 20,
+			name:    "hit invalid string value",
+			c:       &Configuration{iMap: map[string]int{}, sMap: map[string]string{"k": "foo"}},
+			args:    args{key: "k", sortedBounds: NewIntBounds(10, 20, 30)},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotI := tt.c.IntDefault(tt.args.key, tt.args.sortedBounds); gotI != tt.wantI {
+			gotI, err := tt.c.IntDefault(tt.args.key, tt.args.sortedBounds)
+			gotErr := err != nil
+			if gotErr != tt.wantErr {
+				t.Errorf("%s gotErr %t wantErr %t", fnName, gotErr, tt.wantErr)
+			}
+			if !gotErr && gotI != tt.wantI {
 				t.Errorf("%s = %d, want %d", fnName, gotI, tt.wantI)
 			}
 		})
@@ -785,6 +791,91 @@ func Test_createConfiguration(t *testing.T) {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
+			}
+		})
+	}
+}
+
+func Test_readYaml(t *testing.T) {
+	fnName := "readYaml()"
+	type args struct {
+		yfile []byte
+	}
+	tests := []struct {
+		name     string
+		args     args
+		wantData map[string]interface{}
+		wantErr  bool
+	}{
+		{
+			name: "boolean truth",
+			args: args{
+				yfile: []byte("---\n" +
+					"block:\n" +
+					" b1: 1\n" +
+					" b2: t\n" +
+					" b3: true\n" +
+					" b4: True\n" +
+					" b5: TRUE\n"),
+			},
+			wantData: map[string]interface{}{
+				"block": map[string]interface{}{
+					"b1": 1,
+					"b2": "t",
+					"b3": true,
+					"b4": true,
+					"b5": true,
+				},
+			},
+		},
+		{
+			name: "boolean falsehood",
+			args: args{
+				yfile: []byte("---\n" +
+					"block:\n" +
+					" b1: 0\n" +
+					" b2: f\n" +
+					" b3: false\n" +
+					" b4: False\n" +
+					" b5: FALSE\n"),
+			},
+			wantData: map[string]interface{}{
+				"block": map[string]interface{}{
+					"b1": 0,
+					"b2": "f",
+					"b3": false,
+					"b4": false,
+					"b5": false,
+				},
+			},
+		},
+		{
+			name: "numerics",
+			args: args{
+				yfile: []byte("---\n" +
+					"block:\n" +
+					" b1: 100\n" +
+					" b2: 0x64\n" +
+					" b3: 0144\n"),
+			},
+			wantData: map[string]interface{}{
+				"block": map[string]interface{}{
+					"b1": 100,
+					"b2": 100,
+					"b3": 100,
+				},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotData, err := readYaml(tt.args.yfile)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(gotData, tt.wantData) {
+				t.Errorf("%s = %v, want %v", fnName, gotData, tt.wantData)
 			}
 		})
 	}

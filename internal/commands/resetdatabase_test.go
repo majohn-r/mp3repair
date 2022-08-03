@@ -804,6 +804,14 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 	}
 }
 
+func newResetDatabaseCommandForTesting() *resetDatabase {
+	r, _ := newResetDatabaseCommand(
+		internal.NewOutputDeviceForTesting(),
+		internal.EmptyConfiguration(),
+		flag.NewFlagSet("resetDatabase", flag.ContinueOnError))
+	return r
+}
+
 func Test_resetDatabase_Exec(t *testing.T) {
 	fnName := "resetDatabase.Exec()"
 	testDir := "Exec"
@@ -833,9 +841,7 @@ func Test_resetDatabase_Exec(t *testing.T) {
 	}{
 		{
 			name: "bad arguments",
-			r: newResetDatabaseCommand(
-				internal.EmptyConfiguration(),
-				flag.NewFlagSet("resetDatabase", flag.ContinueOnError)),
+			r:    newResetDatabaseCommandForTesting(),
 			args: args{
 				args: []string{"-help"},
 			},
@@ -854,9 +860,7 @@ func Test_resetDatabase_Exec(t *testing.T) {
 		},
 		{
 			name: "runCommand fails",
-			r: newResetDatabaseCommand(
-				internal.EmptyConfiguration(),
-				flag.NewFlagSet("resetDatabase", flag.ContinueOnError)),
+			r:    newResetDatabaseCommandForTesting(),
 			args: args{
 				args: []string{"-metadata", "no such dir"},
 			},
@@ -870,9 +874,7 @@ func Test_resetDatabase_Exec(t *testing.T) {
 		},
 		{
 			name: "success",
-			r: newResetDatabaseCommand(
-				internal.EmptyConfiguration(),
-				flag.NewFlagSet("resetDatabase", flag.ContinueOnError)),
+			r:    newResetDatabaseCommandForTesting(),
 			args: args{
 				args: []string{"-metadata", testDir},
 			},
@@ -1002,6 +1004,56 @@ func Test_resetDatabase_openService(t *testing.T) {
 			}
 			if gotS != tt.wantS {
 				t.Errorf("%s gotS = %t, want %t", fnName, gotS, tt.wantS)
+			}
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
+				}
+			}
+		})
+	}
+}
+
+func Test_newResetDatabaseCommand(t *testing.T) {
+	fnName := "newResetDatabaseCommand()"
+	type args struct {
+		c *internal.Configuration
+	}
+	tests := []struct {
+		name string
+		args
+		wantOk bool
+		internal.WantedOutput
+	}{
+		{
+			name:   "normal case",
+			args:   args{c: internal.EmptyConfiguration()},
+			wantOk: true,
+		},
+		{
+			name: "bad default timeout",
+			args: args{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
+					"resetDatabase": map[string]interface{}{
+						"timeout": "forever",
+					},
+				}),
+			},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"resetDatabase\": invalid value \"forever\" for flag -timeout: parse error.\n",
+				WantLogOutput:   "level='warn' error='invalid value \"forever\" for flag -timeout: parse error' section='resetDatabase' msg='invalid content in configuration file'\n",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			o := internal.NewOutputDeviceForTesting()
+			got, gotOk := newResetDatabaseCommand(o, tt.args.c, flag.NewFlagSet("resetDatabase", flag.ContinueOnError))
+			if gotOk != tt.wantOk {
+				t.Errorf("%s got1 = %v, want %v", fnName, gotOk, tt.wantOk)
+			}
+			if gotOk && got == nil {
+				t.Errorf("%s got nil instance", fnName)
 			}
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {

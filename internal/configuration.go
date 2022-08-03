@@ -44,8 +44,8 @@ func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
 		return
 	}
 	yfile, _ := ioutil.ReadFile(configFile) // only probable error circumvented by verifyFileExists failure
-	data := make(map[string]interface{})
-	if err = yaml.Unmarshal(yfile, &data); err != nil {
+	data, err := readYaml(yfile)
+	if err != nil {
 		o.LogWriter().Warn(LW_CANNOT_UNMARSHAL_YAML, map[string]interface{}{
 			FK_DIRECTORY: path,
 			FK_FILE_NAME: DefaultConfigFileName,
@@ -61,6 +61,12 @@ func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
 		FK_FILE_NAME: DefaultConfigFileName,
 		fkValue:      c,
 	})
+	return
+}
+
+func readYaml(yfile []byte) (data map[string]interface{}, err error) {
+	data = make(map[string]interface{})
+	err = yaml.Unmarshal(yfile, &data)
 	return
 }
 
@@ -146,6 +152,8 @@ func (c *Configuration) BoolDefault(key string, defaultValue bool) (b bool, err 
 			case 1:
 				b = true
 			default:
+				// note: deliberately imitating flags behavior when parsing an
+				// invalid boolean
 				err = fmt.Errorf("invalid boolean value \"%d\" for -%s: parse error", value, key)
 			}
 		} else {
@@ -156,6 +164,8 @@ func (c *Configuration) BoolDefault(key string, defaultValue bool) (b bool, err 
 				if cookedValue, e := strconv.ParseBool(rawValue); e == nil {
 					b = cookedValue
 				} else {
+					// note: deliberately imitating flags behavior when parsing
+					// an invalid boolean
 					err = fmt.Errorf("invalid boolean value %q for -%s: parse error", value, key)
 				}
 			}
@@ -180,29 +190,32 @@ func NewIntBounds(v1, v2, v3 int) *IntBounds {
 	}
 }
 
-func (c *Configuration) IntDefault(key string, sortedBounds *IntBounds) (i int) {
+func (c *Configuration) IntDefault(key string, sortedBounds *IntBounds) (i int, err error) {
 	i = sortedBounds.defaultValue
 	if value, ok := c.iMap[key]; ok {
-		if value < sortedBounds.minValue {
-			i = sortedBounds.minValue
-		} else if value > sortedBounds.maxValue {
-			i = sortedBounds.maxValue
-		} else {
-			i = value
-		}
+		i = constrainedValue(value, sortedBounds)
 	} else {
 		if value, ok := c.sMap[key]; ok {
 			rawValue := InterpretEnvVarReferences(value)
 			if cookedValue, e := strconv.Atoi(rawValue); e == nil {
-				if cookedValue < sortedBounds.minValue {
-					i = sortedBounds.minValue
-				} else if cookedValue > sortedBounds.maxValue {
-					i = sortedBounds.maxValue
-				} else {
-					i = cookedValue
-				}
-			} // else 'invalid value "flopsy" for flag -timeout: parse error'
+				i = constrainedValue(cookedValue, sortedBounds)
+			} else {
+				// note: deliberately imitating flags behavior when parsing an
+				// invalid int
+				err = fmt.Errorf("invalid value %q for flag -%s: parse error", rawValue, key)
+			}
 		}
+	}
+	return
+}
+
+func constrainedValue(value int, sortedBounds *IntBounds) (i int) {
+	if value < sortedBounds.minValue {
+		i = sortedBounds.minValue
+	} else if value > sortedBounds.maxValue {
+		i = sortedBounds.maxValue
+	} else {
+		i = value
 	}
 	return
 }

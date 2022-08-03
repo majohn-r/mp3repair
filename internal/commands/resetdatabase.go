@@ -62,29 +62,36 @@ var stateToStatus = map[svc.State]string{
 }
 
 func newResetDatabase(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
-	return newResetDatabaseCommand(c, fSet), true
+	return newResetDatabaseCommand(o, c, fSet)
 }
 
-func newResetDatabaseCommand(c *internal.Configuration, fSet *flag.FlagSet) *resetDatabase {
+func newResetDatabaseCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*resetDatabase, bool) {
 	name := fSet.Name()
 	configuration := c.SubConfiguration(name)
-	return &resetDatabase{
-		n: name,
-		timeout: fSet.Int(timeoutFlag,
-			configuration.IntDefault(timeoutFlag, internal.NewIntBounds(minTimeout, defaultTimeout, maxTimeout)),
-			fmt.Sprintf("timeout in seconds (minimum %d, maximum %d) for stopping the media player service",
-				minTimeout, maxTimeout)),
-		service: fSet.String(serviceFlag,
-			configuration.StringDefault(serviceFlag, defaultService),
-			"name of the media player service"),
-		metadata: fSet.String(metadataFlag,
-			configuration.StringDefault(metadataFlag, defaultMetadata),
-			"directory where the media player service metadata files are stored"),
-		extension: fSet.String(extensionFlag,
-			c.StringDefault(extensionFlag, defaultExtension),
-			"extension for metadata files"),
-		f: fSet,
+	ok := true
+	defTimeout, err := configuration.IntDefault(timeoutFlag, internal.NewIntBounds(minTimeout, defaultTimeout, maxTimeout))
+	if err != nil {
+		reportBadDefault(o, name, err)
+		ok = false
 	}
+	if ok {
+		return &resetDatabase{
+			n: name,
+			timeout: fSet.Int(timeoutFlag, defTimeout, fmt.Sprintf("timeout in seconds (minimum %d, maximum %d) for stopping the media player service",
+				minTimeout, maxTimeout)),
+			service: fSet.String(serviceFlag,
+				configuration.StringDefault(serviceFlag, defaultService),
+				"name of the media player service"),
+			metadata: fSet.String(metadataFlag,
+				configuration.StringDefault(metadataFlag, defaultMetadata),
+				"directory where the media player service metadata files are stored"),
+			extension: fSet.String(extensionFlag,
+				c.StringDefault(extensionFlag, defaultExtension),
+				"extension for metadata files"),
+			f: fSet,
+		}, true
+	}
+	return nil, false
 }
 
 type resetDatabase struct {
