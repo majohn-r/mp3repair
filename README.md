@@ -28,6 +28,9 @@
       - [Boolean Values](#boolean-values)
   - [Environment](#environment)
   - [Dependencies](#dependencies)
+  - [Other Documentation](#other-documentation)
+    - [ID3V2.3.0](#id3v230)
+    - [YAML](#yaml)
 
 ## Purpose
 
@@ -237,7 +240,8 @@ override the default command argument values by placing a text file named
 **defaults.yaml** in the **%APPDATA%\mp3** directory. By default, there is no
 such directory, and the user must create it.
 
-The **YAML** specification is here: [https://yaml.org/spec/1.2.2/](https://yaml.org/spec/1.2.2/).
+See [YAML](#yaml) for a brief description of how the **mp3** program uses _YAML_
+and a link to _YAML_ documentation.
 
 The **defaults.yaml** file may contain six blocks, all of which are optional:
 
@@ -365,3 +369,20 @@ _F_, _false_, _FALSE_, or _False_.
 
 In addition, I use [https://libs.garden/](https://libs.garden/) to look for
 libraries.
+
+## Other Documentation
+
+### ID3V2.3.0
+
+The **mp3** program depends heavily on the MP3 files containing an **ID3V2.3.0**
+tag, which stores information about the audio file, particularly meta
+information, such as the title and performer. Information about the
+**ID3V2.3.0** tag format can be found here:
+[https://id3.org/id3v2.3.0](https://id3.org/id3v2.3.0).
+
+### YAML
+
+The **mp3** program reads user-supplied files, written in YAML, for purposes
+such as configuring default argument values. For information on writing such
+files, the **YAML** specification can be found here:
+[https://yaml.org/spec/1.2.2/](https://yaml.org/spec/1.2.2/).

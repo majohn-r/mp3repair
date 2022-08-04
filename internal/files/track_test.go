@@ -1420,16 +1420,16 @@ func TestTrack_Diagnostics(t *testing.T) {
 			wantEnc:     "ISO-8859-1",
 			wantVersion: 3,
 			wantF: []*TrackFrame{
-				NewTrackFrame("Fake", "frame name not recognized - unknown purpose", "<<[]byte{0x0, 0x75, 0x6d, 0x6d, 0x6d}>>"),
-				NewTrackFrame("T???", "frame name not recognized - unknown purpose", "who knows?"),
-				NewTrackFrame("TALB", "The 'Album/Movie/Show title' frame is intended for the title of the recording(/source of sound) which the audio in the file is taken from.", "unknown album"),
-				NewTrackFrame("TCOM", "The 'Composer(s)' frame is intended for the name of the composer(s).", "a couple of idiots"),
-				NewTrackFrame("TCON", "The 'Content type', which previously was stored as a one byte numeric value only, is now a numeric string.", "dance music"),
-				NewTrackFrame("TIT2", "The 'Title/Songname/Content description' frame is the actual name of the piece (e.g. 'Adagio', 'Hurricane Donna').", "unknown track"),
-				NewTrackFrame("TLEN", "The 'Length' frame contains the length of the audiofile in milliseconds, represented as a numeric string.", "1000"),
-				NewTrackFrame("TPE1", "The 'Lead artist(s)/Lead performer(s)/Soloist(s)/Performing group' is used for the main artist(s).", "unknown artist"),
-				NewTrackFrame("TRCK", "The 'Track number/Position in set' frame is a numeric string containing the order number of the audio-file on its original recording.", "2"),
-				NewTrackFrame("TYER", "The 'Year' frame is a numeric string with a year of the recording.", "2022")},
+				NewTrackFrame("Fake", "<<[]byte{0x0, 0x75, 0x6d, 0x6d, 0x6d}>>"),
+				NewTrackFrame("T???", "who knows?"),
+				NewTrackFrame("TALB", "unknown album"),
+				NewTrackFrame("TCOM", "a couple of idiots"),
+				NewTrackFrame("TCON", "dance music"),
+				NewTrackFrame("TIT2", "unknown track"),
+				NewTrackFrame("TLEN", "1000"),
+				NewTrackFrame("TPE1", "unknown artist"),
+				NewTrackFrame("TRCK", "2"),
+				NewTrackFrame("TYER", "2022")},
 		},
 	}
 	for _, tt := range tests {
@@ -1458,7 +1458,7 @@ func TestTrackFrame_String(t *testing.T) {
 		name string
 		f    *TrackFrame
 		want string
-	}{{name: "usual", f: NewTrackFrame("T1", "D1", "V1"), want: "T1 = \"V1\" // D1"}}
+	}{{name: "usual", f: NewTrackFrame("T1", "V1"), want: "T1 = \"V1\""}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.f.String(); got != tt.want {

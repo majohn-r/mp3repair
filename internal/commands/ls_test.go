@@ -955,14 +955,14 @@ func Test_ls_outputTrackDiagnostics(t *testing.T) {
 			WantedOutput: internal.WantedOutput{
 				WantConsoleOutput: "      Version: 3\n" +
 					"      Encoding: \"ISO-8859-1\"\n" +
-					"      TALB = \"unknown album\" // The 'Album/Movie/Show title' frame is intended for the title of the recording(/source of sound) which the audio in the file is taken from.\n" +
-					"      TCOM = \"a couple of idiots\" // The 'Composer(s)' frame is intended for the name of the composer(s).\n" +
-					"      TCON = \"dance music\" // The 'Content type', which previously was stored as a one byte numeric value only, is now a numeric string.\n" +
-					"      TIT2 = \"unknown track\" // The 'Title/Songname/Content description' frame is the actual name of the piece (e.g. 'Adagio', 'Hurricane Donna').\n" +
-					"      TLEN = \"1000\" // The 'Length' frame contains the length of the audiofile in milliseconds, represented as a numeric string.\n" +
-					"      TPE1 = \"unknown artist\" // The 'Lead artist(s)/Lead performer(s)/Soloist(s)/Performing group' is used for the main artist(s).\n" +
-					"      TRCK = \"2\" // The 'Track number/Position in set' frame is a numeric string containing the order number of the audio-file on its original recording.\n" +
-					"      TYER = \"2022\" // The 'Year' frame is a numeric string with a year of the recording.\n",
+					"      TALB = \"unknown album\"\n" +
+					"      TCOM = \"a couple of idiots\"\n" +
+					"      TCON = \"dance music\"\n" +
+					"      TIT2 = \"unknown track\"\n" +
+					"      TLEN = \"1000\"\n" +
+					"      TPE1 = \"unknown artist\"\n" +
+					"      TRCK = \"2\"\n" +
+					"      TYER = \"2022\"\n",
 			},
 		},
 	}
