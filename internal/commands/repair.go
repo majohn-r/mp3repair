@@ -34,18 +34,18 @@ const (
 
 func newRepairCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*repair, bool) {
 	name := fSet.Name()
-	configuration := c.SubConfiguration(name)
 	ok := true
-	defDryRun, err := configuration.BoolDefault(dryRunFlag, defaultDryRun)
+	defDryRun, err := c.SubConfiguration(name).BoolDefault(dryRunFlag, defaultDryRun)
 	if err != nil {
 		reportBadDefault(o, name, err)
 		ok = false
 	}
-	if ok {
+	sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet)
+	if sFlagsOk && ok {
 		return &repair{
 			n:      name,
 			dryRun: fSet.Bool(dryRunFlag, defDryRun, "if true, output what would have repaired, but make no repairs"),
-			sf:     files.NewSearchFlags(c, fSet),
+			sf:     sFlags,
 		}, true
 	}
 	return nil, false

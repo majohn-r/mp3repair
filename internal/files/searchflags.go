@@ -30,25 +30,52 @@ const (
 	topDirectoryFlag      = "topDir"
 )
 
-// NewSearchFlags are used by commands to use the common top directory, target
+func reportBadDefault(o internal.OutputBus, err error) {
+	o.WriteError(internal.USER_CONFIGURATION_FILE_INVALID, internal.DefaultConfigFileName, "common", err)
+	o.LogWriter().Warn(internal.LW_INVALID_CONFIGURATION_DATA, map[string]interface{}{
+		internal.FK_SECTION: "common",
+		internal.FK_ERROR:   err,
+	})
+}
+
+// NewSearchFlags are used by commands that use the common top directory, target
 // extension, and album and artist filter regular expressions.
-func NewSearchFlags(c *internal.Configuration, fSet *flag.FlagSet) *SearchFlags {
-	configuration := c.SubConfiguration("common")
-	return &SearchFlags{
-		f: fSet,
-		topDirectory: fSet.String(topDirectoryFlag,
-			configuration.StringDefault(topDirectoryFlag, "$HOMEPATH/Music"),
-			"top directory in which to look for music files"),
-		fileExtension: fSet.String(fileExtensionFlag,
-			configuration.StringDefault(fileExtensionFlag, defaultFileExtension),
-			"extension for music files"),
-		albumRegex: fSet.String(albumRegexFlag,
-			configuration.StringDefault(albumRegexFlag, defaultRegex),
-			"regular expression of albums to select"),
-		artistRegex: fSet.String(artistRegexFlag,
-			configuration.StringDefault(artistRegexFlag, defaultRegex),
-			"regular expression of artists to select"),
+func NewSearchFlags(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*SearchFlags, bool) {
+	return makeSearchFlags(o, c.SubConfiguration("common"), fSet)
+}
+
+func makeSearchFlags(o internal.OutputBus, configuration *internal.Configuration, fSet *flag.FlagSet) (*SearchFlags, bool) {
+	var ok = true
+	defTopDirectory, err := configuration.StringDefault(topDirectoryFlag, "$HOMEPATH/Music")
+	if err != nil {
+		reportBadDefault(o, err)
+		ok = false
 	}
+	defFileExtension, err := configuration.StringDefault(fileExtensionFlag, defaultFileExtension)
+	if err != nil {
+		reportBadDefault(o, err)
+		ok = false
+	}
+	defAlbumRegex, err := configuration.StringDefault(albumRegexFlag, defaultRegex)
+	if err != nil {
+		reportBadDefault(o, err)
+		ok = false
+	}
+	defArtistRegex, err := configuration.StringDefault(artistRegexFlag, defaultRegex)
+	if err != nil {
+		reportBadDefault(o, err)
+		ok = false
+	}
+	if ok {
+		return &SearchFlags{
+			f:             fSet,
+			topDirectory:  fSet.String(topDirectoryFlag, defTopDirectory, "top directory in which to look for music files"),
+			fileExtension: fSet.String(fileExtensionFlag, defFileExtension, "extension for music files"),
+			albumRegex:    fSet.String(albumRegexFlag, defAlbumRegex, "regular expression of albums to select"),
+			artistRegex:   fSet.String(artistRegexFlag, defArtistRegex, "regular expression of artists to select"),
+		}, true
+	}
+	return nil, false
 }
 
 // ProcessArgs consumes the command line arguments.

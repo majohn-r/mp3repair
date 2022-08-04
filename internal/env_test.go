@@ -39,11 +39,15 @@ func TestInterpretEnvVarReferences(t *testing.T) {
 	originalFileName := os.Getenv("FILENAME")
 	originalPath := os.Getenv("PATH")
 	originalSubPath := os.Getenv("SUBPATH")
+	originalVarX := os.Getenv("VARX")
+	originalVarY := os.Getenv("VARY")
 	defer func() {
 		os.Setenv("EXTENSION", originalExtension)
 		os.Setenv("FILENAME", originalFileName)
 		os.Setenv("PATH", originalPath)
 		os.Setenv("SUBPATH", originalSubPath)
+		os.Setenv("VARX", originalVarX)
+		os.Setenv("VARY", originalVarY)
 	}()
 	newExtension := "mp3"
 	newFileName := "track"
@@ -53,13 +57,16 @@ func TestInterpretEnvVarReferences(t *testing.T) {
 	os.Setenv("FILENAME", newFileName)
 	os.Setenv("PATH", newPath)
 	os.Setenv("SUBPATH", newSubPath)
+	os.Unsetenv("VARX")
+	os.Unsetenv("VARY")
 	type args struct {
 		s string
 	}
 	tests := []struct {
 		name string
-		args args
-		want string
+		args
+		want    string
+		wantErr bool
 	}{
 		{name: "no references", args: args{s: "no references"}, want: "no references"},
 		{
@@ -67,10 +74,19 @@ func TestInterpretEnvVarReferences(t *testing.T) {
 			args: args{s: "$PATH/$SUBPATH/%FILENAME%.%EXTENSION%"},
 			want: "/c/Users/MyUser/Music/track.mp3",
 		},
+		{
+			name:    "missing references",
+			args:    args{s: "$VARX + %VARY%"},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := InterpretEnvVarReferences(tt.args.s); got != tt.want {
+			got, gotErr := InterpretEnvVarReferences(tt.args.s)
+			if (gotErr != nil) != tt.wantErr {
+				t.Errorf("%s gotErr %v wantErr %t", fnName, gotErr, tt.wantErr)
+			}
+			if got != tt.want {
 				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})

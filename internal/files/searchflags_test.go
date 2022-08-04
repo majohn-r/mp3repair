@@ -10,12 +10,15 @@ import (
 	"testing"
 )
 
-func Test_NewFileFlags(t *testing.T) {
-	fnName := "NewFileFlags()"
-	savedState := internal.SaveEnvVarForTesting("APPDATA")
+func Test_NewSearchFlags(t *testing.T) {
+	fnName := "NewSearchFlags()"
+	savedAppData := internal.SaveEnvVarForTesting("APPDATA")
 	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
+	savedFoo := internal.SaveEnvVarForTesting("FOO")
+	os.Unsetenv("FOO")
 	defer func() {
-		savedState.RestoreForTesting()
+		savedAppData.RestoreForTesting()
+		savedFoo.RestoreForTesting()
 	}()
 	oldHomePath := os.Getenv("HOMEPATH")
 	defer func() {
@@ -33,12 +36,14 @@ func Test_NewFileFlags(t *testing.T) {
 		c *internal.Configuration
 	}
 	tests := []struct {
-		name            string
-		args            args
+		name string
+		args
+		wantOk          bool
 		wantTopDir      string
 		wantExtension   string
 		wantAlbumRegex  string
 		wantArtistRegex string
+		internal.WantedOutput
 	}{
 		{
 			name:            "default",
@@ -47,6 +52,7 @@ func Test_NewFileFlags(t *testing.T) {
 			wantExtension:   ".mp3",
 			wantAlbumRegex:  ".*",
 			wantArtistRegex: ".*",
+			wantOk:          true,
 		},
 		{
 			name:            "overrides",
@@ -55,13 +61,73 @@ func Test_NewFileFlags(t *testing.T) {
 			wantExtension:   ".mpeg",
 			wantAlbumRegex:  "^.*$",
 			wantArtistRegex: "^.*$",
+			wantOk:          true,
+		},
+		{
+			name: "bad default topDir",
+			args: args{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
+					"common": map[string]interface{}{
+						"topDir": "$FOO",
+					},
+				}),
+			},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -topDir: missing environment variables: [FOO].\n",
+				WantLogOutput:   "level='warn' error='invalid value \"$FOO\" for flag -topDir: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
+			},
+		},
+		{
+			name: "bad default extension",
+			args: args{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
+					"common": map[string]interface{}{
+						"ext": "$FOO",
+					},
+				}),
+			},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -ext: missing environment variables: [FOO].\n",
+				WantLogOutput:   "level='warn' error='invalid value \"$FOO\" for flag -ext: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
+			},
+		},
+		{
+			name: "bad default album filter",
+			args: args{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
+					"common": map[string]interface{}{
+						"albumFilter": "$FOO",
+					},
+				}),
+			},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -albumFilter: missing environment variables: [FOO].\n",
+				WantLogOutput:   "level='warn' error='invalid value \"$FOO\" for flag -albumFilter: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
+			},
+		},
+		{
+			name: "bad default artist filter",
+			args: args{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
+					"common": map[string]interface{}{
+						"artistFilter": "$FOO",
+					},
+				}),
+			},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -artistFilter: missing environment variables: [FOO].\n",
+				WantLogOutput:   "level='warn' error='invalid value \"$FOO\" for flag -artistFilter: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
+			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewSearchFlags(tt.args.c, flag.NewFlagSet("test", flag.ContinueOnError)); got == nil {
-				t.Errorf("%s = %v", fnName, got)
-			} else {
+			o := internal.NewOutputDeviceForTesting()
+			got, gotOk := NewSearchFlags(o, tt.args.c, flag.NewFlagSet("test", flag.ContinueOnError))
+			if gotOk != tt.wantOk {
+				t.Errorf("%s gotOk %t wantOK %t", fnName, gotOk, tt.wantOk)
+			}
+			if got != nil {
 				if err := got.f.Parse([]string{}); err != nil {
 					t.Errorf("%s error parsing flags: %v", fnName, err)
 				} else {
@@ -77,6 +143,11 @@ func Test_NewFileFlags(t *testing.T) {
 					if *got.artistRegex != tt.wantArtistRegex {
 						t.Errorf("%s %q got artist regex %q want %q", fnName, tt.name, *got.artistRegex, tt.wantArtistRegex)
 					}
+				}
+			}
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 		})

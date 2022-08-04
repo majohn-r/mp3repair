@@ -160,13 +160,17 @@ func (c *Configuration) BoolDefault(key string, defaultValue bool) (b bool, err 
 			// True values may be specified as "t", "T", "true", "TRUE", or "True"
 			// False values may be specified as "f", "F", "false", "FALSE", or "False"_."
 			if value, ok := c.sMap[key]; ok {
-				rawValue := InterpretEnvVarReferences(value)
-				if cookedValue, e := strconv.ParseBool(rawValue); e == nil {
-					b = cookedValue
+				rawValue, dereferenceErr := InterpretEnvVarReferences(value)
+				if dereferenceErr == nil {
+					if cookedValue, e := strconv.ParseBool(rawValue); e == nil {
+						b = cookedValue
+					} else {
+						// note: deliberately imitating flags behavior when parsing
+						// an invalid boolean
+						err = fmt.Errorf("invalid boolean value %q for -%s: parse error", value, key)
+					}
 				} else {
-					// note: deliberately imitating flags behavior when parsing
-					// an invalid boolean
-					err = fmt.Errorf("invalid boolean value %q for -%s: parse error", value, key)
+					err = fmt.Errorf("invalid boolean value %q for -%s: %v", value, key, dereferenceErr)
 				}
 			}
 		}
@@ -196,13 +200,17 @@ func (c *Configuration) IntDefault(key string, sortedBounds *IntBounds) (i int, 
 		i = constrainedValue(value, sortedBounds)
 	} else {
 		if value, ok := c.sMap[key]; ok {
-			rawValue := InterpretEnvVarReferences(value)
-			if cookedValue, e := strconv.Atoi(rawValue); e == nil {
-				i = constrainedValue(cookedValue, sortedBounds)
+			rawValue, dereferenceErr := InterpretEnvVarReferences(value)
+			if dereferenceErr == nil {
+				if cookedValue, e := strconv.Atoi(rawValue); e == nil {
+					i = constrainedValue(cookedValue, sortedBounds)
+				} else {
+					// note: deliberately imitating flags behavior when parsing an
+					// invalid int
+					err = fmt.Errorf("invalid value %q for flag -%s: parse error", rawValue, key)
+				}
 			} else {
-				// note: deliberately imitating flags behavior when parsing an
-				// invalid int
-				err = fmt.Errorf("invalid value %q for flag -%s: parse error", rawValue, key)
+				err = fmt.Errorf("invalid value %q for flag -%s: %v", rawValue, key, dereferenceErr)
 			}
 		}
 	}
@@ -221,10 +229,20 @@ func constrainedValue(value int, sortedBounds *IntBounds) (i int) {
 }
 
 // StringDefault returns a string value for a specified key
-func (c *Configuration) StringDefault(key string, defaultValue string) (s string) {
-	s = InterpretEnvVarReferences(defaultValue)
-	if value, ok := c.sMap[key]; ok {
-		s = InterpretEnvVarReferences(value)
+func (c *Configuration) StringDefault(key string, defaultValue string) (s string, err error) {
+	var dereferenceErr error
+	s, dereferenceErr = InterpretEnvVarReferences(defaultValue)
+	if dereferenceErr == nil {
+		if value, ok := c.sMap[key]; ok {
+			s, dereferenceErr = InterpretEnvVarReferences(value)
+			if dereferenceErr != nil {
+				err = fmt.Errorf("invalid value %q for flag -%s: %v", value, key, dereferenceErr)
+				s = ""
+			}
+		}
+	} else {
+		err = fmt.Errorf("invalid value %q for flag -%s: %v", defaultValue, key, dereferenceErr)
+		s = ""
 	}
 	return
 }

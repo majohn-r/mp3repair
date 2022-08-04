@@ -57,9 +57,12 @@ func Test_Configuration_BoolDefault(t *testing.T) {
 	if err := CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
+	saved := SaveEnvVarForTesting("FOO")
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
+		saved.RestoreForTesting()
 	}()
+	os.Unsetenv("FOO")
 	testConfiguration, _ := ReadConfigurationFile(NewOutputDeviceForTesting())
 	type args struct {
 		key          string
@@ -216,6 +219,12 @@ func Test_Configuration_BoolDefault(t *testing.T) {
 			args:  args{key: "myKey", defaultValue: true},
 			wantB: false,
 		},
+		{
+			name:  "boolean from string with missing reference",
+			c:     &Configuration{sMap: map[string]string{"key": "%FOO%"}},
+			args:  args{key: "key"},
+			wantE: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -234,8 +243,14 @@ func Test_Configuration_BoolDefault(t *testing.T) {
 func Test_Configuration_StringDefault(t *testing.T) {
 	fnName := "Configuration.StringDefault()"
 	savedState := SaveEnvVarForTesting(appDataVar)
+	savedFoo := SaveEnvVarForTesting("FOO")
+	savedBar := SaveEnvVarForTesting("BAR")
+	os.Unsetenv("FOO")
+	os.Unsetenv("BAR")
 	os.Setenv(appDataVar, SecureAbsolutePathForTesting("."))
 	defer func() {
+		savedFoo.RestoreForTesting()
+		savedBar.RestoreForTesting()
 		savedState.RestoreForTesting()
 	}()
 	if err := CreateDefaultYamlFileForTesting(); err != nil {
@@ -250,10 +265,11 @@ func Test_Configuration_StringDefault(t *testing.T) {
 		defaultValue string
 	}
 	tests := []struct {
-		name  string
-		c     *Configuration
-		args  args
-		wantS string
+		name    string
+		c       *Configuration
+		args    args
+		wantS   string
+		wantErr bool
 	}{
 		{
 			name:  "empty configuration",
@@ -272,10 +288,26 @@ func Test_Configuration_StringDefault(t *testing.T) {
 			args:  args{key: "sort", defaultValue: "my default value"},
 			wantS: "alpha",
 		},
+		{
+			name:    "bad default",
+			c:       &Configuration{sMap: map[string]string{"key": "$FOO"}},
+			args:    args{key: "key"},
+			wantErr: true,
+		},
+		{
+			name:    "bad default",
+			c:       EmptyConfiguration(),
+			args:    args{key: "key", defaultValue: "boo%BAR%"},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotS := tt.c.StringDefault(tt.args.key, tt.args.defaultValue); gotS != tt.wantS {
+			gotS, gotErr := tt.c.StringDefault(tt.args.key, tt.args.defaultValue)
+			if (gotErr != nil) != tt.wantErr {
+				t.Errorf("%s gotErr %v wantErr %t", fnName, gotErr, tt.wantErr)
+			}
+			if gotS != tt.wantS {
 				t.Errorf("%s = %v, want %v", fnName, gotS, tt.wantS)
 			}
 		})
@@ -674,6 +706,11 @@ func TestNewIntBounds(t *testing.T) {
 
 func TestConfiguration_IntDefault(t *testing.T) {
 	fnName := "Configuration.IntDefault()"
+	saved := SaveEnvVarForTesting("FOO")
+	os.Unsetenv("FOO")
+	defer func() {
+		saved.RestoreForTesting()
+	}()
 	type args struct {
 		key          string
 		sortedBounds *IntBounds
@@ -730,6 +767,12 @@ func TestConfiguration_IntDefault(t *testing.T) {
 		{
 			name:    "hit invalid string value",
 			c:       &Configuration{iMap: map[string]int{}, sMap: map[string]string{"k": "foo"}},
+			args:    args{key: "k", sortedBounds: NewIntBounds(10, 20, 30)},
+			wantErr: true,
+		},
+		{
+			name:    "hit bad references",
+			c:       &Configuration{iMap: map[string]int{}, sMap: map[string]string{"k": "$FOO"}},
 			args:    args{key: "k", sortedBounds: NewIntBounds(10, 20, 30)},
 			wantErr: true,
 		},

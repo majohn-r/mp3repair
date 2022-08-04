@@ -4,9 +4,18 @@ import (
 	"flag"
 	"mp3/internal"
 	"mp3/internal/files"
+	"os"
 	"path/filepath"
 	"testing"
 )
+
+func makePostRepairCommandForTesting() *postrepair {
+	pr, _ := newPostRepairCommand(
+		internal.NewOutputDeviceForTesting(),
+		internal.EmptyConfiguration(),
+		flag.NewFlagSet("postRepair", flag.ContinueOnError))
+	return pr
+}
 
 func Test_postrepair_Exec(t *testing.T) {
 	fnName := "postrepair.Exec()"
@@ -58,8 +67,7 @@ func Test_postrepair_Exec(t *testing.T) {
 	}{
 		{
 			name: "handle bad common arguments",
-			p: newPostRepairCommand(
-				internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError)),
+			p:    makePostRepairCommandForTesting(),
 			args: args{args: []string{"-topDir", "non-existent directory"}},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The -topDir value you specified, \"non-existent directory\", cannot be read: CreateFile non-existent directory: The system cannot find the file specified.\n",
@@ -68,8 +76,7 @@ func Test_postrepair_Exec(t *testing.T) {
 		},
 		{
 			name: "handle normal processing with nothing to do",
-			p: newPostRepairCommand(
-				internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError)),
+			p:    makePostRepairCommandForTesting(),
 			args: args{args: []string{"-topDir", topDirName}},
 			WantedOutput: internal.WantedOutput{
 				WantConsoleOutput: "There are no backup directories to delete.\n",
@@ -79,8 +86,7 @@ func Test_postrepair_Exec(t *testing.T) {
 		},
 		{
 			name: "handle normal processing",
-			p: newPostRepairCommand(
-				internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError)),
+			p:    makePostRepairCommandForTesting(),
 			args: args{args: []string{"-topDir", topDir2Name}},
 			WantedOutput: internal.WantedOutput{
 				WantConsoleOutput: "The backup directory for artist \"the artist\" album \"the album\" has been deleted.\n",
@@ -159,6 +165,68 @@ func Test_removeBackupDirectory(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
 			removeBackupDirectory(o, tt.args.d, tt.args.a)
+			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+				for _, issue := range issues {
+					t.Errorf("%s %s", fnName, issue)
+				}
+			}
+		})
+	}
+}
+
+func Test_newPostRepairCommand(t *testing.T) {
+	fnName := "newPostRepairCommand()"
+	savedFoo := internal.SaveEnvVarForTesting("FOO")
+	os.Unsetenv("FOO")
+	defer func() {
+		savedFoo.RestoreForTesting()
+	}()
+	type args struct {
+		c    *internal.Configuration
+		fSet *flag.FlagSet
+	}
+	tests := []struct {
+		name string
+		args
+		wantPostRepair bool
+		wantOk         bool
+		internal.WantedOutput
+	}{
+		{
+			name: "success",
+			args: args{
+				c:    internal.EmptyConfiguration(),
+				fSet: flag.NewFlagSet("postRepair", flag.ContinueOnError),
+			},
+			wantPostRepair: true,
+			wantOk:         true,
+		},
+		{
+			name: "failure",
+			args: args{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
+					"common": map[string]interface{}{
+						"topDir": "%FOO%",
+					},
+				}),
+				fSet: flag.NewFlagSet("postRepair", flag.ContinueOnError),
+			},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"%FOO%\" for flag -topDir: missing environment variables: [FOO].\n",
+				WantLogOutput:   "level='warn' error='invalid value \"%FOO%\" for flag -topDir: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			o := internal.NewOutputDeviceForTesting()
+			got, gotOk := newPostRepairCommand(o, tt.args.c, tt.args.fSet)
+			if (got != nil) != tt.wantPostRepair {
+				t.Errorf("%s got = %v, want %v", fnName, got, tt.wantPostRepair)
+			}
+			if gotOk != tt.wantOk {
+				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
+			}
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)

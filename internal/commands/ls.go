@@ -52,50 +52,69 @@ const (
 	fkTrack                  = "track"
 )
 
+type lsDefaults struct {
+	includeAlbums  bool
+	includeArtists bool
+	includeTracks  bool
+	annotateTracks bool
+	diagnostics    bool
+	sorting        string
+}
+
 func newLsCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*ls, bool) {
-	ok := true
 	name := fSet.Name()
-	configuration := c.SubConfiguration(name)
-	defIncludeAlbums, err := configuration.BoolDefault(includeAlbumsFlag, defaultIncludeAlbums)
-	if err != nil {
-		reportBadDefault(o, name, err)
-		ok = false
-	}
-	defIncludeArtists, err := configuration.BoolDefault(includeArtistsFlag, defaultIncludeArtists)
-	if err != nil {
-		reportBadDefault(o, name, err)
-		ok = false
-	}
-	defIncludeTracks, err := configuration.BoolDefault(includeTracksFlag, defaultIncludeTracks)
-	if err != nil {
-		reportBadDefault(o, name, err)
-		ok = false
-	}
-	defAnnotateTracks, err := configuration.BoolDefault(annotateListingsFlag, defaultAnnotateListings)
-	if err != nil {
-		reportBadDefault(o, name, err)
-		ok = false
-	}
-	defDiagnostics, err := configuration.BoolDefault(diagnosticListingFlag, defaultDiagnosticListing)
-	if err != nil {
-		reportBadDefault(o, name, err)
-		ok = false
-	}
-	if ok {
+	defaults, defaultsOk := evaluateLsDefaults(o, c.SubConfiguration(name), name)
+	sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet)
+	if defaultsOk && sFlagsOk {
 		return &ls{
-			n:              name,
-			includeAlbums:  fSet.Bool(includeAlbumsFlag, defIncludeAlbums, "include album names in listing"),
-			includeArtists: fSet.Bool(includeArtistsFlag, defIncludeArtists, "include artist names in listing"),
-			includeTracks:  fSet.Bool(includeTracksFlag, defIncludeTracks, "include track names in listing"),
-			trackSorting: fSet.String(trackSortingFlag,
-				configuration.StringDefault(trackSortingFlag, defaultTrackSorting),
-				"track sorting, 'numeric' in track number order, or 'alpha' in track name order"),
-			annotateListings: fSet.Bool(annotateListingsFlag, defAnnotateTracks, "annotate listings with album and artist data"),
-			diagnostics:      fSet.Bool(diagnosticListingFlag, defDiagnostics, "include diagnostic information with tracks"),
-			sf:               files.NewSearchFlags(c, fSet),
+			n:                name,
+			includeAlbums:    fSet.Bool(includeAlbumsFlag, defaults.includeAlbums, "include album names in listing"),
+			includeArtists:   fSet.Bool(includeArtistsFlag, defaults.includeArtists, "include artist names in listing"),
+			includeTracks:    fSet.Bool(includeTracksFlag, defaults.includeTracks, "include track names in listing"),
+			trackSorting:     fSet.String(trackSortingFlag, defaults.sorting, "track sorting, 'numeric' in track number order, or 'alpha' in track name order"),
+			annotateListings: fSet.Bool(annotateListingsFlag, defaults.annotateTracks, "annotate listings with album and artist data"),
+			diagnostics:      fSet.Bool(diagnosticListingFlag, defaults.diagnostics, "include diagnostic information with tracks"),
+			sf:               sFlags,
 		}, true
 	}
 	return nil, false
+}
+
+func evaluateLsDefaults(o internal.OutputBus, c *internal.Configuration, name string) (defaults lsDefaults, ok bool) {
+	ok = true
+	defaults = lsDefaults{}
+	var err error
+	defaults.includeAlbums, err = c.BoolDefault(includeAlbumsFlag, defaultIncludeAlbums)
+	if err != nil {
+		reportBadDefault(o, name, err)
+		ok = false
+	}
+	defaults.includeArtists, err = c.BoolDefault(includeArtistsFlag, defaultIncludeArtists)
+	if err != nil {
+		reportBadDefault(o, name, err)
+		ok = false
+	}
+	defaults.includeTracks, err = c.BoolDefault(includeTracksFlag, defaultIncludeTracks)
+	if err != nil {
+		reportBadDefault(o, name, err)
+		ok = false
+	}
+	defaults.annotateTracks, err = c.BoolDefault(annotateListingsFlag, defaultAnnotateListings)
+	if err != nil {
+		reportBadDefault(o, name, err)
+		ok = false
+	}
+	defaults.diagnostics, err = c.BoolDefault(diagnosticListingFlag, defaultDiagnosticListing)
+	if err != nil {
+		reportBadDefault(o, name, err)
+		ok = false
+	}
+	defaults.sorting, err = c.StringDefault(trackSortingFlag, defaultTrackSorting)
+	if err != nil {
+		reportBadDefault(o, name, err)
+		ok = false
+	}
+	return
 }
 
 func (l *ls) Exec(o internal.OutputBus, args []string) (ok bool) {

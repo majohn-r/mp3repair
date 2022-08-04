@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -18,11 +19,12 @@ func CreateAppSpecificPath(topDir string) string {
 // InterpretEnvVarReferences looks up environment variable references in the
 // provided string and substitutes the specified environment variable value into
 // the string
-func InterpretEnvVarReferences(s string) string {
+func InterpretEnvVarReferences(s string) (string, error) {
 	references := findReferences(s)
 	if len(references) == 0 {
-		return s
+		return s, nil
 	}
+	var missingVars []string
 	for _, r := range references {
 		envVar := ""
 		if strings.HasPrefix(r, "$") {
@@ -30,9 +32,17 @@ func InterpretEnvVarReferences(s string) string {
 		} else {
 			envVar = r[1 : len(r)-1]
 		}
-		s = strings.ReplaceAll(s, r, os.Getenv(envVar))
+		if value, ok := os.LookupEnv(envVar); !ok {
+			missingVars = append(missingVars, envVar)
+		} else {
+			s = strings.ReplaceAll(s, r, value)
+		}
 	}
-	return s
+	if len(missingVars) > 0 {
+		sort.Strings(missingVars)
+		return "", fmt.Errorf("missing environment variables: %v", missingVars)
+	}
+	return s, nil
 }
 
 var (

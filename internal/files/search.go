@@ -148,18 +148,20 @@ func (s *Search) LoadData(o internal.OutputBus) (artists []*Artist, ok bool) {
 // used for testing only!
 func CreateSearchForTesting(topDir string) *Search {
 	realFlagSet := flag.NewFlagSet("testing", flag.ContinueOnError)
-	s, _ := NewSearchFlags(internal.EmptyConfiguration(), realFlagSet).ProcessArgs(
-		internal.NewOutputDeviceForTesting(), []string{"-topDir", topDir})
+	o := internal.NewOutputDeviceForTesting()
+	sf, _ := NewSearchFlags(o, internal.EmptyConfiguration(), realFlagSet)
+	s, _ := sf.ProcessArgs(o, []string{"-topDir", topDir})
 	return s
 }
 
 func CreateFilteredSearchForTesting(topDir string, artistFilter string, albumFilter string) *Search {
 	realFlagSet := flag.NewFlagSet("testing", flag.ContinueOnError)
-	s, _ := NewSearchFlags(internal.EmptyConfiguration(), realFlagSet).ProcessArgs(
-		internal.NewOutputDeviceForTesting(), []string{
-			"-topDir", topDir,
-			"-artistFilter", artistFilter,
-			"-albumFilter", albumFilter,
-		})
+	o := internal.NewOutputDeviceForTesting()
+	sf, _ := NewSearchFlags(o, internal.EmptyConfiguration(), realFlagSet)
+	s, _ := sf.ProcessArgs(o, []string{
+		"-topDir", topDir,
+		"-artistFilter", artistFilter,
+		"-albumFilter", albumFilter,
+	})
 	return s
 }

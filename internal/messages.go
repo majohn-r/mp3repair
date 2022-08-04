@@ -47,6 +47,7 @@ const (
 
 // error log messages
 const (
+	LE_BAD_ARGUMENT          = "argument cannot be used"
 	LE_COMMAND_COUNT         = "incorrect number of commands"
 	LE_DEFAULT_COMMAND_COUNT = "incorrect number of default commands"
 	LE_FILE_IS_DIR           = "file is a directory"
@@ -54,6 +55,7 @@ const (
 
 // for output to user
 const (
+	USER_BAD_ARGUMENT                                 = "The value for argument %q cannot be used: %v"
 	USER_CANNOT_CREATE_DIRECTORY                      = "The directory %q cannot be created: %v"
 	USER_CANNOT_DELETE_DIRECTORY                      = "The directory %q cannot be deleted: %v"
 	USER_CANNOT_DELETE_FILE                           = "The file %q cannot be deleted: %v"
@@ -93,5 +95,6 @@ const (
 	ERROR_DOES_NOT_BEGIN_WITH_DIGIT = "first character is not a digit"
 	ERROR_EDIT_UNNECESSARY          = "no edit required"
 	ERROR_FILE_IS_DIR               = "file exists but is a directory"
+	ERROR_MISSING_ENV_VARS          = "missing environment variables: %v"
 	ERROR_ZERO_LENGTH               = "zero length"
 )

@@ -17,12 +17,19 @@ func (p *postrepair) name() string {
 	return p.n
 }
 
-func newPostRepairCommand(c *internal.Configuration, fSet *flag.FlagSet) *postrepair {
-	return &postrepair{n: fSet.Name(), sf: files.NewSearchFlags(c, fSet)}
+func newPostRepairCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*postrepair, bool) {
+	sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet)
+	if sFlagsOk {
+		return &postrepair{
+			n:  fSet.Name(),
+			sf: sFlags,
+		}, true
+	}
+	return nil, false
 }
 
 func newPostRepair(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
-	return newPostRepairCommand(c, fSet), true
+	return newPostRepairCommand(o, c, fSet)
 }
 
 func (p *postrepair) Exec(o internal.OutputBus, args []string) (ok bool) {

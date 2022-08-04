@@ -701,10 +701,13 @@ func Test_ls_Exec(t *testing.T) {
 
 func Test_newLsCommand(t *testing.T) {
 	fnName := "newLsCommand()"
-	savedState := internal.SaveEnvVarForTesting("APPDATA")
+	savedAppData := internal.SaveEnvVarForTesting("APPDATA")
 	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
+	savedFoo := internal.SaveEnvVarForTesting("FOO")
+	os.Unsetenv("FOO")
 	defer func() {
-		savedState.RestoreForTesting()
+		savedAppData.RestoreForTesting()
+		savedFoo.RestoreForTesting()
 	}()
 	topDir := "loadTest"
 	if err := internal.Mkdir(topDir); err != nil {
@@ -823,6 +826,20 @@ func Test_newLsCommand(t *testing.T) {
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"ls\": invalid boolean value \"no!\" for -diagnostic: parse error.\n",
 				WantLogOutput:   "level='warn' error='invalid boolean value \"no!\" for -diagnostic: parse error' section='ls' msg='invalid content in configuration file'\n",
+			},
+		},
+		{
+			name: "bad default for sorting",
+			args: args{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
+					"ls": map[string]interface{}{
+						"sort": "$FOO",
+					},
+				}),
+			},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"ls\": invalid value \"$FOO\" for flag -sort: missing environment variables: [FOO].\n",
+				WantLogOutput:   "level='warn' error='invalid value \"$FOO\" for flag -sort: missing environment variables: [FOO]' section='ls' msg='invalid content in configuration file'\n",
 			},
 		},
 	}

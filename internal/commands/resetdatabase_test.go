@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"mp3/internal"
+	"os"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -1016,6 +1017,11 @@ func Test_resetDatabase_openService(t *testing.T) {
 
 func Test_newResetDatabaseCommand(t *testing.T) {
 	fnName := "newResetDatabaseCommand()"
+	savedFoo := internal.SaveEnvVarForTesting("FOO")
+	os.Unsetenv("FOO")
+	defer func() {
+		savedFoo.RestoreForTesting()
+	}()
 	type args struct {
 		c *internal.Configuration
 	}
@@ -1042,6 +1048,48 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"resetDatabase\": invalid value \"forever\" for flag -timeout: parse error.\n",
 				WantLogOutput:   "level='warn' error='invalid value \"forever\" for flag -timeout: parse error' section='resetDatabase' msg='invalid content in configuration file'\n",
+			},
+		},
+		{
+			name: "bad default service",
+			args: args{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
+					"resetDatabase": map[string]interface{}{
+						"service": "Win$FOO",
+					},
+				}),
+			},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"resetDatabase\": invalid value \"Win$FOO\" for flag -service: missing environment variables: [FOO].\n",
+				WantLogOutput:   "level='warn' error='invalid value \"Win$FOO\" for flag -service: missing environment variables: [FOO]' section='resetDatabase' msg='invalid content in configuration file'\n",
+			},
+		},
+		{
+			name: "bad default metadata",
+			args: args{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
+					"resetDatabase": map[string]interface{}{
+						"metadata": "%FOO%/data",
+					},
+				}),
+			},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"resetDatabase\": invalid value \"%FOO%/data\" for flag -metadata: missing environment variables: [FOO].\n",
+				WantLogOutput:   "level='warn' error='invalid value \"%FOO%/data\" for flag -metadata: missing environment variables: [FOO]' section='resetDatabase' msg='invalid content in configuration file'\n",
+			},
+		},
+		{
+			name: "bad default extension",
+			args: args{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
+					"resetDatabase": map[string]interface{}{
+						"extension": ".%FOO%",
+					},
+				}),
+			},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"resetDatabase\": invalid value \".%FOO%\" for flag -extension: missing environment variables: [FOO].\n",
+				WantLogOutput:   "level='warn' error='invalid value \".%FOO%\" for flag -extension: missing environment variables: [FOO]' section='resetDatabase' msg='invalid content in configuration file'\n",
 			},
 		},
 	}

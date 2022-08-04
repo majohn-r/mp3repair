@@ -36,35 +36,48 @@ const (
 	integrityFlag               = "integrity"
 )
 
+type checkDefaults struct {
+	empty     bool
+	gaps      bool
+	integrity bool
+}
+
 func newCheckCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*check, bool) {
-	ok := true
 	name := fSet.Name()
-	configuration := c.SubConfiguration(name)
-	defaultEmpty, err := configuration.BoolDefault(emptyFoldersFlag, defaultEmptyFolders)
-	if err != nil {
-		reportBadDefault(o, name, err)
-		ok = false
-	}
-	defaultGaps, err := configuration.BoolDefault(gapsInTrackNumberingFlag, defaultGapsInTrackNumbering)
-	if err != nil {
-		reportBadDefault(o, name, err)
-		ok = false
-	}
-	defaultIntegritySetting, err := configuration.BoolDefault(integrityFlag, defaultIntegrity)
-	if err != nil {
-		reportBadDefault(o, name, err)
-		ok = false
-	}
-	if ok {
+	defaults, defaultsOk := evaluateCheckDefaults(o, c.SubConfiguration(name), name)
+	sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet)
+	if defaultsOk && sFlagsOk {
 		return &check{
 			n:                         name,
-			checkEmptyFolders:         fSet.Bool(emptyFoldersFlag, defaultEmpty, "check for empty artist and album folders"),
-			checkGapsInTrackNumbering: fSet.Bool(gapsInTrackNumberingFlag, defaultGaps, "check for gaps in track numbers"),
-			checkIntegrity:            fSet.Bool(integrityFlag, defaultIntegritySetting, "check for disagreement between the file system and audio file metadata"),
-			sf:                        files.NewSearchFlags(c, fSet),
-		}, ok
+			checkEmptyFolders:         fSet.Bool(emptyFoldersFlag, defaults.empty, "check for empty artist and album folders"),
+			checkGapsInTrackNumbering: fSet.Bool(gapsInTrackNumberingFlag, defaults.gaps, "check for gaps in track numbers"),
+			checkIntegrity:            fSet.Bool(integrityFlag, defaults.integrity, "check for disagreement between the file system and audio file metadata"),
+			sf:                        sFlags,
+		}, true
 	}
-	return nil, ok
+	return nil, false
+}
+
+func evaluateCheckDefaults(o internal.OutputBus, c *internal.Configuration, name string) (defaults checkDefaults, ok bool) {
+	ok = true
+	var err error
+	defaults = checkDefaults{}
+	defaults.empty, err = c.BoolDefault(emptyFoldersFlag, defaultEmptyFolders)
+	if err != nil {
+		reportBadDefault(o, name, err)
+		ok = false
+	}
+	defaults.gaps, err = c.BoolDefault(gapsInTrackNumberingFlag, defaultGapsInTrackNumbering)
+	if err != nil {
+		reportBadDefault(o, name, err)
+		ok = false
+	}
+	defaults.integrity, err = c.BoolDefault(integrityFlag, defaultIntegrity)
+	if err != nil {
+		reportBadDefault(o, name, err)
+		ok = false
+	}
+	return
 }
 
 func (c *check) Exec(o internal.OutputBus, args []string) (ok bool) {

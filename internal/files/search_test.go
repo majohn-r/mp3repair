@@ -21,11 +21,14 @@ func TestSearch_FilterArtists(t *testing.T) {
 		t.Errorf("%s error populating %q: %v", fnName, topDir, err)
 	}
 	realFlagSet := flag.NewFlagSet("real", flag.ContinueOnError)
-	realS, _ := NewSearchFlags(internal.EmptyConfiguration(), realFlagSet).ProcessArgs(
-		internal.NewOutputDeviceForTesting(), []string{"-topDir", topDir})
+	realSF, _ := NewSearchFlags(internal.NewOutputDeviceForTesting(), internal.EmptyConfiguration(), realFlagSet)
+	realS, _ := realSF.ProcessArgs(internal.NewOutputDeviceForTesting(), []string{"-topDir", topDir})
 	realArtists, _ := realS.LoadData(internal.NewOutputDeviceForTesting())
-	overFilteredS, _ := NewSearchFlags(internal.EmptyConfiguration(),
-		flag.NewFlagSet("overFiltered", flag.ContinueOnError)).ProcessArgs(
+	overFilteredSF, _ := NewSearchFlags(
+		internal.NewOutputDeviceForTesting(),
+		internal.EmptyConfiguration(),
+		flag.NewFlagSet("overFiltered", flag.ContinueOnError))
+	overFilteredS, _ := overFilteredSF.ProcessArgs(
 		internal.NewOutputDeviceForTesting(), []string{"-topDir", topDir, "-artistFilter", "^Filter all out$"})
 	a, _ := realS.LoadUnfilteredData(internal.NewOutputDeviceForTesting())
 	type args struct {

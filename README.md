@@ -322,6 +322,10 @@ Argument values may contain references to environment variables. These can be
 specified either in **Windows** format (**%VAR_NAME%**) or in **\*nix** format
 (**\$VAR_NAME**), such as **$APPDATA/mp3** or **%APPDATA%\mp3**.
 
+The referenced environment variables must exist. Referring to a non-existent
+(e.g., misspelled) variable will result in the program failing with one or more
+error messages specifying the missing variable.
+
 #### File Separators
 
 File separators, as in a path to the music files, may be forward slashes (**/**) or

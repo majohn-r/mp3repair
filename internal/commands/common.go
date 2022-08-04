@@ -11,7 +11,6 @@ const (
 	checkCommand         = "check"
 	fkCommandName        = "command"
 	fkCount              = "count"
-	fkSection            = "section"
 	lsCommand            = "ls"
 	postRepairCommand    = "postRepair"
 	repairCommand        = "repair"
@@ -183,8 +182,7 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 func reportBadDefault(o internal.OutputBus, section string, err error) {
 	o.WriteError(internal.USER_CONFIGURATION_FILE_INVALID, internal.DefaultConfigFileName, section, err)
 	o.LogWriter().Warn(internal.LW_INVALID_CONFIGURATION_DATA, map[string]interface{}{
-		fkSection:         section,
-		internal.FK_ERROR: err,
+		internal.FK_SECTION: section,
+		internal.FK_ERROR:   err,
 	})
-
 }
