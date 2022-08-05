@@ -36,7 +36,7 @@ func configureLogging(path string) *cronowriter.CronoWriter {
 
 func cleanupLogFiles(o OutputBus, path string) {
 	if files, err := ioutil.ReadDir(path); err != nil {
-		o.LogWriter().Warn(LW_CANNOT_READ_DIRECTORY, map[string]interface{}{
+		o.LogWriter().Error(LE_CANNOT_READ_DIRECTORY, map[string]interface{}{
 			FK_DIRECTORY: path,
 			FK_ERROR:     err,
 		})
@@ -63,7 +63,7 @@ func cleanupLogFiles(o OutputBus, path string) {
 				fileName := fileMap[times[k]].Name()
 				logFilePath := filepath.Join(path, fileName)
 				if err := os.Remove(logFilePath); err != nil {
-					o.LogWriter().Warn(LW_CANNOT_DELETE_FILE, map[string]interface{}{
+					o.LogWriter().Error(LE_CANNOT_DELETE_FILE, map[string]interface{}{
 						FK_DIRECTORY: path,
 						FK_FILE_NAME: fileName,
 						FK_ERROR:     err,
@@ -106,7 +106,6 @@ func InitLogging(o OutputBus) bool {
 
 type Logger interface {
 	Info(msg string, fields map[string]interface{})
-	Warn(msg string, fields map[string]interface{})
 	Error(msg string, fields map[string]interface{})
 }
 
@@ -114,10 +113,6 @@ type productionLogger struct{}
 
 func (productionLogger) Info(msg string, fields map[string]interface{}) {
 	logrus.WithFields(fields).Info(msg)
-}
-
-func (productionLogger) Warn(msg string, fields map[string]interface{}) {
-	logrus.WithFields(fields).Warn(msg)
 }
 
 func (productionLogger) Error(msg string, fields map[string]interface{}) {

@@ -46,7 +46,7 @@ func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
 	yfile, _ := ioutil.ReadFile(configFile) // only probable error circumvented by verifyFileExists failure
 	data, err := readYaml(yfile)
 	if err != nil {
-		o.LogWriter().Warn(LW_CANNOT_UNMARSHAL_YAML, map[string]interface{}{
+		o.LogWriter().Error(LE_CANNOT_UNMARSHAL_YAML, map[string]interface{}{
 			FK_DIRECTORY: path,
 			FK_FILE_NAME: DefaultConfigFileName,
 			FK_ERROR:     err,
@@ -274,11 +274,12 @@ func CreateConfiguration(o OutputBus, data map[string]interface{}) *Configuratio
 		case map[string]interface{}:
 			c.cMap[key] = CreateConfiguration(o, t)
 		default:
-			o.LogWriter().Warn(LW_UNEXPECTED_VALUE_TYPE, map[string]interface{}{
+			o.LogWriter().Error(LE_UNEXPECTED_VALUE_TYPE, map[string]interface{}{
 				fkKey:   key,
 				fkValue: v,
 				fkType:  fmt.Sprintf("%T", v),
 			})
+			o.WriteError(USER_UNEXPECTED_VALUE_TYPE, key, v, v)
 			c.sMap[key] = fmt.Sprintf("%v", v)
 		}
 	}

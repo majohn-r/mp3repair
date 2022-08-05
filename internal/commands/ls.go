@@ -139,7 +139,7 @@ func (l *ls) logFields() map[string]interface{} {
 func (l *ls) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
 		o.WriteError(internal.USER_SPECIFIED_NO_WORK, l.name())
-		o.LogWriter().Warn(internal.LW_NOTHING_TO_DO, l.logFields())
+		o.LogWriter().Error(internal.LE_NOTHING_TO_DO, l.logFields())
 		return
 	}
 	o.LogWriter().Info(internal.LI_EXECUTING_COMMAND, l.logFields())
@@ -215,7 +215,7 @@ func (l *ls) validateTrackSorting(o internal.OutputBus) (ok bool) {
 	case numericSorting:
 		if !*l.includeAlbums {
 			o.WriteError(internal.USER_INVALID_SORTING_APPLIED, fkTrackSortingFlag, *l.trackSorting, fkIncludeAlbumsFlag)
-			o.LogWriter().Warn(internal.LW_SORTING_OPTION_UNACCEPTABLE, map[string]interface{}{
+			o.LogWriter().Error(internal.LE_SORTING_OPTION_UNACCEPTABLE, map[string]interface{}{
 				fkTrackSortingFlag:  *l.trackSorting,
 				fkIncludeAlbumsFlag: *l.includeAlbums,
 			})
@@ -226,7 +226,7 @@ func (l *ls) validateTrackSorting(o internal.OutputBus) (ok bool) {
 		ok = true
 	default:
 		o.WriteError(internal.USER_UNRECOGNIZED_VALUE, fkTrackSortingFlag, *l.trackSorting)
-		o.LogWriter().Warn(internal.LW_INVALID_FLAG_SETTING, map[string]interface{}{
+		o.LogWriter().Error(internal.LE_INVALID_FLAG_SETTING, map[string]interface{}{
 			fkCommandName:      l.name(),
 			fkTrackSortingFlag: *l.trackSorting,
 		})
@@ -301,7 +301,7 @@ func (l *ls) outputTracks(o internal.OutputBus, tracks []*files.Track, prefix st
 func (l *ls) outputTrackDiagnostics(o internal.OutputBus, t *files.Track, prefix string) {
 	if *l.diagnostics {
 		if version, enc, frames, err := t.Diagnostics(); err != nil {
-			o.LogWriter().Warn(internal.LW_TAG_ERROR, map[string]interface{}{
+			o.LogWriter().Error(internal.LE_TAG_ERROR, map[string]interface{}{
 				internal.FK_ERROR: err,
 				fkTrack:           t.String(),
 			})

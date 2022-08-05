@@ -156,7 +156,7 @@ func Test_resetDatabase_waitForStop(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The service \"test service\" could not be stopped within the 10 second timeout.\n",
-				WantLogOutput:   "level='warn' error='operation timed out' operation='stop service' service='test service' timeout in seconds='10' msg='service issue'\n",
+				WantLogOutput:   "level='error' error='operation timed out' operation='stop service' service='test service' timeout in seconds='10' msg='service issue'\n",
 			},
 		},
 		{
@@ -184,7 +184,7 @@ func Test_resetDatabase_waitForStop(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The status for the service \"test service\" cannot be obtained: access denied.\n",
-				WantLogOutput:   "level='warn' error='access denied' operation='query service status' service='test service' msg='service issue'\n",
+				WantLogOutput:   "level='error' error='access denied' operation='query service status' service='test service' msg='service issue'\n",
 			},
 		},
 	}
@@ -228,7 +228,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The service manager cannot be accessed. Try running the program again as an administrator. Error: access denied.\n",
-				WantLogOutput:   "level='warn' error='access denied' operation='connect to service manager' msg='service manager issue'\n",
+				WantLogOutput:   "level='error' error='access denied' operation='connect to service manager' msg='service manager issue'\n",
 			},
 		},
 		{
@@ -245,9 +245,9 @@ func Test_resetDatabase_stopService(t *testing.T) {
 				},
 			},
 			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "The service \"mp3 management service\" cannot be opened: access denied.\n" +
-					"The following services are available:\n  - none -\n",
-				WantLogOutput: "level='warn' error='access denied' operation='open service' service='mp3 management service' msg='service issue'\n",
+				WantConsoleOutput: "The following services are available:\n  - none -\n",
+				WantErrorOutput:   "The service \"mp3 management service\" cannot be opened: access denied.\n",
+				WantLogOutput:     "level='error' error='access denied' operation='open service' service='mp3 management service' msg='service issue'\n",
 			},
 		},
 		{
@@ -269,7 +269,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The status for the service \"mp3 management service\" cannot be obtained: query failure.\n",
-				WantLogOutput:   "level='warn' error='query failure' operation='query service status' service='mp3 management service' msg='service issue'\n",
+				WantLogOutput:   "level='error' error='query failure' operation='query service status' service='mp3 management service' msg='service issue'\n",
 			},
 		},
 		{
@@ -317,7 +317,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The service \"mp3 management service\" cannot be stopped: stop command rejected.\n",
-				WantLogOutput:   "level='warn' error='stop command rejected' operation='stop service' service='mp3 management service' msg='service issue'\n",
+				WantLogOutput:   "level='error' error='stop command rejected' operation='stop service' service='mp3 management service' msg='service issue'\n",
 			},
 		},
 		{
@@ -341,7 +341,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The service \"mp3 management service\" cannot be stopped: stop command rejected.\n",
-				WantLogOutput:   "level='warn' error='stop command rejected' operation='stop service' service='mp3 management service' msg='service issue'\n",
+				WantLogOutput:   "level='error' error='stop command rejected' operation='stop service' service='mp3 management service' msg='service issue'\n",
 			},
 		},
 		{
@@ -369,7 +369,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The service \"mp3 management service\" could not be stopped within the -1 second timeout.\n",
-				WantLogOutput:   "level='warn' error='operation timed out' operation='stop service' service='mp3 management service' timeout in seconds='-1' msg='service issue'\n",
+				WantLogOutput:   "level='error' error='operation timed out' operation='stop service' service='mp3 management service' timeout in seconds='-1' msg='service issue'\n",
 			},
 		},
 		{
@@ -396,7 +396,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The service \"mp3 management service\" could not be stopped within the -1 second timeout.\n",
-				WantLogOutput:   "level='warn' error='operation timed out' operation='stop service' service='mp3 management service' timeout in seconds='-1' msg='service issue'\n",
+				WantLogOutput:   "level='error' error='operation timed out' operation='stop service' service='mp3 management service' timeout in seconds='-1' msg='service issue'\n",
 			},
 		},
 		{
@@ -588,7 +588,7 @@ func Test_resetDatabase_deleteMetadataFiles(t *testing.T) {
 			WantedOutput: internal.WantedOutput{
 				WantConsoleOutput: "8 out of 9 metadata files have been deleted from \"deleteMetadataFiles\".\n",
 				WantErrorOutput:   "The file \"deleteMetadataFiles\\\\file8.wmdb\" cannot be deleted: remove deleteMetadataFiles\\file8.wmdb: The directory is not empty.\n",
-				WantLogOutput:     "level='warn' error='remove deleteMetadataFiles\\file8.wmdb: The directory is not empty.' fileName='deleteMetadataFiles\\file8.wmdb' msg='cannot delete file'\n",
+				WantLogOutput:     "level='error' error='remove deleteMetadataFiles\\file8.wmdb: The directory is not empty.' fileName='deleteMetadataFiles\\file8.wmdb' msg='cannot delete file'\n",
 			},
 		},
 		{
@@ -651,7 +651,7 @@ func Test_resetDatabase_deleteMetadata(t *testing.T) {
 			r:    &resetDatabase{metadata: &fnName},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The directory \"resetDatabase.deleteMetadata()\" cannot be read: open resetDatabase.deleteMetadata(): The system cannot find the file specified.\n",
-				WantLogOutput:   "level='warn' directory='resetDatabase.deleteMetadata()' error='open resetDatabase.deleteMetadata(): The system cannot find the file specified.' msg='cannot read directory'\n",
+				WantLogOutput:   "level='error' directory='resetDatabase.deleteMetadata()' error='open resetDatabase.deleteMetadata(): The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
 		},
 		{
@@ -742,7 +742,7 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The service \"mp3 service\" cannot be stopped: stop command rejected.\n",
 				WantLogOutput: "level='info' -extension='.wmdb' -metadata='runCommand' -service='mp3 service' -timeout='-1' command='resetDatabase' msg='executing command'\n" +
-					"level='warn' error='stop command rejected' operation='stop service' service='mp3 service' msg='service issue'\n",
+					"level='error' error='stop command rejected' operation='stop service' service='mp3 service' msg='service issue'\n",
 			},
 		},
 		{
@@ -763,8 +763,8 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 				WantErrorOutput: "The service manager cannot be accessed. Try running the program again as an administrator. Error: access denied.\n" +
 					"The directory \"resetdatabase_test.go\" cannot be read: readdir resetdatabase_test.go: The system cannot find the path specified.\n",
 				WantLogOutput: "level='info' -extension='.wmdb' -metadata='resetdatabase_test.go' -service='mp3 service' -timeout='-1' command='resetDatabase' msg='executing command'\n" +
-					"level='warn' error='access denied' operation='connect to service manager' msg='service manager issue'\n" +
-					"level='warn' directory='resetdatabase_test.go' error='readdir resetdatabase_test.go: The system cannot find the path specified.' msg='cannot read directory'\n",
+					"level='error' error='access denied' operation='connect to service manager' msg='service manager issue'\n" +
+					"level='error' directory='resetdatabase_test.go' error='readdir resetdatabase_test.go: The system cannot find the path specified.' msg='cannot read directory'\n",
 			},
 		},
 		{
@@ -786,7 +786,7 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 				WantConsoleOutput: "10 out of 10 metadata files have been deleted from \"runCommand\".\n",
 				WantErrorOutput:   "The service manager cannot be accessed. Try running the program again as an administrator. Error: access denied.\n",
 				WantLogOutput: "level='info' -extension='.wmdb' -metadata='runCommand' -service='mp3 service' -timeout='-1' command='resetDatabase' msg='executing command'\n" +
-					"level='warn' error='access denied' operation='connect to service manager' msg='service manager issue'\n",
+					"level='error' error='access denied' operation='connect to service manager' msg='service manager issue'\n",
 			},
 		},
 	}
@@ -869,8 +869,8 @@ func Test_resetDatabase_Exec(t *testing.T) {
 				WantErrorOutput: "The service manager cannot be accessed. Try running the program again as an administrator. Error: Access is denied.\n" +
 					"The directory \"no such dir\" cannot be read: open no such dir: The system cannot find the file specified.\n",
 				WantLogOutput: "level='info' -extension='.wmdb' -metadata='no such dir' -service='WMPNetworkSVC' -timeout='10' command='resetDatabase' msg='executing command'\n" +
-					"level='warn' error='Access is denied.' operation='connect to service manager' msg='service manager issue'\n" +
-					"level='warn' directory='no such dir' error='open no such dir: The system cannot find the file specified.' msg='cannot read directory'\n",
+					"level='error' error='Access is denied.' operation='connect to service manager' msg='service manager issue'\n" +
+					"level='error' directory='no such dir' error='open no such dir: The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
 		},
 		{
@@ -884,7 +884,7 @@ func Test_resetDatabase_Exec(t *testing.T) {
 				WantConsoleOutput: "No metadata files were found in \"Exec\".\n",
 				WantErrorOutput:   "The service manager cannot be accessed. Try running the program again as an administrator. Error: Access is denied.\n",
 				WantLogOutput: "level='info' -extension='.wmdb' -metadata='Exec' -service='WMPNetworkSVC' -timeout='10' command='resetDatabase' msg='executing command'\n" +
-					"level='warn' error='Access is denied.' operation='connect to service manager' msg='service manager issue'\n" +
+					"level='error' error='Access is denied.' operation='connect to service manager' msg='service manager issue'\n" +
 					"level='info' directory='Exec' file extension='.wmdb' msg='no files found'\n",
 			},
 		},
@@ -929,7 +929,7 @@ func Test_resetDatabase_openService(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The service manager cannot be accessed. Try running the program again as an administrator. Error: access denied.\n",
-				WantLogOutput:   "level='warn' error='access denied' operation='connect to service manager' msg='service manager issue'\n",
+				WantLogOutput:   "level='error' error='access denied' operation='connect to service manager' msg='service manager issue'\n",
 			},
 		},
 		{
@@ -944,10 +944,10 @@ func Test_resetDatabase_openService(t *testing.T) {
 				},
 			},
 			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "The service \"mp3 management service\" cannot be opened: access denied.\n",
-				WantErrorOutput:   "The list of available services cannot be obtained: cannot list services.\n",
-				WantLogOutput: "level='warn' error='access denied' operation='open service' service='mp3 management service' msg='service issue'\n" +
-					"level='warn' error='cannot list services' operation='list services' msg='service manager issue'\n",
+				WantErrorOutput: "The service \"mp3 management service\" cannot be opened: access denied.\n" +
+					"The list of available services cannot be obtained: cannot list services.\n",
+				WantLogOutput: "level='error' error='access denied' operation='open service' service='mp3 management service' msg='service issue'\n" +
+					"level='error' error='cannot list services' operation='list services' msg='service manager issue'\n",
 			},
 		},
 		{
@@ -967,11 +967,11 @@ func Test_resetDatabase_openService(t *testing.T) {
 				},
 			},
 			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "The service \"mp3 management service\" cannot be opened: access denied.\n" +
-					"The following services are available:\n" +
+				WantConsoleOutput: "The following services are available:\n" +
 					"  State \"running\":\n" +
 					"    \"other service\"\n",
-				WantLogOutput: "level='warn' error='access denied' operation='open service' service='mp3 management service' msg='service issue'\n",
+				WantErrorOutput: "The service \"mp3 management service\" cannot be opened: access denied.\n",
+				WantLogOutput:   "level='error' error='access denied' operation='open service' service='mp3 management service' msg='service issue'\n",
 			},
 		},
 		{
@@ -1047,7 +1047,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"resetDatabase\": invalid value \"forever\" for flag -timeout: parse error.\n",
-				WantLogOutput:   "level='warn' error='invalid value \"forever\" for flag -timeout: parse error' section='resetDatabase' msg='invalid content in configuration file'\n",
+				WantLogOutput:   "level='error' error='invalid value \"forever\" for flag -timeout: parse error' section='resetDatabase' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
@@ -1061,7 +1061,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"resetDatabase\": invalid value \"Win$FOO\" for flag -service: missing environment variables: [FOO].\n",
-				WantLogOutput:   "level='warn' error='invalid value \"Win$FOO\" for flag -service: missing environment variables: [FOO]' section='resetDatabase' msg='invalid content in configuration file'\n",
+				WantLogOutput:   "level='error' error='invalid value \"Win$FOO\" for flag -service: missing environment variables: [FOO]' section='resetDatabase' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
@@ -1075,7 +1075,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"resetDatabase\": invalid value \"%FOO%/data\" for flag -metadata: missing environment variables: [FOO].\n",
-				WantLogOutput:   "level='warn' error='invalid value \"%FOO%/data\" for flag -metadata: missing environment variables: [FOO]' section='resetDatabase' msg='invalid content in configuration file'\n",
+				WantLogOutput:   "level='error' error='invalid value \"%FOO%/data\" for flag -metadata: missing environment variables: [FOO]' section='resetDatabase' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
@@ -1089,7 +1089,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"resetDatabase\": invalid value \".%FOO%\" for flag -extension: missing environment variables: [FOO].\n",
-				WantLogOutput:   "level='warn' error='invalid value \".%FOO%\" for flag -extension: missing environment variables: [FOO]' section='resetDatabase' msg='invalid content in configuration file'\n",
+				WantLogOutput:   "level='error' error='invalid value \".%FOO%\" for flag -extension: missing environment variables: [FOO]' section='resetDatabase' msg='invalid content in configuration file'\n",
 			},
 		},
 	}

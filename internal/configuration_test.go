@@ -462,7 +462,8 @@ func TestReadConfigurationFile(t *testing.T) {
 			},
 			wantOk: true,
 			WantedOutput: WantedOutput{
-				WantLogOutput: fmt.Sprintf("level='warn' key='value' type='float64' value='1.25' msg='unexpected value type'\n"+
+				WantErrorOutput: "The key \"value\", with value '1.25', has an unexpected type float64.\n",
+				WantLogOutput: fmt.Sprintf("level='error' key='value' type='float64' value='1.25' msg='unexpected value type'\n"+
 					"level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1.25]]' msg='read configuration file'\n", mp3Path),
 			},
 		},
@@ -499,7 +500,7 @@ func TestReadConfigurationFile(t *testing.T) {
 				WantErrorOutput: fmt.Sprintf(
 					"The configuration file %q is not well-formed YAML: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}.\n",
 					SecureAbsolutePathForTesting(filepath.Join(gibberishDir, DefaultConfigFileName))),
-				WantLogOutput: fmt.Sprintf("level='warn' directory='%s' error='yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}' fileName='defaults.yaml' msg='cannot unmarshal yaml content'\n", SecureAbsolutePathForTesting(gibberishDir)),
+				WantLogOutput: fmt.Sprintf("level='error' directory='%s' error='yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}' fileName='defaults.yaml' msg='cannot unmarshal yaml content'\n", SecureAbsolutePathForTesting(gibberishDir)),
 			},
 		},
 	}
@@ -820,7 +821,8 @@ func Test_createConfiguration(t *testing.T) {
 				cMap: map[string]*Configuration{"mapValue": EmptyConfiguration()},
 			},
 			WantedOutput: WantedOutput{
-				WantLogOutput: "level='warn' key='weirdValue' type='float64' value='1.2345' msg='unexpected value type'\n",
+				WantErrorOutput: "The key \"weirdValue\", with value '1.2345', has an unexpected type float64.\n",
+				WantLogOutput:   "level='error' key='weirdValue' type='float64' value='1.2345' msg='unexpected value type'\n",
 			},
 		},
 	}

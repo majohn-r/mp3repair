@@ -35,7 +35,6 @@ func TestNewOutputDevice(t *testing.T) {
 			}
 			// exercise log functionality
 			testDevice.LogWriter().Info("info message", map[string]interface{}{"foo": "INFO"})
-			testDevice.LogWriter().Warn("warn message", map[string]interface{}{"foo": "WARN"})
 			testDevice.LogWriter().Error("errpr message", map[string]interface{}{"foo": "ERROR"})
 		})
 	}

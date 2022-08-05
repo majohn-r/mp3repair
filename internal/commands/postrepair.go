@@ -72,7 +72,7 @@ func (p *postrepair) runCommand(o internal.OutputBus, s *files.Search) (ok bool)
 
 func removeBackupDirectory(o internal.OutputBus, d string, a *files.Album) {
 	if err := os.RemoveAll(d); err != nil {
-		o.LogWriter().Warn(internal.LW_CANNOT_DELETE_DIRECTORY, map[string]interface{}{
+		o.LogWriter().Error(internal.LE_CANNOT_DELETE_DIRECTORY, map[string]interface{}{
 			internal.FK_DIRECTORY: d,
 			internal.FK_ERROR:     err,
 		})

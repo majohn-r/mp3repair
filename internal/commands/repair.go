@@ -136,7 +136,7 @@ func (r *repair) fixTracks(o internal.OutputBus, tracks []*files.Track) {
 	for _, t := range tracks {
 		if err := t.EditTags(); err != nil {
 			o.WriteError(internal.USER_ERROR_REPAIRING_TRACK_FILE, t)
-			o.LogWriter().Warn(internal.LW_CANNOT_EDIT_TRACK, map[string]interface{}{
+			o.LogWriter().Error(internal.LE_CANNOT_EDIT_TRACK, map[string]interface{}{
 				internal.LI_EXECUTING_COMMAND: r.name(),
 				internal.FK_DIRECTORY:         t.Directory(),
 				internal.FK_FILE_NAME:         t.FileName(),
@@ -166,7 +166,7 @@ func (r *repair) backupTrack(o internal.OutputBus, t *files.Track) {
 	if internal.DirExists(backupDir) && !internal.PlainFileExists(destinationPath) {
 		if err := t.Copy(destinationPath); err != nil {
 			o.WriteError(internal.USER_ERROR_CREATING_BACKUP_FILE, t)
-			o.LogWriter().Warn(internal.LW_CANNOT_COPY_FILE, map[string]interface{}{
+			o.LogWriter().Error(internal.LE_CANNOT_COPY_FILE, map[string]interface{}{
 				fkCommandName:     r.name(),
 				fkSource:          t.Path(),
 				fkDestination:     destinationPath,
@@ -184,7 +184,7 @@ func (r *repair) makeBackupDirectories(o internal.OutputBus, paths []string) {
 		if !internal.DirExists(newPath) {
 			if err := internal.Mkdir(newPath); err != nil {
 				o.WriteError(internal.USER_CANNOT_CREATE_DIRECTORY, newPath, err)
-				o.LogWriter().Warn(internal.LW_CANNOT_CREATE_DIRECTORY, map[string]interface{}{
+				o.LogWriter().Error(internal.LE_CANNOT_CREATE_DIRECTORY, map[string]interface{}{
 					fkCommandName:         r.name(),
 					internal.FK_DIRECTORY: newPath,
 					internal.FK_ERROR:     err,

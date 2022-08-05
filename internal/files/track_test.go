@@ -58,7 +58,7 @@ func Test_parseTrackName(t *testing.T) {
 			wantTrackNumber: 59,
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The track \"59 track name.mp4\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
-				WantLogOutput:   "level='warn' albumName='some album' artistName='some artist' trackName='59 track name.mp4' msg='the track name cannot be parsed'\n",
+				WantLogOutput:   "level='error' albumName='some album' artistName='some artist' trackName='59 track name.mp4' msg='the track name cannot be parsed'\n",
 			},
 			args: args{
 				name:  "59 track name.mp4",
@@ -71,7 +71,7 @@ func Test_parseTrackName(t *testing.T) {
 			wantSimpleName: "name",
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The track \"track name.mp3\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
-				WantLogOutput:   "level='warn' albumName='some album' artistName='some artist' trackName='track name.mp3' msg='the track name cannot be parsed'\n",
+				WantLogOutput:   "level='error' albumName='some album' artistName='some artist' trackName='track name.mp3' msg='the track name cannot be parsed'\n",
 			},
 			args: args{
 				name:  "track name.mp3",
@@ -83,7 +83,7 @@ func Test_parseTrackName(t *testing.T) {
 			name: "missing track number, simple name",
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The track \"trackName.mp3\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
-				WantLogOutput:   "level='warn' albumName='some album' artistName='some artist' trackName='trackName.mp3' msg='the track name cannot be parsed'\n",
+				WantLogOutput:   "level='error' albumName='some album' artistName='some artist' trackName='trackName.mp3' msg='the track name cannot be parsed'\n",
 			},
 			args: args{
 				name:  "trackName.mp3",
@@ -489,7 +489,7 @@ func TestUpdateTracks(t *testing.T) {
 		for _, album := range artist.Albums() {
 			for _, track := range album.Tracks() {
 				errors = append(errors, "An error occurred when trying to read tag information for track \""+track.name+"\" on album \""+album.name+"\" by artist \""+artist.name+"\": \"read error\".\n")
-				logs = append(logs, fmt.Sprintf("level='warn' albumName='%s' artistName='%s' error='read error' trackName='%s' msg='tag error'\n", album.name, artist.name, track.name))
+				logs = append(logs, fmt.Sprintf("level='error' albumName='%s' artistName='%s' error='read error' trackName='%s' msg='tag error'\n", album.name, artist.name, track.name))
 			}
 		}
 	}
@@ -1280,10 +1280,14 @@ func Test_processAlbumRelatedFrames(t *testing.T) {
 			album:          album3,
 			wantAlbumTitle: "problematic_album",
 			WantedOutput: internal.WantedOutput{
-				WantLogOutput: "level='warn' albumName='problematic_album' artistName='problematic artist' field='genre' settings='map[folk:1 pop:1 rock:1]' msg='no value has a majority of instances'\n" +
-					"level='warn' albumName='problematic_album' artistName='problematic artist' field='year' settings='map[2021:1 2022:1 2023:1]' msg='no value has a majority of instances'\n" +
-					"level='warn' albumName='problematic_album' artistName='problematic artist' field='album title' settings='map[Problematic:album:1 problematic:Album:1 problematic:album:1]' msg='no value has a majority of instances'\n" +
-					"level='warn' albumName='problematic_album' artistName='problematic artist' field='mcdi frame' settings='map[\x01\x02\x03:1 \x01\x02\x03\x04:1 \x01\x02\x03\x04\x05:1]' msg='no value has a majority of instances'\n",
+				WantErrorOutput: "There are multiple genre fields for \"problematic_album by problematic artist\", and there is no unambiguously preferred choice; candidates are {\"folk\": 1 instance, \"pop\": 1 instance, \"rock\": 1 instance}.\n" +
+					"There are multiple year fields for \"problematic_album by problematic artist\", and there is no unambiguously preferred choice; candidates are {\"2021\": 1 instance, \"2022\": 1 instance, \"2023\": 1 instance}.\n" +
+					"There are multiple album title fields for \"problematic_album by problematic artist\", and there is no unambiguously preferred choice; candidates are {\"Problematic:album\": 1 instance, \"problematic:Album\": 1 instance, \"problematic:album\": 1 instance}.\n" +
+					"There are multiple MCDI frame fields for \"problematic_album by problematic artist\", and there is no unambiguously preferred choice; candidates are {\"\\x01\\x02\\x03\": 1 instance, \"\\x01\\x02\\x03\\x04\": 1 instance, \"\\x01\\x02\\x03\\x04\\x05\": 1 instance}.\n",
+				WantLogOutput: "level='error' albumName='problematic_album' artistName='problematic artist' field='genre' settings='map[folk:1 pop:1 rock:1]' msg='no value has a majority of instances'\n" +
+					"level='error' albumName='problematic_album' artistName='problematic artist' field='year' settings='map[2021:1 2022:1 2023:1]' msg='no value has a majority of instances'\n" +
+					"level='error' albumName='problematic_album' artistName='problematic artist' field='album title' settings='map[Problematic:album:1 problematic:Album:1 problematic:album:1]' msg='no value has a majority of instances'\n" +
+					"level='error' albumName='problematic_album' artistName='problematic artist' field='mcdi frame' settings='map[\x01\x02\x03:1 \x01\x02\x03\x04:1 \x01\x02\x03\x04\x05:1]' msg='no value has a majority of instances'\n",
 			},
 		},
 	}
@@ -1357,7 +1361,8 @@ func Test_processArtistRelatedFrames(t *testing.T) {
 			artist:             artist3,
 			wantCanonicalTitle: "artist_name",
 			WantedOutput: internal.WantedOutput{
-				WantLogOutput: "level='warn' artistName='artist_name' field='artist name' settings='map[artist:name:5 artist_name:5]' msg='no value has a majority of instances'\n",
+				WantErrorOutput: "There are multiple artist name fields for \"artist_name\", and there is no unambiguously preferred choice; candidates are {\"artist:name\": 5 instances, \"artist_name\": 5 instances}.\n",
+				WantLogOutput:   "level='error' artistName='artist_name' field='artist name' settings='map[artist:name:5 artist_name:5]' msg='no value has a majority of instances'\n",
 			},
 		},
 	}

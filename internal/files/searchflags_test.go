@@ -74,7 +74,7 @@ func Test_NewSearchFlags(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -topDir: missing environment variables: [FOO].\n",
-				WantLogOutput:   "level='warn' error='invalid value \"$FOO\" for flag -topDir: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
+				WantLogOutput:   "level='error' error='invalid value \"$FOO\" for flag -topDir: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
@@ -88,7 +88,7 @@ func Test_NewSearchFlags(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -ext: missing environment variables: [FOO].\n",
-				WantLogOutput:   "level='warn' error='invalid value \"$FOO\" for flag -ext: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
+				WantLogOutput:   "level='error' error='invalid value \"$FOO\" for flag -ext: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
@@ -102,7 +102,7 @@ func Test_NewSearchFlags(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -albumFilter: missing environment variables: [FOO].\n",
-				WantLogOutput:   "level='warn' error='invalid value \"$FOO\" for flag -albumFilter: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
+				WantLogOutput:   "level='error' error='invalid value \"$FOO\" for flag -albumFilter: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
@@ -116,7 +116,7 @@ func Test_NewSearchFlags(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -artistFilter: missing environment variables: [FOO].\n",
-				WantLogOutput:   "level='warn' error='invalid value \"$FOO\" for flag -artistFilter: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
+				WantLogOutput:   "level='error' error='invalid value \"$FOO\" for flag -artistFilter: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
 			},
 		},
 	}
@@ -190,7 +190,7 @@ func Test_validateRegexp(t *testing.T) {
 			args: args{pattern: "disc[", name: "album"},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The album filter value you specified, \"disc[\", cannot be used: error parsing regexp: missing closing ]: `[`.\n",
-				WantLogOutput:   "level='warn' album='disc[' error='error parsing regexp: missing closing ]: `[`' msg='the filter cannot be parsed as a regular expression'\n",
+				WantLogOutput:   "level='error' album='disc[' error='error parsing regexp: missing closing ]: `[`' msg='the filter cannot be parsed as a regular expression'\n",
 			},
 		},
 	}
@@ -253,7 +253,7 @@ func Test_validateSearchParameters(t *testing.T) {
 			wantArtistsFilter: regexp.MustCompile(".*"),
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The -ext value you specified, \"mp3\", must contain exactly one '.' and '.' must be the first character.\n",
-				WantLogOutput:   "level='warn' -ext='mp3' msg='the file extension must begin with '.' and contain no other '.' characters'\n",
+				WantLogOutput:   "level='error' -ext='mp3' msg='the file extension must begin with '.' and contain no other '.' characters'\n",
 			},
 		},
 		{
@@ -268,7 +268,7 @@ func Test_validateSearchParameters(t *testing.T) {
 			wantArtistsFilter: regexp.MustCompile(".*"),
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The -ext value you specified, \".m.p3\", must contain exactly one '.' and '.' must be the first character.\n",
-				WantLogOutput:   "level='warn' -ext='.m.p3' msg='the file extension must begin with '.' and contain no other '.' characters'\n",
+				WantLogOutput:   "level='error' -ext='.m.p3' msg='the file extension must begin with '.' and contain no other '.' characters'\n",
 			},
 		},
 		{
@@ -283,7 +283,7 @@ func Test_validateSearchParameters(t *testing.T) {
 			wantArtistsFilter: regexp.MustCompile(".*"),
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The -ext value you specified, \".mp[3\", cannot be used for file matching: error parsing regexp: missing closing ]: `[3$`.\n",
-				WantLogOutput:   "level='warn' -ext='.mp[3' error='error parsing regexp: missing closing ]: `[3$`' msg='the file extension cannot be parsed as a regular expression'\n",
+				WantLogOutput:   "level='error' -ext='.mp[3' error='error parsing regexp: missing closing ]: `[3$`' msg='the file extension cannot be parsed as a regular expression'\n",
 			},
 		},
 		{
@@ -297,7 +297,7 @@ func Test_validateSearchParameters(t *testing.T) {
 			wantArtistsFilter: regexp.MustCompile(".*"),
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The -albumFilter filter value you specified, \".[*\", cannot be used: error parsing regexp: missing closing ]: `[*`.\n",
-				WantLogOutput:   "level='warn' -albumFilter='.[*' error='error parsing regexp: missing closing ]: `[*`' msg='the filter cannot be parsed as a regular expression'\n",
+				WantLogOutput:   "level='error' -albumFilter='.[*' error='error parsing regexp: missing closing ]: `[*`' msg='the filter cannot be parsed as a regular expression'\n",
 			},
 		},
 		{
@@ -311,7 +311,7 @@ func Test_validateSearchParameters(t *testing.T) {
 			wantAlbumsFilter: regexp.MustCompile(".*"),
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The -artistFilter filter value you specified, \".[*\", cannot be used: error parsing regexp: missing closing ]: `[*`.\n",
-				WantLogOutput:   "level='warn' -artistFilter='.[*' error='error parsing regexp: missing closing ]: `[*`' msg='the filter cannot be parsed as a regular expression'\n",
+				WantLogOutput:   "level='error' -artistFilter='.[*' error='error parsing regexp: missing closing ]: `[*`' msg='the filter cannot be parsed as a regular expression'\n",
 			},
 		},
 		{
@@ -326,7 +326,7 @@ func Test_validateSearchParameters(t *testing.T) {
 			wantArtistsFilter: regexp.MustCompile(".*"),
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The -topDir value you specified, \"no such directory\", cannot be read: CreateFile no such directory: The system cannot find the file specified.\n",
-				WantLogOutput:   "level='warn' -topDir='no such directory' error='CreateFile no such directory: The system cannot find the file specified.' msg='cannot read directory'\n",
+				WantLogOutput:   "level='error' -topDir='no such directory' error='CreateFile no such directory: The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
 		},
 		{
@@ -341,7 +341,7 @@ func Test_validateSearchParameters(t *testing.T) {
 			wantArtistsFilter: regexp.MustCompile(".*"),
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The -topDir value you specified, \"utilities_test.go\", is not a directory.\n",
-				WantLogOutput:   "level='warn' -topDir='utilities_test.go' msg='the file is not a directory'\n",
+				WantLogOutput:   "level='error' -topDir='utilities_test.go' msg='the file is not a directory'\n",
 			},
 		},
 	}
@@ -392,7 +392,7 @@ func TestSearchFlags_validateTopLevelDirectory(t *testing.T) {
 			sf:   &SearchFlags{topDirectory: &notAFile},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The -topDir value you specified, \"no such file\", cannot be read: CreateFile no such file: The system cannot find the file specified.\n",
-				WantLogOutput:   "level='warn' -topDir='no such file' error='CreateFile no such file: The system cannot find the file specified.' msg='cannot read directory'\n",
+				WantLogOutput:   "level='error' -topDir='no such file' error='CreateFile no such file: The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
 		},
 		{
@@ -400,7 +400,7 @@ func TestSearchFlags_validateTopLevelDirectory(t *testing.T) {
 			sf:   &SearchFlags{topDirectory: &notADir},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The -topDir value you specified, \"searchflags_test.go\", is not a directory.\n",
-				WantLogOutput:   "level='warn' -topDir='searchflags_test.go' msg='the file is not a directory'\n",
+				WantLogOutput:   "level='error' -topDir='searchflags_test.go' msg='the file is not a directory'\n",
 			},
 		},
 	}
@@ -441,7 +441,7 @@ func TestSearchFlags_validateExtension(t *testing.T) {
 			sf:   &SearchFlags{fileExtension: &missingLeadDot},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The -ext value you specified, \"mp3\", must contain exactly one '.' and '.' must be the first character.\n",
-				WantLogOutput:   "level='warn' -ext='mp3' msg='the file extension must begin with '.' and contain no other '.' characters'\n",
+				WantLogOutput:   "level='error' -ext='mp3' msg='the file extension must begin with '.' and contain no other '.' characters'\n",
 			},
 		},
 		{
@@ -449,7 +449,7 @@ func TestSearchFlags_validateExtension(t *testing.T) {
 			sf:   &SearchFlags{fileExtension: &multipleDots},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The -ext value you specified, \".m.p3\", must contain exactly one '.' and '.' must be the first character.\n",
-				WantLogOutput:   "level='warn' -ext='.m.p3' msg='the file extension must begin with '.' and contain no other '.' characters'\n",
+				WantLogOutput:   "level='error' -ext='.m.p3' msg='the file extension must begin with '.' and contain no other '.' characters'\n",
 			},
 		},
 		{
@@ -457,7 +457,7 @@ func TestSearchFlags_validateExtension(t *testing.T) {
 			sf:   &SearchFlags{fileExtension: &badChar},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The -ext value you specified, \".m[p3\", cannot be used for file matching: error parsing regexp: missing closing ]: `[p3$`.\n",
-				WantLogOutput:   "level='warn' -ext='.m[p3' error='error parsing regexp: missing closing ]: `[p3$`' msg='the file extension cannot be parsed as a regular expression'\n",
+				WantLogOutput:   "level='error' -ext='.m[p3' error='error parsing regexp: missing closing ]: `[p3$`' msg='the file extension cannot be parsed as a regular expression'\n",
 			},
 		},
 	}

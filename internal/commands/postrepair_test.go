@@ -71,7 +71,7 @@ func Test_postrepair_Exec(t *testing.T) {
 			args: args{args: []string{"-topDir", "non-existent directory"}},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The -topDir value you specified, \"non-existent directory\", cannot be read: CreateFile non-existent directory: The system cannot find the file specified.\n",
-				WantLogOutput:   "level='warn' -topDir='non-existent directory' error='CreateFile non-existent directory: The system cannot find the file specified.' msg='cannot read directory'\n",
+				WantLogOutput:   "level='error' -topDir='non-existent directory' error='CreateFile non-existent directory: The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
 		},
 		{
@@ -150,7 +150,7 @@ func Test_removeBackupDirectory(t *testing.T) {
 			args: args{d: "dir/.", a: nil},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The directory \"dir/.\" cannot be deleted: RemoveAll dir/.: invalid argument.\n",
-				WantLogOutput:   "level='warn' directory='dir/.' error='RemoveAll dir/.: invalid argument' msg='cannot delete directory'\n",
+				WantLogOutput:   "level='error' directory='dir/.' error='RemoveAll dir/.: invalid argument' msg='cannot delete directory'\n",
 			},
 		},
 		{
@@ -213,7 +213,7 @@ func Test_newPostRepairCommand(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"%FOO%\" for flag -topDir: missing environment variables: [FOO].\n",
-				WantLogOutput:   "level='warn' error='invalid value \"%FOO%\" for flag -topDir: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
+				WantLogOutput:   "level='error' error='invalid value \"%FOO%\" for flag -topDir: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
 			},
 		},
 	}

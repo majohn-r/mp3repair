@@ -150,7 +150,7 @@ func TestReadDirectory(t *testing.T) {
 			args: args{"non-existent directory"},
 			WantedOutput: WantedOutput{
 				WantErrorOutput: "The directory \"non-existent directory\" cannot be read: open non-existent directory: The system cannot find the file specified.\n",
-				WantLogOutput:   "level='warn' directory='non-existent directory' error='open non-existent directory: The system cannot find the file specified.' msg='cannot read directory'\n",
+				WantLogOutput:   "level='error' directory='non-existent directory' error='open non-existent directory: The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
 		},
 	}

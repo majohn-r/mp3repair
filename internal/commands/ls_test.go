@@ -31,7 +31,7 @@ func Test_ls_validateTrackSorting(t *testing.T) {
 			wantSorting:   "alpha",
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
-				WantLogOutput:   "level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n",
+				WantLogOutput:   "level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n",
 			},
 		},
 		{
@@ -41,7 +41,7 @@ func Test_ls_validateTrackSorting(t *testing.T) {
 			wantSorting:   "numeric",
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The \"-sort\" value you specified, \"nonsense\", is not valid.\n",
-				WantLogOutput:   "level='warn' -sort='nonsense' command='ls' msg='flag value is not valid'\n",
+				WantLogOutput:   "level='error' -sort='nonsense' command='ls' msg='flag value is not valid'\n",
 			},
 		},
 		{
@@ -51,7 +51,7 @@ func Test_ls_validateTrackSorting(t *testing.T) {
 			wantSorting:   "alpha",
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The \"-sort\" value you specified, \"nonsense\", is not valid.\n",
-				WantLogOutput:   "level='warn' -sort='nonsense' command='ls' msg='flag value is not valid'\n",
+				WantLogOutput:   "level='error' -sort='nonsense' command='ls' msg='flag value is not valid'\n",
 			},
 		},
 	}
@@ -247,7 +247,7 @@ func Test_ls_Exec(t *testing.T) {
 			WantedOutput: internal.WantedOutput{
 				WantConsoleOutput: generateListing(false, false, false, false, false),
 				WantErrorOutput:   "You disabled all functionality for the command \"ls\".\n",
-				WantLogOutput:     "level='warn' -annotate='false' -diagnostic='false' -includeAlbums='false' -includeArtists='false' -includeTracks='false' -sort='numeric' command='ls' msg='the user disabled all functionality'\n",
+				WantLogOutput:     "level='error' -annotate='false' -diagnostic='false' -includeAlbums='false' -includeArtists='false' -includeTracks='false' -sort='numeric' command='ls' msg='the user disabled all functionality'\n",
 			},
 		},
 		// tracks only
@@ -267,7 +267,7 @@ func Test_ls_Exec(t *testing.T) {
 				WantConsoleOutput: generateListing(false, false, true, false, false),
 				WantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
 				WantLogOutput: "level='info' -annotate='false' -diagnostic='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
-					"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
+					"level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
@@ -287,7 +287,7 @@ func Test_ls_Exec(t *testing.T) {
 				WantConsoleOutput: generateListing(false, false, true, true, false),
 				WantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
 				WantLogOutput: "level='info' -annotate='true' -diagnostic='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
-					"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
+					"level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
@@ -308,7 +308,7 @@ func Test_ls_Exec(t *testing.T) {
 				WantConsoleOutput: generateListing(false, false, true, false, true),
 				WantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
 				WantLogOutput: "level='info' -annotate='false' -diagnostic='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
-					"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
+					"level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
@@ -329,7 +329,7 @@ func Test_ls_Exec(t *testing.T) {
 				WantConsoleOutput: generateListing(false, false, true, true, true),
 				WantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
 				WantLogOutput: "level='info' -annotate='true' -diagnostic='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
-					"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
+					"level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
@@ -581,7 +581,7 @@ func Test_ls_Exec(t *testing.T) {
 				WantConsoleOutput: generateListing(true, false, true, false, true),
 				WantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
 				WantLogOutput: "level='info' -annotate='false' -diagnostic='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
-					"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
+					"level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
@@ -602,7 +602,7 @@ func Test_ls_Exec(t *testing.T) {
 				WantConsoleOutput: generateListing(true, false, true, true, true),
 				WantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
 				WantLogOutput: "level='info' -annotate='true' -diagnostic='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='numeric' command='ls' msg='executing command'\n" +
-					"level='warn' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
+					"level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
@@ -769,7 +769,7 @@ func Test_newLsCommand(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"ls\": invalid boolean value \"nope\" for -includeAlbums: parse error.\n",
-				WantLogOutput:   "level='warn' error='invalid boolean value \"nope\" for -includeAlbums: parse error' section='ls' msg='invalid content in configuration file'\n",
+				WantLogOutput:   "level='error' error='invalid boolean value \"nope\" for -includeAlbums: parse error' section='ls' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
@@ -783,7 +783,7 @@ func Test_newLsCommand(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"ls\": invalid boolean value \"yes\" for -includeArtists: parse error.\n",
-				WantLogOutput:   "level='warn' error='invalid boolean value \"yes\" for -includeArtists: parse error' section='ls' msg='invalid content in configuration file'\n",
+				WantLogOutput:   "level='error' error='invalid boolean value \"yes\" for -includeArtists: parse error' section='ls' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
@@ -797,7 +797,7 @@ func Test_newLsCommand(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"ls\": invalid boolean value \"sure\" for -includeTracks: parse error.\n",
-				WantLogOutput:   "level='warn' error='invalid boolean value \"sure\" for -includeTracks: parse error' section='ls' msg='invalid content in configuration file'\n",
+				WantLogOutput:   "level='error' error='invalid boolean value \"sure\" for -includeTracks: parse error' section='ls' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
@@ -811,7 +811,7 @@ func Test_newLsCommand(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"ls\": invalid boolean value \"+2\" for -annotate: parse error.\n",
-				WantLogOutput:   "level='warn' error='invalid boolean value \"+2\" for -annotate: parse error' section='ls' msg='invalid content in configuration file'\n",
+				WantLogOutput:   "level='error' error='invalid boolean value \"+2\" for -annotate: parse error' section='ls' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
@@ -825,7 +825,7 @@ func Test_newLsCommand(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"ls\": invalid boolean value \"no!\" for -diagnostic: parse error.\n",
-				WantLogOutput:   "level='warn' error='invalid boolean value \"no!\" for -diagnostic: parse error' section='ls' msg='invalid content in configuration file'\n",
+				WantLogOutput:   "level='error' error='invalid boolean value \"no!\" for -diagnostic: parse error' section='ls' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
@@ -839,7 +839,7 @@ func Test_newLsCommand(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"ls\": invalid value \"$FOO\" for flag -sort: missing environment variables: [FOO].\n",
-				WantLogOutput:   "level='warn' error='invalid value \"$FOO\" for flag -sort: missing environment variables: [FOO]' section='ls' msg='invalid content in configuration file'\n",
+				WantLogOutput:   "level='error' error='invalid value \"$FOO\" for flag -sort: missing environment variables: [FOO]' section='ls' msg='invalid content in configuration file'\n",
 			},
 		},
 	}
@@ -945,7 +945,7 @@ func Test_ls_outputTrackDiagnostics(t *testing.T) {
 			args: args{t: badTrack},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "An error occurred when trying to read tag information for track \"bad track\" on album \"bad album\" by artist \"bad artist\": \"open BadAlbum\\\\01 bad track.mp3: The system cannot find the path specified.\".\n",
-				WantLogOutput:   "level='warn' error='open BadAlbum\\01 bad track.mp3: The system cannot find the path specified.' track='BadAlbum\\01 bad track.mp3' msg='tag error'\n",
+				WantLogOutput:   "level='error' error='open BadAlbum\\01 bad track.mp3: The system cannot find the path specified.' track='BadAlbum\\01 bad track.mp3' msg='tag error'\n",
 			},
 		},
 		{

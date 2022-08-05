@@ -73,7 +73,7 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "No music files could be found using the specified parameters.\n",
 				WantLogOutput: "level='info' -ext='.mp3' -topDir='empty' msg='reading unfiltered music files'\n" +
-					"level='warn' -ext='.mp3' -topDir='empty' msg='cannot find any artist directories'\n",
+					"level='error' -ext='.mp3' -topDir='empty' msg='cannot find any artist directories'\n",
 			},
 		},
 		{
@@ -410,7 +410,7 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 			args: args{artists: a},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "An error occurred when trying to read tag information for track \"track\" on album \"album\" by artist \"artist\": \"zero length\".\n",
-				WantLogOutput:   "level='warn' albumName='album' artistName='artist' error='zero length' trackName='track' msg='tag error'\n",
+				WantLogOutput:   "level='error' albumName='album' artistName='artist' error='zero length' trackName='track' msg='tag error'\n",
 			},
 			wantConflictedArtists: []*artistWithIssues{
 				{
@@ -479,7 +479,7 @@ func Test_check_Exec(t *testing.T) {
 			args: args{[]string{"-topDir", topDirName, "-empty=false", "-gaps=false", "-integrity=false"}},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "You disabled all functionality for the command \"check\".\n",
-				WantLogOutput:   "level='warn' -empty='false' -gaps='false' -integrity='false' command='check' msg='the user disabled all functionality'\n",
+				WantLogOutput:   "level='error' -empty='false' -gaps='false' -integrity='false' command='check' msg='the user disabled all functionality'\n",
 			},
 		},
 		{
@@ -605,7 +605,7 @@ func Test_newCheckCommand(t *testing.T) {
 			wantOk: false,
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"check\": invalid boolean value \"Empty!!\" for -empty: parse error.\n",
-				WantLogOutput:   "level='warn' error='invalid boolean value \"Empty!!\" for -empty: parse error' section='check' msg='invalid content in configuration file'\n",
+				WantLogOutput:   "level='error' error='invalid boolean value \"Empty!!\" for -empty: parse error' section='check' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
@@ -620,7 +620,7 @@ func Test_newCheckCommand(t *testing.T) {
 			wantOk: false,
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"check\": invalid boolean value \"No\" for -gaps: parse error.\n",
-				WantLogOutput:   "level='warn' error='invalid boolean value \"No\" for -gaps: parse error' section='check' msg='invalid content in configuration file'\n",
+				WantLogOutput:   "level='error' error='invalid boolean value \"No\" for -gaps: parse error' section='check' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
@@ -635,7 +635,7 @@ func Test_newCheckCommand(t *testing.T) {
 			wantOk: false,
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"check\": invalid boolean value \"Off\" for -integrity: parse error.\n",
-				WantLogOutput:   "level='warn' error='invalid boolean value \"Off\" for -integrity: parse error' section='check' msg='invalid content in configuration file'\n",
+				WantLogOutput:   "level='error' error='invalid boolean value \"Off\" for -integrity: parse error' section='check' msg='invalid content in configuration file'\n",
 			},
 		},
 	}

@@ -59,7 +59,7 @@ func TestSearch_FilterArtists(t *testing.T) {
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "No music files could be found using the specified parameters.\n",
 				WantLogOutput: "level='info' -albumFilter='.*' -artistFilter='^Filter all out$' -ext='.mp3' -topDir='loadTest' msg='filtering music files'\n" +
-					"level='warn' -albumFilter='.*' -artistFilter='^Filter all out$' -ext='.mp3' -topDir='loadTest' msg='cannot find any artist directories'\n",
+					"level='error' -albumFilter='.*' -artistFilter='^Filter all out$' -ext='.mp3' -topDir='loadTest' msg='cannot find any artist directories'\n",
 			},
 		},
 	}
@@ -126,7 +126,7 @@ func TestSearch_LoadData(t *testing.T) {
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "No music files could be found using the specified parameters.\n",
 				WantLogOutput: "level='info' -albumFilter='^.*$' -artistFilter='^.*X$' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n" +
-					"level='warn' -albumFilter='^.*$' -artistFilter='^.*X$' -ext='.mp3' -topDir='loadTest' msg='cannot find any artist directories'\n",
+					"level='error' -albumFilter='^.*$' -artistFilter='^.*X$' -ext='.mp3' -topDir='loadTest' msg='cannot find any artist directories'\n",
 			},
 		},
 		{
@@ -135,7 +135,7 @@ func TestSearch_LoadData(t *testing.T) {
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "No music files could be found using the specified parameters.\n",
 				WantLogOutput: "level='info' -albumFilter='^.*X$' -artistFilter='^.*$' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n" +
-					"level='warn' -albumFilter='^.*X$' -artistFilter='^.*$' -ext='.mp3' -topDir='loadTest' msg='cannot find any artist directories'\n",
+					"level='error' -albumFilter='^.*X$' -artistFilter='^.*$' -ext='.mp3' -topDir='loadTest' msg='cannot find any artist directories'\n",
 			},
 		},
 	}
@@ -198,7 +198,7 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "No music files could be found using the specified parameters.\n",
 				WantLogOutput: "level='info' -ext='.mp3' -topDir='empty directory' msg='reading unfiltered music files'\n" +
-					"level='warn' -ext='.mp3' -topDir='empty directory' msg='cannot find any artist directories'\n"},
+					"level='error' -ext='.mp3' -topDir='empty directory' msg='cannot find any artist directories'\n"},
 		},
 	}
 	for _, tt := range tests {

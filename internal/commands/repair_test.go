@@ -67,7 +67,7 @@ func Test_newRepairCommand(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"repair\": invalid boolean value \"42\" for -dryRun: parse error.\n",
-				WantLogOutput:   "level='warn' error='invalid boolean value \"42\" for -dryRun: parse error' section='repair' msg='invalid content in configuration file'\n",
+				WantLogOutput:   "level='error' error='invalid boolean value \"42\" for -dryRun: parse error' section='repair' msg='invalid content in configuration file'\n",
 			},
 		},
 	}
@@ -325,7 +325,7 @@ func generateStandardTrackLogReport() string {
 	for artist := 0; artist < 10; artist++ {
 		for album := 0; album < 10; album++ {
 			for track := 0; track < 10; track++ {
-				result = append(result, fmt.Sprintf("level='warn' albumName='Test Album %d' artistName='Test Artist %d' error='zero length' trackName='Test Track[%02d]' msg='tag error'\n", album, artist, track))
+				result = append(result, fmt.Sprintf("level='error' albumName='Test Album %d' artistName='Test Artist %d' error='zero length' trackName='Test Track[%02d]' msg='tag error'\n", album, artist, track))
 			}
 		}
 	}
@@ -514,7 +514,7 @@ func Test_repair_makeBackupDirectories(t *testing.T) {
 			args: args{paths: []string{topDir, albumDir, albumDir2}},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The directory \"makeBackupDirectories\\\\album\\\\pre-repair-backup\" cannot be created: file exists and is not a directory.\n",
-				WantLogOutput:   "level='warn' command='' directory='makeBackupDirectories\\album\\pre-repair-backup' error='file exists and is not a directory' msg='cannot create directory'\n",
+				WantLogOutput:   "level='error' command='' directory='makeBackupDirectories\\album\\pre-repair-backup' error='file exists and is not a directory' msg='cannot create directory'\n",
 			},
 		},
 	}
@@ -573,7 +573,7 @@ func Test_repair_backupTracks(t *testing.T) {
 			},
 			WantedOutput: internal.WantedOutput{
 				WantConsoleOutput: fmt.Sprintf("The track %q has been backed up to %q.\n", filepath.Join(topDir, goodTrackName), filepath.Join(files.CreateBackupPath(topDir), "1.mp3")),
-				WantLogOutput:     "level='warn' command='repair' destination='backupTracks\\pre-repair-backup\\2.mp3' error='open backupTracks\\pre-repair-backup\\2.mp3: is a directory' source='backupTracks\\1 good track.mp3' msg='error copying file'\n",
+				WantLogOutput:     "level='error' command='repair' destination='backupTracks\\pre-repair-backup\\2.mp3' error='open backupTracks\\pre-repair-backup\\2.mp3: is a directory' source='backupTracks\\1 good track.mp3' msg='error copying file'\n",
 				WantErrorOutput:   fmt.Sprintf("The track %q cannot be backed up.\n", filepath.Join(topDir, goodTrackName)),
 			},
 		},
@@ -650,7 +650,7 @@ func Test_repair_fixTracks(t *testing.T) {
 			WantedOutput: internal.WantedOutput{
 				WantConsoleOutput: fmt.Sprintf("%q repaired.\n", filepath.Join(topDir, goodFileName)),
 				WantErrorOutput:   "An error occurred repairing track \"fixTracks\\\\non-existent-track\".\n",
-				WantLogOutput:     "level='warn' directory='fixTracks' error='no edit required' executing command='' fileName='non-existent-track' msg='cannot edit track'\n",
+				WantLogOutput:     "level='error' directory='fixTracks' error='no edit required' executing command='' fileName='non-existent-track' msg='cannot edit track'\n",
 			},
 		},
 	}

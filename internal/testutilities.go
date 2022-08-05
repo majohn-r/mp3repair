@@ -250,10 +250,6 @@ func (tl testLogger) log(level string, msg string, fields map[string]interface{}
 	fmt.Fprintf(tl.writer, "level='%s' %s msg='%s'\n", level, strings.Join(parts, " "), msg)
 }
 
-func (tl testLogger) Warn(msg string, fields map[string]interface{}) {
-	tl.log("warn", msg, fields)
-}
-
 func (tl testLogger) Error(msg string, fields map[string]interface{}) {
 	tl.log("error", msg, fields)
 }
