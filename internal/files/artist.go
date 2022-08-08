@@ -15,7 +15,7 @@ type Artist struct {
 	canonicalName string
 }
 
-func newArtistFromFile(f fs.FileInfo, dir string) *Artist {
+func newArtistFromFile(f fs.DirEntry, dir string) *Artist {
 	artistName := f.Name()
 	return NewArtist(artistName, filepath.Join(dir, artistName))
 }
@@ -31,7 +31,7 @@ func NewArtist(n, p string) *Artist {
 	return &Artist{name: n, path: p, canonicalName: n}
 }
 
-func (a *Artist) contents(o internal.OutputBus) ([]fs.FileInfo, bool) {
+func (a *Artist) contents(o internal.OutputBus) ([]fs.DirEntry, bool) {
 	return internal.ReadDirectory(o, a.path)
 }
 

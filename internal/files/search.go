@@ -16,7 +16,7 @@ type Search struct {
 	artistFilter    *regexp.Regexp
 }
 
-func (s *Search) contents(o internal.OutputBus) ([]fs.FileInfo, bool) {
+func (s *Search) contents(o internal.OutputBus) ([]fs.DirEntry, bool) {
 	return internal.ReadDirectory(o, s.topDirectory)
 }
 

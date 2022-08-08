@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"os"
 )
 
@@ -64,9 +63,9 @@ func Mkdir(dirName string) (err error) {
 }
 
 // ReadDirectory returns the contents of a specified directory
-func ReadDirectory(o OutputBus, dir string) (files []fs.FileInfo, ok bool) {
+func ReadDirectory(o OutputBus, dir string) (files []fs.DirEntry, ok bool) {
 	var err error
-	if files, err = ioutil.ReadDir(dir); err != nil {
+	if files, err = os.ReadDir(dir); err != nil {
 		o.LogWriter().Error(LE_CANNOT_READ_DIRECTORY, map[string]interface{}{
 			FK_DIRECTORY: dir,
 			FK_ERROR:     err,

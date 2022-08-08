@@ -3,7 +3,6 @@ package internal
 import (
 	"fmt"
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -34,16 +33,15 @@ func Test_configureLogging(t *testing.T) {
 			got.Close()
 			var latestFound bool
 			var mp3logFound bool
-			if files, err := ioutil.ReadDir(tt.args.path); err != nil {
+			if files, err := os.ReadDir(tt.args.path); err != nil {
 				t.Errorf("%s cannot read path %q: %v", fnName, tt.args.path, err)
 			} else {
 				for _, file := range files {
-					mode := file.Mode()
 					fileName := file.Name()
-					if mode.IsRegular() && strings.HasPrefix(fileName, logFilePrefix) && strings.HasSuffix(fileName, logFileExtension) {
+					if file.Type().IsRegular() && strings.HasPrefix(fileName, logFilePrefix) && strings.HasSuffix(fileName, logFileExtension) {
 						mp3logFound = true
 
-					} else if fs.ModeSymlink == (mode&fs.ModeSymlink) && fileName == symlinkName {
+					} else if fs.ModeSymlink == (file.Type()&fs.ModeSymlink) && fileName == symlinkName {
 						latestFound = true
 					}
 				}
@@ -156,13 +154,13 @@ func TestCleanupLogFiles(t *testing.T) {
 				}
 			}
 			if tt.createFolder {
-				if files, err := ioutil.ReadDir(tt.args.path); err != nil {
+				if files, err := os.ReadDir(tt.args.path); err != nil {
 					t.Errorf("%s cannot read directory %q: %v", fnName, tt.args.path, err)
 				} else {
 					var gotFileCount int
 					for _, file := range files {
 						fileName := file.Name()
-						if file.Mode().IsRegular() && strings.HasPrefix(fileName, logFilePrefix) && strings.HasSuffix(fileName, logFileExtension) {
+						if file.Type().IsRegular() && strings.HasPrefix(fileName, logFilePrefix) && strings.HasSuffix(fileName, logFileExtension) {
 							gotFileCount++
 						}
 					}

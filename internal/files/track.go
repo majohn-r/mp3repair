@@ -78,7 +78,7 @@ func copyTrack(t *Track, a *Album) *Track {
 	}
 }
 
-func newTrackFromFile(a *Album, f fs.FileInfo, simpleName string, trackNumber int) *Track {
+func newTrackFromFile(a *Album, f fs.DirEntry, simpleName string, trackNumber int) *Track {
 	return NewTrack(a, f.Name(), simpleName, trackNumber)
 }
 

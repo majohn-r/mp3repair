@@ -2,7 +2,6 @@ package internal
 
 import (
 	"io/fs"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -35,23 +34,25 @@ func configureLogging(path string) *cronowriter.CronoWriter {
 }
 
 func cleanupLogFiles(o OutputBus, path string) {
-	if files, err := ioutil.ReadDir(path); err != nil {
+	if files, err := os.ReadDir(path); err != nil {
 		o.LogWriter().Error(LE_CANNOT_READ_DIRECTORY, map[string]interface{}{
 			FK_DIRECTORY: path,
 			FK_ERROR:     err,
 		})
 		o.WriteError(USER_LOG_DIR_CANNOT_BE_READ, path, err)
 	} else {
-		var fileMap map[time.Time]fs.FileInfo = make(map[time.Time]fs.FileInfo)
+		var fileMap map[time.Time]fs.DirEntry = make(map[time.Time]fs.DirEntry)
 		var times []time.Time
 		for _, file := range files {
 			fileName := file.Name()
-			if file.Mode().IsRegular() &&
+			if file.Type().IsRegular() &&
 				strings.HasPrefix(fileName, logFilePrefix) &&
 				strings.HasSuffix(fileName, logFileExtension) {
-				modificationTime := file.ModTime()
-				fileMap[modificationTime] = file
-				times = append(times, modificationTime)
+				if f, fErr := file.Info(); fErr == nil {
+					modificationTime := f.ModTime()
+					fileMap[modificationTime] = file
+					times = append(times, modificationTime)
+				}
 			}
 		}
 		if len(times) > maxLogFiles {

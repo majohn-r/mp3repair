@@ -140,11 +140,11 @@ func TestReadDirectory(t *testing.T) {
 	tests := []struct {
 		name      string
 		args      args
-		wantFiles []fs.FileInfo
+		wantFiles []fs.DirEntry
 		wantOk    bool
 		WantedOutput
 	}{
-		{name: "default", args: args{topDir}, wantFiles: []fs.FileInfo{}, wantOk: true},
+		{name: "default", args: args{topDir}, wantFiles: []fs.DirEntry{}, wantOk: true},
 		{
 			name: "non-existent dir",
 			args: args{"non-existent directory"},

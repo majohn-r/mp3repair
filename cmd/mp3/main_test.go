@@ -52,7 +52,7 @@ func Test_run(t *testing.T) {
 			args:            args{cmdlineArgs: []string{"./mp3", "foo"}},
 			wantReturnValue: 1,
 			wantErrorOutput: "There is no command named \"foo\"; valid commands include [check ls postRepair repair resetDatabase].\n",
-			wantLogPrefix: "level='info' args='[./mp3 foo]' timeStamp='' version='unknown version!' msg='execution starts'\n" +
+			wantLogPrefix: "level='info' args='[./mp3 foo]' go version='unknown go version' timeStamp='' version='unknown version!' msg='execution starts'\n" +
 				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", filepath.Join(thisDir, internal.AppName)) +
 				"level='error' command='foo' msg='unrecognized command'\n" +
 				"level='info' duration='",
@@ -62,7 +62,7 @@ func Test_run(t *testing.T) {
 			name:            "success",
 			args:            args{cmdlineArgs: []string{"./mp3", "-topDir", "./Music"}},
 			wantReturnValue: 0,
-			wantLogPrefix: "level='info' args='[./mp3 -topDir ./Music]' timeStamp='' version='unknown version!' msg='execution starts'\n" +
+			wantLogPrefix: "level='info' args='[./mp3 -topDir ./Music]' go version='unknown go version' timeStamp='' version='unknown version!' msg='execution starts'\n" +
 				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", filepath.Join(thisDir, internal.AppName)) +
 				"level='info' -annotate='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n" +
 				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='./Music' msg='reading filtered music files'\n" +
@@ -98,6 +98,7 @@ func Test_report(t *testing.T) {
 	fnName := "report()"
 	creation = time.Now().Format(time.RFC3339)
 	version = "1.2.3"
+	goVersion = "go1.xx"
 	type args struct {
 		returnValue int
 	}
@@ -111,7 +112,7 @@ func Test_report(t *testing.T) {
 			name: "failure",
 			args: args{returnValue: 1},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "\"mp3\" version 1.2.3, created at " + creation + ", failed.\n",
+				WantErrorOutput: "\"mp3\" version 1.2.3, created at " + creation + ", with " + goVersion + ", failed.\n",
 			},
 		},
 	}

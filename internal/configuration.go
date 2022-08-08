@@ -3,7 +3,6 @@ package internal
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sort"
@@ -43,7 +42,7 @@ func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
 		ok = true
 		return
 	}
-	yfile, _ := ioutil.ReadFile(configFile) // only probable error circumvented by verifyFileExists failure
+	yfile, _ := os.ReadFile(configFile) // only probable error circumvented by verifyFileExists failure
 	data, err := readYaml(yfile)
 	if err != nil {
 		o.LogWriter().Error(LE_CANNOT_UNMARSHAL_YAML, map[string]interface{}{

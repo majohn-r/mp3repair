@@ -13,6 +13,8 @@ var (
 	version string = "unknown version!"
 	// build timestamp in RFC3339 format (2006-01-02T15:04:05Z07:00)
 	creation string
+	// go version
+	goVersion string = "unknown go version"
 )
 
 func main() {
@@ -25,7 +27,8 @@ const (
 	fkExitCode             = "exitCode"
 	fkTimeStamp            = "timeStamp"
 	fkVersion              = "version"
-	statusFormat           = "%q version %s, created at %s, failed"
+	fkGoVersion            = "go version"
+	statusFormat           = "%q version %s, created at %s, with %s, failed"
 )
 
 func exec(logInit func(internal.OutputBus) bool, cmdLine []string) (returnValue int) {
@@ -40,7 +43,7 @@ func exec(logInit func(internal.OutputBus) bool, cmdLine []string) (returnValue 
 
 func report(o internal.OutputBus, returnValue int) {
 	if returnValue != 0 {
-		o.WriteError(statusFormat, internal.AppName, version, creation)
+		o.WriteError(statusFormat, internal.AppName, version, creation, goVersion)
 	}
 }
 
@@ -50,6 +53,7 @@ func run(o internal.OutputBus, cmdlineArgs []string) (returnValue int) {
 	o.LogWriter().Info(internal.LI_BEGIN_EXECUTION, map[string]interface{}{
 		fkVersion:              version,
 		fkTimeStamp:            creation,
+		fkGoVersion:            goVersion,
 		fkCommandLineArguments: cmdlineArgs,
 	})
 	if cmd, args, ok := commands.ProcessCommand(o, cmdlineArgs); ok {

@@ -20,7 +20,7 @@ type Album struct {
 	musicCDIdentifier id3v2.UnknownFrame // MCDI frame value
 }
 
-func newAlbumFromFile(file fs.FileInfo, artist *Artist) *Album {
+func newAlbumFromFile(file fs.DirEntry, artist *Artist) *Album {
 	dirName := file.Name()
 	return NewAlbum(dirName, artist, artist.subDirectory(dirName))
 }
@@ -46,7 +46,7 @@ func (a *Album) BackupDirectory() string {
 	return a.subDirectory(backupDirName)
 }
 
-func (a *Album) contents(o internal.OutputBus) ([]fs.FileInfo, bool) {
+func (a *Album) contents(o internal.OutputBus) ([]fs.DirEntry, bool) {
 	return internal.ReadDirectory(o, a.path)
 }
 

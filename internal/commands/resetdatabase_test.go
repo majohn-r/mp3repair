@@ -496,7 +496,7 @@ func Test_resetDatabase_filterMetadataFiles(t *testing.T) {
 	}
 	files, _ := internal.ReadDirectory(internal.NewOutputDeviceForTesting(), testDir)
 	type args struct {
-		files []fs.FileInfo
+		files []fs.DirEntry
 	}
 	tests := []struct {
 		name string

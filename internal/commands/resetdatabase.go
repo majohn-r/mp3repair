@@ -158,7 +158,7 @@ func (r *resetDatabase) runCommand(o internal.OutputBus, connect func() (service
 }
 
 func (r *resetDatabase) deleteMetadata(o internal.OutputBus) bool {
-	var files []fs.FileInfo
+	var files []fs.DirEntry
 	var ok bool
 	if files, ok = internal.ReadDirectory(o, *r.metadata); !ok {
 		return false
@@ -192,7 +192,7 @@ func (r *resetDatabase) deleteMetadataFiles(o internal.OutputBus, paths []string
 	return count == len(paths)
 }
 
-func (r *resetDatabase) filterMetadataFiles(files []fs.FileInfo) []string {
+func (r *resetDatabase) filterMetadataFiles(files []fs.DirEntry) []string {
 	var paths []string
 	for _, file := range files {
 		if strings.HasSuffix(file.Name(), *r.extension) {

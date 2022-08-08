@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 )
 
@@ -23,13 +24,15 @@ const (
 func Build() error {
 	versionArgument, version := createVersionArgument()
 	fmt.Printf("Creating %s version %s\n", executable, version)
-	creationTimestamp := createCreationArgument()
-	var flags string
+	var args []string
 	if len(versionArgument) > 0 {
-		flags = fmt.Sprintf("%s %s", versionArgument, creationTimestamp)
-	} else {
-		flags = creationTimestamp
+		args = append(args, versionArgument)
 	}
+	creationTimestamp := createCreationArgument()
+	args = append(args, creationTimestamp)
+	goVersion := createGoVersionArgument()
+	args = append(args, goVersion)
+	flags := strings.Join(args, " ")
 	cmd := exec.Command("go", "build", "-ldflags", flags, "-o", executable, "./cmd/mp3/")
 	unifiedOutput := &bytes.Buffer{}
 	cmd.Stderr = unifiedOutput
@@ -39,11 +42,22 @@ func Build() error {
 	return err
 }
 
-func printOutput(b *bytes.Buffer){
+func printOutput(b *bytes.Buffer) {
 	output := b.String()
 	if len(output) > 0 {
 		fmt.Println(output)
 	}
+}
+
+func createGoVersionArgument() string {
+	cmd := exec.Command("go", "version")
+	unifiedOutput := &bytes.Buffer{}
+	cmd.Stderr = unifiedOutput
+	cmd.Stdout = unifiedOutput
+	cmd.Run()
+	output := unifiedOutput.String()
+	vals := strings.Split(output, " ")
+	return fmt.Sprintf("-X main.goVersion=%s", vals[2])
 }
 
 func createCreationArgument() string {
