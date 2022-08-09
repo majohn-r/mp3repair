@@ -3,6 +3,7 @@
 - [mp3](#mp3)
   - [Purpose](#purpose)
   - [Commands](#commands)
+    - [about](#about)
     - [check](#check)
       - [check Argument Details](#check-argument-details)
         - [-empty](#-empty)
@@ -40,6 +41,16 @@ Windows.
 ## Commands
 
 The **mp3** program supports the following commands:
+
+### about
+
+The **about** command provides information about the **mp3** program, including:
+
+- The program version
+- The build timestamp
+- Copyright information
+- The version of go used to compile the code
+- A list of dependencies and their versions
 
 ### check
 
@@ -194,8 +205,8 @@ above.
 
 ### Common Command Arguments
 
-These command arguments are common to all commands except the **resetDatabase**
-command:
+These command arguments are common to the **check**, **ls**, **postRepair**, and
+the **repair** commands:
 
 Argument Name      | Value   | Default Value | Description
 -------------------|---------|---------------|-------------
@@ -252,10 +263,10 @@ The **defaults.yaml** file may contain six blocks, all of which are optional:
    2. **gaps**
    3. **integrity**
 2. **command** The **command** block may have one string key-value pair:
-   1. **default** the value of this entry must be one of **check**, **ls**,
-      **postRepair**, **repair**, or **resetDatabase**. It causes that command
-      to become the default command when no command is specified on the command
-      line.
+   1. **default** the value of this entry must be one of **about**, **check**,
+      **ls**, **postRepair**, **repair**, or **resetDatabase**. It causes that
+      command to become the default command when no command is specified on the
+      command line.
 3. **common** The **common** block may have up to four string key-value pairs,
    with each key controlling the default setting for its corresponding
    **common** argument:
@@ -283,6 +294,9 @@ The **defaults.yaml** file may contain six blocks, all of which are optional:
    2. **metadata**
    3. **service**
    4. **timeout**
+
+As the **about** and **postRepair** commands have no arguments, if either is
+included as a block, the block will be ignored.
 
 Here is the **yaml** content corresponding to the standard out of the box
 default values:
