@@ -18,7 +18,7 @@ func ProcessArgs(o OutputBus, f *flag.FlagSet, args []string) (ok bool) {
 		if err != nil {
 			o.WriteError(USER_BAD_ARGUMENT, arg, err)
 			o.LogWriter().Error(LE_BAD_ARGUMENT, map[string]interface{}{
-				fkValue:  arg,
+				FK_VALUE: arg,
 				FK_ERROR: err,
 			})
 			ok = false

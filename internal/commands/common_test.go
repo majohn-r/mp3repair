@@ -163,7 +163,7 @@ func TestProcessCommand(t *testing.T) {
 			args:  args{args: []string{"mp3.exe", "no such command"}},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The key \"value\", with value '1.25', has an unexpected type float64.\n" +
-					"There is no command named \"no such command\"; valid commands include [check ls postRepair repair resetDatabase].\n",
+					"There is no command named \"no such command\"; valid commands include [about check ls postRepair repair resetDatabase].\n",
 				WantLogOutput: "level='error' key='value' type='float64' value='1.25' msg='unexpected value type'\n" +
 					fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1.25]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")) +
 					"level='error' command='no such command' msg='unrecognized command'\n",
@@ -334,6 +334,7 @@ func Test_getDefaultSettings(t *testing.T) {
 				repairCommand:        false,
 				postRepairCommand:    false,
 				resetDatabaseCommand: false,
+				aboutCommand:         false,
 			},
 			wantOk: true,
 		},
@@ -347,6 +348,7 @@ func Test_getDefaultSettings(t *testing.T) {
 				repairCommand:        false,
 				postRepairCommand:    false,
 				resetDatabaseCommand: false,
+				aboutCommand:         false,
 			},
 			wantOk: true,
 		},

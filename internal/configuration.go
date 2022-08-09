@@ -17,7 +17,6 @@ const (
 	appDataVar            = "APPDATA"
 	fkKey                 = "key"
 	fkType                = "type"
-	fkValue               = "value"
 )
 
 // ReadConfigurationFile reads defaults.yaml from the specified path and returns
@@ -58,7 +57,7 @@ func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
 	o.LogWriter().Info(LI_CONFIGURATION_FILE_READ, map[string]interface{}{
 		FK_DIRECTORY: path,
 		FK_FILE_NAME: DefaultConfigFileName,
-		fkValue:      c,
+		FK_VALUE:     c,
 	})
 	return
 }
@@ -274,9 +273,9 @@ func CreateConfiguration(o OutputBus, data map[string]interface{}) *Configuratio
 			c.cMap[key] = CreateConfiguration(o, t)
 		default:
 			o.LogWriter().Error(LE_UNEXPECTED_VALUE_TYPE, map[string]interface{}{
-				fkKey:   key,
-				fkValue: v,
-				fkType:  fmt.Sprintf("%T", v),
+				fkKey:    key,
+				FK_VALUE: v,
+				fkType:   fmt.Sprintf("%T", v),
 			})
 			o.WriteError(USER_UNEXPECTED_VALUE_TYPE, key, v, v)
 			c.sMap[key] = fmt.Sprintf("%v", v)

@@ -8,6 +8,7 @@ import (
 )
 
 const (
+	aboutCommand         = "about"
 	checkCommand         = "check"
 	fkCommandName        = "command"
 	fkCount              = "count"
@@ -65,6 +66,11 @@ func ProcessCommand(o internal.OutputBus, args []string) (cmd CommandProcessor, 
 		defaultCommand: defaultSettings[resetDatabaseCommand],
 		initializer:    newResetDatabase,
 	})
+	initializers = append(initializers, commandInitializer{
+		name:           aboutCommand,
+		defaultCommand: defaultSettings[aboutCommand],
+		initializer:    newAboutCmd,
+	})
 	cmd, cmdArgs, ok = selectCommand(o, c, initializers, args)
 	return
 }
@@ -78,6 +84,7 @@ func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[
 			postRepairCommand:    false,
 			repairCommand:        false,
 			resetDatabaseCommand: false,
+			aboutCommand:         false,
 		}
 		ok = true
 		return
@@ -88,6 +95,7 @@ func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[
 		postRepairCommand:    defaultCommand == postRepairCommand,
 		repairCommand:        defaultCommand == repairCommand,
 		resetDatabaseCommand: defaultCommand == resetDatabaseCommand,
+		aboutCommand:         defaultCommand == aboutCommand,
 	}
 	found := false
 	for _, value := range m {

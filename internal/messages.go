@@ -58,6 +58,7 @@ const (
 	USER_CANNOT_DELETE_FILE                           = "The file %q cannot be deleted: %v"
 	USER_CANNOT_LIST_SERVICES                         = "The list of available services cannot be obtained: %v"
 	USER_CANNOT_OPEN_SERVICE                          = "The service %q cannot be opened: %v"
+	USER_CANNOT_PARSE_TIMESTAMP                       = "The build time %q cannot be parsed: %v"
 	USER_CANNOT_QUERY_SERVICE                         = "The status for the service %q cannot be obtained: %v"
 	USER_CANNOT_READ_DIRECTORY                        = "The directory %q cannot be read: %v"
 	USER_CANNOT_READ_TOPDIR                           = "The -topDir value you specified, %q, cannot be read: %v"

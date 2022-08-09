@@ -9,12 +9,9 @@ import (
 
 // these variables' values are injected by the mage build
 var (
-	// semantic version; read by the mage build from version.txt
-	version string = "unknown version!"
-	// build timestamp in RFC3339 format (2006-01-02T15:04:05Z07:00)
-	creation string
-	// go version
-	goVersion string = "unknown go version"
+	version   string = "unknown version!"   // semantic version; read by the mage build from version.txt
+	creation  string                        // build timestamp in RFC3339 format (2006-01-02T15:04:05Z07:00)
+	goVersion string = "unknown go version" // go version; read by the mage build from 'go version'
 )
 
 func main() {
@@ -56,6 +53,11 @@ func run(o internal.OutputBus, cmdlineArgs []string) (returnValue int) {
 		fkGoVersion:            goVersion,
 		fkCommandLineArguments: cmdlineArgs,
 	})
+	// initialize about command
+	commands.AboutSettings = commands.AboutData{
+		AppVersion:     version,
+		BuildTimestamp: creation,
+	}
 	if cmd, args, ok := commands.ProcessCommand(o, cmdlineArgs); ok {
 		if cmd.Exec(o, args) {
 			returnValue = 0

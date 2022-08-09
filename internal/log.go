@@ -24,6 +24,7 @@ const (
 	FK_ERROR     = "error"
 	FK_FILE_NAME = "fileName"
 	FK_SECTION   = "section"
+	FK_VALUE     = "value"
 	fkVarName    = "environment variable"
 )
 
