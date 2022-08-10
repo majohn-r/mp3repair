@@ -18,7 +18,7 @@ func TestCreateAlbumNameForTesting(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		want string
 	}{
 		{name: "negative value", args: args{k: -1}, want: "Test Album -1"},
@@ -41,7 +41,7 @@ func TestCreateArtistNameForTesting(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		want string
 	}{
 		{name: "negative value", args: args{k: -1}, want: "Test Artist -1"},
@@ -64,7 +64,7 @@ func TestCreateTrackNameForTesting(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		want string
 	}{
 		{name: "zero", args: args{k: 0}, want: "00-Test Track[00].mp3"},
@@ -92,7 +92,7 @@ func TestDestroyDirectoryForTesting(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 	}{
 		{name: "no error", args: args{fnName: fnName, dirName: testDirName}},
 		{name: "error", args: args{fnName: fnName, dirName: "."}},
@@ -177,8 +177,8 @@ func TestPopulateTopDirForTesting(t *testing.T) {
 		topDir string
 	}
 	tests := []struct {
-		name    string
-		args    args
+		name string
+		args
 		wantErr bool
 	}{
 		{name: "success", args: args{topDir: cleanDirName}, wantErr: false},
@@ -363,7 +363,7 @@ func TestSaveEnvVarForTesting(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		want *SavedEnvVar
 	}{
 		{name: "set", args: args{name1}, want: &SavedEnvVar{Name: name1, Value: "value1", Set: true}},
@@ -385,7 +385,7 @@ func TestSecureAbsolutePathForTesting(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		want bool
 	}{
 		{name: "simple", args: args{path: "."}, want: true},
@@ -464,8 +464,8 @@ func TestCheckOutput(t *testing.T) {
 		w WantedOutput
 	}
 	tests := []struct {
-		name       string
-		args       args
+		name string
+		args
 		wantIssues []string
 		wantOk     bool
 	}{

@@ -28,7 +28,7 @@ func Test_Configuration_SubConfiguration(t *testing.T) {
 	tests := []struct {
 		name string
 		c    *Configuration
-		args args
+		args
 		want *Configuration
 	}{
 		{name: "no configuration", c: &Configuration{}, args: args{}, want: EmptyConfiguration()},
@@ -69,9 +69,9 @@ func Test_Configuration_BoolDefault(t *testing.T) {
 		defaultValue bool
 	}
 	tests := []struct {
-		name  string
-		c     *Configuration
-		args  args
+		name string
+		c    *Configuration
+		args
 		wantB bool
 		wantE bool
 	}{
@@ -265,9 +265,9 @@ func Test_Configuration_StringDefault(t *testing.T) {
 		defaultValue string
 	}
 	tests := []struct {
-		name    string
-		c       *Configuration
-		args    args
+		name string
+		c    *Configuration
+		args
 		wantS   string
 		wantErr bool
 	}{
@@ -320,8 +320,8 @@ func Test_verifyFileExists(t *testing.T) {
 		path string
 	}
 	tests := []struct {
-		name    string
-		args    args
+		name string
+		args
 		wantOk  bool
 		wantErr bool
 		WantedOutput
@@ -579,9 +579,9 @@ func TestConfiguration_StringValue(t *testing.T) {
 		key string
 	}
 	tests := []struct {
-		name      string
-		c         *Configuration
-		args      args
+		name string
+		c    *Configuration
+		args
 		wantValue string
 		wantOk    bool
 	}{
@@ -662,7 +662,7 @@ func TestNewIntBounds(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		want *IntBounds
 	}{
 		{
@@ -799,7 +799,7 @@ func Test_createConfiguration(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		want *Configuration
 		WantedOutput
 	}{
@@ -847,8 +847,8 @@ func Test_readYaml(t *testing.T) {
 		yfile []byte
 	}
 	tests := []struct {
-		name     string
-		args     args
+		name string
+		args
 		wantData map[string]interface{}
 		wantErr  bool
 	}{

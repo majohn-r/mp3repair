@@ -230,7 +230,7 @@ func Test_ls_Exec(t *testing.T) {
 	tests := []struct {
 		name string
 		l    *ls
-		args args
+		args
 		internal.WantedOutput
 	}{
 		{
@@ -936,7 +936,7 @@ func Test_ls_outputTrackDiagnostics(t *testing.T) {
 	tests := []struct {
 		name string
 		l    *ls
-		args args
+		args
 		internal.WantedOutput
 	}{
 		{

@@ -62,7 +62,7 @@ func Test_postrepair_Exec(t *testing.T) {
 	tests := []struct {
 		name string
 		p    *postrepair
-		args args
+		args
 		internal.WantedOutput
 	}{
 		{
@@ -142,7 +142,7 @@ func Test_removeBackupDirectory(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		internal.WantedOutput
 	}{
 		{

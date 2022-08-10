@@ -17,7 +17,7 @@ func Test_configureLogging(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 	}{
 		{name: "standard test case", args: args{path: "testlogs"}},
 	}
@@ -62,11 +62,11 @@ func TestCleanupLogFiles(t *testing.T) {
 		path string
 	}
 	tests := []struct {
-		name          string
-		fileCount     int
-		createFolder  bool
-		lockFiles     bool
-		args          args
+		name         string
+		fileCount    int
+		createFolder bool
+		lockFiles    bool
+		args
 		wantFileCount int
 		WantedOutput
 	}{

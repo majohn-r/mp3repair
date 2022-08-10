@@ -20,8 +20,8 @@ func TestMkdir(t *testing.T) {
 		dirName string
 	}
 	tests := []struct {
-		name    string
-		args    args
+		name string
+		args
 		wantErr bool
 	}{
 		{name: "failure", args: args{dirName: "testutilities_test.go"}, wantErr: true},
@@ -45,7 +45,7 @@ func TestPlainFileExists(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		want bool
 	}{
 		{name: "plain file", args: args{path: "fileio_test.go"}, want: true},
@@ -68,7 +68,7 @@ func TestDirExists(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		want bool
 	}{
 		{name: "no such directory", args: args{path: "no such dir"}, want: false},
@@ -103,8 +103,8 @@ func TestCopyFile(t *testing.T) {
 		dest string
 	}
 	tests := []struct {
-		name    string
-		args    args
+		name string
+		args
 		wantErr bool
 	}{
 		{name: "copy non-existent file", args: args{src: "foo.txt2", dest: "f.txt"}, wantErr: true},
@@ -138,8 +138,8 @@ func TestReadDirectory(t *testing.T) {
 		dir string
 	}
 	tests := []struct {
-		name      string
-		args      args
+		name string
+		args
 		wantFiles []fs.DirEntry
 		wantOk    bool
 		WantedOutput

@@ -130,9 +130,9 @@ func Test_resetDatabase_waitForStop(t *testing.T) {
 		checkFreq time.Duration
 	}
 	tests := []struct {
-		name   string
-		r      *resetDatabase
-		args   args
+		name string
+		r    *resetDatabase
+		args
 		wantOk bool
 		internal.WantedOutput
 	}{

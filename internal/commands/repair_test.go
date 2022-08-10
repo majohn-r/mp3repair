@@ -118,7 +118,7 @@ func Test_findConflictedTracks(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		want []*files.Track
 	}{
 		{name: "degenerate case", args: args{}},
@@ -156,7 +156,7 @@ func Test_reportTracks(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		internal.WantedOutput
 	}{
 		{name: "no tracks", args: args{}},
@@ -240,7 +240,7 @@ func Test_repair_Exec(t *testing.T) {
 	tests := []struct {
 		name string
 		r    *repair
-		args args
+		args
 		internal.WantedOutput
 	}{
 		{
@@ -357,7 +357,7 @@ func Test_getAlbumPaths(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		want []string
 	}{
 		{name: "degenerate case", args: args{}},
@@ -504,7 +504,7 @@ func Test_repair_makeBackupDirectories(t *testing.T) {
 	tests := []struct {
 		name string
 		r    *repair
-		args args
+		args
 		internal.WantedOutput
 	}{
 		{name: "degenerate case", r: &repair{dryRun: &fFlag}, args: args{paths: nil}},
@@ -557,7 +557,7 @@ func Test_repair_backupTracks(t *testing.T) {
 	tests := []struct {
 		name string
 		r    *repair
-		args args
+		args
 		internal.WantedOutput
 	}{
 		{name: "degenerate case", r: &repair{dryRun: &fFlag}, args: args{tracks: nil}},
@@ -634,7 +634,7 @@ func Test_repair_fixTracks(t *testing.T) {
 	tests := []struct {
 		name string
 		r    *repair
-		args args
+		args
 		internal.WantedOutput
 	}{
 		{name: "degenerate case", r: &repair{dryRun: &fFlag}, args: args{tracks: nil}},

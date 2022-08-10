@@ -57,9 +57,9 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 		s *files.Search
 	}
 	tests := []struct {
-		name                string
-		c                   *check
-		args                args
+		name string
+		c    *check
+		args
 		wantArtists         []*files.Artist
 		wantFilteredArtists []*artistWithIssues
 		wantOk              bool
@@ -188,9 +188,9 @@ func Test_filterArtists(t *testing.T) {
 		artists []*files.Artist
 	}
 	tests := []struct {
-		name                string
-		c                   *check
-		args                args
+		name string
+		c    *check
+		args
 		wantFilteredArtists []*files.Artist
 		wantOk              bool
 		internal.WantedOutput
@@ -300,9 +300,9 @@ func Test_check_performGapAnalysis(t *testing.T) {
 		artists []*files.Artist
 	}
 	tests := []struct {
-		name                  string
-		c                     *check
-		args                  args
+		name string
+		c    *check
+		args
 		wantConflictedArtists []*artistWithIssues
 		internal.WantedOutput
 	}{
@@ -390,9 +390,9 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 		artists []*files.Artist
 	}
 	tests := []struct {
-		name                  string
-		c                     *check
-		args                  args
+		name string
+		c    *check
+		args
 		wantConflictedArtists []*artistWithIssues
 		internal.WantedOutput
 	}{
@@ -467,9 +467,9 @@ func Test_check_Exec(t *testing.T) {
 		args []string
 	}
 	tests := []struct {
-		name   string
-		c      *check
-		args   args
+		name string
+		c    *check
+		args
 		wantOk bool
 		internal.WantedOutput
 	}{
@@ -680,7 +680,7 @@ func Test_merge(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		want []*artistWithIssues
 	}{
 		{name: "degenerate case", args: args{}},
@@ -964,7 +964,7 @@ func Test_reportResults(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		internal.WantedOutput
 	}{
 		{name: "degenerate case", args: args{}},

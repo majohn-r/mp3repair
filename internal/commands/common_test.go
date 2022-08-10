@@ -69,7 +69,7 @@ func TestProcessCommand(t *testing.T) {
 	tests := []struct {
 		name  string
 		state *internal.SavedEnvVar
-		args  args
+		args
 		want  CommandProcessor
 		want1 []string
 		want2 bool
@@ -224,8 +224,8 @@ func Test_selectCommand(t *testing.T) {
 		args []string
 	}
 	tests := []struct {
-		name            string
-		args            args
+		name string
+		args
 		wantCmd         CommandProcessor
 		wantCallingArgs []string
 		wantOk          bool
@@ -321,9 +321,9 @@ func Test_getDefaultSettings(t *testing.T) {
 		name           string
 		includeDefault bool
 		defaultValue   string
-		args           args
-		wantM          map[string]bool
-		wantOk         bool
+		args
+		wantM  map[string]bool
+		wantOk bool
 		internal.WantedOutput
 	}{
 		{

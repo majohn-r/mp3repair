@@ -161,8 +161,8 @@ func Test_validateRegexp(t *testing.T) {
 		name    string
 	}
 	tests := []struct {
-		name       string
-		args       args
+		name string
+		args
 		wantFilter *regexp.Regexp
 		wantOk     bool
 		internal.WantedOutput
@@ -222,8 +222,8 @@ func Test_validateSearchParameters(t *testing.T) {
 		artists string
 	}
 	tests := []struct {
-		name              string
-		args              args
+		name string
+		args
 		wantAlbumsFilter  *regexp.Regexp
 		wantArtistsFilter *regexp.Regexp
 		wantOk            bool
@@ -502,9 +502,9 @@ func TestSearchFlags_ProcessArgs(t *testing.T) {
 		args []string
 	}
 	tests := []struct {
-		name   string
-		sf     *SearchFlags
-		args   args
+		name string
+		sf   *SearchFlags
+		args
 		wantS  *Search
 		wantOk bool
 		internal.WantedOutput

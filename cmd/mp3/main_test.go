@@ -121,7 +121,7 @@ func Test_report(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		internal.WantedOutput
 	}{
 		{name: "success", args: args{returnValue: 0}, WantedOutput: internal.WantedOutput{WantErrorOutput: ""}},
@@ -153,8 +153,8 @@ func Test_exec(t *testing.T) {
 		cmdLine []string
 	}
 	tests := []struct {
-		name            string
-		args            args
+		name string
+		args
 		wantReturnValue int
 	}{
 		{

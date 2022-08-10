@@ -12,7 +12,7 @@ func Test_isIllegalRuneForFileNames(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		want bool
 	}{
 		{name: "0", args: args{r: 0}, want: true},
@@ -179,7 +179,7 @@ func TestCreateBackupPath(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		want string
 	}{
 		{

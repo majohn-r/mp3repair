@@ -35,9 +35,9 @@ func TestSearch_FilterArtists(t *testing.T) {
 		unfilteredArtists []*Artist
 	}
 	tests := []struct {
-		name        string
-		s           *Search
-		args        args
+		name string
+		s    *Search
+		args
 		wantArtists []*Artist
 		wantOk      bool
 		internal.WantedOutput

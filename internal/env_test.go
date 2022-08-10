@@ -14,7 +14,7 @@ func Test_findReferences(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		want []string
 	}{
 		{name: "no references", args: args{s: ".mp3"}, want: nil},
@@ -100,7 +100,7 @@ func TestCreateAppSpecificPath(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		want string
 	}{{name: "simple test", args: args{topDir: "top"}, want: filepath.Join("top", AppName)}}
 	for _, tt := range tests {

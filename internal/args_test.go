@@ -24,8 +24,8 @@ func TestProcessArgs(t *testing.T) {
 		args []string
 	}
 	tests := []struct {
-		name   string
-		args   args
+		name string
+		args
 		wantOk bool
 		WantedOutput
 	}{

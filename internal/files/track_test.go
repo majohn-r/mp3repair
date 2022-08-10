@@ -23,8 +23,8 @@ func Test_parseTrackName(t *testing.T) {
 		ext   string
 	}
 	tests := []struct {
-		name            string
-		args            args
+		name string
+		args
 		wantSimpleName  string
 		wantTrackNumber int
 		wantValid       bool
@@ -142,8 +142,8 @@ func Test_toTrackNumber(t *testing.T) {
 		s string
 	}
 	tests := []struct {
-		name    string
-		args    args
+		name string
+		args
 		wantI   int
 		wantErr bool
 	}{
@@ -174,9 +174,9 @@ func TestTrack_SetTags(t *testing.T) {
 		d *TaggedTrackData
 	}
 	tests := []struct {
-		name       string
-		tr         *Track
-		args       args
+		name string
+		tr   *Track
+		args
 		wantAlbum  string
 		wantArtist string
 		wantTitle  string
@@ -239,9 +239,9 @@ func TestTrack_readTags(t *testing.T) {
 		reader func(string) *TaggedTrackData
 	}
 	tests := []struct {
-		name       string
-		tr         *Track
-		args       args
+		name string
+		tr   *Track
+		args
 		wantAlbum  string
 		wantArtist string
 		wantTitle  string
@@ -312,7 +312,7 @@ func Test_isComparable(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		want bool
 	}{
 		{name: "simple case", args: args{nameTagPair{name: "simple name", tag: "simple name"}}, want: true},
@@ -498,8 +498,8 @@ func TestUpdateTracks(t *testing.T) {
 		reader  func(string) *TaggedTrackData
 	}
 	tests := []struct {
-		name             string
-		args             args
+		name string
+		args
 		checkTrackNumber bool
 		internal.WantedOutput
 	}{
@@ -573,8 +573,8 @@ func TestRawReadTags(t *testing.T) {
 		path string
 	}
 	tests := []struct {
-		name  string
-		args  args
+		name string
+		args
 		wantD *TaggedTrackData
 	}{
 		{name: "bad test", args: args{path: "./noSuchFile!.mp3"}, wantD: &TaggedTrackData{err: "foo"}},
@@ -617,7 +617,7 @@ func Test_removeLeadingBOMs(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		want string
 	}{
 		{name: "normal string", args: args{s: "normal"}, want: "normal"},
@@ -874,7 +874,7 @@ func TestNewTaggedTrackData(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		want *TaggedTrackData
 	}{
 		{
@@ -927,9 +927,9 @@ func TestTrack_Copy(t *testing.T) {
 		destination string
 	}
 	tests := []struct {
-		name    string
-		tr      *Track
-		args    args
+		name string
+		tr   *Track
+		args
 		wantErr bool
 	}{
 		{
@@ -1050,8 +1050,8 @@ func TestParseTrackNameForTesting(t *testing.T) {
 		name string
 	}
 	tests := []struct {
-		name            string
-		args            args
+		name string
+		args
 		wantSimpleName  string
 		wantTrackNumber int
 	}{
@@ -1143,8 +1143,8 @@ func Test_pickKey(t *testing.T) {
 		m map[string]int
 	}
 	tests := []struct {
-		name   string
-		args   args
+		name string
+		args
 		wantS  string
 		wantOk bool
 	}{
@@ -1250,8 +1250,8 @@ func Test_processAlbumRelatedFrames(t *testing.T) {
 		artists []*Artist
 	}
 	tests := []struct {
-		name           string
-		args           args
+		name string
+		args
 		album          *Album
 		wantGenre      string
 		wantYear       string
@@ -1500,7 +1500,7 @@ func Test_stringifyFramerArray(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		want string
 	}{
 		{
@@ -1540,7 +1540,7 @@ func Test_selectUnknownFrame(t *testing.T) {
 	}
 	tests := []struct {
 		name string
-		args args
+		args
 		want id3v2.UnknownFrame
 	}{
 		{
