@@ -28,10 +28,7 @@ func Build() error {
 	if len(versionArgument) > 0 {
 		args = append(args, versionArgument)
 	}
-	creationTimestamp := createCreationArgument()
-	args = append(args, creationTimestamp)
-	goVersion := createGoVersionArgument()
-	args = append(args, goVersion)
+	args = append(args, createCreationArgument())
 	flags := strings.Join(args, " ")
 	cmd := exec.Command("go", "build", "-ldflags", flags, "-o", executable, "./cmd/mp3/")
 	unifiedOutput := &bytes.Buffer{}
@@ -47,17 +44,6 @@ func printOutput(b *bytes.Buffer) {
 	if len(output) > 0 {
 		fmt.Println(output)
 	}
-}
-
-func createGoVersionArgument() string {
-	cmd := exec.Command("go", "version")
-	unifiedOutput := &bytes.Buffer{}
-	cmd.Stderr = unifiedOutput
-	cmd.Stdout = unifiedOutput
-	cmd.Run()
-	output := unifiedOutput.String()
-	vals := strings.Split(output, " ")
-	return fmt.Sprintf("-X main.goVersion=%s", vals[2])
 }
 
 func createCreationArgument() string {

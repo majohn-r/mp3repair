@@ -3,7 +3,6 @@ package commands
 import (
 	"mp3/internal"
 	"reflect"
-	"runtime/debug"
 	"testing"
 )
 
@@ -96,7 +95,7 @@ func Test_formatCopyright(t *testing.T) {
 func Test_formatBuildData(t *testing.T) {
 	fnName := "formatBuildData()"
 	type args struct {
-		f func() (*debug.BuildInfo, bool)
+		bD *BuildData
 	}
 	tests := []struct {
 		name string
@@ -104,23 +103,16 @@ func Test_formatBuildData(t *testing.T) {
 		want []string
 	}{
 		{
-			name: "malfunction",
-			args: args{f: func() (*debug.BuildInfo, bool) {
-				return nil, false
-			}},
-			want: []string{" - None available"},
-		},
-		{
 			name: "success",
-			args: args{f: func() (*debug.BuildInfo, bool) {
-				return &debug.BuildInfo{
+			args: args{
+				bD: &BuildData{
 					GoVersion: "go1.x",
-					Deps: []*debug.Module{
-						{Path: "github.com/bogem/id3v2/v2", Version: "v2.1.2"},
-						{Path: "github.com/lestrrat-go/strftime", Version: "v1.0.6"},
+					Dependencies: []string{
+						"github.com/bogem/id3v2/v2 v2.1.2",
+						"github.com/lestrrat-go/strftime v1.0.6",
 					},
-				}, true
-			}},
+				},
+			},
 			want: []string{
 				" - Go version: go1.x",
 				" - Dependency: github.com/bogem/id3v2/v2 v2.1.2",
@@ -130,7 +122,7 @@ func Test_formatBuildData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := formatBuildData(tt.args.f); !reflect.DeepEqual(got, tt.want) {
+			if got := formatBuildData(tt.args.bD); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
@@ -180,6 +172,7 @@ func Test_reportAbout(t *testing.T) {
 
 func Test_aboutCmd_Exec(t *testing.T) {
 	fnName := "aboutCmd.Exec()"
+	AboutBuildData = &BuildData{}
 	type args struct {
 		o    internal.OutputBus
 		args []string
@@ -201,6 +194,36 @@ func Test_aboutCmd_Exec(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if gotOk := tt.v.Exec(tt.args.o, tt.args.args); gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
+			}
+		})
+	}
+}
+
+func Test_translateTimestamp(t *testing.T) {
+	fnName := "translateTimestamp()"
+	type args struct {
+		t string
+	}
+	tests := []struct {
+		name string
+		args
+		want string
+	}{
+		{
+			name: "good time",
+			args: args{t: "2022-08-10T13:29:57-04:00"},
+			want: "Wednesday, August 10 2022, 13:29:57 EDT",
+		},
+		{
+			name: "badly formatted time",
+			args: args{t: "today is Monday!"},
+			want: "today is Monday!",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := translateTimestamp(tt.args.t); got != tt.want {
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}

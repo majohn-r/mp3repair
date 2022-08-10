@@ -1,17 +1,18 @@
 package main
 
 import (
+	"fmt"
 	"mp3/internal"
 	"mp3/internal/commands"
 	"os"
+	"runtime/debug"
 	"time"
 )
 
 // these variables' values are injected by the mage build
 var (
-	version   string = "unknown version!"   // semantic version; read by the mage build from version.txt
-	creation  string                        // build timestamp in RFC3339 format (2006-01-02T15:04:05Z07:00)
-	goVersion string = "unknown go version" // go version; read by the mage build from 'go version'
+	version  string = "unknown version!" // semantic version; read by the mage build from version.txt
+	creation string                      // build timestamp in RFC3339 format (2006-01-02T15:04:05Z07:00)
 )
 
 func main() {
@@ -25,14 +26,15 @@ const (
 	fkTimeStamp            = "timeStamp"
 	fkVersion              = "version"
 	fkGoVersion            = "go version"
-	statusFormat           = "%q version %s, created at %s, with %s, failed"
+	fkDependencies         = "dependencies"
+	statusFormat           = "%q version %s, created at %s, failed"
 )
 
 func exec(logInit func(internal.OutputBus) bool, cmdLine []string) (returnValue int) {
 	returnValue = 1
 	o := internal.NewOutputDevice()
 	if logInit(o) {
-		returnValue = run(o, cmdLine)
+		returnValue = run(o, debug.ReadBuildInfo, cmdLine)
 	}
 	report(o, returnValue)
 	return
@@ -40,24 +42,20 @@ func exec(logInit func(internal.OutputBus) bool, cmdLine []string) (returnValue 
 
 func report(o internal.OutputBus, returnValue int) {
 	if returnValue != 0 {
-		o.WriteError(statusFormat, internal.AppName, version, creation, goVersion)
+		o.WriteError(statusFormat, internal.AppName, version, creation)
 	}
 }
 
-func run(o internal.OutputBus, cmdlineArgs []string) (returnValue int) {
+func run(o internal.OutputBus, f func() (*debug.BuildInfo, bool), cmdlineArgs []string) (returnValue int) {
 	returnValue = 1
 	startTime := time.Now()
-	o.LogWriter().Info(internal.LI_BEGIN_EXECUTION, map[string]interface{}{
-		fkVersion:              version,
-		fkTimeStamp:            creation,
-		fkGoVersion:            goVersion,
-		fkCommandLineArguments: cmdlineArgs,
-	})
 	// initialize about command
+	commands.AboutBuildData = createBuildData(f)
 	commands.AboutSettings = commands.AboutData{
 		AppVersion:     version,
 		BuildTimestamp: creation,
 	}
+	logBegin(o, commands.AboutBuildData.GoVersion, commands.AboutBuildData.Dependencies, cmdlineArgs)
 	if cmd, args, ok := commands.ProcessCommand(o, cmdlineArgs); ok {
 		if cmd.Exec(o, args) {
 			returnValue = 0
@@ -68,4 +66,27 @@ func run(o internal.OutputBus, cmdlineArgs []string) (returnValue int) {
 		fkExitCode: returnValue,
 	})
 	return
+}
+
+func logBegin(o internal.OutputBus, goVersion string, dependencies []string, cmdLineArgs []string) {
+	o.LogWriter().Info(internal.LI_BEGIN_EXECUTION, map[string]interface{}{
+		fkVersion:              version,
+		fkTimeStamp:            creation,
+		fkGoVersion:            goVersion,
+		fkDependencies:         dependencies,
+		fkCommandLineArguments: cmdLineArgs,
+	})
+}
+
+func createBuildData(f func() (*debug.BuildInfo, bool)) *commands.BuildData {
+	bD := &commands.BuildData{}
+	if b, ok := f(); ok {
+		bD.GoVersion = b.GoVersion
+		for _, d := range b.Deps {
+			bD.Dependencies = append(bD.Dependencies, fmt.Sprintf("%s %s", d.Path, d.Version))
+		}
+	} else {
+		bD.GoVersion = "unknown"
+	}
+	return bD
 }
