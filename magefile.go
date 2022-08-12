@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -117,4 +118,70 @@ func CoverageReport() error {
 		printOutput(unifiedOutput)
 	}
 	return err
+}
+
+// generate go doc output
+func Doc() error {
+	if folders, err := getCodeFolders(); err != nil {
+		return err
+	} else {
+		for _, folder := range folders {
+			unifiedOutput := &bytes.Buffer{}
+			// go doc -all .\\{folder}
+			if !strings.HasPrefix(folder, ".") {
+				folder = ".\\" + folder
+			}
+			cmd := exec.Command("go", "doc", "-all", folder)
+			cmd.Stderr = unifiedOutput
+			cmd.Stdout = unifiedOutput
+			// ignore error return
+			err = cmd.Run()
+			printOutput(unifiedOutput)
+		}
+		return nil
+	}
+}
+
+func getCodeFolders() ([]string, error) {
+	if candidates, err := getAllFolders("."); err != nil {
+		return nil, err
+	} else {
+		var folders []string
+		for _, folder := range candidates {
+			if entries, err := os.ReadDir(folder); err != nil {
+				return nil, err
+			} else {
+				for _, entry := range entries {
+					if entry.Type().IsRegular() {
+						name := entry.Name()
+						if strings.HasSuffix(name, ".go") && !strings.HasSuffix(name, "_test.go") && !strings.HasPrefix(name, "testing") {
+							folders = append(folders, folder)
+							break
+						}
+					}
+				}
+			}
+		}
+		return folders, nil
+	}
+}
+
+func getAllFolders(topDir string) ([]string, error) {
+	var folders []string
+	if dirs, err := os.ReadDir(topDir); err != nil {
+		return nil, err
+	} else {
+		for _, d := range dirs {
+			if d.IsDir() {
+				folder := filepath.Join(topDir, d.Name())
+				folders = append(folders, folder)
+				if subfolders, err := getAllFolders(folder); err != nil {
+					return nil, err
+				} else {
+					folders = append(folders, subfolders...)
+				}
+			}
+		}
+	}
+	return folders, nil
 }
