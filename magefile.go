@@ -120,7 +120,7 @@ func CoverageReport() error {
 	return err
 }
 
-// generate go doc output
+// Generate go doc output
 func Doc() error {
 	if folders, err := getCodeFolders(); err != nil {
 		return err
