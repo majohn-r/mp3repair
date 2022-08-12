@@ -105,13 +105,13 @@ func Test_findConflictedTracks(t *testing.T) {
 	goodAlbum := files.NewAlbum("album1", goodArtist, "")
 	goodArtist.AddAlbum(goodAlbum)
 	goodTrack := files.NewTrack(goodAlbum, "", "track1", 1)
-	goodTrack.SetTags(files.NewTaggedTrackData("album1", "artist1", "track1", 1, nil))
+	goodTrack.SetID3V2Tags(files.NewID3V2TaggedTrackDataForTesting("album1", "artist1", "track1", 1, nil))
 	goodAlbum.AddTrack(goodTrack)
 	badArtist := files.NewArtist("artist1", "")
 	badAlbum := files.NewAlbum("album1", badArtist, "")
 	badArtist.AddAlbum(badAlbum)
 	badTrack := files.NewTrack(badAlbum, "", "track1", 1)
-	badTrack.SetTags(files.NewTaggedTrackData("album1", "artist1", "track3", 1, []byte{0, 1, 2}))
+	badTrack.SetID3V2Tags(files.NewID3V2TaggedTrackDataForTesting("album1", "artist1", "track3", 1, []byte{0, 1, 2}))
 	badAlbum.AddTrack(badTrack)
 	type args struct {
 		artists []*files.Artist
@@ -144,13 +144,13 @@ func Test_findConflictedTracks(t *testing.T) {
 func Test_reportTracks(t *testing.T) {
 	fnName := "reportTracks()"
 	t1 := files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist1", ""), ""), "", "track1", 1)
-	t1.SetTags(files.NewTaggedTrackData("no album known", "no artist known", "no track name", 1, []byte{0, 1, 2}))
+	t1.SetID3V2Tags(files.NewID3V2TaggedTrackDataForTesting("no album known", "no artist known", "no track name", 1, []byte{0, 1, 2}))
 	t2 := files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist1", ""), ""), "", "track2", 2)
-	t2.SetTags(files.NewTaggedTrackData("no album known", "no artist known", "track2", 1, []byte{0, 1, 2}))
+	t2.SetID3V2Tags(files.NewID3V2TaggedTrackDataForTesting("no album known", "no artist known", "track2", 1, []byte{0, 1, 2}))
 	t3 := files.NewTrack(files.NewAlbum("album2", files.NewArtist("artist1", ""), ""), "", "track1", 1)
-	t3.SetTags(files.NewTaggedTrackData("no album known", "no artist known", "no track name", 1, []byte{0, 1, 2}))
+	t3.SetID3V2Tags(files.NewID3V2TaggedTrackDataForTesting("no album known", "no artist known", "no track name", 1, []byte{0, 1, 2}))
 	t4 := files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist2", ""), ""), "", "track1", 1)
-	t4.SetTags(files.NewTaggedTrackData("no album known", "no artist known", "no track name", 1, []byte{0, 1, 2}))
+	t4.SetID3V2Tags(files.NewID3V2TaggedTrackDataForTesting("no album known", "no artist known", "no track name", 1, []byte{0, 1, 2}))
 	type args struct {
 		tracks []*files.Track
 	}
@@ -627,7 +627,7 @@ func Test_repair_fixTracks(t *testing.T) {
 		t.Errorf("%s error creating %q: %v", fnName, filepath.Join(topDir, goodFileName), err)
 	}
 	trackWithData := files.NewTrack(files.NewAlbum("ok album", files.NewArtist("beautiful singer", ""), topDir), goodFileName, trackName, 1)
-	trackWithData.SetTags(files.NewTaggedTrackData(frames["TALB"], frames["TPE1"], frames["TIT2"], 2, []byte{0, 1, 2}))
+	trackWithData.SetID3V2Tags(files.NewID3V2TaggedTrackDataForTesting(frames["TALB"], frames["TPE1"], frames["TIT2"], 2, []byte{0, 1, 2}))
 	type args struct {
 		tracks []*files.Track
 	}

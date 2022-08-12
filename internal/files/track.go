@@ -23,58 +23,59 @@ const (
 	fkTrackName             = "trackName"
 	mcdiFrame               = "MCDI"
 	rawExtension            = "mp3"
-	trackDiffUnreadTags     = "cannot determine differences, tags have not been read"
-	trackDiffError          = "cannot determine differences, there was an error reading tags"
+	trackDiffUnreadTags     = "differences cannot be determined: ID3V2 tags have not been read"
+	trackDiffError          = "differences cannot be determined: there was an error reading ID3V2 tags"
 	trackFrame              = "TRCK"
 )
 
-// Track encapsulates data about a track in an album
+// Track encapsulates data about a track in an album.
 type Track struct {
 	path            string // full path to the file associated with the track, including the file itself
 	name            string // name of the track, without the track number or file extension, e.g., "First Track"
 	number          int    // number of the track
 	containingAlbum *Album
 	// these fields are populated when needed; acquisition is expensive
-	TaggedTrackData
+	ID3V2TaggedTrackData
 }
 
-// String returns the track's path (implementation of Stringer interface)
+// String returns the track's full path (implementation of Stringer interface).
 func (t *Track) String() string {
 	return t.path
 }
 
-// Path returns the track's full path
+// Path returns the track's full path.
 func (t *Track) Path() string {
 	return t.path
 }
 
-// Directory returns the track's directory
+// Directory returns the directory containing the track file - in other words,
+// its Album directory
 func (t *Track) Directory() string {
 	return filepath.Dir(t.path)
 }
 
-// FileName returns the track's full file name
+// FileName returns the track's full file name, minus its containing directory.
 func (t *Track) FileName() string {
 	return filepath.Base(t.path)
 }
 
-// Name returns the simple name of the track
+// Name returns the name of the track without its extension and track number.
 func (t *Track) Name() string {
 	return t.name
 }
 
-// Number returns the track's number per its filename
+// Number returns the track's number as defined by its filename.
 func (t *Track) Number() int {
 	return t.number
 }
 
 func copyTrack(t *Track, a *Album) *Track {
 	return &Track{
-		path:            t.path,
-		name:            t.name,
-		number:          t.number,
-		TaggedTrackData: t.TaggedTrackData,
-		containingAlbum: a, // do not use source track's album!
+		path:                 t.path,
+		name:                 t.name,
+		number:               t.number,
+		ID3V2TaggedTrackData: t.ID3V2TaggedTrackData,
+		containingAlbum:      a, // do not use source track's album!
 	}
 }
 
@@ -82,7 +83,7 @@ func newTrackFromFile(a *Album, f fs.DirEntry, simpleName string, trackNumber in
 	return NewTrack(a, f.Name(), simpleName, trackNumber)
 }
 
-// NewTrack creates a new instance of Track without (expensive) tag data
+// NewTrack creates a new instance of Track without (expensive) tag data.
 func NewTrack(a *Album, fullName string, simpleName string, trackNumber int) *Track {
 	return &Track{
 		path:            a.subDirectory(fullName),
@@ -92,13 +93,19 @@ func NewTrack(a *Album, fullName string, simpleName string, trackNumber int) *Tr
 	}
 }
 
-// logic for sorting tracks spanning albums and artists
+// Tracks is used for sorting tracks spanning albums and artists.
 type Tracks []*Track
 
+// Len returns the number of *Track instances.
 func (t Tracks) Len() int {
 	return len(t)
 }
 
+// Less returns true if the first track's artist comes before the second track's
+// artist. If the tracks are from the same artist, then it returns true if the
+// first track's album comes before the second track's album. If the tracks come
+// from the same artist and album, then it returns true if the first track's
+// track number comes before the second track's track number.
 func (t Tracks) Less(i, j int) bool {
 	track1 := t[i]
 	track2 := t[j]
@@ -120,12 +127,14 @@ func (t Tracks) Less(i, j int) bool {
 	}
 }
 
+// Swap swaps two tracks.
 func (t Tracks) Swap(i, j int) {
 	t[i], t[j] = t[j], t[i]
 }
 
-// TaggedTrackData contains raw tag frames data
-type TaggedTrackData struct {
+// ID3V2TaggedTrackData contains raw ID3V2 tag frame data and is public so that
+// tests can populate it.
+type ID3V2TaggedTrackData struct {
 	album             string
 	artist            string
 	title             string
@@ -136,9 +145,11 @@ type TaggedTrackData struct {
 	err               string
 }
 
-// NewTaggedTrackData creates a new instance of TaggedTrackData
-func NewTaggedTrackData(albumFrame string, artistFrame string, titleFrame string, evaluatedNumberFrame int, mcdi []byte) *TaggedTrackData {
-	return &TaggedTrackData{
+// NewID3V2TaggedTrackDataForTesting creates a new instance of
+// ID3V2TaggedTrackData. The method is public so it can be called from unit
+// tests.
+func NewID3V2TaggedTrackDataForTesting(albumFrame string, artistFrame string, titleFrame string, evaluatedNumberFrame int, mcdi []byte) *ID3V2TaggedTrackData {
+	return &ID3V2TaggedTrackData{
 		album:             albumFrame,
 		artist:            artistFrame,
 		title:             titleFrame,
@@ -150,7 +161,7 @@ func NewTaggedTrackData(albumFrame string, artistFrame string, titleFrame string
 
 var trackNameRegex *regexp.Regexp = regexp.MustCompile(defaultTrackNamePattern)
 
-// BackupDirectory returns the path for this track
+// BackupDirectory returns the path of the backup directory for this track.
 func (t *Track) BackupDirectory() string {
 	return t.containingAlbum.BackupDirectory()
 }
@@ -194,9 +205,10 @@ func toTrackNumber(s string) (i int, err error) {
 	return
 }
 
-// SetTags sets track frame fields
-func (t *Track) SetTags(d *TaggedTrackData) {
-	t.TaggedTrackData = *d
+// SetID3V2Tags sets track ID3V2 tag frame fields and is public so it can be
+// called from unit tests.
+func (t *Track) SetID3V2Tags(d *ID3V2TaggedTrackData) {
+	t.ID3V2TaggedTrackData = *d
 }
 
 // depending on encoding, frame values may begin with a BOM (byte order mark)
@@ -230,33 +242,33 @@ type taggedTrackState struct {
 
 // HasNumberingConflict returns true if there is a conflict between the track
 // number (as derived from the track's file name) and the value of the track's
-// TRCK frame.
+// ID3V2 TRCK frame.
 func (s taggedTrackState) HasNumberingConflict() bool {
 	return s.numberingConflict
 }
 
 // HasTrackNameConflict returns true if there is a conflict between the track
 // name (as derived from the track's file name) and the value of the track's
-// TIT2 frame.
+// ID3V2 TIT2 frame.
 func (s taggedTrackState) HasTrackNameConflict() bool {
 	return s.trackNameConflict
 }
 
 // HasAlbumNameConflict returns true if there is a conflict between the name of
-// the album the track is associated with and the value of the track's TALB
-// frame.
+// the album the track is associated with and the value of the track's ID3V2
+// TALB frame.
 func (s taggedTrackState) HasAlbumNameConflict() bool {
 	return s.albumNameConflict
 }
 
 // HasArtistNameConflict returns true if there is a conflict between the track's
-// recording artist and the value of the track's TPE1 frame.
+// recording artist and the value of the track's ID3V2 TPE1 frame.
 func (s taggedTrackState) HasArtistNameConflict() bool {
 	return s.artistNameConflict
 }
 
 // HasTaggingConflicts returns true if there are any conflicts between the
-// track's frame values and their corresponding file-based values.
+// track's ID3V2 frame values and their corresponding file-based values.
 func (s taggedTrackState) HasTaggingConflicts() bool {
 	return s.numberingConflict ||
 		s.trackNameConflict ||
@@ -268,24 +280,24 @@ func (s taggedTrackState) HasTaggingConflicts() bool {
 }
 
 // HasMCDIConflict returns true if there is conflict between the track's album's
-// music CD identifier and the value of the track's MCDI frame
+// music CD identifier and the value of the track's ID3V2 MCDI frame.
 func (s taggedTrackState) HasMCDIConflict() bool {
 	return s.mcdiConflict
 }
 
 // HasGenreConflict returns true if there is conflict between the track's
-// album's genre and the value of the track's TCON frame
+// album's genre and the value of the track's ID3V2 TCON frame.
 func (s taggedTrackState) HasGenreConflict() bool {
 	return s.genreConflict
 }
 
 // HasYearConflict returns true if there is conflict between the track's album's
-// year and the value of the track's TYER frame
+// year and the value of the track's ID3V2 TYER frame.
 func (s taggedTrackState) HasYearConflict() bool {
 	return s.yearConflict
 }
 
-// AnalyzeIssues determines whether there are problems with the track's
+// AnalyzeIssues determines whether there are problems with the track's ID3V2
 // frame-based values.
 func (t *Track) AnalyzeIssues() taggedTrackState {
 	if t.hasTagError() {
@@ -307,8 +319,8 @@ func (t *Track) AnalyzeIssues() taggedTrackState {
 	}
 }
 
-// FindDifferences returns strings describing the problems found by calling
-// AnalyzeIssues.
+// FindDifferences returns a slice of strings describing the problems found by
+// calling AnalyzeIssues.
 func (t *Track) FindDifferences() []string {
 	s := t.AnalyzeIssues()
 	if s.hasError {
@@ -377,10 +389,10 @@ func isComparable(p nameTagPair) bool {
 	return true // rune by rune comparison was successful
 }
 
-// RawReadTags reads the tag from an MP3 file and collects interesting frame
-// values.
-func RawReadTags(path string) (d *TaggedTrackData) {
-	d = &TaggedTrackData{}
+// RawReadID3V2Tag reads the ID3V2 tag from an MP3 file and collects interesting
+// frame values.
+func RawReadID3V2Tag(path string) (d *ID3V2TaggedTrackData) {
+	d = &ID3V2TaggedTrackData{}
 	var tag *id3v2.Tag
 	var err error
 	if tag, err = id3v2.Open(path, id3v2.Options{Parse: true, ParseFrames: nil}); err != nil {
@@ -414,9 +426,9 @@ func selectUnknownFrame(mcdiFramers []id3v2.Framer) id3v2.UnknownFrame {
 	return uf
 }
 
-// EditTags rewrites tag frames to match file-based values and saves (re-writes)
-// the associated MP3 file.
-func (t *Track) EditTags() error {
+// EditID3V2Tag rewrites ID3V2 tag frames to match file-based values and saves
+// (re-writes) the associated MP3 file.
+func (t *Track) EditID3V2Tag() error {
 	a := t.AnalyzeIssues()
 	if !a.HasTaggingConflicts() {
 		return fmt.Errorf(internal.ERROR_EDIT_UNNECESSARY)
@@ -459,20 +471,20 @@ type empty struct{}
 
 var semaphores = make(chan empty, 20) // 20 is a typical limit for open files
 
-func (t *Track) readTags(reader func(string) *TaggedTrackData) {
+func (t *Track) readTags(reader func(string) *ID3V2TaggedTrackData) {
 	if t.needsTaggedData() {
 		semaphores <- empty{} // block while full
 		go func() {
 			defer func() {
 				<-semaphores // read to release a slot
 			}()
-			t.SetTags(reader(t.path))
+			t.SetID3V2Tags(reader(t.path))
 		}()
 	}
 }
 
-// UpdateTracks reads the MP3 tags for all the associated tracks.
-func UpdateTracks(o internal.OutputBus, artists []*Artist, reader func(string) *TaggedTrackData) {
+// UpdateTracks reads the ID3V2 tags for all the associated tracks.
+func UpdateTracks(o internal.OutputBus, artists []*Artist, reader func(string) *ID3V2TaggedTrackData) {
 	for _, artist := range artists {
 		for _, album := range artist.Albums() {
 			for _, track := range album.Tracks() {
@@ -481,12 +493,12 @@ func UpdateTracks(o internal.OutputBus, artists []*Artist, reader func(string) *
 		}
 	}
 	waitForSemaphoresDrained()
-	processAlbumRelatedFrames(o, artists)
-	processArtistRelatedFrames(o, artists)
+	processAlbumRelatedID3V2Frames(o, artists)
+	processArtistRelatedID3V2Frames(o, artists)
 	reportTrackErrors(o, artists)
 }
 
-func processArtistRelatedFrames(o internal.OutputBus, artists []*Artist) {
+func processArtistRelatedID3V2Frames(o internal.OutputBus, artists []*Artist) {
 	for _, artist := range artists {
 		names := make(map[string]int)
 		for _, album := range artist.Albums() {
@@ -511,7 +523,7 @@ func processArtistRelatedFrames(o internal.OutputBus, artists []*Artist) {
 	}
 }
 
-func processAlbumRelatedFrames(o internal.OutputBus, artists []*Artist) {
+func processAlbumRelatedID3V2Frames(o internal.OutputBus, artists []*Artist) {
 	for _, artist := range artists {
 		for _, album := range artist.Albums() {
 			mcdis := make(map[string]int)
@@ -649,7 +661,8 @@ func waitForSemaphoresDrained() {
 }
 
 // ParseTrackNameForTesting parses a name into its simple form (no leading track
-// number, no file extension); it is for testing only
+// number, no file extension); it is for testing only and assumes that the input
+// name is well-formed.
 func ParseTrackNameForTesting(name string) (simpleName string, trackNumber int) {
 	simpleName, trackNumber, _ = parseTrackName(nil, name, nil, defaultFileExtension)
 	return
@@ -684,7 +697,7 @@ func parseTrackName(o internal.OutputBus, name string, album *Album, ext string)
 	return
 }
 
-// AlbumPath returns the path to the track's album
+// AlbumPath returns the path of the track's album.
 func (t *Track) AlbumPath() string {
 	if t.containingAlbum == nil {
 		return ""
@@ -692,7 +705,7 @@ func (t *Track) AlbumPath() string {
 	return t.containingAlbum.path
 }
 
-// AlbumName returns the name of the track's album
+// AlbumName returns the name of the track's album.
 func (t *Track) AlbumName() string {
 	if t.containingAlbum == nil {
 		return ""
@@ -701,7 +714,7 @@ func (t *Track) AlbumName() string {
 }
 
 // RecordingArtist returns the name of the artist on whose album this track
-// appears
+// appears.
 func (t *Track) RecordingArtist() string {
 	if t.containingAlbum == nil {
 		return ""
@@ -709,25 +722,33 @@ func (t *Track) RecordingArtist() string {
 	return t.containingAlbum.RecordingArtistName()
 }
 
-// Copy copies the track to a specified destination path
+// Copy copies the track file to a specified destination path.
 func (t *Track) Copy(destination string) error {
 	return internal.CopyFile(t.path, destination)
 }
 
-type TrackFrame struct {
+// ID3V2TrackFrame holds an ID3V2 tag frame's name and its value. It is public
+// so it can be used in unit tests.
+type ID3V2TrackFrame struct {
 	name  string
 	value string
 }
 
-func NewTrackFrame(name, value string) *TrackFrame {
-	return &TrackFrame{name: name, value: value}
+// NewID3V2TrackFrameTesting creates an instance of ID3V2TrackName and is
+// intended solely for testing.
+func NewID3V2TrackFrameForTesting(name, value string) *ID3V2TrackFrame {
+	return &ID3V2TrackFrame{name: name, value: value}
 }
 
-func (f *TrackFrame) String() string {
+// String returns the contents of an ID3V2TrackFrame formatted in the form "name
+// = value".
+func (f *ID3V2TrackFrame) String() string {
 	return fmt.Sprintf("%s = %q", f.name, f.value)
 }
 
-func (t *Track) Diagnostics() (version byte, enc string, f []*TrackFrame, e error) {
+// ID3V2Diagnostics returns ID3V2 tag data - the ID3V2 version, its encoding,
+// and a slice of all the frames in the tag.
+func (t *Track) ID3V2Diagnostics() (version byte, enc string, f []*ID3V2TrackFrame, e error) {
 	var tag *id3v2.Tag
 	var err error
 	if tag, err = id3v2.Open(t.path, id3v2.Options{Parse: true, ParseFrames: nil}); err != nil {
@@ -743,9 +764,9 @@ func (t *Track) Diagnostics() (version byte, enc string, f []*TrackFrame, e erro
 	sort.Strings(frameNames)
 	for _, n := range frameNames {
 		if strings.HasPrefix(n, "T") {
-			f = append(f, &TrackFrame{name: n, value: removeLeadingBOMs(tag.GetTextFrame(n).Text)})
+			f = append(f, &ID3V2TrackFrame{name: n, value: removeLeadingBOMs(tag.GetTextFrame(n).Text)})
 		} else {
-			f = append(f, &TrackFrame{name: n, value: stringifyFramerArray(frames[n])})
+			f = append(f, &ID3V2TrackFrame{name: n, value: stringifyFramerArray(frames[n])})
 		}
 	}
 	enc = tag.DefaultEncoding().Name

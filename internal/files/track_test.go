@@ -123,9 +123,9 @@ func TestTrack_needsTaggedData(t *testing.T) {
 		tr   *Track
 		want bool
 	}{
-		{name: "needs tagged data", tr: &Track{TaggedTrackData: TaggedTrackData{track: 0}}, want: true},
-		{name: "format error", tr: &Track{TaggedTrackData: TaggedTrackData{err: "format error"}}, want: false},
-		{name: "valid track number", tr: &Track{TaggedTrackData: TaggedTrackData{track: 1}}, want: false},
+		{name: "needs tagged data", tr: &Track{ID3V2TaggedTrackData: ID3V2TaggedTrackData{track: 0}}, want: true},
+		{name: "format error", tr: &Track{ID3V2TaggedTrackData: ID3V2TaggedTrackData{err: "format error"}}, want: false},
+		{name: "valid track number", tr: &Track{ID3V2TaggedTrackData: ID3V2TaggedTrackData{track: 1}}, want: false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -168,10 +168,10 @@ func Test_toTrackNumber(t *testing.T) {
 	}
 }
 
-func TestTrack_SetTags(t *testing.T) {
-	fnName := "track.SetTags()"
+func TestTrack_SetID3V2Tags(t *testing.T) {
+	fnName := "track.SetID3V2Tags()"
 	type args struct {
-		d *TaggedTrackData
+		d *ID3V2TaggedTrackData
 	}
 	tests := []struct {
 		name string
@@ -186,7 +186,7 @@ func TestTrack_SetTags(t *testing.T) {
 		{
 			name: "good input",
 			tr:   &Track{},
-			args: args{&TaggedTrackData{
+			args: args{&ID3V2TaggedTrackData{
 				album:  "my excellent album",
 				artist: "great artist",
 				title:  "best track ever",
@@ -200,7 +200,7 @@ func TestTrack_SetTags(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.tr.SetTags(tt.args.d)
+			tt.tr.SetID3V2Tags(tt.args.d)
 			if tt.tr.track != tt.wantNumber {
 				t.Errorf("%s tagged track = %d, want %d ", fnName, tt.tr.track, tt.wantNumber)
 			}
@@ -221,22 +221,22 @@ func TestTrack_SetTags(t *testing.T) {
 
 func TestTrack_readTags(t *testing.T) {
 	fnName := "track.readTags()"
-	normalReader := func(path string) *TaggedTrackData {
-		return &TaggedTrackData{
+	normalReader := func(path string) *ID3V2TaggedTrackData {
+		return &ID3V2TaggedTrackData{
 			album:  "beautiful album",
 			artist: "great artist",
 			title:  "terrific track",
 			track:  1,
 		}
 	}
-	bentReader := func(path string) *TaggedTrackData {
-		return &TaggedTrackData{err: "read error"}
+	bentReader := func(path string) *ID3V2TaggedTrackData {
+		return &ID3V2TaggedTrackData{err: "read error"}
 	}
-	brokenReader := func(path string) *TaggedTrackData {
-		return &TaggedTrackData{err: "read error"}
+	brokenReader := func(path string) *ID3V2TaggedTrackData {
+		return &ID3V2TaggedTrackData{err: "read error"}
 	}
 	type args struct {
-		reader func(string) *TaggedTrackData
+		reader func(string) *ID3V2TaggedTrackData
 	}
 	tests := []struct {
 		name string
@@ -259,7 +259,7 @@ func TestTrack_readTags(t *testing.T) {
 		{
 			name: "replay",
 			tr: &Track{
-				TaggedTrackData: TaggedTrackData{
+				ID3V2TaggedTrackData: ID3V2TaggedTrackData{
 					track:  2,
 					album:  "nice album",
 					artist: "good artist",
@@ -359,7 +359,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 				number:          1,
 				name:            "track name",
 				containingAlbum: NewAlbum("album name", NewArtist("artist name", ""), ""),
-				TaggedTrackData: TaggedTrackData{
+				ID3V2TaggedTrackData: ID3V2TaggedTrackData{
 					track:  1,
 					title:  "track name",
 					album:  "album name",
@@ -374,7 +374,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 				number:          1,
 				name:            "track name",
 				containingAlbum: NewAlbum("album name", NewArtist("artist name", ""), ""),
-				TaggedTrackData: TaggedTrackData{
+				ID3V2TaggedTrackData: ID3V2TaggedTrackData{
 					track:  1,
 					title:  "track:name",
 					album:  "album name",
@@ -389,7 +389,7 @@ func TestTrack_FindDifferences(t *testing.T) {
 				number:          2,
 				name:            "track:name",
 				containingAlbum: NewAlbum("album:name", NewArtist("artist:name", ""), ""),
-				TaggedTrackData: TaggedTrackData{
+				ID3V2TaggedTrackData: ID3V2TaggedTrackData{
 					track:  1,
 					title:  "track name",
 					album:  "album name",
@@ -405,12 +405,12 @@ func TestTrack_FindDifferences(t *testing.T) {
 		},
 		{
 			name: "unread tags",
-			tr:   &Track{TaggedTrackData: TaggedTrackData{track: 0}},
+			tr:   &Track{ID3V2TaggedTrackData: ID3V2TaggedTrackData{track: 0}},
 			want: []string{trackDiffUnreadTags},
 		},
 		{
 			name: "track with error",
-			tr:   &Track{TaggedTrackData: TaggedTrackData{err: "oops"}},
+			tr:   &Track{ID3V2TaggedTrackData: ID3V2TaggedTrackData{err: "oops"}},
 			want: []string{trackDiffError},
 		},
 		{
@@ -456,16 +456,16 @@ func TestUpdateTracks(t *testing.T) {
 			}
 		}
 	}
-	normalReader := func(path string) *TaggedTrackData {
-		return &TaggedTrackData{
+	normalReader := func(path string) *ID3V2TaggedTrackData {
+		return &ID3V2TaggedTrackData{
 			album:  "beautiful album",
 			artist: "great artist",
 			title:  "terrific track",
 			track:  1,
 		}
 	}
-	badReader := func(path string) *TaggedTrackData {
-		return &TaggedTrackData{err: "read error"}
+	badReader := func(path string) *ID3V2TaggedTrackData {
+		return &ID3V2TaggedTrackData{err: "read error"}
 	}
 	var artists2 []*Artist
 	for k := 0; k < 500; k++ {
@@ -495,7 +495,7 @@ func TestUpdateTracks(t *testing.T) {
 	}
 	type args struct {
 		artists []*Artist
-		reader  func(string) *TaggedTrackData
+		reader  func(string) *ID3V2TaggedTrackData
 	}
 	tests := []struct {
 		name string
@@ -537,8 +537,8 @@ func TestUpdateTracks(t *testing.T) {
 	}
 }
 
-func TestRawReadTags(t *testing.T) {
-	fnName := "RawReadTags()"
+func TestRawReadID3V2Tag(t *testing.T) {
+	fnName := "RawReadID3V2Tag()"
 	payload := make([]byte, 0)
 	for k := 0; k < 256; k++ {
 		payload = append(payload, byte(k))
@@ -575,13 +575,13 @@ func TestRawReadTags(t *testing.T) {
 	tests := []struct {
 		name string
 		args
-		wantD *TaggedTrackData
+		wantD *ID3V2TaggedTrackData
 	}{
-		{name: "bad test", args: args{path: "./noSuchFile!.mp3"}, wantD: &TaggedTrackData{err: "foo"}},
+		{name: "bad test", args: args{path: "./noSuchFile!.mp3"}, wantD: &ID3V2TaggedTrackData{err: "foo"}},
 		{
 			name: "good test",
 			args: args{path: "./goodFile.mp3"},
-			wantD: &TaggedTrackData{
+			wantD: &ID3V2TaggedTrackData{
 				album:  "unknown album",
 				artist: "unknown artist",
 				title:  "unknown track",
@@ -591,14 +591,14 @@ func TestRawReadTags(t *testing.T) {
 		{
 			name: "bad data test",
 			args: args{path: "./badFile.mp3"},
-			wantD: &TaggedTrackData{
+			wantD: &ID3V2TaggedTrackData{
 				err: internal.ERROR_DOES_NOT_BEGIN_WITH_DIGIT,
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotD := RawReadTags(tt.args.path)
+			gotD := RawReadID3V2Tag(tt.args.path)
 			if len(gotD.err) != 0 {
 				if len(tt.wantD.err) == 0 {
 					t.Errorf("%s = %v, want %v", fnName, gotD, tt.wantD)
@@ -702,9 +702,9 @@ func Test_sortTracks(t *testing.T) {
 	}
 }
 
-func TestTrack_EditTags(t *testing.T) {
-	fnName := "Track.EditTags()"
-	topDir := "editTags"
+func TestTrack_EditID3V2Tag(t *testing.T) {
+	fnName := "Track.EditID3V2Tag()"
+	topDir := "editID3V2Tag"
 	if err := internal.Mkdir(topDir); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, topDir, err)
 	}
@@ -752,7 +752,7 @@ func TestTrack_EditTags(t *testing.T) {
 				name:            "defective track",
 				path:            filepath.Join(topDir, "non-existent-file.mp3"),
 				containingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
-				TaggedTrackData: TaggedTrackData{
+				ID3V2TaggedTrackData: ID3V2TaggedTrackData{
 					track:  1,
 					title:  "unknown track",
 					album:  "unknown album",
@@ -768,7 +768,7 @@ func TestTrack_EditTags(t *testing.T) {
 				name:            "fixable track",
 				path:            fullPath,
 				containingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
-				TaggedTrackData: TaggedTrackData{
+				ID3V2TaggedTrackData: ID3V2TaggedTrackData{
 					track:             2,
 					title:             "unknown track",
 					album:             "unknown album",
@@ -783,7 +783,7 @@ func TestTrack_EditTags(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.tr.EditTags(); (err != nil) != tt.wantErr {
+			if err := tt.tr.EditID3V2Tag(); (err != nil) != tt.wantErr {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
 			}
 		})
@@ -863,8 +863,8 @@ func TestTrack_AlbumPath(t *testing.T) {
 	}
 }
 
-func TestNewTaggedTrackData(t *testing.T) {
-	fnName := "NewTaggedTrackData()"
+func TestNewID3V2TaggedTrackDataForTesting(t *testing.T) {
+	fnName := "NewID3V2TaggedTrackDataForTesting()"
 	type args struct {
 		albumFrame           string
 		artistFrame          string
@@ -875,7 +875,7 @@ func TestNewTaggedTrackData(t *testing.T) {
 	tests := []struct {
 		name string
 		args
-		want *TaggedTrackData
+		want *ID3V2TaggedTrackData
 	}{
 		{
 			name: "usual",
@@ -886,7 +886,7 @@ func TestNewTaggedTrackData(t *testing.T) {
 				evaluatedNumberFrame: 1,
 				musicCDIdentifier:    []byte{0, 1, 2},
 			},
-			want: &TaggedTrackData{
+			want: &ID3V2TaggedTrackData{
 				album:             "the album",
 				artist:            "the artist",
 				title:             "the title",
@@ -897,7 +897,7 @@ func TestNewTaggedTrackData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := NewTaggedTrackData(tt.args.albumFrame, tt.args.artistFrame, tt.args.titleFrame, tt.args.evaluatedNumberFrame, tt.args.musicCDIdentifier)
+			got := NewID3V2TaggedTrackDataForTesting(tt.args.albumFrame, tt.args.artistFrame, tt.args.titleFrame, tt.args.evaluatedNumberFrame, tt.args.musicCDIdentifier)
 			if got.album != tt.want.album ||
 				got.artist != tt.want.artist ||
 				got.title != tt.want.title ||
@@ -1188,8 +1188,8 @@ func Test_pickKey(t *testing.T) {
 	}
 }
 
-func Test_processAlbumRelatedFrames(t *testing.T) {
-	fnName := "processAlbumRelatedFrames()"
+func Test_processAlbumRelatedID3V2Frames(t *testing.T) {
+	fnName := "processAlbumRelatedID3V2Frames()"
 	// ordinary test data
 	var artists1 []*Artist
 	artist1 := NewArtist("good artist", "")
@@ -1294,7 +1294,7 @@ func Test_processAlbumRelatedFrames(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
-			processAlbumRelatedFrames(o, tt.args.artists)
+			processAlbumRelatedID3V2Frames(o, tt.args.artists)
 			if tt.album.genre != tt.wantGenre {
 				t.Errorf("%s want genre %q, got %q", fnName, tt.album.genre, tt.wantGenre)
 			}
@@ -1310,8 +1310,8 @@ func Test_processAlbumRelatedFrames(t *testing.T) {
 	}
 }
 
-func Test_processArtistRelatedFrames(t *testing.T) {
-	fnName := "processArtistRelatedFrames"
+func Test_processArtistRelatedID3V2Frames(t *testing.T) {
+	fnName := "processArtistRelatedID3V2Frames"
 	artist1 := NewArtist("artist_name", "")
 	album1 := NewAlbum("album1", artist1, "")
 	artist1.AddAlbum(album1)
@@ -1369,7 +1369,7 @@ func Test_processArtistRelatedFrames(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
-			processArtistRelatedFrames(o, []*Artist{tt.artist})
+			processArtistRelatedID3V2Frames(o, []*Artist{tt.artist})
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
@@ -1379,8 +1379,8 @@ func Test_processArtistRelatedFrames(t *testing.T) {
 	}
 }
 
-func TestTrack_Diagnostics(t *testing.T) {
-	fnName := "Track.Diagnostics()"
+func TestTrack_ID3V2Diagnostics(t *testing.T) {
+	fnName := "Track.ID3V2Diagnostics()"
 	payload := make([]byte, 0)
 	for k := 0; k < 256; k++ {
 		payload = append(payload, byte(k))
@@ -1411,7 +1411,7 @@ func TestTrack_Diagnostics(t *testing.T) {
 		tr          *Track
 		wantEnc     string
 		wantVersion byte
-		wantF       []*TrackFrame
+		wantF       []*ID3V2TrackFrame
 		wantErr     bool
 	}{
 		{
@@ -1424,22 +1424,22 @@ func TestTrack_Diagnostics(t *testing.T) {
 			tr:          &Track{path: "./goodfile.mp3"},
 			wantEnc:     "ISO-8859-1",
 			wantVersion: 3,
-			wantF: []*TrackFrame{
-				NewTrackFrame("Fake", "<<[]byte{0x0, 0x75, 0x6d, 0x6d, 0x6d}>>"),
-				NewTrackFrame("T???", "who knows?"),
-				NewTrackFrame("TALB", "unknown album"),
-				NewTrackFrame("TCOM", "a couple of idiots"),
-				NewTrackFrame("TCON", "dance music"),
-				NewTrackFrame("TIT2", "unknown track"),
-				NewTrackFrame("TLEN", "1000"),
-				NewTrackFrame("TPE1", "unknown artist"),
-				NewTrackFrame("TRCK", "2"),
-				NewTrackFrame("TYER", "2022")},
+			wantF: []*ID3V2TrackFrame{
+				NewID3V2TrackFrameForTesting("Fake", "<<[]byte{0x0, 0x75, 0x6d, 0x6d, 0x6d}>>"),
+				NewID3V2TrackFrameForTesting("T???", "who knows?"),
+				NewID3V2TrackFrameForTesting("TALB", "unknown album"),
+				NewID3V2TrackFrameForTesting("TCOM", "a couple of idiots"),
+				NewID3V2TrackFrameForTesting("TCON", "dance music"),
+				NewID3V2TrackFrameForTesting("TIT2", "unknown track"),
+				NewID3V2TrackFrameForTesting("TLEN", "1000"),
+				NewID3V2TrackFrameForTesting("TPE1", "unknown artist"),
+				NewID3V2TrackFrameForTesting("TRCK", "2"),
+				NewID3V2TrackFrameForTesting("TYER", "2022")},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotVersion, gotEnc, gotF, err := tt.tr.Diagnostics()
+			gotVersion, gotEnc, gotF, err := tt.tr.ID3V2Diagnostics()
 			if (err != nil) != tt.wantErr {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
 				return
@@ -1457,13 +1457,13 @@ func TestTrack_Diagnostics(t *testing.T) {
 	}
 }
 
-func TestTrackFrame_String(t *testing.T) {
-	fnName := "TrackFrame.String()"
+func TestID3V2TrackFrame_String(t *testing.T) {
+	fnName := "ID3V2TrackFrame.String()"
 	tests := []struct {
 		name string
-		f    *TrackFrame
+		f    *ID3V2TrackFrame
 		want string
-	}{{name: "usual", f: NewTrackFrame("T1", "V1"), want: "T1 = \"V1\""}}
+	}{{name: "usual", f: NewID3V2TrackFrameForTesting("T1", "V1"), want: "T1 = \"V1\""}}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.f.String(); got != tt.want {

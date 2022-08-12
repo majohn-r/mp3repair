@@ -422,7 +422,7 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 								{
 									name:   "track",
 									number: 1,
-									issues: []string{"cannot determine differences, there was an error reading tags"},
+									issues: []string{"differences cannot be determined: there was an error reading ID3V2 tags"},
 								},
 							},
 						},

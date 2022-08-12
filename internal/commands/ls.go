@@ -300,7 +300,7 @@ func (l *ls) outputTracks(o internal.OutputBus, tracks []*files.Track, prefix st
 
 func (l *ls) outputTrackDiagnostics(o internal.OutputBus, t *files.Track, prefix string) {
 	if *l.diagnostics {
-		if version, enc, frames, err := t.Diagnostics(); err != nil {
+		if version, enc, frames, err := t.ID3V2Diagnostics(); err != nil {
 			o.LogWriter().Error(internal.LE_TAG_ERROR, map[string]interface{}{
 				internal.FK_ERROR: err,
 				fkTrack:           t.String(),
