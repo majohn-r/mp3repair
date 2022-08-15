@@ -7,6 +7,7 @@ import (
 	"bufio"
 	"bytes"
 	"fmt"
+	"io/fs"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -142,46 +143,56 @@ func Doc() error {
 	}
 }
 
-func getCodeFolders() ([]string, error) {
-	if candidates, err := getAllFolders("."); err != nil {
-		return nil, err
-	} else {
-		var folders []string
-		for _, folder := range candidates {
-			if entries, err := os.ReadDir(folder); err != nil {
-				return nil, err
-			} else {
-				for _, entry := range entries {
-					if entry.Type().IsRegular() {
-						name := entry.Name()
-						if strings.HasSuffix(name, ".go") && !strings.HasSuffix(name, "_test.go") && !strings.HasPrefix(name, "testing") {
-							folders = append(folders, folder)
-							break
-						}
-					}
-				}
-			}
-		}
-		return folders, nil
+func getCodeFolders() (folders []string, err error) {
+	var candidates []string
+	if candidates, err = getAllFolders("."); err != nil {
+		return
 	}
+	for _, folder := range candidates {
+		var entries []fs.DirEntry
+		if entries, err = os.ReadDir(folder); err != nil {
+			return
+		}
+		if includesCode(entries) {
+			folders = append(folders, folder)
+		}
+	}
+	return
 }
 
-func getAllFolders(topDir string) ([]string, error) {
-	var folders []string
-	if dirs, err := os.ReadDir(topDir); err != nil {
-		return nil, err
-	} else {
-		for _, d := range dirs {
-			if d.IsDir() {
-				folder := filepath.Join(topDir, d.Name())
-				folders = append(folders, folder)
-				if subfolders, err := getAllFolders(folder); err != nil {
-					return nil, err
-				} else {
-					folders = append(folders, subfolders...)
-				}
-			}
+func includesCode(entries []fs.DirEntry) (ok bool) {
+	for _, entry := range entries {
+		if isCode(entry) {
+			ok = true
+			return
 		}
 	}
-	return folders, nil
+	return
+}
+
+func isCode(entry fs.DirEntry) (ok bool) {
+	if entry.Type().IsRegular() {
+		name := entry.Name()
+		ok = strings.HasSuffix(name, ".go") && !strings.HasSuffix(name, "_test.go") && !strings.HasPrefix(name, "testing")
+	}
+	return
+}
+
+func getAllFolders(topDir string) (folders []string, err error) {
+	var dirs []fs.DirEntry
+	if dirs, err = os.ReadDir(topDir); err != nil {
+		return
+	}
+	for _, d := range dirs {
+		if d.IsDir() {
+			folder := filepath.Join(topDir, d.Name())
+			folders = append(folders, folder)
+			var subfolders []string
+			if subfolders, err = getAllFolders(folder); err != nil {
+				return
+			}
+			folders = append(folders, subfolders...)
+		}
+	}
+	return
 }
