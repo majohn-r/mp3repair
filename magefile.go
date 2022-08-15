@@ -23,7 +23,7 @@ const (
 // var Default = Build
 
 // Create the executable image
-func Build() error {
+func Build() (err error) {
 	versionArgument, version := createVersionArgument()
 	fmt.Printf("Creating %s version %s\n", executable, version)
 	var args []string
@@ -36,9 +36,9 @@ func Build() error {
 	unifiedOutput := &bytes.Buffer{}
 	cmd.Stderr = unifiedOutput
 	cmd.Stdout = unifiedOutput
-	err := cmd.Run()
+	err = cmd.Run()
 	printOutput(unifiedOutput)
-	return err
+	return
 }
 
 func printOutput(b *bytes.Buffer) {
@@ -84,50 +84,40 @@ func Clean() error {
 }
 
 // Execute all unit tests
-func Test() error {
+func Test() (err error) {
 	unifiedOutput := &bytes.Buffer{}
 	// go test -cover ./...
 	cmd := exec.Command("go", "test", "-cover", "./...")
 	cmd.Stderr = unifiedOutput
 	cmd.Stdout = unifiedOutput
 	fmt.Println("running all unit tests with code coverage")
-	// ignore error return
-	err := cmd.Run()
+	err = cmd.Run()
 	printOutput(unifiedOutput)
-	return err
+	return
 }
 
 // Execute all unit tests and generate a code coverage report
-func CoverageReport() error {
-	unifiedOutput := &bytes.Buffer{}
+func CoverageReport() (err error) {
 	// go test -coverprofile=coverage.out ./...
 	cmd := exec.Command("go", "test", "-coverprofile=coverage.out", "./...")
-	cmd.Stderr = unifiedOutput
-	cmd.Stdout = unifiedOutput
 	fmt.Println("generating code coverage data")
-	err := cmd.Run()
-	printOutput(unifiedOutput)
+	err = cmd.Run()
 	if err == nil {
-		unifiedOutput = &bytes.Buffer{}
 		// go tool cover -html=coverage.out
 		cmd = exec.Command("go", "tool", "cover", "-html=coverage.out")
-		cmd.Stderr = unifiedOutput
-		cmd.Stdout = unifiedOutput
 		fmt.Println("generating report from code coverage data")
 		// ignore error return
 		err = cmd.Run()
-		printOutput(unifiedOutput)
 	}
 	return err
 }
 
 // Generate go doc output
-func Doc() error {
-	if folders, err := getCodeFolders(); err != nil {
-		return err
-	} else {
+func Doc() (err error) {
+	var folders []string
+	if folders, err = getCodeFolders(); err == nil {
+		unifiedOutput := &bytes.Buffer{}
 		for _, folder := range folders {
-			unifiedOutput := &bytes.Buffer{}
 			// go doc -all .\\{folder}
 			if !strings.HasPrefix(folder, ".") {
 				folder = ".\\" + folder
@@ -135,12 +125,13 @@ func Doc() error {
 			cmd := exec.Command("go", "doc", "-all", folder)
 			cmd.Stderr = unifiedOutput
 			cmd.Stdout = unifiedOutput
-			// ignore error return
-			err = cmd.Run()
-			printOutput(unifiedOutput)
+			if err = cmd.Run(); err != nil {
+				break
+			}
 		}
-		return nil
+		printOutput(unifiedOutput)
 	}
+	return
 }
 
 func getCodeFolders() (folders []string, err error) {
