@@ -313,7 +313,7 @@ func generateStandardTrackErrorReport() string {
 	for artist := 0; artist < 10; artist++ {
 		for album := 0; album < 10; album++ {
 			for track := 0; track < 10; track++ {
-				result = append(result, fmt.Sprintf("An error occurred when trying to read tag information for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"zero length\".\n", track, album, artist))
+				result = append(result, fmt.Sprintf("An error occurred when trying to read ID3V2 tag information for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"zero length\".\n", track, album, artist))
 			}
 		}
 	}
@@ -325,7 +325,7 @@ func generateStandardTrackLogReport() string {
 	for artist := 0; artist < 10; artist++ {
 		for album := 0; album < 10; album++ {
 			for track := 0; track < 10; track++ {
-				result = append(result, fmt.Sprintf("level='error' albumName='Test Album %d' artistName='Test Artist %d' error='zero length' trackName='Test Track[%02d]' msg='tag error'\n", album, artist, track))
+				result = append(result, fmt.Sprintf("level='error' albumName='Test Album %d' artistName='Test Artist %d' error='zero length' trackName='Test Track[%02d]' msg='id3v2 tag error'\n", album, artist, track))
 			}
 		}
 	}

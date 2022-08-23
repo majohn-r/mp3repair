@@ -920,6 +920,16 @@ func Test_ls_outputTrackDiagnostics(t *testing.T) {
 		t.Errorf("%s error creating %q: %v", fnName, goodAlbumDir, err)
 	}
 	content := createTaggedContent(frames)
+	content = append(content, []byte{ // borrowed from id3v1_test.go
+		'T', 'A', 'G', 'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P',
+		'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e',
+		'w', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'O',
+		'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T',
+		'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm', '2', '0', '1',
+		'3', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+		' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 29, 12,
+	}...)
 	trackName := "01 new track.mp3"
 	if err := internal.CreateFileForTestingWithContent(goodAlbumDir, trackName, content); err != nil {
 		t.Errorf("%s error creating file %q: %v", fnName, trackName, err)
@@ -944,8 +954,10 @@ func Test_ls_outputTrackDiagnostics(t *testing.T) {
 			l:    makeLs(),
 			args: args{t: badTrack},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "An error occurred when trying to read tag information for track \"bad track\" on album \"bad album\" by artist \"bad artist\": \"open BadAlbum\\\\01 bad track.mp3: The system cannot find the path specified.\".\n",
-				WantLogOutput:   "level='error' error='open BadAlbum\\01 bad track.mp3: The system cannot find the path specified.' track='BadAlbum\\01 bad track.mp3' msg='tag error'\n",
+				WantErrorOutput: "An error occurred when trying to read ID3V2 tag information for track \"bad track\" on album \"bad album\" by artist \"bad artist\": \"open BadAlbum\\\\01 bad track.mp3: The system cannot find the path specified.\".\n" +
+					"An error occurred when trying to read ID3V1 tag information for track \"bad track\" on album \"bad album\" by artist \"bad artist\": \"open BadAlbum\\\\01 bad track.mp3: The system cannot find the path specified.\".\n",
+				WantLogOutput: "level='error' error='open BadAlbum\\01 bad track.mp3: The system cannot find the path specified.' track='BadAlbum\\01 bad track.mp3' msg='id3v2 tag error'\n" +
+					"level='error' error='open BadAlbum\\01 bad track.mp3: The system cannot find the path specified.' track='BadAlbum\\01 bad track.mp3' msg='id3v1 tag error'\n",
 			},
 		},
 		{
@@ -953,16 +965,22 @@ func Test_ls_outputTrackDiagnostics(t *testing.T) {
 			l:    makeLs(),
 			args: args{t: goodTrack, prefix: "      "},
 			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "      Version: 3\n" +
-					"      Encoding: \"ISO-8859-1\"\n" +
-					"      TALB = \"unknown album\"\n" +
-					"      TCOM = \"a couple of idiots\"\n" +
-					"      TCON = \"dance music\"\n" +
-					"      TIT2 = \"unknown track\"\n" +
-					"      TLEN = \"1000\"\n" +
-					"      TPE1 = \"unknown artist\"\n" +
-					"      TRCK = \"2\"\n" +
-					"      TYER = \"2022\"\n",
+				WantConsoleOutput: "      ID3V2 Version: 3\n" +
+					"      ID3V2 Encoding: \"ISO-8859-1\"\n" +
+					"      ID3V2 TALB = \"unknown album\"\n" +
+					"      ID3V2 TCOM = \"a couple of idiots\"\n" +
+					"      ID3V2 TCON = \"dance music\"\n" +
+					"      ID3V2 TIT2 = \"unknown track\"\n" +
+					"      ID3V2 TLEN = \"1000\"\n" +
+					"      ID3V2 TPE1 = \"unknown artist\"\n" +
+					"      ID3V2 TRCK = \"2\"\n" +
+					"      ID3V2 TYER = \"2022\"\n" +
+					"      ID3V1 Artist: \"The Beatles\"\n" +
+					"      ID3V1 Album: \"On Air: Live At The BBC, Volum\"\n" +
+					"      ID3V1 Title: \"Ringo - Pop Profile [Interview\"\n" +
+					"      ID3V1 Track: 29\n" +
+					"      ID3V1 Year: 2013\n" +
+					"      ID3V1 Genre: \"Other\"\n",
 			},
 		},
 	}

@@ -641,8 +641,8 @@ func reportTrackErrors(o internal.OutputBus, artists []*Artist) {
 		for _, album := range artist.Albums() {
 			for _, track := range album.Tracks() {
 				if track.hasTagError() {
-					o.WriteError(internal.USER_TAG_ERROR, track.name, album.name, artist.name, track.err)
-					o.LogWriter().Error(internal.LE_TAG_ERROR, map[string]interface{}{
+					o.WriteError(internal.USER_ID3V2_TAG_ERROR, track.name, album.name, artist.name, track.err)
+					o.LogWriter().Error(internal.LE_ID3V2_TAG_ERROR, map[string]interface{}{
 						fkTrackName:       track.name,
 						fkAlbumName:       album.name,
 						fkArtistName:      artist.name,
@@ -744,6 +744,33 @@ func NewID3V2TrackFrameForTesting(name, value string) *ID3V2TrackFrame {
 // = value".
 func (f *ID3V2TrackFrame) String() string {
 	return fmt.Sprintf("%s = %q", f.name, f.value)
+}
+
+// ID3V1Diagnostics returns the ID3V1 tag contents, if any; a missing ID3V1 tag
+// (e.g., the input file is too short to have an ID3V1 tag), or an invalid ID3V1
+// tag (isValid() is false), returns a non-nil error
+func (t *Track) ID3V1Diagnostics() ([]string, error) {
+	if v1, err := readId3v1Metadata(t.path); err != nil {
+		return nil, err
+	} else {
+		var output []string
+		output = append(output, fmt.Sprintf("Artist: %q", v1.getArtist()))
+		output = append(output, fmt.Sprintf("Album: %q", v1.getAlbum()))
+		output = append(output, fmt.Sprintf("Title: %q", v1.getTitle()))
+		if track, ok := v1.getTrack(); ok {
+			output = append(output, fmt.Sprintf("Track: %d", track))
+		}
+		if year, ok := v1.getYear(); ok {
+			output = append(output, fmt.Sprintf("Year: %d", year))
+		}
+		if genre, ok := v1.getGenre(); ok {
+			output = append(output, fmt.Sprintf("Genre: %q", genre))
+		}
+		if comment := v1.getComment(); len(comment) > 0 {
+			output = append(output, fmt.Sprintf("Comment: %q", comment))
+		}
+		return output, nil
+	}
 }
 
 // ID3V2Diagnostics returns ID3V2 tag data - the ID3V2 version, its encoding,

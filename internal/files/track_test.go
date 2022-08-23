@@ -488,8 +488,8 @@ func TestUpdateTracks(t *testing.T) {
 	for _, artist := range artists2 {
 		for _, album := range artist.Albums() {
 			for _, track := range album.Tracks() {
-				errors = append(errors, "An error occurred when trying to read tag information for track \""+track.name+"\" on album \""+album.name+"\" by artist \""+artist.name+"\": \"read error\".\n")
-				logs = append(logs, fmt.Sprintf("level='error' albumName='%s' artistName='%s' error='read error' trackName='%s' msg='tag error'\n", album.name, artist.name, track.name))
+				errors = append(errors, "An error occurred when trying to read ID3V2 tag information for track \""+track.name+"\" on album \""+album.name+"\" by artist \""+artist.name+"\": \"read error\".\n")
+				logs = append(logs, fmt.Sprintf("level='error' albumName='%s' artistName='%s' error='read error' trackName='%s' msg='id3v2 tag error'\n", album.name, artist.name, track.name))
 			}
 		}
 	}
@@ -1580,6 +1580,90 @@ func Test_selectUnknownFrame(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := selectUnknownFrame(tt.args.mcdiFramers); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTrack_ID3V1Diagnostics(t *testing.T) {
+	fnName := "Track.ID3V1Diagnostics()"
+	testDir := "id3v1Diagnostics"
+	if err := internal.Mkdir(testDir); err != nil {
+		t.Errorf("%s cannot create %q: %v", fnName, testDir, err)
+	}
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, testDir)
+	}()
+	// three files: one good, one too small, one with an invalid tag
+	smallFile := "01 small.mp3"
+	if err := internal.CreateFileForTestingWithContent(testDir, smallFile, []byte{0, 1, 2}); err != nil {
+		t.Errorf("%s cannot create %q: %v", fnName, smallFile, err)
+	}
+	invalidFile := "02 invalid.mp3"
+	if err := internal.CreateFileForTestingWithContent(testDir, invalidFile, []byte{
+		'd', 'A', 'G', 'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P',
+		'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e',
+		'w', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'O',
+		'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T',
+		'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm', '2', '0', '1',
+		'3', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+		' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 29, 12,
+	}); err != nil {
+		t.Errorf("%s cannot create %q: %v", fnName, invalidFile, err)
+	}
+	goodFile := "02 good.mp3"
+	if err := internal.CreateFileForTestingWithContent(testDir, goodFile, []byte{
+		'T', 'A', 'G', 'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P',
+		'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e',
+		'w', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'O',
+		'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T',
+		'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm', '2', '0', '1',
+		'3', 's', 'i', 'l', 'l', 'y', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+		' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 29, 12,
+	}); err != nil {
+		t.Errorf("%s cannot create %q: %v", fnName, goodFile, err)
+	}
+	tests := []struct {
+		name    string
+		tr      *Track
+		want    []string
+		wantErr bool
+	}{
+		{
+			name:    "small file",
+			tr:      &Track{path: filepath.Join(testDir, smallFile)},
+			wantErr: true,
+		},
+		{
+			name:    "invalid file",
+			tr:      &Track{path: filepath.Join(testDir, invalidFile)},
+			wantErr: true,
+		},
+		{
+			name: "good file",
+			tr:   &Track{path: filepath.Join(testDir, goodFile)},
+			want: []string{
+				"Artist: \"The Beatles\"",
+				"Album: \"On Air: Live At The BBC, Volum\"",
+				"Title: \"Ringo - Pop Profile [Interview\"",
+				"Track: 29",
+				"Year: 2013",
+				"Genre: \"Other\"",
+				"Comment: \"silly\"",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.tr.ID3V1Diagnostics()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})

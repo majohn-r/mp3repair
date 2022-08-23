@@ -301,16 +301,27 @@ func (l *ls) outputTracks(o internal.OutputBus, tracks []*files.Track, prefix st
 func (l *ls) outputTrackDiagnostics(o internal.OutputBus, t *files.Track, prefix string) {
 	if *l.diagnostics {
 		if version, enc, frames, err := t.ID3V2Diagnostics(); err != nil {
-			o.LogWriter().Error(internal.LE_TAG_ERROR, map[string]interface{}{
+			o.LogWriter().Error(internal.LE_ID3V2_TAG_ERROR, map[string]interface{}{
 				internal.FK_ERROR: err,
 				fkTrack:           t.String(),
 			})
-			o.WriteError(internal.USER_TAG_ERROR, t.Name(), t.AlbumName(), t.RecordingArtist(), fmt.Sprintf("%v", err))
+			o.WriteError(internal.USER_ID3V2_TAG_ERROR, t.Name(), t.AlbumName(), t.RecordingArtist(), fmt.Sprintf("%v", err))
 		} else {
-			o.WriteConsole(false, "%sVersion: %v\n", prefix, version)
-			o.WriteConsole(false, "%sEncoding: %q\n", prefix, enc)
+			o.WriteConsole(false, "%sID3V2 Version: %v\n", prefix, version)
+			o.WriteConsole(false, "%sID3V2 Encoding: %q\n", prefix, enc)
 			for _, frame := range frames {
-				o.WriteConsole(false, "%s%s\n", prefix, frame.String())
+				o.WriteConsole(false, "%sID3V2 %s\n", prefix, frame.String())
+			}
+		}
+		if id3v1Data, err := t.ID3V1Diagnostics(); err != nil {
+			o.LogWriter().Error(internal.LE_ID3V1_TAG_ERROR, map[string]interface{}{
+				internal.FK_ERROR: err,
+				fkTrack:           t.String(),
+			})
+			o.WriteError(internal.USER_ID3V1_TAG_ERROR, t.Name(), t.AlbumName(), t.RecordingArtist(), fmt.Sprintf("%v", err))
+		} else {
+			for _, datum := range id3v1Data {
+				o.WriteConsole(false, "%sID3V1 %s\n", prefix, datum)
 			}
 		}
 	}
