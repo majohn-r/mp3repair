@@ -132,33 +132,6 @@ func (t Tracks) Swap(i, j int) {
 	t[i], t[j] = t[j], t[i]
 }
 
-// ID3V2TaggedTrackData contains raw ID3V2 tag frame data and is public so that
-// tests can populate it.
-type ID3V2TaggedTrackData struct {
-	album             string
-	artist            string
-	title             string
-	genre             string
-	year              string
-	track             int
-	musicCDIdentifier id3v2.UnknownFrame
-	err               string
-}
-
-// NewID3V2TaggedTrackDataForTesting creates a new instance of
-// ID3V2TaggedTrackData. The method is public so it can be called from unit
-// tests.
-func NewID3V2TaggedTrackDataForTesting(albumFrame string, artistFrame string, titleFrame string, evaluatedNumberFrame int, mcdi []byte) *ID3V2TaggedTrackData {
-	return &ID3V2TaggedTrackData{
-		album:             albumFrame,
-		artist:            artistFrame,
-		title:             titleFrame,
-		track:             evaluatedNumberFrame,
-		musicCDIdentifier: id3v2.UnknownFrame{Body: mcdi},
-		err:               "",
-	}
-}
-
 var trackNameRegex *regexp.Regexp = regexp.MustCompile(defaultTrackNamePattern)
 
 // BackupDirectory returns the path of the backup directory for this track.
@@ -174,53 +147,10 @@ func (t *Track) hasTagError() bool {
 	return len(t.err) != 0
 }
 
-func toTrackNumber(s string) (i int, err error) {
-	// this is more complicated than I wanted, because some mp3 rippers produce
-	// track numbers like "12/14", meaning 12th track of 14
-	if len(s) == 0 {
-		err = fmt.Errorf(internal.ERROR_ZERO_LENGTH)
-		return
-	}
-	s = removeLeadingBOMs(s)
-	n := 0
-	bs := []byte(s)
-	for j, b := range bs {
-		c := int(b)
-		if c >= '0' && c <= '9' {
-			n *= 10
-			n += c - '0'
-		} else {
-			switch j {
-			case 0: // never saw a digit
-				err = fmt.Errorf(internal.ERROR_DOES_NOT_BEGIN_WITH_DIGIT)
-				return
-			default: // found something other than a digit, but read at least one
-				i = n
-				return
-			}
-		}
-	}
-	// normal path, whole string was digits
-	i = n
-	return
-}
-
 // SetID3V2Tags sets track ID3V2 tag frame fields and is public so it can be
 // called from unit tests.
 func (t *Track) SetID3V2Tags(d *ID3V2TaggedTrackData) {
 	t.ID3V2TaggedTrackData = *d
-}
-
-// depending on encoding, frame values may begin with a BOM (byte order mark)
-func removeLeadingBOMs(s string) string {
-	if len(s) == 0 {
-		return s
-	}
-	r := []rune(s)
-	if r[0] == '\ufeff' {
-		return removeLeadingBOMs(string(r[1:]))
-	}
-	return s
 }
 
 type nameTagPair struct {
@@ -299,6 +229,7 @@ func (s taggedTrackState) HasYearConflict() bool {
 
 // AnalyzeIssues determines whether there are problems with the track's ID3V2
 // frame-based values.
+// TODO #115 needs to take into account all metadata sources
 func (t *Track) AnalyzeIssues() taggedTrackState {
 	if t.hasTagError() {
 		return taggedTrackState{hasError: true}
@@ -366,6 +297,7 @@ func (t *Track) FindDifferences() []string {
 	return differences
 }
 
+// TODO #115 needs to adapt to id3v1 tags as well as id3v2 tags
 func isComparable(p nameTagPair) bool {
 	fileName := strings.ToLower(p.name)
 	tag := strings.ToLower(p.tag)
@@ -389,43 +321,6 @@ func isComparable(p nameTagPair) bool {
 	return true // rune by rune comparison was successful
 }
 
-// RawReadID3V2Tag reads the ID3V2 tag from an MP3 file and collects interesting
-// frame values.
-func RawReadID3V2Tag(path string) (d *ID3V2TaggedTrackData) {
-	d = &ID3V2TaggedTrackData{}
-	var tag *id3v2.Tag
-	var err error
-	if tag, err = id3v2.Open(path, id3v2.Options{Parse: true, ParseFrames: nil}); err != nil {
-		d.err = fmt.Sprintf("%v", err)
-		return
-	}
-	defer tag.Close()
-	if trackNumber, err := toTrackNumber(tag.GetTextFrame(trackFrame).Text); err != nil {
-		d.err = fmt.Sprintf("%v", err)
-	} else {
-		d.album = removeLeadingBOMs(tag.Album())
-		d.artist = removeLeadingBOMs(tag.Artist())
-		d.genre = removeLeadingBOMs(tag.Genre())
-		d.title = removeLeadingBOMs(tag.Title())
-		d.track = trackNumber
-		d.year = removeLeadingBOMs(tag.Year())
-		mcdiFramers := tag.AllFrames()[mcdiFrame]
-		d.musicCDIdentifier = selectUnknownFrame(mcdiFramers)
-	}
-	return
-}
-
-func selectUnknownFrame(mcdiFramers []id3v2.Framer) id3v2.UnknownFrame {
-	uf := id3v2.UnknownFrame{Body: []byte{0}}
-	if len(mcdiFramers) == 1 {
-		frame := mcdiFramers[0]
-		if f, ok := frame.(id3v2.UnknownFrame); ok {
-			uf = f
-		}
-	}
-	return uf
-}
-
 // EditID3V2Tag rewrites ID3V2 tag frames to match file-based values and saves
 // (re-writes) the associated MP3 file.
 func (t *Track) EditID3V2Tag() error {
@@ -433,35 +328,7 @@ func (t *Track) EditID3V2Tag() error {
 	if !a.HasTaggingConflicts() {
 		return fmt.Errorf(internal.ERROR_EDIT_UNNECESSARY)
 	}
-	tag, err := id3v2.Open(t.path, id3v2.Options{Parse: true})
-	if err != nil {
-		return err
-	}
-	defer tag.Close()
-	tag.SetDefaultEncoding(id3v2.EncodingUTF8)
-	if a.HasAlbumNameConflict() {
-		tag.SetAlbum(t.containingAlbum.canonicalTitle)
-	}
-	if a.HasArtistNameConflict() {
-		tag.SetArtist(t.containingAlbum.recordingArtist.canonicalName)
-	}
-	if a.HasTrackNameConflict() {
-		tag.SetTitle(t.name)
-	}
-	if a.HasNumberingConflict() {
-		tag.AddTextFrame("TRCK", tag.DefaultEncoding(), fmt.Sprintf("%d", t.number))
-	}
-	if a.HasGenreConflict() {
-		tag.SetGenre(t.containingAlbum.genre)
-	}
-	if a.HasYearConflict() {
-		tag.SetYear(t.containingAlbum.year)
-	}
-	if a.HasMCDIConflict() {
-		tag.DeleteFrames(mcdiFrame)
-		tag.AddFrame(mcdiFrame, t.containingAlbum.musicCDIdentifier)
-	}
-	return tag.Save()
+	return updateID3V2Tag(t, a)
 }
 
 // use of semaphores nicely documented here:
@@ -484,6 +351,7 @@ func (t *Track) readTags(reader func(string) *ID3V2TaggedTrackData) {
 }
 
 // UpdateTracks reads the ID3V2 tags for all the associated tracks.
+// TODO #115 needs to update all metadata, id3v2 and id3v1
 func UpdateTracks(o internal.OutputBus, artists []*Artist, reader func(string) *ID3V2TaggedTrackData) {
 	for _, artist := range artists {
 		for _, album := range artist.Albums() {
@@ -498,6 +366,7 @@ func UpdateTracks(o internal.OutputBus, artists []*Artist, reader func(string) *
 	reportTrackErrors(o, artists)
 }
 
+// TODO #115 needs to handle all metadata sources
 func processArtistRelatedID3V2Frames(o internal.OutputBus, artists []*Artist) {
 	for _, artist := range artists {
 		names := make(map[string]int)
@@ -523,6 +392,7 @@ func processArtistRelatedID3V2Frames(o internal.OutputBus, artists []*Artist) {
 	}
 }
 
+// TODO #115 needs to interact with metadata, both id3v2 and id3v1
 func processAlbumRelatedID3V2Frames(o internal.OutputBus, artists []*Artist) {
 	for _, artist := range artists {
 		for _, album := range artist.Albums() {
@@ -727,96 +597,15 @@ func (t *Track) Copy(destination string) error {
 	return internal.CopyFile(t.path, destination)
 }
 
-// ID3V2TrackFrame holds an ID3V2 tag frame's name and its value. It is public
-// so it can be used in unit tests.
-type ID3V2TrackFrame struct {
-	name  string
-	value string
-}
-
-// NewID3V2TrackFrameTesting creates an instance of ID3V2TrackName and is
-// intended solely for testing.
-func NewID3V2TrackFrameForTesting(name, value string) *ID3V2TrackFrame {
-	return &ID3V2TrackFrame{name: name, value: value}
-}
-
-// String returns the contents of an ID3V2TrackFrame formatted in the form "name
-// = value".
-func (f *ID3V2TrackFrame) String() string {
-	return fmt.Sprintf("%s = %q", f.name, f.value)
-}
-
 // ID3V1Diagnostics returns the ID3V1 tag contents, if any; a missing ID3V1 tag
 // (e.g., the input file is too short to have an ID3V1 tag), or an invalid ID3V1
 // tag (isValid() is false), returns a non-nil error
 func (t *Track) ID3V1Diagnostics() ([]string, error) {
-	if v1, err := readId3v1Metadata(t.path); err != nil {
-		return nil, err
-	} else {
-		var output []string
-		output = append(output, fmt.Sprintf("Artist: %q", v1.getArtist()))
-		output = append(output, fmt.Sprintf("Album: %q", v1.getAlbum()))
-		output = append(output, fmt.Sprintf("Title: %q", v1.getTitle()))
-		if track, ok := v1.getTrack(); ok {
-			output = append(output, fmt.Sprintf("Track: %d", track))
-		}
-		if year, ok := v1.getYear(); ok {
-			output = append(output, fmt.Sprintf("Year: %d", year))
-		}
-		if genre, ok := v1.getGenre(); ok {
-			output = append(output, fmt.Sprintf("Genre: %q", genre))
-		}
-		if comment := v1.getComment(); len(comment) > 0 {
-			output = append(output, fmt.Sprintf("Comment: %q", comment))
-		}
-		return output, nil
-	}
+	return readId3v1Metadata(t.path)
 }
 
 // ID3V2Diagnostics returns ID3V2 tag data - the ID3V2 version, its encoding,
 // and a slice of all the frames in the tag.
-func (t *Track) ID3V2Diagnostics() (version byte, enc string, f []*ID3V2TrackFrame, e error) {
-	var tag *id3v2.Tag
-	var err error
-	if tag, err = id3v2.Open(t.path, id3v2.Options{Parse: true, ParseFrames: nil}); err != nil {
-		e = err
-		return
-	}
-	defer tag.Close()
-	frames := tag.AllFrames()
-	var frameNames []string
-	for k := range frames {
-		frameNames = append(frameNames, k)
-	}
-	sort.Strings(frameNames)
-	for _, n := range frameNames {
-		if strings.HasPrefix(n, "T") {
-			f = append(f, &ID3V2TrackFrame{name: n, value: removeLeadingBOMs(tag.GetTextFrame(n).Text)})
-		} else {
-			f = append(f, &ID3V2TrackFrame{name: n, value: stringifyFramerArray(frames[n])})
-		}
-	}
-	enc = tag.DefaultEncoding().Name
-	version = tag.Version()
-	return
-}
-
-func stringifyFramerArray(f []id3v2.Framer) string {
-	var substrings []string
-	if len(f) == 1 {
-		if data, ok := f[0].(id3v2.UnknownFrame); ok {
-			substrings = append(substrings, fmt.Sprintf("%#v", data.Body))
-		} else {
-			substrings = append(substrings, fmt.Sprintf("%#v", f[0]))
-		}
-	} else {
-		for k, framer := range f {
-			if data, ok := framer.(id3v2.UnknownFrame); ok {
-				substrings = append(substrings, fmt.Sprintf("[%d %#v]", k, data.Body))
-			} else {
-				substrings = append(substrings, fmt.Sprintf("[%d %#v]", k, framer))
-			}
-		}
-	}
-	return fmt.Sprintf("<<%s>>", strings.Join(substrings, ", "))
+func (t *Track) ID3V2Diagnostics() (version byte, enc string, f []string, e error) {
+	return readID3V3Metadata(t.path)
 }

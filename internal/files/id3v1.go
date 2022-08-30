@@ -420,8 +420,29 @@ func stripTrailing(s string, suffix string) string {
 	return s
 }
 
-func readId3v1Metadata(path string) (*id3v1Metadata, error) {
-	return internalReadId3V1Metadata(path, readFromFile)
+func readId3v1Metadata(path string) ([]string, error) {
+	if v1, err := internalReadId3V1Metadata(path, readFromFile); err != nil {
+		return nil, err
+	} else {
+		var output []string
+		output = append(output, fmt.Sprintf("Artist: %q", v1.getArtist()))
+		output = append(output, fmt.Sprintf("Album: %q", v1.getAlbum()))
+		output = append(output, fmt.Sprintf("Title: %q", v1.getTitle()))
+		if track, ok := v1.getTrack(); ok {
+			output = append(output, fmt.Sprintf("Track: %d", track))
+		}
+		if year, ok := v1.getYear(); ok {
+			output = append(output, fmt.Sprintf("Year: %d", year))
+		}
+		if genre, ok := v1.getGenre(); ok {
+			output = append(output, fmt.Sprintf("Genre: %q", genre))
+		}
+		if comment := v1.getComment(); len(comment) > 0 {
+			output = append(output, fmt.Sprintf("Comment: %q", comment))
+		}
+		return output, nil
+
+	}
 }
 
 func readFromFile(f *os.File, b []byte) (int, error) {

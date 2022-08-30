@@ -134,6 +134,7 @@ func reportProblem(b bool, problem string) (s string) {
 
 func (r *repair) fixTracks(o internal.OutputBus, tracks []*files.Track) {
 	for _, t := range tracks {
+		// TODO #115 needs to fix all metadata sources.
 		if err := t.EditID3V2Tag(); err != nil {
 			o.WriteError(internal.USER_ERROR_REPAIRING_TRACK_FILE, t)
 			o.LogWriter().Error(internal.LE_CANNOT_EDIT_TRACK, map[string]interface{}{

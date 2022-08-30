@@ -1,7 +1,6 @@
 package files
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"mp3/internal"
@@ -131,38 +130,6 @@ func TestTrack_needsTaggedData(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.tr.needsTaggedData(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_toTrackNumber(t *testing.T) {
-	fnName := "toTrackNumber()"
-	type args struct {
-		s string
-	}
-	tests := []struct {
-		name string
-		args
-		wantI   int
-		wantErr bool
-	}{
-		{name: "good value", args: args{s: "12"}, wantI: 12, wantErr: false},
-		{name: "empty value", args: args{s: ""}, wantI: 0, wantErr: true},
-		{name: "negative value", args: args{s: "-12"}, wantI: 0, wantErr: true},
-		{name: "invalid value", args: args{s: "foo"}, wantI: 0, wantErr: true},
-		{name: "complicated value", args: args{s: "12/39"}, wantI: 12, wantErr: false},
-		{name: "BOM-infested complicated value", args: args{s: "\ufeff12/39"}, wantI: 12, wantErr: false},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotI, err := toTrackNumber(tt.args.s)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
-				return
-			}
-			if err == nil && gotI != tt.wantI {
-				t.Errorf("%s = %d, want %d", fnName, gotI, tt.wantI)
 			}
 		})
 	}
@@ -537,103 +504,6 @@ func TestUpdateTracks(t *testing.T) {
 	}
 }
 
-func TestRawReadID3V2Tag(t *testing.T) {
-	fnName := "RawReadID3V2Tag()"
-	payload := make([]byte, 0)
-	for k := 0; k < 256; k++ {
-		payload = append(payload, byte(k))
-	}
-	frames := map[string]string{
-		"TYER": "2022",
-		"TALB": "unknown album",
-		"TRCK": "2",
-		"TCON": "dance music",
-		"TCOM": "a couple of idiots",
-		"TIT2": "unknown track",
-		"TPE1": "unknown artist",
-		"TLEN": "1000",
-	}
-	content := CreateTaggedDataForTesting(payload, frames)
-	if err := internal.CreateFileForTestingWithContent(".", "goodFile.mp3", content); err != nil {
-		t.Errorf("%s failed to create ./goodFile.mp3: %v", fnName, err)
-	}
-	frames["TRCK"] = "oops"
-	if err := internal.CreateFileForTestingWithContent(".", "badFile.mp3", CreateTaggedDataForTesting(payload, frames)); err != nil {
-		t.Errorf("%s failed to create ./badFile.mp3: %v", fnName, err)
-	}
-	defer func() {
-		if err := os.Remove("./goodFile.mp3"); err != nil {
-			t.Errorf("%s failed to delete ./goodFile.mp3: %v", fnName, err)
-		}
-		if err := os.Remove("./badFile.mp3"); err != nil {
-			t.Errorf("%s failed to delete ./badFile.mp3: %v", fnName, err)
-		}
-	}()
-	type args struct {
-		path string
-	}
-	tests := []struct {
-		name string
-		args
-		wantD *ID3V2TaggedTrackData
-	}{
-		{name: "bad test", args: args{path: "./noSuchFile!.mp3"}, wantD: &ID3V2TaggedTrackData{err: "foo"}},
-		{
-			name: "good test",
-			args: args{path: "./goodFile.mp3"},
-			wantD: &ID3V2TaggedTrackData{
-				album:  "unknown album",
-				artist: "unknown artist",
-				title:  "unknown track",
-				track:  2,
-			},
-		},
-		{
-			name: "bad data test",
-			args: args{path: "./badFile.mp3"},
-			wantD: &ID3V2TaggedTrackData{
-				err: internal.ERROR_DOES_NOT_BEGIN_WITH_DIGIT,
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotD := RawReadID3V2Tag(tt.args.path)
-			if len(gotD.err) != 0 {
-				if len(tt.wantD.err) == 0 {
-					t.Errorf("%s = %v, want %v", fnName, gotD, tt.wantD)
-				}
-			} else if len(tt.wantD.err) != 0 {
-				t.Errorf("%s = %v, want %v", fnName, gotD, tt.wantD)
-			}
-		})
-	}
-}
-
-func Test_removeLeadingBOMs(t *testing.T) {
-	fnName := "removeLeadingBOMs()"
-	type args struct {
-		s string
-	}
-	tests := []struct {
-		name string
-		args
-		want string
-	}{
-		{name: "normal string", args: args{s: "normal"}, want: "normal"},
-		{name: "abnormal string", args: args{s: "\ufeff\ufeffnormal"}, want: "normal"},
-		{name: "empty string", args: args{}},
-		{name: "nothing but BOM", args: args{s: "\ufeff\ufeff"}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := removeLeadingBOMs(tt.args.s); got != tt.want {
-				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
-			}
-		})
-	}
-}
-
 func Test_sortTracks(t *testing.T) {
 	fnName := "sortTracks()"
 	tests := []struct {
@@ -727,7 +597,7 @@ func TestTrack_EditID3V2Tag(t *testing.T) {
 		"TPE1": "unknown artist",
 		"TLEN": "1000",
 	}
-	content := CreateTaggedDataForTesting(payload, frames)
+	content := CreateID3V2TaggedDataForTesting(payload, frames)
 	if err := internal.CreateFileForTestingWithContent(topDir, testFileName, content); err != nil {
 		t.Errorf("%s cannot create file %q: %v", fnName, fullPath, err)
 	}
@@ -788,38 +658,6 @@ func TestTrack_EditID3V2Tag(t *testing.T) {
 			}
 		})
 	}
-	if edited, err := os.ReadFile(fullPath); err != nil {
-		t.Errorf("%s cannot read file %q: %v", fnName, fullPath, err)
-	} else {
-		if tag, err := id3v2.ParseReader(bytes.NewReader(edited), id3v2.Options{Parse: true}); err != nil {
-			t.Errorf("%s edited mp3 file %q cannot be read for tags: %v", fnName, fullPath, err)
-		} else {
-			m := map[string]string{
-				// changed by editing
-				"TALB": "poor album",
-				"TIT2": "fixable track",
-				"TPE1": "sorry artist",
-				"TRCK": "1",
-				"TCON": "",
-				"TYER": "",
-				// preserved from original file
-				"TCOM": "a couple of idiots",
-				"TLEN": "1000",
-			}
-			for key, value := range m {
-				if got := tag.GetTextFrame(key).Text; got != value {
-					t.Errorf("%s edited mp3 file key %q got %q want %q", fnName, key, got, value)
-				}
-			}
-		}
-		// verify "music" is present
-		musicStarts := len(edited) - 256
-		for k := 0; k < 256; k++ {
-			if edited[musicStarts+k] != byte(k) {
-				t.Errorf("%s edited mp3 file music at index %d mismatch (%d v. %d)", fnName, k, edited[musicStarts+k], k)
-			}
-		}
-	}
 }
 
 func TestTrack_BackupDirectory(t *testing.T) {
@@ -858,52 +696,6 @@ func TestTrack_AlbumPath(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := tt.tr.AlbumPath(); got != tt.want {
 				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
-			}
-		})
-	}
-}
-
-func TestNewID3V2TaggedTrackDataForTesting(t *testing.T) {
-	fnName := "NewID3V2TaggedTrackDataForTesting()"
-	type args struct {
-		albumFrame           string
-		artistFrame          string
-		titleFrame           string
-		evaluatedNumberFrame int
-		musicCDIdentifier    []byte
-	}
-	tests := []struct {
-		name string
-		args
-		want *ID3V2TaggedTrackData
-	}{
-		{
-			name: "usual",
-			args: args{
-				albumFrame:           "the album",
-				artistFrame:          "the artist",
-				titleFrame:           "the title",
-				evaluatedNumberFrame: 1,
-				musicCDIdentifier:    []byte{0, 1, 2},
-			},
-			want: &ID3V2TaggedTrackData{
-				album:             "the album",
-				artist:            "the artist",
-				title:             "the title",
-				track:             1,
-				musicCDIdentifier: id3v2.UnknownFrame{Body: []byte{0, 1, 2}},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := NewID3V2TaggedTrackDataForTesting(tt.args.albumFrame, tt.args.artistFrame, tt.args.titleFrame, tt.args.evaluatedNumberFrame, tt.args.musicCDIdentifier)
-			if got.album != tt.want.album ||
-				got.artist != tt.want.artist ||
-				got.title != tt.want.title ||
-				got.track != tt.want.track ||
-				string(got.musicCDIdentifier.Body) != string(tt.want.musicCDIdentifier.Body) {
-				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}
@@ -1397,7 +1189,7 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 		"T???": "who knows?",
 		"Fake": "ummm",
 	}
-	content := CreateTaggedDataForTesting(payload, frames)
+	content := CreateID3V2TaggedDataForTesting(payload, frames)
 	if err := internal.CreateFileForTestingWithContent(".", "goodFile.mp3", content); err != nil {
 		t.Errorf("%s failed to create ./goodFile.mp3: %v", fnName, err)
 	}
@@ -1411,7 +1203,7 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 		tr          *Track
 		wantEnc     string
 		wantVersion byte
-		wantF       []*ID3V2TrackFrame
+		wantF       []string
 		wantErr     bool
 	}{
 		{
@@ -1424,17 +1216,18 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 			tr:          &Track{path: "./goodfile.mp3"},
 			wantEnc:     "ISO-8859-1",
 			wantVersion: 3,
-			wantF: []*ID3V2TrackFrame{
-				NewID3V2TrackFrameForTesting("Fake", "<<[]byte{0x0, 0x75, 0x6d, 0x6d, 0x6d}>>"),
-				NewID3V2TrackFrameForTesting("T???", "who knows?"),
-				NewID3V2TrackFrameForTesting("TALB", "unknown album"),
-				NewID3V2TrackFrameForTesting("TCOM", "a couple of idiots"),
-				NewID3V2TrackFrameForTesting("TCON", "dance music"),
-				NewID3V2TrackFrameForTesting("TIT2", "unknown track"),
-				NewID3V2TrackFrameForTesting("TLEN", "1000"),
-				NewID3V2TrackFrameForTesting("TPE1", "unknown artist"),
-				NewID3V2TrackFrameForTesting("TRCK", "2"),
-				NewID3V2TrackFrameForTesting("TYER", "2022")},
+			wantF: []string{
+				"Fake = \"<<[]byte{0x0, 0x75, 0x6d, 0x6d, 0x6d}>>\"",
+				"T??? = \"who knows?\"",
+				"TALB = \"unknown album\"",
+				"TCOM = \"a couple of idiots\"",
+				"TCON = \"dance music\"",
+				"TIT2 = \"unknown track\"",
+				"TLEN = \"1000\"",
+				"TPE1 = \"unknown artist\"",
+				"TRCK = \"2\"",
+				"TYER = \"2022\"",
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -1452,22 +1245,6 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 			}
 			if !reflect.DeepEqual(gotF, tt.wantF) {
 				t.Errorf("%s gotF = %v, want %v", fnName, gotF, tt.wantF)
-			}
-		})
-	}
-}
-
-func TestID3V2TrackFrame_String(t *testing.T) {
-	fnName := "ID3V2TrackFrame.String()"
-	tests := []struct {
-		name string
-		f    *ID3V2TrackFrame
-		want string
-	}{{name: "usual", f: NewID3V2TrackFrameForTesting("T1", "V1"), want: "T1 = \"V1\""}}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.f.String(); got != tt.want {
-				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})
 	}
@@ -1494,98 +1271,6 @@ func (u unspecifiedFrame) WriteTo(w io.Writer) (n int64, err error) {
 	return
 }
 
-func Test_stringifyFramerArray(t *testing.T) {
-	type args struct {
-		f []id3v2.Framer
-	}
-	tests := []struct {
-		name string
-		args
-		want string
-	}{
-		{
-			name: "single UnknownFrame",
-			args: args{f: []id3v2.Framer{id3v2.UnknownFrame{Body: []byte{0, 1, 2}}}},
-			want: "<<[]byte{0x0, 0x1, 0x2}>>",
-		},
-		{
-			name: "single unexpected frame",
-			args: args{f: []id3v2.Framer{unspecifiedFrame{content: "hello world"}}},
-			want: "<<files.unspecifiedFrame{content:\"hello world\"}>>",
-		},
-		{
-			name: "multiple frames",
-			args: args{
-				f: []id3v2.Framer{
-					id3v2.UnknownFrame{Body: []byte{0, 1, 2}},
-					unspecifiedFrame{content: "hello world"},
-				},
-			},
-			want: "<<[0 []byte{0x0, 0x1, 0x2}], [1 files.unspecifiedFrame{content:\"hello world\"}]>>",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := stringifyFramerArray(tt.args.f); got != tt.want {
-				t.Errorf("stringifyFramerArray() = %q, want %q", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_selectUnknownFrame(t *testing.T) {
-	fnName := "selectUnknownFrame()"
-	type args struct {
-		mcdiFramers []id3v2.Framer
-	}
-	tests := []struct {
-		name string
-		args
-		want id3v2.UnknownFrame
-	}{
-		{
-			name: "degenerate case",
-			args: args{mcdiFramers: nil},
-			want: id3v2.UnknownFrame{Body: []byte{0}},
-		},
-		{
-			name: "too many framers",
-			args: args{
-				mcdiFramers: []id3v2.Framer{
-					id3v2.UnknownFrame{Body: []byte{1, 2, 3}},
-					id3v2.UnknownFrame{Body: []byte{4, 5, 6}},
-				},
-			},
-			want: id3v2.UnknownFrame{Body: []byte{0}},
-		},
-		{
-			name: "wrong kind of framer",
-			args: args{
-				mcdiFramers: []id3v2.Framer{
-					unspecifiedFrame{content: "no good"},
-				},
-			},
-			want: id3v2.UnknownFrame{Body: []byte{0}},
-		},
-		{
-			name: "desired use case",
-			args: args{
-				mcdiFramers: []id3v2.Framer{
-					id3v2.UnknownFrame{Body: []byte{0, 1, 2}},
-				},
-			},
-			want: id3v2.UnknownFrame{Body: []byte{0, 1, 2}},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := selectUnknownFrame(tt.args.mcdiFramers); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
-			}
-		})
-	}
-}
-
 func TestTrack_ID3V1Diagnostics(t *testing.T) {
 	fnName := "Track.ID3V1Diagnostics()"
 	testDir := "id3v1Diagnostics"
@@ -1602,27 +1287,29 @@ func TestTrack_ID3V1Diagnostics(t *testing.T) {
 	}
 	invalidFile := "02 invalid.mp3"
 	if err := internal.CreateFileForTestingWithContent(testDir, invalidFile, []byte{
-		'd', 'A', 'G', 'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P',
-		'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e',
-		'w', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'O',
-		'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T',
-		'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm', '2', '0', '1',
-		'3', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-		' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 29, 12,
+		'd', 'A', 'G', // 'd' for defective!
+		'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
+		'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		'O', 'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T', 'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm',
+		'2', '0', '1', '3',
+		' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+		0,
+		29,
+		12,
 	}); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, invalidFile, err)
 	}
 	goodFile := "02 good.mp3"
 	if err := internal.CreateFileForTestingWithContent(testDir, goodFile, []byte{
-		'T', 'A', 'G', 'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P',
-		'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e',
-		'w', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'O',
-		'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T',
-		'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm', '2', '0', '1',
-		'3', 's', 'i', 'l', 'l', 'y', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-		' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 29, 12,
+		'T', 'A', 'G',
+		'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
+		'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		'O', 'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T', 'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm',
+		'2', '0', '1', '3',
+		's', 'i', 'l', 'l', 'y', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+		0,
+		29,
+		12,
 	}); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, goodFile, err)
 	}

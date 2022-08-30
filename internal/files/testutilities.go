@@ -66,10 +66,10 @@ func CreateAllArtistsForTesting(topDir string, addExtras bool) []*Artist {
 	return artists
 }
 
-// CreateTaggedDataForTesting creates tagged content. This code is based on
-// reading https://id3.org/id3v2.3.0 and on looking at a hex dump of a real mp3
-// file.
-func CreateTaggedDataForTesting(payload []byte, frames map[string]string) []byte {
+// CreateID3V2TaggedDataForTesting creates ID3V2-tagged content. This code is
+// based on reading https://id3.org/id3v2.3.0 and on looking at a hex dump of a
+// real mp3 file.
+func CreateID3V2TaggedDataForTesting(payload []byte, frames map[string]string) []byte {
 	content := make([]byte, 0)
 	// block off tag header
 	content = append(content, []byte("ID3")...)

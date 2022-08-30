@@ -920,16 +920,7 @@ func Test_ls_outputTrackDiagnostics(t *testing.T) {
 		t.Errorf("%s error creating %q: %v", fnName, goodAlbumDir, err)
 	}
 	content := createTaggedContent(frames)
-	content = append(content, []byte{ // borrowed from id3v1_test.go
-		'T', 'A', 'G', 'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P',
-		'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e',
-		'w', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'O',
-		'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T',
-		'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm', '2', '0', '1',
-		'3', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-		' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 29, 12,
-	}...)
+	content = append(content, internal.ID3V1DataSet1...)
 	trackName := "01 new track.mp3"
 	if err := internal.CreateFileForTestingWithContent(goodAlbumDir, trackName, content); err != nil {
 		t.Errorf("%s error creating file %q: %v", fnName, trackName, err)

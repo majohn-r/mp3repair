@@ -14,9 +14,11 @@ type Album struct {
 	tracks            []*Track
 	recordingArtist   *Artist
 	path              string
+	// TODO #115 evaluate how these fields will work across both metadata sources
 	genre             string
 	year              string
 	canonicalTitle    string             // this is what the tracks will record as their title
+	// TODO #115 this is, of course, id3v2 specific - but should be hidden in a metadata layer?
 	musicCDIdentifier id3v2.UnknownFrame // MCDI frame value
 }
 

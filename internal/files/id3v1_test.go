@@ -10,29 +10,6 @@ import (
 	"testing"
 )
 
-var (
-	rawData1 = []byte{
-		'T', 'A', 'G', 'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P',
-		'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e',
-		'w', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'O',
-		'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T',
-		'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm', '2', '0', '1',
-		'3', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-		' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 29, 12,
-	}
-	rawData2 = []byte{
-		'T', 'A', 'G', 'J', 'u', 'l', 'i', 'a', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-		' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-		' ', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', ' ', ' ', ' ', ' ',
-		' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'T',
-		'h', 'e', ' ', 'W', 'h', 'i', 't', 'e', ' ', 'A', 'l', 'b', 'u', 'm', ' ', '[',
-		'D', 'i', 's', 'c', ' ', '1', ']', ' ', ' ', ' ', ' ', ' ', ' ', '1', '9', '6',
-		'8', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-		' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 17, 17,
-	}
-)
-
 func Test_trim(t *testing.T) {
 	fnName := "trim()"
 	type args struct {
@@ -96,18 +73,9 @@ func Test_newId3v1MetadataWithData(t *testing.T) {
 		},
 		{
 			name: "just right",
-			args: args{b: rawData1},
+			args: args{b: internal.ID3V1DataSet1},
 			want: &id3v1Metadata{
-				data: []byte{
-					'T', 'A', 'G', 'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P',
-					'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e',
-					'w', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0,
-					0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'O',
-					'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T',
-					'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm', '2', '0', '1',
-					'3', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-					' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 29, 12,
-				},
+				data: internal.ID3V1DataSet1,
 			},
 		},
 		{
@@ -155,7 +123,7 @@ func Test_id3v1Metadata_isValid(t *testing.T) {
 	}{
 		{
 			name: "expected",
-			v1:   newId3v1MetadataWithData(rawData1),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			want: true,
 		},
 		{
@@ -181,12 +149,12 @@ func Test_id3v1Metadata_getTitle(t *testing.T) {
 	}{
 		{
 			name: "ringo",
-			v1:   newId3v1MetadataWithData(rawData1),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			want: "Ringo - Pop Profile [Interview",
 		},
 		{
 			name: "julia",
-			v1:   newId3v1MetadataWithData(rawData2),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet2),
 			want: "Julia",
 		},
 	}
@@ -212,32 +180,34 @@ func Test_id3v1Metadata_setTitle(t *testing.T) {
 	}{
 		{
 			name: "short title",
-			v1:   newId3v1MetadataWithData(rawData1),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "short title"},
 			want: newId3v1MetadataWithData([]byte{
-				'T', 'A', 'G', 's', 'h', 'o', 'r', 't', ' ', 't', 'i', 't', 'l', 'e', 0, 0,
-				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				0, 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0,
-				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'O',
-				'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T',
-				'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm', '2', '0', '1',
-				'3', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 29, 12,
+				'T', 'A', 'G',
+				's', 'h', 'o', 'r', 't', ' ', 't', 'i', 't', 'l', 'e', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				'O', 'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T', 'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm',
+				'2', '0', '1', '3',
+				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+				0,
+				29,
+				12,
 			}),
 		},
 		{
 			name: "long title",
-			v1:   newId3v1MetadataWithData(rawData1),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "very long title, so long it cannot be copied intact"},
 			want: newId3v1MetadataWithData([]byte{
-				'T', 'A', 'G', 'v', 'e', 'r', 'y', ' ', 'l', 'o', 'n', 'g', ' ', 't', 'i', 't',
-				'l', 'e', ',', ' ', 's', 'o', ' ', 'l', 'o', 'n', 'g', ' ', 'i', 't', ' ', 'c',
-				'a', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0,
-				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'O',
-				'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T',
-				'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm', '2', '0', '1',
-				'3', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 29, 12,
+				'T', 'A', 'G',
+				'v', 'e', 'r', 'y', ' ', 'l', 'o', 'n', 'g', ' ', 't', 'i', 't', 'l', 'e', ',', ' ', 's', 'o', ' ', 'l', 'o', 'n', 'g', ' ', 'i', 't', ' ', 'c', 'a',
+				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				'O', 'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T', 'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm',
+				'2', '0', '1', '3',
+				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+				0,
+				29,
+				12,
 			}),
 		},
 	}
@@ -260,12 +230,12 @@ func Test_id3v1Metadata_getArtist(t *testing.T) {
 	}{
 		{
 			name: "beatles1",
-			v1:   newId3v1MetadataWithData(rawData1),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			want: "The Beatles",
 		},
 		{
 			name: "beatles2",
-			v1:   newId3v1MetadataWithData(rawData2),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet2),
 			want: "The Beatles",
 		},
 	}
@@ -291,32 +261,34 @@ func Test_id3v1Metadata_setArtist(t *testing.T) {
 	}{
 		{
 			name: "short name",
-			v1:   newId3v1MetadataWithData(rawData1),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "shorties"},
 			want: newId3v1MetadataWithData([]byte{
-				'T', 'A', 'G', 'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P',
-				'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e',
-				'w', 's', 'h', 'o', 'r', 't', 'i', 'e', 's', 0, 0, 0, 0, 0, 0, 0,
-				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'O',
-				'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T',
-				'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm', '2', '0', '1',
-				'3', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 29, 12,
+				'T', 'A', 'G',
+				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
+				's', 'h', 'o', 'r', 't', 'i', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				'O', 'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T', 'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm',
+				'2', '0', '1', '3',
+				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+				0,
+				29,
+				12,
 			}),
 		},
 		{
 			name: "long name",
-			v1:   newId3v1MetadataWithData(rawData1),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "The greatest band ever known, bar none"},
 			want: newId3v1MetadataWithData([]byte{
-				'T', 'A', 'G', 'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P',
-				'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e',
-				'w', 'T', 'h', 'e', ' ', 'g', 'r', 'e', 'a', 't', 'e', 's', 't', ' ', 'b', 'a',
-				'n', 'd', ' ', 'e', 'v', 'e', 'r', ' ', 'k', 'n', 'o', 'w', 'n', ',', ' ', 'O',
-				'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T',
-				'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm', '2', '0', '1',
-				'3', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 29, 12,
+				'T', 'A', 'G',
+				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
+				'T', 'h', 'e', ' ', 'g', 'r', 'e', 'a', 't', 'e', 's', 't', ' ', 'b', 'a', 'n', 'd', ' ', 'e', 'v', 'e', 'r', ' ', 'k', 'n', 'o', 'w', 'n', ',', ' ',
+				'O', 'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T', 'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm',
+				'2', '0', '1', '3',
+				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+				0,
+				29,
+				12,
 			}),
 		},
 	}
@@ -339,12 +311,12 @@ func Test_id3v1Metadata_getAlbum(t *testing.T) {
 	}{
 		{
 			name: "BBC",
-			v1:   newId3v1MetadataWithData(rawData1),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			want: "On Air: Live At The BBC, Volum",
 		},
 		{
 			name: "White Album",
-			v1:   newId3v1MetadataWithData(rawData2),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet2),
 			want: "The White Album [Disc 1]",
 		},
 	}
@@ -370,32 +342,34 @@ func Test_id3v1Metadata_setAlbum(t *testing.T) {
 	}{
 		{
 			name: "short name",
-			v1:   newId3v1MetadataWithData(rawData1),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "!"},
 			want: newId3v1MetadataWithData([]byte{
-				'T', 'A', 'G', 'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P',
-				'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e',
-				'w', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0,
-				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '!',
-				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, '2', '0', '1',
-				'3', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 29, 12,
+				'T', 'A', 'G',
+				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
+				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				'!', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				'2', '0', '1', '3',
+				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+				0,
+				29,
+				12,
 			}),
 		},
 		{
 			name: "long name",
-			v1:   newId3v1MetadataWithData(rawData1),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "The Most Amazing Album Ever Released"},
 			want: newId3v1MetadataWithData([]byte{
-				'T', 'A', 'G', 'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P',
-				'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e',
-				'w', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0,
-				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'T',
-				'h', 'e', ' ', 'M', 'o', 's', 't', ' ', 'A', 'm', 'a', 'z', 'i', 'n', 'g', ' ',
-				'A', 'l', 'b', 'u', 'm', ' ', 'E', 'v', 'e', 'r', ' ', 'R', 'e', '2', '0', '1',
-				'3', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 29, 12,
+				'T', 'A', 'G',
+				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
+				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				'T', 'h', 'e', ' ', 'M', 'o', 's', 't', ' ', 'A', 'm', 'a', 'z', 'i', 'n', 'g', ' ', 'A', 'l', 'b', 'u', 'm', ' ', 'E', 'v', 'e', 'r', ' ', 'R', 'e',
+				'2', '0', '1', '3',
+				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+				0,
+				29,
+				12,
 			}),
 		},
 	}
@@ -419,13 +393,13 @@ func Test_id3v1Metadata_getYear(t *testing.T) {
 	}{
 		{
 			name:   "BBC",
-			v1:     newId3v1MetadataWithData(rawData1),
+			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			wantY:  2013,
 			wantOk: true,
 		},
 		{
 			name:   "White Album",
-			v1:     newId3v1MetadataWithData(rawData2),
+			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet2),
 			wantY:  1968,
 			wantOk: true,
 		},
@@ -461,32 +435,33 @@ func Test_id3v1Metadata_setYear(t *testing.T) {
 	}{
 		{
 			name:   "prehistoric",
-			v1:     newId3v1MetadataWithData(rawData1),
+			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			args:   args{y: 999},
 			want:   false,
-			wantv1: newId3v1MetadataWithData(rawData1),
+			wantv1: newId3v1MetadataWithData(internal.ID3V1DataSet1),
 		},
 		{
 			name:   "futuristic",
-			v1:     newId3v1MetadataWithData(rawData1),
+			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			args:   args{y: 10000},
 			want:   false,
-			wantv1: newId3v1MetadataWithData(rawData1),
+			wantv1: newId3v1MetadataWithData(internal.ID3V1DataSet1),
 		},
 		{
 			name: "realistic",
-			v1:   newId3v1MetadataWithData(rawData1),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{y: 2022},
 			want: true,
 			wantv1: newId3v1MetadataWithData([]byte{
-				'T', 'A', 'G', 'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P',
-				'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e',
-				'w', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0,
-				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'O',
-				'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T',
-				'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm', '2', '0', '2',
-				'2', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 29, 12,
+				'T', 'A', 'G',
+				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
+				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				'O', 'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T', 'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm',
+				'2', '0', '2', '2',
+				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+				0,
+				29,
+				12,
 			}),
 		},
 	}
@@ -511,11 +486,11 @@ func Test_id3v1Metadata_getComment(t *testing.T) {
 	}{
 		{
 			name: "BBC",
-			v1:   newId3v1MetadataWithData(rawData1),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
 		},
 		{
 			name: "White Album",
-			v1:   newId3v1MetadataWithData(rawData2),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet2),
 		},
 	}
 	for _, tt := range tests {
@@ -540,32 +515,34 @@ func Test_id3v1Metadata_setComment(t *testing.T) {
 	}{
 		{
 			name: "typical comment",
-			v1:   newId3v1MetadataWithData(rawData1),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: ""},
 			want: newId3v1MetadataWithData([]byte{
-				'T', 'A', 'G', 'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P',
-				'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e',
-				'w', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0,
-				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'O',
-				'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T',
-				'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm', '2', '0', '1',
-				'3', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 29, 12,
+				'T', 'A', 'G',
+				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
+				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				'O', 'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T', 'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm',
+				'2', '0', '1', '3',
+				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				0,
+				29,
+				12,
 			}),
 		},
 		{
 			name: "long winded",
-			v1:   newId3v1MetadataWithData(rawData1),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "This track is genuinely insightful"},
 			want: newId3v1MetadataWithData([]byte{
-				'T', 'A', 'G', 'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P',
-				'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e',
-				'w', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0,
-				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'O',
-				'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T',
-				'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm', '2', '0', '1',
-				'3', 'T', 'h', 'i', 's', ' ', 't', 'r', 'a', 'c', 'k', ' ', 'i', 's', ' ', 'g',
-				'e', 'n', 'u', 'i', 'n', 'e', 'l', 'y', ' ', 'i', 'n', 's', 'i', 0, 29, 12,
+				'T', 'A', 'G',
+				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
+				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				'O', 'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T', 'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm',
+				'2', '0', '1', '3',
+				'T', 'h', 'i', 's', ' ', 't', 'r', 'a', 'c', 'k', ' ', 'i', 's', ' ', 'g', 'e', 'n', 'u', 'i', 'n', 'e', 'l', 'y', ' ', 'i', 'n', 's', 'i',
+				0,
+				29,
+				12,
 			}),
 		},
 	}
@@ -589,13 +566,13 @@ func Test_id3v1Metadata_getTrack(t *testing.T) {
 	}{
 		{
 			name:   "BBC",
-			v1:     newId3v1MetadataWithData(rawData1),
+			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			wantI:  29,
 			wantOk: true,
 		},
 		{
 			name:   "White Album",
-			v1:     newId3v1MetadataWithData(rawData2),
+			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet2),
 			wantI:  17,
 			wantOk: true,
 		},
@@ -640,32 +617,33 @@ func Test_id3v1Metadata_setTrack(t *testing.T) {
 	}{
 		{
 			name:   "low",
-			v1:     newId3v1MetadataWithData(rawData1),
+			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			args:   args{t: 0},
 			want:   false,
-			wantv1: newId3v1MetadataWithData(rawData1),
+			wantv1: newId3v1MetadataWithData(internal.ID3V1DataSet1),
 		},
 		{
 			name:   "high",
-			v1:     newId3v1MetadataWithData(rawData1),
+			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			args:   args{t: 256},
 			want:   false,
-			wantv1: newId3v1MetadataWithData(rawData1),
+			wantv1: newId3v1MetadataWithData(internal.ID3V1DataSet1),
 		},
 		{
 			name: "ok",
-			v1:   newId3v1MetadataWithData(rawData1),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{t: 45},
 			want: true,
 			wantv1: newId3v1MetadataWithData([]byte{
-				'T', 'A', 'G', 'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P',
-				'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e',
-				'w', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0,
-				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'O',
-				'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T',
-				'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm', '2', '0', '1',
-				'3', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 45, 12,
+				'T', 'A', 'G',
+				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
+				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				'O', 'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T', 'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm',
+				'2', '0', '1', '3',
+				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+				0,
+				45,
+				12,
 			}),
 		},
 	}
@@ -691,13 +669,13 @@ func Test_id3v1Metadata_getGenre(t *testing.T) {
 	}{
 		{
 			name:   "BBC",
-			v1:     newId3v1MetadataWithData(rawData1),
+			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			wantS:  "Other",
 			wantOk: true,
 		},
 		{
 			name:   "White Album",
-			v1:     newId3v1MetadataWithData(rawData2),
+			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet2),
 			wantS:  "Rock",
 			wantOk: true,
 		},
@@ -742,25 +720,26 @@ func Test_id3v1Metadata_setGenre(t *testing.T) {
 	}{
 		{
 			name:   "no such genre",
-			v1:     newId3v1MetadataWithData(rawData1),
+			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			args:   args{s: "Subspace Radio"},
 			want:   false,
-			wantv1: newId3v1MetadataWithData(rawData1),
+			wantv1: newId3v1MetadataWithData(internal.ID3V1DataSet1),
 		},
 		{
 			name: "known genre",
-			v1:   newId3v1MetadataWithData(rawData1),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: genreMap[37]},
 			want: true,
 			wantv1: newId3v1MetadataWithData([]byte{
-				'T', 'A', 'G', 'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P',
-				'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e',
-				'w', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0,
-				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'O',
-				'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T',
-				'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm', '2', '0', '1',
-				'3', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 29, 37,
+				'T', 'A', 'G',
+				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
+				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				'O', 'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T', 'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm',
+				'2', '0', '1', '3',
+				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+				0,
+				29,
+				37,
 			}),
 		},
 	}
@@ -821,7 +800,7 @@ func Test_internalReadId3V1Metadata(t *testing.T) {
 		t.Errorf("%s error creating %q: %v", testDir, badFile, err)
 	}
 	goodFile := "good.mp3"
-	if err := internal.CreateFileForTestingWithContent(testDir, goodFile, []byte{
+	payload := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -833,16 +812,9 @@ func Test_internalReadId3V1Metadata(t *testing.T) {
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-		'T', 'A', 'G', 'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P',
-		'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e',
-		'w', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'O',
-		'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T',
-		'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm', '2', '0', '1',
-		'3', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-		' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 29, 12,
-	}); err != nil {
+	}
+	payload = append(payload, internal.ID3V1DataSet1...)
+	if err := internal.CreateFileForTestingWithContent(testDir, goodFile, payload); err != nil {
 		t.Errorf("%s error creating %q: %v", testDir, goodFile, err)
 	}
 	type args struct {
@@ -910,7 +882,7 @@ func Test_internalReadId3V1Metadata(t *testing.T) {
 				path:     filepath.Join(testDir, goodFile),
 				readFunc: readFromFile,
 			},
-			want:    newId3v1MetadataWithData(rawData1),
+			want:    newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			wantErr: false,
 		},
 	}
@@ -938,7 +910,7 @@ func Test_readId3v1Metadata(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, testDir)
 	}()
 	goodFile := "good.mp3"
-	if err := internal.CreateFileForTestingWithContent(testDir, goodFile, []byte{
+	payload := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -950,16 +922,9 @@ func Test_readId3v1Metadata(t *testing.T) {
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-		'T', 'A', 'G', 'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P',
-		'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e',
-		'w', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'O',
-		'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T',
-		'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm', '2', '0', '1',
-		'3', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-		' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 29, 12,
-	}); err != nil {
+	}
+	payload = append(payload, internal.ID3V1DataSet1...)
+	if err := internal.CreateFileForTestingWithContent(testDir, goodFile, payload); err != nil {
 		t.Errorf("%s error creating %q: %v", testDir, goodFile, err)
 	}
 	type args struct {
@@ -968,7 +933,7 @@ func Test_readId3v1Metadata(t *testing.T) {
 	tests := []struct {
 		name string
 		args
-		want    *id3v1Metadata
+		want    []string
 		wantErr bool
 	}{
 		// only testing good path ... all the error paths are handled in the
@@ -976,7 +941,14 @@ func Test_readId3v1Metadata(t *testing.T) {
 		{
 			name:    "good file",
 			args:    args{path: filepath.Join(testDir, goodFile)},
-			want:    newId3v1MetadataWithData(rawData1),
+			want:    []string{
+				"Artist: \"The Beatles\"",
+				"Album: \"On Air: Live At The BBC, Volum\"",
+				"Title: \"Ringo - Pop Profile [Interview\"",
+				"Track: 29",
+				"Year: 2013",
+				"Genre: \"Other\"",
+			},
 			wantErr: false,
 		},
 	}
@@ -1008,7 +980,7 @@ func Test_id3v1Metadata_internalWrite(t *testing.T) {
 		t.Errorf("%s error creating %q: %v", testDir, shortFile, err)
 	}
 	goodFile := "good.mp3"
-	if err := internal.CreateFileForTestingWithContent(testDir, goodFile, []byte{
+	payload := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -1020,16 +992,9 @@ func Test_id3v1Metadata_internalWrite(t *testing.T) {
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-		'T', 'A', 'G', 'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P',
-		'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e',
-		'w', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'O',
-		'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T',
-		'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm', '2', '0', '1',
-		'3', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-		' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 29, 12,
-	}); err != nil {
+	}
+	payload = append(payload, internal.ID3V1DataSet1...)
+	if err := internal.CreateFileForTestingWithContent(testDir, goodFile, payload); err != nil {
 		t.Errorf("%s error creating %q: %v", testDir, goodFile, err)
 	}
 	type args struct {
@@ -1055,7 +1020,7 @@ func Test_id3v1Metadata_internalWrite(t *testing.T) {
 		},
 		{
 			name: "error on write",
-			v1:   newId3v1MetadataWithData(rawData1),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{
 				oldPath: filepath.Join(testDir, goodFile),
 				writeFunc: func(f *os.File, b []byte) (int, error) {
@@ -1066,7 +1031,7 @@ func Test_id3v1Metadata_internalWrite(t *testing.T) {
 		},
 		{
 			name: "short write",
-			v1:   newId3v1MetadataWithData(rawData1),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{
 				oldPath: filepath.Join(testDir, goodFile),
 				writeFunc: func(f *os.File, b []byte) (int, error) {
@@ -1077,7 +1042,7 @@ func Test_id3v1Metadata_internalWrite(t *testing.T) {
 		},
 		{
 			name: "good write",
-			v1:   newId3v1MetadataWithData(rawData2),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet2),
 			args: args{
 				oldPath:   filepath.Join(testDir, goodFile),
 				writeFunc: writeToFile,
@@ -1095,14 +1060,15 @@ func Test_id3v1Metadata_internalWrite(t *testing.T) {
 				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-				'T', 'A', 'G', 'J', 'u', 'l', 'i', 'a', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-				' ', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', ' ', ' ', ' ', ' ',
-				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'T',
-				'h', 'e', ' ', 'W', 'h', 'i', 't', 'e', ' ', 'A', 'l', 'b', 'u', 'm', ' ', '[',
-				'D', 'i', 's', 'c', ' ', '1', ']', ' ', ' ', ' ', ' ', ' ', ' ', '1', '9', '6',
-				'8', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 17, 17,
+				'T', 'A', 'G',
+				'J', 'u', 'l', 'i', 'a', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+				'T', 'h', 'e', ' ', 'W', 'h', 'i', 't', 'e', ' ', 'A', 'l', 'b', 'u', 'm', ' ', '[', 'D', 'i', 's', 'c', ' ', '1', ']', ' ', ' ', ' ', ' ', ' ', ' ',
+				'1', '9', '6', '8',
+				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+				0,
+				17,
+				17,
 			},
 		},
 	}
@@ -1132,7 +1098,7 @@ func Test_id3v1Metadata_write(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, testDir)
 	}()
 	goodFile := "good.mp3"
-	if err := internal.CreateFileForTestingWithContent(testDir, goodFile, []byte{
+	payload := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -1144,16 +1110,9 @@ func Test_id3v1Metadata_write(t *testing.T) {
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-		'T', 'A', 'G', 'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P',
-		'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e',
-		'w', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0,
-		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 'O',
-		'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T',
-		'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm', '2', '0', '1',
-		'3', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-		' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 29, 12,
-	}); err != nil {
+	}
+	payload = append(payload, internal.ID3V1DataSet1...)
+	if err := internal.CreateFileForTestingWithContent(testDir, goodFile, payload); err != nil {
 		t.Errorf("%s error creating %q: %v", testDir, goodFile, err)
 	}
 	type args struct {
@@ -1168,7 +1127,7 @@ func Test_id3v1Metadata_write(t *testing.T) {
 	}{
 		{
 			name: "happy place",
-			v1:   newId3v1MetadataWithData(rawData2),
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet2),
 			args: args{
 				path: filepath.Join(testDir, goodFile),
 			},
@@ -1185,14 +1144,15 @@ func Test_id3v1Metadata_write(t *testing.T) {
 				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-				'T', 'A', 'G', 'J', 'u', 'l', 'i', 'a', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-				' ', 'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', ' ', ' ', ' ', ' ',
-				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 'T',
-				'h', 'e', ' ', 'W', 'h', 'i', 't', 'e', ' ', 'A', 'l', 'b', 'u', 'm', ' ', '[',
-				'D', 'i', 's', 'c', ' ', '1', ']', ' ', ' ', ' ', ' ', ' ', ' ', '1', '9', '6',
-				'8', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
-				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', 0, 17, 17,
+				'T', 'A', 'G',
+				'J', 'u', 'l', 'i', 'a', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+				'T', 'h', 'e', ' ', 'W', 'h', 'i', 't', 'e', ' ', 'A', 'l', 'b', 'u', 'm', ' ', '[', 'D', 'i', 's', 'c', ' ', '1', ']', ' ', ' ', ' ', ' ', ' ', ' ',
+				'1', '9', '6', '8',
+				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+				0,
+				17,
+				17,
 			},
 		},
 	}

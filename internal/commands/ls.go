@@ -310,7 +310,7 @@ func (l *ls) outputTrackDiagnostics(o internal.OutputBus, t *files.Track, prefix
 			o.WriteConsole(false, "%sID3V2 Version: %v\n", prefix, version)
 			o.WriteConsole(false, "%sID3V2 Encoding: %q\n", prefix, enc)
 			for _, frame := range frames {
-				o.WriteConsole(false, "%sID3V2 %s\n", prefix, frame.String())
+				o.WriteConsole(false, "%sID3V2 %s\n", prefix, frame)
 			}
 		}
 		if id3v1Data, err := t.ID3V1Diagnostics(); err != nil {
