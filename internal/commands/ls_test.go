@@ -970,7 +970,7 @@ func Test_ls_outputTrackDiagnostics(t *testing.T) {
 					"      ID3V1 Album: \"On Air: Live At The BBC, Volum\"\n" +
 					"      ID3V1 Title: \"Ringo - Pop Profile [Interview\"\n" +
 					"      ID3V1 Track: 29\n" +
-					"      ID3V1 Year: 2013\n" +
+					"      ID3V1 Year: \"2013\"\n" +
 					"      ID3V1 Genre: \"Other\"\n",
 			},
 		},

@@ -99,96 +99,6 @@ func Test_newRepairCommand(t *testing.T) {
 	}
 }
 
-func Test_findConflictedTracks(t *testing.T) {
-	fnName := "findConflictedTracks()"
-	goodArtist := files.NewArtist("artist1", "")
-	goodAlbum := files.NewAlbum("album1", goodArtist, "")
-	goodArtist.AddAlbum(goodAlbum)
-	goodTrack := files.NewTrack(goodAlbum, "", "track1", 1)
-	goodTrack.SetID3V2Tags(files.NewID3V2TaggedTrackDataForTesting("album1", "artist1", "track1", 1, nil))
-	goodAlbum.AddTrack(goodTrack)
-	badArtist := files.NewArtist("artist1", "")
-	badAlbum := files.NewAlbum("album1", badArtist, "")
-	badArtist.AddAlbum(badAlbum)
-	badTrack := files.NewTrack(badAlbum, "", "track1", 1)
-	badTrack.SetID3V2Tags(files.NewID3V2TaggedTrackDataForTesting("album1", "artist1", "track3", 1, []byte{0, 1, 2}))
-	badAlbum.AddTrack(badTrack)
-	type args struct {
-		artists []*files.Artist
-	}
-	tests := []struct {
-		name string
-		args
-		want []*files.Track
-	}{
-		{name: "degenerate case", args: args{}},
-		{
-			name: "no problems",
-			args: args{artists: []*files.Artist{goodArtist}},
-		},
-		{
-			name: "problems",
-			args: args{artists: []*files.Artist{badArtist}},
-			want: []*files.Track{badTrack},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := findConflictedTracks(tt.args.artists); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_reportTracks(t *testing.T) {
-	fnName := "reportTracks()"
-	t1 := files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist1", ""), ""), "", "track1", 1)
-	t1.SetID3V2Tags(files.NewID3V2TaggedTrackDataForTesting("no album known", "no artist known", "no track name", 1, []byte{0, 1, 2}))
-	t2 := files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist1", ""), ""), "", "track2", 2)
-	t2.SetID3V2Tags(files.NewID3V2TaggedTrackDataForTesting("no album known", "no artist known", "track2", 1, []byte{0, 1, 2}))
-	t3 := files.NewTrack(files.NewAlbum("album2", files.NewArtist("artist1", ""), ""), "", "track1", 1)
-	t3.SetID3V2Tags(files.NewID3V2TaggedTrackDataForTesting("no album known", "no artist known", "no track name", 1, []byte{0, 1, 2}))
-	t4 := files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist2", ""), ""), "", "track1", 1)
-	t4.SetID3V2Tags(files.NewID3V2TaggedTrackDataForTesting("no album known", "no artist known", "no track name", 1, []byte{0, 1, 2}))
-	type args struct {
-		tracks []*files.Track
-	}
-	tests := []struct {
-		name string
-		args
-		internal.WantedOutput
-	}{
-		{name: "no tracks", args: args{}},
-		{
-			name: "multiple tracks",
-			args: args{tracks: []*files.Track{t1, t2, t3, t4}},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "\"artist1\"\n" +
-					"    \"album1\"\n" +
-					"         1 \"track1\" need to repair track name; album name; artist name;\n" +
-					"         2 \"track2\" need to repair track numbering; album name; artist name;\n" +
-					"    \"album2\"\n" +
-					"         1 \"track1\" need to repair track name; album name; artist name;\n" +
-					"\"artist2\"\n" +
-					"    \"album1\"\n" +
-					"         1 \"track1\" need to repair track name; album name; artist name;\n",
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
-			reportTracks(o, tt.args.tracks)
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
-				for _, issue := range issues {
-					t.Errorf("%s %s", fnName, issue)
-				}
-			}
-		})
-	}
-}
-
 func newRepairForTesting() *repair {
 	r, _ := newRepairCommand(internal.NewOutputDeviceForTesting(), internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError))
 	return r
@@ -277,8 +187,10 @@ func Test_repair_Exec(t *testing.T) {
 					"    \"new album\"",
 					"         1 \"new track\" need to repair track numbering; track name; album name; artist name;\n",
 				}, "\n"),
+				WantErrorOutput: "An error occurred when trying to read ID3V1 tag information for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
 				WantLogOutput: "level='info' -dryRun='true' command='repair' msg='executing command'\n" +
-					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n",
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n" +
+					"level='error' albumName='new album' artistName='new artist' error='no id3v1 tag found in file \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\"' trackName='new track' msg='id3v1 tag error'\n",
 			},
 		},
 		{
@@ -290,8 +202,10 @@ func Test_repair_Exec(t *testing.T) {
 					"The track \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" has been backed up to \"realContent\\\\new artist\\\\new album\\\\pre-repair-backup\\\\1.mp3\".",
 					"\"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" repaired.\n",
 				}, "\n"),
+				WantErrorOutput: "An error occurred when trying to read ID3V1 tag information for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
 				WantLogOutput: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
-					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n",
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n" +
+					"level='error' albumName='new album' artistName='new artist' error='no id3v1 tag found in file \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\"' trackName='new track' msg='id3v1 tag error'\n",
 			},
 		},
 	}
@@ -313,6 +227,13 @@ func generateStandardTrackErrorReport() string {
 	for artist := 0; artist < 10; artist++ {
 		for album := 0; album < 10; album++ {
 			for track := 0; track < 10; track++ {
+				var sep string
+				if track%2 == 0 {
+					sep = "-"
+				} else {
+					sep = " "
+				}
+				result = append(result, fmt.Sprintf("An error occurred when trying to read ID3V1 tag information for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"seek repairExec\\\\Test Artist %d\\\\Test Album %d\\\\%02d%sTest Track[%02d].mp3: An attempt was made to move the file pointer before the beginning of the file.\".\n", track, album, artist, artist, album, track, sep, track))
 				result = append(result, fmt.Sprintf("An error occurred when trying to read ID3V2 tag information for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"zero length\".\n", track, album, artist))
 			}
 		}
@@ -325,6 +246,13 @@ func generateStandardTrackLogReport() string {
 	for artist := 0; artist < 10; artist++ {
 		for album := 0; album < 10; album++ {
 			for track := 0; track < 10; track++ {
+				var sep string
+				if track%2 == 0 {
+					sep = "-"
+				} else {
+					sep = " "
+				}
+				result = append(result, fmt.Sprintf("level='error' albumName='Test Album %d' artistName='Test Artist %d' error='seek repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3: An attempt was made to move the file pointer before the beginning of the file.' trackName='Test Track[%02d]' msg='id3v1 tag error'\n", album, artist, artist, album, track, sep, track, track))
 				result = append(result, fmt.Sprintf("level='error' albumName='Test Album %d' artistName='Test Artist %d' error='zero length' trackName='Test Track[%02d]' msg='id3v2 tag error'\n", album, artist, track))
 			}
 		}
@@ -627,7 +555,7 @@ func Test_repair_fixTracks(t *testing.T) {
 		t.Errorf("%s error creating %q: %v", fnName, filepath.Join(topDir, goodFileName), err)
 	}
 	trackWithData := files.NewTrack(files.NewAlbum("ok album", files.NewArtist("beautiful singer", ""), topDir), goodFileName, trackName, 1)
-	trackWithData.SetID3V2Tags(files.NewID3V2TaggedTrackDataForTesting(frames["TALB"], frames["TPE1"], frames["TIT2"], 2, []byte{0, 1, 2}))
+	// trackWithData.SetID3V2Tags(files.NewID3V2TaggedTrackDataForTesting(frames["TALB"], frames["TPE1"], frames["TIT2"], 2, []byte{0, 1, 2}))
 	type args struct {
 		tracks []*files.Track
 	}
@@ -648,9 +576,10 @@ func Test_repair_fixTracks(t *testing.T) {
 				trackWithData,
 			}},
 			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: fmt.Sprintf("%q repaired.\n", filepath.Join(topDir, goodFileName)),
-				WantErrorOutput:   "An error occurred repairing track \"fixTracks\\\\non-existent-track\".\n",
-				WantLogOutput:     "level='error' directory='fixTracks' error='no edit required' executing command='' fileName='non-existent-track' msg='cannot edit track'\n",
+				WantErrorOutput: "An error occurred repairing track \"fixTracks\\\\non-existent-track\".\n" +
+					"An error occurred repairing track \"fixTracks\\\\01 repairable track.mp3\".\n",
+				WantLogOutput: "level='error' directory='fixTracks' error='[no edit required]' executing command='' fileName='non-existent-track' msg='cannot edit track'\n" +
+					"level='error' directory='fixTracks' error='[no edit required]' executing command='' fileName='01 repairable track.mp3' msg='cannot edit track'\n",
 			},
 		},
 	}

@@ -409,8 +409,10 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 			c:    &check{checkIntegrity: &tFlag},
 			args: args{artists: a},
 			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "An error occurred when trying to read ID3V2 tag information for track \"track\" on album \"album\" by artist \"artist\": \"zero length\".\n",
-				WantLogOutput:   "level='error' albumName='album' artistName='artist' error='zero length' trackName='track' msg='id3v2 tag error'\n",
+				WantErrorOutput: "An error occurred when trying to read ID3V1 tag information for track \"track\" on album \"album\" by artist \"artist\": \"seek integrity\\\\artist\\\\album\\\\01 track.mp3: An attempt was made to move the file pointer before the beginning of the file.\".\n" +
+					"An error occurred when trying to read ID3V2 tag information for track \"track\" on album \"album\" by artist \"artist\": \"zero length\".\n",
+				WantLogOutput: "level='error' albumName='album' artistName='artist' error='seek integrity\\artist\\album\\01 track.mp3: An attempt was made to move the file pointer before the beginning of the file.' trackName='track' msg='id3v1 tag error'\n" +
+					"level='error' albumName='album' artistName='artist' error='zero length' trackName='track' msg='id3v2 tag error'\n",
 			},
 			wantConflictedArtists: []*artistWithIssues{
 				{
@@ -422,7 +424,7 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 								{
 									name:   "track",
 									number: 1,
-									issues: []string{"differences cannot be determined: there was an error reading ID3V2 tags"},
+									issues: []string{"differences cannot be determined: there was an error reading metadata"},
 								},
 							},
 						},

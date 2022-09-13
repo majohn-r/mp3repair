@@ -396,13 +396,13 @@ func createBareConflictedIssues(artists []*files.Artist) (conflictedArtists []*a
 func (c *check) performIntegrityCheck(o internal.OutputBus, artists []*files.Artist) []*artistWithIssues {
 	conflictedArtists := make([]*artistWithIssues, 0)
 	if *c.checkIntegrity {
-		files.UpdateTracks(o, artists, files.RawReadID3V2Tag)
+		files.ReadMetadata(o, artists)
 		conflictedArtists = createBareConflictedIssues(artists)
 		issuesFound := false
 		for _, conflictedArtist := range conflictedArtists {
 			for _, conflictedAlbum := range conflictedArtist.albums {
 				for _, conflictedTrack := range conflictedAlbum.tracks {
-					differences := conflictedTrack.track.FindDifferences()
+					differences := conflictedTrack.track.ReportMetadataProblems()
 					if len(differences) > 0 {
 						conflictedTrack.issues = append(conflictedTrack.issues, differences...)
 						issuesFound = true

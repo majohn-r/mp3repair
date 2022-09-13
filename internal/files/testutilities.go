@@ -1,8 +1,10 @@
 package files
 
 import (
+	"fmt"
 	"mp3/internal"
 	"path/filepath"
+	"sort"
 )
 
 // NOTE: the functions in this file are strictly for testing purposes. Do not
@@ -66,6 +68,15 @@ func CreateAllArtistsForTesting(topDir string, addExtras bool) []*Artist {
 	return artists
 }
 
+var nameToID3V2Tag = map[string]string{
+	"artist": "TPE1",
+	"album":  "TALB",
+	"title":  "TIT2",
+	"genre":  "TCON",
+	"year":   "TYER",
+	"track":  "TRCK",
+}
+
 // CreateID3V2TaggedDataForTesting creates ID3V2-tagged content. This code is
 // based on reading https://id3.org/id3v2.3.0 and on looking at a hex dump of a
 // real mp3 file.
@@ -74,9 +85,14 @@ func CreateID3V2TaggedDataForTesting(payload []byte, frames map[string]string) [
 	// block off tag header
 	content = append(content, []byte("ID3")...)
 	content = append(content, []byte{3, 0, 0, 0, 0, 0, 0}...)
-	// add some text frames
-	for name, value := range frames {
-		content = append(content, makeTextFrame(name, value)...)
+	// add some text frames; order is fixed for testing
+	var keys []string
+	for key := range frames {
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	for _, key := range keys {
+		content = append(content, makeTextFrame(key, frames[key])...)
 	}
 	contentLength := len(content) - 10
 	factor := 128 * 128 * 128
@@ -103,4 +119,47 @@ func makeTextFrame(id string, content string) []byte {
 	frame = append(frame, []byte{0, 0, 0}...)
 	frame = append(frame, []byte(content)...)
 	return frame
+}
+
+var recognizedTags = []string{"artist", "album", "title", "genre", "year", "track"}
+
+func CreateConsistentlyTaggedDataForTesting(payload []byte, m map[string]any) []byte {
+	var frames = map[string]string{}
+	for _, tagName := range recognizedTags {
+		if value, ok := m[tagName]; ok {
+			switch tagName {
+			case "track":
+				frames[nameToID3V2Tag[tagName]] = fmt.Sprintf("%d", value.(int))
+			default:
+				frames[nameToID3V2Tag[tagName]] = value.(string)
+			}
+		}
+	}
+	data := CreateID3V2TaggedDataForTesting(payload, frames)
+	data = append(data, CreateID3V1TaggedDataForTesting(m)...)
+	return data
+}
+
+func CreateID3V1TaggedDataForTesting(m map[string]any) []byte {
+	v1 := newId3v1Metadata()
+	v1.writeStringField("TAG", id3v1Tag)
+	for _, tagName := range recognizedTags {
+		if value, ok := m[tagName]; ok {
+			switch tagName {
+			case "artist":
+				v1.setArtist(value.(string))
+			case "album":
+				v1.setAlbum(value.(string))
+			case "title":
+				v1.setTitle(value.(string))
+			case "genre":
+				v1.setGenre(value.(string))
+			case "year":
+				v1.setYear(value.(string))
+			case "track":
+				v1.setTrack(value.(int))
+			}
+		}
+	}
+	return v1.data
 }

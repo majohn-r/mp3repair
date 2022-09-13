@@ -56,7 +56,7 @@ func RawReadID3V2Tag(path string) (d *ID3V2TaggedTrackData) {
 	} else {
 		d.album = removeLeadingBOMs(tag.Album())
 		d.artist = removeLeadingBOMs(tag.Artist())
-		d.genre = removeLeadingBOMs(tag.Genre())
+		d.genre = normalizeGenre(removeLeadingBOMs(tag.Genre()))
 		d.title = removeLeadingBOMs(tag.Title())
 		d.track = trackNumber
 		d.year = removeLeadingBOMs(tag.Year())
@@ -64,6 +64,28 @@ func RawReadID3V2Tag(path string) (d *ID3V2TaggedTrackData) {
 		d.musicCDIdentifier = selectUnknownFrame(mcdiFramers)
 	}
 	return
+}
+
+// sometimes an id3v2 genre tries to show some solidarity with the old id3v1
+// genre, by making the genre string "(key)value", where key is the integer
+// index and value is the canonical string for that key, as defined for id3v1.
+// This function also has to take into account that the mapping is imperfect in
+// the case of "Rhythm and Blues", which is abbreviated to "R&B". This function
+// detects these "(key)value" strings, verifies that the value is correct for
+// the specified key, and, if so, returns the plain value without the
+// parenthetical key. Everything else passes through 'as is'.
+func normalizeGenre(g string) string {
+	var index int
+	var value string
+	if n, err := fmt.Sscanf(g, "(%d)%s", &index, &value); n == 2 && err == nil {
+		// discard value
+		value = strings.SplitAfter(g, ")")[1]
+		mappedValue := genreMap[index]
+		if value == mappedValue || (value == "R&B" && mappedValue == "Rhythm and Blues") {
+			return mappedValue
+		}
+	}
+	return g
 }
 
 func toTrackNumber(s string) (i int, err error) {
@@ -120,36 +142,46 @@ func selectUnknownFrame(mcdiFramers []id3v2.Framer) id3v2.UnknownFrame {
 	return uf
 }
 
-func updateID3V2Tag(t *Track, a taggedTrackState) error {
-	tag, err := readID3V2Tag(t.path)
-	if err != nil {
-		return err
+func updateID3V2Tag(t *Track, src sourceType) (err error) {
+	if t.tM.requiresEdit[src] {
+		var tag *id3v2.Tag
+		tag, err = readID3V2Tag(t.path)
+		if err == nil {
+			defer tag.Close()
+			tag.SetDefaultEncoding(id3v2.EncodingUTF8)
+			albumTitle := t.tM.correctedAlbum[src]
+			if len(albumTitle) != 0 {
+				tag.SetAlbum(albumTitle)
+			}
+			artistName := t.tM.correctedArtist[src]
+			if len(artistName) != 0 {
+				tag.SetArtist(artistName)
+			}
+			trackTitle := t.tM.correctedTitle[src]
+			if len(trackTitle) != 0 {
+				tag.SetTitle(trackTitle)
+			}
+			trackNumber := t.tM.correctedTrack[src]
+			if trackNumber != 0 {
+				tag.AddTextFrame("TRCK", tag.DefaultEncoding(), fmt.Sprintf("%d", trackNumber))
+			}
+			genre := t.tM.correctedGenre[src]
+			if len(genre) != 0 {
+				tag.SetGenre(genre)
+			}
+			year := t.tM.correctedYear[src]
+			if len(year) != 0 {
+				tag.SetYear(year)
+			}
+			mcdi := t.tM.correctedMusicCDIdentifier
+			if len(mcdi.Body) != 0 {
+				tag.DeleteFrames(mcdiFrame)
+				tag.AddFrame(mcdiFrame, mcdi)
+			}
+			err = tag.Save()
+		}
 	}
-	defer tag.Close()
-	tag.SetDefaultEncoding(id3v2.EncodingUTF8)
-	if a.HasAlbumNameConflict() {
-		tag.SetAlbum(t.containingAlbum.canonicalTitle)
-	}
-	if a.HasArtistNameConflict() {
-		tag.SetArtist(t.containingAlbum.recordingArtist.canonicalName)
-	}
-	if a.HasTrackNameConflict() {
-		tag.SetTitle(t.name)
-	}
-	if a.HasNumberingConflict() {
-		tag.AddTextFrame("TRCK", tag.DefaultEncoding(), fmt.Sprintf("%d", t.number))
-	}
-	if a.HasGenreConflict() {
-		tag.SetGenre(t.containingAlbum.genre)
-	}
-	if a.HasYearConflict() {
-		tag.SetYear(t.containingAlbum.year)
-	}
-	if a.HasMCDIConflict() {
-		tag.DeleteFrames(mcdiFrame)
-		tag.AddFrame(mcdiFrame, t.containingAlbum.musicCDIdentifier)
-	}
-	return tag.Save()
+	return
 }
 
 type id3v2TrackFrame struct {
@@ -209,4 +241,37 @@ func stringifyFramerArray(f []id3v2.Framer) string {
 		}
 	}
 	return fmt.Sprintf("<<%s>>", strings.Join(substrings, ", "))
+}
+
+func id3v2NameDiffers(cS comparableStrings) bool {
+	externalName := strings.ToLower(cS.externalName)
+	metadataName := strings.ToLower(cS.metadataName)
+	// strip off illegal end characters from the tag
+	for strings.HasSuffix(metadataName, " ") {
+		metadataName = metadataName[:len(metadataName)-1]
+	}
+	if externalName == metadataName {
+		return false
+	}
+	metadataRunes := []rune(metadataName)
+	externalRunes := []rune(externalName)
+	if len(metadataRunes) != len(externalRunes) {
+		return true
+	}
+	for index, c := range metadataRunes {
+		if externalRunes[index] == c {
+			continue
+		}
+		// allow for the metadata rune to be one that is illegal for file names:
+		// the external name is likely to be a file name
+		if !isIllegalRuneForFileNames(c) {
+			return true
+		}
+	}
+	return false // rune by rune comparison was successful
+}
+
+func id3v2GenreDiffers(cS comparableStrings) bool {
+	// differs unless exact match. Period.
+	return cS.externalName != cS.metadataName
 }

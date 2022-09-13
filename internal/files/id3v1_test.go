@@ -386,36 +386,31 @@ func Test_id3v1Metadata_setAlbum(t *testing.T) {
 func Test_id3v1Metadata_getYear(t *testing.T) {
 	fnName := "id3v1Metadata.getYear()"
 	tests := []struct {
-		name   string
-		v1     *id3v1Metadata
-		wantY  int
-		wantOk bool
+		name string
+		v1   *id3v1Metadata
+		want string
 	}{
 		{
-			name:   "BBC",
-			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet1),
-			wantY:  2013,
-			wantOk: true,
+			name: "BBC",
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			want: "2013",
 		},
 		{
-			name:   "White Album",
-			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet2),
-			wantY:  1968,
-			wantOk: true,
+			name: "White Album",
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet2),
+			want: "1968",
 		},
 		{
 			name: "no date",
 			v1:   newId3v1Metadata(),
+			want: "",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotY, gotOk := tt.v1.getYear()
-			if gotY != tt.wantY {
-				t.Errorf("%s gotY = %v, want %v", fnName, gotY, tt.wantY)
-			}
-			if gotOk != tt.wantOk {
-				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
+			got := tt.v1.getYear()
+			if got != tt.want {
+				t.Errorf("%s gotY = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}
@@ -424,34 +419,18 @@ func Test_id3v1Metadata_getYear(t *testing.T) {
 func Test_id3v1Metadata_setYear(t *testing.T) {
 	fnName := "id3v1Metadata.setYear()"
 	type args struct {
-		y int
+		s string
 	}
 	tests := []struct {
 		name string
 		v1   *id3v1Metadata
 		args
-		want   bool
 		wantv1 *id3v1Metadata
 	}{
 		{
-			name:   "prehistoric",
-			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet1),
-			args:   args{y: 999},
-			want:   false,
-			wantv1: newId3v1MetadataWithData(internal.ID3V1DataSet1),
-		},
-		{
-			name:   "futuristic",
-			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet1),
-			args:   args{y: 10000},
-			want:   false,
-			wantv1: newId3v1MetadataWithData(internal.ID3V1DataSet1),
-		},
-		{
 			name: "realistic",
 			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
-			args: args{y: 2022},
-			want: true,
+			args: args{s: "2022"},
 			wantv1: newId3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
 				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
@@ -467,9 +446,7 @@ func Test_id3v1Metadata_setYear(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.v1.setYear(tt.args.y); got != tt.want {
-				t.Errorf("%s = %t, want %t", fnName, got, tt.want)
-			}
+			tt.v1.setYear(tt.args.s)
 			if !reflect.DeepEqual(tt.v1, tt.wantv1) {
 				t.Errorf("%s got %v want %v", fnName, tt.v1, tt.wantv1)
 			}
@@ -871,7 +848,7 @@ func Test_internalReadId3V1Metadata(t *testing.T) {
 			name: "bad file",
 			args: args{
 				path:     filepath.Join(testDir, badFile),
-				readFunc: readFromFile,
+				readFunc: fileReader,
 			},
 			want:    nil,
 			wantErr: true,
@@ -880,7 +857,7 @@ func Test_internalReadId3V1Metadata(t *testing.T) {
 			name: "good file",
 			args: args{
 				path:     filepath.Join(testDir, goodFile),
-				readFunc: readFromFile,
+				readFunc: fileReader,
 			},
 			want:    newId3v1MetadataWithData(internal.ID3V1DataSet1),
 			wantErr: false,
@@ -939,14 +916,14 @@ func Test_readId3v1Metadata(t *testing.T) {
 		// only testing good path ... all the error paths are handled in the
 		// internal read test
 		{
-			name:    "good file",
-			args:    args{path: filepath.Join(testDir, goodFile)},
-			want:    []string{
+			name: "good file",
+			args: args{path: filepath.Join(testDir, goodFile)},
+			want: []string{
 				"Artist: \"The Beatles\"",
 				"Album: \"On Air: Live At The BBC, Volum\"",
 				"Title: \"Ringo - Pop Profile [Interview\"",
 				"Track: 29",
-				"Year: 2013",
+				"Year: \"2013\"",
 				"Genre: \"Other\"",
 			},
 			wantErr: false,
@@ -1167,6 +1144,176 @@ func Test_id3v1Metadata_write(t *testing.T) {
 				if !reflect.DeepEqual(got, tt.wantData) {
 					t.Errorf("%s got %v want %v", fnName, got, tt.wantData)
 				}
+			}
+		})
+	}
+}
+
+func Test_id3v1NameDiffers(t *testing.T) {
+	fnName := "id3v1NameDiffers()"
+	type args struct {
+		cS comparableStrings
+	}
+	tests := []struct {
+		name string
+		args
+		want bool
+	}{
+		{
+			name: "identical strings",
+			args: args{
+				comparableStrings{
+					externalName: "Fiddler On The Roof",
+					metadataName: "Fiddler On The Roof",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "unusable characters in metadata",
+			args: args{
+				comparableStrings{
+					externalName: "Theme From M-A-S-H",
+					metadataName: "Theme From M*A*S*H",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "really long name",
+			args: args{
+				comparableStrings{
+					externalName: "A Funny Thing Happened On The Way To The Forum 1996 Broadway Revival Cast",
+					metadataName: "A Funny Thing Happened On The",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "non-ASCII values",
+			args: args{
+				comparableStrings{
+					externalName: "Grohg - Cortège Macabre",
+					metadataName: "Grohg - Cort\xe8ge Macabre",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "larger non-ASCII values",
+			args: args{
+				comparableStrings{
+					externalName: "Dvořák",
+					metadataName: "Dvor\xe1k",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "identical strings with case differences",
+			args: args{
+				comparableStrings{
+					externalName: "SIMPLE name",
+					metadataName: "simple NAME",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "strings of different length within name length limit",
+			args: args{
+				comparableStrings{
+					externalName: "simple name",
+					metadataName: "artist: simple name",
+				},
+			},
+			want: true,
+		},
+		{
+			name: "use of runes that are illegal for file names",
+			args: args{
+				comparableStrings{
+					externalName: "simple_name",
+					metadataName: "simple:name",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "complex mismatch",
+			args: args{
+				comparableStrings{
+					externalName: "simple_name",
+					metadataName: "simple: nam",
+				},
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := id3v1NameDiffers(tt.args.cS); got != tt.want {
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_id3v1GenreDiffers(t *testing.T) {
+	fnName := "id3v1GenreDiffers()"
+	type args struct {
+		cS comparableStrings
+	}
+	tests := []struct {
+		name string
+		args
+		want bool
+	}{
+		{
+			name: "match",
+			args: args{
+				cS: comparableStrings{
+					externalName: "Classic Rock", 
+					metadataName: "Classic Rock",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "no match",
+			args: args{
+				cS: comparableStrings{
+					externalName: "Classic Rock", 
+					metadataName: "classic rock",
+				},
+			},
+			want: true,
+		},
+		{
+			name: "other",
+			args: args{
+				cS: comparableStrings{
+					externalName: "Prog Rock", 
+					metadataName: "Other",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "known genre",
+			args: args{
+				cS: comparableStrings{
+					externalName: "Classic Rock", // known id3v1 genre - "Other" will not match
+					metadataName: "Other",
+				},
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := id3v1GenreDiffers(tt.args.cS); got != tt.want {
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}

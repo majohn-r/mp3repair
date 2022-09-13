@@ -5,20 +5,20 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"strconv"
 	"strings"
 )
 
 // values per https://id3.org/ID3v1 as of August 16 2022
 const (
+	nameLength     = 30
 	tagOffset      = 0 // always 'TAG' if present
 	tagLength      = 3
 	titleOffset    = tagOffset + tagLength // first 30 characters of the track title
-	titleLength    = 30
+	titleLength    = nameLength
 	artistOffset   = titleOffset + titleLength // first 30 characters of the artist name
-	artistLength   = 30
+	artistLength   = nameLength
 	albumOffset    = artistOffset + artistLength // first 30 characters of the album name
-	albumLength    = 30
+	albumLength    = nameLength
 	yearOffset     = albumOffset + albumLength // four digit year, e.g., '2', '0', '2', '2'
 	yearLength     = 4
 	commentOffset  = yearOffset + yearLength // comment, rarely used, and not interesting
@@ -330,21 +330,12 @@ func (v1 *id3v1Metadata) setAlbum(s string) {
 	v1.writeStringField(s, id3v1Album)
 }
 
-func (v1 *id3v1Metadata) getYear() (y int, ok bool) {
-	s := v1.readStringField(id3v1Year)
-	if year, err := strconv.Atoi(s); err == nil {
-		y = year
-		ok = true
-	}
-	return
+func (v1 *id3v1Metadata) getYear() string {
+	return v1.readStringField(id3v1Year)
 }
 
-func (v1 *id3v1Metadata) setYear(y int) bool {
-	if y < 1000 || y > 9999 {
-		return false
-	}
-	v1.writeStringField(fmt.Sprintf("%d", y), id3v1Year)
-	return true
+func (v1 *id3v1Metadata) setYear(s string) {
+	v1.writeStringField(s, id3v1Year)
 }
 
 func (v1 *id3v1Metadata) getComment() string {
@@ -421,7 +412,7 @@ func stripTrailing(s string, suffix string) string {
 }
 
 func readId3v1Metadata(path string) ([]string, error) {
-	if v1, err := internalReadId3V1Metadata(path, readFromFile); err != nil {
+	if v1, err := internalReadId3V1Metadata(path, fileReader); err != nil {
 		return nil, err
 	} else {
 		var output []string
@@ -431,9 +422,7 @@ func readId3v1Metadata(path string) ([]string, error) {
 		if track, ok := v1.getTrack(); ok {
 			output = append(output, fmt.Sprintf("Track: %d", track))
 		}
-		if year, ok := v1.getYear(); ok {
-			output = append(output, fmt.Sprintf("Year: %d", year))
-		}
+		output = append(output, fmt.Sprintf("Year: %q", v1.getYear()))
 		if genre, ok := v1.getGenre(); ok {
 			output = append(output, fmt.Sprintf("Genre: %q", genre))
 		}
@@ -445,7 +434,7 @@ func readId3v1Metadata(path string) ([]string, error) {
 	}
 }
 
-func readFromFile(f *os.File, b []byte) (int, error) {
+func fileReader(f *os.File, b []byte) (int, error) {
 	return f.Read(b)
 }
 
@@ -478,13 +467,47 @@ func writeToFile(f *os.File, b []byte) (int, error) {
 	return f.Write(b)
 }
 
-func (v1 *id3v1Metadata) internalWrite(oldPath string, writeFunc func(f *os.File, b []byte) (int, error) ) (err error) {
+func updateID3V1Tag(t *Track, src sourceType) (err error) {
+	if t.tM.requiresEdit[src] {
+		var v1 *id3v1Metadata
+		if v1, err = internalReadId3V1Metadata(t.path, fileReader); err == nil {
+			albumTitle := t.tM.correctedAlbum[src]
+			if len(albumTitle) != 0 {
+				v1.setAlbum(albumTitle)
+			}
+			artistName := t.tM.correctedArtist[src]
+			if len(artistName) != 0 {
+				v1.setArtist(artistName)
+			}
+			trackTitle := t.tM.correctedTitle[src]
+			if len(trackTitle) != 0 {
+				v1.setTitle(trackTitle)
+			}
+			trackNumber := t.tM.correctedTrack[src]
+			if trackNumber != 0 {
+				_ = v1.setTrack(trackNumber)
+			}
+			genre := t.tM.correctedGenre[src]
+			if len(genre) != 0 {
+				v1.setGenre(genre)
+			}
+			year := t.tM.correctedYear[src]
+			if len(year) != 0 {
+				v1.setYear(year)
+			}
+			err = v1.write(t.path)
+		}
+	}
+	return
+}
+
+func (v1 *id3v1Metadata) internalWrite(originalPath string, writeFunc func(f *os.File, b []byte) (int, error)) (err error) {
 	var oldFile *os.File
-	if oldFile, err = os.Open(oldPath); err == nil {
+	if oldFile, err = os.Open(originalPath); err == nil {
 		defer oldFile.Close()
 		var stat fs.FileInfo
 		if stat, err = oldFile.Stat(); err == nil {
-			newPath := oldPath + "-id3v1"
+			newPath := originalPath + "-id3v1"
 			var newFile *os.File
 			if newFile, err = os.OpenFile(newPath, os.O_RDWR|os.O_CREATE, stat.Mode()); err == nil {
 				defer newFile.Close()
@@ -505,7 +528,7 @@ func (v1 *id3v1Metadata) internalWrite(oldPath string, writeFunc func(f *os.File
 								err = fmt.Errorf("wrote %d bytes to %q, expected to write %d bytes", n, newPath, id3v1Length)
 								return
 							}
-							if err = os.Rename(newPath, oldPath); err == nil {
+							if err = os.Rename(newPath, originalPath); err == nil {
 								tempfileShouldBeRemoved = false
 							}
 						}
@@ -515,4 +538,275 @@ func (v1 *id3v1Metadata) internalWrite(oldPath string, writeFunc func(f *os.File
 		}
 	}
 	return
+}
+
+var runeByteMapping map[rune][]byte = map[rune][]byte{
+	'…': {0x85},
+	'¡': {0xA1},
+	'¢': {0xA2},
+	'£': {0xA3},
+	'¤': {0xA4},
+	'¥': {0xA5},
+	'¦': {0xA6},
+	'§': {0xA7},
+	'¨': {0xA8},
+	'©': {0xA9},
+	'ª': {0xAA},
+	'«': {0xAB},
+	'¬': {0xAC},
+	'®': {0xAE},
+	'¯': {0xAF},
+	'°': {0xB0},
+	'±': {0xB1},
+	'²': {0xB2},
+	'³': {0xB3},
+	'´': {0xB4},
+	'µ': {0xB5},
+	'¶': {0xB6},
+	'·': {0xB7},
+	'¸': {0xB8},
+	'¹': {0xB9},
+	'º': {0xBA},
+	'»': {0xBB},
+	'¼': {0xBC},
+	'½': {0xBD},
+	'¾': {0xBE},
+	'¿': {0xBF},
+	'À': {0xC0},
+	'Á': {0xC1},
+	'Â': {0xC2},
+	'Ã': {0xC3},
+	'Ä': {0xC4},
+	'Å': {0xC5},
+	'Æ': {0xC6},
+	'Ç': {0xC7},
+	'È': {0xC8},
+	'É': {0xC9},
+	'Ê': {0xCA},
+	'Ë': {0xCB},
+	'Ì': {0xCC},
+	'Í': {0xCD},
+	'Î': {0xCE},
+	'Ï': {0xCF},
+	'Ð': {0xD0},
+	'Ñ': {0xD1},
+	'Ò': {0xD2},
+	'Ó': {0xD3},
+	'Ô': {0xD4},
+	'Õ': {0xD5},
+	'Ö': {0xD6},
+	'×': {0xD7},
+	'Ø': {0xD8},
+	'Ù': {0xD9},
+	'Ú': {0xDA},
+	'Û': {0xDB},
+	'Ü': {0xDC},
+	'Ý': {0xDD},
+	'Þ': {0xDE},
+	'ß': {0xDF},
+	'à': {0xE0},
+	'á': {0xE1},
+	'â': {0xE2},
+	'ã': {0xE3},
+	'ä': {0xE4},
+	'å': {0xE5},
+	'æ': {0xE6},
+	'ç': {0xE7},
+	'è': {0xE8},
+	'é': {0xE9},
+	'ê': {0xEA},
+	'ë': {0xEB},
+	'ì': {0xEC},
+	'í': {0xED},
+	'î': {0xEE},
+	'ï': {0xEF},
+	'ñ': {0xF1},
+	'ò': {0xF2},
+	'ó': {0xF3},
+	'ô': {0xF4},
+	'õ': {0xF5},
+	'ö': {0xF6},
+	'÷': {0xF7},
+	'ø': {0xF8},
+	'ù': {0xF9},
+	'ú': {0xFA},
+	'û': {0xFB},
+	'ü': {0xFC},
+	'ý': {0xFD},
+	'þ': {0xFE},
+	'ÿ': {0xFF},
+	'Ā': {'A'},      // Latin Capital letter A with macron
+	'ā': {'a'},      // Latin Small letter A with macron
+	'Ă': {'A'},      // Latin Capital letter A with breve
+	'ă': {'a'},      // Latin Small letter A with breve
+	'Ą': {'A'},      // Latin Capital letter A with ogonek
+	'ą': {'a'},      // Latin Small letter A with ogonek
+	'Ć': {'C'},      // Latin Capital letter C with acute
+	'ć': {'c'},      // Latin Small letter C with acute
+	'Ĉ': {'C'},      // Latin Capital letter C with circumflex
+	'ĉ': {'c'},      // Latin Small letter C with circumflex
+	'Ċ': {'C'},      // Latin Capital letter C with dot above
+	'ċ': {'c'},      // Latin Small letter C with dot above
+	'Č': {'C'},      // Latin Capital letter C with caron
+	'č': {'c'},      // Latin Small letter C with caron
+	'Ď': {'D'},      // Latin Capital letter D with caron
+	'ď': {'d'},      // Latin Small letter D with caron
+	'Đ': {'D'},      // Latin Capital letter D with stroke
+	'đ': {'d'},      // Latin Small letter D with stroke
+	'Ē': {'E'},      // Latin Capital letter E with macron
+	'ē': {'e'},      // Latin Small letter E with macron
+	'Ĕ': {'E'},      // Latin Capital letter E with breve
+	'ĕ': {'e'},      // Latin Small letter E with breve
+	'Ė': {'E'},      // Latin Capital letter E with dot above
+	'ė': {'e'},      // Latin Small letter E with dot above
+	'Ę': {'E'},      // Latin Capital letter E with ogonek
+	'ę': {'e'},      // Latin Small letter E with ogonek
+	'Ě': {'E'},      // Latin Capital letter E with caron
+	'ě': {'e'},      // Latin Small letter E with caron
+	'Ĝ': {'G'},      // Latin Capital letter G with circumflex
+	'ĝ': {'g'},      // Latin Small letter G with circumflex
+	'Ğ': {'G'},      // Latin Capital letter G with breve
+	'ğ': {'g'},      // Latin Small letter G with breve
+	'Ġ': {'G'},      // Latin Capital letter G with dot above
+	'ġ': {'g'},      // Latin Small letter G with dot above
+	'Ģ': {'G'},      // Latin Capital letter G with cedilla
+	'ģ': {'g'},      // Latin Small letter G with cedilla
+	'Ĥ': {'H'},      // Latin Capital letter H with circumflex
+	'ĥ': {'h'},      // Latin Small letter H with circumflex
+	'Ħ': {'H'},      // Latin Capital letter H with stroke
+	'ħ': {'h'},      // Latin Small letter H with stroke
+	'Ĩ': {'I'},      // Latin Capital letter I with tilde
+	'ĩ': {'i'},      // Latin Small letter I with tilde
+	'Ī': {'I'},      // Latin Capital letter I with macron
+	'ī': {'i'},      // Latin Small letter I with macron
+	'Ĭ': {'I'},      // Latin Capital letter I with breve
+	'ĭ': {'i'},      // Latin Small letter I with breve
+	'Į': {'I'},      // Latin Capital letter I with ogonek
+	'į': {'i'},      // Latin Small letter I with ogonek
+	'İ': {'I'},      // Latin Capital letter I with dot above
+	'ı': {'i'},      // Latin Small letter dotless I
+	'Ĳ': {'I', 'J'}, // Latin Capital Ligature IJ
+	'ĳ': {'i', 'j'}, // Latin Small Ligature IJ
+	'Ĵ': {'J'},      // Latin Capital letter J with circumflex
+	'ĵ': {'j'},      // Latin Small letter J with circumflex
+	'Ķ': {'K'},      // Latin Capital letter K with cedilla
+	'ķ': {'k'},      // Latin Small letter K with cedilla
+	'ĸ': {'k'},      // Latin Small letter Kra
+	'Ĺ': {'L'},      // Latin Capital letter L with acute
+	'ĺ': {'l'},      // Latin Small letter L with acute
+	'Ļ': {'L'},      // Latin Capital letter L with cedilla
+	'ļ': {'l'},      // Latin Small letter L with cedilla
+	'Ľ': {'L'},      // Latin Capital letter L with caron
+	'ľ': {'l'},      // Latin Small letter L with caron
+	'Ŀ': {'L'},      // Latin Capital letter L with middle dot
+	'ŀ': {'l'},      // Latin Small letter L with middle dot
+	'Ł': {'L'},      // Latin Capital letter L with stroke
+	'ł': {'L'},      // Latin Small letter L with stroke
+	'Ń': {'N'},      // Latin Capital letter N with acute
+	'ń': {'n'},      // Latin Small letter N with acute
+	'Ņ': {'N'},      // Latin Capital letter N with cedilla
+	'ņ': {'n'},      // Latin Small letter N with cedilla
+	'Ň': {'N'},      // Latin Capital letter N with caron
+	'ň': {'n'},      // Latin Small letter N with caron
+	'ŉ': {'n'},      // Latin Small letter N preceded by apostrophe
+	'Ŋ': {'N', 'G'}, // Latin Capital letter Eng
+	'ŋ': {'n', 'g'}, // Latin Small letter Eng
+	'Ō': {'O'},      // Latin Capital letter O with macron
+	'ō': {'o'},      // Latin Small letter O with macron
+	'Ŏ': {'O'},      // Latin Capital letter O with breve
+	'ŏ': {'o'},      // Latin Small letter O with breve
+	'Ő': {'O'},      // Latin Capital Letter O with double acute
+	'ő': {'o'},      // Latin Small Letter O with double acute
+	'Œ': {'O', 'E'}, // Latin Capital Ligature OE
+	'œ': {'o', 'e'}, // Latin Small Ligature OE
+	'Ŕ': {'R'},      // Latin Capital letter R with acute
+	'ŕ': {'r'},      // Latin Small letter R with acute
+	'Ŗ': {'R'},      // Latin Capital letter R with cedilla
+	'ŗ': {'t'},      // Latin Small letter R with cedilla
+	'Ř': {'R'},      // Latin Capital letter R with caron
+	'ř': {'r'},      // Latin Small letter R with caron
+	'Ś': {'S'},      // Latin Capital letter S with acute
+	'ś': {'s'},      // Latin Small letter S with acute
+	'Ŝ': {'S'},      // Latin Capital letter S with circumflex
+	'ŝ': {'s'},      // Latin Small letter S with circumflex
+	'Ş': {'S'},      // Latin Capital letter S with cedilla
+	'ş': {'s'},      // Latin Small letter S with cedilla
+	'Š': {'S'},      // Latin Capital letter S with caron
+	'š': {'s'},      // Latin Small letter S with caron
+	'Ţ': {'T'},      // Latin Capital letter T with cedilla
+	'ţ': {'t'},      // Latin Small letter T with cedilla
+	'Ť': {'T'},      // Latin Capital letter T with caron
+	'ť': {'t'},      // Latin Small letter T with caron
+	'Ŧ': {'T'},      // Latin Capital letter T with stroke
+	'ŧ': {'t'},      // Latin Small letter T with stroke
+	'Ũ': {'U'},      // Latin Capital letter U with tilde
+	'ũ': {'u'},      // Latin Small letter U with tilde
+	'Ū': {'U'},      // Latin Capital letter U with macron
+	'ū': {'u'},      // Latin Small letter U with macron
+	'Ŭ': {'U'},      // Latin Capital letter U with breve
+	'ŭ': {'u'},      // Latin Small letter U with breve
+	'Ů': {'U'},      // Latin Capital letter U with ring above
+	'ů': {'u'},      // Latin Small letter U with ring above
+	'Ű': {'U'},      // Latin Capital Letter U with double acute
+	'ű': {'u'},      // Latin Small Letter U with double acute
+	'Ų': {'U'},      // Latin Capital letter U with ogonek
+	'ų': {'u'},      // Latin Small letter U with ogonek
+	'Ŵ': {'W'},      // Latin Capital letter W with circumflex
+	'ŵ': {'w'},      // Latin Small letter W with circumflex
+	'Ŷ': {'Y'},      // Latin Capital letter Y with circumflex
+	'ŷ': {'y'},      // Latin Small letter Y with circumflex
+	'Ÿ': {'Y'},      // Latin Capital letter Y with diaeresis
+	'Ź': {'Z'},      // Latin Capital letter Z with acute
+	'ź': {'z'},      // Latin Small letter Z with acute
+	'Ż': {'Z'},      // Latin Capital letter Z with dot above
+	'ż': {'z'},      // Latin Small letter Z with dot above
+	'Ž': {'Z'},      // Latin Capital letter Z with caron
+	'ž': {'z'},      // Latin Small letter Z with caron
+	'ſ': {'S'},      // Latin Small letter long S
+}
+
+func id3v1NameDiffers(cS comparableStrings) bool {
+	var externalBytes []byte
+	for _, r := range strings.ToLower(cS.externalName) {
+		if b, ok := runeByteMapping[r]; ok {
+			externalBytes = append(externalBytes, b...)
+		} else {
+			externalBytes = append(externalBytes, byte(r))
+		}
+	}
+	if len(externalBytes) > nameLength {
+		externalBytes = externalBytes[:nameLength]
+	}
+	for externalBytes[len(externalBytes)-1] == ' ' {
+		externalBytes = externalBytes[:len(externalBytes)-1]
+	}
+	metadataRunes := []rune(strings.ToLower(cS.metadataName))
+	externalRunes := []rune(string(externalBytes))
+	if len(metadataRunes) != len(externalRunes) {
+		return true
+	}
+	for index, c := range metadataRunes {
+		if externalRunes[index] == c {
+			continue
+		}
+		// allow for the metadata rune to be one that is illegal for file names:
+		// the external name is likely to be a file name
+		if !isIllegalRuneForFileNames(c) {
+			return true
+		}
+	}
+	return false
+}
+
+func id3v1GenreDiffers(cS comparableStrings) bool {
+	initGenreIndices()
+	if _, ok := genreIndicesMap[strings.ToLower(cS.externalName)]; !ok {
+		// the external genre does not map to a known id3v1 genre but "Other"
+		// always matches the external name
+		if cS.metadataName == "Other" {
+			return false
+		}
+	}
+	// external name is a known id3v1 genre, or metadata name is not "Other"
+	return cS.externalName != cS.metadataName
 }

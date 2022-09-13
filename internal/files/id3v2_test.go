@@ -1,10 +1,11 @@
 package files
 
 import (
-	"bytes"
+	// "bytes"
+	"fmt"
 	"mp3/internal"
 	"os"
-	"path/filepath"
+	// "path/filepath"
 	"reflect"
 	"testing"
 
@@ -239,134 +240,6 @@ func Test_selectUnknownFrame(t *testing.T) {
 	}
 }
 
-func Test_updateID3V2Tag(t *testing.T) {
-	fnName := "updateID3V2Tag()"
-	topDir := "updateID3V2Tag"
-	if err := internal.Mkdir(topDir); err != nil {
-		t.Errorf("%s cannot create %q: %v", fnName, topDir, err)
-	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, topDir)
-	}()
-	testFileName := "test.mp3"
-	fullPath := filepath.Join(topDir, testFileName)
-	payload := make([]byte, 0)
-	for k := 0; k < 256; k++ {
-		payload = append(payload, byte(k))
-	}
-	frames := map[string]string{
-		"TYER": "2022",
-		"TALB": "unknown album",
-		"TRCK": "2",
-		"TCON": "dance music",
-		"TCOM": "a couple of idiots",
-		"TIT2": "unknown track",
-		"TPE1": "unknown artist",
-		"TLEN": "1000",
-	}
-	content := CreateID3V2TaggedDataForTesting(payload, frames)
-	if err := internal.CreateFileForTestingWithContent(topDir, testFileName, content); err != nil {
-		t.Errorf("%s cannot create file %q: %v", fnName, fullPath, err)
-	}
-	type args struct {
-		t *Track
-		a taggedTrackState
-	}
-	tests := []struct {
-		name string
-		args
-		wantErr bool
-	}{
-		{
-			name: "track got deleted!",
-			args: args{
-				t: &Track{
-					number:          1,
-					name:            "defective track",
-					path:            filepath.Join(topDir, "non-existent-file.mp3"),
-					containingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
-					ID3V2TaggedTrackData: ID3V2TaggedTrackData{
-						track:  1,
-						title:  "unknown track",
-						album:  "unknown album",
-						artist: "unknown artist",
-					},
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name: "fixable track",
-			args: args{
-				t: &Track{
-					number:          1,
-					name:            "fixable track",
-					path:            fullPath,
-					containingAlbum: NewAlbum("poor album", NewArtist("sorry artist", ""), ""),
-					ID3V2TaggedTrackData: ID3V2TaggedTrackData{
-						track:             2,
-						title:             "unknown track",
-						album:             "unknown album",
-						artist:            "unknown artist",
-						genre:             "unknown genre",
-						year:              "2022",
-						musicCDIdentifier: id3v2.UnknownFrame{Body: []byte{1, 2, 3}},
-					},
-				},
-				a: taggedTrackState{
-					numberingConflict:  true,
-					trackNameConflict:  true,
-					albumNameConflict:  true,
-					artistNameConflict: true,
-					genreConflict:      true,
-					yearConflict:       true,
-					mcdiConflict:       true,
-				},
-			},
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := updateID3V2Tag(tt.args.t, tt.args.a); (err != nil) != tt.wantErr {
-				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
-			}
-		})
-	}
-	if edited, err := os.ReadFile(fullPath); err != nil {
-		t.Errorf("%s cannot read file %q: %v", fnName, fullPath, err)
-	} else {
-		if tag, err := id3v2.ParseReader(bytes.NewReader(edited), id3v2.Options{Parse: true}); err != nil {
-			t.Errorf("%s edited mp3 file %q cannot be read for tags: %v", fnName, fullPath, err)
-		} else {
-			m := map[string]string{
-				// changed by editing
-				"TALB": "poor album",
-				"TIT2": "fixable track",
-				"TPE1": "sorry artist",
-				"TRCK": "1",
-				"TCON": "",
-				"TYER": "",
-				// preserved from original file
-				"TCOM": "a couple of idiots",
-				"TLEN": "1000",
-			}
-			for key, value := range m {
-				if got := tag.GetTextFrame(key).Text; got != value {
-					t.Errorf("%s edited mp3 file key %q got %q want %q", fnName, key, got, value)
-				}
-			}
-		}
-		// verify "music" is present
-		musicStarts := len(edited) - 256
-		for k := 0; k < 256; k++ {
-			if edited[musicStarts+k] != byte(k) {
-				t.Errorf("%s edited mp3 file music at index %d mismatch (%d v. %d)", fnName, k, edited[musicStarts+k], k)
-			}
-		}
-	}
-}
-
 func TestID3V2TrackFrame_String(t *testing.T) {
 	fnName := "ID3V2TrackFrame.String()"
 	tests := []struct {
@@ -500,6 +373,188 @@ func Test_stringifyFramerArray(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := stringifyFramerArray(tt.args.f); got != tt.want {
 				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_id3v2NameDiffers(t *testing.T) {
+	fnName := "id3v2NameDiffers()"
+	type args struct {
+		cS comparableStrings
+	}
+	tests := []struct {
+		name string
+		args
+		want bool
+	}{
+		{
+			name: "identical strings",
+			args: args{
+				comparableStrings{
+					externalName: "simple name",
+					metadataName: "simple name",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "identical strings with case differences",
+			args: args{
+				comparableStrings{
+					externalName: "SIMPLE name",
+					metadataName: "simple NAME",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "strings of different length",
+			args: args{
+				comparableStrings{
+					externalName: "simple name",
+					metadataName: "artist: simple name",
+				},
+			},
+			want: true,
+		},
+		{
+			name: "use of runes that are illegal for file names",
+			args: args{
+				comparableStrings{
+					externalName: "simple_name",
+					metadataName: "simple:name",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "metadata with trailing space",
+			args: args{
+				comparableStrings{
+					externalName: "simple name",
+					metadataName: "simple name ",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "period on the end",
+			args: args{
+				comparableStrings{
+					externalName: "simple name.",
+					metadataName: "simple name.",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "complex mismatch",
+			args: args{
+				comparableStrings{
+					externalName: "simple_name",
+					metadataName: "simple: nam",
+				},
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := id3v2NameDiffers(tt.args.cS); got != tt.want {
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_normalizeGenre(t *testing.T) {
+	fnName := "normalizeGenre()"
+	type args struct {
+		g string
+	}
+	type test struct {
+		name string
+		args
+		want string
+	}
+	tests := []test{}
+	for k, v := range genreMap {
+		tests = append(tests, test{
+			name: v,
+			args: args{
+				g: fmt.Sprintf("(%d)%s", k, v),
+			},
+			want: v,
+		})
+		if v == "Rhythm and Blues" {
+			tests = append(tests, test{
+				name: "R&B",
+				args: args{
+					g: fmt.Sprintf("(%d)R&B", k),
+				},
+				want: v,
+			})
+		}
+	}
+	tests = append(tests, test{
+		name: "prog rock",
+		args: args{
+			g: "prog rock",
+		},
+		want: "prog rock",
+	})
+	tests = append(tests, test{
+		name: "unexpected k/v",
+		args: args{
+			g: "(256)martian folk rock",
+		},
+		want: "(256)martian folk rock",
+	})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := normalizeGenre(tt.args.g); got != tt.want {
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_id3v2GenreDiffers(t *testing.T) {
+	fnName := "id3v2GenreDiffers()"
+	type args struct {
+		cS comparableStrings
+	}
+	tests := []struct {
+		name string
+		args
+		want bool
+	}{
+		{
+			name: "match",
+			args: args{
+				cS: comparableStrings{
+					externalName: "Classic Rock", 
+					metadataName: "Classic Rock",
+				},
+			},
+			want: false,
+		},
+		{
+			name: "no match",
+			args: args{
+				cS: comparableStrings{
+					externalName: "Classic Rock", 
+					metadataName: "classic rock",
+				},
+			},
+			want: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := id3v2GenreDiffers(tt.args.cS); got != tt.want {
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}

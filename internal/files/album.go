@@ -14,11 +14,9 @@ type Album struct {
 	tracks            []*Track
 	recordingArtist   *Artist
 	path              string
-	// TODO #115 evaluate how these fields will work across both metadata sources
-	genre             string
-	year              string
-	canonicalTitle    string             // this is what the tracks will record as their title
-	// TODO #115 this is, of course, id3v2 specific - but should be hidden in a metadata layer?
+	canonicalGenre    string
+	canonicalYear     string
+	canonicalTitle    string             // this is what the tracks will record as their album title
 	musicCDIdentifier id3v2.UnknownFrame // MCDI frame value
 }
 
@@ -32,8 +30,8 @@ func copyAlbum(a *Album, artist *Artist) *Album {
 	for _, t := range a.tracks {
 		a2.AddTrack(copyTrack(t, a2))
 	}
-	a2.genre = a.genre
-	a2.year = a.year
+	a2.canonicalGenre = a.canonicalGenre
+	a2.canonicalYear = a.canonicalYear
 	a2.canonicalTitle = a.canonicalTitle
 	a2.musicCDIdentifier = a.musicCDIdentifier
 	return a2

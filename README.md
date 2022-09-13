@@ -30,6 +30,7 @@
   - [Environment](#environment)
   - [Dependencies](#dependencies)
   - [Other Documentation](#other-documentation)
+    - [ID3V1](#id3v1)
     - [ID3V2.3.0](#id3v230)
     - [YAML](#yaml)
 
@@ -84,23 +85,30 @@ directory.
 
 ##### -integrity
 
-**mp3** reads the **mp3 tag frames** for each track file; the **-integrity** check looks for discrepancies between that data and the files:
+**mp3** reads the **mp3 tags** for each track file; the **-integrity** check
+looks for discrepancies between that data and the files:
 
 - Verify that the track file name begins with the track number encoded in the
-  _TRCK_ (track number/position in set) frame and that the rest of the track
-  name matches the value encoded in the _TIT2_ (title/songname/content
-  description) frame.
-- Verify that the _TALB_ (album/movie/show title) frame value matches the
-  containing album directory's name.
-- Verify that the _TPE1_ (lead artist/lead performer/soloist/performing group)
-  frame value matches the containing artist directory's name and that all mp3
-  files within an artist directory use the same _TPE1_ frame value.
+  _TRCK_ (track number/position in set) frame of the ID3V2 tag and the track
+  field of the ID3V1 tag, and that the rest of the track name matches the value
+  encoded in the _TIT2_ (title/songname/content description) frame of the ID3V2
+  tag and the song title field of the ID3v1 tag.
+- Verify that the containing album directory's name matches the _TALB_
+  (album/movie/show title) frame of the ID3V2 tag and the album field of the
+  ID3V1 tag, and that all mp3 files in the album use the same album name in
+  their ID3V2 and ID3V1 tags.
+- Verify that the containing artist directory's name matches the _TPE1_ (lead
+  artist/lead performer/soloist/performing group) frame of the ID3V2 tag and the
+  artist field of the ID3V1 tag, and that all mp3 files within an artist
+  directory use the same artist name in their ID3V2 and ID3V1 tags.
 - Verify that all the mp3 files in an album contain the same _TYER_ (year) frame
-  contents.
+  of the ID3V2 tag and the year field of the ID3V1 tag.
 - Verify that all the mp3 files in an album contain the same _TCON_ (content
-  type, aka genre) frame contents.
+  type, aka genre) frame of the ID3V2 tag and the same genre field of the ID3V1
+  tag, and that the genres in each tag agree as closely as possible.
 - Verify that all the mp3 files in an album contain the same _MCDI_ (music CD
-  identifier) frame contents.
+  identifier) frame of the ID3V2 tag; there is no corresponding data in the
+  ID3V1 tag.
 
 File names and their corresponding frame values cannot always be identical, as
 some characters in the frame may not be legal file name characters and end up
@@ -386,13 +394,22 @@ libraries.
 
 ## Other Documentation
 
+### ID3V1
+
+MP3 files contain metadata in the form of ID3V2 tags and ID3V1 tags; ID3V1 is
+the older tag format and is severely constrained compared to ID3V2, but it is
+still widely supported and it is common to find MP3 files that contain both.
+While the **mp3** program primarily deals with the richer ID3V2 metadata, the
+**check** and **repair** commands will notice when ID3V1 tags are not in sync
+with the files and rewrite them as necessary. Information about the **ID3V1**
+tag formt can be found here: [https://id3.org/ID3v1](https://id3.org/ID3v1).
+
 ### ID3V2.3.0
 
 The **mp3** program depends heavily on the MP3 files containing an **ID3V2.3.0**
-tag, which stores information about the audio file, particularly meta
-information, such as the title and performer. Information about the
-**ID3V2.3.0** tag format can be found here:
-[https://id3.org/id3v2.3.0](https://id3.org/id3v2.3.0).
+tag, which stores information about the audio file, particularly metadata, such
+as the title and performer. Information about the **ID3V2.3.0** tag format can
+be found here: [https://id3.org/id3v2.3.0](https://id3.org/id3v2.3.0).
 
 ### YAML
 

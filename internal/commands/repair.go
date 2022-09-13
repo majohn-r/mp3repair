@@ -69,7 +69,7 @@ func (r *repair) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 	o.LogWriter().Info(internal.LI_EXECUTING_COMMAND, r.logFields())
 	artists, ok := s.LoadData(o)
 	if ok {
-		files.UpdateTracks(o, artists, files.RawReadID3V2Tag)
+		files.ReadMetadata(o, artists)
 		tracksWithConflicts := findConflictedTracks(artists)
 		if len(tracksWithConflicts) == 0 {
 			o.WriteConsole(true, noProblemsFound)
@@ -90,7 +90,7 @@ func findConflictedTracks(artists []*files.Artist) []*files.Track {
 	for _, artist := range artists {
 		for _, album := range artist.Albums() {
 			for _, track := range album.Tracks() {
-				if state := track.AnalyzeIssues(); state.HasTaggingConflicts() {
+				if state := track.ReconcileMetadata(); state.HasTaggingConflicts() {
 					t = append(t, track)
 				}
 			}
@@ -115,7 +115,7 @@ func reportTracks(o internal.OutputBus, tracks []*files.Track) {
 			o.WriteConsole(false, "    %q\n", albumName)
 			lastAlbumName = albumName
 		}
-		s := t.AnalyzeIssues()
+		s := t.ReconcileMetadata()
 		o.WriteConsole(false, "        %2d %q need to repair%s%s%s%s\n",
 			t.Number(), t.Name(),
 			reportProblem(s.HasNumberingConflict(), " track numbering;"),
@@ -134,8 +134,7 @@ func reportProblem(b bool, problem string) (s string) {
 
 func (r *repair) fixTracks(o internal.OutputBus, tracks []*files.Track) {
 	for _, t := range tracks {
-		// TODO #115 needs to fix all metadata sources.
-		if err := t.EditID3V2Tag(); err != nil {
+		if err := t.EditTags(); len(err) != 0 {
 			o.WriteError(internal.USER_ERROR_REPAIRING_TRACK_FILE, t)
 			o.LogWriter().Error(internal.LE_CANNOT_EDIT_TRACK, map[string]interface{}{
 				internal.LI_EXECUTING_COMMAND: r.name(),
