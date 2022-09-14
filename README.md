@@ -16,6 +16,8 @@
     - [postRepair](#postrepair)
     - [repair](#repair)
     - [resetDatabase](#resetdatabase)
+      - [Avoiding an Unnecessary Reset](#avoiding-an-unnecessary-reset)
+      - [Forcing a Database Reset](#forcing-a-database-reset)
       - [resetDatabase Argument Details](#resetdatabase-argument-details)
         - [-timeout](#-timeout)
   - [Command Arguments](#command-arguments)
@@ -181,14 +183,31 @@ argument:
 
 Argument Name | Value   | Default Value | Description
 --------------|---------|---------------|-------------
- **-dryRun**  | Boolean | false         | If ture, output what the command would repair, but take no action
+ **-dryRun**  | Boolean | false         | If true, output what the command would repair, but take no action
 
 ### resetDatabase
 
 The **resetDatabase** command provides a means to reset the database that the
 Windows Media Player uses to catalogue the albums, artists, and tracks. The
 Windows Media Player will not recognize the effects of the **repair** command
-until that database is reset. The command has the following command arguments:
+until that database is reset.
+
+#### Avoiding an Unnecessary Reset
+
+It takes a non-trivial amount of time for Windows Media Player to recreate its
+database, so the **resetDatabase** command will not run unless the **repair**
+command has edited at least one mp3 file since the last time the
+**resetDatabase** command was run (if ever).
+
+#### Forcing a Database Reset
+
+If you need to reset the database (for instance: because you used another
+program such as **WinAmp** to edit mp3 file metadata) and the **resetDatabase**
+command insists that it doesn't need to do anything, simply create a file named
+**metadata.dirty** in the **%APPDATA%\mp3** directory and run the
+**resetDatabase** command again.
+
+The **resetDatabase** command has the following command arguments:
 
 Argument Name   | Value   | Default Value | Description
 ----------------|---------|---------------|-------------
