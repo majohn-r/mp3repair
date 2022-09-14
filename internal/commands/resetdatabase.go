@@ -132,13 +132,21 @@ func (r *resetDatabase) name() string {
 
 func (r *resetDatabase) Exec(o internal.OutputBus, args []string) (ok bool) {
 	if internal.ProcessArgs(o, r.f, args) {
-		ok = r.runCommand(o, func() (serviceGateway, error) {
-			m, err := mgr.Connect()
-			if err != nil {
-				return nil, err
+		if Dirty(){
+			ok = r.runCommand(o, func() (serviceGateway, error) {
+				m, err := mgr.Connect()
+				if err != nil {
+					return nil, err
+				}
+				return &sysMgr{m: m}, err
+			})
+			if ok {
+				ClearDirty(o)
 			}
-			return &sysMgr{m: m}, err
-		})
+		} else {
+			o.WriteConsole(true, "Running %q is not necessary, as no track files have been edited", r.name())
+			ok = true // no harm, no foul
+		}
 	}
 	return
 }

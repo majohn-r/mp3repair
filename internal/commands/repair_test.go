@@ -114,7 +114,19 @@ func Test_repair_Exec(t *testing.T) {
 	if err := internal.Mkdir(topDirWithContent); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, topDirWithContent, err)
 	}
+	appFolder := filepath.Join(topDirName, "mp3")
+	if err := internal.Mkdir(appFolder); err != nil {
+		t.Errorf("%s error creating %q: %v", fnName, appFolder, err)
+	}
+	savedDirtyFolderFound := dirtyFolderFound
+	savedDirtyFolder := dirtyFolder
+	savedDirtyFolderValid := dirtyFolderValid
+	savedMarkDirtyAttempted := markDirtyAttempted
 	defer func() {
+		dirtyFolderFound = savedDirtyFolderFound
+		dirtyFolder = savedDirtyFolder
+		dirtyFolderValid = savedDirtyFolderValid
+		markDirtyAttempted = savedMarkDirtyAttempted
 		internal.DestroyDirectoryForTesting(fnName, topDirName)
 		internal.DestroyDirectoryForTesting(fnName, topDirWithContent)
 	}()
@@ -205,12 +217,18 @@ func Test_repair_Exec(t *testing.T) {
 				WantErrorOutput: "An error occurred when trying to read ID3V1 tag information for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
 				WantLogOutput: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n" +
-					"level='error' albumName='new album' artistName='new artist' error='no id3v1 tag found in file \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\"' trackName='new track' msg='id3v1 tag error'\n",
+					"level='error' albumName='new album' artistName='new artist' error='no id3v1 tag found in file \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\"' trackName='new track' msg='id3v1 tag error'\n"+
+					"level='info' fileName='repairExec\\mp3\\metadata.dirty' msg='metadata dirty file written'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// fake out code for MarkDirty()
+			markDirtyAttempted = false
+			dirtyFolder = appFolder
+			dirtyFolderFound = true
+			dirtyFolderValid = true
 			o := internal.NewOutputDeviceForTesting()
 			tt.r.Exec(o, tt.args.args)
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
@@ -555,7 +573,6 @@ func Test_repair_fixTracks(t *testing.T) {
 		t.Errorf("%s error creating %q: %v", fnName, filepath.Join(topDir, goodFileName), err)
 	}
 	trackWithData := files.NewTrack(files.NewAlbum("ok album", files.NewArtist("beautiful singer", ""), topDir), goodFileName, trackName, 1)
-	// trackWithData.SetID3V2Tags(files.NewID3V2TaggedTrackDataForTesting(frames["TALB"], frames["TPE1"], frames["TIT2"], 2, []byte{0, 1, 2}))
 	type args struct {
 		tracks []*files.Track
 	}

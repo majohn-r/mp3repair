@@ -820,9 +820,21 @@ func Test_resetDatabase_Exec(t *testing.T) {
 		t.Errorf("%s error creating %s: %v", fnName, testDir, err)
 	}
 	savedUserProfile := internal.SaveEnvVarForTesting("Userprofile")
+	appFolder := filepath.Join(testDir, "mp3")
+	if err := internal.Mkdir(appFolder); err != nil {
+		t.Errorf("%s error creating %q: %v", fnName, appFolder, err)
+	}
+	savedDirtyFolderFound := dirtyFolderFound
+	savedDirtyFolder := dirtyFolder
+	savedDirtyFolderValid := dirtyFolderValid
+	savedMarkDirtyAttempted := markDirtyAttempted
 	defer func() {
 		savedUserProfile.RestoreForTesting()
 		internal.DestroyDirectoryForTesting(fnName, testDir)
+		dirtyFolderFound = savedDirtyFolderFound
+		dirtyFolder = savedDirtyFolder
+		dirtyFolderValid = savedDirtyFolderValid
+		markDirtyAttempted = savedMarkDirtyAttempted
 	}()
 	userProfile := internal.SavedEnvVar{
 		Name:  "Userprofile",
@@ -834,8 +846,9 @@ func Test_resetDatabase_Exec(t *testing.T) {
 		args []string
 	}
 	tests := []struct {
-		name string
-		r    *resetDatabase
+		name              string
+		r                 *resetDatabase
+		markMetadataDirty bool
 		args
 		wantOk bool
 		internal.WantedOutput
@@ -860,8 +873,20 @@ func Test_resetDatabase_Exec(t *testing.T) {
 			},
 		},
 		{
-			name: "runCommand fails",
+			name: "runCommand fails but is short-circuited",
 			r:    newResetDatabaseCommandForTesting(),
+			args: args{
+				args: []string{"-metadata", "no such dir"},
+			},
+			wantOk: true,
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: "Running \"resetDatabase\" is not necessary, as no track files have been edited.\n",
+			},
+		},
+		{
+			name:              "runCommand fails",
+			r:                 newResetDatabaseCommandForTesting(),
+			markMetadataDirty: true,
 			args: args{
 				args: []string{"-metadata", "no such dir"},
 			},
@@ -874,8 +899,20 @@ func Test_resetDatabase_Exec(t *testing.T) {
 			},
 		},
 		{
-			name: "success",
+			name: "success, though no metadata has been written",
 			r:    newResetDatabaseCommandForTesting(),
+			args: args{
+				args: []string{"-metadata", testDir},
+			},
+			wantOk: true,
+			WantedOutput: internal.WantedOutput{
+				WantConsoleOutput: "Running \"resetDatabase\" is not necessary, as no track files have been edited.\n",
+			},
+		},
+		{
+			name:              "success after metadata written",
+			r:                 newResetDatabaseCommandForTesting(),
+			markMetadataDirty: true,
 			args: args{
 				args: []string{"-metadata", testDir},
 			},
@@ -885,12 +922,21 @@ func Test_resetDatabase_Exec(t *testing.T) {
 				WantErrorOutput:   "The service manager cannot be accessed. Try running the program again as an administrator. Error: Access is denied.\n",
 				WantLogOutput: "level='info' -extension='.wmdb' -metadata='Exec' -service='WMPNetworkSVC' -timeout='10' command='resetDatabase' msg='executing command'\n" +
 					"level='error' error='Access is denied.' operation='connect to service manager' msg='service manager issue'\n" +
-					"level='info' directory='Exec' file extension='.wmdb' msg='no files found'\n",
+					"level='info' directory='Exec' file extension='.wmdb' msg='no files found'\n"+
+					"level='info' fileName='Exec\\mp3\\metadata.dirty' msg='metadata dirty file deleted'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			// fake out code for MarkDirty()
+			markDirtyAttempted = false
+			dirtyFolder = appFolder
+			dirtyFolderFound = true
+			dirtyFolderValid = true
+			if tt.markMetadataDirty {
+				MarkDirty(internal.NewOutputDeviceForTesting())
+			}
 			o := internal.NewOutputDeviceForTesting()
 			if gotOk := tt.r.Exec(o, tt.args.args); gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
@@ -899,6 +945,9 @@ func Test_resetDatabase_Exec(t *testing.T) {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
+			}
+			if tt.markMetadataDirty {
+				ClearDirty(internal.NewOutputDeviceForTesting())
 			}
 		})
 	}

@@ -144,6 +144,7 @@ func (r *repair) fixTracks(o internal.OutputBus, tracks []*files.Track) {
 			})
 		} else {
 			o.WriteConsole(false, "%q repaired.\n", t)
+			MarkDirty(o)
 		}
 	}
 }

@@ -371,12 +371,14 @@ func Test_verifyFileExists(t *testing.T) {
 
 func TestReadConfigurationFile(t *testing.T) {
 	fnName := "ReadConfigurationFile()"
+	savedAppPath, savedAppPathValid := GetAppSpecificPath()
 	savedState := SaveEnvVarForTesting(appDataVar)
 	canonicalPath := SecureAbsolutePathForTesting(".")
 	mp3Path := SecureAbsolutePathForTesting("mp3")
 	os.Setenv(appDataVar, canonicalPath)
 	defer func() {
 		savedState.RestoreForTesting()
+		SetAppSpecificPathForTesting(savedAppPath, savedAppPathValid)
 	}()
 	if err := CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
@@ -405,10 +407,12 @@ func TestReadConfigurationFile(t *testing.T) {
 		t.Errorf("%s error creating gibberish defaults.yaml: %v", fnName, err)
 	}
 	tests := []struct {
-		name   string
-		state  *SavedEnvVar
-		wantC  *Configuration
-		wantOk bool
+		name                     string
+		state                    *SavedEnvVar
+		wantC                    *Configuration
+		wantOk                   bool
+		wantAppSpecificPath      string
+		wantAppSpecificPathValid bool
 		WantedOutput
 	}{
 		{
@@ -460,7 +464,9 @@ func TestReadConfigurationFile(t *testing.T) {
 						cMap: map[string]*Configuration{}},
 				},
 			},
-			wantOk: true,
+			wantOk:                   true,
+			wantAppSpecificPath:      mp3Path,
+			wantAppSpecificPathValid: true,
 			WantedOutput: WantedOutput{
 				WantErrorOutput: "The key \"value\", with value '1.25', has an unexpected type float64.\n",
 				WantLogOutput: fmt.Sprintf("level='error' key='value' type='float64' value='1.25' msg='unexpected value type'\n"+
@@ -477,25 +483,31 @@ func TestReadConfigurationFile(t *testing.T) {
 			},
 		},
 		{
-			name:  "defaults.yaml is a directory",
-			state: &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(badDir), Set: true},
+			name:                     "defaults.yaml is a directory",
+			state:                    &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(badDir), Set: true},
+			wantAppSpecificPath:      SecureAbsolutePathForTesting(filepath.Join(badDir, "mp3")),
+			wantAppSpecificPathValid: true,
 			WantedOutput: WantedOutput{
 				WantErrorOutput: fmt.Sprintf("The configuration file %q is a directory.\n", yamlAsDir),
 				WantLogOutput:   fmt.Sprintf("level='error' directory='%s' fileName='defaults.yaml' msg='file is a directory'\n", SecureAbsolutePathForTesting(badDir2)),
 			},
 		},
 		{
-			name:   "missing yaml",
-			state:  &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(yamlAsDir), Set: true},
-			wantC:  EmptyConfiguration(),
-			wantOk: true,
+			name:                     "missing yaml",
+			state:                    &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(yamlAsDir), Set: true},
+			wantC:                    EmptyConfiguration(),
+			wantOk:                   true,
+			wantAppSpecificPath:      SecureAbsolutePathForTesting(filepath.Join(yamlAsDir, "mp3")),
+			wantAppSpecificPathValid: true,
 			WantedOutput: WantedOutput{
 				WantLogOutput: fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", SecureAbsolutePathForTesting(filepath.Join(yamlAsDir, AppName))),
 			},
 		},
 		{
-			name:  "malformed yaml",
-			state: &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(badDir2), Set: true},
+			name:                     "malformed yaml",
+			state:                    &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(badDir2), Set: true},
+			wantAppSpecificPath:      SecureAbsolutePathForTesting(filepath.Join(badDir2, "mp3")),
+			wantAppSpecificPathValid: true,
 			WantedOutput: WantedOutput{
 				WantErrorOutput: fmt.Sprintf(
 					"The configuration file %q is not well-formed YAML: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}.\n",
@@ -508,6 +520,8 @@ func TestReadConfigurationFile(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.state.RestoreForTesting()
 			o := NewOutputDeviceForTesting()
+			appSpecificPath = ""
+			appSpecificPathValid = false
 			gotC, gotOk := ReadConfigurationFile(o)
 			if !reflect.DeepEqual(gotC, tt.wantC) {
 				t.Errorf("%s gotC = %v, want %v", fnName, gotC, tt.wantC)
@@ -519,6 +533,14 @@ func TestReadConfigurationFile(t *testing.T) {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
+			}
+			// check side effects
+			gotPath, gotPathValid := GetAppSpecificPath()
+			if gotPath != tt.wantAppSpecificPath {
+				t.Errorf("%s got path %q want %q", fnName, gotPath, tt.wantAppSpecificPath)
+			}
+			if gotPathValid != tt.wantAppSpecificPathValid {
+				t.Errorf("%s got path %t want %t", fnName, gotPathValid, tt.wantAppSpecificPathValid)
 			}
 		})
 	}

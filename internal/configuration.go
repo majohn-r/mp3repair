@@ -19,6 +19,20 @@ const (
 	fkType                = "type"
 )
 
+var (
+	appSpecificPath      string
+	appSpecificPathValid bool
+)
+
+func GetAppSpecificPath() (string, bool) {
+	return appSpecificPath, appSpecificPathValid
+}
+
+func SetAppSpecificPathForTesting(p string, v bool) {
+	appSpecificPath = p
+	appSpecificPathValid = v
+}
+
 // ReadConfigurationFile reads defaults.yaml from the specified path and returns
 // a pointer to a cooked Configuration instance
 func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
@@ -30,6 +44,8 @@ func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
 		return
 	}
 	path := CreateAppSpecificPath(appDataValue)
+	appSpecificPath = path
+	appSpecificPathValid = true
 	configFile := filepath.Join(path, DefaultConfigFileName)
 	var err error
 	var exists bool
