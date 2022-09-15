@@ -310,8 +310,20 @@ func (v1 *id3v1Metadata) writeStringField(s string, f id3v1Field) {
 	copy(v1.data[f.startOffset:f.endOffset], b)
 }
 
+func repairName(origin string) string {
+	var externalBytes []byte
+	for _, r := range origin {
+		if b, ok := runeByteMapping[r]; ok {
+			externalBytes = append(externalBytes, b...)
+		} else {
+			externalBytes = append(externalBytes, byte(r))
+		}
+	}
+	return string(externalBytes)
+}
+
 func (v1 *id3v1Metadata) setTitle(s string) {
-	v1.writeStringField(s, id3v1Title)
+	v1.writeStringField(repairName(s), id3v1Title)
 }
 
 func (v1 *id3v1Metadata) getArtist() string {
@@ -319,7 +331,7 @@ func (v1 *id3v1Metadata) getArtist() string {
 }
 
 func (v1 *id3v1Metadata) setArtist(s string) {
-	v1.writeStringField(s, id3v1Artist)
+	v1.writeStringField(repairName(s), id3v1Artist)
 }
 
 func (v1 *id3v1Metadata) getAlbum() string {
@@ -327,7 +339,7 @@ func (v1 *id3v1Metadata) getAlbum() string {
 }
 
 func (v1 *id3v1Metadata) setAlbum(s string) {
-	v1.writeStringField(s, id3v1Album)
+	v1.writeStringField(repairName(s), id3v1Album)
 }
 
 func (v1 *id3v1Metadata) getYear() string {
@@ -384,13 +396,12 @@ func initGenreIndices() {
 	}
 }
 
-func (v1 *id3v1Metadata) setGenre(s string) bool {
+func (v1 *id3v1Metadata) setGenre(s string) {
 	initGenreIndices()
 	if index, ok := genreIndicesMap[strings.ToLower(s)]; !ok {
-		return false
+		v1.setByteField(genreIndicesMap["other"], id3v1Genre)
 	} else {
 		v1.setByteField(index, id3v1Genre)
-		return true
 	}
 }
 
