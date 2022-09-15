@@ -459,7 +459,15 @@ func Test_check_Exec(t *testing.T) {
 	if err := internal.Mkdir(topDirName); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, topDirName, err)
 	}
+	savedHome := internal.SaveEnvVarForTesting("HOMEPATH")
+	home := internal.SavedEnvVar{
+		Name:  "HOMEPATH",
+		Value: "C:\\Users\\The User",
+		Set:   true,
+	}
+	home.RestoreForTesting()
 	defer func() {
+		savedHome.RestoreForTesting()
 		internal.DestroyDirectoryForTesting(fnName, topDirName)
 	}()
 	if err := internal.PopulateTopDirForTesting(topDirName); err != nil {
@@ -475,6 +483,29 @@ func Test_check_Exec(t *testing.T) {
 		wantOk bool
 		internal.WantedOutput
 	}{
+		{
+			name: "help",
+			c:    makeCheckCommand(),
+			args: args{[]string{"--help"}},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "Usage of check:\n" +
+					"  -albumFilter regular expression\n" +
+					"    \tregular expression specifying which albums to select (default \".*\")\n" +
+					"  -artistFilter regular expression\n" +
+					"    \tregular expression specifying which artists to select (default \".*\")\n" +
+					"  -empty\n" +
+					"    \tcheck for empty artist and album folders (default false)\n" +
+					"  -ext extension\n" +
+					"    \textension identifying music files (default \".mp3\")\n" +
+					"  -gaps\n" +
+					"    \tcheck for gaps in track numbers (default false)\n" +
+					"  -integrity\n" +
+					"    \tcheck for disagreement between the file system and audio file metadata (default true)\n" +
+					"  -topDir directory\n" +
+					"    \ttop directory specifying where to find music files (default \"C:\\\\Users\\\\The User\\\\Music\")\n",
+				WantLogOutput: "level='error' arguments='[--help]' msg='flag: help requested'\n",
+			},
+		},
 		{
 			name: "do nothing",
 			c:    makeCheckCommand(),

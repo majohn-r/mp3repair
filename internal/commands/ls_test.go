@@ -218,7 +218,15 @@ func Test_ls_Exec(t *testing.T) {
 	if err := internal.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
+	savedHome := internal.SaveEnvVarForTesting("HOMEPATH")
+	home := internal.SavedEnvVar{
+		Name:  "HOMEPATH",
+		Value: "C:\\Users\\The User",
+		Set:   true,
+	}
+	home.RestoreForTesting()
 	defer func() {
+		savedHome.RestoreForTesting()
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
@@ -233,6 +241,35 @@ func Test_ls_Exec(t *testing.T) {
 		args
 		internal.WantedOutput
 	}{
+		{
+			name: "help",
+			l:    newLsForTesting(),
+			args: args{[]string{"--help"}},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "Usage of ls:\n" +
+					"  -albumFilter regular expression\n" +
+					"    \tregular expression specifying which albums to select (default \".*\")\n" +
+					"  -annotate\n" +
+					"    \tannotate listings with album and artist data (default false)\n" +
+					"  -artistFilter regular expression\n" +
+					"    \tregular expression specifying which artists to select (default \".*\")\n" +
+					"  -diagnostic\n" +
+					"    \tinclude diagnostic information with tracks (default false)\n" +
+					"  -ext extension\n" +
+					"    \textension identifying music files (default \".mp3\")\n" +
+					"  -includeAlbums\n" +
+					"    \tinclude album names in listing (default true)\n" +
+					"  -includeArtists\n" +
+					"    \tinclude artist names in listing (default true)\n" +
+					"  -includeTracks\n" +
+					"    \tinclude track names in listing (default false)\n" +
+					"  -sort sorting\n" +
+					"    \ttrack sorting, 'numeric' in track number order, or 'alpha' in track name order (default \"numeric\")\n" +
+					"  -topDir directory\n" +
+					"    \ttop directory specifying where to find music files (default \"C:\\\\Users\\\\The User\\\\Music\")\n",
+				WantLogOutput: "level='error' arguments='[--help]' msg='flag: help requested'\n",
+			},
+		},
 		{
 			name: "no output",
 			l:    newLsForTesting(),

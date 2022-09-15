@@ -66,14 +66,20 @@ func newLsCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.Fl
 	defaults, defaultsOk := evaluateLsDefaults(o, c.SubConfiguration(name), name)
 	sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet)
 	if defaultsOk && sFlagsOk {
+		albumUsage := internal.DecorateBoolFlagUsage("include album names in listing", defaults.includeAlbums)
+		artistUsage := internal.DecorateBoolFlagUsage("include artist names in listing", defaults.includeArtists)
+		trackUsage := internal.DecorateBoolFlagUsage("include track names in listing", defaults.includeTracks)
+		sortingUsage := internal.DecorateStringFlagUsage("track `sorting`, 'numeric' in track number order, or 'alpha' in track name order", defaults.sorting)
+		annotateUsage := internal.DecorateBoolFlagUsage("annotate listings with album and artist data", defaults.annotateTracks)
+		diagnosticUsage := internal.DecorateBoolFlagUsage("include diagnostic information with tracks", defaults.diagnostics)
 		return &ls{
 			n:                name,
-			includeAlbums:    fSet.Bool(includeAlbumsFlag, defaults.includeAlbums, "include album names in listing"),
-			includeArtists:   fSet.Bool(includeArtistsFlag, defaults.includeArtists, "include artist names in listing"),
-			includeTracks:    fSet.Bool(includeTracksFlag, defaults.includeTracks, "include track names in listing"),
-			trackSorting:     fSet.String(trackSortingFlag, defaults.sorting, "track sorting, 'numeric' in track number order, or 'alpha' in track name order"),
-			annotateListings: fSet.Bool(annotateListingsFlag, defaults.annotateTracks, "annotate listings with album and artist data"),
-			diagnostics:      fSet.Bool(diagnosticListingFlag, defaults.diagnostics, "include diagnostic information with tracks"),
+			includeAlbums:    fSet.Bool(includeAlbumsFlag, defaults.includeAlbums, albumUsage),
+			includeArtists:   fSet.Bool(includeArtistsFlag, defaults.includeArtists, artistUsage),
+			includeTracks:    fSet.Bool(includeTracksFlag, defaults.includeTracks, trackUsage),
+			trackSorting:     fSet.String(trackSortingFlag, defaults.sorting, sortingUsage),
+			annotateListings: fSet.Bool(annotateListingsFlag, defaults.annotateTracks, annotateUsage),
+			diagnostics:      fSet.Bool(diagnosticListingFlag, defaults.diagnostics, diagnosticUsage),
 			sf:               sFlags,
 		}, true
 	}

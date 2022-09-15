@@ -47,11 +47,14 @@ func newCheckCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag
 	defaults, defaultsOk := evaluateCheckDefaults(o, c.SubConfiguration(name), name)
 	sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet)
 	if defaultsOk && sFlagsOk {
+		emptyUsage := internal.DecorateBoolFlagUsage("check for empty artist and album folders", defaults.empty)
+		gapsUsage := internal.DecorateBoolFlagUsage("check for gaps in track numbers", defaults.gaps)
+		integrityUsage := internal.DecorateBoolFlagUsage("check for disagreement between the file system and audio file metadata", defaults.integrity)
 		return &check{
 			n:                         name,
-			checkEmptyFolders:         fSet.Bool(emptyFoldersFlag, defaults.empty, "check for empty artist and album folders"),
-			checkGapsInTrackNumbering: fSet.Bool(gapsInTrackNumberingFlag, defaults.gaps, "check for gaps in track numbers"),
-			checkIntegrity:            fSet.Bool(integrityFlag, defaults.integrity, "check for disagreement between the file system and audio file metadata"),
+			checkEmptyFolders:         fSet.Bool(emptyFoldersFlag, defaults.empty, emptyUsage),
+			checkGapsInTrackNumbering: fSet.Bool(gapsInTrackNumberingFlag, defaults.gaps, gapsUsage),
+			checkIntegrity:            fSet.Bool(integrityFlag, defaults.integrity, integrityUsage),
 			sf:                        sFlags,
 		}, true
 	}

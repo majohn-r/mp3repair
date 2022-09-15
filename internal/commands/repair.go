@@ -42,9 +42,10 @@ func newRepairCommand(o internal.OutputBus, c *internal.Configuration, fSet *fla
 	}
 	sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet)
 	if sFlagsOk && ok {
+		dryRunUsage := internal.DecorateBoolFlagUsage("output what would have been repaired, but make no repairs", defDryRun)
 		return &repair{
 			n:      name,
-			dryRun: fSet.Bool(dryRunFlag, defDryRun, "if true, output what would have repaired, but make no repairs"),
+			dryRun: fSet.Bool(dryRunFlag, defDryRun, dryRunUsage),
 			sf:     sFlags,
 		}, true
 	}

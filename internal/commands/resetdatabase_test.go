@@ -854,18 +854,18 @@ func Test_resetDatabase_Exec(t *testing.T) {
 		internal.WantedOutput
 	}{
 		{
-			name: "bad arguments",
+			name: "help",
 			r:    newResetDatabaseCommandForTesting(),
 			args: args{
 				args: []string{"-help"},
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "Usage of resetDatabase:\n" +
-					"  -extension string\n" +
+					"  -extension extension\n" +
 					"    \textension for metadata files (default \".wmdb\")\n" +
-					"  -metadata string\n" +
+					"  -metadata directory\n" +
 					"    \tdirectory where the media player service metadata files are stored (default \"C:\\\\Users\\\\The User\\\\AppData\\\\Local\\\\Microsoft\\\\Media Player\")\n" +
-					"  -service string\n" +
+					"  -service service\n" +
 					"    \tname of the media player service (default \"WMPNetworkSVC\")\n" +
 					"  -timeout int\n" +
 					"    \ttimeout in seconds (minimum 1, maximum 60) for stopping the media player service (default 10)\n",

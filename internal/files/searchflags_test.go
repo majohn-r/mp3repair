@@ -48,7 +48,7 @@ func Test_NewSearchFlags(t *testing.T) {
 		{
 			name:            "default",
 			args:            args{c: internal.EmptyConfiguration()},
-			wantTopDir:      "./Music",
+			wantTopDir:      ".\\Music",
 			wantExtension:   ".mp3",
 			wantAlbumRegex:  ".*",
 			wantArtistRegex: ".*",

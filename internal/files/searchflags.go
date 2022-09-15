@@ -4,6 +4,7 @@ import (
 	"flag"
 	"mp3/internal"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 )
@@ -46,7 +47,7 @@ func NewSearchFlags(o internal.OutputBus, c *internal.Configuration, fSet *flag.
 
 func makeSearchFlags(o internal.OutputBus, configuration *internal.Configuration, fSet *flag.FlagSet) (*SearchFlags, bool) {
 	var ok = true
-	defTopDirectory, err := configuration.StringDefault(topDirectoryFlag, "$HOMEPATH/Music")
+	defTopDirectory, err := configuration.StringDefault(topDirectoryFlag, filepath.Join("$HOMEPATH","Music"))
 	if err != nil {
 		reportBadDefault(o, err)
 		ok = false
@@ -67,12 +68,16 @@ func makeSearchFlags(o internal.OutputBus, configuration *internal.Configuration
 		ok = false
 	}
 	if ok {
+		topDirUsage := internal.DecorateStringFlagUsage("top `directory` specifying where to find music files", defTopDirectory)
+		extUsage := internal.DecorateStringFlagUsage("`extension` identifying music files", defFileExtension)
+		albumUsage := internal.DecorateStringFlagUsage("`regular expression` specifying which albums to select", defAlbumRegex)
+		artistUsage := internal.DecorateStringFlagUsage("`regular expression` specifying which artists to select", defArtistRegex)
 		return &SearchFlags{
 			f:             fSet,
-			topDirectory:  fSet.String(topDirectoryFlag, defTopDirectory, "top directory in which to look for music files"),
-			fileExtension: fSet.String(fileExtensionFlag, defFileExtension, "extension for music files"),
-			albumRegex:    fSet.String(albumRegexFlag, defAlbumRegex, "regular expression of albums to select"),
-			artistRegex:   fSet.String(artistRegexFlag, defArtistRegex, "regular expression of artists to select"),
+			topDirectory:  fSet.String(topDirectoryFlag, defTopDirectory, topDirUsage),
+			fileExtension: fSet.String(fileExtensionFlag, defFileExtension, extUsage),
+			albumRegex:    fSet.String(albumRegexFlag, defAlbumRegex, albumUsage),
+			artistRegex:   fSet.String(artistRegexFlag, defArtistRegex, artistUsage),
 		}, true
 	}
 	return nil, false

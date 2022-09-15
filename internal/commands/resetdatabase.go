@@ -78,12 +78,16 @@ func newResetDatabaseCommand(o internal.OutputBus, c *internal.Configuration, fS
 	if defaultsOk {
 		timeoutDescription := fmt.Sprintf(
 			"timeout in seconds (minimum %d, maximum %d) for stopping the media player service", minTimeout, maxTimeout)
+		timeoutUsage := internal.DecorateIntFlagUsage(timeoutDescription, defaults.timeout)
+		serviceUsage := internal.DecorateStringFlagUsage("name of the media player `service`", defaults.service)
+		metadataUsage := internal.DecorateStringFlagUsage("`directory` where the media player service metadata files are stored", defaults.metadata)
+		extensionUsage := internal.DecorateStringFlagUsage("`extension` for metadata files", defaults.extension)
 		return &resetDatabase{
 			n:         name,
-			timeout:   fSet.Int(timeoutFlag, defaults.timeout, timeoutDescription),
-			service:   fSet.String(serviceFlag, defaults.service, "name of the media player service"),
-			metadata:  fSet.String(metadataFlag, defaults.metadata, "directory where the media player service metadata files are stored"),
-			extension: fSet.String(extensionFlag, defaults.extension, "extension for metadata files"),
+			timeout:   fSet.Int(timeoutFlag, defaults.timeout, timeoutUsage),
+			service:   fSet.String(serviceFlag, defaults.service, serviceUsage),
+			metadata:  fSet.String(metadataFlag, defaults.metadata, metadataUsage),
+			extension: fSet.String(extensionFlag, defaults.extension, extensionUsage),
 			f:         fSet,
 		}, true
 	}
@@ -132,7 +136,7 @@ func (r *resetDatabase) name() string {
 
 func (r *resetDatabase) Exec(o internal.OutputBus, args []string) (ok bool) {
 	if internal.ProcessArgs(o, r.f, args) {
-		if Dirty(){
+		if Dirty() {
 			ok = r.runCommand(o, func() (serviceGateway, error) {
 				m, err := mgr.Connect()
 				if err != nil {

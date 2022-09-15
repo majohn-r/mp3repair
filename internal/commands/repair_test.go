@@ -118,11 +118,19 @@ func Test_repair_Exec(t *testing.T) {
 	if err := internal.Mkdir(appFolder); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, appFolder, err)
 	}
+	savedHome := internal.SaveEnvVarForTesting("HOMEPATH")
+	home := internal.SavedEnvVar{
+		Name:  "HOMEPATH",
+		Value: "C:\\Users\\The User",
+		Set:   true,
+	}
+	home.RestoreForTesting()
 	savedDirtyFolderFound := dirtyFolderFound
 	savedDirtyFolder := dirtyFolder
 	savedDirtyFolderValid := dirtyFolderValid
 	savedMarkDirtyAttempted := markDirtyAttempted
 	defer func() {
+		savedHome.RestoreForTesting()
 		dirtyFolderFound = savedDirtyFolderFound
 		dirtyFolder = savedDirtyFolder
 		dirtyFolderValid = savedDirtyFolderValid
@@ -165,6 +173,25 @@ func Test_repair_Exec(t *testing.T) {
 		args
 		internal.WantedOutput
 	}{
+		{
+			name: "help",
+			r:    newRepairForTesting(),
+			args: args{[]string{"--help"}},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "Usage of repair:\n" +
+					"  -albumFilter regular expression\n" +
+					"    \tregular expression specifying which albums to select (default \".*\")\n" +
+					"  -artistFilter regular expression\n" +
+					"    \tregular expression specifying which artists to select (default \".*\")\n" +
+					"  -dryRun\n" +
+					"    \toutput what would have been repaired, but make no repairs (default false)\n" +
+					"  -ext extension\n" +
+					"    \textension identifying music files (default \".mp3\")\n" +
+					"  -topDir directory\n" +
+					"    \ttop directory specifying where to find music files (default \"C:\\\\Users\\\\The User\\\\Music\")\n",
+				WantLogOutput: "level='error' arguments='[--help]' msg='flag: help requested'\n",
+			},
+		},
 		{
 			name: "dry run, no usable content",
 			r:    newRepairForTesting(),
@@ -217,7 +244,7 @@ func Test_repair_Exec(t *testing.T) {
 				WantErrorOutput: "An error occurred when trying to read ID3V1 tag information for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
 				WantLogOutput: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n" +
-					"level='error' albumName='new album' artistName='new artist' error='no id3v1 tag found in file \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\"' trackName='new track' msg='id3v1 tag error'\n"+
+					"level='error' albumName='new album' artistName='new artist' error='no id3v1 tag found in file \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\"' trackName='new track' msg='id3v1 tag error'\n" +
 					"level='info' fileName='repairExec\\mp3\\metadata.dirty' msg='metadata dirty file written'\n",
 			},
 		},

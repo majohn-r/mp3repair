@@ -27,7 +27,15 @@ func Test_postrepair_Exec(t *testing.T) {
 	if err := internal.Mkdir(topDir2Name); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, topDir2Name, err)
 	}
+	savedHome := internal.SaveEnvVarForTesting("HOMEPATH")
+	home := internal.SavedEnvVar{
+		Name:  "HOMEPATH",
+		Value: "C:\\Users\\The User",
+		Set:   true,
+	}
+	home.RestoreForTesting()
 	defer func() {
+		savedHome.RestoreForTesting()
 		internal.DestroyDirectoryForTesting(fnName, topDirName)
 		internal.DestroyDirectoryForTesting(fnName, topDir2Name)
 	}()
@@ -65,6 +73,23 @@ func Test_postrepair_Exec(t *testing.T) {
 		args
 		internal.WantedOutput
 	}{
+		{
+			name: "help",
+			p:    makePostRepairCommandForTesting(),
+			args: args{args: []string{"--help"}},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "Usage of postRepair:\n" +
+					"  -albumFilter regular expression\n" +
+					"    \tregular expression specifying which albums to select (default \".*\")\n" +
+					"  -artistFilter regular expression\n" +
+					"    \tregular expression specifying which artists to select (default \".*\")\n" +
+					"  -ext extension\n" +
+					"    \textension identifying music files (default \".mp3\")\n" +
+					"  -topDir directory\n" +
+					"    \ttop directory specifying where to find music files (default \"C:\\\\Users\\\\The User\\\\Music\")\n",
+				WantLogOutput: "level='error' arguments='[--help]' msg='flag: help requested'\n",
+			},
+		},
 		{
 			name: "handle bad common arguments",
 			p:    makePostRepairCommandForTesting(),
