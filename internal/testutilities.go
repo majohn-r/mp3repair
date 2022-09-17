@@ -181,7 +181,7 @@ common:
     ext: .mpeg     # .mp3
     albumFilter: ^.*$   # .*
     artistFilter: ^.*$  # .* 
-ls:
+list:
     includeAlbums: false  # true
     includeArtists: false # true
     includeTracks: true   # false

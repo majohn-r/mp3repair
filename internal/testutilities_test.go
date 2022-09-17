@@ -262,23 +262,23 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 						t.Errorf("%s 'good test': common.artists got %q want %q", fnName, got, "^.*$")
 					}
 				}
-				if ls := c.cMap["ls"]; ls == nil {
-					t.Errorf("%s 'good test': configuration does not contain ls subtree", fnName)
+				if list := c.cMap["list"]; list == nil {
+					t.Errorf("%s 'good test': configuration does not contain list subtree", fnName)
 				} else {
-					if got := ls.bMap["includeAlbums"]; got != false {
-						t.Errorf("%s 'good test': ls.album got %t want %t", fnName, got, false)
+					if got := list.bMap["includeAlbums"]; got != false {
+						t.Errorf("%s 'good test': list.album got %t want %t", fnName, got, false)
 					}
-					if got := ls.bMap["includeArtists"]; got != false {
-						t.Errorf("%s 'good test': ls.artist got %t want %t", fnName, got, false)
+					if got := list.bMap["includeArtists"]; got != false {
+						t.Errorf("%s 'good test': list.artist got %t want %t", fnName, got, false)
 					}
-					if got := ls.bMap["includeTracks"]; got != true {
-						t.Errorf("%s 'good test': ls.track got %t want %t", fnName, got, true)
+					if got := list.bMap["includeTracks"]; got != true {
+						t.Errorf("%s 'good test': list.track got %t want %t", fnName, got, true)
 					}
-					if got := ls.bMap["annotate"]; got != true {
-						t.Errorf("%s 'good test': ls.annotate got %t want %t", fnName, got, true)
+					if got := list.bMap["annotate"]; got != true {
+						t.Errorf("%s 'good test': list.annotate got %t want %t", fnName, got, true)
 					}
-					if got := ls.sMap["sort"]; got != "alpha" {
-						t.Errorf("%s 'good test': ls.sort got %s want %s", fnName, got, "alpha")
+					if got := list.sMap["sort"]; got != "alpha" {
+						t.Errorf("%s 'good test': list.sort got %s want %s", fnName, got, "alpha")
 					}
 				}
 				if check := c.cMap["check"]; check == nil {

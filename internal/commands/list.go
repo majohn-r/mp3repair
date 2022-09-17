@@ -9,7 +9,7 @@ import (
 	"strings"
 )
 
-type ls struct {
+type list struct {
 	n                string
 	includeAlbums    *bool
 	includeArtists   *bool
@@ -21,12 +21,12 @@ type ls struct {
 	sf               *files.SearchFlags
 }
 
-func (l *ls) name() string {
+func (l *list) name() string {
 	return l.n
 }
 
-func newLs(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
-	return newLsCommand(o, c, fSet)
+func newList(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
+	return newListCommand(o, c, fSet)
 }
 
 const (
@@ -59,7 +59,7 @@ const (
 	fkTrack                 = "track"
 )
 
-type lsDefaults struct {
+type listDefaults struct {
 	includeAlbums  bool
 	includeArtists bool
 	includeTracks  bool
@@ -69,9 +69,9 @@ type lsDefaults struct {
 	sorting        string
 }
 
-func newLsCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*ls, bool) {
+func newListCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*list, bool) {
 	name := fSet.Name()
-	defaults, defaultsOk := evaluateLsDefaults(o, c.SubConfiguration(name), name)
+	defaults, defaultsOk := evaluateListDefaults(o, c.SubConfiguration(name), name)
 	sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet)
 	if defaultsOk && sFlagsOk {
 		albumUsage := internal.DecorateBoolFlagUsage("include album names in listing", defaults.includeAlbums)
@@ -81,7 +81,7 @@ func newLsCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.Fl
 		annotateUsage := internal.DecorateBoolFlagUsage("annotate listings with album and artist data", defaults.annotateTracks)
 		diagnosticUsage := internal.DecorateBoolFlagUsage("include diagnostic information with tracks", defaults.diagnostics)
 		detailsUsage := internal.DecorateBoolFlagUsage("include details with tracks", defaults.details)
-		return &ls{
+		return &list{
 			n:                name,
 			includeAlbums:    fSet.Bool(includeAlbumsFlag, defaults.includeAlbums, albumUsage),
 			includeArtists:   fSet.Bool(includeArtistsFlag, defaults.includeArtists, artistUsage),
@@ -96,9 +96,9 @@ func newLsCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.Fl
 	return nil, false
 }
 
-func evaluateLsDefaults(o internal.OutputBus, c *internal.Configuration, name string) (defaults lsDefaults, ok bool) {
+func evaluateListDefaults(o internal.OutputBus, c *internal.Configuration, name string) (defaults listDefaults, ok bool) {
 	ok = true
-	defaults = lsDefaults{}
+	defaults = listDefaults{}
 	var err error
 	defaults.includeAlbums, err = c.BoolDefault(includeAlbumsFlag, defaultIncludeAlbums)
 	if err != nil {
@@ -138,14 +138,14 @@ func evaluateLsDefaults(o internal.OutputBus, c *internal.Configuration, name st
 	return
 }
 
-func (l *ls) Exec(o internal.OutputBus, args []string) (ok bool) {
+func (l *list) Exec(o internal.OutputBus, args []string) (ok bool) {
 	if s, argsOk := l.sf.ProcessArgs(o, args); argsOk {
 		ok = l.runCommand(o, s)
 	}
 	return
 }
 
-func (l *ls) logFields() map[string]interface{} {
+func (l *list) logFields() map[string]interface{} {
 	return map[string]interface{}{
 		fkCommandName:           l.name(),
 		fkIncludeAlbumsFlag:     *l.includeAlbums,
@@ -158,7 +158,7 @@ func (l *ls) logFields() map[string]interface{} {
 	}
 }
 
-func (l *ls) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
+func (l *list) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
 		o.WriteError(internal.USER_SPECIFIED_NO_WORK, l.name())
 		o.LogWriter().Error(internal.LE_NOTHING_TO_DO, l.logFields())
@@ -177,7 +177,7 @@ func (l *ls) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 	return
 }
 
-func (l *ls) outputArtists(o internal.OutputBus, artists []*files.Artist) {
+func (l *list) outputArtists(o internal.OutputBus, artists []*files.Artist) {
 	switch *l.includeArtists {
 	case true:
 		artistsByArtistNames := make(map[string]*files.Artist)
@@ -201,7 +201,7 @@ func (l *ls) outputArtists(o internal.OutputBus, artists []*files.Artist) {
 	}
 }
 
-func (l *ls) outputAlbums(o internal.OutputBus, albums []*files.Album, prefix string) {
+func (l *list) outputAlbums(o internal.OutputBus, albums []*files.Album, prefix string) {
 	switch *l.includeAlbums {
 	case true:
 		albumsByAlbumName := make(map[string]*files.Album)
@@ -232,7 +232,7 @@ func (l *ls) outputAlbums(o internal.OutputBus, albums []*files.Album, prefix st
 	}
 }
 
-func (l *ls) validateTrackSorting(o internal.OutputBus) (ok bool) {
+func (l *list) validateTrackSorting(o internal.OutputBus) (ok bool) {
 	switch *l.trackSorting {
 	case numericSorting:
 		if !*l.includeAlbums {
@@ -264,7 +264,7 @@ func (l *ls) validateTrackSorting(o internal.OutputBus) (ok bool) {
 	return
 }
 
-func (l *ls) outputTracks(o internal.OutputBus, tracks []*files.Track, prefix string) {
+func (l *list) outputTracks(o internal.OutputBus, tracks []*files.Track, prefix string) {
 	if !*l.includeTracks {
 		return
 	}
@@ -281,7 +281,7 @@ func (l *ls) outputTracks(o internal.OutputBus, tracks []*files.Track, prefix st
 		sort.Ints(trackNumbers)
 		for _, trackNumber := range trackNumbers {
 			o.WriteConsole(false, "%s%2d. %s\n", prefix, trackNumber, trackNamesNumeric[trackNumber])
-			l.outputTrackDetails(o, tracksNumeric[trackNumber], prefix + "  ")
+			l.outputTrackDetails(o, tracksNumeric[trackNumber], prefix+"  ")
 			l.outputTrackDiagnostics(o, tracksNumeric[trackNumber], prefix+"  ")
 		}
 	case alphabeticSorting:
@@ -316,13 +316,13 @@ func (l *ls) outputTracks(o internal.OutputBus, tracks []*files.Track, prefix st
 		sort.Strings(trackNames)
 		for _, trackName := range trackNames {
 			o.WriteConsole(false, "%s%s\n", prefix, trackName)
-			l.outputTrackDetails(o, tracksByName[trackName], prefix + "  ")
+			l.outputTrackDetails(o, tracksByName[trackName], prefix+"  ")
 			l.outputTrackDiagnostics(o, tracksByName[trackName], prefix+"  ")
 		}
 	}
 }
 
-func (l *ls) outputTrackDetails(o internal.OutputBus, t *files.Track, prefix string){
+func (l *list) outputTrackDetails(o internal.OutputBus, t *files.Track, prefix string) {
 	if *l.details {
 		// go get information from track and display it
 		if m, err := t.Details(); err != nil {
@@ -347,7 +347,7 @@ func (l *ls) outputTrackDetails(o internal.OutputBus, t *files.Track, prefix str
 	}
 }
 
-func (l *ls) outputTrackDiagnostics(o internal.OutputBus, t *files.Track, prefix string) {
+func (l *list) outputTrackDiagnostics(o internal.OutputBus, t *files.Track, prefix string) {
 	if *l.diagnostics {
 		if version, enc, frames, err := t.ID3V2Diagnostics(); err != nil {
 			o.LogWriter().Error(internal.LE_ID3V2_TAG_ERROR, map[string]interface{}{

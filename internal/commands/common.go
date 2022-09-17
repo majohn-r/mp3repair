@@ -12,7 +12,7 @@ const (
 	checkCommand         = "check"
 	fkCommandName        = "command"
 	fkCount              = "count"
-	lsCommand            = "ls"
+	listCommand          = "list"
 	postRepairCommand    = "postRepair"
 	repairCommand        = "repair"
 	resetDatabaseCommand = "resetDatabase"
@@ -42,9 +42,9 @@ func ProcessCommand(o internal.OutputBus, args []string) (cmd CommandProcessor, 
 	}
 	var initializers []commandInitializer
 	initializers = append(initializers, commandInitializer{
-		name:           lsCommand,
-		defaultCommand: defaultSettings[lsCommand],
-		initializer:    newLs,
+		name:           listCommand,
+		defaultCommand: defaultSettings[listCommand],
+		initializer:    newList,
 	})
 	initializers = append(initializers, commandInitializer{
 		name:           checkCommand,
@@ -80,7 +80,7 @@ func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[
 	if !ok { // no definition
 		m = map[string]bool{
 			checkCommand:         false,
-			lsCommand:            true,
+			listCommand:          true,
 			postRepairCommand:    false,
 			repairCommand:        false,
 			resetDatabaseCommand: false,
@@ -91,7 +91,7 @@ func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[
 	}
 	m = map[string]bool{
 		checkCommand:         defaultCommand == checkCommand,
-		lsCommand:            defaultCommand == lsCommand,
+		listCommand:          defaultCommand == listCommand,
 		postRepairCommand:    defaultCommand == postRepairCommand,
 		repairCommand:        defaultCommand == repairCommand,
 		resetDatabaseCommand: defaultCommand == resetDatabaseCommand,

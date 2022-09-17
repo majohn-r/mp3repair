@@ -33,7 +33,7 @@ func Test_Configuration_SubConfiguration(t *testing.T) {
 	}{
 		{name: "no configuration", c: &Configuration{}, args: args{}, want: EmptyConfiguration()},
 		{name: "commons", c: testConfiguration, args: args{key: "common"}, want: testConfiguration.cMap["common"]},
-		{name: "ls", c: testConfiguration, args: args{key: "ls"}, want: testConfiguration.cMap["ls"]},
+		{name: "list", c: testConfiguration, args: args{key: "list"}, want: testConfiguration.cMap["list"]},
 		{name: "check", c: testConfiguration, args: args{key: "check"}, want: testConfiguration.cMap["check"]},
 		{name: "repair", c: testConfiguration, args: args{key: "repair"}, want: testConfiguration.cMap["repair"]},
 		{name: "unknown key", c: testConfiguration, args: args{key: "unknown key"}, want: EmptyConfiguration()},
@@ -125,13 +125,13 @@ func Test_Configuration_BoolDefault(t *testing.T) {
 		},
 		{
 			name:  "boolean value default false",
-			c:     testConfiguration.cMap["ls"],
+			c:     testConfiguration.cMap["list"],
 			args:  args{key: "includeTracks", defaultValue: false},
 			wantB: true,
 		},
 		{
 			name:  "boolean value default true",
-			c:     testConfiguration.cMap["ls"],
+			c:     testConfiguration.cMap["list"],
 			args:  args{key: "includeTracks", defaultValue: true},
 			wantB: true,
 		},
@@ -284,7 +284,7 @@ func Test_Configuration_StringDefault(t *testing.T) {
 		},
 		{
 			name:  "defined key",
-			c:     testConfiguration.cMap["ls"],
+			c:     testConfiguration.cMap["list"],
 			args:  args{key: "sort", defaultValue: "my default value"},
 			wantS: "alpha",
 		},
@@ -440,7 +440,7 @@ func TestReadConfigurationFile(t *testing.T) {
 						},
 						cMap: map[string]*Configuration{},
 					},
-					"ls": {
+					"list": {
 						bMap: map[string]bool{
 							"annotate":       true,
 							"includeAlbums":  false,
@@ -470,7 +470,7 @@ func TestReadConfigurationFile(t *testing.T) {
 			WantedOutput: WantedOutput{
 				WantErrorOutput: "The key \"value\", with value '1.25', has an unexpected type float64.\n",
 				WantLogOutput: fmt.Sprintf("level='error' key='value' type='float64' value='1.25' msg='unexpected value type'\n"+
-					"level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] ls:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1.25]]' msg='read configuration file'\n", mp3Path),
+					"level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] list:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1.25]]' msg='read configuration file'\n", mp3Path),
 			},
 		},
 		{

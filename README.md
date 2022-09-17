@@ -9,8 +9,8 @@
         - [-empty](#-empty)
         - [-gaps](#-gaps)
         - [-integrity](#-integrity)
-    - [ls](#ls)
-      - [ls Argument Details](#ls-argument-details)
+    - [list](#list)
+      - [list Argument Details](#list-argument-details)
         - [-annotate](#-annotate)
         - [-details](#-details)
         - [-sort](#-sort)
@@ -129,10 +129,10 @@ illegal in WIndows file names:
 - quotation mark (**"**)
 - vertical bar (**|**)
 
-### ls
+### list
 
-The **ls** command provides a means for listing mp3 files. It can list artists,
-albums, and tracks, governed by these command arguments:
+The **list** command provides a means for listing mp3 files. It can list
+artists, albums, and tracks, governed by these command arguments:
 
 Argument Name        | Value   | Default Value | Description
 ---------------------|---------|---------------|-------------
@@ -144,7 +144,7 @@ Argument Name        | Value   | Default Value | Description
  **-includeTracks**  | Boolean | false         | List track names
  **-sort**           | String  | **numeric**   | How to sort tracks, if listed
 
-#### ls Argument Details
+#### list Argument Details
 
 ##### -annotate
 
@@ -251,8 +251,8 @@ above.
 
 ### Common Command Arguments
 
-These command arguments are common to the **check**, **ls**, **postRepair**, and
-the **repair** commands:
+These command arguments are common to the **check**, **list**, **postRepair**,
+and **repair** commands:
 
 Argument Name      | Value   | Default Value | Description
 -------------------|---------|---------------|-------------
@@ -310,7 +310,7 @@ The **defaults.yaml** file may contain six blocks, all of which are optional:
    3. **integrity**
 2. **command** The **command** block may have one string key-value pair:
    1. **default** the value of this entry must be one of **about**, **check**,
-      **ls**, **postRepair**, **repair**, or **resetDatabase**. It causes that
+      **list**, **postRepair**, **repair**, or **resetDatabase**. It causes that
       command to become the default command when no command is specified on the
       command line.
 3. **common** The **common** block may have up to four string key-value pairs,
@@ -320,9 +320,9 @@ The **defaults.yaml** file may contain six blocks, all of which are optional:
    2. **artistFilter**
    3. **ext**
    4. **topDir**
-4. **ls** The **ls** block may have up to four boolean key-value pairs and one
-   string key-value pair, with each key controlling the default setting for its
-   corresponding **ls** command argument:
+4. **list** The **list** block may have up to four boolean key-value pairs and
+   one string key-value pair, with each key controlling the default setting for
+   its corresponding **list** command argument:
    1. **annotate**
    2. **details**
    3. **diagnostic**
@@ -355,13 +355,13 @@ check:
  gaps:      false
  integrity: true
 command:
- default: ls
+ default: list
 common:
  albumFilter:  .*
  artistFilter: .* 
  ext:          .mp3
  topDir:       $HOMEPATH/Music
-ls:
+list:
  annotate:       false
  details:        false
  diagnostic:     false

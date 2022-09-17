@@ -50,7 +50,8 @@ func Test_run(t *testing.T) {
 		wantLogPrefix     string
 		wantLogSuffix     string
 	}{
-		// TODO [#85] need more tests: explicitly call ls, check, repair, postRepair
+		// TODO [#85] need more tests: explicitly call list, check, repair,
+		// postRepair
 		{
 			name: "failure",
 			args: args{
@@ -62,7 +63,7 @@ func Test_run(t *testing.T) {
 				cmdlineArgs: []string{"./mp3", "foo"},
 			},
 			wantReturnValue: 1,
-			wantErrorOutput: "There is no command named \"foo\"; valid commands include [about check ls postRepair repair resetDatabase].\n",
+			wantErrorOutput: "There is no command named \"foo\"; valid commands include [about check list postRepair repair resetDatabase].\n",
 			wantLogPrefix: "level='info' args='[./mp3 foo]' dependencies='[]' go version='go1.x' timeStamp='' version='unknown version!' msg='execution starts'\n" +
 				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", filepath.Join(thisDir, internal.AppName)) +
 				"level='error' command='foo' msg='unrecognized command'\n" +
@@ -82,7 +83,7 @@ func Test_run(t *testing.T) {
 			wantReturnValue: 0,
 			wantLogPrefix: "level='info' args='[./mp3 -topDir ./Music]' dependencies='[]' go version='go1.x' timeStamp='' version='unknown version!' msg='execution starts'\n" +
 				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", filepath.Join(thisDir, internal.AppName)) +
-				"level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n" +
+				"level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='false' -sort='numeric' command='list' msg='executing command'\n" +
 				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='./Music' msg='reading filtered music files'\n" +
 				"level='info' duration='",
 			wantLogSuffix:     "' exitCode='0' msg='execution ends'\n",
