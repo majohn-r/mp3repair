@@ -195,7 +195,7 @@ func (f *id3v2TrackFrame) String() string {
 	return fmt.Sprintf("%s = %q", f.name, f.value)
 }
 
-func readID3V3Metadata(path string) (version byte, enc string, f []string, e error) {
+func readID3V2Metadata(path string) (version byte, enc string, f []string, f2 []*id3v2TrackFrame, e error) {
 	var tag *id3v2.Tag
 	var err error
 	if tag, err = readID3V2Tag(path); err != nil {
@@ -217,6 +217,7 @@ func readID3V3Metadata(path string) (version byte, enc string, f []string, e err
 			frame = &id3v2TrackFrame{name: n, value: stringifyFramerArray(frames[n])}
 		}
 		f = append(f, frame.String())
+		f2 = append(f2, frame)
 	}
 	enc = tag.DefaultEncoding().Name
 	version = tag.Version()

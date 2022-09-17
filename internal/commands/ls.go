@@ -17,6 +17,7 @@ type ls struct {
 	trackSorting     *string
 	annotateListings *bool
 	diagnostics      *bool
+	details          *bool
 	sf               *files.SearchFlags
 }
 
@@ -29,27 +30,33 @@ func newLs(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) 
 }
 
 const (
+	alphabeticSorting = "alpha"
+	numericSorting    = "numeric"
+
 	defaultAnnotateListings  = false
+	defaultDetailsListing    = false
 	defaultDiagnosticListing = false
 	defaultIncludeAlbums     = true
 	defaultIncludeArtists    = true
 	defaultIncludeTracks     = false
-	alphabeticSorting        = "alpha"
-	numericSorting           = "numeric"
 	defaultTrackSorting      = numericSorting
-	annotateListingsFlag     = "annotate"
-	diagnosticListingFlag    = "diagnostic"
-	includeAlbumsFlag        = "includeAlbums"
-	includeArtistsFlag       = "includeArtists"
-	includeTracksFlag        = "includeTracks"
-	trackSortingFlag         = "sort"
-	fkAnnotateListingsFlag   = "-" + annotateListingsFlag
-	fkDiagnosticListingFlag  = "-" + diagnosticListingFlag
-	fkIncludeAlbumsFlag      = "-" + includeAlbumsFlag
-	fkIncludeArtistsFlag     = "-" + includeArtistsFlag
-	fkIncludeTracksFlag      = "-" + includeTracksFlag
-	fkTrackSortingFlag       = "-" + trackSortingFlag
-	fkTrack                  = "track"
+
+	annotateListingsFlag  = "annotate"
+	detailsListingFlag    = "details"
+	diagnosticListingFlag = "diagnostic"
+	includeAlbumsFlag     = "includeAlbums"
+	includeArtistsFlag    = "includeArtists"
+	includeTracksFlag     = "includeTracks"
+	trackSortingFlag      = "sort"
+
+	fkAnnotateListingsFlag  = "-" + annotateListingsFlag
+	fkDetailsListingFlag    = "-" + detailsListingFlag
+	fkDiagnosticListingFlag = "-" + diagnosticListingFlag
+	fkIncludeAlbumsFlag     = "-" + includeAlbumsFlag
+	fkIncludeArtistsFlag    = "-" + includeArtistsFlag
+	fkIncludeTracksFlag     = "-" + includeTracksFlag
+	fkTrackSortingFlag      = "-" + trackSortingFlag
+	fkTrack                 = "track"
 )
 
 type lsDefaults struct {
@@ -58,6 +65,7 @@ type lsDefaults struct {
 	includeTracks  bool
 	annotateTracks bool
 	diagnostics    bool
+	details        bool
 	sorting        string
 }
 
@@ -72,6 +80,7 @@ func newLsCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.Fl
 		sortingUsage := internal.DecorateStringFlagUsage("track `sorting`, 'numeric' in track number order, or 'alpha' in track name order", defaults.sorting)
 		annotateUsage := internal.DecorateBoolFlagUsage("annotate listings with album and artist data", defaults.annotateTracks)
 		diagnosticUsage := internal.DecorateBoolFlagUsage("include diagnostic information with tracks", defaults.diagnostics)
+		detailsUsage := internal.DecorateBoolFlagUsage("include details with tracks", defaults.details)
 		return &ls{
 			n:                name,
 			includeAlbums:    fSet.Bool(includeAlbumsFlag, defaults.includeAlbums, albumUsage),
@@ -80,6 +89,7 @@ func newLsCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.Fl
 			trackSorting:     fSet.String(trackSortingFlag, defaults.sorting, sortingUsage),
 			annotateListings: fSet.Bool(annotateListingsFlag, defaults.annotateTracks, annotateUsage),
 			diagnostics:      fSet.Bool(diagnosticListingFlag, defaults.diagnostics, diagnosticUsage),
+			details:          fSet.Bool(detailsListingFlag, defaults.details, detailsUsage),
 			sf:               sFlags,
 		}, true
 	}
@@ -115,6 +125,11 @@ func evaluateLsDefaults(o internal.OutputBus, c *internal.Configuration, name st
 		reportBadDefault(o, name, err)
 		ok = false
 	}
+	defaults.details, err = c.BoolDefault(detailsListingFlag, defaultDetailsListing)
+	if err != nil {
+		reportBadDefault(o, name, err)
+		ok = false
+	}
 	defaults.sorting, err = c.StringDefault(trackSortingFlag, defaultTrackSorting)
 	if err != nil {
 		reportBadDefault(o, name, err)
@@ -139,6 +154,7 @@ func (l *ls) logFields() map[string]interface{} {
 		fkTrackSortingFlag:      *l.trackSorting,
 		fkAnnotateListingsFlag:  *l.annotateListings,
 		fkDiagnosticListingFlag: *l.diagnostics,
+		fkDetailsListingFlag:    *l.details,
 	}
 }
 
@@ -265,6 +281,7 @@ func (l *ls) outputTracks(o internal.OutputBus, tracks []*files.Track, prefix st
 		sort.Ints(trackNumbers)
 		for _, trackNumber := range trackNumbers {
 			o.WriteConsole(false, "%s%2d. %s\n", prefix, trackNumber, trackNamesNumeric[trackNumber])
+			l.outputTrackDetails(o, tracksNumeric[trackNumber], prefix + "  ")
 			l.outputTrackDiagnostics(o, tracksNumeric[trackNumber], prefix+"  ")
 		}
 	case alphabeticSorting:
@@ -299,7 +316,33 @@ func (l *ls) outputTracks(o internal.OutputBus, tracks []*files.Track, prefix st
 		sort.Strings(trackNames)
 		for _, trackName := range trackNames {
 			o.WriteConsole(false, "%s%s\n", prefix, trackName)
+			l.outputTrackDetails(o, tracksByName[trackName], prefix + "  ")
 			l.outputTrackDiagnostics(o, tracksByName[trackName], prefix+"  ")
+		}
+	}
+}
+
+func (l *ls) outputTrackDetails(o internal.OutputBus, t *files.Track, prefix string){
+	if *l.details {
+		// go get information from track and display it
+		if m, err := t.Details(); err != nil {
+			o.LogWriter().Error(internal.LE_CANNOT_GET_TRACK_DETAILS, map[string]any{
+				internal.FK_ERROR: err,
+				fkTrack:           t.String(),
+			})
+			o.WriteError(internal.USER_CANNOT_READ_TRACK_DETAILS, t.Name(), t.AlbumName(), t.RecordingArtist(), fmt.Sprintf("%v", err))
+		} else {
+			if len(m) != 0 {
+				var keys []string
+				for k := range m {
+					keys = append(keys, k)
+				}
+				sort.Strings(keys)
+				o.WriteConsole(false, "%sDetails:\n", prefix)
+				for _, k := range keys {
+					o.WriteConsole(false, "%s  %s = %q\n", prefix, k, m[k])
+				}
+			}
 		}
 	}
 }

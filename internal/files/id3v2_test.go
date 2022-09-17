@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"mp3/internal"
 	"os"
+
 	// "path/filepath"
 	"reflect"
 	"testing"
@@ -256,8 +257,8 @@ func TestID3V2TrackFrame_String(t *testing.T) {
 	}
 }
 
-func Test_readID3V3Metadata(t *testing.T) {
-	fnName := "readID3V3Metadata()"
+func Test_readID3V2Metadata(t *testing.T) {
+	fnName := "readID3V2Metadata()"
 	payload := make([]byte, 0)
 	for k := 0; k < 256; k++ {
 		payload = append(payload, byte(k))
@@ -320,7 +321,8 @@ func Test_readID3V3Metadata(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotVersion, gotEnc, gotF, err := readID3V3Metadata(tt.args.path)
+			// ignoring raw frames ...
+			gotVersion, gotEnc, gotF, _, err := readID3V2Metadata(tt.args.path)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
 				return
@@ -534,7 +536,7 @@ func Test_id3v2GenreDiffers(t *testing.T) {
 			name: "match",
 			args: args{
 				cS: comparableStrings{
-					externalName: "Classic Rock", 
+					externalName: "Classic Rock",
 					metadataName: "Classic Rock",
 				},
 			},
@@ -544,7 +546,7 @@ func Test_id3v2GenreDiffers(t *testing.T) {
 			name: "no match",
 			args: args{
 				cS: comparableStrings{
-					externalName: "Classic Rock", 
+					externalName: "Classic Rock",
 					metadataName: "classic rock",
 				},
 			},

@@ -82,7 +82,7 @@ func Test_run(t *testing.T) {
 			wantReturnValue: 0,
 			wantLogPrefix: "level='info' args='[./mp3 -topDir ./Music]' dependencies='[]' go version='go1.x' timeStamp='' version='unknown version!' msg='execution starts'\n" +
 				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", filepath.Join(thisDir, internal.AppName)) +
-				"level='info' -annotate='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n" +
+				"level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='false' -sort='numeric' command='ls' msg='executing command'\n" +
 				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='./Music' msg='reading filtered music files'\n" +
 				"level='info' duration='",
 			wantLogSuffix:     "' exitCode='0' msg='execution ends'\n",

@@ -12,6 +12,7 @@
     - [ls](#ls)
       - [ls Argument Details](#ls-argument-details)
         - [-annotate](#-annotate)
+        - [-details](#-details)
         - [-sort](#-sort)
     - [postRepair](#postrepair)
     - [repair](#repair)
@@ -136,6 +137,7 @@ albums, and tracks, governed by these command arguments:
 Argument Name        | Value   | Default Value | Description
 ---------------------|---------|---------------|-------------
  **-annotate**       | Boolean | false         | Annotate track and album names
+ **-details**        | Boolean | false         | Include details for tracks
  **-diagnostic**     | Boolean | false         | Include diagnostic data for tracks
  **-includeArtists** | Boolean | true          | List album artists
  **-includeAlbums**  | Boolean | true          | List album names
@@ -153,6 +155,23 @@ If true, **mp3** provides the following annotations:
 2. Track names will include the album name if albums are not included
    (**-includeAlbums=false**), and the recording artist if artists are also not included
    (**-includeArtists=false**)
+
+##### -details
+
+If true, **mp3** provides the following details, if available:
+
+1. Composer, which corresponds to the _TCOM_ (Composer) frame of the track's
+   ID3V2 tag.
+2. Conductor, which corresponds to the _TPE3_ (Conductor/performer refinement)
+   frame of the track's ID3V2 tag.
+3. Key, which corresponds to the _TKEY_ (Initial key) frame of the track's ID3V2
+   tag.
+4. Lyricist, which corresponds to the _TEXT_ (Lyricist/Text writer) frame of the
+   track's ID3V2 tag.
+5. Orchestra/Band, which corresponds to the _TPE2_
+   (Band/orchestra/accompaniment) frame of the track's ID3V2 tag.
+6. Subtitle, which corresponds to the _TIT3_ (Subtitle/Description refinement)
+   frame of the track's ID3V2 tag.
 
 ##### -sort
 
@@ -305,11 +324,12 @@ The **defaults.yaml** file may contain six blocks, all of which are optional:
    string key-value pair, with each key controlling the default setting for its
    corresponding **ls** command argument:
    1. **annotate**
-   2. **diagnostic**
-   3. **includeAlbums**
-   4. **includeArtists**
-   5. **includeTracks**
-   6. **sort** must be set to **alpha** or **numeric**
+   2. **details**
+   3. **diagnostic**
+   4. **includeAlbums**
+   5. **includeArtists**
+   6. **includeTracks**
+   7. **sort** must be set to **alpha** or **numeric**
 5. **repair** The **repair** block may have one boolean key-value pair,
    controlling the default setting for its corresponding **repair** command
    argument:
@@ -343,6 +363,7 @@ common:
  topDir:       $HOMEPATH/Music
 ls:
  annotate:       false
+ details:        false
  diagnostic:     false
  includeAlbums:  true
  includeArtists: true

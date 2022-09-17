@@ -1383,3 +1383,72 @@ func Test_reportTrackErrors(t *testing.T) {
 		})
 	}
 }
+
+func TestTrack_Details(t *testing.T) {
+	fnName := "Track.Details()"
+	payload := make([]byte, 0)
+	for k := 0; k < 256; k++ {
+		payload = append(payload, byte(k))
+	}
+	frames := map[string]string{
+		"TYER": "2022",
+		"TALB": "unknown album",
+		"TRCK": "2",
+		"TCON": "dance music",
+		"TCOM": "a couple of idiots",
+		"TIT2": "unknown track",
+		"TPE1": "unknown artist",
+		"TLEN": "1000",
+		"T???": "who knows?",
+		"TEXT": "An infinite number of monkeys with a typewriter",
+		"TIT3": "Part II",
+		"TKEY": "D Major",
+		"TPE2": "The usual gang of idiots",
+		"TPE3": "Someone with a stick",
+	}
+	content := CreateID3V2TaggedDataForTesting(payload, frames)
+	if err := internal.CreateFileForTestingWithContent(".", "goodFile.mp3", content); err != nil {
+		t.Errorf("%s failed to create ./goodFile.mp3: %v", fnName, err)
+	}
+	defer func() {
+		if err := os.Remove("./goodFile.mp3"); err != nil {
+			t.Errorf("%s failed to delete ./goodFile.mp3: %v", fnName, err)
+		}
+	}()
+	tests := []struct {
+		name    string
+		tr      *Track
+		want    map[string]string
+		wantErr bool
+	}{
+		{
+			name:    "error case",
+			tr:      &Track{path: "./no such file"},
+			wantErr: true,
+		},
+		{
+			name: "good case",
+			tr:   &Track{path: "./goodfile.mp3"},
+			want: map[string]string{
+				"Composer":       "a couple of idiots",
+				"Lyricist":       "An infinite number of monkeys with a typewriter",
+				"Subtitle":       "Part II",
+				"Key":            "D Major",
+				"Orchestra/Band": "The usual gang of idiots",
+				"Conductor":      "Someone with a stick",
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := tt.tr.Details()
+			if (err != nil) != tt.wantErr {
+				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
+			}
+		})
+	}
+}

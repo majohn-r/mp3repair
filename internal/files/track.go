@@ -591,6 +591,31 @@ func (t *Track) ID3V1Diagnostics() ([]string, error) {
 
 // ID3V2Diagnostics returns ID3V2 tag data - the ID3V2 version, its encoding,
 // and a slice of all the frames in the tag.
-func (t *Track) ID3V2Diagnostics() (version byte, enc string, f []string, e error) {
-	return readID3V3Metadata(t.path)
+func (t *Track) ID3V2Diagnostics() (byte, string, []string, error) {
+	v, e, f, _, err := readID3V2Metadata(t.path)
+	return v, e, f, err
+}
+
+var frameToName = map[string]string{
+	"TCOM": "Composer",
+	"TEXT": "Lyricist",
+	"TIT3": "Subtitle",
+	"TKEY": "Key",
+	"TPE2": "Orchestra/Band",
+	"TPE3": "Conductor",
+}
+
+// Details returns relevant details about the track
+func (t *Track) Details() (map[string]string, error) {
+	if _, _, _, frames, err := readID3V2Metadata(t.path); err != nil {
+		return nil, err
+	} else {
+		m := map[string]string{}
+		for _, frame := range frames {
+			if value, ok := frameToName[frame.name]; ok {
+				m[value] = frame.value
+			}
+		}
+		return m, nil
+	}
 }
