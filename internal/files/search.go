@@ -61,8 +61,8 @@ func (s *Search) LoadUnfilteredData(o internal.OutputBus) (artists []*Artist, ok
 }
 
 // LogFields returns an appropriate set of fields for logging
-func (s *Search) LogFields(includeFilters bool) map[string]interface{} {
-	m := map[string]interface{}{
+func (s *Search) LogFields(includeFilters bool) map[string]any {
+	m := map[string]any{
 		fkTopDirFlag:          s.topDirectory,
 		fkTargetExtensionFlag: s.targetExtension,
 	}

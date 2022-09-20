@@ -343,7 +343,7 @@ func processArtistMetadata(o internal.OutputBus, artists []*Artist) {
 		}
 		if chosenName, ok := pickKey(names); !ok {
 			o.WriteError(internal.USER_AMBIGUOUS_CHOICES, "artist name", artist.Name(), friendlyEncode(names))
-			o.LogWriter().Error(internal.LE_AMBIGUOUS_VALUE, map[string]interface{}{
+			o.LogWriter().Error(internal.LE_AMBIGUOUS_VALUE, map[string]any{
 				fkFieldName:  "artist name",
 				fkSettings:   names,
 				fkArtistName: artist.Name(),
@@ -383,7 +383,7 @@ func processAlbumMetadata(o internal.OutputBus, artists []*Artist) {
 			}
 			if chosenGenre, ok := pickKey(genres); !ok {
 				o.WriteError(internal.USER_AMBIGUOUS_CHOICES, "genre", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(genres))
-				o.LogWriter().Error(internal.LE_AMBIGUOUS_VALUE, map[string]interface{}{
+				o.LogWriter().Error(internal.LE_AMBIGUOUS_VALUE, map[string]any{
 					fkFieldName:  "genre",
 					fkSettings:   genres,
 					fkAlbumName:  album.Name(),
@@ -394,7 +394,7 @@ func processAlbumMetadata(o internal.OutputBus, artists []*Artist) {
 			}
 			if chosenYear, ok := pickKey(years); !ok {
 				o.WriteError(internal.USER_AMBIGUOUS_CHOICES, "year", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(years))
-				o.LogWriter().Error(internal.LE_AMBIGUOUS_VALUE, map[string]interface{}{
+				o.LogWriter().Error(internal.LE_AMBIGUOUS_VALUE, map[string]any{
 					fkFieldName:  "year",
 					fkSettings:   years,
 					fkAlbumName:  album.Name(),
@@ -405,7 +405,7 @@ func processAlbumMetadata(o internal.OutputBus, artists []*Artist) {
 			}
 			if chosenAlbumTitle, ok := pickKey(albumTitles); !ok {
 				o.WriteError(internal.USER_AMBIGUOUS_CHOICES, "album title", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(albumTitles))
-				o.LogWriter().Error(internal.LE_AMBIGUOUS_VALUE, map[string]interface{}{
+				o.LogWriter().Error(internal.LE_AMBIGUOUS_VALUE, map[string]any{
 					fkFieldName:  "album title",
 					fkSettings:   albumTitles,
 					fkAlbumName:  album.Name(),
@@ -418,7 +418,7 @@ func processAlbumMetadata(o internal.OutputBus, artists []*Artist) {
 			}
 			if chosenMCDI, ok := pickKey(mcdis); !ok {
 				o.WriteError(internal.USER_AMBIGUOUS_CHOICES, "MCDI frame", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(mcdis))
-				o.LogWriter().Error(internal.LE_AMBIGUOUS_VALUE, map[string]interface{}{
+				o.LogWriter().Error(internal.LE_AMBIGUOUS_VALUE, map[string]any{
 					fkFieldName:  "mcdi frame",
 					fkSettings:   mcdis,
 					fkAlbumName:  album.Name(),
@@ -498,7 +498,7 @@ func reportTrackErrors(o internal.OutputBus, track *Track, album *Album, artist 
 			e := track.tM.err[source]
 			if len(e) != 0 {
 				o.WriteError(tagConsoleErrors[source], track.name, album.name, artist.name, e)
-				o.LogWriter().Error(tagLogErrors[source], map[string]interface{}{
+				o.LogWriter().Error(tagLogErrors[source], map[string]any{
 					fkTrackName:       track.name,
 					fkAlbumName:       album.name,
 					fkArtistName:      artist.name,
@@ -525,7 +525,7 @@ func ParseTrackNameForTesting(name string) (simpleName string, trackNumber int) 
 
 func parseTrackName(o internal.OutputBus, name string, album *Album, ext string) (simpleName string, trackNumber int, valid bool) {
 	if !trackNameRegex.MatchString(name) {
-		o.LogWriter().Error(internal.LE_INVALID_TRACK_NAME, map[string]interface{}{
+		o.LogWriter().Error(internal.LE_INVALID_TRACK_NAME, map[string]any{
 			fkTrackName:  name,
 			fkAlbumName:  album.name,
 			fkArtistName: album.RecordingArtistName(),

@@ -61,7 +61,7 @@ func run(o internal.OutputBus, f func() (*debug.BuildInfo, bool), cmdlineArgs []
 			returnValue = 0
 		}
 	}
-	o.LogWriter().Info(internal.LI_END_EXECUTION, map[string]interface{}{
+	o.LogWriter().Info(internal.LI_END_EXECUTION, map[string]any{
 		fkDuration: time.Since(startTime),
 		fkExitCode: returnValue,
 	})
@@ -69,7 +69,7 @@ func run(o internal.OutputBus, f func() (*debug.BuildInfo, bool), cmdlineArgs []
 }
 
 func logBegin(o internal.OutputBus, goVersion string, dependencies []string, cmdLineArgs []string) {
-	o.LogWriter().Info(internal.LI_BEGIN_EXECUTION, map[string]interface{}{
+	o.LogWriter().Info(internal.LI_BEGIN_EXECUTION, map[string]any{
 		fkVersion:              version,
 		fkTimeStamp:            creation,
 		fkGoVersion:            goVersion,

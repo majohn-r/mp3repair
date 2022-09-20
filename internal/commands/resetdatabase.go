@@ -175,7 +175,7 @@ func (r *resetDatabase) Exec(o internal.OutputBus, args []string) (ok bool) {
 }
 
 func (r *resetDatabase) runCommand(o internal.OutputBus, connect func() (serviceGateway, error)) (ok bool) {
-	o.LogWriter().Info(internal.LI_EXECUTING_COMMAND, map[string]interface{}{
+	o.LogWriter().Info(internal.LI_EXECUTING_COMMAND, map[string]any{
 		fkCommandName:   r.name(),
 		fkServiceFlag:   *r.service,
 		fkTimeoutFlag:   *r.timeout,
@@ -199,7 +199,7 @@ func (r *resetDatabase) deleteMetadata(o internal.OutputBus) bool {
 		return r.deleteMetadataFiles(o, pathsToDelete)
 	}
 	o.WriteConsole(true, "No metadata files were found in %q", *r.metadata)
-	o.LogWriter().Info(internal.LI_NO_FILES_FOUND, map[string]interface{}{
+	o.LogWriter().Info(internal.LI_NO_FILES_FOUND, map[string]any{
 		internal.FK_DIRECTORY: *r.metadata,
 		fkFileExtension:       *r.extension,
 	})
@@ -211,7 +211,7 @@ func (r *resetDatabase) deleteMetadataFiles(o internal.OutputBus, paths []string
 	for _, path := range paths {
 		if err := os.Remove(path); err != nil {
 			o.WriteError(internal.USER_CANNOT_DELETE_FILE, path, err)
-			o.LogWriter().Error(internal.LE_CANNOT_DELETE_FILE, map[string]interface{}{
+			o.LogWriter().Error(internal.LE_CANNOT_DELETE_FILE, map[string]any{
 				internal.FK_FILE_NAME: path,
 				internal.FK_ERROR:     err,
 			})
@@ -252,7 +252,7 @@ func (r *resetDatabase) stopService(o internal.OutputBus, connect func() (servic
 	status, err := s.Query()
 	if err != nil {
 		o.WriteError(internal.USER_CANNOT_QUERY_SERVICE, *r.service, err)
-		o.LogWriter().Error(internal.LE_SERVICE_ISSUE, map[string]interface{}{
+		o.LogWriter().Error(internal.LE_SERVICE_ISSUE, map[string]any{
 			internal.FK_ERROR: err,
 			fkService:         *r.service,
 			fkOperation:       opQueryService,
@@ -272,7 +272,7 @@ func (r *resetDatabase) stopService(o internal.OutputBus, connect func() (servic
 		}
 	} else {
 		o.WriteError(internal.USER_CANNOT_STOP_SERVICE, *r.service, err)
-		o.LogWriter().Error(internal.LE_SERVICE_ISSUE, map[string]interface{}{
+		o.LogWriter().Error(internal.LE_SERVICE_ISSUE, map[string]any{
 			internal.FK_ERROR: err,
 			fkService:         *r.service,
 			fkOperation:       opStopService,
@@ -282,7 +282,7 @@ func (r *resetDatabase) stopService(o internal.OutputBus, connect func() (servic
 }
 
 func (r *resetDatabase) logServiceStopped(o internal.OutputBus) {
-	o.LogWriter().Info(internal.LI_SERVICE_STATUS, map[string]interface{}{
+	o.LogWriter().Info(internal.LI_SERVICE_STATUS, map[string]any{
 		fkService:       *r.service,
 		fkServiceStatus: statusStopped,
 	})
@@ -292,7 +292,7 @@ func (r *resetDatabase) openService(o internal.OutputBus, connect func() (servic
 	sM, err := connect()
 	if err != nil {
 		o.WriteError(internal.USER_SERVICE_MGR_CONNECION_FAILED, err)
-		o.LogWriter().Error(internal.LE_SERVICE_MANAGER_ISSUE, map[string]interface{}{
+		o.LogWriter().Error(internal.LE_SERVICE_MANAGER_ISSUE, map[string]any{
 			internal.FK_ERROR: err,
 			fkOperation:       opConnect,
 		})
@@ -300,7 +300,7 @@ func (r *resetDatabase) openService(o internal.OutputBus, connect func() (servic
 		s, err = sM.openService(*r.service)
 		if err != nil {
 			o.WriteError(internal.USER_CANNOT_OPEN_SERVICE, *r.service, err)
-			o.LogWriter().Error(internal.LE_SERVICE_ISSUE, map[string]interface{}{
+			o.LogWriter().Error(internal.LE_SERVICE_ISSUE, map[string]any{
 				internal.FK_ERROR: err,
 				fkService:         *r.service,
 				fkOperation:       opOpenService,
@@ -308,7 +308,7 @@ func (r *resetDatabase) openService(o internal.OutputBus, connect func() (servic
 			services, err := sM.manager().ListServices()
 			if err != nil {
 				o.WriteError(internal.USER_CANNOT_LIST_SERVICES, err)
-				o.LogWriter().Error(internal.LE_SERVICE_MANAGER_ISSUE, map[string]interface{}{
+				o.LogWriter().Error(internal.LE_SERVICE_MANAGER_ISSUE, map[string]any{
 					internal.FK_ERROR: err,
 					fkOperation:       opListServices,
 				})
@@ -332,7 +332,7 @@ func (r *resetDatabase) waitForStop(o internal.OutputBus, s service, status svc.
 	for !ok {
 		if timeout.Before(time.Now()) {
 			o.WriteError(internal.USER_SERVICE_STOP_TIMED_OUT, *r.service, *r.timeout)
-			o.LogWriter().Error(internal.LE_SERVICE_ISSUE, map[string]interface{}{
+			o.LogWriter().Error(internal.LE_SERVICE_ISSUE, map[string]any{
 				fkService:         *r.service,
 				fkTimeout:         *r.timeout,
 				fkOperation:       opStopService,
@@ -344,7 +344,7 @@ func (r *resetDatabase) waitForStop(o internal.OutputBus, s service, status svc.
 		status, err := s.Query()
 		if err != nil {
 			o.WriteError(internal.USER_CANNOT_QUERY_SERVICE, *r.service, err)
-			o.LogWriter().Error(internal.LE_SERVICE_ISSUE, map[string]interface{}{
+			o.LogWriter().Error(internal.LE_SERVICE_ISSUE, map[string]any{
 				internal.FK_ERROR: err,
 				fkService:         *r.service,
 				fkOperation:       opQueryService,

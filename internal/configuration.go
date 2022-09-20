@@ -60,7 +60,7 @@ func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
 	yfile, _ := os.ReadFile(configFile) // only probable error circumvented by verifyFileExists failure
 	data, err := readYaml(yfile)
 	if err != nil {
-		o.LogWriter().Error(LE_CANNOT_UNMARSHAL_YAML, map[string]interface{}{
+		o.LogWriter().Error(LE_CANNOT_UNMARSHAL_YAML, map[string]any{
 			FK_DIRECTORY: path,
 			FK_FILE_NAME: DefaultConfigFileName,
 			FK_ERROR:     err,
@@ -70,7 +70,7 @@ func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
 	}
 	c = CreateConfiguration(o, data)
 	ok = true
-	o.LogWriter().Info(LI_CONFIGURATION_FILE_READ, map[string]interface{}{
+	o.LogWriter().Info(LI_CONFIGURATION_FILE_READ, map[string]any{
 		FK_DIRECTORY: path,
 		FK_FILE_NAME: DefaultConfigFileName,
 		FK_VALUE:     c,
@@ -78,8 +78,8 @@ func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
 	return
 }
 
-func readYaml(yfile []byte) (data map[string]interface{}, err error) {
-	data = make(map[string]interface{})
+func readYaml(yfile []byte) (data map[string]any, err error) {
+	data = make(map[string]any)
 	err = yaml.Unmarshal(yfile, &data)
 	return
 }
@@ -89,7 +89,7 @@ func LookupAppData(o OutputBus) (string, bool) {
 	if value, ok := os.LookupEnv(appDataVar); ok {
 		return value, ok
 	}
-	o.LogWriter().Info(LI_NOT_SET, map[string]interface{}{
+	o.LogWriter().Info(LI_NOT_SET, map[string]any{
 		fkVarName: appDataVar,
 	})
 	return "", false
@@ -99,7 +99,7 @@ func verifyFileExists(o OutputBus, path string) (ok bool, err error) {
 	f, err := os.Stat(path)
 	if err == nil {
 		if f.IsDir() {
-			o.LogWriter().Error(LE_FILE_IS_DIR, map[string]interface{}{
+			o.LogWriter().Error(LE_FILE_IS_DIR, map[string]any{
 				FK_DIRECTORY: filepath.Dir(path),
 				FK_FILE_NAME: filepath.Base(path),
 			})
@@ -111,7 +111,7 @@ func verifyFileExists(o OutputBus, path string) (ok bool, err error) {
 		return
 	}
 	if errors.Is(err, os.ErrNotExist) {
-		o.LogWriter().Info(LI_NO_SUCH_FILE, map[string]interface{}{
+		o.LogWriter().Info(LI_NO_SUCH_FILE, map[string]any{
 			FK_DIRECTORY: filepath.Dir(path),
 			FK_FILE_NAME: filepath.Base(path),
 		})
@@ -276,7 +276,7 @@ type Configuration struct {
 	cMap map[string]*Configuration
 }
 
-func CreateConfiguration(o OutputBus, data map[string]interface{}) *Configuration {
+func CreateConfiguration(o OutputBus, data map[string]any) *Configuration {
 	c := EmptyConfiguration()
 	for key, v := range data {
 		switch t := v.(type) {
@@ -286,10 +286,10 @@ func CreateConfiguration(o OutputBus, data map[string]interface{}) *Configuratio
 			c.bMap[key] = t
 		case int:
 			c.iMap[key] = t
-		case map[string]interface{}:
+		case map[string]any:
 			c.cMap[key] = CreateConfiguration(o, t)
 		default:
-			o.LogWriter().Error(LE_UNEXPECTED_VALUE_TYPE, map[string]interface{}{
+			o.LogWriter().Error(LE_UNEXPECTED_VALUE_TYPE, map[string]any{
 				fkKey:    key,
 				FK_VALUE: v,
 				fkType:   fmt.Sprintf("%T", v),

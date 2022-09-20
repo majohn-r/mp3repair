@@ -29,13 +29,13 @@ func TestNewOutputDevice(t *testing.T) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 			testDevice := NewOutputDevice()
-			var o interface{} = testDevice
+			var o any = testDevice
 			if _, ok := o.(OutputBus); !ok {
 				t.Errorf("%s: does not implement OutputBus", fnName)
 			}
 			// exercise log functionality
-			testDevice.LogWriter().Info("info message", map[string]interface{}{"foo": "INFO"})
-			testDevice.LogWriter().Error("errpr message", map[string]interface{}{"foo": "ERROR"})
+			testDevice.LogWriter().Info("info message", map[string]any{"foo": "INFO"})
+			testDevice.LogWriter().Error("errpr message", map[string]any{"foo": "ERROR"})
 		})
 	}
 }

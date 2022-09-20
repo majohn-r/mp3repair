@@ -66,7 +66,7 @@ func Mkdir(dirName string) (err error) {
 func ReadDirectory(o OutputBus, dir string) (files []fs.DirEntry, ok bool) {
 	var err error
 	if files, err = os.ReadDir(dir); err != nil {
-		o.LogWriter().Error(LE_CANNOT_READ_DIRECTORY, map[string]interface{}{
+		o.LogWriter().Error(LE_CANNOT_READ_DIRECTORY, map[string]any{
 			FK_DIRECTORY: dir,
 			FK_ERROR:     err,
 		})

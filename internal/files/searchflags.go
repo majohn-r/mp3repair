@@ -37,7 +37,7 @@ const (
 
 func reportBadDefault(o internal.OutputBus, err error) {
 	o.WriteError(internal.USER_CONFIGURATION_FILE_INVALID, internal.DefaultConfigFileName, defaultSectionName, err)
-	o.LogWriter().Error(internal.LE_INVALID_CONFIGURATION_DATA, map[string]interface{}{
+	o.LogWriter().Error(internal.LE_INVALID_CONFIGURATION_DATA, map[string]any{
 		internal.FK_SECTION: defaultSectionName,
 		internal.FK_ERROR:   err,
 	})
@@ -114,7 +114,7 @@ func (sf *SearchFlags) NewSearch(o internal.OutputBus) (s *Search, ok bool) {
 func (sf *SearchFlags) validateTopLevelDirectory(o internal.OutputBus) bool {
 	if file, err := os.Stat(*sf.topDirectory); err != nil {
 		o.WriteError(internal.USER_CANNOT_READ_TOPDIR, *sf.topDirectory, err)
-		o.LogWriter().Error(internal.LE_CANNOT_READ_DIRECTORY, map[string]interface{}{
+		o.LogWriter().Error(internal.LE_CANNOT_READ_DIRECTORY, map[string]any{
 			fkTopDirFlag:      *sf.topDirectory,
 			internal.FK_ERROR: err,
 		})
@@ -124,7 +124,7 @@ func (sf *SearchFlags) validateTopLevelDirectory(o internal.OutputBus) bool {
 			return true
 		} else {
 			o.WriteError(internal.USER_TOPDIR_NOT_A_DIRECTORY, *sf.topDirectory)
-			o.LogWriter().Error(internal.LE_NOT_A_DIRECTORY, map[string]interface{}{
+			o.LogWriter().Error(internal.LE_NOT_A_DIRECTORY, map[string]any{
 				fkTopDirFlag: *sf.topDirectory,
 			})
 			return false
@@ -137,7 +137,7 @@ func (sf *SearchFlags) validateExtension(o internal.OutputBus) (ok bool) {
 	if !strings.HasPrefix(*sf.fileExtension, ".") || strings.Contains(strings.TrimPrefix(*sf.fileExtension, "."), ".") {
 		ok = false
 		o.WriteError(internal.USER_EXTENSION_INVALID_FORMAT, *sf.fileExtension)
-		o.LogWriter().Error(internal.LE_INVALID_EXTENSION_FORMAT, map[string]interface{}{
+		o.LogWriter().Error(internal.LE_INVALID_EXTENSION_FORMAT, map[string]any{
 			fkTargetExtensionFlag: *sf.fileExtension,
 		})
 	}
@@ -146,7 +146,7 @@ func (sf *SearchFlags) validateExtension(o internal.OutputBus) (ok bool) {
 	if e != nil {
 		ok = false
 		o.WriteError(internal.USER_EXTENSION_GARBLED, *sf.fileExtension, e)
-		o.LogWriter().Error(internal.LE_GARBLED_EXTENSION, map[string]interface{}{
+		o.LogWriter().Error(internal.LE_GARBLED_EXTENSION, map[string]any{
 			fkTargetExtensionFlag: *sf.fileExtension,
 			internal.FK_ERROR:     e,
 		})
@@ -157,7 +157,7 @@ func (sf *SearchFlags) validateExtension(o internal.OutputBus) (ok bool) {
 func validateRegexp(o internal.OutputBus, pattern string, name string) (filter *regexp.Regexp, ok bool) {
 	if f, err := regexp.Compile(pattern); err != nil {
 		o.WriteError(internal.USER_FILTER_GARBLED, name, pattern, err)
-		o.LogWriter().Error(internal.LE_GARBLED_FILTER, map[string]interface{}{
+		o.LogWriter().Error(internal.LE_GARBLED_FILTER, map[string]any{
 			name:              pattern,
 			internal.FK_ERROR: err,
 		})

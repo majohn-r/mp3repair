@@ -421,7 +421,7 @@ func TestNewOutputDeviceForTesting(t *testing.T) {
 			if got = NewOutputDeviceForTesting(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
-			var o interface{} = got
+			var o any = got
 			if _, ok := o.(OutputBus); !ok {
 				t.Errorf("%s does not implement OutputBus", fnName)
 			}

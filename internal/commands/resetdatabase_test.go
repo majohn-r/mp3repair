@@ -1088,8 +1088,8 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		{
 			name: "bad default timeout",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
-					"resetDatabase": map[string]interface{}{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+					"resetDatabase": map[string]any{
 						"timeout": "forever",
 					},
 				}),
@@ -1102,8 +1102,8 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		{
 			name: "bad default service",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
-					"resetDatabase": map[string]interface{}{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+					"resetDatabase": map[string]any{
 						"service": "Win$FOO",
 					},
 				}),
@@ -1116,8 +1116,8 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		{
 			name: "bad default metadata",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
-					"resetDatabase": map[string]interface{}{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+					"resetDatabase": map[string]any{
 						"metadata": "%FOO%/data",
 					},
 				}),
@@ -1130,8 +1130,8 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		{
 			name: "bad default extension",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
-					"resetDatabase": map[string]interface{}{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+					"resetDatabase": map[string]any{
 						"extension": ".%FOO%",
 					},
 				}),

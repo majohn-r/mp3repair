@@ -629,8 +629,8 @@ func Test_newCheckCommand(t *testing.T) {
 		{
 			name: "bad default empty folder",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
-					"check": map[string]interface{}{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+					"check": map[string]any{
 						emptyFoldersFlag: "Empty!!",
 					},
 				}),
@@ -644,8 +644,8 @@ func Test_newCheckCommand(t *testing.T) {
 		{
 			name: "bad default gaps",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
-					"check": map[string]interface{}{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+					"check": map[string]any{
 						gapsInTrackNumberingFlag: "No",
 					},
 				}),
@@ -659,8 +659,8 @@ func Test_newCheckCommand(t *testing.T) {
 		{
 			name: "bad default integrity",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
-					"check": map[string]interface{}{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+					"check": map[string]any{
 						integrityFlag: "Off",
 					},
 				}),

@@ -77,7 +77,7 @@ func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[
 	}
 	switch len(defaultCommands) {
 	case 0:
-		o.LogWriter().Error(internal.LE_INVALID_DEFAULT_COMMAND, map[string]interface{}{fkCommandName: defaultCommand})
+		o.LogWriter().Error(internal.LE_INVALID_DEFAULT_COMMAND, map[string]any{fkCommandName: defaultCommand})
 		o.WriteError(internal.USER_INVALID_DEFAULT_COMMAND, defaultCommand)
 		m = nil
 		ok = false
@@ -95,7 +95,7 @@ func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[
 
 func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, ok bool) {
 	if len(i) == 0 {
-		o.LogWriter().Error(internal.LE_COMMAND_COUNT, map[string]interface{}{fkCount: 0})
+		o.LogWriter().Error(internal.LE_COMMAND_COUNT, map[string]any{fkCount: 0})
 		o.WriteError(internal.USER_NO_COMMANDS_DEFINED)
 		return
 	}
@@ -108,7 +108,7 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 		}
 	}
 	if defaultInitializers != 1 {
-		o.LogWriter().Error(internal.LE_DEFAULT_COMMAND_COUNT, map[string]interface{}{fkCount: defaultInitializers})
+		o.LogWriter().Error(internal.LE_DEFAULT_COMMAND_COUNT, map[string]any{fkCount: defaultInitializers})
 		o.WriteError(internal.USER_INCORRECT_NUMBER_OF_DEFAULT_COMMANDS_DEFINED, defaultInitializers)
 		return
 	}
@@ -143,7 +143,7 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 	if !found {
 		cmd = nil
 		callingArgs = nil
-		o.LogWriter().Error(internal.LE_UNRECOGNIZED_COMMAND, map[string]interface{}{fkCommandName: commandName})
+		o.LogWriter().Error(internal.LE_UNRECOGNIZED_COMMAND, map[string]any{fkCommandName: commandName})
 		var commandNames []string
 		for _, initializer := range i {
 			commandNames = append(commandNames, initializer.name)
@@ -159,7 +159,7 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 
 func reportBadDefault(o internal.OutputBus, section string, err error) {
 	o.WriteError(internal.USER_CONFIGURATION_FILE_INVALID, internal.DefaultConfigFileName, section, err)
-	o.LogWriter().Error(internal.LE_INVALID_CONFIGURATION_DATA, map[string]interface{}{
+	o.LogWriter().Error(internal.LE_INVALID_CONFIGURATION_DATA, map[string]any{
 		internal.FK_SECTION: section,
 		internal.FK_ERROR:   err,
 	})

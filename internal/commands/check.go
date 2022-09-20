@@ -100,8 +100,8 @@ func (c *check) Exec(o internal.OutputBus, args []string) (ok bool) {
 	return
 }
 
-func (c *check) logFields() map[string]interface{} {
-	return map[string]interface{}{
+func (c *check) logFields() map[string]any {
+	return map[string]any{
 		fkCommandName:           c.name(),
 		fkEmptyFoldersFlag:      *c.checkEmptyFolders,
 		fkGapAnalysisFlag:       *c.checkGapsInTrackNumbering,

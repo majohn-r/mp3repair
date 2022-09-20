@@ -158,8 +158,8 @@ func (l *list) Exec(o internal.OutputBus, args []string) (ok bool) {
 	return
 }
 
-func (l *list) logFields() map[string]interface{} {
-	return map[string]interface{}{
+func (l *list) logFields() map[string]any {
+	return map[string]any{
 		fkCommandName:           l.name(),
 		fkIncludeAlbumsFlag:     *l.includeAlbums,
 		fkIncludeArtistsFlag:    *l.includeArtists,
@@ -250,7 +250,7 @@ func (l *list) validateTrackSorting(o internal.OutputBus) (ok bool) {
 	case numericSorting:
 		if !*l.includeAlbums {
 			o.WriteError(internal.USER_INVALID_SORTING_APPLIED, fkTrackSortingFlag, *l.trackSorting, fkIncludeAlbumsFlag)
-			o.LogWriter().Error(internal.LE_SORTING_OPTION_UNACCEPTABLE, map[string]interface{}{
+			o.LogWriter().Error(internal.LE_SORTING_OPTION_UNACCEPTABLE, map[string]any{
 				fkTrackSortingFlag:  *l.trackSorting,
 				fkIncludeAlbumsFlag: *l.includeAlbums,
 			})
@@ -261,7 +261,7 @@ func (l *list) validateTrackSorting(o internal.OutputBus) (ok bool) {
 		ok = true
 	default:
 		o.WriteError(internal.USER_UNRECOGNIZED_VALUE, fkTrackSortingFlag, *l.trackSorting)
-		o.LogWriter().Error(internal.LE_INVALID_FLAG_SETTING, map[string]interface{}{
+		o.LogWriter().Error(internal.LE_INVALID_FLAG_SETTING, map[string]any{
 			fkCommandName:      l.name(),
 			fkTrackSortingFlag: *l.trackSorting,
 		})
@@ -363,7 +363,7 @@ func (l *list) outputTrackDetails(o internal.OutputBus, t *files.Track, prefix s
 func (l *list) outputTrackDiagnostics(o internal.OutputBus, t *files.Track, prefix string) {
 	if *l.diagnostics {
 		if version, enc, frames, err := t.ID3V2Diagnostics(); err != nil {
-			o.LogWriter().Error(internal.LE_ID3V2_TAG_ERROR, map[string]interface{}{
+			o.LogWriter().Error(internal.LE_ID3V2_TAG_ERROR, map[string]any{
 				internal.FK_ERROR: err,
 				fkTrack:           t.String(),
 			})
@@ -376,7 +376,7 @@ func (l *list) outputTrackDiagnostics(o internal.OutputBus, t *files.Track, pref
 			}
 		}
 		if id3v1Data, err := t.ID3V1Diagnostics(); err != nil {
-			o.LogWriter().Error(internal.LE_ID3V1_TAG_ERROR, map[string]interface{}{
+			o.LogWriter().Error(internal.LE_ID3V1_TAG_ERROR, map[string]any{
 				internal.FK_ERROR: err,
 				fkTrack:           t.String(),
 			})

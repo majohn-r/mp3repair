@@ -229,8 +229,8 @@ func Test_newPostRepairCommand(t *testing.T) {
 		{
 			name: "failure",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
-					"common": map[string]interface{}{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+					"common": map[string]any{
 						"topDir": "%FOO%",
 					},
 				}),

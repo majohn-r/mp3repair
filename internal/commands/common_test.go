@@ -259,8 +259,8 @@ func Test_selectCommand(t *testing.T) {
 		{
 			name: "unfortunate defaults",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
-					"list": map[string]interface{}{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+					"list": map[string]any{
 						"includeTracks": "no!!",
 					},
 				}),

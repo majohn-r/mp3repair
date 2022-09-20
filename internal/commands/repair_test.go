@@ -59,8 +59,8 @@ func Test_newRepairCommand(t *testing.T) {
 		{
 			name: "bad dryRun default",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
-					"repair": map[string]interface{}{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+					"repair": map[string]any{
 						"dryRun": 42,
 					},
 				}),

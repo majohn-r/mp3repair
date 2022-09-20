@@ -262,11 +262,11 @@ type testLogger struct {
 	writer *bytes.Buffer
 }
 
-func (tl testLogger) Info(msg string, fields map[string]interface{}) {
+func (tl testLogger) Info(msg string, fields map[string]any) {
 	tl.log("info", msg, fields)
 }
 
-func (tl testLogger) log(level string, msg string, fields map[string]interface{}) {
+func (tl testLogger) log(level string, msg string, fields map[string]any) {
 	var parts []string
 	for k, v := range fields {
 		parts = append(parts, fmt.Sprintf("%s='%v'", k, v))
@@ -275,7 +275,7 @@ func (tl testLogger) log(level string, msg string, fields map[string]interface{}
 	fmt.Fprintf(tl.writer, "level='%s' %s msg='%s'\n", level, strings.Join(parts, " "), msg)
 }
 
-func (tl testLogger) Error(msg string, fields map[string]interface{}) {
+func (tl testLogger) Error(msg string, fields map[string]any) {
 	tl.log("error", msg, fields)
 }
 

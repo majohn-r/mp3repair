@@ -817,7 +817,7 @@ func TestConfiguration_IntDefault(t *testing.T) {
 func Test_createConfiguration(t *testing.T) {
 	fnName := "createConfiguration()"
 	type args struct {
-		data map[string]interface{}
+		data map[string]any
 	}
 	tests := []struct {
 		name string
@@ -828,12 +828,12 @@ func Test_createConfiguration(t *testing.T) {
 		{
 			name: "busy!",
 			args: args{
-				data: map[string]interface{}{
+				data: map[string]any{
 					"boolValue":   true,
 					"intValue":    1,
 					"stringValue": "foo",
 					"weirdValue":  1.2345,
-					"mapValue":    map[string]interface{}{},
+					"mapValue":    map[string]any{},
 				},
 			},
 			want: &Configuration{
@@ -871,7 +871,7 @@ func Test_readYaml(t *testing.T) {
 	tests := []struct {
 		name string
 		args
-		wantData map[string]interface{}
+		wantData map[string]any
 		wantErr  bool
 	}{
 		{
@@ -885,8 +885,8 @@ func Test_readYaml(t *testing.T) {
 					" b4: True\n" +
 					" b5: TRUE\n"),
 			},
-			wantData: map[string]interface{}{
-				"block": map[string]interface{}{
+			wantData: map[string]any{
+				"block": map[string]any{
 					"b1": 1,
 					"b2": "t",
 					"b3": true,
@@ -906,8 +906,8 @@ func Test_readYaml(t *testing.T) {
 					" b4: False\n" +
 					" b5: FALSE\n"),
 			},
-			wantData: map[string]interface{}{
-				"block": map[string]interface{}{
+			wantData: map[string]any{
+				"block": map[string]any{
 					"b1": 0,
 					"b2": "f",
 					"b3": false,
@@ -925,8 +925,8 @@ func Test_readYaml(t *testing.T) {
 					" b2: 0x64\n" +
 					" b3: 0144\n"),
 			},
-			wantData: map[string]interface{}{
-				"block": map[string]interface{}{
+			wantData: map[string]any{
+				"block": map[string]any{
 					"b1": 100,
 					"b2": 100,
 					"b3": 100,

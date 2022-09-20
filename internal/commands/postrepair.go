@@ -41,8 +41,8 @@ func (p *postrepair) Exec(o internal.OutputBus, args []string) (ok bool) {
 	return
 }
 
-func (p *postrepair) logFields() map[string]interface{} {
-	return map[string]interface{}{fkCommandName: p.name()}
+func (p *postrepair) logFields() map[string]any {
+	return map[string]any{fkCommandName: p.name()}
 }
 
 func (p *postrepair) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
@@ -74,7 +74,7 @@ func (p *postrepair) runCommand(o internal.OutputBus, s *files.Search) (ok bool)
 
 func removeBackupDirectory(o internal.OutputBus, d string, a *files.Album) {
 	if err := os.RemoveAll(d); err != nil {
-		o.LogWriter().Error(internal.LE_CANNOT_DELETE_DIRECTORY, map[string]interface{}{
+		o.LogWriter().Error(internal.LE_CANNOT_DELETE_DIRECTORY, map[string]any{
 			internal.FK_DIRECTORY: d,
 			internal.FK_ERROR:     err,
 		})

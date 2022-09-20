@@ -26,7 +26,7 @@ func MarkDirty(o internal.OutputBus) {
 			if _, err := os.Stat(dirtyFile); err != nil && errors.Is(err, os.ErrNotExist) {
 				if writeErr := os.WriteFile(dirtyFile, []byte("dirty"), 0644); writeErr != nil {
 					o.WriteError(internal.USER_CANNOT_CREATE_FILE, dirtyFile, writeErr)
-					o.LogWriter().Error(internal.LE_CANNOT_CREATE_FILE, map[string]interface{}{
+					o.LogWriter().Error(internal.LE_CANNOT_CREATE_FILE, map[string]any{
 						internal.FK_FILE_NAME: dirtyFile,
 						internal.FK_ERROR:     writeErr,
 					})

@@ -67,8 +67,8 @@ func Test_NewSearchFlags(t *testing.T) {
 		{
 			name: "bad default topDir",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
-					"common": map[string]interface{}{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+					"common": map[string]any{
 						"topDir": "$FOO",
 					},
 				}),
@@ -81,8 +81,8 @@ func Test_NewSearchFlags(t *testing.T) {
 		{
 			name: "bad default extension",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
-					"common": map[string]interface{}{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+					"common": map[string]any{
 						"ext": "$FOO",
 					},
 				}),
@@ -95,8 +95,8 @@ func Test_NewSearchFlags(t *testing.T) {
 		{
 			name: "bad default album filter",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
-					"common": map[string]interface{}{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+					"common": map[string]any{
 						"albumFilter": "$FOO",
 					},
 				}),
@@ -109,8 +109,8 @@ func Test_NewSearchFlags(t *testing.T) {
 		{
 			name: "bad default artist filter",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]interface{}{
-					"common": map[string]interface{}{
+				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+					"common": map[string]any{
 						"artistFilter": "$FOO",
 					},
 				}),
