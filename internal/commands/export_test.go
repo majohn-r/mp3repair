@@ -291,7 +291,7 @@ func Test_getDefaultsContent(t *testing.T) {
 				"    albumFilter: .*\n" +
 				"    artistFilter: .*\n" +
 				"    ext: .mp3\n" +
-				"    topDir: $HOMEPATH\\Music\n" +
+				"    topDir: '%HOMEPATH%\\Music'\n" +
 				"export:\n" +
 				"    defaults: false\n" +
 				"    overwrite: false\n" +
@@ -307,7 +307,7 @@ func Test_getDefaultsContent(t *testing.T) {
 				"    dryRun: false\n" +
 				"resetDatabase:\n" +
 				"    extension: .wmdb\n" +
-				"    metadata: '%Userprofile%\\AppData\\Local\\Microsoft\\Media Player'\n" +
+				"    metadata: '%USERPROFILE%\\AppData\\Local\\Microsoft\\Media Player'\n" +
 				"    service: WMPNetworkSVC\n" +
 				"    timeout: 10\n",
 		},

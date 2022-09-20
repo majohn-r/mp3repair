@@ -53,6 +53,14 @@ func TestProcessArgs(t *testing.T) {
 				WantLogOutput:   "level='error' error='missing environment variables: [NOSUCHVAR]' value='-foo3=$NOSUCHVAR' msg='argument cannot be used'\n",
 			},
 		},
+		{
+			name: "bad references2",
+			args: args{f: goodFlags3, args: []string{"-foo3=%NOSUCHVAR%"}},
+			WantedOutput: WantedOutput{
+				WantErrorOutput: "The value for argument \"-foo3=%NOSUCHVAR%\" cannot be used: missing environment variables: [NOSUCHVAR].\n",
+				WantLogOutput:   "level='error' error='missing environment variables: [NOSUCHVAR]' value='-foo3=%NOSUCHVAR%' msg='argument cannot be used'\n",
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

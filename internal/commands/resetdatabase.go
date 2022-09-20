@@ -17,7 +17,7 @@ import (
 
 func init() {
 	addCommandData(resetDatabaseCommandName, commandData{isDefault: false, initFunction: newResetDatabase})
-	defaultMetadata = filepath.Join("%Userprofile%", "AppData", "Local", "Microsoft", "Media Player")
+	defaultMetadata = filepath.Join("%USERPROFILE%", "AppData", "Local", "Microsoft", "Media Player")
 	addDefaultMapping(resetDatabaseCommandName, map[string]any{
 		extensionFlag: defaultExtension,
 		metadataFlag:  defaultMetadata,

@@ -250,7 +250,7 @@ The **resetDatabase** command has the following command arguments:
 Argument Name   | Value   | Default Value | Description
 ----------------|---------|---------------|-------------
  **-extension** | String  | **.wmdb**     | The extension of the files to delete
- **-metadata**  | String  | **%Userprofile%\\AppData\\Local\\Microsoft\\Media Player\\** | The directory where the metadata files are found
+ **-metadata**  | String  | **%USERPROFILE%\\AppData\\Local\\Microsoft\\Media Player\\** | The directory where the metadata files are found
  **-service**   | String  | **WMPNetworkSVC** | The name of the media player sharing service, which, if running, needs to be stopped before deleting the metadata files
  **-timeout**   | Numeric | 10            | The time, in seconds, in which the command will attempt to stop the media player sharing service before giving up
 
@@ -385,7 +385,7 @@ common:
  albumFilter:  .*
  artistFilter: .* 
  ext:          .mp3
- topDir:       $HOMEPATH/Music
+ topDir:       %HOMEPATH\Music
 export:
  defaults:  false
  overwrite: false
@@ -401,7 +401,7 @@ repair:
  dryRun: false
 resetDatabase:
  extension: .wmbd
- metadata:  $Userprofile/AppData/Local/Microsoft/Media Player/
+ metadata:  %USERPROFILE%\AppData\Local\Microsoft\Media Player\
  service:   WMPNetworkSVC
  timeout:   10
 ```

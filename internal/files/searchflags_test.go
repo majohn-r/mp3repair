@@ -563,7 +563,7 @@ func TestSearchDefaults(t *testing.T) {
 				"albumFilter":  ".*",
 				"artistFilter": ".*",
 				"ext":          ".mp3",
-				"topDir":       filepath.Join("$HOMEPATH", "Music"),
+				"topDir":       filepath.Join("%HOMEPATH%", "Music"),
 			},
 		},
 	}

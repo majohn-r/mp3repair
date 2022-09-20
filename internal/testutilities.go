@@ -177,7 +177,7 @@ func CreateDefaultYamlFileForTesting() error {
 	}
 	yamlInput := `---
 common:
-    topDir: .      # $HOMEPATH/Music
+    topDir: .      # %HOMEPATH%\Music
     ext: .mpeg     # .mp3
     albumFilter: ^.*$   # .*
     artistFilter: ^.*$  # .* 

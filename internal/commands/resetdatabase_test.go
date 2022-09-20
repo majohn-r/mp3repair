@@ -819,7 +819,7 @@ func Test_resetDatabase_Exec(t *testing.T) {
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %s: %v", fnName, testDir, err)
 	}
-	savedUserProfile := internal.SaveEnvVarForTesting("Userprofile")
+	savedUserProfile := internal.SaveEnvVarForTesting("USERPROFILE")
 	appFolder := filepath.Join(testDir, "mp3")
 	if err := internal.Mkdir(appFolder); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, appFolder, err)
@@ -837,7 +837,7 @@ func Test_resetDatabase_Exec(t *testing.T) {
 		markDirtyAttempted = savedMarkDirtyAttempted
 	}()
 	userProfile := internal.SavedEnvVar{
-		Name:  "Userprofile",
+		Name:  "USERPROFILE",
 		Value: "C:\\Users\\The User",
 		Set:   true,
 	}

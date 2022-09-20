@@ -51,7 +51,7 @@ func NewSearchFlags(o internal.OutputBus, c *internal.Configuration, fSet *flag.
 
 func makeSearchFlags(o internal.OutputBus, configuration *internal.Configuration, fSet *flag.FlagSet) (*SearchFlags, bool) {
 	var ok = true
-	defTopDirectory, err := configuration.StringDefault(topDirectoryFlag, filepath.Join("$HOMEPATH", "Music"))
+	defTopDirectory, err := configuration.StringDefault(topDirectoryFlag, filepath.Join("%HOMEPATH%", "Music"))
 	if err != nil {
 		reportBadDefault(o, err)
 		ok = false
@@ -194,6 +194,6 @@ func SearchDefaults() (string, map[string]any) {
 		albumRegexFlag:    defaultRegex,
 		artistRegexFlag:   defaultRegex,
 		fileExtensionFlag: defaultFileExtension,
-		topDirectoryFlag:  filepath.Join("$HOMEPATH", "Music"),
+		topDirectoryFlag:  filepath.Join("%HOMEPATH%", "Music"),
 	}
 }
