@@ -185,7 +185,7 @@ func Test_aboutCmd_Exec(t *testing.T) {
 	}{
 		{
 			name:   "for sake of completeness",
-			v:      &aboutCmd{n: "about"},
+			v:      &aboutCmd{},
 			args:   args{o: internal.NewOutputDeviceForTesting()},
 			wantOk: true,
 		},

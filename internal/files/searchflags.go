@@ -20,21 +20,25 @@ type SearchFlags struct {
 }
 
 const (
-	albumRegexFlag        = "albumFilter"
-	artistRegexFlag       = "artistFilter"
-	defaultRegex          = ".*"
-	fileExtensionFlag     = "ext"
+	defaultSectionName = "common"
+
+	albumRegexFlag    = "albumFilter"
+	artistRegexFlag   = "artistFilter"
+	fileExtensionFlag = "ext"
+	topDirectoryFlag  = "topDir"
+
+	defaultRegex = ".*"
+
 	fkAlbumFilterFlag     = "-" + albumRegexFlag
 	fkArtistFilterFlag    = "-" + artistRegexFlag
 	fkTargetExtensionFlag = "-" + fileExtensionFlag
 	fkTopDirFlag          = "-" + topDirectoryFlag
-	topDirectoryFlag      = "topDir"
 )
 
 func reportBadDefault(o internal.OutputBus, err error) {
-	o.WriteError(internal.USER_CONFIGURATION_FILE_INVALID, internal.DefaultConfigFileName, "common", err)
+	o.WriteError(internal.USER_CONFIGURATION_FILE_INVALID, internal.DefaultConfigFileName, defaultSectionName, err)
 	o.LogWriter().Error(internal.LE_INVALID_CONFIGURATION_DATA, map[string]interface{}{
-		internal.FK_SECTION: "common",
+		internal.FK_SECTION: defaultSectionName,
 		internal.FK_ERROR:   err,
 	})
 }
@@ -42,12 +46,12 @@ func reportBadDefault(o internal.OutputBus, err error) {
 // NewSearchFlags are used by commands that use the common top directory, target
 // extension, and album and artist filter regular expressions.
 func NewSearchFlags(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*SearchFlags, bool) {
-	return makeSearchFlags(o, c.SubConfiguration("common"), fSet)
+	return makeSearchFlags(o, c.SubConfiguration(defaultSectionName), fSet)
 }
 
 func makeSearchFlags(o internal.OutputBus, configuration *internal.Configuration, fSet *flag.FlagSet) (*SearchFlags, bool) {
 	var ok = true
-	defTopDirectory, err := configuration.StringDefault(topDirectoryFlag, filepath.Join("$HOMEPATH","Music"))
+	defTopDirectory, err := configuration.StringDefault(topDirectoryFlag, filepath.Join("$HOMEPATH", "Music"))
 	if err != nil {
 		reportBadDefault(o, err)
 		ok = false
@@ -183,4 +187,13 @@ func (sf *SearchFlags) validate(o internal.OutputBus) (albumsFilter *regexp.Rege
 		artistsFilter = filter
 	}
 	return
+}
+
+func SearchDefaults() (string, map[string]any) {
+	return defaultSectionName, map[string]any{
+		albumRegexFlag:    defaultRegex,
+		artistRegexFlag:   defaultRegex,
+		fileExtensionFlag: defaultFileExtension,
+		topDirectoryFlag:  filepath.Join("$HOMEPATH", "Music"),
+	}
 }

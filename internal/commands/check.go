@@ -8,8 +8,16 @@ import (
 	"sort"
 )
 
+func init() {
+	addCommandData(checkCommandName, commandData{isDefault: false, initFunction: newCheck})
+	addDefaultMapping(checkCommandName, map[string]any{
+		emptyFoldersFlag:         defaultEmptyFolders,
+		gapsInTrackNumberingFlag: defaultGapsInTrackNumbering,
+		integrityFlag:            defaultIntegrity,
+	})
+}
+
 type check struct {
-	n                         string
 	checkEmptyFolders         *bool
 	checkGapsInTrackNumbering *bool
 	checkIntegrity            *bool
@@ -17,7 +25,7 @@ type check struct {
 }
 
 func (c *check) name() string {
-	return c.n
+	return checkCommandName
 }
 
 func newCheck(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
@@ -25,15 +33,19 @@ func newCheck(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSe
 }
 
 const (
+	checkCommandName = "check"
+
 	defaultEmptyFolders         = false
 	defaultGapsInTrackNumbering = false
 	defaultIntegrity            = true
-	emptyFoldersFlag            = "empty"
-	fkEmptyFoldersFlag          = "-" + emptyFoldersFlag
-	fkGapAnalysisFlag           = "-" + gapsInTrackNumberingFlag
-	fkIntegrityAnalysisFlag     = "-" + integrityFlag
-	gapsInTrackNumberingFlag    = "gaps"
-	integrityFlag               = "integrity"
+
+	emptyFoldersFlag         = "empty"
+	gapsInTrackNumberingFlag = "gaps"
+	integrityFlag            = "integrity"
+
+	fkEmptyFoldersFlag      = "-" + emptyFoldersFlag
+	fkGapAnalysisFlag       = "-" + gapsInTrackNumberingFlag
+	fkIntegrityAnalysisFlag = "-" + integrityFlag
 )
 
 type checkDefaults struct {
@@ -43,15 +55,13 @@ type checkDefaults struct {
 }
 
 func newCheckCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*check, bool) {
-	name := fSet.Name()
-	defaults, defaultsOk := evaluateCheckDefaults(o, c.SubConfiguration(name), name)
+	defaults, defaultsOk := evaluateCheckDefaults(o, c.SubConfiguration(checkCommandName), checkCommandName)
 	sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet)
 	if defaultsOk && sFlagsOk {
 		emptyUsage := internal.DecorateBoolFlagUsage("check for empty artist and album folders", defaults.empty)
 		gapsUsage := internal.DecorateBoolFlagUsage("check for gaps in track numbers", defaults.gaps)
 		integrityUsage := internal.DecorateBoolFlagUsage("check for disagreement between the file system and audio file metadata", defaults.integrity)
 		return &check{
-			n:                         name,
 			checkEmptyFolders:         fSet.Bool(emptyFoldersFlag, defaults.empty, emptyUsage),
 			checkGapsInTrackNumbering: fSet.Bool(gapsInTrackNumberingFlag, defaults.gaps, gapsUsage),
 			checkIntegrity:            fSet.Bool(integrityFlag, defaults.integrity, integrityUsage),

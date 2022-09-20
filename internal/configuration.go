@@ -38,7 +38,7 @@ func SetAppSpecificPathForTesting(p string, v bool) {
 func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
 	var appDataValue string
 	var appDataSet bool
-	if appDataValue, appDataSet = appData(o); !appDataSet {
+	if appDataValue, appDataSet = LookupAppData(o); !appDataSet {
 		c = EmptyConfiguration()
 		ok = true
 		return
@@ -84,7 +84,8 @@ func readYaml(yfile []byte) (data map[string]interface{}, err error) {
 	return
 }
 
-func appData(o OutputBus) (string, bool) {
+// LookupAppData looks up the environment variable for finding application data
+func LookupAppData(o OutputBus) (string, bool) {
 	if value, ok := os.LookupEnv(appDataVar); ok {
 		return value, ok
 	}

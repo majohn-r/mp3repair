@@ -9,8 +9,21 @@ import (
 	"strings"
 )
 
+func init() {
+	addCommandData(listCommandName, commandData{isDefault: true, initFunction: newList})
+	addDefaultMapping(listCommandName, map[string]any{
+		annotateListingsFlag:  defaultAnnotateListings,
+		detailsListingFlag:    defaultDetailsListing,
+		diagnosticListingFlag: defaultDiagnosticListing,
+		includeAlbumsFlag:     defaultIncludeAlbums,
+		includeArtistsFlag:    defaultIncludeArtists,
+		includeTracksFlag:     defaultIncludeTracks,
+		trackSortingFlag:      defaultTrackSorting,
+	})
+	addDefaultMapping("command", map[string]any{"default": listCommandName})
+}
+
 type list struct {
-	n                string
 	includeAlbums    *bool
 	includeArtists   *bool
 	includeTracks    *bool
@@ -22,7 +35,7 @@ type list struct {
 }
 
 func (l *list) name() string {
-	return l.n
+	return listCommandName
 }
 
 func newList(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
@@ -30,6 +43,8 @@ func newList(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet
 }
 
 const (
+	listCommandName = "list"
+
 	alphabeticSorting = "alpha"
 	numericSorting    = "numeric"
 
@@ -70,8 +85,7 @@ type listDefaults struct {
 }
 
 func newListCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*list, bool) {
-	name := fSet.Name()
-	defaults, defaultsOk := evaluateListDefaults(o, c.SubConfiguration(name), name)
+	defaults, defaultsOk := evaluateListDefaults(o, c.SubConfiguration(listCommandName), listCommandName)
 	sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet)
 	if defaultsOk && sFlagsOk {
 		albumUsage := internal.DecorateBoolFlagUsage("include album names in listing", defaults.includeAlbums)
@@ -82,7 +96,6 @@ func newListCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.
 		diagnosticUsage := internal.DecorateBoolFlagUsage("include diagnostic information with tracks", defaults.diagnostics)
 		detailsUsage := internal.DecorateBoolFlagUsage("include details with tracks", defaults.details)
 		return &list{
-			n:                name,
 			includeAlbums:    fSet.Bool(includeAlbumsFlag, defaults.includeAlbums, albumUsage),
 			includeArtists:   fSet.Bool(includeArtistsFlag, defaults.includeArtists, artistUsage),
 			includeTracks:    fSet.Bool(includeTracksFlag, defaults.includeTracks, trackUsage),

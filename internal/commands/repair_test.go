@@ -487,7 +487,7 @@ func Test_repair_makeBackupDirectories(t *testing.T) {
 			args: args{paths: []string{topDir, albumDir, albumDir2}},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The directory \"makeBackupDirectories\\\\album\\\\pre-repair-backup\" cannot be created: file exists and is not a directory.\n",
-				WantLogOutput:   "level='error' command='' directory='makeBackupDirectories\\album\\pre-repair-backup' error='file exists and is not a directory' msg='cannot create directory'\n",
+				WantLogOutput:   "level='error' command='repair' directory='makeBackupDirectories\\album\\pre-repair-backup' error='file exists and is not a directory' msg='cannot create directory'\n",
 			},
 		},
 	}
@@ -536,7 +536,7 @@ func Test_repair_backupTracks(t *testing.T) {
 		{name: "degenerate case", r: &repair{dryRun: &fFlag}, args: args{tracks: nil}},
 		{
 			name: "real tests",
-			r:    &repair{dryRun: &fFlag, n: "repair"},
+			r:    &repair{dryRun: &fFlag},
 			args: args{
 				tracks: []*files.Track{
 					files.NewTrack(files.NewAlbum("", nil, topDir), goodTrackName, "", 1),
@@ -622,8 +622,8 @@ func Test_repair_fixTracks(t *testing.T) {
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "An error occurred repairing track \"fixTracks\\\\non-existent-track\".\n" +
 					"An error occurred repairing track \"fixTracks\\\\01 repairable track.mp3\".\n",
-				WantLogOutput: "level='error' directory='fixTracks' error='[no edit required]' executing command='' fileName='non-existent-track' msg='cannot edit track'\n" +
-					"level='error' directory='fixTracks' error='[no edit required]' executing command='' fileName='01 repairable track.mp3' msg='cannot edit track'\n",
+				WantLogOutput: "level='error' directory='fixTracks' error='[no edit required]' executing command='repair' fileName='non-existent-track' msg='cannot edit track'\n" +
+					"level='error' directory='fixTracks' error='[no edit required]' executing command='repair' fileName='01 repairable track.mp3' msg='cannot edit track'\n",
 			},
 		},
 	}

@@ -9,14 +9,20 @@ import (
 	"sort"
 )
 
+func init() {
+	addCommandData(repairCommandName, commandData{isDefault: false, initFunction: newRepair})
+	addDefaultMapping(repairCommandName, map[string]any{
+		dryRunFlag: defaultDryRun,
+	})
+}
+
 type repair struct {
-	n      string
 	dryRun *bool
 	sf     *files.SearchFlags
 }
 
 func (r *repair) name() string {
-	return r.n
+	return repairCommandName
 }
 
 func newRepair(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
@@ -24,27 +30,29 @@ func newRepair(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagS
 }
 
 const (
-	dryRunFlag      = "dryRun"
-	defaultDryRun   = false
-	fkDestination   = "destination"
-	fkDryRunFlag    = "-" + dryRunFlag
-	fkSource        = "source"
+	repairCommandName = "repair"
+
+	dryRunFlag    = "dryRun"
+	defaultDryRun = false
+
+	fkDestination = "destination"
+	fkDryRunFlag  = "-" + dryRunFlag
+	fkSource      = "source"
+
 	noProblemsFound = "No repairable track defects found"
 )
 
 func newRepairCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*repair, bool) {
-	name := fSet.Name()
 	ok := true
-	defDryRun, err := c.SubConfiguration(name).BoolDefault(dryRunFlag, defaultDryRun)
+	defDryRun, err := c.SubConfiguration(repairCommandName).BoolDefault(dryRunFlag, defaultDryRun)
 	if err != nil {
-		reportBadDefault(o, name, err)
+		reportBadDefault(o, repairCommandName, err)
 		ok = false
 	}
 	sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet)
 	if sFlagsOk && ok {
 		dryRunUsage := internal.DecorateBoolFlagUsage("output what would have been repaired, but make no repairs", defDryRun)
 		return &repair{
-			n:      name,
 			dryRun: fSet.Bool(dryRunFlag, defDryRun, dryRunUsage),
 			sf:     sFlags,
 		}, true

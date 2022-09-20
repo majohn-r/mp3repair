@@ -579,7 +579,7 @@ func Test_appData(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.state.RestoreForTesting()
 			o := NewOutputDeviceForTesting()
-			got, got1 := appData(o)
+			got, got1 := LookupAppData(o)
 			if got != tt.want {
 				t.Errorf("%s got = %q, want %q", fnName, got, tt.want)
 			}

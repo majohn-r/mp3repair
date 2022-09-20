@@ -9,6 +9,9 @@
         - [-empty](#-empty)
         - [-gaps](#-gaps)
         - [-integrity](#-integrity)
+    - [export](#export)
+      - [export Argument Details](#export-argument-details)
+        - [-defaults](#-defaults)
     - [list](#list)
       - [list Argument Details](#list-argument-details)
         - [-annotate](#-annotate)
@@ -128,6 +131,22 @@ illegal in WIndows file names:
 - question mark (**?**)
 - quotation mark (**"**)
 - vertical bar (**|**)
+
+### export
+
+The **export** command provides a means for exporting data to the file system. It is governed by these command arguments:
+
+Argument Name  | Value   | Default Value | Description
+---------------+---------+---------------+-------------
+**-defaults**  | Boolean | false         | If true, write all command defaults to a file
+**-overwrite** | Boolean | false         | If true, existing files can be overwritten
+
+#### export Argument Details
+
+##### -defaults
+
+If true, **mp3** writes the command defaults to a file named **defaults.yaml**
+in the **%APPDATA%\mp3** directory.
 
 ### list
 
@@ -295,12 +314,13 @@ The user may find that she is constantly overriding some command arguments on
 the command line with the same values. The user can simplify their usage and
 override the default command argument values by placing a text file named
 **defaults.yaml** in the **%APPDATA%\mp3** directory. By default, there is no
-such directory, and the user must create it.
+such directory, and the user must create it; the **export** command can be used
+to create a baseline version of the file, in the correct directory.
 
 See [YAML](#yaml) for a brief description of how the **mp3** program uses _YAML_
 and a link to _YAML_ documentation.
 
-The **defaults.yaml** file may contain six blocks, all of which are optional:
+The **defaults.yaml** file may contain seven blocks, all of which are optional:
 
 1. **check** The **check** block may have up to three boolean key-value pairs,
    with each key controlling the default setting for its corresponding **check**
@@ -320,7 +340,12 @@ The **defaults.yaml** file may contain six blocks, all of which are optional:
    2. **artistFilter**
    3. **ext**
    4. **topDir**
-4. **list** The **list** block may have up to four boolean key-value pairs and
+4. **export** The **export** block may have up to two boolean key-value pairs,
+   with each key controlling the default setting for its corresponding
+   **export** command argument:
+   1. **defaults**
+   2. **overwrite**
+5. **list** The **list** block may have up to six boolean key-value pairs and
    one string key-value pair, with each key controlling the default setting for
    its corresponding **list** command argument:
    1. **annotate**
@@ -330,11 +355,11 @@ The **defaults.yaml** file may contain six blocks, all of which are optional:
    5. **includeArtists**
    6. **includeTracks**
    7. **sort** must be set to **alpha** or **numeric**
-5. **repair** The **repair** block may have one boolean key-value pair,
+6. **repair** The **repair** block may have one boolean key-value pair,
    controlling the default setting for its corresponding **repair** command
    argument:
    1. **dryRun**
-6. **resetDatabase** The **resetDatabase** block may have three string key-value
+7. **resetDatabase** The **resetDatabase** block may have three string key-value
    pairs and on numeric key-value pair, with each key controlling the default
    setting for its corresponding **resetDatabase** command argument:
    1. **extension**
@@ -361,6 +386,9 @@ common:
  artistFilter: .* 
  ext:          .mp3
  topDir:       $HOMEPATH/Music
+export:
+ defaults:  false
+ overwrite: false
 list:
  annotate:       false
  details:        false

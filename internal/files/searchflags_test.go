@@ -5,6 +5,7 @@ import (
 	"flag"
 	"mp3/internal"
 	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"testing"
@@ -543,6 +544,37 @@ func TestSearchFlags_ProcessArgs(t *testing.T) {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
+			}
+		})
+	}
+}
+
+func TestSearchDefaults(t *testing.T) {
+	fnName := "SearchDefaults()"
+	tests := []struct {
+		name  string
+		want  string
+		want1 map[string]any
+	}{
+		{
+			name: "single use case",
+			want: "common",
+			want1: map[string]any{
+				"albumFilter":  ".*",
+				"artistFilter": ".*",
+				"ext":          ".mp3",
+				"topDir":       filepath.Join("$HOMEPATH", "Music"),
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, got1 := SearchDefaults()
+			if got != tt.want {
+				t.Errorf("%s got = %v, want %v", fnName, got, tt.want)
+			}
+			if !reflect.DeepEqual(got1, tt.want1) {
+				t.Errorf("%s got1 = %v, want %v", fnName, got1, tt.want1)
 			}
 		})
 	}

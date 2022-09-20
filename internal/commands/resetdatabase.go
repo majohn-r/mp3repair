@@ -15,30 +15,48 @@ import (
 	"golang.org/x/sys/windows/svc/mgr"
 )
 
+func init() {
+	addCommandData(resetDatabaseCommandName, commandData{isDefault: false, initFunction: newResetDatabase})
+	defaultMetadata = filepath.Join("%Userprofile%", "AppData", "Local", "Microsoft", "Media Player")
+	addDefaultMapping(resetDatabaseCommandName, map[string]any{
+		extensionFlag: defaultExtension,
+		metadataFlag:  defaultMetadata,
+		serviceFlag:   defaultService,
+		timeoutFlag:   defaultTimeout,
+	})
+}
+
 const (
-	timeoutFlag           = "timeout"
-	minTimeout            = 1
-	defaultTimeout        = 10
-	maxTimeout            = 60
-	serviceFlag           = "service"
-	defaultService        = "WMPNetworkSVC" // Windows Media Player Network Sharing Service
-	metadataFlag          = "metadata"
-	extensionFlag         = "extension"
-	defaultExtension      = ".wmdb"
-	fkServiceFlag         = "-" + serviceFlag
-	fkTimeoutFlag         = "-" + timeoutFlag
-	fkMetadataFlag        = "-" + metadataFlag
-	fkExtensionFlag       = "-" + extensionFlag
-	fkFileExtension       = "file extension"
-	fkOperation           = "operation"
-	fkService             = "service"
-	fkServiceStatus       = "status"
-	fkTimeout             = "timeout in seconds"
-	opConnect             = "connect to service manager"
-	opListServices        = "list services"
-	opOpenService         = "open service"
-	opQueryService        = "query service status"
-	opStopService         = "stop service"
+	resetDatabaseCommandName = "resetDatabase"
+
+	timeoutFlag   = "timeout"
+	serviceFlag   = "service"
+	metadataFlag  = "metadata"
+	extensionFlag = "extension"
+
+	minTimeout     = 1
+	defaultTimeout = 10
+	maxTimeout     = 60
+
+	defaultService   = "WMPNetworkSVC" // Windows Media Player Network Sharing Service
+	defaultExtension = ".wmdb"
+
+	fkServiceFlag   = "-" + serviceFlag
+	fkTimeoutFlag   = "-" + timeoutFlag
+	fkMetadataFlag  = "-" + metadataFlag
+	fkExtensionFlag = "-" + extensionFlag
+	fkFileExtension = "file extension"
+	fkOperation     = "operation"
+	fkService       = "service"
+	fkServiceStatus = "status"
+	fkTimeout       = "timeout in seconds"
+
+	opConnect      = "connect to service manager"
+	opListServices = "list services"
+	opOpenService  = "open service"
+	opQueryService = "query service status"
+	opStopService  = "stop service"
+
 	statusContinuePending = "continue pending"
 	statusPaused          = "paused"
 	statusPausePending    = "pause pending"
@@ -46,10 +64,11 @@ const (
 	statusStartPending    = "start pending"
 	statusStopped         = "stopped"
 	statusStopPending     = "stop pending"
-	errTimeout            = "operation timed out"
+
+	errTimeout = "operation timed out"
 )
 
-var defaultMetadata = filepath.Join("%Userprofile%", "AppData", "Local", "Microsoft", "Media Player")
+var defaultMetadata string
 
 var stateToStatus = map[svc.State]string{
 	svc.Stopped:         statusStopped,

@@ -8,22 +8,24 @@ import (
 	"sort"
 )
 
+func init() {
+	addCommandData(postRepairCommandName, commandData{isDefault: false, initFunction: newPostRepair})
+}
+
+const postRepairCommandName = "postRepair"
+
 type postrepair struct {
-	n  string
 	sf *files.SearchFlags
 }
 
 func (p *postrepair) name() string {
-	return p.n
+	return postRepairCommandName
 }
 
 func newPostRepairCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*postrepair, bool) {
 	sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet)
 	if sFlagsOk {
-		return &postrepair{
-			n:  fSet.Name(),
-			sf: sFlags,
-		}, true
+		return &postrepair{sf: sFlags}, true
 	}
 	return nil, false
 }

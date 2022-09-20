@@ -7,6 +7,10 @@ import (
 	"time"
 )
 
+func init() {
+	addCommandData(aboutCommandName, commandData{isDefault: false, initFunction: newAboutCmd})
+}
+
 // AboutData contains data about the image itself.
 type AboutData struct {
 	// AppVersion is the semantic version of the application.
@@ -34,20 +38,21 @@ var (
 )
 
 const (
+	aboutCommandName = "about"
+
 	author    = "Marc Johnson"
 	firstYear = 2021 // the year that development began
 )
 
 type aboutCmd struct {
-	n string // command name, probably "about"
 }
 
 func (v *aboutCmd) name() string {
-	return v.n
+	return aboutCommandName
 }
 
 func newAboutCmd(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
-	return &aboutCmd{n: fSet.Name()}, true
+	return &aboutCmd{}, true
 }
 
 // Exec runs the command. The args parameter is ignored, and the methid always

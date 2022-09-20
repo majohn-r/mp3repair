@@ -7,15 +7,20 @@ import (
 	"strings"
 )
 
+type commandData struct {
+	isDefault    bool
+	initFunction func(internal.OutputBus, *internal.Configuration, *flag.FlagSet) (CommandProcessor, bool)
+}
+
+var commandMap = map[string]commandData{}
+
+func addCommandData(name string, d commandData) {
+	commandMap[name] = d
+}
+
 const (
-	aboutCommand         = "about"
-	checkCommand         = "check"
 	fkCommandName        = "command"
 	fkCount              = "count"
-	listCommand          = "list"
-	postRepairCommand    = "postRepair"
-	repairCommand        = "repair"
-	resetDatabaseCommand = "resetDatabase"
 )
 
 type CommandProcessor interface {
@@ -41,77 +46,50 @@ func ProcessCommand(o internal.OutputBus, args []string) (cmd CommandProcessor, 
 		return nil, nil, false
 	}
 	var initializers []commandInitializer
-	initializers = append(initializers, commandInitializer{
-		name:           listCommand,
-		defaultCommand: defaultSettings[listCommand],
-		initializer:    newList,
-	})
-	initializers = append(initializers, commandInitializer{
-		name:           checkCommand,
-		defaultCommand: defaultSettings[checkCommand],
-		initializer:    newCheck,
-	})
-	initializers = append(initializers, commandInitializer{
-		name:           repairCommand,
-		defaultCommand: defaultSettings[repairCommand],
-		initializer:    newRepair,
-	})
-	initializers = append(initializers, commandInitializer{
-		name:           postRepairCommand,
-		defaultCommand: defaultSettings[postRepairCommand],
-		initializer:    newPostRepair,
-	})
-	initializers = append(initializers, commandInitializer{
-		name:           resetDatabaseCommand,
-		defaultCommand: defaultSettings[resetDatabaseCommand],
-		initializer:    newResetDatabase,
-	})
-	initializers = append(initializers, commandInitializer{
-		name:           aboutCommand,
-		defaultCommand: defaultSettings[aboutCommand],
-		initializer:    newAboutCmd,
-	})
+	for name, d := range commandMap {
+		initializers = append(initializers, commandInitializer{
+			name:           name,
+			defaultCommand: defaultSettings[name],
+			initializer:    d.initFunction,
+		})
+	}
 	cmd, cmdArgs, ok = selectCommand(o, c, initializers, args)
 	return
 }
 
 func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[string]bool, ok bool) {
+	m = map[string]bool{}
 	defaultCommand, ok := c.StringValue("default")
 	if !ok { // no definition
-		m = map[string]bool{
-			checkCommand:         false,
-			listCommand:          true,
-			postRepairCommand:    false,
-			repairCommand:        false,
-			resetDatabaseCommand: false,
-			aboutCommand:         false,
+		for name, d := range commandMap {
+			m[name] = d.isDefault
 		}
-		ok = true
-		return
+	} else {
+		for name := range commandMap {
+			m[name] = defaultCommand == name
+		}
 	}
-	m = map[string]bool{
-		checkCommand:         defaultCommand == checkCommand,
-		listCommand:          defaultCommand == listCommand,
-		postRepairCommand:    defaultCommand == postRepairCommand,
-		repairCommand:        defaultCommand == repairCommand,
-		resetDatabaseCommand: defaultCommand == resetDatabaseCommand,
-		aboutCommand:         defaultCommand == aboutCommand,
-	}
-	found := false
-	for _, value := range m {
+	var defaultCommands []string
+	for k, value := range m {
 		if value {
-			found = true
-			break
+			defaultCommands = append(defaultCommands, k)
 		}
 	}
-	if !found {
+	switch len(defaultCommands) {
+	case 0:
 		o.LogWriter().Error(internal.LE_INVALID_DEFAULT_COMMAND, map[string]interface{}{fkCommandName: defaultCommand})
 		o.WriteError(internal.USER_INVALID_DEFAULT_COMMAND, defaultCommand)
 		m = nil
 		ok = false
-		return
+	case 1:
+		ok = true
+	default:
+		// not using a well-defined constant: this is a developer error.
+		sort.Strings(defaultCommands)
+		o.WriteError("Internal error: %d commands self-selected as default: %v; pick one!", len(defaultCommands), defaultCommands)
+		m = nil
+		ok = false
 	}
-	ok = true
 	return
 }
 

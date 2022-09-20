@@ -163,7 +163,7 @@ func TestProcessCommand(t *testing.T) {
 			args:  args{args: []string{"mp3.exe", "no such command"}},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "The key \"value\", with value '1.25', has an unexpected type float64.\n" +
-					"There is no command named \"no such command\"; valid commands include [about check list postRepair repair resetDatabase].\n",
+					"There is no command named \"no such command\"; valid commands include [about check export list postRepair repair resetDatabase].\n",
 				WantLogOutput: "level='error' key='value' type='float64' value='1.25' msg='unexpected value type'\n" +
 					fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] list:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1.25]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")) +
 					"level='error' command='no such command' msg='unrecognized command'\n",
@@ -300,6 +300,15 @@ func Test_selectCommand(t *testing.T) {
 
 func Test_getDefaultSettings(t *testing.T) {
 	fnName := "getDefaultSettings()"
+	const (
+		aboutCommand         = "about"
+		checkCommand         = "check"
+		exportCommand        = "export"
+		listCommand          = "list"
+		postRepairCommand    = "postRepair"
+		repairCommand        = "repair"
+		resetDatabaseCommand = "resetDatabase"
+	)
 	topDir := filepath.Join(".", "defaultSettings")
 	if err := internal.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating defaultSettings directory: %v", fnName, err)
@@ -308,29 +317,44 @@ func Test_getDefaultSettings(t *testing.T) {
 	if err := internal.Mkdir(configDir); err != nil {
 		t.Errorf("%s error creating mp3 directory: %v", fnName, err)
 	}
+	savedCommandMap := commandMap
 	savedState := internal.SaveEnvVarForTesting("APPDATA")
 	defer func() {
 		savedState.RestoreForTesting()
+		commandMap = savedCommandMap
 		internal.DestroyDirectoryForTesting("getDefaultSettings", topDir)
 	}()
 	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting(topDir))
-	type args struct {
-		c *internal.Configuration
-	}
 	tests := []struct {
 		name           string
 		includeDefault bool
 		defaultValue   string
-		args
-		wantM  map[string]bool
-		wantOk bool
+		cmds           map[string]commandData
+		wantM          map[string]bool
+		wantOk         bool
 		internal.WantedOutput
 	}{
+		{
+			name: "too many values defined in code",
+			cmds: map[string]commandData{
+				listCommand:          commandData{isDefault: true},
+				checkCommand:         commandData{isDefault: true},
+				exportCommand:        commandData{},
+				repairCommand:        commandData{},
+				postRepairCommand:    commandData{},
+				resetDatabaseCommand: commandData{},
+				aboutCommand:         commandData{},
+			},
+			WantedOutput: internal.WantedOutput{
+				WantErrorOutput: "Internal error: 2 commands self-selected as default: [check list]; pick one!\n",
+			},
+		},
 		{
 			name: "no value defined",
 			wantM: map[string]bool{
 				listCommand:          true,
 				checkCommand:         false,
+				exportCommand:        false,
 				repairCommand:        false,
 				postRepairCommand:    false,
 				resetDatabaseCommand: false,
@@ -345,6 +369,7 @@ func Test_getDefaultSettings(t *testing.T) {
 			wantM: map[string]bool{
 				listCommand:          false,
 				checkCommand:         true,
+				exportCommand:        false,
 				repairCommand:        false,
 				postRepairCommand:    false,
 				resetDatabaseCommand: false,
@@ -370,17 +395,22 @@ func Test_getDefaultSettings(t *testing.T) {
 			} else {
 				content = "command:\n    nodefault: true\n"
 			}
+			if tt.cmds == nil {
+				commandMap = savedCommandMap
+			} else {
+				commandMap = tt.cmds
+			}
 			os.Remove(filepath.Join(configDir, "defaults.yaml"))
 			if err := internal.CreateFileForTestingWithContent(configDir, "defaults.yaml", []byte(content)); err != nil {
 				t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 			}
-			if c, ok := internal.ReadConfigurationFile(internal.NewOutputDeviceForTesting()); !ok {
+			var c *internal.Configuration
+			var ok bool
+			if c, ok = internal.ReadConfigurationFile(internal.NewOutputDeviceForTesting()); !ok {
 				t.Errorf("%s error reading defaults.yaml %q", fnName, content)
-			} else {
-				tt.args.c = c.SubConfiguration("command")
 			}
 			o := internal.NewOutputDeviceForTesting()
-			gotM, gotOk := getDefaultSettings(o, tt.args.c)
+			gotM, gotOk := getDefaultSettings(o, c.SubConfiguration("command"))
 			if !reflect.DeepEqual(gotM, tt.wantM) {
 				t.Errorf("%s gotM = %v, want %v", fnName, gotM, tt.wantM)
 			}
