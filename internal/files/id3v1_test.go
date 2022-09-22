@@ -743,9 +743,9 @@ func Test_id3v1Metadata_setGenre(t *testing.T) {
 		wantv1 *id3v1Metadata
 	}{
 		{
-			name:   "no such genre",
-			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet1),
-			args:   args{s: "Subspace Radio"},
+			name: "no such genre",
+			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			args: args{s: "Subspace Radio"},
 			wantv1: newId3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
 				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
@@ -1326,7 +1326,7 @@ func Test_id3v1GenreDiffers(t *testing.T) {
 			name: "match",
 			args: args{
 				cS: comparableStrings{
-					externalName: "Classic Rock", 
+					externalName: "Classic Rock",
 					metadataName: "Classic Rock",
 				},
 			},
@@ -1336,7 +1336,7 @@ func Test_id3v1GenreDiffers(t *testing.T) {
 			name: "no match",
 			args: args{
 				cS: comparableStrings{
-					externalName: "Classic Rock", 
+					externalName: "Classic Rock",
 					metadataName: "classic rock",
 				},
 			},
@@ -1346,7 +1346,7 @@ func Test_id3v1GenreDiffers(t *testing.T) {
 			name: "other",
 			args: args{
 				cS: comparableStrings{
-					externalName: "Prog Rock", 
+					externalName: "Prog Rock",
 					metadataName: "Other",
 				},
 			},

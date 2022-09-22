@@ -134,7 +134,7 @@ func getDefaultsContent() []byte {
 func (ex *export) writeDefaults(o internal.OutputBus, content []byte) (ok bool) {
 	if appData, appDataOk := internal.LookupAppData(o); appDataOk {
 		path := internal.CreateAppSpecificPath(appData)
-		if ensurePathExists(o, path){
+		if ensurePathExists(o, path) {
 			configFile := filepath.Join(path, internal.DefaultConfigFileName)
 			if internal.PlainFileExists(configFile) {
 				ok = ex.overwriteFile(o, configFile, content)
@@ -146,7 +146,7 @@ func (ex *export) writeDefaults(o internal.OutputBus, content []byte) (ok bool) 
 	return
 }
 
-func ensurePathExists(o internal.OutputBus, path string) (ok bool){
+func ensurePathExists(o internal.OutputBus, path string) (ok bool) {
 	if internal.DirExists(path) {
 		ok = true
 	} else {
@@ -154,7 +154,7 @@ func ensurePathExists(o internal.OutputBus, path string) (ok bool){
 			o.WriteError(internal.USER_CANNOT_CREATE_DIRECTORY, path, err)
 			o.LogWriter().Error(internal.LE_CANNOT_CREATE_DIRECTORY, map[string]any{
 				internal.FK_DIRECTORY: path,
-				internal.FK_ERROR: err,
+				internal.FK_ERROR:     err,
 			})
 		} else {
 			ok = true

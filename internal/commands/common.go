@@ -19,8 +19,8 @@ func addCommandData(name string, d commandData) {
 }
 
 const (
-	fkCommandName        = "command"
-	fkCount              = "count"
+	fkCommandName = "command"
+	fkCount       = "count"
 )
 
 type CommandProcessor interface {

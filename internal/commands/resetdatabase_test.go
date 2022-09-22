@@ -922,7 +922,7 @@ func Test_resetDatabase_Exec(t *testing.T) {
 				WantErrorOutput:   "The service manager cannot be accessed. Try running the program again as an administrator. Error: Access is denied.\n",
 				WantLogOutput: "level='info' -extension='.wmdb' -metadata='Exec' -service='WMPNetworkSVC' -timeout='10' command='resetDatabase' msg='executing command'\n" +
 					"level='error' error='Access is denied.' operation='connect to service manager' msg='service manager issue'\n" +
-					"level='info' directory='Exec' file extension='.wmdb' msg='no files found'\n"+
+					"level='info' directory='Exec' file extension='.wmdb' msg='no files found'\n" +
 					"level='info' fileName='Exec\\mp3\\metadata.dirty' msg='metadata dirty file deleted'\n",
 			},
 		},
