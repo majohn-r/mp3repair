@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	fkArguments = "arguments"
+	fieldKeyArguments = "arguments"
 )
 
 // ProcessArgs processes a slice of command line arguments and handles common
@@ -33,7 +33,7 @@ func ProcessArgs(o OutputBus, f *flag.FlagSet, args []string) (ok bool) {
 	// note: Parse outputs errors to o.ErrorWriter*()
 	if err := f.Parse(dereferencedArgs); err != nil {
 		o.LogWriter().Error(fmt.Sprintf("%v", err), map[string]any{
-			fkArguments: dereferencedArgs,
+			fieldKeyArguments: dereferencedArgs,
 		})
 		ok = false
 	} else {

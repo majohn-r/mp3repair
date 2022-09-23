@@ -19,8 +19,8 @@ func addCommandData(name string, d commandData) {
 }
 
 const (
-	fkCommandName = "command"
-	fkCount       = "count"
+	fieldKeyCommandName = "command"
+	fieldKeyCount       = "count"
 )
 
 // CommandProcessor defines the functions needed to run a command
@@ -77,7 +77,7 @@ func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[
 	}
 	switch len(defaultCommands) {
 	case 0:
-		o.LogWriter().Error(internal.LogErrorInvalidDefaultCommand, map[string]any{fkCommandName: defaultCommand})
+		o.LogWriter().Error(internal.LogErrorInvalidDefaultCommand, map[string]any{fieldKeyCommandName: defaultCommand})
 		o.WriteError(internal.UserInvalidDefaultCommand, defaultCommand)
 		m = nil
 		ok = false
@@ -95,7 +95,7 @@ func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[
 
 func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, ok bool) {
 	if len(i) == 0 {
-		o.LogWriter().Error(internal.LogErrorCommandCount, map[string]any{fkCount: 0})
+		o.LogWriter().Error(internal.LogErrorCommandCount, map[string]any{fieldKeyCount: 0})
 		o.WriteError(internal.UserNoCommandsDefined)
 		return
 	}
@@ -108,7 +108,7 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 		}
 	}
 	if defaultInitializers != 1 {
-		o.LogWriter().Error(internal.LogErrorDefaultCommandCount, map[string]any{fkCount: defaultInitializers})
+		o.LogWriter().Error(internal.LogErrorDefaultCommandCount, map[string]any{fieldKeyCount: defaultInitializers})
 		o.WriteError(internal.UserIncorrectNumberOfDefaultCommandsDefined, defaultInitializers)
 		return
 	}
@@ -143,7 +143,7 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 	if !found {
 		cmd = nil
 		callingArgs = nil
-		o.LogWriter().Error(internal.LogErrorUnrecognizedCommand, map[string]any{fkCommandName: commandName})
+		o.LogWriter().Error(internal.LogErrorUnrecognizedCommand, map[string]any{fieldKeyCommandName: commandName})
 		var commandNames []string
 		for _, initializer := range i {
 			commandNames = append(commandNames, initializer.name)

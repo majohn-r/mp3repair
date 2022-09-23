@@ -11,22 +11,22 @@ import (
 )
 
 func makeCheck() CommandProcessor {
-	cp, _ := newCheck(internal.NewOutputDeviceForTesting(), internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ExitOnError))
+	cp, _ := newCheck(internal.NullOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ExitOnError))
 	return cp
 }
 
 func makeList() CommandProcessor {
-	list, _ := newList(internal.NewOutputDeviceForTesting(), internal.EmptyConfiguration(), flag.NewFlagSet("list", flag.ExitOnError))
+	list, _ := newList(internal.NullOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("list", flag.ExitOnError))
 	return list
 }
 
 func makeRepair() CommandProcessor {
-	r, _ := newRepair(internal.NewOutputDeviceForTesting(), internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ExitOnError))
+	r, _ := newRepair(internal.NullOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ExitOnError))
 	return r
 }
 
 func makePostRepair() CommandProcessor {
-	pr, _ := newPostRepair(internal.NewOutputDeviceForTesting(), internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ExitOnError))
+	pr, _ := newPostRepair(internal.NullOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ExitOnError))
 	return pr
 }
 
@@ -255,7 +255,7 @@ func Test_selectCommand(t *testing.T) {
 		{
 			name: "unfortunate defaults",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
 					"list": map[string]any{
 						"includeTracks": "no!!",
 					},
@@ -402,7 +402,7 @@ func Test_getDefaultSettings(t *testing.T) {
 			}
 			var c *internal.Configuration
 			var ok bool
-			if c, ok = internal.ReadConfigurationFile(internal.NewOutputDeviceForTesting()); !ok {
+			if c, ok = internal.ReadConfigurationFile(internal.NullOutputBus()); !ok {
 				t.Errorf("%s error reading defaults.yaml %q", fnName, content)
 			}
 			o := internal.NewOutputDeviceForTesting()

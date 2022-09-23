@@ -245,7 +245,7 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 				defer func() {
 					savedState.RestoreForTesting()
 				}()
-				c, _ := ReadConfigurationFile(NewOutputDeviceForTesting())
+				c, _ := ReadConfigurationFile(NullOutputBus())
 				if common := c.cMap["common"]; common == nil {
 					t.Errorf("%s 'good test': configuration does not contain common subtree", fnName)
 				} else {
@@ -573,5 +573,28 @@ func TestOutputDeviceForTesting_WriteConsole(t *testing.T) {
 				t.Errorf("%s got %q want %q", fnName, got, tt.want)
 			}
 		})
+	}
+}
+
+func TestNullOutputBus(t *testing.T) {
+	o := NullOutputBus()
+	o.WriteConsole(false, "%s", "foo")
+	o.WriteError("%s", "foo")
+	o.LogWriter().Error("message", map[string]any{"foo": 2})
+	o.LogWriter().Info("message", map[string]any{"foo": 2})
+	var i any = o.LogWriter()
+	if _, ok := i.(Logger); !ok {
+		t.Errorf("NullOutputBus() does not implement OutputBus - LogWriter() does not return a Logger")
+	}
+	i = o.ErrorWriter()
+	if _, ok := i.(io.Writer); !ok {
+		t.Errorf("NullOutputBus() does not implement OutputBus - ErrorWriter() does not return an io.Writer")
+	}
+	gotCount, gotError := o.ErrorWriter().Write([]byte{0, 1, 2, 3, 4, 5})
+	if gotCount != 6 {
+		t.Errorf("o.ErrorWriter().Write() returned %d, wanted %d", gotCount, 6)
+	}
+	if gotError != nil {
+		t.Errorf("o.ErrorWriter().Write() returned %v, wanted nil", gotError)
 	}
 }

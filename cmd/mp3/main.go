@@ -20,14 +20,14 @@ func main() {
 }
 
 const (
-	fkCommandLineArguments = "args"
-	fkDuration             = "duration"
-	fkExitCode             = "exitCode"
-	fkTimeStamp            = "timeStamp"
-	fkVersion              = "version"
-	fkGoVersion            = "go version"
-	fkDependencies         = "dependencies"
-	statusFormat           = "%q version %s, created at %s, failed"
+	fieldKeyCommandLineArguments = "args"
+	fieldKeyDuration             = "duration"
+	fieldKeyExitCode             = "exitCode"
+	fieldKeyTImeStamp            = "timeStamp"
+	fieldKeyVersion              = "version"
+	fieldKeyGoVersion            = "go version"
+	fieldKeyDependencies         = "dependencies"
+	statusFormat                 = "%q version %s, created at %s, failed"
 )
 
 func exec(logInit func(internal.OutputBus) bool, cmdLine []string) (returnValue int) {
@@ -62,19 +62,19 @@ func run(o internal.OutputBus, f func() (*debug.BuildInfo, bool), cmdlineArgs []
 		}
 	}
 	o.LogWriter().Info(internal.LogInfoEndExecution, map[string]any{
-		fkDuration: time.Since(startTime),
-		fkExitCode: returnValue,
+		fieldKeyDuration: time.Since(startTime),
+		fieldKeyExitCode: returnValue,
 	})
 	return
 }
 
 func logBegin(o internal.OutputBus, goVersion string, dependencies []string, cmdLineArgs []string) {
 	o.LogWriter().Info(internal.LogInfoBeginExecution, map[string]any{
-		fkVersion:              version,
-		fkTimeStamp:            creation,
-		fkGoVersion:            goVersion,
-		fkDependencies:         dependencies,
-		fkCommandLineArguments: cmdLineArgs,
+		fieldKeyVersion:              version,
+		fieldKeyTImeStamp:            creation,
+		fieldKeyGoVersion:            goVersion,
+		fieldKeyDependencies:         dependencies,
+		fieldKeyCommandLineArguments: cmdLineArgs,
 	})
 }
 

@@ -21,16 +21,16 @@ func TestSearch_FilterArtists(t *testing.T) {
 		t.Errorf("%s error populating %q: %v", fnName, topDir, err)
 	}
 	realFlagSet := flag.NewFlagSet("real", flag.ContinueOnError)
-	realSF, _ := NewSearchFlags(internal.NewOutputDeviceForTesting(), internal.EmptyConfiguration(), realFlagSet)
-	realS, _ := realSF.ProcessArgs(internal.NewOutputDeviceForTesting(), []string{"-topDir", topDir})
-	realArtists, _ := realS.LoadData(internal.NewOutputDeviceForTesting())
+	realSF, _ := NewSearchFlags(internal.NullOutputBus(), internal.EmptyConfiguration(), realFlagSet)
+	realS, _ := realSF.ProcessArgs(internal.NullOutputBus(), []string{"-topDir", topDir})
+	realArtists, _ := realS.LoadData(internal.NullOutputBus())
 	overFilteredSF, _ := NewSearchFlags(
-		internal.NewOutputDeviceForTesting(),
+		internal.NullOutputBus(),
 		internal.EmptyConfiguration(),
 		flag.NewFlagSet("overFiltered", flag.ContinueOnError))
 	overFilteredS, _ := overFilteredSF.ProcessArgs(
-		internal.NewOutputDeviceForTesting(), []string{"-topDir", topDir, "-artistFilter", "^Filter all out$"})
-	a, _ := realS.LoadUnfilteredData(internal.NewOutputDeviceForTesting())
+		internal.NullOutputBus(), []string{"-topDir", topDir, "-artistFilter", "^Filter all out$"})
+	a, _ := realS.LoadUnfilteredData(internal.NullOutputBus())
 	type args struct {
 		unfilteredArtists []*Artist
 	}

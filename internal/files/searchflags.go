@@ -29,10 +29,10 @@ const (
 
 	defaultRegex = ".*"
 
-	fkAlbumFilterFlag     = "-" + albumRegexFlag
-	fkArtistFilterFlag    = "-" + artistRegexFlag
-	fkTargetExtensionFlag = "-" + fileExtensionFlag
-	fkTopDirFlag          = "-" + topDirectoryFlag
+	fieldKeyAlbumFilterFlag     = "-" + albumRegexFlag
+	fieldKeyArtistFilterFlag    = "-" + artistRegexFlag
+	fieldKeyTargetExtensionFlag = "-" + fileExtensionFlag
+	fieldKeyTopDirFlag          = "-" + topDirectoryFlag
 )
 
 func reportBadDefault(o internal.OutputBus, err error) {
@@ -116,7 +116,7 @@ func (sf *SearchFlags) validateTopLevelDirectory(o internal.OutputBus) bool {
 	if err != nil {
 		o.WriteError(internal.UserCannotReadTopDir, *sf.topDirectory, err)
 		o.LogWriter().Error(internal.LogErrorCannotReadDirectory, map[string]any{
-			fkTopDirFlag:           *sf.topDirectory,
+			fieldKeyTopDirFlag:     *sf.topDirectory,
 			internal.FieldKeyError: err,
 		})
 		return false
@@ -126,7 +126,7 @@ func (sf *SearchFlags) validateTopLevelDirectory(o internal.OutputBus) bool {
 	}
 	o.WriteError(internal.UserTopDirNotADirectory, *sf.topDirectory)
 	o.LogWriter().Error(internal.LogErrorNotADirectory, map[string]any{
-		fkTopDirFlag: *sf.topDirectory,
+		fieldKeyTopDirFlag: *sf.topDirectory,
 	})
 	return false
 }
@@ -137,7 +137,7 @@ func (sf *SearchFlags) validateExtension(o internal.OutputBus) (ok bool) {
 		ok = false
 		o.WriteError(internal.UserExtensionInvalidFormat, *sf.fileExtension)
 		o.LogWriter().Error(internal.LogErrorInvalidExtensionFormat, map[string]any{
-			fkTargetExtensionFlag: *sf.fileExtension,
+			fieldKeyTargetExtensionFlag: *sf.fileExtension,
 		})
 	}
 	var e error
@@ -146,8 +146,8 @@ func (sf *SearchFlags) validateExtension(o internal.OutputBus) (ok bool) {
 		ok = false
 		o.WriteError(internal.UserExtensionGarbled, *sf.fileExtension, e)
 		o.LogWriter().Error(internal.LogErrorGarbledExtension, map[string]any{
-			fkTargetExtensionFlag:  *sf.fileExtension,
-			internal.FieldKeyError: e,
+			fieldKeyTargetExtensionFlag: *sf.fileExtension,
+			internal.FieldKeyError:      e,
 		})
 	}
 	return
@@ -175,12 +175,12 @@ func (sf *SearchFlags) validate(o internal.OutputBus) (albumsFilter *regexp.Rege
 	if !sf.validateExtension(o) {
 		ok = false
 	}
-	if filter, regexOk := validateRegexp(o, *sf.albumRegex, fkAlbumFilterFlag); !regexOk {
+	if filter, regexOk := validateRegexp(o, *sf.albumRegex, fieldKeyAlbumFilterFlag); !regexOk {
 		ok = false
 	} else {
 		albumsFilter = filter
 	}
-	if filter, regexOk := validateRegexp(o, *sf.artistRegex, fkArtistFilterFlag); !regexOk {
+	if filter, regexOk := validateRegexp(o, *sf.artistRegex, fieldKeyArtistFilterFlag); !regexOk {
 		ok = false
 	} else {
 		artistsFilter = filter

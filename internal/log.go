@@ -20,7 +20,7 @@ const (
 	symlinkName      = "latest" + logFileExtension
 	maxLogFiles      = 10
 	// constants for log field keys
-	fieldKeyVarName   = "environment variable"
+	fieldKeyVarName = "environment variable"
 )
 
 // Reusable field keys for logs

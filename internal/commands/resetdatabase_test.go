@@ -494,7 +494,7 @@ func Test_resetDatabase_filterMetadataFiles(t *testing.T) {
 	if err := internal.Mkdir(filepath.Join(testDir, subDir)); err != nil {
 		t.Errorf("%s could not create directory %q: %v", fnName, subDir, err)
 	}
-	files, _ := internal.ReadDirectory(internal.NewOutputDeviceForTesting(), testDir)
+	files, _ := internal.ReadDirectory(internal.NullOutputBus(), testDir)
 	type args struct {
 		files []fs.DirEntry
 	}
@@ -804,7 +804,7 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 
 func newResetDatabaseCommandForTesting() *resetDatabase {
 	r, _ := newResetDatabaseCommand(
-		internal.NewOutputDeviceForTesting(),
+		internal.NullOutputBus(),
 		internal.EmptyConfiguration(),
 		flag.NewFlagSet("resetDatabase", flag.ContinueOnError))
 	return r
@@ -932,7 +932,7 @@ func Test_resetDatabase_Exec(t *testing.T) {
 			dirtyFolderFound = true
 			dirtyFolderValid = true
 			if tt.markMetadataDirty {
-				MarkDirty(internal.NewOutputDeviceForTesting())
+				MarkDirty(internal.NullOutputBus())
 			}
 			o := internal.NewOutputDeviceForTesting()
 			if gotOk := tt.r.Exec(o, tt.args.args); gotOk != tt.wantOk {
@@ -944,7 +944,7 @@ func Test_resetDatabase_Exec(t *testing.T) {
 				}
 			}
 			if tt.markMetadataDirty {
-				ClearDirty(internal.NewOutputDeviceForTesting())
+				ClearDirty(internal.NullOutputBus())
 			}
 		})
 	}
@@ -1085,7 +1085,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		{
 			name: "bad default timeout",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
 					"resetDatabase": map[string]any{
 						"timeout": "forever",
 					},
@@ -1099,7 +1099,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		{
 			name: "bad default service",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
 					"resetDatabase": map[string]any{
 						"service": "Win$FOO",
 					},
@@ -1113,7 +1113,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		{
 			name: "bad default metadata",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
 					"resetDatabase": map[string]any{
 						"metadata": "%FOO%/data",
 					},
@@ -1127,7 +1127,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		{
 			name: "bad default extension",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
 					"resetDatabase": map[string]any{
 						"extension": ".%FOO%",
 					},

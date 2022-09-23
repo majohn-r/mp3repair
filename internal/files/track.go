@@ -16,16 +16,18 @@ import (
 const (
 	defaultFileExtension    = "." + rawExtension
 	defaultTrackNamePattern = "^\\d+[\\s-].+\\." + rawExtension + "$"
-	fkAlbumName             = "albumName"
-	fkArtistName            = "artistName"
-	fkFieldName             = "field"
-	fkSettings              = "settings"
-	fkTrackName             = "trackName"
-	mcdiFrame               = "MCDI"
-	rawExtension            = "mp3"
-	noMetadata              = "differences cannot be determined: metadata has not been read"
-	metadataReadError       = "differences cannot be determined: there was an error reading metadata"
-	trackFrame              = "TRCK"
+
+	fieldKeyAlbumName  = "albumName"
+	fieldKeyArtistName = "artistName"
+	fieldKeyFieldName  = "field"
+	fieldKeySettings   = "settings"
+	fieldKeyTrackName  = "trackName"
+
+	mcdiFrame         = "MCDI"
+	rawExtension      = "mp3"
+	noMetadata        = "differences cannot be determined: metadata has not been read"
+	metadataReadError = "differences cannot be determined: there was an error reading metadata"
+	trackFrame        = "TRCK"
 )
 
 // Track encapsulates data about a track in an album.
@@ -345,9 +347,9 @@ func processArtistMetadata(o internal.OutputBus, artists []*Artist) {
 		if chosenName, ok := pickKey(names); !ok {
 			o.WriteError(internal.UserAmbiguousChoices, "artist name", artist.Name(), friendlyEncode(names))
 			o.LogWriter().Error(internal.LogErrorAmbiguousValue, map[string]any{
-				fkFieldName:  "artist name",
-				fkSettings:   names,
-				fkArtistName: artist.Name(),
+				fieldKeyFieldName:  "artist name",
+				fieldKeySettings:   names,
+				fieldKeyArtistName: artist.Name(),
 			})
 		} else {
 			if len(chosenName) > 0 {
@@ -385,10 +387,10 @@ func processAlbumMetadata(o internal.OutputBus, artists []*Artist) {
 			if chosenGenre, ok := pickKey(genres); !ok {
 				o.WriteError(internal.UserAmbiguousChoices, "genre", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(genres))
 				o.LogWriter().Error(internal.LogErrorAmbiguousValue, map[string]any{
-					fkFieldName:  "genre",
-					fkSettings:   genres,
-					fkAlbumName:  album.Name(),
-					fkArtistName: artist.Name(),
+					fieldKeyFieldName:  "genre",
+					fieldKeySettings:   genres,
+					fieldKeyAlbumName:  album.Name(),
+					fieldKeyArtistName: artist.Name(),
 				})
 			} else {
 				album.canonicalGenre = chosenGenre
@@ -396,10 +398,10 @@ func processAlbumMetadata(o internal.OutputBus, artists []*Artist) {
 			if chosenYear, ok := pickKey(years); !ok {
 				o.WriteError(internal.UserAmbiguousChoices, "year", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(years))
 				o.LogWriter().Error(internal.LogErrorAmbiguousValue, map[string]any{
-					fkFieldName:  "year",
-					fkSettings:   years,
-					fkAlbumName:  album.Name(),
-					fkArtistName: artist.Name(),
+					fieldKeyFieldName:  "year",
+					fieldKeySettings:   years,
+					fieldKeyAlbumName:  album.Name(),
+					fieldKeyArtistName: artist.Name(),
 				})
 			} else {
 				album.canonicalYear = chosenYear
@@ -407,10 +409,10 @@ func processAlbumMetadata(o internal.OutputBus, artists []*Artist) {
 			if chosenAlbumTitle, ok := pickKey(albumTitles); !ok {
 				o.WriteError(internal.UserAmbiguousChoices, "album title", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(albumTitles))
 				o.LogWriter().Error(internal.LogErrorAmbiguousValue, map[string]any{
-					fkFieldName:  "album title",
-					fkSettings:   albumTitles,
-					fkAlbumName:  album.Name(),
-					fkArtistName: artist.Name(),
+					fieldKeyFieldName:  "album title",
+					fieldKeySettings:   albumTitles,
+					fieldKeyAlbumName:  album.Name(),
+					fieldKeyArtistName: artist.Name(),
 				})
 			} else {
 				if len(chosenAlbumTitle) != 0 {
@@ -420,10 +422,10 @@ func processAlbumMetadata(o internal.OutputBus, artists []*Artist) {
 			if chosenMCDI, ok := pickKey(mcdis); !ok {
 				o.WriteError(internal.UserAmbiguousChoices, "MCDI frame", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(mcdis))
 				o.LogWriter().Error(internal.LogErrorAmbiguousValue, map[string]any{
-					fkFieldName:  "mcdi frame",
-					fkSettings:   mcdis,
-					fkAlbumName:  album.Name(),
-					fkArtistName: artist.Name(),
+					fieldKeyFieldName:  "mcdi frame",
+					fieldKeySettings:   mcdis,
+					fieldKeyAlbumName:  album.Name(),
+					fieldKeyArtistName: artist.Name(),
 				})
 			} else {
 				album.musicCDIdentifier = mcdiFrames[chosenMCDI]
@@ -500,9 +502,9 @@ func reportTrackErrors(o internal.OutputBus, track *Track, album *Album, artist 
 			if len(e) != 0 {
 				o.WriteError(tagConsoleErrors[source], track.name, album.name, artist.name, e)
 				o.LogWriter().Error(tagLogErrors[source], map[string]any{
-					fkTrackName:            track.name,
-					fkAlbumName:            album.name,
-					fkArtistName:           artist.name,
+					fieldKeyTrackName:      track.name,
+					fieldKeyAlbumName:      album.name,
+					fieldKeyArtistName:     artist.name,
 					internal.FieldKeyError: e,
 				})
 			}
@@ -527,9 +529,9 @@ func ParseTrackNameForTesting(name string) (simpleName string, trackNumber int) 
 func parseTrackName(o internal.OutputBus, name string, album *Album, ext string) (simpleName string, trackNumber int, valid bool) {
 	if !trackNameRegex.MatchString(name) {
 		o.LogWriter().Error(internal.LogErrorInvalidTrackName, map[string]any{
-			fkTrackName:  name,
-			fkAlbumName:  album.name,
-			fkArtistName: album.RecordingArtistName(),
+			fieldKeyTrackName:  name,
+			fieldKeyAlbumName:  album.name,
+			fieldKeyArtistName: album.RecordingArtistName(),
 		})
 		o.WriteError(internal.UserTrackNameGarbled, name, album.name, album.RecordingArtistName())
 		return

@@ -181,8 +181,8 @@ func Test_filterArtists(t *testing.T) {
 		t.Errorf("%s error populating %q: %v", fnName, topDirName, err)
 	}
 	searchStruct := files.CreateSearchForTesting(topDirName)
-	fullArtists, _ := searchStruct.LoadUnfilteredData(internal.NewOutputDeviceForTesting())
-	filteredArtists, _ := searchStruct.LoadData(internal.NewOutputDeviceForTesting())
+	fullArtists, _ := searchStruct.LoadUnfilteredData(internal.NullOutputBus())
+	filteredArtists, _ := searchStruct.LoadData(internal.NullOutputBus())
 	type args struct {
 		s       *files.Search
 		artists []*files.Artist
@@ -385,7 +385,7 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 		t.Errorf("%s error creating track", fnName)
 	}
 	s := files.CreateSearchForTesting(topDirName)
-	a, _ := s.LoadUnfilteredData(internal.NewOutputDeviceForTesting())
+	a, _ := s.LoadUnfilteredData(internal.NullOutputBus())
 	type args struct {
 		artists []*files.Artist
 	}
@@ -449,7 +449,7 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 }
 
 func makeCheckCommand() *check {
-	c, _ := newCheckCommand(internal.NewOutputDeviceForTesting(), internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError))
+	c, _ := newCheckCommand(internal.NullOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError))
 	return c
 }
 
@@ -597,7 +597,7 @@ func Test_newCheckCommand(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	defaultConfig, _ := internal.ReadConfigurationFile(internal.NewOutputDeviceForTesting())
+	defaultConfig, _ := internal.ReadConfigurationFile(internal.NullOutputBus())
 	type args struct {
 		c *internal.Configuration
 	}
@@ -629,7 +629,7 @@ func Test_newCheckCommand(t *testing.T) {
 		{
 			name: "bad default empty folder",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
 					"check": map[string]any{
 						emptyFoldersFlag: "Empty!!",
 					},
@@ -644,7 +644,7 @@ func Test_newCheckCommand(t *testing.T) {
 		{
 			name: "bad default gaps",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
 					"check": map[string]any{
 						gapsInTrackNumberingFlag: "No",
 					},
@@ -659,7 +659,7 @@ func Test_newCheckCommand(t *testing.T) {
 		{
 			name: "bad default integrity",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
 					"check": map[string]any{
 						integrityFlag: "Off",
 					},
@@ -685,7 +685,7 @@ func Test_newCheckCommand(t *testing.T) {
 				}
 			}
 			if check != nil {
-				if _, ok := check.sf.ProcessArgs(internal.NewOutputDeviceForTesting(), []string{
+				if _, ok := check.sf.ProcessArgs(internal.NullOutputBus(), []string{
 					"-topDir", topDir,
 					"-ext", ".mp3",
 				}); ok {

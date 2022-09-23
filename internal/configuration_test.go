@@ -21,7 +21,7 @@ func Test_Configuration_SubConfiguration(t *testing.T) {
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	testConfiguration, _ := ReadConfigurationFile(NewOutputDeviceForTesting())
+	testConfiguration, _ := ReadConfigurationFile(NullOutputBus())
 	type args struct {
 		key string
 	}
@@ -63,7 +63,7 @@ func Test_Configuration_BoolDefault(t *testing.T) {
 		saved.RestoreForTesting()
 	}()
 	os.Unsetenv("FOO")
-	testConfiguration, _ := ReadConfigurationFile(NewOutputDeviceForTesting())
+	testConfiguration, _ := ReadConfigurationFile(NullOutputBus())
 	type args struct {
 		key          string
 		defaultValue bool
@@ -259,7 +259,7 @@ func Test_Configuration_StringDefault(t *testing.T) {
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	testConfiguration, _ := ReadConfigurationFile(NewOutputDeviceForTesting())
+	testConfiguration, _ := ReadConfigurationFile(NullOutputBus())
 	type args struct {
 		key          string
 		defaultValue string

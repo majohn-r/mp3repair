@@ -54,7 +54,7 @@ func newAboutCmd(o internal.OutputBus, c *internal.Configuration, fSet *flag.Fla
 // Exec runs the command. The args parameter is ignored, and the methid always
 // returns true.
 func (v *aboutCmd) Exec(o internal.OutputBus, args []string) (ok bool) {
-	o.LogWriter().Info(internal.LogInfoExecutingCommand, map[string]any{fkCommandName: aboutCommandName})
+	o.LogWriter().Info(internal.LogInfoExecutingCommand, map[string]any{fieldKeyCommandName: aboutCommandName})
 	var elements []string
 	timeStamp := translateTimestamp(AboutSettings.BuildTimestamp)
 	description := fmt.Sprintf("%s version %s, built on %s", internal.AppName, AboutSettings.AppVersion, timeStamp)

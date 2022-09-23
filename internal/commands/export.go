@@ -94,9 +94,9 @@ func (ex *export) Exec(o internal.OutputBus, args []string) (ok bool) {
 
 func (ex *export) logFields() map[string]any {
 	return map[string]any{
-		fkCommandName:   exportCommandName,
-		fKDefaultsFlag:  *ex.defaults,
-		fKOverwriteFlag: *ex.overwrite,
+		fieldKeyCommandName: exportCommandName,
+		fKDefaultsFlag:      *ex.defaults,
+		fKOverwriteFlag:     *ex.overwrite,
 	}
 }
 

@@ -60,14 +60,14 @@ const (
 	includeTracksFlag     = "includeTracks"
 	trackSortingFlag      = "sort"
 
-	fkAnnotateListingsFlag  = "-" + annotateListingsFlag
-	fkDetailsListingFlag    = "-" + detailsListingFlag
-	fkDiagnosticListingFlag = "-" + diagnosticListingFlag
-	fkIncludeAlbumsFlag     = "-" + includeAlbumsFlag
-	fkIncludeArtistsFlag    = "-" + includeArtistsFlag
-	fkIncludeTracksFlag     = "-" + includeTracksFlag
-	fkTrackSortingFlag      = "-" + trackSortingFlag
-	fkTrack                 = "track"
+	fieldKeyAnnotateListingsFLag  = "-" + annotateListingsFlag
+	fieldKeyDetailsListingFlag    = "-" + detailsListingFlag
+	fieldKeyDiagnosticListingFlag = "-" + diagnosticListingFlag
+	fieldKeyIncludeAlbumsFlag     = "-" + includeAlbumsFlag
+	fieldKeyIncludeArtistsFlag    = "-" + includeArtistsFlag
+	fieldKeyIncludeTracksFlag     = "-" + includeTracksFlag
+	fieldKeyTrackSortingFlag      = "-" + trackSortingFlag
+	fieldKeyTrack                 = "track"
 )
 
 type listDefaults struct {
@@ -156,14 +156,14 @@ func (l *list) Exec(o internal.OutputBus, args []string) (ok bool) {
 
 func (l *list) logFields() map[string]any {
 	return map[string]any{
-		fkCommandName:           listCommandName,
-		fkIncludeAlbumsFlag:     *l.includeAlbums,
-		fkIncludeArtistsFlag:    *l.includeArtists,
-		fkIncludeTracksFlag:     *l.includeTracks,
-		fkTrackSortingFlag:      *l.trackSorting,
-		fkAnnotateListingsFlag:  *l.annotateListings,
-		fkDiagnosticListingFlag: *l.diagnostics,
-		fkDetailsListingFlag:    *l.details,
+		fieldKeyCommandName:           listCommandName,
+		fieldKeyIncludeAlbumsFlag:     *l.includeAlbums,
+		fieldKeyIncludeArtistsFlag:    *l.includeArtists,
+		fieldKeyIncludeTracksFlag:     *l.includeTracks,
+		fieldKeyTrackSortingFlag:      *l.trackSorting,
+		fieldKeyAnnotateListingsFLag:  *l.annotateListings,
+		fieldKeyDiagnosticListingFlag: *l.diagnostics,
+		fieldKeyDetailsListingFlag:    *l.details,
 	}
 }
 
@@ -245,10 +245,10 @@ func (l *list) validateTrackSorting(o internal.OutputBus) (ok bool) {
 	switch *l.trackSorting {
 	case numericSorting:
 		if !*l.includeAlbums {
-			o.WriteError(internal.UserInvalidSortingApplied, fkTrackSortingFlag, *l.trackSorting, fkIncludeAlbumsFlag)
+			o.WriteError(internal.UserInvalidSortingApplied, fieldKeyTrackSortingFlag, *l.trackSorting, fieldKeyIncludeAlbumsFlag)
 			o.LogWriter().Error(internal.LogErrorSortingOptionUnacceptable, map[string]any{
-				fkTrackSortingFlag:  *l.trackSorting,
-				fkIncludeAlbumsFlag: *l.includeAlbums,
+				fieldKeyTrackSortingFlag:  *l.trackSorting,
+				fieldKeyIncludeAlbumsFlag: *l.includeAlbums,
 			})
 			preferredValue := alphabeticSorting
 			l.trackSorting = &preferredValue
@@ -256,10 +256,10 @@ func (l *list) validateTrackSorting(o internal.OutputBus) (ok bool) {
 	case alphabeticSorting:
 		ok = true
 	default:
-		o.WriteError(internal.UserUnrecognizedValue, fkTrackSortingFlag, *l.trackSorting)
+		o.WriteError(internal.UserUnrecognizedValue, fieldKeyTrackSortingFlag, *l.trackSorting)
 		o.LogWriter().Error(internal.LogErrorInvalidFlagSetting, map[string]any{
-			fkCommandName:      listCommandName,
-			fkTrackSortingFlag: *l.trackSorting,
+			fieldKeyCommandName:      listCommandName,
+			fieldKeyTrackSortingFlag: *l.trackSorting,
 		})
 		var preferredValue string
 		switch *l.includeAlbums {
@@ -337,7 +337,7 @@ func (l *list) outputTrackDetails(o internal.OutputBus, t *files.Track, prefix s
 		if m, err := t.Details(); err != nil {
 			o.LogWriter().Error(internal.LogErrorCannotGetTrackDetails, map[string]any{
 				internal.FieldKeyError: err,
-				fkTrack:                t.String(),
+				fieldKeyTrack:          t.String(),
 			})
 			o.WriteError(internal.UserCannotReadTrackDetails, t.Name(), t.AlbumName(), t.RecordingArtist(), fmt.Sprintf("%v", err))
 		} else {
@@ -361,7 +361,7 @@ func (l *list) outputTrackDiagnostics(o internal.OutputBus, t *files.Track, pref
 		if version, enc, frames, err := t.ID3V2Diagnostics(); err != nil {
 			o.LogWriter().Error(internal.LogErrorID3v2TagError, map[string]any{
 				internal.FieldKeyError: err,
-				fkTrack:                t.String(),
+				fieldKeyTrack:          t.String(),
 			})
 			o.WriteError(internal.UserID3v2TagError, t.Name(), t.AlbumName(), t.RecordingArtist(), fmt.Sprintf("%v", err))
 		} else {
@@ -374,7 +374,7 @@ func (l *list) outputTrackDiagnostics(o internal.OutputBus, t *files.Track, pref
 		if id3v1Data, err := t.ID3V1Diagnostics(); err != nil {
 			o.LogWriter().Error(internal.LogErrorID3v1TagError, map[string]any{
 				internal.FieldKeyError: err,
-				fkTrack:                t.String(),
+				fieldKeyTrack:          t.String(),
 			})
 			o.WriteError(internal.UserID3v1TagError, t.Name(), t.AlbumName(), t.RecordingArtist(), fmt.Sprintf("%v", err))
 		} else {

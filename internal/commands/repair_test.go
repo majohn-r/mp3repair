@@ -33,7 +33,7 @@ func Test_newRepairCommand(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	defaultConfig, _ := internal.ReadConfigurationFile(internal.NewOutputDeviceForTesting())
+	defaultConfig, _ := internal.ReadConfigurationFile(internal.NullOutputBus())
 	type args struct {
 		c *internal.Configuration
 	}
@@ -59,7 +59,7 @@ func Test_newRepairCommand(t *testing.T) {
 		{
 			name: "bad dryRun default",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
 					"repair": map[string]any{
 						"dryRun": 42,
 					},
@@ -84,7 +84,7 @@ func Test_newRepairCommand(t *testing.T) {
 				}
 			}
 			if repair != nil {
-				if _, ok := repair.sf.ProcessArgs(internal.NewOutputDeviceForTesting(), []string{
+				if _, ok := repair.sf.ProcessArgs(internal.NullOutputBus(), []string{
 					"-topDir", topDir,
 					"-ext", ".mp3",
 				}); ok {
@@ -100,7 +100,7 @@ func Test_newRepairCommand(t *testing.T) {
 }
 
 func newRepairForTesting() *repair {
-	r, _ := newRepairCommand(internal.NewOutputDeviceForTesting(), internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError))
+	r, _ := newRepairCommand(internal.NullOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError))
 	return r
 }
 
@@ -318,7 +318,7 @@ func Test_getAlbumPaths(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
 	s := files.CreateFilteredSearchForTesting(topDir, "^.*$", "^.*$")
-	a, _ := s.LoadData(internal.NewOutputDeviceForTesting())
+	a, _ := s.LoadData(internal.NullOutputBus())
 	var tSlice []*files.Track
 	for _, artist := range a {
 		for _, album := range artist.Albums() {

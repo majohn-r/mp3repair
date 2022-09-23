@@ -31,9 +31,9 @@ const (
 	dryRunFlag    = "dryRun"
 	defaultDryRun = false
 
-	fkDestination = "destination"
-	fkDryRunFlag  = "-" + dryRunFlag
-	fkSource      = "source"
+	fieldKeyDestination = "destination"
+	fieldKeyDryRunFlag  = "-" + dryRunFlag
+	fieldKeySource      = "source"
 
 	noProblemsFound = "No repairable track defects found"
 )
@@ -65,8 +65,8 @@ func (r *repair) Exec(o internal.OutputBus, args []string) (ok bool) {
 
 func (r *repair) logFields() map[string]any {
 	return map[string]any{
-		fkCommandName: repairCommandName,
-		fkDryRunFlag:  *r.dryRun,
+		fieldKeyCommandName: repairCommandName,
+		fieldKeyDryRunFlag:  *r.dryRun,
 	}
 }
 
@@ -173,9 +173,9 @@ func backupTrack(o internal.OutputBus, t *files.Track) {
 		if err := t.Copy(destinationPath); err != nil {
 			o.WriteError(internal.UserErrorCreatingBackupFile, t)
 			o.LogWriter().Error(internal.LogErrorCannotCopyFile, map[string]any{
-				fkCommandName:          repairCommandName,
-				fkSource:               t.Path(),
-				fkDestination:          destinationPath,
+				fieldKeyCommandName:    repairCommandName,
+				fieldKeySource:         t.Path(),
+				fieldKeyDestination:    destinationPath,
 				internal.FieldKeyError: err,
 			})
 		} else {
@@ -191,7 +191,7 @@ func makeBackupDirectories(o internal.OutputBus, paths []string) {
 			if err := internal.Mkdir(newPath); err != nil {
 				o.WriteError(internal.UserCannotCreateDirectory, newPath, err)
 				o.LogWriter().Error(internal.LogErrorCannotCreateDirectory, map[string]any{
-					fkCommandName:              repairCommandName,
+					fieldKeyCommandName:        repairCommandName,
 					internal.FieldKeyDirectory: newPath,
 					internal.FieldKeyError:     err,
 				})

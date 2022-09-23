@@ -207,7 +207,7 @@ func generateTrackListings(testTracks []*testTrack, spacer string, artists, albu
 }
 
 func newListForTesting() *list {
-	l, _ := newListCommand(internal.NewOutputDeviceForTesting(), internal.EmptyConfiguration(), flag.NewFlagSet("list", flag.ContinueOnError))
+	l, _ := newListCommand(internal.NullOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("list", flag.ContinueOnError))
 	return l
 }
 
@@ -762,7 +762,7 @@ func Test_newListCommand(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	defaultConfig, _ := internal.ReadConfigurationFile(internal.NewOutputDeviceForTesting())
+	defaultConfig, _ := internal.ReadConfigurationFile(internal.NullOutputBus())
 	type args struct {
 		c *internal.Configuration
 	}
@@ -800,7 +800,7 @@ func Test_newListCommand(t *testing.T) {
 		{
 			name: "bad default for includeAlbums",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
 					"list": map[string]any{
 						"includeAlbums": "nope",
 					},
@@ -814,7 +814,7 @@ func Test_newListCommand(t *testing.T) {
 		{
 			name: "bad default for includeArtists",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
 					"list": map[string]any{
 						"includeArtists": "yes",
 					},
@@ -828,7 +828,7 @@ func Test_newListCommand(t *testing.T) {
 		{
 			name: "bad default for includeTracks",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
 					"list": map[string]any{
 						"includeTracks": "sure",
 					},
@@ -842,7 +842,7 @@ func Test_newListCommand(t *testing.T) {
 		{
 			name: "bad default for annotate",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
 					"list": map[string]any{
 						"annotate": "+2",
 					},
@@ -856,7 +856,7 @@ func Test_newListCommand(t *testing.T) {
 		{
 			name: "bad default for details",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
 					"list": map[string]any{
 						"details": "no!",
 					},
@@ -870,7 +870,7 @@ func Test_newListCommand(t *testing.T) {
 		{
 			name: "bad default for diagnostics",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
 					"list": map[string]any{
 						"diagnostic": "no!",
 					},
@@ -884,7 +884,7 @@ func Test_newListCommand(t *testing.T) {
 		{
 			name: "bad default for sorting",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
 					"list": map[string]any{
 						"sort": "$FOO",
 					},
@@ -909,7 +909,7 @@ func Test_newListCommand(t *testing.T) {
 				}
 			}
 			if list != nil {
-				if _, ok := list.sf.ProcessArgs(internal.NewOutputDeviceForTesting(), []string{
+				if _, ok := list.sf.ProcessArgs(internal.NullOutputBus(), []string{
 					"-topDir", topDir,
 					"-ext", ".mp3",
 				}); ok {
@@ -942,7 +942,7 @@ func Test_list_outputTrackDiagnostics(t *testing.T) {
 	badAlbum := files.NewAlbum("bad album", badArtist, "BadAlbum")
 	badTrack := files.NewTrack(badAlbum, "01 bad track.mp3", "bad track", 1)
 	makeList := func() *list {
-		l, _ := newListCommand(internal.NewOutputDeviceForTesting(), internal.EmptyConfiguration(), flag.NewFlagSet("list", flag.ContinueOnError))
+		l, _ := newListCommand(internal.NullOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("list", flag.ContinueOnError))
 		t := true
 		l.diagnostics = &t
 		return l
@@ -1047,7 +1047,7 @@ func Test_list_outputTrackDetails(t *testing.T) {
 	badAlbum := files.NewAlbum("bad album", badArtist, "BadAlbum")
 	badTrack := files.NewTrack(badAlbum, "01 bad track.mp3", "bad track", 1)
 	makeList := func() *list {
-		l, _ := newListCommand(internal.NewOutputDeviceForTesting(), internal.EmptyConfiguration(), flag.NewFlagSet("list", flag.ContinueOnError))
+		l, _ := newListCommand(internal.NullOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("list", flag.ContinueOnError))
 		t := true
 		l.details = &t
 		return l

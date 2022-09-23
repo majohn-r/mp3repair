@@ -322,7 +322,7 @@ func Test_getDefaultsContent(t *testing.T) {
 }
 
 func makeExportForTesting() *export {
-	e, _ := newExportCommand(internal.NewOutputDeviceForTesting(), internal.EmptyConfiguration(), flag.NewFlagSet(exportCommandName, flag.ContinueOnError))
+	e, _ := newExportCommand(internal.NullOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet(exportCommandName, flag.ContinueOnError))
 	return e
 }
 
@@ -414,7 +414,7 @@ func Test_newExportCommand(t *testing.T) {
 		{
 			name: "abnormal",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
 					exportCommandName: map[string]any{
 						defaultsFlag:  "Beats me",
 						overwriteFlag: 12,

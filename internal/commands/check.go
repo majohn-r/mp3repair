@@ -39,9 +39,9 @@ const (
 	gapsInTrackNumberingFlag = "gaps"
 	integrityFlag            = "integrity"
 
-	fkEmptyFoldersFlag      = "-" + emptyFoldersFlag
-	fkGapAnalysisFlag       = "-" + gapsInTrackNumberingFlag
-	fkIntegrityAnalysisFlag = "-" + integrityFlag
+	fieldKeyEmptyFoldersFlag      = "-" + emptyFoldersFlag
+	fieldKeyGapAnalysisFlag       = "-" + gapsInTrackNumberingFlag
+	fieldKeyIntegrityAnalysisFlag = "-" + integrityFlag
 )
 
 type checkDefaults struct {
@@ -98,10 +98,10 @@ func (c *check) Exec(o internal.OutputBus, args []string) (ok bool) {
 
 func (c *check) logFields() map[string]any {
 	return map[string]any{
-		fkCommandName:           checkCommandName,
-		fkEmptyFoldersFlag:      *c.checkEmptyFolders,
-		fkGapAnalysisFlag:       *c.checkGapsInTrackNumbering,
-		fkIntegrityAnalysisFlag: *c.checkIntegrity,
+		fieldKeyCommandName:           checkCommandName,
+		fieldKeyEmptyFoldersFlag:      *c.checkEmptyFolders,
+		fieldKeyGapAnalysisFlag:       *c.checkGapsInTrackNumbering,
+		fieldKeyIntegrityAnalysisFlag: *c.checkIntegrity,
 	}
 }
 

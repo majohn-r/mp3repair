@@ -11,7 +11,7 @@ import (
 
 func makePostRepairCommandForTesting() *postrepair {
 	pr, _ := newPostRepairCommand(
-		internal.NewOutputDeviceForTesting(),
+		internal.NullOutputBus(),
 		internal.EmptyConfiguration(),
 		flag.NewFlagSet("postRepair", flag.ContinueOnError))
 	return pr
@@ -229,7 +229,7 @@ func Test_newPostRepairCommand(t *testing.T) {
 		{
 			name: "failure",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewOutputDeviceForTesting(), map[string]any{
+				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
 					"common": map[string]any{
 						"topDir": "%FOO%",
 					},

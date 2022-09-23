@@ -16,9 +16,9 @@ import (
 const DefaultConfigFileName = "defaults.yaml"
 
 const (
-	appDataVar = "APPDATA"
-	fkKey      = "key"
-	fkType     = "type"
+	appDataVar      = "APPDATA"
+	fieldKeyKeyName = "key"
+	fieldKeyType    = "type"
 )
 
 var (
@@ -306,9 +306,9 @@ func CreateConfiguration(o OutputBus, data map[string]any) *Configuration {
 			c.cMap[key] = CreateConfiguration(o, t)
 		default:
 			o.LogWriter().Error(LogErrorUnexpectedValueType, map[string]any{
-				fkKey:         key,
-				FieldKeyValue: v,
-				fkType:        fmt.Sprintf("%T", v),
+				fieldKeyKeyName: key,
+				FieldKeyValue:   v,
+				fieldKeyType:    fmt.Sprintf("%T", v),
 			})
 			o.WriteError(UserUnexpectedValueType, key, v, v)
 			c.sMap[key] = fmt.Sprintf("%v", v)

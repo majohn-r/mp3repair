@@ -338,3 +338,47 @@ func (o *OutputDeviceForTesting) CheckOutput(w WantedOutput) (issues []string, o
 	}
 	return
 }
+
+type nullOutputBus struct {
+	nullLogger Logger
+	nullWriter io.Writer
+}
+
+func (n *nullOutputBus) LogWriter() Logger {
+	return n.nullLogger
+}
+
+func (n *nullOutputBus) ErrorWriter() io.Writer {
+	return n.nullWriter
+}
+
+// WriteError captures data written as an error
+func (n *nullOutputBus) WriteError(format string, a ...any) {
+}
+
+// WriteConsole captures data written to the console
+func (n *nullOutputBus) WriteConsole(strict bool, format string, a ...any) {
+}
+
+type emptyLogger struct{}
+
+func (e *emptyLogger) Info(msg string, fields map[string]any) {
+}
+
+func (e *emptyLogger) Error(msg string, fields map[string]any) {
+}
+
+type emptyWriter struct{}
+
+func (e *emptyWriter) Write(p []byte) (n int, err error) {
+	return len(p), nil
+}
+
+// NullOutputBus is an implementation of OutputBus that can be used in code
+// where no one cares what is written, and, in fact, nothing will be written
+func NullOutputBus() OutputBus {
+	return &nullOutputBus{
+		nullLogger: &emptyLogger{},
+		nullWriter: &emptyWriter{},
+	}
+}
