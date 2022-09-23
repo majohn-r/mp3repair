@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	fFlag bool = false
-	tFlag bool = true
+	fFlag = false
+	tFlag = true
 )
 
 func Test_performEmptyFolderAnalysis(t *testing.T) {

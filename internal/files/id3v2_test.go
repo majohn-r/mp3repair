@@ -114,7 +114,7 @@ func TestRawReadID3V2Tag(t *testing.T) {
 			name: "bad data test",
 			args: args{path: "./badFile.mp3"},
 			wantD: &ID3V2TaggedTrackData{
-				err: internal.ERROR_DOES_NOT_BEGIN_WITH_DIGIT,
+				err: internal.ErrorDoesNotBeginWithDigit,
 			},
 		},
 	}

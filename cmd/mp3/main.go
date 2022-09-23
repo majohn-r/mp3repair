@@ -11,8 +11,8 @@ import (
 
 // these variables' values are injected by the mage build
 var (
-	version  string = "unknown version!" // semantic version; read by the mage build from version.txt
-	creation string                      // build timestamp in RFC3339 format (2006-01-02T15:04:05Z07:00)
+	version  = "unknown version!" // semantic version; read by the mage build from version.txt
+	creation string               // build timestamp in RFC3339 format (2006-01-02T15:04:05Z07:00)
 )
 
 func main() {
@@ -32,7 +32,7 @@ const (
 
 func exec(logInit func(internal.OutputBus) bool, cmdLine []string) (returnValue int) {
 	returnValue = 1
-	o := internal.NewOutputDevice()
+	o := internal.NewOutputBus()
 	if logInit(o) {
 		returnValue = run(o, debug.ReadBuildInfo, cmdLine)
 	}
@@ -61,7 +61,7 @@ func run(o internal.OutputBus, f func() (*debug.BuildInfo, bool), cmdlineArgs []
 			returnValue = 0
 		}
 	}
-	o.LogWriter().Info(internal.LI_END_EXECUTION, map[string]any{
+	o.LogWriter().Info(internal.LogInfoEndExecution, map[string]any{
 		fkDuration: time.Since(startTime),
 		fkExitCode: returnValue,
 	})
@@ -69,7 +69,7 @@ func run(o internal.OutputBus, f func() (*debug.BuildInfo, bool), cmdlineArgs []
 }
 
 func logBegin(o internal.OutputBus, goVersion string, dependencies []string, cmdLineArgs []string) {
-	o.LogWriter().Info(internal.LI_BEGIN_EXECUTION, map[string]any{
+	o.LogWriter().Info(internal.LogInfoBeginExecution, map[string]any{
 		fkVersion:              version,
 		fkTimeStamp:            creation,
 		fkGoVersion:            goVersion,

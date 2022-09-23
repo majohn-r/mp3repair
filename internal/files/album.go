@@ -42,6 +42,7 @@ func NewAlbum(title string, artist *Artist, albumPath string) *Album {
 	return &Album{name: title, recordingArtist: artist, path: albumPath, canonicalTitle: title}
 }
 
+// BackupDirectory gets the path for the album's backup directory
 func (a *Album) BackupDirectory() string {
 	return a.subDirectory(backupDirName)
 }

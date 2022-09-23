@@ -39,28 +39,28 @@ type testManager struct {
 	desiredError error
 }
 
-func (t *testManager) Disconnect() error {
+func (tM *testManager) Disconnect() error {
 	return nil
 }
 
-func (m *testManager) ListServices() ([]string, error) {
-	if m.desiredError != nil {
-		return nil, m.desiredError
+func (tM *testManager) ListServices() ([]string, error) {
+	if tM.desiredError != nil {
+		return nil, tM.desiredError
 	}
 	var services []string
-	for k := range m.serviceMap {
+	for k := range tM.serviceMap {
 		services = append(services, k)
 	}
 	sort.Strings(services)
 	return services, nil
 }
 
-func (m *testManager) manager() manager {
-	return m
+func (tM *testManager) manager() manager {
+	return tM
 }
 
-func (m *testManager) openService(name string) (service, error) {
-	if s, ok := m.serviceMap[name]; ok {
+func (tM *testManager) openService(name string) (service, error) {
+	if s, ok := tM.serviceMap[name]; ok {
 		return s, nil
 	}
 	return nil, fmt.Errorf("access denied")
@@ -719,7 +719,6 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 		{
 			name: "fail to stop service",
 			r: &resetDatabase{
-				n:         "resetDatabase",
 				timeout:   &fastTimeout,
 				service:   &serviceName,
 				metadata:  &testDir,
@@ -748,7 +747,6 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 		{
 			name: "fail to delete metadata",
 			r: &resetDatabase{
-				n:         "resetDatabase",
 				timeout:   &fastTimeout,
 				service:   &serviceName,
 				metadata:  &nonexistentDir,
@@ -770,7 +768,6 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 		{
 			name: "success",
 			r: &resetDatabase{
-				n:         "resetDatabase",
 				timeout:   &fastTimeout,
 				service:   &serviceName,
 				metadata:  &testDir,

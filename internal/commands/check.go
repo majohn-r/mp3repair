@@ -24,10 +24,6 @@ type check struct {
 	sf                        *files.SearchFlags
 }
 
-func (c *check) name() string {
-	return checkCommandName
-}
-
 func newCheck(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
 	return newCheckCommand(o, c, fSet)
 }
@@ -102,7 +98,7 @@ func (c *check) Exec(o internal.OutputBus, args []string) (ok bool) {
 
 func (c *check) logFields() map[string]any {
 	return map[string]any{
-		fkCommandName:           c.name(),
+		fkCommandName:           checkCommandName,
 		fkEmptyFoldersFlag:      *c.checkEmptyFolders,
 		fkGapAnalysisFlag:       *c.checkGapsInTrackNumbering,
 		fkIntegrityAnalysisFlag: *c.checkIntegrity,
@@ -160,10 +156,10 @@ func (a *artistWithIssues) hasIssues() bool {
 
 func (c *check) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 	if !*c.checkEmptyFolders && !*c.checkGapsInTrackNumbering && !*c.checkIntegrity {
-		o.WriteError(internal.USER_SPECIFIED_NO_WORK, c.name())
-		o.LogWriter().Error(internal.LE_NOTHING_TO_DO, c.logFields())
+		o.WriteError(internal.UserSpecifiedNoWork, checkCommandName)
+		o.LogWriter().Error(internal.LogErrorNothingToDo, c.logFields())
 	} else {
-		o.LogWriter().Info(internal.LI_EXECUTING_COMMAND, c.logFields())
+		o.LogWriter().Info(internal.LogInfoExecutingCommand, c.logFields())
 		artists, artistsWithEmptyIssues, analysisOk := c.performEmptyFolderAnalysis(o, s)
 		if analysisOk {
 			artists, ok = c.filterArtists(o, s, artists)

@@ -23,8 +23,8 @@ const (
 	fkCount       = "count"
 )
 
+// CommandProcessor defines the functions needed to run a command
 type CommandProcessor interface {
-	name() string
 	Exec(internal.OutputBus, []string) bool
 }
 
@@ -77,8 +77,8 @@ func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[
 	}
 	switch len(defaultCommands) {
 	case 0:
-		o.LogWriter().Error(internal.LE_INVALID_DEFAULT_COMMAND, map[string]any{fkCommandName: defaultCommand})
-		o.WriteError(internal.USER_INVALID_DEFAULT_COMMAND, defaultCommand)
+		o.LogWriter().Error(internal.LogErrorInvalidDefaultCommand, map[string]any{fkCommandName: defaultCommand})
+		o.WriteError(internal.UserInvalidDefaultCommand, defaultCommand)
 		m = nil
 		ok = false
 	case 1:
@@ -95,8 +95,8 @@ func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[
 
 func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, ok bool) {
 	if len(i) == 0 {
-		o.LogWriter().Error(internal.LE_COMMAND_COUNT, map[string]any{fkCount: 0})
-		o.WriteError(internal.USER_NO_COMMANDS_DEFINED)
+		o.LogWriter().Error(internal.LogErrorCommandCount, map[string]any{fkCount: 0})
+		o.WriteError(internal.UserNoCommandsDefined)
 		return
 	}
 	var defaultInitializers int
@@ -108,8 +108,8 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 		}
 	}
 	if defaultInitializers != 1 {
-		o.LogWriter().Error(internal.LE_DEFAULT_COMMAND_COUNT, map[string]any{fkCount: defaultInitializers})
-		o.WriteError(internal.USER_INCORRECT_NUMBER_OF_DEFAULT_COMMANDS_DEFINED, defaultInitializers)
+		o.LogWriter().Error(internal.LogErrorDefaultCommandCount, map[string]any{fkCount: defaultInitializers})
+		o.WriteError(internal.UserIncorrectNumberOfDefaultCommandsDefined, defaultInitializers)
 		return
 	}
 	processorMap := make(map[string]CommandProcessor)
@@ -143,13 +143,13 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 	if !found {
 		cmd = nil
 		callingArgs = nil
-		o.LogWriter().Error(internal.LE_UNRECOGNIZED_COMMAND, map[string]any{fkCommandName: commandName})
+		o.LogWriter().Error(internal.LogErrorUnrecognizedCommand, map[string]any{fkCommandName: commandName})
 		var commandNames []string
 		for _, initializer := range i {
 			commandNames = append(commandNames, initializer.name)
 		}
 		sort.Strings(commandNames)
-		o.WriteError(internal.USER_NO_SUCH_COMMAND, commandName, commandNames)
+		o.WriteError(internal.UserNoSuchCommand, commandName, commandNames)
 		return
 	}
 	callingArgs = args[2:]
@@ -158,9 +158,9 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 }
 
 func reportBadDefault(o internal.OutputBus, section string, err error) {
-	o.WriteError(internal.USER_CONFIGURATION_FILE_INVALID, internal.DefaultConfigFileName, section, err)
-	o.LogWriter().Error(internal.LE_INVALID_CONFIGURATION_DATA, map[string]any{
-		internal.FK_SECTION: section,
-		internal.FK_ERROR:   err,
+	o.WriteError(internal.UserConfigurationFileInvalid, internal.DefaultConfigFileName, section, err)
+	o.LogWriter().Error(internal.LogErrorInvalidConfigurationData, map[string]any{
+		internal.FieldKeySection: section,
+		internal.FieldKeyError:   err,
 	})
 }

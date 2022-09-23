@@ -237,18 +237,18 @@ type id3v1Field struct {
 }
 
 var (
-	id3v1Tag      = initId3v1Field(tagOffset, tagLength)
-	id3v1Title    = initId3v1Field(titleOffset, titleLength)
-	id3v1Artist   = initId3v1Field(artistOffset, artistLength)
-	id3v1Album    = initId3v1Field(albumOffset, albumLength)
-	id3v1Year     = initId3v1Field(yearOffset, yearLength)
-	id3v1Comment  = initId3v1Field(commentOffset, commentLength)
-	id3v1ZeroByte = initId3v1Field(zeroByteOffset, zeroByteLength)
-	id3v1Track    = initId3v1Field(trackOffset, trackLength)
-	id3v1Genre    = initId3v1Field(genreOffset, genreLength)
+	id3v1Tag      = initID3v1Field(tagOffset, tagLength)
+	id3v1Title    = initID3v1Field(titleOffset, titleLength)
+	id3v1Artist   = initID3v1Field(artistOffset, artistLength)
+	id3v1Album    = initID3v1Field(albumOffset, albumLength)
+	id3v1Year     = initID3v1Field(yearOffset, yearLength)
+	id3v1Comment  = initID3v1Field(commentOffset, commentLength)
+	id3v1ZeroByte = initID3v1Field(zeroByteOffset, zeroByteLength)
+	id3v1Track    = initID3v1Field(trackOffset, trackLength)
+	id3v1Genre    = initID3v1Field(genreOffset, genreLength)
 )
 
-func initId3v1Field(offset int, length int) id3v1Field {
+func initID3v1Field(offset int, length int) id3v1Field {
 	return id3v1Field{
 		startOffset: offset,
 		length:      length,
@@ -260,8 +260,8 @@ type id3v1Metadata struct {
 	data []byte
 }
 
-func newId3v1MetadataWithData(b []byte) *id3v1Metadata {
-	v1 := newId3v1Metadata()
+func newID3v1MetadataWithData(b []byte) *id3v1Metadata {
+	v1 := newID3v1Metadata()
 	if len(b) >= id3v1Length {
 		for k := 0; k < id3v1Length; k++ {
 			v1.data[k] = b[k]
@@ -275,7 +275,7 @@ func newId3v1MetadataWithData(b []byte) *id3v1Metadata {
 	return v1
 }
 
-func newId3v1Metadata() *id3v1Metadata {
+func newID3v1Metadata() *id3v1Metadata {
 	return &id3v1Metadata{data: make([]byte, id3v1Length)}
 }
 
@@ -422,52 +422,51 @@ func stripTrailing(s string, suffix string) string {
 	return s
 }
 
-func readId3v1Metadata(path string) ([]string, error) {
-	if v1, err := internalReadId3V1Metadata(path, fileReader); err != nil {
+func readID3v1Metadata(path string) ([]string, error) {
+	v1, err := internalReadID3V1Metadata(path, fileReader)
+	if err != nil {
 		return nil, err
-	} else {
-		var output []string
-		output = append(output, fmt.Sprintf("Artist: %q", v1.getArtist()))
-		output = append(output, fmt.Sprintf("Album: %q", v1.getAlbum()))
-		output = append(output, fmt.Sprintf("Title: %q", v1.getTitle()))
-		if track, ok := v1.getTrack(); ok {
-			output = append(output, fmt.Sprintf("Track: %d", track))
-		}
-		output = append(output, fmt.Sprintf("Year: %q", v1.getYear()))
-		if genre, ok := v1.getGenre(); ok {
-			output = append(output, fmt.Sprintf("Genre: %q", genre))
-		}
-		if comment := v1.getComment(); len(comment) > 0 {
-			output = append(output, fmt.Sprintf("Comment: %q", comment))
-		}
-		return output, nil
-
 	}
+	var output []string
+	output = append(output, fmt.Sprintf("Artist: %q", v1.getArtist()))
+	output = append(output, fmt.Sprintf("Album: %q", v1.getAlbum()))
+	output = append(output, fmt.Sprintf("Title: %q", v1.getTitle()))
+	if track, ok := v1.getTrack(); ok {
+		output = append(output, fmt.Sprintf("Track: %d", track))
+	}
+	output = append(output, fmt.Sprintf("Year: %q", v1.getYear()))
+	if genre, ok := v1.getGenre(); ok {
+		output = append(output, fmt.Sprintf("Genre: %q", genre))
+	}
+	if comment := v1.getComment(); len(comment) > 0 {
+		output = append(output, fmt.Sprintf("Comment: %q", comment))
+	}
+	return output, nil
 }
 
 func fileReader(f *os.File, b []byte) (int, error) {
 	return f.Read(b)
 }
 
-func internalReadId3V1Metadata(path string, readFunc func(f *os.File, b []byte) (int, error)) (*id3v1Metadata, error) {
-	if file, err := os.Open(path); err != nil {
+func internalReadID3V1Metadata(path string, readFunc func(f *os.File, b []byte) (int, error)) (*id3v1Metadata, error) {
+	file, err := os.Open(path)
+	if err != nil {
 		return nil, err
-	} else {
-		defer file.Close()
-		if _, err = file.Seek(-id3v1Length, io.SeekEnd); err != nil {
-			return nil, err
-		}
-		v1 := newId3v1Metadata()
-		if r, err := readFunc(file, v1.data); err != nil {
-			return nil, err
-		} else if r < id3v1Length {
-			return nil, fmt.Errorf("cannot read id3v1 tag from file %q; only %d bytes read", path, r)
-		}
-		if v1.isValid() {
-			return v1, nil
-		}
-		return nil, fmt.Errorf("no id3v1 tag found in file %q", path)
 	}
+	defer file.Close()
+	if _, err = file.Seek(-id3v1Length, io.SeekEnd); err != nil {
+		return nil, err
+	}
+	v1 := newID3v1Metadata()
+	if r, err := readFunc(file, v1.data); err != nil {
+		return nil, err
+	} else if r < id3v1Length {
+		return nil, fmt.Errorf("cannot read id3v1 tag from file %q; only %d bytes read", path, r)
+	}
+	if v1.isValid() {
+		return v1, nil
+	}
+	return nil, fmt.Errorf("no id3v1 tag found in file %q", path)
 }
 
 func (v1 *id3v1Metadata) write(path string) error {
@@ -481,7 +480,7 @@ func writeToFile(f *os.File, b []byte) (int, error) {
 func updateID3V1Tag(t *Track, src sourceType) (err error) {
 	if t.tM.requiresEdit[src] {
 		var v1 *id3v1Metadata
-		if v1, err = internalReadId3V1Metadata(t.path, fileReader); err == nil {
+		if v1, err = internalReadID3V1Metadata(t.path, fileReader); err == nil {
 			albumTitle := t.tM.correctedAlbum[src]
 			if len(albumTitle) != 0 {
 				v1.setAlbum(albumTitle)
@@ -551,7 +550,7 @@ func (v1 *id3v1Metadata) internalWrite(originalPath string, writeFunc func(f *os
 	return
 }
 
-var runeByteMapping map[rune][]byte = map[rune][]byte{
+var runeByteMapping = map[rune][]byte{
 	'…': {0x85},
 	'¡': {0xA1},
 	'¢': {0xA2},

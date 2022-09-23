@@ -30,10 +30,6 @@ type export struct {
 	f         *flag.FlagSet
 }
 
-func (ex *export) name() string {
-	return exportCommandName
-}
-
 func newExport(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
 	return newExportCommand(o, c, fSet)
 }
@@ -98,7 +94,7 @@ func (ex *export) Exec(o internal.OutputBus, args []string) (ok bool) {
 
 func (ex *export) logFields() map[string]any {
 	return map[string]any{
-		fkCommandName:   ex.name(),
+		fkCommandName:   exportCommandName,
 		fKDefaultsFlag:  *ex.defaults,
 		fKOverwriteFlag: *ex.overwrite,
 	}
@@ -106,8 +102,8 @@ func (ex *export) logFields() map[string]any {
 
 func (ex *export) runCommand(o internal.OutputBus) (ok bool) {
 	if !*ex.defaults {
-		o.WriteError(internal.USER_SPECIFIED_NO_WORK, ex.name())
-		o.LogWriter().Error(internal.LE_NOTHING_TO_DO, ex.logFields())
+		o.WriteError(internal.UserSpecifiedNoWork, exportCommandName)
+		o.LogWriter().Error(internal.LogErrorNothingToDo, ex.logFields())
 		return
 	}
 	return ex.exportDefaults(o)
@@ -151,10 +147,10 @@ func ensurePathExists(o internal.OutputBus, path string) (ok bool) {
 		ok = true
 	} else {
 		if err := internal.Mkdir(path); err != nil {
-			o.WriteError(internal.USER_CANNOT_CREATE_DIRECTORY, path, err)
-			o.LogWriter().Error(internal.LE_CANNOT_CREATE_DIRECTORY, map[string]any{
-				internal.FK_DIRECTORY: path,
-				internal.FK_ERROR:     err,
+			o.WriteError(internal.UserCannotCreateDirectory, path, err)
+			o.LogWriter().Error(internal.LogErrorCannotCreateDirectory, map[string]any{
+				internal.FieldKeyDirectory: path,
+				internal.FieldKeyError:     err,
 			})
 		} else {
 			ok = true
@@ -165,19 +161,19 @@ func ensurePathExists(o internal.OutputBus, path string) (ok bool) {
 
 func (ex *export) overwriteFile(o internal.OutputBus, fileName string, content []byte) (ok bool) {
 	if !*ex.overwrite {
-		o.WriteError(internal.USER_NO_OVERWRITE_ALLOWED, fileName, overwriteFlag)
-		o.LogWriter().Error(internal.LE_OVERWRITE_DISABLED, map[string]any{
-			fKOverwriteFlag:       false,
-			internal.FK_FILE_NAME: fileName,
+		o.WriteError(internal.UserNoOverwriteAllowed, fileName, overwriteFlag)
+		o.LogWriter().Error(internal.LogErrorOverwriteDisabled, map[string]any{
+			fKOverwriteFlag:           false,
+			internal.FieldKeyFileName: fileName,
 		})
 	} else {
 		backupFileName := fileName + "-backup"
 		if err := os.Rename(fileName, backupFileName); err != nil {
-			o.WriteError(internal.USER_CANNOT_RENAME_FILE, fileName, backupFileName, err)
-			o.LogWriter().Error(internal.LE_RENAME_ERROR, map[string]any{
-				internal.FK_ERROR: err,
-				fKOriginalFile:    fileName,
-				fKBackupFile:      backupFileName,
+			o.WriteError(internal.UserCannotRenameFile, fileName, backupFileName, err)
+			o.LogWriter().Error(internal.LogErrorRenameError, map[string]any{
+				internal.FieldKeyError: err,
+				fKOriginalFile:         fileName,
+				fKBackupFile:           backupFileName,
 			})
 		} else {
 			if createFile(o, fileName, content) {
@@ -191,10 +187,10 @@ func (ex *export) overwriteFile(o internal.OutputBus, fileName string, content [
 
 func createFile(o internal.OutputBus, fileName string, content []byte) bool {
 	if err := os.WriteFile(fileName, content, 0644); err != nil {
-		o.WriteError(internal.USER_CANNOT_CREATE_FILE, fileName, err)
-		o.LogWriter().Error(internal.LE_CANNOT_CREATE_FILE, map[string]any{
-			internal.FK_FILE_NAME: fileName,
-			internal.FK_ERROR:     err,
+		o.WriteError(internal.UserCannotCreateFile, fileName, err)
+		o.LogWriter().Error(internal.LogErrorCannotCreateFile, map[string]any{
+			internal.FieldKeyFileName: fileName,
+			internal.FieldKeyError:    err,
 		})
 		return false
 	}

@@ -47,10 +47,6 @@ const (
 type aboutCmd struct {
 }
 
-func (v *aboutCmd) name() string {
-	return aboutCommandName
-}
-
 func newAboutCmd(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
 	return &aboutCmd{}, true
 }
@@ -58,7 +54,7 @@ func newAboutCmd(o internal.OutputBus, c *internal.Configuration, fSet *flag.Fla
 // Exec runs the command. The args parameter is ignored, and the methid always
 // returns true.
 func (v *aboutCmd) Exec(o internal.OutputBus, args []string) (ok bool) {
-	o.LogWriter().Info(internal.LI_EXECUTING_COMMAND, map[string]any{fkCommandName: v.name()})
+	o.LogWriter().Info(internal.LogInfoExecutingCommand, map[string]any{fkCommandName: aboutCommandName})
 	var elements []string
 	timeStamp := translateTimestamp(AboutSettings.BuildTimestamp)
 	description := fmt.Sprintf("%s version %s, built on %s", internal.AppName, AboutSettings.AppVersion, timeStamp)
@@ -133,10 +129,10 @@ func formatCopyright(firstYear, lastYear int) string {
 func finalYear(o internal.OutputBus, timestamp string) int {
 	var y = firstYear
 	if t, err := time.Parse(time.RFC3339, timestamp); err != nil {
-		o.WriteError(internal.USER_CANNOT_PARSE_TIMESTAMP, timestamp, err)
+		o.WriteError(internal.UserCannotParseTimestamp, timestamp, err)
 		o.LogWriter().Error("parse error", map[string]any{
-			internal.FK_ERROR: err,
-			internal.FK_VALUE: timestamp,
+			internal.FieldKeyError: err,
+			internal.FieldKeyValue: timestamp,
 		})
 	} else {
 		y = t.Year()

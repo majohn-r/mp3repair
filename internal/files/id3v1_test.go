@@ -107,7 +107,7 @@ func Test_newId3v1MetadataWithData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := newId3v1MetadataWithData(tt.args.b); !reflect.DeepEqual(got, tt.want) {
+			if got := newID3v1MetadataWithData(tt.args.b); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
@@ -123,12 +123,12 @@ func Test_id3v1Metadata_isValid(t *testing.T) {
 	}{
 		{
 			name: "expected",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			want: true,
 		},
 		{
 			name: "bad",
-			v1:   newId3v1MetadataWithData([]byte{0, 1, 2}),
+			v1:   newID3v1MetadataWithData([]byte{0, 1, 2}),
 		},
 	}
 	for _, tt := range tests {
@@ -149,12 +149,12 @@ func Test_id3v1Metadata_getTitle(t *testing.T) {
 	}{
 		{
 			name: "ringo",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			want: "Ringo - Pop Profile [Interview",
 		},
 		{
 			name: "julia",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet2),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet2),
 			want: "Julia",
 		},
 	}
@@ -180,9 +180,9 @@ func Test_id3v1Metadata_setTitle(t *testing.T) {
 	}{
 		{
 			name: "short title",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "short title"},
-			want: newId3v1MetadataWithData([]byte{
+			want: newID3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
 				's', 'h', 'o', 'r', 't', ' ', 't', 'i', 't', 'l', 'e', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -196,9 +196,9 @@ func Test_id3v1Metadata_setTitle(t *testing.T) {
 		},
 		{
 			name: "long title",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "very long title, so long it cannot be copied intact"},
-			want: newId3v1MetadataWithData([]byte{
+			want: newID3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
 				'v', 'e', 'r', 'y', ' ', 'l', 'o', 'n', 'g', ' ', 't', 'i', 't', 'l', 'e', ',', ' ', 's', 'o', ' ', 'l', 'o', 'n', 'g', ' ', 'i', 't', ' ', 'c', 'a',
 				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -212,9 +212,9 @@ func Test_id3v1Metadata_setTitle(t *testing.T) {
 		},
 		{
 			name: "non-ASCII title",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "Grohg - Cortège Macabre"},
-			want: newId3v1MetadataWithData([]byte{
+			want: newID3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
 				'G', 'r', 'o', 'h', 'g', ' ', '-', ' ', 'C', 'o', 'r', 't', 0xE8, 'g', 'e', ' ', 'M', 'a', 'c', 'a', 'b', 'r', 'e', 0, 0, 0, 0, 0, 0, 0,
 				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -246,12 +246,12 @@ func Test_id3v1Metadata_getArtist(t *testing.T) {
 	}{
 		{
 			name: "beatles1",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			want: "The Beatles",
 		},
 		{
 			name: "beatles2",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet2),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet2),
 			want: "The Beatles",
 		},
 	}
@@ -277,9 +277,9 @@ func Test_id3v1Metadata_setArtist(t *testing.T) {
 	}{
 		{
 			name: "short name",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "shorties"},
-			want: newId3v1MetadataWithData([]byte{
+			want: newID3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
 				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
 				's', 'h', 'o', 'r', 't', 'i', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -293,9 +293,9 @@ func Test_id3v1Metadata_setArtist(t *testing.T) {
 		},
 		{
 			name: "long name",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "The greatest band ever known, bar none"},
-			want: newId3v1MetadataWithData([]byte{
+			want: newID3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
 				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
 				'T', 'h', 'e', ' ', 'g', 'r', 'e', 'a', 't', 'e', 's', 't', ' ', 'b', 'a', 'n', 'd', ' ', 'e', 'v', 'e', 'r', ' ', 'k', 'n', 'o', 'w', 'n', ',', ' ',
@@ -309,9 +309,9 @@ func Test_id3v1Metadata_setArtist(t *testing.T) {
 		},
 		{
 			name: "non-ASCII name",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "Antonín Dvořák"},
-			want: newId3v1MetadataWithData([]byte{
+			want: newID3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
 				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
 				'A', 'n', 't', 'o', 'n', 0xED, 'n', ' ', 'D', 'v', 'o', 'r', 0xE1, 'k', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -343,12 +343,12 @@ func Test_id3v1Metadata_getAlbum(t *testing.T) {
 	}{
 		{
 			name: "BBC",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			want: "On Air: Live At The BBC, Volum",
 		},
 		{
 			name: "White Album",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet2),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet2),
 			want: "The White Album [Disc 1]",
 		},
 	}
@@ -374,9 +374,9 @@ func Test_id3v1Metadata_setAlbum(t *testing.T) {
 	}{
 		{
 			name: "short name",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "!"},
-			want: newId3v1MetadataWithData([]byte{
+			want: newID3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
 				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
 				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -390,9 +390,9 @@ func Test_id3v1Metadata_setAlbum(t *testing.T) {
 		},
 		{
 			name: "long name",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "The Most Amazing Album Ever Released"},
-			want: newId3v1MetadataWithData([]byte{
+			want: newID3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
 				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
 				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -406,9 +406,9 @@ func Test_id3v1Metadata_setAlbum(t *testing.T) {
 		},
 		{
 			name: "non-ASCII name",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "Déjà Vu"},
-			want: newId3v1MetadataWithData([]byte{
+			want: newID3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
 				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
 				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -440,17 +440,17 @@ func Test_id3v1Metadata_getYear(t *testing.T) {
 	}{
 		{
 			name: "BBC",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			want: "2013",
 		},
 		{
 			name: "White Album",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet2),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet2),
 			want: "1968",
 		},
 		{
 			name: "no date",
-			v1:   newId3v1Metadata(),
+			v1:   newID3v1Metadata(),
 			want: "",
 		},
 	}
@@ -477,9 +477,9 @@ func Test_id3v1Metadata_setYear(t *testing.T) {
 	}{
 		{
 			name: "realistic",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "2022"},
-			wantv1: newId3v1MetadataWithData([]byte{
+			wantv1: newID3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
 				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
 				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -511,11 +511,11 @@ func Test_id3v1Metadata_getComment(t *testing.T) {
 	}{
 		{
 			name: "BBC",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 		},
 		{
 			name: "White Album",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet2),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet2),
 		},
 	}
 	for _, tt := range tests {
@@ -540,9 +540,9 @@ func Test_id3v1Metadata_setComment(t *testing.T) {
 	}{
 		{
 			name: "typical comment",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: ""},
-			want: newId3v1MetadataWithData([]byte{
+			want: newID3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
 				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
 				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -556,9 +556,9 @@ func Test_id3v1Metadata_setComment(t *testing.T) {
 		},
 		{
 			name: "long winded",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "This track is genuinely insightful"},
-			want: newId3v1MetadataWithData([]byte{
+			want: newID3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
 				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
 				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -591,19 +591,19 @@ func Test_id3v1Metadata_getTrack(t *testing.T) {
 	}{
 		{
 			name:   "BBC",
-			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:     newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			wantI:  29,
 			wantOk: true,
 		},
 		{
 			name:   "White Album",
-			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet2),
+			v1:     newID3v1MetadataWithData(internal.ID3V1DataSet2),
 			wantI:  17,
 			wantOk: true,
 		},
 		{
 			name: "bad zero byte",
-			v1: newId3v1MetadataWithData([]byte{
+			v1: newID3v1MetadataWithData([]byte{
 				1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 				1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 				1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -642,24 +642,24 @@ func Test_id3v1Metadata_setTrack(t *testing.T) {
 	}{
 		{
 			name:   "low",
-			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:     newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args:   args{t: 0},
 			want:   false,
-			wantv1: newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			wantv1: newID3v1MetadataWithData(internal.ID3V1DataSet1),
 		},
 		{
 			name:   "high",
-			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:     newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args:   args{t: 256},
 			want:   false,
-			wantv1: newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			wantv1: newID3v1MetadataWithData(internal.ID3V1DataSet1),
 		},
 		{
 			name: "ok",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{t: 45},
 			want: true,
-			wantv1: newId3v1MetadataWithData([]byte{
+			wantv1: newID3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
 				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
 				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -694,19 +694,19 @@ func Test_id3v1Metadata_getGenre(t *testing.T) {
 	}{
 		{
 			name:   "BBC",
-			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:     newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			wantS:  "Other",
 			wantOk: true,
 		},
 		{
 			name:   "White Album",
-			v1:     newId3v1MetadataWithData(internal.ID3V1DataSet2),
+			v1:     newID3v1MetadataWithData(internal.ID3V1DataSet2),
 			wantS:  "Rock",
 			wantOk: true,
 		},
 		{
 			name: "bad zero byte",
-			v1: newId3v1MetadataWithData([]byte{
+			v1: newID3v1MetadataWithData([]byte{
 				1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 				1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 				1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -744,9 +744,9 @@ func Test_id3v1Metadata_setGenre(t *testing.T) {
 	}{
 		{
 			name: "no such genre",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "Subspace Radio"},
-			wantv1: newId3v1MetadataWithData([]byte{
+			wantv1: newID3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
 				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
 				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -760,9 +760,9 @@ func Test_id3v1Metadata_setGenre(t *testing.T) {
 		},
 		{
 			name: "known genre",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: genreMap[37]},
-			wantv1: newId3v1MetadataWithData([]byte{
+			wantv1: newID3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
 				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
 				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -912,13 +912,13 @@ func Test_internalReadId3V1Metadata(t *testing.T) {
 				path:     filepath.Join(testDir, goodFile),
 				readFunc: fileReader,
 			},
-			want:    newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			want:    newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			wantErr: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := internalReadId3V1Metadata(tt.args.path, tt.args.readFunc)
+			got, err := internalReadID3V1Metadata(tt.args.path, tt.args.readFunc)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
 				return
@@ -984,7 +984,7 @@ func Test_readId3v1Metadata(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := readId3v1Metadata(tt.args.path)
+			got, err := readID3v1Metadata(tt.args.path)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
 				return
@@ -1050,18 +1050,18 @@ func Test_id3v1Metadata_internalWrite(t *testing.T) {
 		},
 		{
 			name: "error on write",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{
 				oldPath: filepath.Join(testDir, goodFile),
 				writeFunc: func(f *os.File, b []byte) (int, error) {
-					return 0, fmt.Errorf("ruh-roh!")
+					return 0, fmt.Errorf("ruh-roh")
 				},
 			},
 			wantErr: true,
 		},
 		{
 			name: "short write",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet1),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{
 				oldPath: filepath.Join(testDir, goodFile),
 				writeFunc: func(f *os.File, b []byte) (int, error) {
@@ -1072,7 +1072,7 @@ func Test_id3v1Metadata_internalWrite(t *testing.T) {
 		},
 		{
 			name: "good write",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet2),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet2),
 			args: args{
 				oldPath:   filepath.Join(testDir, goodFile),
 				writeFunc: writeToFile,
@@ -1157,7 +1157,7 @@ func Test_id3v1Metadata_write(t *testing.T) {
 	}{
 		{
 			name: "happy place",
-			v1:   newId3v1MetadataWithData(internal.ID3V1DataSet2),
+			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet2),
 			args: args{
 				path: filepath.Join(testDir, goodFile),
 			},

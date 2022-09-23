@@ -20,7 +20,7 @@ const (
 	versionFile = "version.txt"
 )
 
-// var Default = Build
+var Default = Build
 
 // Create the executable image
 func Build() (err error) {
@@ -81,6 +81,18 @@ func readFirstLine() (line string) {
 func Clean() error {
 	fmt.Printf("Removing %s\n", executable)
 	return os.RemoveAll(executable)
+}
+
+// Execute lint
+func Lint() (err error) {
+	unifiedOutput := &bytes.Buffer{}
+	cmd := exec.Command("golint", "-set_exit_status", "./...")
+	cmd.Stderr = unifiedOutput
+	cmd.Stdout = unifiedOutput
+	fmt.Println("running lint on all files")
+	err = cmd.Run()
+	printOutput(unifiedOutput)
+	return
 }
 
 // Execute all unit tests

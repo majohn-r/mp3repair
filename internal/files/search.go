@@ -24,7 +24,7 @@ func (s *Search) contents(o internal.OutputBus) ([]fs.DirEntry, bool) {
 // directory, honoring the specified track extension, but ignoring the album and
 // artist filter expressions.
 func (s *Search) LoadUnfilteredData(o internal.OutputBus) (artists []*Artist, ok bool) {
-	o.LogWriter().Info(internal.LI_READING_UNFILTERED_FILES, s.LogFields(false))
+	o.LogWriter().Info(internal.LogInfoReadingUnfilteredFiles, s.LogFields(false))
 	if artistFiles, ok := s.contents(o); ok {
 		for _, artistFile := range artistFiles {
 			if artistFile.IsDir() {
@@ -54,8 +54,8 @@ func (s *Search) LoadUnfilteredData(o internal.OutputBus) (artists []*Artist, ok
 	}
 	ok = len(artists) != 0
 	if !ok {
-		o.LogWriter().Error(internal.LE_NO_ARTIST_DIRECTORIES, s.LogFields(false))
-		o.WriteError(internal.USER_NO_MUSIC_FILES_FOUND)
+		o.LogWriter().Error(internal.LogErrorNoArtistDirectories, s.LogFields(false))
+		o.WriteError(internal.UserNoMusicFilesFound)
 	}
 	return
 }
@@ -76,7 +76,7 @@ func (s *Search) LogFields(includeFilters bool) map[string]any {
 // FilterArtists filters out the unwanted artists and albums from the input. The
 // result is a new, filtered, copy of the original slice of Artists.
 func (s *Search) FilterArtists(o internal.OutputBus, unfilteredArtists []*Artist) (artists []*Artist, ok bool) {
-	o.LogWriter().Info(internal.LI_FILTERING_FILES, s.LogFields(true))
+	o.LogWriter().Info(internal.LogInfoFilteringFiles, s.LogFields(true))
 	for _, unfilteredArtist := range unfilteredArtists {
 		if s.artistFilter.MatchString(unfilteredArtist.Name()) {
 			artist := copyArtist(unfilteredArtist)
@@ -95,8 +95,8 @@ func (s *Search) FilterArtists(o internal.OutputBus, unfilteredArtists []*Artist
 	}
 	ok = len(artists) != 0
 	if !ok {
-		o.LogWriter().Error(internal.LE_NO_ARTIST_DIRECTORIES, s.LogFields(true))
-		o.WriteError(internal.USER_NO_MUSIC_FILES_FOUND)
+		o.LogWriter().Error(internal.LogErrorNoArtistDirectories, s.LogFields(true))
+		o.WriteError(internal.UserNoMusicFilesFound)
 	}
 	return
 }
@@ -104,7 +104,7 @@ func (s *Search) FilterArtists(o internal.OutputBus, unfilteredArtists []*Artist
 // LoadData collects the artists, albums, and mp3 tracks, honoring all the
 // search parameters.
 func (s *Search) LoadData(o internal.OutputBus) (artists []*Artist, ok bool) {
-	o.LogWriter().Info(internal.LI_READING_FILTERED_FILES, s.LogFields(true))
+	o.LogWriter().Info(internal.LogInfoReadingFilteredFiles, s.LogFields(true))
 	if artistFiles, ok := s.contents(o); ok {
 		for _, artistFile := range artistFiles {
 			if !artistFile.IsDir() || !s.artistFilter.MatchString(artistFile.Name()) {
@@ -139,13 +139,14 @@ func (s *Search) LoadData(o internal.OutputBus) (artists []*Artist, ok bool) {
 	}
 	ok = len(artists) != 0
 	if !ok {
-		o.LogWriter().Error(internal.LE_NO_ARTIST_DIRECTORIES, s.LogFields(true))
-		o.WriteError(internal.USER_NO_MUSIC_FILES_FOUND)
+		o.LogWriter().Error(internal.LogErrorNoArtistDirectories, s.LogFields(true))
+		o.WriteError(internal.UserNoMusicFilesFound)
 	}
 	return
 }
 
-// used for testing only!
+// CreateSearchForTesting creates a minimal Search instance; used for testing
+// only!
 func CreateSearchForTesting(topDir string) *Search {
 	realFlagSet := flag.NewFlagSet("testing", flag.ContinueOnError)
 	o := internal.NewOutputDeviceForTesting()
@@ -154,6 +155,8 @@ func CreateSearchForTesting(topDir string) *Search {
 	return s
 }
 
+// CreateFilteredSearchForTesting creates a Search instance configured for
+// specified search parameters
 func CreateFilteredSearchForTesting(topDir string, artistFilter string, albumFilter string) *Search {
 	realFlagSet := flag.NewFlagSet("testing", flag.ContinueOnError)
 	o := internal.NewOutputDeviceForTesting()

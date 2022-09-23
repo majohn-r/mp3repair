@@ -7,6 +7,9 @@ import (
 	"strings"
 )
 
+// OutputBus defines a set of functions for writing to the console, to the
+// standard error devices, and to a logger; its primary use is to make it much
+// easier to test output writing
 type OutputBus interface {
 	WriteConsole(bool, string, ...any)
 	WriteError(string, ...any)
@@ -14,33 +17,38 @@ type OutputBus interface {
 	LogWriter() Logger
 }
 
-type OutputDevice struct {
+type outputDevice struct {
 	consoleWriter io.Writer
 	errorWriter   io.Writer
 	logWriter     Logger
 }
 
-func NewOutputDevice() *OutputDevice {
-	return &OutputDevice{
+// NewOutputBus returns an implementation of OutputBus
+func NewOutputBus() OutputBus {
+	return &outputDevice{
 		consoleWriter: os.Stdout,
 		errorWriter:   os.Stderr,
 		logWriter:     productionLogger{},
 	}
 }
 
-func (o *OutputDevice) ErrorWriter() io.Writer {
+// ErrorWriter returns a writer to stderr
+func (o *outputDevice) ErrorWriter() io.Writer {
 	return o.errorWriter
 }
 
-func (o *OutputDevice) LogWriter() Logger {
+// LogWriter returns a logger
+func (o *outputDevice) LogWriter() Logger {
 	return o.logWriter
 }
 
-func (o *OutputDevice) WriteError(format string, a ...any) {
+// WriteError writes output to stderr
+func (o *outputDevice) WriteError(format string, a ...any) {
 	fmt.Fprintln(o.errorWriter, createStrictOutput(format, a...))
 }
 
-func (o *OutputDevice) WriteConsole(strict bool, format string, a ...any) {
+// WriteConsole writes output to stdout
+func (o *outputDevice) WriteConsole(strict bool, format string, a ...any) {
 	fmt.Fprint(o.consoleWriter, createConsoleOutput(strict, format, a...))
 }
 

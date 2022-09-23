@@ -20,12 +20,16 @@ const (
 	symlinkName      = "latest" + logFileExtension
 	maxLogFiles      = 10
 	// constants for log field keys
-	FK_DIRECTORY = "directory"
-	FK_ERROR     = "error"
-	FK_FILE_NAME = "fileName"
-	FK_SECTION   = "section"
-	FK_VALUE     = "value"
-	fkVarName    = "environment variable"
+	fieldKeyVarName   = "environment variable"
+)
+
+// Reusable field keys for logs
+const (
+	FieldKeyDirectory = "directory"
+	FieldKeyError     = "error"
+	FieldKeyFileName  = "fileName"
+	FieldKeySection   = "section"
+	FieldKeyValue     = "value"
 )
 
 func configureLogging(path string) *cronowriter.CronoWriter {
@@ -36,11 +40,11 @@ func configureLogging(path string) *cronowriter.CronoWriter {
 
 func cleanupLogFiles(o OutputBus, path string) {
 	if files, err := os.ReadDir(path); err != nil {
-		o.LogWriter().Error(LE_CANNOT_READ_DIRECTORY, map[string]any{
-			FK_DIRECTORY: path,
-			FK_ERROR:     err,
+		o.LogWriter().Error(LogErrorCannotReadDirectory, map[string]any{
+			FieldKeyDirectory: path,
+			FieldKeyError:     err,
 		})
-		o.WriteError(USER_LOG_DIR_CANNOT_BE_READ, path, err)
+		o.WriteError(UserLogDirCannotBeRead, path, err)
 	} else {
 		var fileMap map[time.Time]fs.DirEntry = make(map[time.Time]fs.DirEntry)
 		var times []time.Time
@@ -65,16 +69,16 @@ func cleanupLogFiles(o OutputBus, path string) {
 				fileName := fileMap[times[k]].Name()
 				logFilePath := filepath.Join(path, fileName)
 				if err := os.Remove(logFilePath); err != nil {
-					o.LogWriter().Error(LE_CANNOT_DELETE_FILE, map[string]any{
-						FK_DIRECTORY: path,
-						FK_FILE_NAME: fileName,
-						FK_ERROR:     err,
+					o.LogWriter().Error(LogErrorCannotDeleteFile, map[string]any{
+						FieldKeyDirectory: path,
+						FieldKeyFileName:  fileName,
+						FieldKeyError:     err,
 					})
-					o.WriteError(USER_LOG_FILE_CANNOT_BE_DELETED, logFilePath, err)
+					o.WriteError(UserLogFileCannotBeDeleted, logFilePath, err)
 				} else {
-					o.LogWriter().Info(LI_FILE_DELETED, map[string]any{
-						FK_DIRECTORY: path,
-						FK_FILE_NAME: fileName,
+					o.LogWriter().Info(LogInfoFileDeleted, map[string]any{
+						FieldKeyDirectory: path,
+						FieldKeyFileName:  fileName,
 					})
 				}
 			}
@@ -91,13 +95,13 @@ func InitLogging(o OutputBus) bool {
 	var found bool
 	if tmpFolder, found = os.LookupEnv("TMP"); !found {
 		if tmpFolder, found = os.LookupEnv("TEMP"); !found {
-			o.WriteError(USER_NO_TEMP_FOLDER)
+			o.WriteError(UserNoTempFolder)
 			return false
 		}
 	}
 	path := filepath.Join(CreateAppSpecificPath(tmpFolder), logDirName)
 	if err := os.MkdirAll(path, 0755); err != nil {
-		o.WriteError(USER_CANNOT_CREATE_DIRECTORY, path, err)
+		o.WriteError(UserCannotCreateDirectory, path, err)
 		return false
 	}
 	logger = configureLogging(path)
@@ -106,6 +110,7 @@ func InitLogging(o OutputBus) bool {
 	return true
 }
 
+// Logger defines functions for writing to a log
 type Logger interface {
 	Info(msg string, fields map[string]any)
 	Error(msg string, fields map[string]any)

@@ -92,7 +92,7 @@ func toTrackNumber(s string) (i int, err error) {
 	// this is more complicated than I wanted, because some mp3 rippers produce
 	// track numbers like "12/14", meaning 12th track of 14
 	if len(s) == 0 {
-		err = fmt.Errorf(internal.ERROR_ZERO_LENGTH)
+		err = fmt.Errorf(internal.ErrorZeroLength)
 		return
 	}
 	s = removeLeadingBOMs(s)
@@ -106,7 +106,7 @@ func toTrackNumber(s string) (i int, err error) {
 		} else {
 			switch j {
 			case 0: // never saw a digit
-				err = fmt.Errorf(internal.ERROR_DOES_NOT_BEGIN_WITH_DIGIT)
+				err = fmt.Errorf(internal.ErrorDoesNotBeginWithDigit)
 				return
 			default: // found something other than a digit, but read at least one
 				i = n

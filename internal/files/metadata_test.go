@@ -23,7 +23,7 @@ func Test_trackMetadata_setId3v1Values(t *testing.T) {
 		{
 			name: "complete test",
 			tM:   newTrackMetadata(),
-			args: args{v1: newId3v1MetadataWithData(internal.ID3V1DataSet1)},
+			args: args{v1: newID3v1MetadataWithData(internal.ID3V1DataSet1)},
 			wantTM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -47,7 +47,7 @@ func Test_trackMetadata_setId3v1Values(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.tM.setId3v1Values(tt.args.v1)
+			tt.tM.setID3v1Values(tt.args.v1)
 			if !reflect.DeepEqual(tt.tM, tt.wantTM) {
 				t.Errorf("%s got %v want %v", fnName, tt.tM, tt.wantTM)
 			}
@@ -103,7 +103,7 @@ func Test_trackMetadata_setId3v2Values(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.tM.setId3v2Values(tt.args.d)
+			tt.tM.setID3v2Values(tt.args.d)
 			if !reflect.DeepEqual(tt.tM, tt.wantTM) {
 				t.Errorf("%s got %v want %v", fnName, tt.tM, tt.wantTM)
 			}
@@ -125,9 +125,9 @@ func Test_readMetadata(t *testing.T) {
 		t.Errorf("%s cannot create %q: %v", fnName, taglessFile, err)
 	}
 	id3v1OnlyFile := "02 id3v1.mp3"
-	payloadId3v1Only := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-	payloadId3v1Only = append(payloadId3v1Only, internal.ID3V1DataSet1...)
-	if err := internal.CreateFileForTestingWithContent(testDir, id3v1OnlyFile, payloadId3v1Only); err != nil {
+	payloadID3v1Only := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
+	payloadID3v1Only = append(payloadID3v1Only, internal.ID3V1DataSet1...)
+	if err := internal.CreateFileForTestingWithContent(testDir, id3v1OnlyFile, payloadID3v1Only); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, id3v1OnlyFile, err)
 	}
 	id3v2OnlyFile := "03 id3v2.mp3"
@@ -141,13 +141,13 @@ func Test_readMetadata(t *testing.T) {
 		"TPE1": "unknown artist",
 		"TLEN": "1000",
 	}
-	payloadId3v2Only := CreateID3V2TaggedDataForTesting([]byte{}, frames)
-	if err := internal.CreateFileForTestingWithContent(testDir, id3v2OnlyFile, payloadId3v2Only); err != nil {
+	payloadID3v2Only := CreateID3V2TaggedDataForTesting([]byte{}, frames)
+	if err := internal.CreateFileForTestingWithContent(testDir, id3v2OnlyFile, payloadID3v2Only); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, id3v2OnlyFile, err)
 	}
 	completeFile := "04 complete.mp3"
-	payloadComplete := payloadId3v2Only
-	payloadComplete = append(payloadComplete, payloadId3v1Only...)
+	payloadComplete := payloadID3v2Only
+	payloadComplete = append(payloadComplete, payloadID3v1Only...)
 	if err := internal.CreateFileForTestingWithContent(testDir, completeFile, payloadComplete); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, completeFile, err)
 	}

@@ -26,7 +26,7 @@ func DecorateIntFlagUsage(usage string, defaultValue int) string {
 	return fmt.Sprintf("%s (default 0)", usage)
 }
 
-// DecorateIntFlagUsage appends a default value to the provided usage if the
+// DecorateStringFlagUsage appends a default value to the provided usage if the
 // default value is the empty string. This is a work-around for the flag
 // package's defaultUsage function, which displays each flag's usage, along with
 // its default value - but it only includes the default value only if the

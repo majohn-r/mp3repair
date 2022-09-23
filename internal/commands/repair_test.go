@@ -494,7 +494,7 @@ func Test_repair_makeBackupDirectories(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
-			tt.r.makeBackupDirectories(o, tt.args.paths)
+			makeBackupDirectories(o, tt.args.paths)
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
@@ -554,7 +554,7 @@ func Test_repair_backupTracks(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
-			tt.r.backupTracks(o, tt.args.tracks)
+			backupTracks(o, tt.args.tracks)
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
@@ -630,7 +630,7 @@ func Test_repair_fixTracks(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := internal.NewOutputDeviceForTesting()
-			tt.r.fixTracks(o, tt.args.tracks)
+			fixTracks(o, tt.args.tracks)
 			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)

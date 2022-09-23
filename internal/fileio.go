@@ -14,9 +14,8 @@ func PlainFileExists(path string) bool {
 	f, err := os.Stat(path)
 	if err == nil {
 		return !f.IsDir()
-	} else {
-		return !errors.Is(err, os.ErrNotExist)
 	}
+	return !errors.Is(err, os.ErrNotExist)
 }
 
 // DirExists returns whether the specified file exists as a directory
@@ -24,12 +23,11 @@ func DirExists(path string) bool {
 	f, err := os.Stat(path)
 	if err == nil {
 		return f.IsDir()
-	} else {
-		return !errors.Is(err, os.ErrNotExist)
 	}
+	return !errors.Is(err, os.ErrNotExist)
 }
 
-// Copy copies a file. Adapted from
+// CopyFile copies a file. Adapted from
 // https://github.com/cleversoap/go-cp/blob/master/cp.go
 func CopyFile(src, dest string) (err error) {
 	var r *os.File
@@ -57,7 +55,7 @@ func Mkdir(dirName string) (err error) {
 		return
 	}
 	if !status.IsDir() {
-		err = fmt.Errorf(ERROR_DIR_IS_FILE)
+		err = fmt.Errorf(ErrorDirIsFile)
 	}
 	return
 }
@@ -66,11 +64,11 @@ func Mkdir(dirName string) (err error) {
 func ReadDirectory(o OutputBus, dir string) (files []fs.DirEntry, ok bool) {
 	var err error
 	if files, err = os.ReadDir(dir); err != nil {
-		o.LogWriter().Error(LE_CANNOT_READ_DIRECTORY, map[string]any{
-			FK_DIRECTORY: dir,
-			FK_ERROR:     err,
+		o.LogWriter().Error(LogErrorCannotReadDirectory, map[string]any{
+			FieldKeyDirectory: dir,
+			FieldKeyError:     err,
 		})
-		o.WriteError(USER_CANNOT_READ_DIRECTORY, dir, err)
+		o.WriteError(UserCannotReadDirectory, dir, err)
 		return
 	}
 	ok = true

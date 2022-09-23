@@ -12,11 +12,13 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// DefaultConfigFileName is the name of the configuration file that contains defaults for the commands
+const DefaultConfigFileName = "defaults.yaml"
+
 const (
-	DefaultConfigFileName = "defaults.yaml"
-	appDataVar            = "APPDATA"
-	fkKey                 = "key"
-	fkType                = "type"
+	appDataVar = "APPDATA"
+	fkKey      = "key"
+	fkType     = "type"
 )
 
 var (
@@ -24,10 +26,14 @@ var (
 	appSpecificPathValid bool
 )
 
+// GetAppSpecificPath returns the location for application-specific files
+// (%APPPATH%\mp3) and whether that value is trustworthy
 func GetAppSpecificPath() (string, bool) {
 	return appSpecificPath, appSpecificPathValid
 }
 
+// SetAppSpecificPathForTesting sets the app-specific path internal variables;
+// useful for test scenarios only
 func SetAppSpecificPathForTesting(p string, v bool) {
 	appSpecificPath = p
 	appSpecificPathValid = v
@@ -60,20 +66,20 @@ func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
 	yfile, _ := os.ReadFile(configFile) // only probable error circumvented by verifyFileExists failure
 	data, err := readYaml(yfile)
 	if err != nil {
-		o.LogWriter().Error(LE_CANNOT_UNMARSHAL_YAML, map[string]any{
-			FK_DIRECTORY: path,
-			FK_FILE_NAME: DefaultConfigFileName,
-			FK_ERROR:     err,
+		o.LogWriter().Error(LogErrorCannotUnmarshalYAML, map[string]any{
+			FieldKeyDirectory: path,
+			FieldKeyFileName:  DefaultConfigFileName,
+			FieldKeyError:     err,
 		})
-		o.WriteError(USER_CONFIGURATION_FILE_GARBLED, configFile, err)
+		o.WriteError(UserConfigurationFileGarbled, configFile, err)
 		return
 	}
 	c = CreateConfiguration(o, data)
 	ok = true
-	o.LogWriter().Info(LI_CONFIGURATION_FILE_READ, map[string]any{
-		FK_DIRECTORY: path,
-		FK_FILE_NAME: DefaultConfigFileName,
-		FK_VALUE:     c,
+	o.LogWriter().Info(LogInfoConfigurationFileRead, map[string]any{
+		FieldKeyDirectory: path,
+		FieldKeyFileName:  DefaultConfigFileName,
+		FieldKeyValue:     c,
 	})
 	return
 }
@@ -89,8 +95,8 @@ func LookupAppData(o OutputBus) (string, bool) {
 	if value, ok := os.LookupEnv(appDataVar); ok {
 		return value, ok
 	}
-	o.LogWriter().Info(LI_NOT_SET, map[string]any{
-		fkVarName: appDataVar,
+	o.LogWriter().Info(LogInfoNotSet, map[string]any{
+		fieldKeyVarName: appDataVar,
 	})
 	return "", false
 }
@@ -99,21 +105,21 @@ func verifyFileExists(o OutputBus, path string) (ok bool, err error) {
 	f, err := os.Stat(path)
 	if err == nil {
 		if f.IsDir() {
-			o.LogWriter().Error(LE_FILE_IS_DIR, map[string]any{
-				FK_DIRECTORY: filepath.Dir(path),
-				FK_FILE_NAME: filepath.Base(path),
+			o.LogWriter().Error(LogErrorFileIsDirectory, map[string]any{
+				FieldKeyDirectory: filepath.Dir(path),
+				FieldKeyFileName:  filepath.Base(path),
 			})
-			o.WriteError(USER_CONFIGURATION_FILE_IS_DIR, path)
-			err = fmt.Errorf(ERROR_FILE_IS_DIR)
+			o.WriteError(UserConfigurationFileIsDir, path)
+			err = fmt.Errorf(ErrorFileIsDir)
 			return
 		}
 		ok = true
 		return
 	}
 	if errors.Is(err, os.ErrNotExist) {
-		o.LogWriter().Info(LI_NO_SUCH_FILE, map[string]any{
-			FK_DIRECTORY: filepath.Dir(path),
-			FK_FILE_NAME: filepath.Base(path),
+		o.LogWriter().Info(LogInfoNoSuchFile, map[string]any{
+			FieldKeyDirectory: filepath.Dir(path),
+			FieldKeyFileName:  filepath.Base(path),
 		})
 		err = nil
 	}
@@ -137,6 +143,7 @@ func (c *Configuration) String() string {
 	return strings.Join(output, ", ")
 }
 
+// EmptyConfiguration creates an empty Configuration instance
 func EmptyConfiguration() *Configuration {
 	return &Configuration{
 		bMap: make(map[string]bool),
@@ -193,12 +200,16 @@ func (c *Configuration) BoolDefault(key string, defaultValue bool) (b bool, err 
 	return
 }
 
+// IntBounds holds the bounds for an int value which has a minimum value, a
+// maximum value, and a default that lies within those bounds
 type IntBounds struct {
 	minValue     int
 	defaultValue int
 	maxValue     int
 }
 
+// NewIntBounds creates a instance of IntBounds, sorting the provided value into
+// reasonable fields
 func NewIntBounds(v1, v2, v3 int) *IntBounds {
 	is := []int{v1, v2, v3}
 	sort.Ints(is)
@@ -209,6 +220,8 @@ func NewIntBounds(v1, v2, v3 int) *IntBounds {
 	}
 }
 
+// IntDefault returns a default value for a specified key, which may or may not
+// be defined in the Configuration instance
 func (c *Configuration) IntDefault(key string, sortedBounds *IntBounds) (i int, err error) {
 	i = sortedBounds.defaultValue
 	if value, ok := c.iMap[key]; ok {
@@ -269,6 +282,7 @@ func (c *Configuration) StringValue(key string) (value string, ok bool) {
 	return
 }
 
+// Configuration defines the data structure for configuration information.
 type Configuration struct {
 	sMap map[string]string
 	bMap map[string]bool
@@ -276,6 +290,8 @@ type Configuration struct {
 	cMap map[string]*Configuration
 }
 
+// CreateConfiguration returns a Configuration instance populated as specified
+// by the data parameter
 func CreateConfiguration(o OutputBus, data map[string]any) *Configuration {
 	c := EmptyConfiguration()
 	for key, v := range data {
@@ -289,12 +305,12 @@ func CreateConfiguration(o OutputBus, data map[string]any) *Configuration {
 		case map[string]any:
 			c.cMap[key] = CreateConfiguration(o, t)
 		default:
-			o.LogWriter().Error(LE_UNEXPECTED_VALUE_TYPE, map[string]any{
-				fkKey:    key,
-				FK_VALUE: v,
-				fkType:   fmt.Sprintf("%T", v),
+			o.LogWriter().Error(LogErrorUnexpectedValueType, map[string]any{
+				fkKey:         key,
+				FieldKeyValue: v,
+				fkType:        fmt.Sprintf("%T", v),
 			})
-			o.WriteError(USER_UNEXPECTED_VALUE_TYPE, key, v, v)
+			o.WriteError(UserUnexpectedValueType, key, v, v)
 			c.sMap[key] = fmt.Sprintf("%v", v)
 		}
 	}

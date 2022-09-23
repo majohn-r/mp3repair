@@ -9,6 +9,7 @@ import (
 	"strings"
 )
 
+// AppName is the name of the application
 const AppName = "mp3"
 
 // CreateAppSpecificPath creates a path string for an app-related directory

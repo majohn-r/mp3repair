@@ -12,23 +12,23 @@ func TestNewOutputDevice(t *testing.T) {
 	fnName := "NewOutputDevice()"
 	tests := []struct {
 		name        string
-		want        *OutputDevice
+		want        *outputDevice
 		wantWStdout string
 		wantWStderr string
 	}{
 		{
 			name:        "normal",
-			want:        &OutputDevice{consoleWriter: os.Stdout, errorWriter: os.Stderr, logWriter: productionLogger{}},
+			want:        &outputDevice{consoleWriter: os.Stdout, errorWriter: os.Stderr, logWriter: productionLogger{}},
 			wantWStdout: "hello to console",
 			wantWStderr: "hello to error",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := NewOutputDevice(); !reflect.DeepEqual(got, tt.want) {
+			if got := NewOutputBus(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
-			testDevice := NewOutputDevice()
+			testDevice := NewOutputBus()
 			var o any = testDevice
 			if _, ok := o.(OutputBus); !ok {
 				t.Errorf("%s: does not implement OutputBus", fnName)
@@ -44,12 +44,12 @@ func TestOutputDevice_ErrorWriter(t *testing.T) {
 	fnName := "OutputDevice.ErrorWriter()"
 	tests := []struct {
 		name string
-		o    *OutputDevice
+		o    OutputBus
 		want io.Writer
 	}{
 		{
 			name: "normal",
-			o:    NewOutputDevice(),
+			o:    NewOutputBus(),
 			want: os.Stderr,
 		},
 	}
@@ -95,7 +95,7 @@ func TestOutputDevice_WriteError(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := &OutputDevice{errorWriter: tt.w}
+			o := &outputDevice{errorWriter: tt.w}
 			o.WriteError(tt.args.format, tt.args.a...)
 			if got := tt.w.String(); got != tt.want {
 				t.Errorf("%s got %q want %q", fnName, got, tt.want)
@@ -140,7 +140,7 @@ func TestOutputDevice_WriteConsole(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := &OutputDevice{consoleWriter: tt.w}
+			o := &outputDevice{consoleWriter: tt.w}
 			o.WriteConsole(tt.args.strict, tt.args.format, tt.args.a...)
 			if got := tt.w.String(); got != tt.want {
 				t.Errorf("%s: got %q want %q", fnName, got, tt.want)

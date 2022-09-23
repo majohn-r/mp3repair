@@ -18,10 +18,6 @@ type postrepair struct {
 	sf *files.SearchFlags
 }
 
-func (p *postrepair) name() string {
-	return postRepairCommandName
-}
-
 func newPostRepairCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*postrepair, bool) {
 	sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet)
 	if sFlagsOk {
@@ -36,17 +32,17 @@ func newPostRepair(o internal.OutputBus, c *internal.Configuration, fSet *flag.F
 
 func (p *postrepair) Exec(o internal.OutputBus, args []string) (ok bool) {
 	if s, argsOk := p.sf.ProcessArgs(o, args); argsOk {
-		ok = p.runCommand(o, s)
+		ok = runCommand(o, s)
 	}
 	return
 }
 
-func (p *postrepair) logFields() map[string]any {
-	return map[string]any{fkCommandName: p.name()}
+func logFields() map[string]any {
+	return map[string]any{fkCommandName: postRepairCommandName}
 }
 
-func (p *postrepair) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
-	o.LogWriter().Info(internal.LI_EXECUTING_COMMAND, p.logFields())
+func runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
+	o.LogWriter().Info(internal.LogInfoExecutingCommand, logFields())
 	artists, ok := s.LoadData(o)
 	if ok {
 		backups := make(map[string]*files.Album)
@@ -74,11 +70,11 @@ func (p *postrepair) runCommand(o internal.OutputBus, s *files.Search) (ok bool)
 
 func removeBackupDirectory(o internal.OutputBus, d string, a *files.Album) {
 	if err := os.RemoveAll(d); err != nil {
-		o.LogWriter().Error(internal.LE_CANNOT_DELETE_DIRECTORY, map[string]any{
-			internal.FK_DIRECTORY: d,
-			internal.FK_ERROR:     err,
+		o.LogWriter().Error(internal.LogErrorCannotDeleteDirectory, map[string]any{
+			internal.FieldKeyDirectory: d,
+			internal.FieldKeyError:     err,
 		})
-		o.WriteError(internal.USER_CANNOT_DELETE_DIRECTORY, d, err)
+		o.WriteError(internal.UserCannotDeleteDirectory, d, err)
 	} else {
 		o.WriteConsole(true, "The backup directory for artist %q album %q has been deleted\n", a.RecordingArtistName(), a.Name())
 	}

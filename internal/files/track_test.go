@@ -1112,7 +1112,7 @@ func TestTrack_EditTags(t *testing.T) {
 		{
 			name:  "no edit required",
 			tr:    &Track{tM: nil},
-			wantE: []string{internal.ERROR_EDIT_UNNECESSARY},
+			wantE: []string{internal.ErrorEditUnnecessary},
 		},
 		{
 			name:   "edit required",

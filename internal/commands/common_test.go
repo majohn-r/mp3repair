@@ -195,10 +195,6 @@ func TestProcessCommand(t *testing.T) {
 			} else {
 				if tt.want == nil {
 					t.Errorf("%s got = %v, want %v", fnName, got, tt.want)
-				} else {
-					if got.name() != tt.want.name() {
-						t.Errorf("%s got name = %q, want name %q", fnName, got.name(), tt.want.name())
-					}
 				}
 			}
 			if !reflect.DeepEqual(got1, tt.want1) {

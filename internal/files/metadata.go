@@ -55,7 +55,7 @@ func newTrackMetadata() *trackMetadata {
 }
 
 func readMetadata(path string) *trackMetadata {
-	v1, id3v1Err := internalReadId3V1Metadata(path, fileReader)
+	v1, id3v1Err := internalReadID3V1Metadata(path, fileReader)
 	d := RawReadID3V2Tag(path)
 	tM := newTrackMetadata()
 	switch {
@@ -64,21 +64,21 @@ func readMetadata(path string) *trackMetadata {
 		tM.err[id3v2Source] = d.err
 	case id3v1Err != nil:
 		tM.err[id3v1Source] = id3v1Err.Error()
-		tM.setId3v2Values(d)
+		tM.setID3v2Values(d)
 		tM.canonicalType = id3v2Source
 	case len(d.err) != 0:
 		tM.err[id3v2Source] = d.err
-		tM.setId3v1Values(v1)
+		tM.setID3v1Values(v1)
 		tM.canonicalType = id3v1Source
 	default:
-		tM.setId3v2Values(d)
-		tM.setId3v1Values(v1)
+		tM.setID3v2Values(d)
+		tM.setID3v1Values(v1)
 		tM.canonicalType = id3v2Source
 	}
 	return tM
 }
 
-func (tM *trackMetadata) setId3v2Values(d *ID3V2TaggedTrackData) {
+func (tM *trackMetadata) setID3v2Values(d *ID3V2TaggedTrackData) {
 	index := id3v2Source
 	tM.album[index] = d.album
 	tM.artist[index] = d.artist
@@ -89,7 +89,7 @@ func (tM *trackMetadata) setId3v2Values(d *ID3V2TaggedTrackData) {
 	tM.musicCDIdentifier = d.musicCDIdentifier
 }
 
-func (tM *trackMetadata) setId3v1Values(v1 *id3v1Metadata) {
+func (tM *trackMetadata) setID3v1Values(v1 *id3v1Metadata) {
 	index := id3v1Source
 	tM.album[index] = v1.getAlbum()
 	tM.artist[index] = v1.getArtist()

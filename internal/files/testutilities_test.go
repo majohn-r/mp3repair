@@ -42,7 +42,7 @@ func TestCreateID3V1TaggedDataForTesting(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := CreateID3V1TaggedDataForTesting(tt.args.m); !reflect.DeepEqual(got, tt.want) {
+			if got := createID3V1TaggedDataForTesting(tt.args.m); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})

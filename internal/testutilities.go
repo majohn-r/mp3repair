@@ -15,6 +15,7 @@ import (
 // call them from production code.
 
 var (
+	// ID3V1DataSet1 is a sample ID3V1 tag from an existing file
 	ID3V1DataSet1 = []byte{
 		'T', 'A', 'G',
 		'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
@@ -26,6 +27,7 @@ var (
 		29,
 		12,
 	}
+	// ID3V1DataSet2 is a sample ID3V1 tag from an existing file
 	ID3V1DataSet2 = []byte{
 		'T', 'A', 'G',
 		'J', 'u', 'l', 'i', 'a', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
@@ -166,10 +168,14 @@ func CreateFileForTestingWithContent(dir string, name string, content []byte) er
 	return CreateNamedFileForTesting(fileName, content)
 }
 
+// CreateFileForTesting creates a file in a specified directory with
+// standardized content
 func CreateFileForTesting(dir, name string) (err error) {
 	return CreateFileForTestingWithContent(dir, name, []byte("file contents for "+name))
 }
 
+// CreateDefaultYamlFileForTesting creates a yaml file with different defaults
+// than the prescribed values
 func CreateDefaultYamlFileForTesting() error {
 	path := "./mp3"
 	if err := Mkdir(path); err != nil {
@@ -198,12 +204,15 @@ repair:
 	return CreateFileForTestingWithContent(path, DefaultConfigFileName, []byte(yamlInput))
 }
 
+// SavedEnvVar preserves a memento of an environment variable's state
 type SavedEnvVar struct {
 	Name  string
 	Value string
 	Set   bool
 }
 
+// SaveEnvVarForTesting reads a specified environment variable and returns a
+// memento of its state
 func SaveEnvVarForTesting(name string) *SavedEnvVar {
 	s := &SavedEnvVar{Name: name}
 	if value, ok := os.LookupEnv(name); ok {
@@ -213,6 +222,7 @@ func SaveEnvVarForTesting(name string) *SavedEnvVar {
 	return s
 }
 
+// RestoreForTesting resets a saved environment variable to its original state
 func (e *SavedEnvVar) RestoreForTesting() {
 	if e.Set {
 		os.Setenv(e.Name, e.Value)
@@ -221,6 +231,7 @@ func (e *SavedEnvVar) RestoreForTesting() {
 	}
 }
 
+// SecureAbsolutePathForTesting returns a path's absolute value
 func SecureAbsolutePathForTesting(path string) string {
 	absPath, _ := filepath.Abs(path)
 	return absPath
@@ -228,12 +239,16 @@ func SecureAbsolutePathForTesting(path string) string {
 
 // testing solution
 
+// OutputDeviceForTesting is a data structure used to capture console, error,
+// and log output for a function under test
 type OutputDeviceForTesting struct {
 	consoleWriter *bytes.Buffer
 	errorWriter   *bytes.Buffer
 	logWriter     testLogger
 }
 
+// NewOutputDeviceForTesting returns a new instance of OutputDeviceForTesting,
+// suitable for capturing the output written by a function under test
 func NewOutputDeviceForTesting() *OutputDeviceForTesting {
 	return &OutputDeviceForTesting{
 		consoleWriter: &bytes.Buffer{},
@@ -242,18 +257,22 @@ func NewOutputDeviceForTesting() *OutputDeviceForTesting {
 	}
 }
 
+// ErrorWriter returns the internal error writer
 func (o *OutputDeviceForTesting) ErrorWriter() io.Writer {
 	return o.errorWriter
 }
 
+// LogWriter returns the internal logger
 func (o *OutputDeviceForTesting) LogWriter() Logger {
 	return o.logWriter
 }
 
+// WriteError captures data written as an error
 func (o *OutputDeviceForTesting) WriteError(format string, a ...any) {
 	fmt.Fprintln(o.errorWriter, createStrictOutput(format, a...))
 }
 
+// WriteConsole captures data written to the console
 func (o *OutputDeviceForTesting) WriteConsole(strict bool, format string, a ...any) {
 	fmt.Fprint(o.consoleWriter, createConsoleOutput(strict, format, a...))
 }
@@ -279,24 +298,30 @@ func (tl testLogger) Error(msg string, fields map[string]any) {
 	tl.log("error", msg, fields)
 }
 
+// ConsoleOutput returns the data written as console output
 func (o *OutputDeviceForTesting) ConsoleOutput() string {
 	return o.consoleWriter.String()
 }
 
+// ErrorOutput returns the data written as error output
 func (o *OutputDeviceForTesting) ErrorOutput() string {
 	return o.errorWriter.String()
 }
 
+// LogOutput returns the data written to a log
 func (o *OutputDeviceForTesting) LogOutput() string {
 	return o.logWriter.writer.String()
 }
 
+// WantedOutput contains the desired console, error, and log output
 type WantedOutput struct {
 	WantConsoleOutput string
 	WantErrorOutput   string
 	WantLogOutput     string
 }
 
+// CheckOutput verifies the written output against the expected output and
+// returns differences
 func (o *OutputDeviceForTesting) CheckOutput(w WantedOutput) (issues []string, ok bool) {
 	ok = true
 	if gotConsoleOutput := o.consoleWriter.String(); gotConsoleOutput != w.WantConsoleOutput {

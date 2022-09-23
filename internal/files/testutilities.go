@@ -123,6 +123,8 @@ func makeTextFrame(id string, content string) []byte {
 
 var recognizedTags = []string{"artist", "album", "title", "genre", "year", "track"}
 
+// CreateConsistentlyTaggedDataForTesting creates a file with a consistent set
+// of ID3V2 and ID3V1 tags
 func CreateConsistentlyTaggedDataForTesting(payload []byte, m map[string]any) []byte {
 	var frames = map[string]string{}
 	for _, tagName := range recognizedTags {
@@ -136,12 +138,12 @@ func CreateConsistentlyTaggedDataForTesting(payload []byte, m map[string]any) []
 		}
 	}
 	data := CreateID3V2TaggedDataForTesting(payload, frames)
-	data = append(data, CreateID3V1TaggedDataForTesting(m)...)
+	data = append(data, createID3V1TaggedDataForTesting(m)...)
 	return data
 }
 
-func CreateID3V1TaggedDataForTesting(m map[string]any) []byte {
-	v1 := newId3v1Metadata()
+func createID3V1TaggedDataForTesting(m map[string]any) []byte {
+	v1 := newID3v1Metadata()
 	v1.writeStringField("TAG", id3v1Tag)
 	for _, tagName := range recognizedTags {
 		if value, ok := m[tagName]; ok {

@@ -9,6 +9,8 @@ const (
 	fkArguments = "arguments"
 )
 
+// ProcessArgs processes a slice of command line arguments and handles common
+// errors therein
 func ProcessArgs(o OutputBus, f *flag.FlagSet, args []string) (ok bool) {
 	dereferencedArgs := make([]string, len(args))
 	ok = true
@@ -16,10 +18,10 @@ func ProcessArgs(o OutputBus, f *flag.FlagSet, args []string) (ok bool) {
 		var err error
 		dereferencedArgs[i], err = InterpretEnvVarReferences(arg)
 		if err != nil {
-			o.WriteError(USER_BAD_ARGUMENT, arg, err)
-			o.LogWriter().Error(LE_BAD_ARGUMENT, map[string]any{
-				FK_VALUE: arg,
-				FK_ERROR: err,
+			o.WriteError(UserBadArgument, arg, err)
+			o.LogWriter().Error(LogErrorBadArgument, map[string]any{
+				FieldKeyValue: arg,
+				FieldKeyError: err,
 			})
 			ok = false
 		}
