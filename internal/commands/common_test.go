@@ -333,13 +333,13 @@ func Test_getDefaultSettings(t *testing.T) {
 		{
 			name: "too many values defined in code",
 			cmds: map[string]commandData{
-				listCommand:          commandData{isDefault: true},
-				checkCommand:         commandData{isDefault: true},
-				exportCommand:        commandData{},
-				repairCommand:        commandData{},
-				postRepairCommand:    commandData{},
-				resetDatabaseCommand: commandData{},
-				aboutCommand:         commandData{},
+				listCommand:          {isDefault: true},
+				checkCommand:         {isDefault: true},
+				exportCommand:        {},
+				repairCommand:        {},
+				postRepairCommand:    {},
+				resetDatabaseCommand: {},
+				aboutCommand:         {},
 			},
 			WantedOutput: internal.WantedOutput{
 				WantErrorOutput: "Internal error: 2 commands self-selected as default: [check list]; pick one!\n",

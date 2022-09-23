@@ -146,6 +146,18 @@ func Doc() (err error) {
 	return
 }
 
+// Perform formatting analysis
+func Format() (err error) {
+	unifiedOutput := &bytes.Buffer{}
+	cmd := exec.Command("gofmt", "-e", "-l", "-s", "-d", ".")
+	cmd.Stderr = unifiedOutput
+	cmd.Stdout = unifiedOutput
+	fmt.Println("performing formatting analysis")
+	err = cmd.Run()
+	printOutput(unifiedOutput)
+	return
+}
+
 func getCodeFolders() (folders []string, err error) {
 	var candidates []string
 	if candidates, err = getAllFolders("."); err != nil {
