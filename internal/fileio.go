@@ -64,11 +64,11 @@ func Mkdir(dirName string) (err error) {
 func ReadDirectory(o OutputBus, dir string) (files []fs.DirEntry, ok bool) {
 	var err error
 	if files, err = os.ReadDir(dir); err != nil {
-		o.LogWriter().Error(LogErrorCannotReadDirectory, map[string]any{
+		o.Log(Error, LogErrorCannotReadDirectory, map[string]any{
 			FieldKeyDirectory: dir,
 			FieldKeyError:     err,
 		})
-		o.WriteError(UserCannotReadDirectory, dir, err)
+		o.WriteCanonicalError(UserCannotReadDirectory, dir, err)
 		return
 	}
 	ok = true

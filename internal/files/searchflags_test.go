@@ -32,7 +32,7 @@ func Test_NewSearchFlags(t *testing.T) {
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	defaultConfig, _ := internal.ReadConfigurationFile(internal.NullOutputBus())
+	defaultConfig, _ := internal.ReadConfigurationFile(internal.NewNilOutputBus())
 	type args struct {
 		c *internal.Configuration
 	}
@@ -67,7 +67,7 @@ func Test_NewSearchFlags(t *testing.T) {
 		{
 			name: "bad default topDir",
 			args: args{
-				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
 					"common": map[string]any{
 						"topDir": "$FOO",
 					},
@@ -81,7 +81,7 @@ func Test_NewSearchFlags(t *testing.T) {
 		{
 			name: "bad default extension",
 			args: args{
-				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
 					"common": map[string]any{
 						"ext": "$FOO",
 					},
@@ -95,7 +95,7 @@ func Test_NewSearchFlags(t *testing.T) {
 		{
 			name: "bad default album filter",
 			args: args{
-				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
 					"common": map[string]any{
 						"albumFilter": "$FOO",
 					},
@@ -109,7 +109,7 @@ func Test_NewSearchFlags(t *testing.T) {
 		{
 			name: "bad default artist filter",
 			args: args{
-				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
 					"common": map[string]any{
 						"artistFilter": "$FOO",
 					},
@@ -123,7 +123,7 @@ func Test_NewSearchFlags(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			got, gotOk := NewSearchFlags(o, tt.args.c, flag.NewFlagSet("test", flag.ContinueOnError))
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk %t wantOK %t", fnName, gotOk, tt.wantOk)
@@ -146,7 +146,7 @@ func Test_NewSearchFlags(t *testing.T) {
 					}
 				}
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -197,7 +197,7 @@ func Test_validateRegexp(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			gotFilter, gotOk := validateRegexp(o, tt.args.pattern, tt.args.name)
 			if tt.wantOk && !reflect.DeepEqual(gotFilter, tt.wantFilter) {
 				t.Errorf("%s gotFilter = %v, want %v", fnName, gotFilter, tt.wantFilter)
@@ -205,7 +205,7 @@ func Test_validateRegexp(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -354,7 +354,7 @@ func Test_validateSearchParameters(t *testing.T) {
 				albumRegex:    &tt.args.albums,
 				artistRegex:   &tt.args.artists,
 			}
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			gotAlbumsFilter, gotArtistsFilter, gotOk := sf.validate(o)
 			if !tt.wantOk {
 				if !reflect.DeepEqual(gotAlbumsFilter, tt.wantAlbumsFilter) {
@@ -367,7 +367,7 @@ func Test_validateSearchParameters(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -407,11 +407,11 @@ func TestSearchFlags_validateTopLevelDirectory(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			if got := tt.sf.validateTopLevelDirectory(o); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -464,11 +464,11 @@ func TestSearchFlags_validateExtension(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			if gotValid := tt.sf.validateExtension(o); gotValid != tt.wantValid {
 				t.Errorf("%s = %v, want %v", fnName, gotValid, tt.wantValid)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -532,7 +532,7 @@ func TestSearchFlags_ProcessArgs(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			gotS, gotOk := tt.sf.ProcessArgs(o, tt.args.args)
 			if !reflect.DeepEqual(gotS, tt.wantS) {
 				t.Errorf("%s gotS = %v, want %v", fnName, gotS, tt.wantS)
@@ -540,7 +540,7 @@ func TestSearchFlags_ProcessArgs(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

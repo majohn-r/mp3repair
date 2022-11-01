@@ -108,9 +108,9 @@ func Test_listAvailableServices(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			listAvailableServices(o, tt.args.sM, tt.args.services)
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -190,11 +190,11 @@ func Test_resetDatabase_waitForStop(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			if gotOk := tt.r.waitForStop(o, tt.args.s, tt.args.status, tt.args.timeout, tt.args.checkFreq); gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -456,11 +456,11 @@ func Test_resetDatabase_stopService(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			if got := tt.r.stopService(o, tt.args.connect); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -494,7 +494,7 @@ func Test_resetDatabase_filterMetadataFiles(t *testing.T) {
 	if err := internal.Mkdir(filepath.Join(testDir, subDir)); err != nil {
 		t.Errorf("%s could not create directory %q: %v", fnName, subDir, err)
 	}
-	files, _ := internal.ReadDirectory(internal.NullOutputBus(), testDir)
+	files, _ := internal.ReadDirectory(internal.NewNilOutputBus(), testDir)
 	type args struct {
 		files []fs.DirEntry
 	}
@@ -603,11 +603,11 @@ func Test_resetDatabase_deleteMetadataFiles(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			if gotOk := tt.r.deleteMetadataFiles(o, tt.args.paths); gotOk != tt.want {
 				t.Errorf("%s gotOK %t want %t", fnName, gotOk, tt.want)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -674,11 +674,11 @@ func Test_resetDatabase_deleteMetadata(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			if got := tt.r.deleteMetadata(o); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -789,11 +789,11 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			if gotOk := tt.r.runCommand(o, tt.args.connect); gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -804,7 +804,7 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 
 func newResetDatabaseCommandForTesting() *resetDatabase {
 	r, _ := newResetDatabaseCommand(
-		internal.NullOutputBus(),
+		internal.NewNilOutputBus(),
 		internal.EmptyConfiguration(),
 		flag.NewFlagSet("resetDatabase", flag.ContinueOnError))
 	return r
@@ -932,19 +932,19 @@ func Test_resetDatabase_Exec(t *testing.T) {
 			dirtyFolderFound = true
 			dirtyFolderValid = true
 			if tt.markMetadataDirty {
-				MarkDirty(internal.NullOutputBus())
+				MarkDirty(internal.NewNilOutputBus())
 			}
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			if gotOk := tt.r.Exec(o, tt.args.args); gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 			if tt.markMetadataDirty {
-				ClearDirty(internal.NullOutputBus())
+				ClearDirty(internal.NewNilOutputBus())
 			}
 		})
 	}
@@ -1042,7 +1042,7 @@ func Test_resetDatabase_openService(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			returnedM, returnedS := tt.r.openService(o, tt.args.connect)
 			gotM := returnedM != nil
 			gotS := returnedS != nil
@@ -1052,7 +1052,7 @@ func Test_resetDatabase_openService(t *testing.T) {
 			if gotS != tt.wantS {
 				t.Errorf("%s gotS = %t, want %t", fnName, gotS, tt.wantS)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -1085,7 +1085,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		{
 			name: "bad default timeout",
 			args: args{
-				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
 					"resetDatabase": map[string]any{
 						"timeout": "forever",
 					},
@@ -1099,7 +1099,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		{
 			name: "bad default service",
 			args: args{
-				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
 					"resetDatabase": map[string]any{
 						"service": "Win$FOO",
 					},
@@ -1113,7 +1113,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		{
 			name: "bad default metadata",
 			args: args{
-				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
 					"resetDatabase": map[string]any{
 						"metadata": "%FOO%/data",
 					},
@@ -1127,7 +1127,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		{
 			name: "bad default extension",
 			args: args{
-				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
 					"resetDatabase": map[string]any{
 						"extension": ".%FOO%",
 					},
@@ -1141,7 +1141,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			got, gotOk := newResetDatabaseCommand(o, tt.args.c, flag.NewFlagSet("resetDatabase", flag.ContinueOnError))
 			if gotOk != tt.wantOk {
 				t.Errorf("%s got1 = %v, want %v", fnName, gotOk, tt.wantOk)
@@ -1149,7 +1149,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 			if gotOk && got == nil {
 				t.Errorf("%s got nil instance", fnName)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

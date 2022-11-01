@@ -129,9 +129,9 @@ func TestMarkDirty(t *testing.T) {
 			dirtyFolderValid = true // yes, of course it's valid (even if it isn't)
 			dirtyFolder = tt.initialDirtyFolder
 			markDirtyAttempted = tt.initialMarkDirtyAttempted
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			MarkDirty(o)
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -261,9 +261,9 @@ func TestClearDirty(t *testing.T) {
 			dirtyFolderFound = true // short-circuit finding the folder
 			dirtyFolderValid = tt.initialDirtyFolderValid
 			dirtyFolder = tt.initialDirtyFolder
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			ClearDirty(o)
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

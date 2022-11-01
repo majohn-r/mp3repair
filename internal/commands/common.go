@@ -77,8 +77,8 @@ func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[
 	}
 	switch len(defaultCommands) {
 	case 0:
-		o.LogWriter().Error(internal.LogErrorInvalidDefaultCommand, map[string]any{fieldKeyCommandName: defaultCommand})
-		o.WriteError(internal.UserInvalidDefaultCommand, defaultCommand)
+		o.Log(internal.Error, internal.LogErrorInvalidDefaultCommand, map[string]any{fieldKeyCommandName: defaultCommand})
+		o.WriteCanonicalError(internal.UserInvalidDefaultCommand, defaultCommand)
 		m = nil
 		ok = false
 	case 1:
@@ -86,7 +86,7 @@ func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[
 	default:
 		// not using a well-defined constant: this is a developer error.
 		sort.Strings(defaultCommands)
-		o.WriteError("Internal error: %d commands self-selected as default: %v; pick one!", len(defaultCommands), defaultCommands)
+		o.WriteCanonicalError("Internal error: %d commands self-selected as default: %v; pick one!", len(defaultCommands), defaultCommands)
 		m = nil
 		ok = false
 	}
@@ -95,8 +95,8 @@ func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[
 
 func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, ok bool) {
 	if len(i) == 0 {
-		o.LogWriter().Error(internal.LogErrorCommandCount, map[string]any{fieldKeyCount: 0})
-		o.WriteError(internal.UserNoCommandsDefined)
+		o.Log(internal.Error, internal.LogErrorCommandCount, map[string]any{fieldKeyCount: 0})
+		o.WriteCanonicalError(internal.UserNoCommandsDefined)
 		return
 	}
 	var defaultInitializers int
@@ -108,8 +108,8 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 		}
 	}
 	if defaultInitializers != 1 {
-		o.LogWriter().Error(internal.LogErrorDefaultCommandCount, map[string]any{fieldKeyCount: defaultInitializers})
-		o.WriteError(internal.UserIncorrectNumberOfDefaultCommandsDefined, defaultInitializers)
+		o.Log(internal.Error, internal.LogErrorDefaultCommandCount, map[string]any{fieldKeyCount: defaultInitializers})
+		o.WriteCanonicalError(internal.UserIncorrectNumberOfDefaultCommandsDefined, defaultInitializers)
 		return
 	}
 	processorMap := make(map[string]CommandProcessor)
@@ -143,13 +143,13 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 	if !found {
 		cmd = nil
 		callingArgs = nil
-		o.LogWriter().Error(internal.LogErrorUnrecognizedCommand, map[string]any{fieldKeyCommandName: commandName})
+		o.Log(internal.Error, internal.LogErrorUnrecognizedCommand, map[string]any{fieldKeyCommandName: commandName})
 		var commandNames []string
 		for _, initializer := range i {
 			commandNames = append(commandNames, initializer.name)
 		}
 		sort.Strings(commandNames)
-		o.WriteError(internal.UserNoSuchCommand, commandName, commandNames)
+		o.WriteCanonicalError(internal.UserNoSuchCommand, commandName, commandNames)
 		return
 	}
 	callingArgs = args[2:]
@@ -158,8 +158,8 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 }
 
 func reportBadDefault(o internal.OutputBus, section string, err error) {
-	o.WriteError(internal.UserConfigurationFileInvalid, internal.DefaultConfigFileName, section, err)
-	o.LogWriter().Error(internal.LogErrorInvalidConfigurationData, map[string]any{
+	o.WriteCanonicalError(internal.UserConfigurationFileInvalid, internal.DefaultConfigFileName, section, err)
+	o.Log(internal.Error, internal.LogErrorInvalidConfigurationData, map[string]any{
 		internal.FieldKeySection: section,
 		internal.FieldKeyError:   err,
 	})

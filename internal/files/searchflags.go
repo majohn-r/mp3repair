@@ -36,8 +36,8 @@ const (
 )
 
 func reportBadDefault(o internal.OutputBus, err error) {
-	o.WriteError(internal.UserConfigurationFileInvalid, internal.DefaultConfigFileName, defaultSectionName, err)
-	o.LogWriter().Error(internal.LogErrorInvalidConfigurationData, map[string]any{
+	o.WriteCanonicalError(internal.UserConfigurationFileInvalid, internal.DefaultConfigFileName, defaultSectionName, err)
+	o.Log(internal.Error, internal.LogErrorInvalidConfigurationData, map[string]any{
 		internal.FieldKeySection: defaultSectionName,
 		internal.FieldKeyError:   err,
 	})
@@ -114,8 +114,8 @@ func (sf *SearchFlags) NewSearch(o internal.OutputBus) (s *Search, ok bool) {
 func (sf *SearchFlags) validateTopLevelDirectory(o internal.OutputBus) bool {
 	file, err := os.Stat(*sf.topDirectory)
 	if err != nil {
-		o.WriteError(internal.UserCannotReadTopDir, *sf.topDirectory, err)
-		o.LogWriter().Error(internal.LogErrorCannotReadDirectory, map[string]any{
+		o.WriteCanonicalError(internal.UserCannotReadTopDir, *sf.topDirectory, err)
+		o.Log(internal.Error, internal.LogErrorCannotReadDirectory, map[string]any{
 			fieldKeyTopDirFlag:     *sf.topDirectory,
 			internal.FieldKeyError: err,
 		})
@@ -124,8 +124,8 @@ func (sf *SearchFlags) validateTopLevelDirectory(o internal.OutputBus) bool {
 	if file.IsDir() {
 		return true
 	}
-	o.WriteError(internal.UserTopDirNotADirectory, *sf.topDirectory)
-	o.LogWriter().Error(internal.LogErrorNotADirectory, map[string]any{
+	o.WriteCanonicalError(internal.UserTopDirNotADirectory, *sf.topDirectory)
+	o.Log(internal.Error, internal.LogErrorNotADirectory, map[string]any{
 		fieldKeyTopDirFlag: *sf.topDirectory,
 	})
 	return false
@@ -135,8 +135,8 @@ func (sf *SearchFlags) validateExtension(o internal.OutputBus) (ok bool) {
 	ok = true
 	if !strings.HasPrefix(*sf.fileExtension, ".") || strings.Contains(strings.TrimPrefix(*sf.fileExtension, "."), ".") {
 		ok = false
-		o.WriteError(internal.UserExtensionInvalidFormat, *sf.fileExtension)
-		o.LogWriter().Error(internal.LogErrorInvalidExtensionFormat, map[string]any{
+		o.WriteCanonicalError(internal.UserExtensionInvalidFormat, *sf.fileExtension)
+		o.Log(internal.Error, internal.LogErrorInvalidExtensionFormat, map[string]any{
 			fieldKeyTargetExtensionFlag: *sf.fileExtension,
 		})
 	}
@@ -144,8 +144,8 @@ func (sf *SearchFlags) validateExtension(o internal.OutputBus) (ok bool) {
 	trackNameRegex, e = regexp.Compile("^\\d+[\\s-].+\\." + strings.TrimPrefix(*sf.fileExtension, ".") + "$")
 	if e != nil {
 		ok = false
-		o.WriteError(internal.UserExtensionGarbled, *sf.fileExtension, e)
-		o.LogWriter().Error(internal.LogErrorGarbledExtension, map[string]any{
+		o.WriteCanonicalError(internal.UserExtensionGarbled, *sf.fileExtension, e)
+		o.Log(internal.Error, internal.LogErrorGarbledExtension, map[string]any{
 			fieldKeyTargetExtensionFlag: *sf.fileExtension,
 			internal.FieldKeyError:      e,
 		})
@@ -155,8 +155,8 @@ func (sf *SearchFlags) validateExtension(o internal.OutputBus) (ok bool) {
 
 func validateRegexp(o internal.OutputBus, pattern string, name string) (filter *regexp.Regexp, ok bool) {
 	if f, err := regexp.Compile(pattern); err != nil {
-		o.WriteError(internal.UserFilterGarbled, name, pattern, err)
-		o.LogWriter().Error(internal.LogErrorGarbledFilter, map[string]any{
+		o.WriteCanonicalError(internal.UserFilterGarbled, name, pattern, err)
+		o.Log(internal.Error, internal.LogErrorGarbledFilter, map[string]any{
 			name:                   pattern,
 			internal.FieldKeyError: err,
 		})

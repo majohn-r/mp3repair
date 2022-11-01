@@ -11,22 +11,22 @@ import (
 )
 
 func makeCheck() CommandProcessor {
-	cp, _ := newCheck(internal.NullOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ExitOnError))
+	cp, _ := newCheck(internal.NewNilOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ExitOnError))
 	return cp
 }
 
 func makeList() CommandProcessor {
-	list, _ := newList(internal.NullOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("list", flag.ExitOnError))
+	list, _ := newList(internal.NewNilOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("list", flag.ExitOnError))
 	return list
 }
 
 func makeRepair() CommandProcessor {
-	r, _ := newRepair(internal.NullOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ExitOnError))
+	r, _ := newRepair(internal.NewNilOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ExitOnError))
 	return r
 }
 
 func makePostRepair() CommandProcessor {
-	pr, _ := newPostRepair(internal.NullOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ExitOnError))
+	pr, _ := newPostRepair(internal.NewNilOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ExitOnError))
 	return pr
 }
 
@@ -186,7 +186,7 @@ func TestProcessCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.state.RestoreForTesting()
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			got, got1, got2 := ProcessCommand(o, tt.args.args)
 			if got == nil {
 				if tt.want != nil {
@@ -203,7 +203,7 @@ func TestProcessCommand(t *testing.T) {
 			if got2 != tt.want2 {
 				t.Errorf("%s got2 = %v, want %v", fnName, got2, tt.want2)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -255,7 +255,7 @@ func Test_selectCommand(t *testing.T) {
 		{
 			name: "unfortunate defaults",
 			args: args{
-				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
 					"list": map[string]any{
 						"includeTracks": "no!!",
 					},
@@ -274,7 +274,7 @@ func Test_selectCommand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			gotCmd, gotCallingArgs, gotOk := selectCommand(o, tt.args.c, tt.args.i, tt.args.args)
 			if !reflect.DeepEqual(gotCmd, tt.wantCmd) {
 				t.Errorf("%s gotCmd = %v, want %v", fnName, gotCmd, tt.wantCmd)
@@ -285,7 +285,7 @@ func Test_selectCommand(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s  gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -402,10 +402,10 @@ func Test_getDefaultSettings(t *testing.T) {
 			}
 			var c *internal.Configuration
 			var ok bool
-			if c, ok = internal.ReadConfigurationFile(internal.NullOutputBus()); !ok {
+			if c, ok = internal.ReadConfigurationFile(internal.NewNilOutputBus()); !ok {
 				t.Errorf("%s error reading defaults.yaml %q", fnName, content)
 			}
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			gotM, gotOk := getDefaultSettings(o, c.SubConfiguration("command"))
 			if !reflect.DeepEqual(gotM, tt.wantM) {
 				t.Errorf("%s gotM = %v, want %v", fnName, gotM, tt.wantM)
@@ -413,7 +413,7 @@ func Test_getDefaultSettings(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

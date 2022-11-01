@@ -66,17 +66,17 @@ func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
 	yfile, _ := os.ReadFile(configFile) // only probable error circumvented by verifyFileExists failure
 	data, err := readYaml(yfile)
 	if err != nil {
-		o.LogWriter().Error(LogErrorCannotUnmarshalYAML, map[string]any{
+		o.Log(Error, LogErrorCannotUnmarshalYAML, map[string]any{
 			FieldKeyDirectory: path,
 			FieldKeyFileName:  DefaultConfigFileName,
 			FieldKeyError:     err,
 		})
-		o.WriteError(UserConfigurationFileGarbled, configFile, err)
+		o.WriteCanonicalError(UserConfigurationFileGarbled, configFile, err)
 		return
 	}
 	c = CreateConfiguration(o, data)
 	ok = true
-	o.LogWriter().Info(LogInfoConfigurationFileRead, map[string]any{
+	o.Log(Info, LogInfoConfigurationFileRead, map[string]any{
 		FieldKeyDirectory: path,
 		FieldKeyFileName:  DefaultConfigFileName,
 		FieldKeyValue:     c,
@@ -95,7 +95,7 @@ func LookupAppData(o OutputBus) (string, bool) {
 	if value, ok := os.LookupEnv(appDataVar); ok {
 		return value, ok
 	}
-	o.LogWriter().Info(LogInfoNotSet, map[string]any{
+	o.Log(Info, LogInfoNotSet, map[string]any{
 		fieldKeyVarName: appDataVar,
 	})
 	return "", false
@@ -105,11 +105,11 @@ func verifyFileExists(o OutputBus, path string) (ok bool, err error) {
 	f, err := os.Stat(path)
 	if err == nil {
 		if f.IsDir() {
-			o.LogWriter().Error(LogErrorFileIsDirectory, map[string]any{
+			o.Log(Error, LogErrorFileIsDirectory, map[string]any{
 				FieldKeyDirectory: filepath.Dir(path),
 				FieldKeyFileName:  filepath.Base(path),
 			})
-			o.WriteError(UserConfigurationFileIsDir, path)
+			o.WriteCanonicalError(UserConfigurationFileIsDir, path)
 			err = fmt.Errorf(ErrorFileIsDir)
 			return
 		}
@@ -117,7 +117,7 @@ func verifyFileExists(o OutputBus, path string) (ok bool, err error) {
 		return
 	}
 	if errors.Is(err, os.ErrNotExist) {
-		o.LogWriter().Info(LogInfoNoSuchFile, map[string]any{
+		o.Log(Info, LogInfoNoSuchFile, map[string]any{
 			FieldKeyDirectory: filepath.Dir(path),
 			FieldKeyFileName:  filepath.Base(path),
 		})
@@ -305,12 +305,12 @@ func CreateConfiguration(o OutputBus, data map[string]any) *Configuration {
 		case map[string]any:
 			c.cMap[key] = CreateConfiguration(o, t)
 		default:
-			o.LogWriter().Error(LogErrorUnexpectedValueType, map[string]any{
+			o.Log(Error, LogErrorUnexpectedValueType, map[string]any{
 				fieldKeyKeyName: key,
 				FieldKeyValue:   v,
 				fieldKeyType:    fmt.Sprintf("%T", v),
 			})
-			o.WriteError(UserUnexpectedValueType, key, v, v)
+			o.WriteCanonicalError(UserUnexpectedValueType, key, v, v)
 			c.sMap[key] = fmt.Sprintf("%v", v)
 		}
 	}

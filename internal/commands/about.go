@@ -54,7 +54,7 @@ func newAboutCmd(o internal.OutputBus, c *internal.Configuration, fSet *flag.Fla
 // Exec runs the command. The args parameter is ignored, and the methid always
 // returns true.
 func (v *aboutCmd) Exec(o internal.OutputBus, args []string) (ok bool) {
-	o.LogWriter().Info(internal.LogInfoExecutingCommand, map[string]any{fieldKeyCommandName: aboutCommandName})
+	o.Log(internal.Info, internal.LogInfoExecutingCommand, map[string]any{fieldKeyCommandName: aboutCommandName})
 	var elements []string
 	timeStamp := translateTimestamp(AboutSettings.BuildTimestamp)
 	description := fmt.Sprintf("%s version %s, built on %s", internal.AppName, AboutSettings.AppVersion, timeStamp)
@@ -102,11 +102,11 @@ func reportAbout(o internal.OutputBus, data []string) {
 		bHeader[i] = '-'
 	}
 	header := string(bHeader)
-	o.WriteConsole(false, "+-%s-+\n", header)
+	o.WriteConsole("+-%s-+\n", header)
 	for _, s := range formattedData {
-		o.WriteConsole(false, "| %s |\n", s)
+		o.WriteConsole("| %s |\n", s)
 	}
-	o.WriteConsole(false, "+-%s-+\n", header)
+	o.WriteConsole("+-%s-+\n", header)
 }
 
 func formatBuildData(bD *BuildData) []string {
@@ -129,8 +129,8 @@ func formatCopyright(firstYear, lastYear int) string {
 func finalYear(o internal.OutputBus, timestamp string) int {
 	var y = firstYear
 	if t, err := time.Parse(time.RFC3339, timestamp); err != nil {
-		o.WriteError(internal.UserCannotParseTimestamp, timestamp, err)
-		o.LogWriter().Error("parse error", map[string]any{
+		o.WriteCanonicalError(internal.UserCannotParseTimestamp, timestamp, err)
+		o.Log(internal.Error, "parse error", map[string]any{
 			internal.FieldKeyError: err,
 			internal.FieldKeyValue: timestamp,
 		})

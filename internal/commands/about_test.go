@@ -34,11 +34,11 @@ func Test_finalYear(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			if got := finalYear(o, tt.args.timestamp); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -159,9 +159,9 @@ func Test_reportAbout(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			reportAbout(o, tt.args.data)
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -186,7 +186,7 @@ func Test_aboutCmd_Exec(t *testing.T) {
 		{
 			name:   "for sake of completeness",
 			v:      &aboutCmd{},
-			args:   args{o: internal.NullOutputBus()},
+			args:   args{o: internal.NewNilOutputBus()},
 			wantOk: true,
 		},
 	}

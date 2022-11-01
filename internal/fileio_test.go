@@ -156,7 +156,7 @@ func TestReadDirectory(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := NewOutputDeviceForTesting()
+			o := NewRecordingOutputBus()
 			gotFiles, gotOk := ReadDirectory(o, tt.args.dir)
 			if !reflect.DeepEqual(gotFiles, tt.wantFiles) {
 				t.Errorf("%s gotFiles = %v, want %v", fnName, gotFiles, tt.wantFiles)
@@ -164,7 +164,7 @@ func TestReadDirectory(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

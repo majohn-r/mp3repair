@@ -71,13 +71,13 @@ func (r *repair) logFields() map[string]any {
 }
 
 func (r *repair) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
-	o.LogWriter().Info(internal.LogInfoExecutingCommand, r.logFields())
+	o.Log(internal.Info, internal.LogInfoExecutingCommand, r.logFields())
 	artists, ok := s.LoadData(o)
 	if ok {
 		files.ReadMetadata(o, artists)
 		tracksWithConflicts := findConflictedTracks(artists)
 		if len(tracksWithConflicts) == 0 {
-			o.WriteConsole(true, noProblemsFound)
+			o.WriteCanonicalConsole(noProblemsFound)
 		} else {
 			if *r.dryRun {
 				reportTracks(o, tracksWithConflicts)
@@ -112,16 +112,16 @@ func reportTracks(o internal.OutputBus, tracks []*files.Track) {
 		albumName := t.AlbumName()
 		artistName := t.RecordingArtist()
 		if lastArtistName != artistName {
-			o.WriteConsole(false, "%q\n", artistName)
+			o.WriteConsole("%q\n", artistName)
 			lastArtistName = artistName
 			lastAlbumName = ""
 		}
 		if albumName != lastAlbumName {
-			o.WriteConsole(false, "    %q\n", albumName)
+			o.WriteConsole("    %q\n", albumName)
 			lastAlbumName = albumName
 		}
 		s := t.ReconcileMetadata()
-		o.WriteConsole(false, "        %2d %q need to repair%s%s%s%s\n",
+		o.WriteConsole("        %2d %q need to repair%s%s%s%s\n",
 			t.Number(), t.Name(),
 			reportProblem(s.HasNumberingConflict(), " track numbering;"),
 			reportProblem(s.HasTrackNameConflict(), " track name;"),
@@ -140,15 +140,15 @@ func reportProblem(b bool, problem string) (s string) {
 func fixTracks(o internal.OutputBus, tracks []*files.Track) {
 	for _, t := range tracks {
 		if err := t.EditTags(); len(err) != 0 {
-			o.WriteError(internal.UserErrorRepairingTrackFile, t)
-			o.LogWriter().Error(internal.LogErrorCannotEditTrack, map[string]any{
+			o.WriteCanonicalError(internal.UserErrorRepairingTrackFile, t)
+			o.Log(internal.Error, internal.LogErrorCannotEditTrack, map[string]any{
 				internal.LogInfoExecutingCommand: repairCommandName,
 				internal.FieldKeyDirectory:       t.Directory(),
 				internal.FieldKeyFileName:        t.FileName(),
 				internal.FieldKeyError:           err,
 			})
 		} else {
-			o.WriteConsole(false, "%q repaired.\n", t)
+			o.WriteConsole("%q repaired.\n", t)
 			MarkDirty(o)
 		}
 	}
@@ -171,15 +171,15 @@ func backupTrack(o internal.OutputBus, t *files.Track) {
 	destinationPath := filepath.Join(backupDir, fmt.Sprintf("%d.mp3", t.Number()))
 	if internal.DirExists(backupDir) && !internal.PlainFileExists(destinationPath) {
 		if err := t.Copy(destinationPath); err != nil {
-			o.WriteError(internal.UserErrorCreatingBackupFile, t)
-			o.LogWriter().Error(internal.LogErrorCannotCopyFile, map[string]any{
+			o.WriteCanonicalError(internal.UserErrorCreatingBackupFile, t)
+			o.Log(internal.Error, internal.LogErrorCannotCopyFile, map[string]any{
 				fieldKeyCommandName:    repairCommandName,
 				fieldKeySource:         t.Path(),
 				fieldKeyDestination:    destinationPath,
 				internal.FieldKeyError: err,
 			})
 		} else {
-			o.WriteConsole(true, "The track %q has been backed up to %q", t, destinationPath)
+			o.WriteCanonicalConsole("The track %q has been backed up to %q", t, destinationPath)
 		}
 	}
 }
@@ -189,8 +189,8 @@ func makeBackupDirectories(o internal.OutputBus, paths []string) {
 		newPath := files.CreateBackupPath(path)
 		if !internal.DirExists(newPath) {
 			if err := internal.Mkdir(newPath); err != nil {
-				o.WriteError(internal.UserCannotCreateDirectory, newPath, err)
-				o.LogWriter().Error(internal.LogErrorCannotCreateDirectory, map[string]any{
+				o.WriteCanonicalError(internal.UserCannotCreateDirectory, newPath, err)
+				o.Log(internal.Error, internal.LogErrorCannotCreateDirectory, map[string]any{
 					fieldKeyCommandName:        repairCommandName,
 					internal.FieldKeyDirectory: newPath,
 					internal.FieldKeyError:     err,

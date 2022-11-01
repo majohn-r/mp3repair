@@ -21,7 +21,7 @@ func Test_Configuration_SubConfiguration(t *testing.T) {
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	testConfiguration, _ := ReadConfigurationFile(NullOutputBus())
+	testConfiguration, _ := ReadConfigurationFile(NewNilOutputBus())
 	type args struct {
 		key string
 	}
@@ -63,7 +63,7 @@ func Test_Configuration_BoolDefault(t *testing.T) {
 		saved.RestoreForTesting()
 	}()
 	os.Unsetenv("FOO")
-	testConfiguration, _ := ReadConfigurationFile(NullOutputBus())
+	testConfiguration, _ := ReadConfigurationFile(NewNilOutputBus())
 	type args struct {
 		key          string
 		defaultValue bool
@@ -259,7 +259,7 @@ func Test_Configuration_StringDefault(t *testing.T) {
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	testConfiguration, _ := ReadConfigurationFile(NullOutputBus())
+	testConfiguration, _ := ReadConfigurationFile(NewNilOutputBus())
 	type args struct {
 		key          string
 		defaultValue string
@@ -351,7 +351,7 @@ func Test_verifyFileExists(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := NewOutputDeviceForTesting()
+			o := NewRecordingOutputBus()
 			gotOk, err := verifyFileExists(o, tt.args.path)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
@@ -360,7 +360,7 @@ func Test_verifyFileExists(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -519,7 +519,7 @@ func TestReadConfigurationFile(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.state.RestoreForTesting()
-			o := NewOutputDeviceForTesting()
+			o := NewRecordingOutputBus()
 			appSpecificPath = ""
 			appSpecificPathValid = false
 			gotC, gotOk := ReadConfigurationFile(o)
@@ -529,7 +529,7 @@ func TestReadConfigurationFile(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -578,7 +578,7 @@ func Test_appData(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.state.RestoreForTesting()
-			o := NewOutputDeviceForTesting()
+			o := NewRecordingOutputBus()
 			got, got1 := LookupAppData(o)
 			if got != tt.want {
 				t.Errorf("%s got = %q, want %q", fnName, got, tt.want)
@@ -586,7 +586,7 @@ func Test_appData(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("%s got1 = %v, want %v", fnName, got1, tt.want1)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -850,11 +850,11 @@ func Test_createConfiguration(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := NewOutputDeviceForTesting()
+			o := NewRecordingOutputBus()
 			if got := CreateConfiguration(o, tt.args.data); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

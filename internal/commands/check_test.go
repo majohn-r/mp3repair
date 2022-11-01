@@ -146,7 +146,7 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			gotArtists, gotArtistsWithIssues, gotOk := tt.c.performEmptyFolderAnalysis(o, tt.args.s)
 			if !reflect.DeepEqual(gotArtists, tt.wantArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotArtists, tt.wantArtists)
@@ -159,7 +159,7 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -181,8 +181,8 @@ func Test_filterArtists(t *testing.T) {
 		t.Errorf("%s error populating %q: %v", fnName, topDirName, err)
 	}
 	searchStruct := files.CreateSearchForTesting(topDirName)
-	fullArtists, _ := searchStruct.LoadUnfilteredData(internal.NullOutputBus())
-	filteredArtists, _ := searchStruct.LoadData(internal.NullOutputBus())
+	fullArtists, _ := searchStruct.LoadUnfilteredData(internal.NewNilOutputBus())
+	filteredArtists, _ := searchStruct.LoadData(internal.NewNilOutputBus())
 	type args struct {
 		s       *files.Search
 		artists []*files.Artist
@@ -264,7 +264,7 @@ func Test_filterArtists(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			gotFilteredArtists, gotOk := tt.c.filterArtists(o, tt.args.s, tt.args.artists)
 			if !reflect.DeepEqual(gotFilteredArtists, tt.wantFilteredArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotFilteredArtists, tt.wantFilteredArtists)
@@ -272,7 +272,7 @@ func Test_filterArtists(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -349,11 +349,11 @@ func Test_check_performGapAnalysis(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			if gotConflictedArtists := filterAndSortArtists(tt.c.performGapAnalysis(o, tt.args.artists)); !reflect.DeepEqual(gotConflictedArtists, tt.wantConflictedArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotConflictedArtists, tt.wantConflictedArtists)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -385,7 +385,7 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 		t.Errorf("%s error creating track", fnName)
 	}
 	s := files.CreateSearchForTesting(topDirName)
-	a, _ := s.LoadUnfilteredData(internal.NullOutputBus())
+	a, _ := s.LoadUnfilteredData(internal.NewNilOutputBus())
 	type args struct {
 		artists []*files.Artist
 	}
@@ -435,11 +435,11 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			if gotConflictedArtists := filterAndSortArtists(tt.c.performIntegrityCheck(o, tt.args.artists)); !reflect.DeepEqual(gotConflictedArtists, tt.wantConflictedArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotConflictedArtists, tt.wantConflictedArtists)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -449,7 +449,7 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 }
 
 func makeCheckCommand() *check {
-	c, _ := newCheckCommand(internal.NullOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError))
+	c, _ := newCheckCommand(internal.NewNilOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError))
 	return c
 }
 
@@ -563,11 +563,11 @@ func Test_check_Exec(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			if gotOk := tt.c.Exec(o, tt.args.args); gotOk != tt.wantOk {
 				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -597,7 +597,7 @@ func Test_newCheckCommand(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	defaultConfig, _ := internal.ReadConfigurationFile(internal.NullOutputBus())
+	defaultConfig, _ := internal.ReadConfigurationFile(internal.NewNilOutputBus())
 	type args struct {
 		c *internal.Configuration
 	}
@@ -629,7 +629,7 @@ func Test_newCheckCommand(t *testing.T) {
 		{
 			name: "bad default empty folder",
 			args: args{
-				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
 					"check": map[string]any{
 						emptyFoldersFlag: "Empty!!",
 					},
@@ -644,7 +644,7 @@ func Test_newCheckCommand(t *testing.T) {
 		{
 			name: "bad default gaps",
 			args: args{
-				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
 					"check": map[string]any{
 						gapsInTrackNumberingFlag: "No",
 					},
@@ -659,7 +659,7 @@ func Test_newCheckCommand(t *testing.T) {
 		{
 			name: "bad default integrity",
 			args: args{
-				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
 					"check": map[string]any{
 						integrityFlag: "Off",
 					},
@@ -674,18 +674,18 @@ func Test_newCheckCommand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			check, gotOk := newCheckCommand(o, tt.args.c, flag.NewFlagSet("check", flag.ContinueOnError))
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk %t wantOk %t", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 			if check != nil {
-				if _, ok := check.sf.ProcessArgs(internal.NullOutputBus(), []string{
+				if _, ok := check.sf.ProcessArgs(internal.NewNilOutputBus(), []string{
 					"-topDir", topDir,
 					"-ext", ".mp3",
 				}); ok {
@@ -1108,9 +1108,9 @@ func Test_reportResults(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			reportResults(o, tt.args.artistsWithIssues...)
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

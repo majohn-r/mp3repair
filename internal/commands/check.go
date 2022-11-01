@@ -156,10 +156,10 @@ func (a *artistWithIssues) hasIssues() bool {
 
 func (c *check) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 	if !*c.checkEmptyFolders && !*c.checkGapsInTrackNumbering && !*c.checkIntegrity {
-		o.WriteError(internal.UserSpecifiedNoWork, checkCommandName)
-		o.LogWriter().Error(internal.LogErrorNothingToDo, c.logFields())
+		o.WriteCanonicalError(internal.UserSpecifiedNoWork, checkCommandName)
+		o.Log(internal.Error, internal.LogErrorNothingToDo, c.logFields())
 	} else {
-		o.LogWriter().Info(internal.LogInfoExecutingCommand, c.logFields())
+		o.Log(internal.Info, internal.LogInfoExecutingCommand, c.logFields())
 		artists, artistsWithEmptyIssues, analysisOk := c.performEmptyFolderAnalysis(o, s)
 		if analysisOk {
 			artists, ok = c.filterArtists(o, s, artists)
@@ -181,19 +181,19 @@ func reportResults(o internal.OutputBus, artistsWithIssues ...[]*artistWithIssue
 	filteredArtists := merge(filteredArtistSets)
 	if len(filteredArtists) > 0 {
 		for _, artist := range filteredArtists {
-			o.WriteConsole(false, "%s\n", artist.name)
+			o.WriteConsole("%s\n", artist.name)
 			for _, issue := range artist.issues {
-				o.WriteConsole(false, "  %s\n", issue)
+				o.WriteConsole("  %s\n", issue)
 			}
 			for _, album := range artist.albums {
-				o.WriteConsole(false, "    %s\n", album.name)
+				o.WriteConsole("    %s\n", album.name)
 				for _, issue := range album.issues {
-					o.WriteConsole(false, "      %s\n", issue)
+					o.WriteConsole("      %s\n", issue)
 				}
 				for _, track := range album.tracks {
-					o.WriteConsole(false, "        %2d %s\n", track.number, track.name)
+					o.WriteConsole("        %2d %s\n", track.number, track.name)
 					for _, issue := range track.issues {
-						o.WriteConsole(false, "          %s\n", issue)
+						o.WriteConsole("          %s\n", issue)
 					}
 				}
 			}
@@ -380,7 +380,7 @@ func (c *check) performEmptyFolderAnalysis(o internal.OutputBus, s *files.Search
 		}
 	}
 	if !issuesFound {
-		o.WriteConsole(true, "Empty Folder Analysis: no empty folders found")
+		o.WriteCanonicalConsole("Empty Folder Analysis: no empty folders found")
 	}
 	ok = true
 	return
@@ -420,7 +420,7 @@ func (c *check) performIntegrityCheck(o internal.OutputBus, artists []*files.Art
 			}
 		}
 		if !issuesFound {
-			o.WriteConsole(true, "Integrity Analysis: no issues found")
+			o.WriteCanonicalConsole("Integrity Analysis: no issues found")
 		}
 	}
 	return conflictedArtists
@@ -468,7 +468,7 @@ func (c *check) performGapAnalysis(o internal.OutputBus, artists []*files.Artist
 			}
 		}
 		if !issuesFound {
-			o.WriteConsole(true, "Check Gaps: no gaps found")
+			o.WriteCanonicalConsole("Check Gaps: no gaps found")
 		}
 	}
 	return conflictedArtists

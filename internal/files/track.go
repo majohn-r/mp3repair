@@ -345,8 +345,8 @@ func processArtistMetadata(o internal.OutputBus, artists []*Artist) {
 			}
 		}
 		if chosenName, ok := pickKey(names); !ok {
-			o.WriteError(internal.UserAmbiguousChoices, "artist name", artist.Name(), friendlyEncode(names))
-			o.LogWriter().Error(internal.LogErrorAmbiguousValue, map[string]any{
+			o.WriteCanonicalError(internal.UserAmbiguousChoices, "artist name", artist.Name(), friendlyEncode(names))
+			o.Log(internal.Error, internal.LogErrorAmbiguousValue, map[string]any{
 				fieldKeyFieldName:  "artist name",
 				fieldKeySettings:   names,
 				fieldKeyArtistName: artist.Name(),
@@ -385,8 +385,8 @@ func processAlbumMetadata(o internal.OutputBus, artists []*Artist) {
 				}
 			}
 			if chosenGenre, ok := pickKey(genres); !ok {
-				o.WriteError(internal.UserAmbiguousChoices, "genre", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(genres))
-				o.LogWriter().Error(internal.LogErrorAmbiguousValue, map[string]any{
+				o.WriteCanonicalError(internal.UserAmbiguousChoices, "genre", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(genres))
+				o.Log(internal.Error, internal.LogErrorAmbiguousValue, map[string]any{
 					fieldKeyFieldName:  "genre",
 					fieldKeySettings:   genres,
 					fieldKeyAlbumName:  album.Name(),
@@ -396,8 +396,8 @@ func processAlbumMetadata(o internal.OutputBus, artists []*Artist) {
 				album.canonicalGenre = chosenGenre
 			}
 			if chosenYear, ok := pickKey(years); !ok {
-				o.WriteError(internal.UserAmbiguousChoices, "year", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(years))
-				o.LogWriter().Error(internal.LogErrorAmbiguousValue, map[string]any{
+				o.WriteCanonicalError(internal.UserAmbiguousChoices, "year", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(years))
+				o.Log(internal.Error, internal.LogErrorAmbiguousValue, map[string]any{
 					fieldKeyFieldName:  "year",
 					fieldKeySettings:   years,
 					fieldKeyAlbumName:  album.Name(),
@@ -407,8 +407,8 @@ func processAlbumMetadata(o internal.OutputBus, artists []*Artist) {
 				album.canonicalYear = chosenYear
 			}
 			if chosenAlbumTitle, ok := pickKey(albumTitles); !ok {
-				o.WriteError(internal.UserAmbiguousChoices, "album title", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(albumTitles))
-				o.LogWriter().Error(internal.LogErrorAmbiguousValue, map[string]any{
+				o.WriteCanonicalError(internal.UserAmbiguousChoices, "album title", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(albumTitles))
+				o.Log(internal.Error, internal.LogErrorAmbiguousValue, map[string]any{
 					fieldKeyFieldName:  "album title",
 					fieldKeySettings:   albumTitles,
 					fieldKeyAlbumName:  album.Name(),
@@ -420,8 +420,8 @@ func processAlbumMetadata(o internal.OutputBus, artists []*Artist) {
 				}
 			}
 			if chosenMCDI, ok := pickKey(mcdis); !ok {
-				o.WriteError(internal.UserAmbiguousChoices, "MCDI frame", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(mcdis))
-				o.LogWriter().Error(internal.LogErrorAmbiguousValue, map[string]any{
+				o.WriteCanonicalError(internal.UserAmbiguousChoices, "MCDI frame", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(mcdis))
+				o.Log(internal.Error, internal.LogErrorAmbiguousValue, map[string]any{
 					fieldKeyFieldName:  "mcdi frame",
 					fieldKeySettings:   mcdis,
 					fieldKeyAlbumName:  album.Name(),
@@ -500,8 +500,8 @@ func reportTrackErrors(o internal.OutputBus, track *Track, album *Album, artist 
 		for _, source := range []sourceType{id3v1Source, id3v2Source} {
 			e := track.tM.err[source]
 			if len(e) != 0 {
-				o.WriteError(tagConsoleErrors[source], track.name, album.name, artist.name, e)
-				o.LogWriter().Error(tagLogErrors[source], map[string]any{
+				o.WriteCanonicalError(tagConsoleErrors[source], track.name, album.name, artist.name, e)
+				o.Log(internal.Error, tagLogErrors[source], map[string]any{
 					fieldKeyTrackName:      track.name,
 					fieldKeyAlbumName:      album.name,
 					fieldKeyArtistName:     artist.name,
@@ -528,12 +528,12 @@ func ParseTrackNameForTesting(name string) (simpleName string, trackNumber int) 
 
 func parseTrackName(o internal.OutputBus, name string, album *Album, ext string) (simpleName string, trackNumber int, valid bool) {
 	if !trackNameRegex.MatchString(name) {
-		o.LogWriter().Error(internal.LogErrorInvalidTrackName, map[string]any{
+		o.Log(internal.Error, internal.LogErrorInvalidTrackName, map[string]any{
 			fieldKeyTrackName:  name,
 			fieldKeyAlbumName:  album.name,
 			fieldKeyArtistName: album.RecordingArtistName(),
 		})
-		o.WriteError(internal.UserTrackNameGarbled, name, album.name, album.RecordingArtistName())
+		o.WriteCanonicalError(internal.UserTrackNameGarbled, name, album.name, album.RecordingArtistName())
 		return
 	}
 	wantDigit := true

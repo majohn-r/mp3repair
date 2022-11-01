@@ -33,7 +33,7 @@ func Test_newRepairCommand(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	defaultConfig, _ := internal.ReadConfigurationFile(internal.NullOutputBus())
+	defaultConfig, _ := internal.ReadConfigurationFile(internal.NewNilOutputBus())
 	type args struct {
 		c *internal.Configuration
 	}
@@ -59,7 +59,7 @@ func Test_newRepairCommand(t *testing.T) {
 		{
 			name: "bad dryRun default",
 			args: args{
-				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
 					"repair": map[string]any{
 						"dryRun": 42,
 					},
@@ -73,18 +73,18 @@ func Test_newRepairCommand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			repair, gotOk := newRepairCommand(o, tt.args.c, flag.NewFlagSet("repair", flag.ContinueOnError))
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk %t wantOk %t", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 			if repair != nil {
-				if _, ok := repair.sf.ProcessArgs(internal.NullOutputBus(), []string{
+				if _, ok := repair.sf.ProcessArgs(internal.NewNilOutputBus(), []string{
 					"-topDir", topDir,
 					"-ext", ".mp3",
 				}); ok {
@@ -100,7 +100,7 @@ func Test_newRepairCommand(t *testing.T) {
 }
 
 func newRepairForTesting() *repair {
-	r, _ := newRepairCommand(internal.NullOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError))
+	r, _ := newRepairCommand(internal.NewNilOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError))
 	return r
 }
 
@@ -256,9 +256,9 @@ func Test_repair_Exec(t *testing.T) {
 			dirtyFolder = appFolder
 			dirtyFolderFound = true
 			dirtyFolderValid = true
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			tt.r.Exec(o, tt.args.args)
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -318,7 +318,7 @@ func Test_getAlbumPaths(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
 	s := files.CreateFilteredSearchForTesting(topDir, "^.*$", "^.*$")
-	a, _ := s.LoadData(internal.NullOutputBus())
+	a, _ := s.LoadData(internal.NewNilOutputBus())
 	var tSlice []*files.Track
 	for _, artist := range a {
 		for _, album := range artist.Albums() {
@@ -493,9 +493,9 @@ func Test_repair_makeBackupDirectories(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			makeBackupDirectories(o, tt.args.paths)
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -553,9 +553,9 @@ func Test_repair_backupTracks(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			backupTracks(o, tt.args.tracks)
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -629,9 +629,9 @@ func Test_repair_fixTracks(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			fixTracks(o, tt.args.tracks)
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

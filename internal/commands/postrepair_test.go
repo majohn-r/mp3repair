@@ -11,7 +11,7 @@ import (
 
 func makePostRepairCommandForTesting() *postrepair {
 	pr, _ := newPostRepairCommand(
-		internal.NullOutputBus(),
+		internal.NewNilOutputBus(),
 		internal.EmptyConfiguration(),
 		flag.NewFlagSet("postRepair", flag.ContinueOnError))
 	return pr
@@ -122,9 +122,9 @@ func Test_postrepair_Exec(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			tt.p.Exec(o, tt.args.args)
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -188,9 +188,9 @@ func Test_removeBackupDirectory(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			removeBackupDirectory(o, tt.args.d, tt.args.a)
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -229,7 +229,7 @@ func Test_newPostRepairCommand(t *testing.T) {
 		{
 			name: "failure",
 			args: args{
-				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
 					"common": map[string]any{
 						"topDir": "%FOO%",
 					},
@@ -244,7 +244,7 @@ func Test_newPostRepairCommand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			got, gotOk := newPostRepairCommand(o, tt.args.c, tt.args.fSet)
 			if (got != nil) != tt.wantPostRepair {
 				t.Errorf("%s got = %v, want %v", fnName, got, tt.wantPostRepair)
@@ -252,7 +252,7 @@ func Test_newPostRepairCommand(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

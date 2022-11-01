@@ -58,11 +58,11 @@ func Test_createFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			if got := createFile(o, tt.args.fileName, tt.args.content); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -138,11 +138,11 @@ func Test_export_overwriteFile(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			if gotOk := tt.ex.overwriteFile(o, tt.args.fileName, tt.args.content); gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -216,11 +216,11 @@ func Test_export_writeDefaults(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.appDataValue.RestoreForTesting()
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			if gotOk := tt.ex.writeDefaults(o, tt.args.content); gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -260,11 +260,11 @@ func Test_export_exportDefaults(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			if got := tt.ex.exportDefaults(o); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -322,7 +322,7 @@ func Test_getDefaultsContent(t *testing.T) {
 }
 
 func makeExportForTesting() *export {
-	e, _ := newExportCommand(internal.NullOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet(exportCommandName, flag.ContinueOnError))
+	e, _ := newExportCommand(internal.NewNilOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet(exportCommandName, flag.ContinueOnError))
 	return e
 }
 
@@ -379,11 +379,11 @@ func Test_export_Exec(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			if gotOk := tt.ex.Exec(o, tt.args.args); gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -414,7 +414,7 @@ func Test_newExportCommand(t *testing.T) {
 		{
 			name: "abnormal",
 			args: args{
-				c: internal.CreateConfiguration(internal.NullOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
 					exportCommandName: map[string]any{
 						defaultsFlag:  "Beats me",
 						overwriteFlag: 12,
@@ -434,7 +434,7 @@ func Test_newExportCommand(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			got, got1 := newExportCommand(o, tt.args.c, tt.args.fSet)
 			if got == nil && tt.want != nil {
 				t.Errorf("%s got = %v, want %v", fnName, got, tt.want)
@@ -444,7 +444,7 @@ func Test_newExportCommand(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("%s got1 = %v, want %v", fnName, got1, tt.want1)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

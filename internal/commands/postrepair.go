@@ -42,7 +42,7 @@ func logFields() map[string]any {
 }
 
 func runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
-	o.LogWriter().Info(internal.LogInfoExecutingCommand, logFields())
+	o.Log(internal.Info, internal.LogInfoExecutingCommand, logFields())
 	artists, ok := s.LoadData(o)
 	if ok {
 		backups := make(map[string]*files.Album)
@@ -57,7 +57,7 @@ func runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 			}
 		}
 		if len(backupDirectories) == 0 {
-			o.WriteConsole(true, "There are no backup directories to delete")
+			o.WriteCanonicalConsole("There are no backup directories to delete")
 		} else {
 			sort.Strings(backupDirectories)
 			for _, backupDirectory := range backupDirectories {
@@ -70,12 +70,12 @@ func runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 
 func removeBackupDirectory(o internal.OutputBus, d string, a *files.Album) {
 	if err := os.RemoveAll(d); err != nil {
-		o.LogWriter().Error(internal.LogErrorCannotDeleteDirectory, map[string]any{
+		o.Log(internal.Error, internal.LogErrorCannotDeleteDirectory, map[string]any{
 			internal.FieldKeyDirectory: d,
 			internal.FieldKeyError:     err,
 		})
-		o.WriteError(internal.UserCannotDeleteDirectory, d, err)
+		o.WriteCanonicalError(internal.UserCannotDeleteDirectory, d, err)
 	} else {
-		o.WriteConsole(true, "The backup directory for artist %q album %q has been deleted\n", a.RecordingArtistName(), a.Name())
+		o.WriteCanonicalConsole("The backup directory for artist %q album %q has been deleted\n", a.RecordingArtistName(), a.Name())
 	}
 }

@@ -102,8 +102,8 @@ func (ex *export) logFields() map[string]any {
 
 func (ex *export) runCommand(o internal.OutputBus) (ok bool) {
 	if !*ex.defaults {
-		o.WriteError(internal.UserSpecifiedNoWork, exportCommandName)
-		o.LogWriter().Error(internal.LogErrorNothingToDo, ex.logFields())
+		o.WriteCanonicalError(internal.UserSpecifiedNoWork, exportCommandName)
+		o.Log(internal.Error, internal.LogErrorNothingToDo, ex.logFields())
 		return
 	}
 	return ex.exportDefaults(o)
@@ -147,8 +147,8 @@ func ensurePathExists(o internal.OutputBus, path string) (ok bool) {
 		ok = true
 	} else {
 		if err := internal.Mkdir(path); err != nil {
-			o.WriteError(internal.UserCannotCreateDirectory, path, err)
-			o.LogWriter().Error(internal.LogErrorCannotCreateDirectory, map[string]any{
+			o.WriteCanonicalError(internal.UserCannotCreateDirectory, path, err)
+			o.Log(internal.Error, internal.LogErrorCannotCreateDirectory, map[string]any{
 				internal.FieldKeyDirectory: path,
 				internal.FieldKeyError:     err,
 			})
@@ -161,16 +161,16 @@ func ensurePathExists(o internal.OutputBus, path string) (ok bool) {
 
 func (ex *export) overwriteFile(o internal.OutputBus, fileName string, content []byte) (ok bool) {
 	if !*ex.overwrite {
-		o.WriteError(internal.UserNoOverwriteAllowed, fileName, overwriteFlag)
-		o.LogWriter().Error(internal.LogErrorOverwriteDisabled, map[string]any{
+		o.WriteCanonicalError(internal.UserNoOverwriteAllowed, fileName, overwriteFlag)
+		o.Log(internal.Error, internal.LogErrorOverwriteDisabled, map[string]any{
 			fKOverwriteFlag:           false,
 			internal.FieldKeyFileName: fileName,
 		})
 	} else {
 		backupFileName := fileName + "-backup"
 		if err := os.Rename(fileName, backupFileName); err != nil {
-			o.WriteError(internal.UserCannotRenameFile, fileName, backupFileName, err)
-			o.LogWriter().Error(internal.LogErrorRenameError, map[string]any{
+			o.WriteCanonicalError(internal.UserCannotRenameFile, fileName, backupFileName, err)
+			o.Log(internal.Error, internal.LogErrorRenameError, map[string]any{
 				internal.FieldKeyError: err,
 				fKOriginalFile:         fileName,
 				fKBackupFile:           backupFileName,
@@ -187,8 +187,8 @@ func (ex *export) overwriteFile(o internal.OutputBus, fileName string, content [
 
 func createFile(o internal.OutputBus, fileName string, content []byte) bool {
 	if err := os.WriteFile(fileName, content, 0644); err != nil {
-		o.WriteError(internal.UserCannotCreateFile, fileName, err)
-		o.LogWriter().Error(internal.LogErrorCannotCreateFile, map[string]any{
+		o.WriteCanonicalError(internal.UserCannotCreateFile, fileName, err)
+		o.Log(internal.Error, internal.LogErrorCannotCreateFile, map[string]any{
 			internal.FieldKeyFileName: fileName,
 			internal.FieldKeyError:    err,
 		})

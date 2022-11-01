@@ -92,7 +92,7 @@ func Test_run(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			if gotReturnValue := run(o, tt.args.f, tt.args.cmdlineArgs); gotReturnValue != tt.wantReturnValue {
 				t.Errorf("%s = %d, want %d", fnName, gotReturnValue, tt.wantReturnValue)
 			}
@@ -136,9 +136,9 @@ func Test_report(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			report(o, tt.args.returnValue)
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

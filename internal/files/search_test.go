@@ -21,16 +21,16 @@ func TestSearch_FilterArtists(t *testing.T) {
 		t.Errorf("%s error populating %q: %v", fnName, topDir, err)
 	}
 	realFlagSet := flag.NewFlagSet("real", flag.ContinueOnError)
-	realSF, _ := NewSearchFlags(internal.NullOutputBus(), internal.EmptyConfiguration(), realFlagSet)
-	realS, _ := realSF.ProcessArgs(internal.NullOutputBus(), []string{"-topDir", topDir})
-	realArtists, _ := realS.LoadData(internal.NullOutputBus())
+	realSF, _ := NewSearchFlags(internal.NewNilOutputBus(), internal.EmptyConfiguration(), realFlagSet)
+	realS, _ := realSF.ProcessArgs(internal.NewNilOutputBus(), []string{"-topDir", topDir})
+	realArtists, _ := realS.LoadData(internal.NewNilOutputBus())
 	overFilteredSF, _ := NewSearchFlags(
-		internal.NullOutputBus(),
+		internal.NewNilOutputBus(),
 		internal.EmptyConfiguration(),
 		flag.NewFlagSet("overFiltered", flag.ContinueOnError))
 	overFilteredS, _ := overFilteredSF.ProcessArgs(
-		internal.NullOutputBus(), []string{"-topDir", topDir, "-artistFilter", "^Filter all out$"})
-	a, _ := realS.LoadUnfilteredData(internal.NullOutputBus())
+		internal.NewNilOutputBus(), []string{"-topDir", topDir, "-artistFilter", "^Filter all out$"})
+	a, _ := realS.LoadUnfilteredData(internal.NewNilOutputBus())
 	type args struct {
 		unfilteredArtists []*Artist
 	}
@@ -65,7 +65,7 @@ func TestSearch_FilterArtists(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			gotArtists, gotOk := tt.s.FilterArtists(o, tt.args.unfilteredArtists)
 			if !reflect.DeepEqual(gotArtists, tt.wantArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotArtists, tt.wantArtists)
@@ -73,7 +73,7 @@ func TestSearch_FilterArtists(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -141,12 +141,12 @@ func TestSearch_LoadData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			gotArtists, gotOk := tt.s.LoadData(o)
 			if !reflect.DeepEqual(gotArtists, tt.wantArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotArtists, tt.wantArtists)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -205,14 +205,14 @@ func TestSearch_LoadUnfilteredData(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var gotArtists []*Artist
 			var gotOk bool
-			o := internal.NewOutputDeviceForTesting()
+			o := internal.NewRecordingOutputBus()
 			if gotArtists, gotOk = tt.s.LoadUnfilteredData(o); !reflect.DeepEqual(gotArtists, tt.wantArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotArtists, tt.wantArtists)
 			}
 			if gotOk != tt.wantOk {
 				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

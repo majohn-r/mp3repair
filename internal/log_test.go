@@ -146,9 +146,9 @@ func TestCleanupLogFiles(t *testing.T) {
 			}
 		}
 		t.Run(tt.name, func(t *testing.T) {
-			o := NewOutputDeviceForTesting()
+			o := NewRecordingOutputBus()
 			cleanupLogFiles(o, tt.args.path)
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -245,11 +245,11 @@ func TestInitLogging(t *testing.T) {
 			for _, s := range tt.state {
 				s.RestoreForTesting()
 			}
-			o := NewOutputDeviceForTesting()
+			o := NewRecordingOutputBus()
 			if got := InitLogging(o); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
-			if issues, ok := o.CheckOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -257,6 +257,43 @@ func TestInitLogging(t *testing.T) {
 			if logger != nil {
 				logger.Close()
 			}
+		})
+	}
+}
+
+func TestProductionLogger(t *testing.T) {
+	fnName := "TestProductionLogger"
+	type args struct {
+		msg    string
+		fields map[string]any
+	}
+	tests := []struct {
+		name string
+		p    ProductionLogger
+		args
+	}{
+		{
+			name: "normal",
+			p:    ProductionLogger{},
+			args: args{
+				msg:    "test message",
+				fields: map[string]any{"field": "value"},
+			},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tt.p.Trace(tt.args.msg, tt.args.fields)
+			tt.p.Debug(tt.args.msg, tt.args.fields)
+			tt.p.Info(tt.args.msg, tt.args.fields)
+			tt.p.Warning(tt.args.msg, tt.args.fields)
+			tt.p.Error(tt.args.msg, tt.args.fields)
+			defer func() {
+				if r := recover(); r != nil {
+					fmt.Printf("%s: recovered from panic: %#v\n", fnName, r)
+				}
+			}()
+			tt.p.Panic(tt.args.msg, tt.args.fields)
 		})
 	}
 }

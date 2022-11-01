@@ -18,8 +18,8 @@ func ProcessArgs(o OutputBus, f *flag.FlagSet, args []string) (ok bool) {
 		var err error
 		dereferencedArgs[i], err = InterpretEnvVarReferences(arg)
 		if err != nil {
-			o.WriteError(UserBadArgument, arg, err)
-			o.LogWriter().Error(LogErrorBadArgument, map[string]any{
+			o.WriteCanonicalError(UserBadArgument, arg, err)
+			o.Log(Error, LogErrorBadArgument, map[string]any{
 				FieldKeyValue: arg,
 				FieldKeyError: err,
 			})
@@ -32,7 +32,7 @@ func ProcessArgs(o OutputBus, f *flag.FlagSet, args []string) (ok bool) {
 	f.SetOutput(o.ErrorWriter())
 	// note: Parse outputs errors to o.ErrorWriter*()
 	if err := f.Parse(dereferencedArgs); err != nil {
-		o.LogWriter().Error(fmt.Sprintf("%v", err), map[string]any{
+		o.Log(Error, fmt.Sprintf("%v", err), map[string]any{
 			fieldKeyArguments: dereferencedArgs,
 		})
 		ok = false

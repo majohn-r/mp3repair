@@ -40,11 +40,11 @@ func configureLogging(path string) *cronowriter.CronoWriter {
 
 func cleanupLogFiles(o OutputBus, path string) {
 	if files, err := os.ReadDir(path); err != nil {
-		o.LogWriter().Error(LogErrorCannotReadDirectory, map[string]any{
+		o.Log(Error, LogErrorCannotReadDirectory, map[string]any{
 			FieldKeyDirectory: path,
 			FieldKeyError:     err,
 		})
-		o.WriteError(UserLogDirCannotBeRead, path, err)
+		o.WriteCanonicalError(UserLogDirCannotBeRead, path, err)
 	} else {
 		var fileMap map[time.Time]fs.DirEntry = make(map[time.Time]fs.DirEntry)
 		var times []time.Time
@@ -69,14 +69,14 @@ func cleanupLogFiles(o OutputBus, path string) {
 				fileName := fileMap[times[k]].Name()
 				logFilePath := filepath.Join(path, fileName)
 				if err := os.Remove(logFilePath); err != nil {
-					o.LogWriter().Error(LogErrorCannotDeleteFile, map[string]any{
+					o.Log(Error, LogErrorCannotDeleteFile, map[string]any{
 						FieldKeyDirectory: path,
 						FieldKeyFileName:  fileName,
 						FieldKeyError:     err,
 					})
-					o.WriteError(UserLogFileCannotBeDeleted, logFilePath, err)
+					o.WriteCanonicalError(UserLogFileCannotBeDeleted, logFilePath, err)
 				} else {
-					o.LogWriter().Info(LogInfoFileDeleted, map[string]any{
+					o.Log(Info, LogInfoFileDeleted, map[string]any{
 						FieldKeyDirectory: path,
 						FieldKeyFileName:  fileName,
 					})
@@ -95,13 +95,13 @@ func InitLogging(o OutputBus) bool {
 	var found bool
 	if tmpFolder, found = os.LookupEnv("TMP"); !found {
 		if tmpFolder, found = os.LookupEnv("TEMP"); !found {
-			o.WriteError(UserNoTempFolder)
+			o.WriteCanonicalError(UserNoTempFolder)
 			return false
 		}
 	}
 	path := filepath.Join(CreateAppSpecificPath(tmpFolder), logDirName)
 	if err := os.MkdirAll(path, 0755); err != nil {
-		o.WriteError(UserCannotCreateDirectory, path, err)
+		o.WriteCanonicalError(UserCannotCreateDirectory, path, err)
 		return false
 	}
 	logger = configureLogging(path)
@@ -110,18 +110,40 @@ func InitLogging(o OutputBus) bool {
 	return true
 }
 
-// Logger defines functions for writing to a log
-type Logger interface {
-	Info(msg string, fields map[string]any)
-	Error(msg string, fields map[string]any)
+// ProductionLogger is the production implementation of the Logger interface
+type ProductionLogger struct{}
+
+// Trace outputs a trace log message
+func (ProductionLogger) Trace(msg string, fields map[string]any) {
+	logrus.WithFields(fields).Trace(msg)
 }
 
-type productionLogger struct{}
+// Debug outputs a debug log message
+func (ProductionLogger) Debug(msg string, fields map[string]any) {
+	logrus.WithFields(fields).Debug(msg)
+}
 
-func (productionLogger) Info(msg string, fields map[string]any) {
+// Info outputs an info log message
+func (ProductionLogger) Info(msg string, fields map[string]any) {
 	logrus.WithFields(fields).Info(msg)
 }
 
-func (productionLogger) Error(msg string, fields map[string]any) {
+// Warning outputs a warning log message
+func (ProductionLogger) Warning(msg string, fields map[string]any) {
+	logrus.WithFields(fields).Warning(msg)
+}
+
+// Error outputs an error log message
+func (ProductionLogger) Error(msg string, fields map[string]any) {
 	logrus.WithFields(fields).Error(msg)
+}
+
+// Panic outputs a panic log message and calls panic()
+func (ProductionLogger) Panic(msg string, fields map[string]any) {
+	logrus.WithFields(fields).Panic(msg)
+}
+
+// Fatal outputs a fatal log message and terminates the program
+func (ProductionLogger) Fatal(msg string, fields map[string]any) {
+	logrus.WithFields(fields).Fatal(msg)
 }

@@ -25,13 +25,13 @@ func MarkDirty(o internal.OutputBus) {
 			dirtyFile := filepath.Join(path, dirtyFileName)
 			if _, err := os.Stat(dirtyFile); err != nil && errors.Is(err, os.ErrNotExist) {
 				if writeErr := os.WriteFile(dirtyFile, []byte("dirty"), 0644); writeErr != nil {
-					o.WriteError(internal.UserCannotCreateFile, dirtyFile, writeErr)
-					o.LogWriter().Error(internal.LogErrorCannotCreateFile, map[string]any{
+					o.WriteCanonicalError(internal.UserCannotCreateFile, dirtyFile, writeErr)
+					o.Log(internal.Error, internal.LogErrorCannotCreateFile, map[string]any{
 						internal.FieldKeyFileName: dirtyFile,
 						internal.FieldKeyError:    writeErr,
 					})
 				} else {
-					o.LogWriter().Info(internal.LogInfoDirtyFileWritten, map[string]any{
+					o.Log(internal.Info, internal.LogInfoDirtyFileWritten, map[string]any{
 						internal.FieldKeyFileName: dirtyFile,
 					})
 				}
@@ -65,13 +65,13 @@ func ClearDirty(o internal.OutputBus) {
 		dirtyFile := filepath.Join(path, dirtyFileName)
 		if internal.PlainFileExists(dirtyFile) {
 			if err := os.Remove(dirtyFile); err != nil {
-				o.WriteError(internal.UserCannotDeleteFile, dirtyFile, err)
-				o.LogWriter().Error(internal.LogErrorCannotDeleteFile, map[string]any{
+				o.WriteCanonicalError(internal.UserCannotDeleteFile, dirtyFile, err)
+				o.Log(internal.Error, internal.LogErrorCannotDeleteFile, map[string]any{
 					internal.FieldKeyFileName: dirtyFile,
 					internal.FieldKeyError:    err,
 				})
 			} else {
-				o.LogWriter().Info(internal.LogInfoDirtyFileDeleted, map[string]any{
+				o.Log(internal.Info, internal.LogInfoDirtyFileDeleted, map[string]any{
 					internal.FieldKeyFileName: dirtyFile,
 				})
 			}

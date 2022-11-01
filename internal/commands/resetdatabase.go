@@ -160,7 +160,7 @@ func (r *resetDatabase) Exec(o internal.OutputBus, args []string) (ok bool) {
 				ClearDirty(o)
 			}
 		} else {
-			o.WriteConsole(true, "Running %q is not necessary, as no track files have been edited", resetDatabaseCommandName)
+			o.WriteCanonicalConsole("Running %q is not necessary, as no track files have been edited", resetDatabaseCommandName)
 			ok = true // no harm, no foul
 		}
 	}
@@ -168,7 +168,7 @@ func (r *resetDatabase) Exec(o internal.OutputBus, args []string) (ok bool) {
 }
 
 func (r *resetDatabase) runCommand(o internal.OutputBus, connect func() (serviceGateway, error)) (ok bool) {
-	o.LogWriter().Info(internal.LogInfoExecutingCommand, map[string]any{
+	o.Log(internal.Info, internal.LogInfoExecutingCommand, map[string]any{
 		fieldKeyCommandName:   resetDatabaseCommandName,
 		fieldKeyServiceFlag:   *r.service,
 		fieldKeyTimeoutFlag:   *r.timeout,
@@ -191,8 +191,8 @@ func (r *resetDatabase) deleteMetadata(o internal.OutputBus) bool {
 	if len(pathsToDelete) > 0 {
 		return r.deleteMetadataFiles(o, pathsToDelete)
 	}
-	o.WriteConsole(true, "No metadata files were found in %q", *r.metadata)
-	o.LogWriter().Info(internal.LogInfoNoFilesFound, map[string]any{
+	o.WriteCanonicalConsole("No metadata files were found in %q", *r.metadata)
+	o.Log(internal.Info, internal.LogInfoNoFilesFound, map[string]any{
 		internal.FieldKeyDirectory: *r.metadata,
 		fieldKeyFileExtension:      *r.extension,
 	})
@@ -203,8 +203,8 @@ func (r *resetDatabase) deleteMetadataFiles(o internal.OutputBus, paths []string
 	var count int
 	for _, path := range paths {
 		if err := os.Remove(path); err != nil {
-			o.WriteError(internal.UserCannotDeleteFile, path, err)
-			o.LogWriter().Error(internal.LogErrorCannotDeleteFile, map[string]any{
+			o.WriteCanonicalError(internal.UserCannotDeleteFile, path, err)
+			o.Log(internal.Error, internal.LogErrorCannotDeleteFile, map[string]any{
 				internal.FieldKeyFileName: path,
 				internal.FieldKeyError:    err,
 			})
@@ -212,7 +212,7 @@ func (r *resetDatabase) deleteMetadataFiles(o internal.OutputBus, paths []string
 			count++
 		}
 	}
-	o.WriteConsole(true, "%d out of %d metadata files have been deleted from %q", count, len(paths), *r.metadata)
+	o.WriteCanonicalConsole("%d out of %d metadata files have been deleted from %q", count, len(paths), *r.metadata)
 	return count == len(paths)
 }
 
@@ -244,8 +244,8 @@ func (r *resetDatabase) stopService(o internal.OutputBus, connect func() (servic
 	}()
 	status, err := s.Query()
 	if err != nil {
-		o.WriteError(internal.UserCannotQueryService, *r.service, err)
-		o.LogWriter().Error(internal.LogErrorServiceIssue, map[string]any{
+		o.WriteCanonicalError(internal.UserCannotQueryService, *r.service, err)
+		o.Log(internal.Error, internal.LogErrorServiceIssue, map[string]any{
 			internal.FieldKeyError: err,
 			fieldKeyService:        *r.service,
 			fieldKeyOperation:      operationQueryService,
@@ -264,8 +264,8 @@ func (r *resetDatabase) stopService(o internal.OutputBus, connect func() (servic
 			ok = true
 		}
 	} else {
-		o.WriteError(internal.UserCannotStopService, *r.service, err)
-		o.LogWriter().Error(internal.LogErrorServiceIssue, map[string]any{
+		o.WriteCanonicalError(internal.UserCannotStopService, *r.service, err)
+		o.Log(internal.Error, internal.LogErrorServiceIssue, map[string]any{
 			internal.FieldKeyError: err,
 			fieldKeyService:        *r.service,
 			fieldKeyOperation:      operationStopService,
@@ -275,7 +275,7 @@ func (r *resetDatabase) stopService(o internal.OutputBus, connect func() (servic
 }
 
 func (r *resetDatabase) logServiceStopped(o internal.OutputBus) {
-	o.LogWriter().Info(internal.LogInfoServiceStatus, map[string]any{
+	o.Log(internal.Info, internal.LogInfoServiceStatus, map[string]any{
 		fieldKeyService:       *r.service,
 		fieldKeyServiceStatus: statusStopped,
 	})
@@ -284,24 +284,24 @@ func (r *resetDatabase) logServiceStopped(o internal.OutputBus) {
 func (r *resetDatabase) openService(o internal.OutputBus, connect func() (serviceGateway, error)) (sM serviceGateway, s service) {
 	sM, err := connect()
 	if err != nil {
-		o.WriteError(internal.UserServiceMgrConnectionFailed, err)
-		o.LogWriter().Error(internal.LogErrorServiceManagerIssue, map[string]any{
+		o.WriteCanonicalError(internal.UserServiceMgrConnectionFailed, err)
+		o.Log(internal.Error, internal.LogErrorServiceManagerIssue, map[string]any{
 			internal.FieldKeyError: err,
 			fieldKeyOperation:      operationConnect,
 		})
 	} else {
 		s, err = sM.openService(*r.service)
 		if err != nil {
-			o.WriteError(internal.UserCannotOpenService, *r.service, err)
-			o.LogWriter().Error(internal.LogErrorServiceIssue, map[string]any{
+			o.WriteCanonicalError(internal.UserCannotOpenService, *r.service, err)
+			o.Log(internal.Error, internal.LogErrorServiceIssue, map[string]any{
 				internal.FieldKeyError: err,
 				fieldKeyService:        *r.service,
 				fieldKeyOperation:      operationOpenService,
 			})
 			services, err := sM.manager().ListServices()
 			if err != nil {
-				o.WriteError(internal.UserCannotListServices, err)
-				o.LogWriter().Error(internal.LogErrorServiceManagerIssue, map[string]any{
+				o.WriteCanonicalError(internal.UserCannotListServices, err)
+				o.Log(internal.Error, internal.LogErrorServiceManagerIssue, map[string]any{
 					internal.FieldKeyError: err,
 					fieldKeyOperation:      operationListServices,
 				})
@@ -324,8 +324,8 @@ func (r *resetDatabase) waitForStop(o internal.OutputBus, s service, status svc.
 	}
 	for !ok {
 		if timeout.Before(time.Now()) {
-			o.WriteError(internal.UserServiceStopTimedOut, *r.service, *r.timeout)
-			o.LogWriter().Error(internal.LogErrorServiceIssue, map[string]any{
+			o.WriteCanonicalError(internal.UserServiceStopTimedOut, *r.service, *r.timeout)
+			o.Log(internal.Error, internal.LogErrorServiceIssue, map[string]any{
 				fieldKeyService:        *r.service,
 				fieldKeyTimeout:        *r.timeout,
 				fieldKeyOperation:      operationStopService,
@@ -336,8 +336,8 @@ func (r *resetDatabase) waitForStop(o internal.OutputBus, s service, status svc.
 		time.Sleep(checkFreq)
 		status, err := s.Query()
 		if err != nil {
-			o.WriteError(internal.UserCannotQueryService, *r.service, err)
-			o.LogWriter().Error(internal.LogErrorServiceIssue, map[string]any{
+			o.WriteCanonicalError(internal.UserCannotQueryService, *r.service, err)
+			o.Log(internal.Error, internal.LogErrorServiceIssue, map[string]any{
 				internal.FieldKeyError: err,
 				fieldKeyService:        *r.service,
 				fieldKeyOperation:      operationQueryService,
@@ -353,9 +353,9 @@ func (r *resetDatabase) waitForStop(o internal.OutputBus, s service, status svc.
 }
 
 func listAvailableServices(o internal.OutputBus, sM serviceGateway, services []string) {
-	o.WriteConsole(false, "The following services are available:\n")
+	o.WriteConsole("The following services are available:\n")
 	if len(services) == 0 {
-		o.WriteConsole(false, "  - none -\n")
+		o.WriteConsole("  - none -\n")
 		return
 	}
 	sort.Strings(services)
@@ -381,9 +381,9 @@ func listAvailableServices(o internal.OutputBus, sM serviceGateway, services []s
 	}
 	sort.Strings(states)
 	for _, state := range states {
-		o.WriteConsole(false, "  State %q:\n", state)
+		o.WriteConsole("  State %q:\n", state)
 		for _, service := range sMap[state] {
-			o.WriteConsole(false, "    %q\n", service)
+			o.WriteConsole("    %q\n", service)
 		}
 	}
 }

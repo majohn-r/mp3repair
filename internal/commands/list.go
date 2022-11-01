@@ -169,14 +169,14 @@ func (l *list) logFields() map[string]any {
 
 func (l *list) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
-		o.WriteError(internal.UserSpecifiedNoWork, listCommandName)
-		o.LogWriter().Error(internal.LogErrorNothingToDo, l.logFields())
+		o.WriteCanonicalError(internal.UserSpecifiedNoWork, listCommandName)
+		o.Log(internal.Error, internal.LogErrorNothingToDo, l.logFields())
 		return
 	}
-	o.LogWriter().Info(internal.LogInfoExecutingCommand, l.logFields())
+	o.Log(internal.Info, internal.LogInfoExecutingCommand, l.logFields())
 	if *l.includeTracks {
 		if l.validateTrackSorting(o) {
-			o.LogWriter().Info(internal.LogInfoParametersOverridden, l.logFields())
+			o.Log(internal.Info, internal.LogInfoParametersOverridden, l.logFields())
 		}
 	}
 	artists, ok := s.LoadData(o)
@@ -197,7 +197,7 @@ func (l *list) outputArtists(o internal.OutputBus, artists []*files.Artist) {
 		}
 		sort.Strings(artistNames)
 		for _, artistName := range artistNames {
-			o.WriteConsole(false, "Artist: %s\n", artistName)
+			o.WriteConsole("Artist: %s\n", artistName)
 			artist := artistsByArtistNames[artistName]
 			l.outputAlbums(o, artist.Albums(), "  ")
 		}
@@ -228,7 +228,7 @@ func (l *list) outputAlbums(o internal.OutputBus, albums []*files.Album, prefix 
 		}
 		sort.Strings(albumNames)
 		for _, albumName := range albumNames {
-			o.WriteConsole(false, "%sAlbum: %s\n", prefix, albumName)
+			o.WriteConsole("%sAlbum: %s\n", prefix, albumName)
 			album := albumsByAlbumName[albumName]
 			l.outputTracks(o, album.Tracks(), prefix+"  ")
 		}
@@ -245,8 +245,8 @@ func (l *list) validateTrackSorting(o internal.OutputBus) (ok bool) {
 	switch *l.trackSorting {
 	case numericSorting:
 		if !*l.includeAlbums {
-			o.WriteError(internal.UserInvalidSortingApplied, fieldKeyTrackSortingFlag, *l.trackSorting, fieldKeyIncludeAlbumsFlag)
-			o.LogWriter().Error(internal.LogErrorSortingOptionUnacceptable, map[string]any{
+			o.WriteCanonicalError(internal.UserInvalidSortingApplied, fieldKeyTrackSortingFlag, *l.trackSorting, fieldKeyIncludeAlbumsFlag)
+			o.Log(internal.Error, internal.LogErrorSortingOptionUnacceptable, map[string]any{
 				fieldKeyTrackSortingFlag:  *l.trackSorting,
 				fieldKeyIncludeAlbumsFlag: *l.includeAlbums,
 			})
@@ -256,8 +256,8 @@ func (l *list) validateTrackSorting(o internal.OutputBus) (ok bool) {
 	case alphabeticSorting:
 		ok = true
 	default:
-		o.WriteError(internal.UserUnrecognizedValue, fieldKeyTrackSortingFlag, *l.trackSorting)
-		o.LogWriter().Error(internal.LogErrorInvalidFlagSetting, map[string]any{
+		o.WriteCanonicalError(internal.UserUnrecognizedValue, fieldKeyTrackSortingFlag, *l.trackSorting)
+		o.Log(internal.Error, internal.LogErrorInvalidFlagSetting, map[string]any{
 			fieldKeyCommandName:      listCommandName,
 			fieldKeyTrackSortingFlag: *l.trackSorting,
 		})
@@ -289,7 +289,7 @@ func (l *list) outputTracks(o internal.OutputBus, tracks []*files.Track, prefix 
 		}
 		sort.Ints(trackNumbers)
 		for _, trackNumber := range trackNumbers {
-			o.WriteConsole(false, "%s%2d. %s\n", prefix, trackNumber, trackNamesNumeric[trackNumber])
+			o.WriteConsole("%s%2d. %s\n", prefix, trackNumber, trackNamesNumeric[trackNumber])
 			l.outputTrackDetails(o, tracksNumeric[trackNumber], prefix+"  ")
 			l.outputTrackDiagnostics(o, tracksNumeric[trackNumber], prefix+"  ")
 		}
@@ -324,7 +324,7 @@ func (l *list) outputTracks(o internal.OutputBus, tracks []*files.Track, prefix 
 		}
 		sort.Strings(trackNames)
 		for _, trackName := range trackNames {
-			o.WriteConsole(false, "%s%s\n", prefix, trackName)
+			o.WriteConsole("%s%s\n", prefix, trackName)
 			l.outputTrackDetails(o, tracksByName[trackName], prefix+"  ")
 			l.outputTrackDiagnostics(o, tracksByName[trackName], prefix+"  ")
 		}
@@ -335,11 +335,11 @@ func (l *list) outputTrackDetails(o internal.OutputBus, t *files.Track, prefix s
 	if *l.details {
 		// go get information from track and display it
 		if m, err := t.Details(); err != nil {
-			o.LogWriter().Error(internal.LogErrorCannotGetTrackDetails, map[string]any{
+			o.Log(internal.Error, internal.LogErrorCannotGetTrackDetails, map[string]any{
 				internal.FieldKeyError: err,
 				fieldKeyTrack:          t.String(),
 			})
-			o.WriteError(internal.UserCannotReadTrackDetails, t.Name(), t.AlbumName(), t.RecordingArtist(), fmt.Sprintf("%v", err))
+			o.WriteCanonicalError(internal.UserCannotReadTrackDetails, t.Name(), t.AlbumName(), t.RecordingArtist(), fmt.Sprintf("%v", err))
 		} else {
 			if len(m) != 0 {
 				var keys []string
@@ -347,9 +347,9 @@ func (l *list) outputTrackDetails(o internal.OutputBus, t *files.Track, prefix s
 					keys = append(keys, k)
 				}
 				sort.Strings(keys)
-				o.WriteConsole(false, "%sDetails:\n", prefix)
+				o.WriteConsole("%sDetails:\n", prefix)
 				for _, k := range keys {
-					o.WriteConsole(false, "%s  %s = %q\n", prefix, k, m[k])
+					o.WriteConsole("%s  %s = %q\n", prefix, k, m[k])
 				}
 			}
 		}
@@ -359,27 +359,27 @@ func (l *list) outputTrackDetails(o internal.OutputBus, t *files.Track, prefix s
 func (l *list) outputTrackDiagnostics(o internal.OutputBus, t *files.Track, prefix string) {
 	if *l.diagnostics {
 		if version, enc, frames, err := t.ID3V2Diagnostics(); err != nil {
-			o.LogWriter().Error(internal.LogErrorID3v2TagError, map[string]any{
+			o.Log(internal.Error, internal.LogErrorID3v2TagError, map[string]any{
 				internal.FieldKeyError: err,
 				fieldKeyTrack:          t.String(),
 			})
-			o.WriteError(internal.UserID3v2TagError, t.Name(), t.AlbumName(), t.RecordingArtist(), fmt.Sprintf("%v", err))
+			o.WriteCanonicalError(internal.UserID3v2TagError, t.Name(), t.AlbumName(), t.RecordingArtist(), fmt.Sprintf("%v", err))
 		} else {
-			o.WriteConsole(false, "%sID3V2 Version: %v\n", prefix, version)
-			o.WriteConsole(false, "%sID3V2 Encoding: %q\n", prefix, enc)
+			o.WriteConsole("%sID3V2 Version: %v\n", prefix, version)
+			o.WriteConsole("%sID3V2 Encoding: %q\n", prefix, enc)
 			for _, frame := range frames {
-				o.WriteConsole(false, "%sID3V2 %s\n", prefix, frame)
+				o.WriteConsole("%sID3V2 %s\n", prefix, frame)
 			}
 		}
 		if id3v1Data, err := t.ID3V1Diagnostics(); err != nil {
-			o.LogWriter().Error(internal.LogErrorID3v1TagError, map[string]any{
+			o.Log(internal.Error, internal.LogErrorID3v1TagError, map[string]any{
 				internal.FieldKeyError: err,
 				fieldKeyTrack:          t.String(),
 			})
-			o.WriteError(internal.UserID3v1TagError, t.Name(), t.AlbumName(), t.RecordingArtist(), fmt.Sprintf("%v", err))
+			o.WriteCanonicalError(internal.UserID3v1TagError, t.Name(), t.AlbumName(), t.RecordingArtist(), fmt.Sprintf("%v", err))
 		} else {
 			for _, datum := range id3v1Data {
-				o.WriteConsole(false, "%sID3V1 %s\n", prefix, datum)
+				o.WriteConsole("%sID3V1 %s\n", prefix, datum)
 			}
 		}
 	}

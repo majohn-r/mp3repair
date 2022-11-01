@@ -32,7 +32,7 @@ const (
 
 func exec(logInit func(internal.OutputBus) bool, cmdLine []string) (returnValue int) {
 	returnValue = 1
-	o := internal.NewOutputBus()
+	o := internal.NewDefaultOutputBus(internal.ProductionLogger{})
 	if logInit(o) {
 		returnValue = run(o, debug.ReadBuildInfo, cmdLine)
 	}
@@ -42,7 +42,7 @@ func exec(logInit func(internal.OutputBus) bool, cmdLine []string) (returnValue 
 
 func report(o internal.OutputBus, returnValue int) {
 	if returnValue != 0 {
-		o.WriteError(statusFormat, internal.AppName, version, creation)
+		o.WriteCanonicalError(statusFormat, internal.AppName, version, creation)
 	}
 }
 
@@ -61,7 +61,7 @@ func run(o internal.OutputBus, f func() (*debug.BuildInfo, bool), cmdlineArgs []
 			returnValue = 0
 		}
 	}
-	o.LogWriter().Info(internal.LogInfoEndExecution, map[string]any{
+	o.Log(internal.Info, internal.LogInfoEndExecution, map[string]any{
 		fieldKeyDuration: time.Since(startTime),
 		fieldKeyExitCode: returnValue,
 	})
@@ -69,7 +69,7 @@ func run(o internal.OutputBus, f func() (*debug.BuildInfo, bool), cmdlineArgs []
 }
 
 func logBegin(o internal.OutputBus, goVersion string, dependencies []string, cmdLineArgs []string) {
-	o.LogWriter().Info(internal.LogInfoBeginExecution, map[string]any{
+	o.Log(internal.Info, internal.LogInfoBeginExecution, map[string]any{
 		fieldKeyVersion:              version,
 		fieldKeyTImeStamp:            creation,
 		fieldKeyGoVersion:            goVersion,
