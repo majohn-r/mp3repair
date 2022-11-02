@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"mp3/internal"
+	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -32,7 +33,7 @@ func Test_NewSearchFlags(t *testing.T) {
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	defaultConfig, _ := internal.ReadConfigurationFile(internal.NewNilOutputBus())
+	defaultConfig, _ := internal.ReadConfigurationFile(output.NewNilBus())
 	type args struct {
 		c *internal.Configuration
 	}
@@ -44,7 +45,7 @@ func Test_NewSearchFlags(t *testing.T) {
 		wantExtension   string
 		wantAlbumRegex  string
 		wantArtistRegex string
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name:            "default",
@@ -67,63 +68,63 @@ func Test_NewSearchFlags(t *testing.T) {
 		{
 			name: "bad default topDir",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"common": map[string]any{
 						"topDir": "$FOO",
 					},
 				}),
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -topDir: missing environment variables: [FOO].\n",
-				WantLogOutput:   "level='error' error='invalid value \"$FOO\" for flag -topDir: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -topDir: missing environment variables: [FOO].\n",
+				Log:   "level='error' error='invalid value \"$FOO\" for flag -topDir: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
 			name: "bad default extension",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"common": map[string]any{
 						"ext": "$FOO",
 					},
 				}),
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -ext: missing environment variables: [FOO].\n",
-				WantLogOutput:   "level='error' error='invalid value \"$FOO\" for flag -ext: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -ext: missing environment variables: [FOO].\n",
+				Log:   "level='error' error='invalid value \"$FOO\" for flag -ext: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
 			name: "bad default album filter",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"common": map[string]any{
 						"albumFilter": "$FOO",
 					},
 				}),
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -albumFilter: missing environment variables: [FOO].\n",
-				WantLogOutput:   "level='error' error='invalid value \"$FOO\" for flag -albumFilter: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -albumFilter: missing environment variables: [FOO].\n",
+				Log:   "level='error' error='invalid value \"$FOO\" for flag -albumFilter: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
 			name: "bad default artist filter",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"common": map[string]any{
 						"artistFilter": "$FOO",
 					},
 				}),
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -artistFilter: missing environment variables: [FOO].\n",
-				WantLogOutput:   "level='error' error='invalid value \"$FOO\" for flag -artistFilter: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -artistFilter: missing environment variables: [FOO].\n",
+				Log:   "level='error' error='invalid value \"$FOO\" for flag -artistFilter: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			got, gotOk := NewSearchFlags(o, tt.args.c, flag.NewFlagSet("test", flag.ContinueOnError))
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk %t wantOK %t", fnName, gotOk, tt.wantOk)
@@ -146,7 +147,7 @@ func Test_NewSearchFlags(t *testing.T) {
 					}
 				}
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -166,7 +167,7 @@ func Test_validateRegexp(t *testing.T) {
 		args
 		wantFilter *regexp.Regexp
 		wantOk     bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "valid filter with regex",
@@ -189,15 +190,15 @@ func Test_validateRegexp(t *testing.T) {
 		{
 			name: "invalid filter",
 			args: args{pattern: "disc[", name: "album"},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The album filter value you specified, \"disc[\", cannot be used: error parsing regexp: missing closing ]: `[`.\n",
-				WantLogOutput:   "level='error' album='disc[' error='error parsing regexp: missing closing ]: `[`' msg='the filter cannot be parsed as a regular expression'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The album filter value you specified, \"disc[\", cannot be used: error parsing regexp: missing closing ]: `[`.\n",
+				Log:   "level='error' album='disc[' error='error parsing regexp: missing closing ]: `[`' msg='the filter cannot be parsed as a regular expression'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			gotFilter, gotOk := validateRegexp(o, tt.args.pattern, tt.args.name)
 			if tt.wantOk && !reflect.DeepEqual(gotFilter, tt.wantFilter) {
 				t.Errorf("%s gotFilter = %v, want %v", fnName, gotFilter, tt.wantFilter)
@@ -205,7 +206,7 @@ func Test_validateRegexp(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -228,7 +229,7 @@ func Test_validateSearchParameters(t *testing.T) {
 		wantAlbumsFilter  *regexp.Regexp
 		wantArtistsFilter *regexp.Regexp
 		wantOk            bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "valid input",
@@ -252,9 +253,9 @@ func Test_validateSearchParameters(t *testing.T) {
 			},
 			wantAlbumsFilter:  regexp.MustCompile(".*"),
 			wantArtistsFilter: regexp.MustCompile(".*"),
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The -ext value you specified, \"mp3\", must contain exactly one '.' and '.' must be the first character.\n",
-				WantLogOutput:   "level='error' -ext='mp3' msg='the file extension must begin with '.' and contain no other '.' characters'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The -ext value you specified, \"mp3\", must contain exactly one '.' and '.' must be the first character.\n",
+				Log:   "level='error' -ext='mp3' msg='the file extension must begin with '.' and contain no other '.' characters'\n",
 			},
 		},
 		{
@@ -267,9 +268,9 @@ func Test_validateSearchParameters(t *testing.T) {
 			},
 			wantAlbumsFilter:  regexp.MustCompile(".*"),
 			wantArtistsFilter: regexp.MustCompile(".*"),
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The -ext value you specified, \".m.p3\", must contain exactly one '.' and '.' must be the first character.\n",
-				WantLogOutput:   "level='error' -ext='.m.p3' msg='the file extension must begin with '.' and contain no other '.' characters'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The -ext value you specified, \".m.p3\", must contain exactly one '.' and '.' must be the first character.\n",
+				Log:   "level='error' -ext='.m.p3' msg='the file extension must begin with '.' and contain no other '.' characters'\n",
 			},
 		},
 		{
@@ -282,9 +283,9 @@ func Test_validateSearchParameters(t *testing.T) {
 			},
 			wantAlbumsFilter:  regexp.MustCompile(".*"),
 			wantArtistsFilter: regexp.MustCompile(".*"),
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The -ext value you specified, \".mp[3\", cannot be used for file matching: error parsing regexp: missing closing ]: `[3$`.\n",
-				WantLogOutput:   "level='error' -ext='.mp[3' error='error parsing regexp: missing closing ]: `[3$`' msg='the file extension cannot be parsed as a regular expression'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The -ext value you specified, \".mp[3\", cannot be used for file matching: error parsing regexp: missing closing ]: `[3$`.\n",
+				Log:   "level='error' -ext='.mp[3' error='error parsing regexp: missing closing ]: `[3$`' msg='the file extension cannot be parsed as a regular expression'\n",
 			},
 		},
 		{
@@ -296,9 +297,9 @@ func Test_validateSearchParameters(t *testing.T) {
 				artists: ".*",
 			},
 			wantArtistsFilter: regexp.MustCompile(".*"),
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The -albumFilter filter value you specified, \".[*\", cannot be used: error parsing regexp: missing closing ]: `[*`.\n",
-				WantLogOutput:   "level='error' -albumFilter='.[*' error='error parsing regexp: missing closing ]: `[*`' msg='the filter cannot be parsed as a regular expression'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The -albumFilter filter value you specified, \".[*\", cannot be used: error parsing regexp: missing closing ]: `[*`.\n",
+				Log:   "level='error' -albumFilter='.[*' error='error parsing regexp: missing closing ]: `[*`' msg='the filter cannot be parsed as a regular expression'\n",
 			},
 		},
 		{
@@ -310,9 +311,9 @@ func Test_validateSearchParameters(t *testing.T) {
 				artists: ".[*",
 			},
 			wantAlbumsFilter: regexp.MustCompile(".*"),
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The -artistFilter filter value you specified, \".[*\", cannot be used: error parsing regexp: missing closing ]: `[*`.\n",
-				WantLogOutput:   "level='error' -artistFilter='.[*' error='error parsing regexp: missing closing ]: `[*`' msg='the filter cannot be parsed as a regular expression'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The -artistFilter filter value you specified, \".[*\", cannot be used: error parsing regexp: missing closing ]: `[*`.\n",
+				Log:   "level='error' -artistFilter='.[*' error='error parsing regexp: missing closing ]: `[*`' msg='the filter cannot be parsed as a regular expression'\n",
 			},
 		},
 		{
@@ -325,9 +326,9 @@ func Test_validateSearchParameters(t *testing.T) {
 			},
 			wantAlbumsFilter:  regexp.MustCompile(".*"),
 			wantArtistsFilter: regexp.MustCompile(".*"),
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The -topDir value you specified, \"no such directory\", cannot be read: CreateFile no such directory: The system cannot find the file specified.\n",
-				WantLogOutput:   "level='error' -topDir='no such directory' error='CreateFile no such directory: The system cannot find the file specified.' msg='cannot read directory'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The -topDir value you specified, \"no such directory\", cannot be read: CreateFile no such directory: The system cannot find the file specified.\n",
+				Log:   "level='error' -topDir='no such directory' error='CreateFile no such directory: The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
 		},
 		{
@@ -340,9 +341,9 @@ func Test_validateSearchParameters(t *testing.T) {
 			},
 			wantAlbumsFilter:  regexp.MustCompile(".*"),
 			wantArtistsFilter: regexp.MustCompile(".*"),
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The -topDir value you specified, \"utilities_test.go\", is not a directory.\n",
-				WantLogOutput:   "level='error' -topDir='utilities_test.go' msg='the file is not a directory'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The -topDir value you specified, \"utilities_test.go\", is not a directory.\n",
+				Log:   "level='error' -topDir='utilities_test.go' msg='the file is not a directory'\n",
 			},
 		},
 	}
@@ -354,7 +355,7 @@ func Test_validateSearchParameters(t *testing.T) {
 				albumRegex:    &tt.args.albums,
 				artistRegex:   &tt.args.artists,
 			}
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			gotAlbumsFilter, gotArtistsFilter, gotOk := sf.validate(o)
 			if !tt.wantOk {
 				if !reflect.DeepEqual(gotAlbumsFilter, tt.wantAlbumsFilter) {
@@ -367,7 +368,7 @@ func Test_validateSearchParameters(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -385,33 +386,33 @@ func TestSearchFlags_validateTopLevelDirectory(t *testing.T) {
 		name string
 		sf   *SearchFlags
 		want bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{name: "is directory", sf: &SearchFlags{topDirectory: &thisDir}, want: true},
 		{
 			name: "non-existent directory",
 			sf:   &SearchFlags{topDirectory: &notAFile},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The -topDir value you specified, \"no such file\", cannot be read: CreateFile no such file: The system cannot find the file specified.\n",
-				WantLogOutput:   "level='error' -topDir='no such file' error='CreateFile no such file: The system cannot find the file specified.' msg='cannot read directory'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The -topDir value you specified, \"no such file\", cannot be read: CreateFile no such file: The system cannot find the file specified.\n",
+				Log:   "level='error' -topDir='no such file' error='CreateFile no such file: The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
 		},
 		{
 			name: "file that is not a directory",
 			sf:   &SearchFlags{topDirectory: &notADir},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The -topDir value you specified, \"searchflags_test.go\", is not a directory.\n",
-				WantLogOutput:   "level='error' -topDir='searchflags_test.go' msg='the file is not a directory'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The -topDir value you specified, \"searchflags_test.go\", is not a directory.\n",
+				Log:   "level='error' -topDir='searchflags_test.go' msg='the file is not a directory'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			if got := tt.sf.validateTopLevelDirectory(o); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -434,41 +435,41 @@ func TestSearchFlags_validateExtension(t *testing.T) {
 		name      string
 		sf        *SearchFlags
 		wantValid bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{name: "valid extension", sf: &SearchFlags{fileExtension: &defaultExtension}, wantValid: true},
 		{
 			name: "extension does not start with '.'",
 			sf:   &SearchFlags{fileExtension: &missingLeadDot},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The -ext value you specified, \"mp3\", must contain exactly one '.' and '.' must be the first character.\n",
-				WantLogOutput:   "level='error' -ext='mp3' msg='the file extension must begin with '.' and contain no other '.' characters'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The -ext value you specified, \"mp3\", must contain exactly one '.' and '.' must be the first character.\n",
+				Log:   "level='error' -ext='mp3' msg='the file extension must begin with '.' and contain no other '.' characters'\n",
 			},
 		},
 		{
 			name: "extension contains multiple '.'",
 			sf:   &SearchFlags{fileExtension: &multipleDots},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The -ext value you specified, \".m.p3\", must contain exactly one '.' and '.' must be the first character.\n",
-				WantLogOutput:   "level='error' -ext='.m.p3' msg='the file extension must begin with '.' and contain no other '.' characters'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The -ext value you specified, \".m.p3\", must contain exactly one '.' and '.' must be the first character.\n",
+				Log:   "level='error' -ext='.m.p3' msg='the file extension must begin with '.' and contain no other '.' characters'\n",
 			},
 		},
 		{
 			name: "extension contains invalid characters",
 			sf:   &SearchFlags{fileExtension: &badChar},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The -ext value you specified, \".m[p3\", cannot be used for file matching: error parsing regexp: missing closing ]: `[p3$`.\n",
-				WantLogOutput:   "level='error' -ext='.m[p3' error='error parsing regexp: missing closing ]: `[p3$`' msg='the file extension cannot be parsed as a regular expression'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The -ext value you specified, \".m[p3\", cannot be used for file matching: error parsing regexp: missing closing ]: `[p3$`.\n",
+				Log:   "level='error' -ext='.m[p3' error='error parsing regexp: missing closing ]: `[p3$`' msg='the file extension cannot be parsed as a regular expression'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			if gotValid := tt.sf.validateExtension(o); gotValid != tt.wantValid {
 				t.Errorf("%s = %v, want %v", fnName, gotValid, tt.wantValid)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -508,31 +509,31 @@ func TestSearchFlags_ProcessArgs(t *testing.T) {
 		args
 		wantS  *Search
 		wantOk bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{name: "good arguments", sf: flags, args: args{args: nil}, wantS: s, wantOk: true},
 		{
 			name: "request help",
 			sf:   flags,
 			args: args{args: []string{"-help"}},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: usage,
-				WantLogOutput:   "level='error' arguments='[-help]' msg='flag: help requested'\n",
+			WantedRecording: output.WantedRecording{
+				Error: usage,
+				Log:   "level='error' arguments='[-help]' msg='flag: help requested'\n",
 			},
 		},
 		{
 			name: "request invalid argument",
 			sf:   flags,
 			args: args{args: []string{"-foo"}},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "flag provided but not defined: -foo\n" + usage,
-				WantLogOutput:   "level='error' arguments='[-foo]' msg='flag provided but not defined: -foo'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "flag provided but not defined: -foo\n" + usage,
+				Log:   "level='error' arguments='[-foo]' msg='flag provided but not defined: -foo'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			gotS, gotOk := tt.sf.ProcessArgs(o, tt.args.args)
 			if !reflect.DeepEqual(gotS, tt.wantS) {
 				t.Errorf("%s gotS = %v, want %v", fnName, gotS, tt.wantS)
@@ -540,7 +541,7 @@ func TestSearchFlags_ProcessArgs(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

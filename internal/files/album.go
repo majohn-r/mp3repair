@@ -3,6 +3,7 @@ package files
 import (
 	"io/fs"
 	"mp3/internal"
+	"mp3/internal/output"
 	"path/filepath"
 
 	"github.com/bogem/id3v2/v2"
@@ -47,7 +48,7 @@ func (a *Album) BackupDirectory() string {
 	return a.subDirectory(backupDirName)
 }
 
-func (a *Album) contents(o internal.OutputBus) ([]fs.DirEntry, bool) {
+func (a *Album) contents(o output.Bus) ([]fs.DirEntry, bool) {
 	return internal.ReadDirectory(o, a.path)
 }
 

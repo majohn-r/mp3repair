@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"mp3/internal"
 	"mp3/internal/files"
+	"mp3/internal/output"
 	"sort"
 	"strings"
 )
@@ -34,7 +35,7 @@ type list struct {
 	sf               *files.SearchFlags
 }
 
-func newList(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
+func newList(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
 	return newListCommand(o, c, fSet)
 }
 
@@ -80,7 +81,7 @@ type listDefaults struct {
 	sorting        string
 }
 
-func newListCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*list, bool) {
+func newListCommand(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (*list, bool) {
 	defaults, defaultsOk := evaluateListDefaults(o, c.SubConfiguration(listCommandName), listCommandName)
 	sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet)
 	if defaultsOk && sFlagsOk {
@@ -105,7 +106,7 @@ func newListCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.
 	return nil, false
 }
 
-func evaluateListDefaults(o internal.OutputBus, c *internal.Configuration, name string) (defaults listDefaults, ok bool) {
+func evaluateListDefaults(o output.Bus, c *internal.Configuration, name string) (defaults listDefaults, ok bool) {
 	ok = true
 	defaults = listDefaults{}
 	var err error
@@ -147,7 +148,7 @@ func evaluateListDefaults(o internal.OutputBus, c *internal.Configuration, name 
 	return
 }
 
-func (l *list) Exec(o internal.OutputBus, args []string) (ok bool) {
+func (l *list) Exec(o output.Bus, args []string) (ok bool) {
 	if s, argsOk := l.sf.ProcessArgs(o, args); argsOk {
 		ok = l.runCommand(o, s)
 	}
@@ -167,16 +168,16 @@ func (l *list) logFields() map[string]any {
 	}
 }
 
-func (l *list) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
+func (l *list) runCommand(o output.Bus, s *files.Search) (ok bool) {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
 		o.WriteCanonicalError(internal.UserSpecifiedNoWork, listCommandName)
-		o.Log(internal.Error, internal.LogErrorNothingToDo, l.logFields())
+		o.Log(output.Error, internal.LogErrorNothingToDo, l.logFields())
 		return
 	}
-	o.Log(internal.Info, internal.LogInfoExecutingCommand, l.logFields())
+	o.Log(output.Info, internal.LogInfoExecutingCommand, l.logFields())
 	if *l.includeTracks {
 		if l.validateTrackSorting(o) {
-			o.Log(internal.Info, internal.LogInfoParametersOverridden, l.logFields())
+			o.Log(output.Info, internal.LogInfoParametersOverridden, l.logFields())
 		}
 	}
 	artists, ok := s.LoadData(o)
@@ -186,7 +187,7 @@ func (l *list) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 	return
 }
 
-func (l *list) outputArtists(o internal.OutputBus, artists []*files.Artist) {
+func (l *list) outputArtists(o output.Bus, artists []*files.Artist) {
 	switch *l.includeArtists {
 	case true:
 		artistsByArtistNames := make(map[string]*files.Artist)
@@ -210,7 +211,7 @@ func (l *list) outputArtists(o internal.OutputBus, artists []*files.Artist) {
 	}
 }
 
-func (l *list) outputAlbums(o internal.OutputBus, albums []*files.Album, prefix string) {
+func (l *list) outputAlbums(o output.Bus, albums []*files.Album, prefix string) {
 	switch *l.includeAlbums {
 	case true:
 		albumsByAlbumName := make(map[string]*files.Album)
@@ -241,12 +242,12 @@ func (l *list) outputAlbums(o internal.OutputBus, albums []*files.Album, prefix 
 	}
 }
 
-func (l *list) validateTrackSorting(o internal.OutputBus) (ok bool) {
+func (l *list) validateTrackSorting(o output.Bus) (ok bool) {
 	switch *l.trackSorting {
 	case numericSorting:
 		if !*l.includeAlbums {
 			o.WriteCanonicalError(internal.UserInvalidSortingApplied, fieldKeyTrackSortingFlag, *l.trackSorting, fieldKeyIncludeAlbumsFlag)
-			o.Log(internal.Error, internal.LogErrorSortingOptionUnacceptable, map[string]any{
+			o.Log(output.Error, internal.LogErrorSortingOptionUnacceptable, map[string]any{
 				fieldKeyTrackSortingFlag:  *l.trackSorting,
 				fieldKeyIncludeAlbumsFlag: *l.includeAlbums,
 			})
@@ -257,7 +258,7 @@ func (l *list) validateTrackSorting(o internal.OutputBus) (ok bool) {
 		ok = true
 	default:
 		o.WriteCanonicalError(internal.UserUnrecognizedValue, fieldKeyTrackSortingFlag, *l.trackSorting)
-		o.Log(internal.Error, internal.LogErrorInvalidFlagSetting, map[string]any{
+		o.Log(output.Error, internal.LogErrorInvalidFlagSetting, map[string]any{
 			fieldKeyCommandName:      listCommandName,
 			fieldKeyTrackSortingFlag: *l.trackSorting,
 		})
@@ -273,7 +274,7 @@ func (l *list) validateTrackSorting(o internal.OutputBus) (ok bool) {
 	return
 }
 
-func (l *list) outputTracks(o internal.OutputBus, tracks []*files.Track, prefix string) {
+func (l *list) outputTracks(o output.Bus, tracks []*files.Track, prefix string) {
 	if !*l.includeTracks {
 		return
 	}
@@ -331,11 +332,11 @@ func (l *list) outputTracks(o internal.OutputBus, tracks []*files.Track, prefix 
 	}
 }
 
-func (l *list) outputTrackDetails(o internal.OutputBus, t *files.Track, prefix string) {
+func (l *list) outputTrackDetails(o output.Bus, t *files.Track, prefix string) {
 	if *l.details {
 		// go get information from track and display it
 		if m, err := t.Details(); err != nil {
-			o.Log(internal.Error, internal.LogErrorCannotGetTrackDetails, map[string]any{
+			o.Log(output.Error, internal.LogErrorCannotGetTrackDetails, map[string]any{
 				internal.FieldKeyError: err,
 				fieldKeyTrack:          t.String(),
 			})
@@ -356,10 +357,10 @@ func (l *list) outputTrackDetails(o internal.OutputBus, t *files.Track, prefix s
 	}
 }
 
-func (l *list) outputTrackDiagnostics(o internal.OutputBus, t *files.Track, prefix string) {
+func (l *list) outputTrackDiagnostics(o output.Bus, t *files.Track, prefix string) {
 	if *l.diagnostics {
 		if version, enc, frames, err := t.ID3V2Diagnostics(); err != nil {
-			o.Log(internal.Error, internal.LogErrorID3v2TagError, map[string]any{
+			o.Log(output.Error, internal.LogErrorID3v2TagError, map[string]any{
 				internal.FieldKeyError: err,
 				fieldKeyTrack:          t.String(),
 			})
@@ -372,7 +373,7 @@ func (l *list) outputTrackDiagnostics(o internal.OutputBus, t *files.Track, pref
 			}
 		}
 		if id3v1Data, err := t.ID3V1Diagnostics(); err != nil {
-			o.Log(internal.Error, internal.LogErrorID3v1TagError, map[string]any{
+			o.Log(output.Error, internal.LogErrorID3v1TagError, map[string]any{
 				internal.FieldKeyError: err,
 				fieldKeyTrack:          t.String(),
 			})

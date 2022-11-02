@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"mp3/internal"
 	"mp3/internal/files"
+	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -33,7 +34,7 @@ func Test_newRepairCommand(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	defaultConfig, _ := internal.ReadConfigurationFile(internal.NewNilOutputBus())
+	defaultConfig, _ := internal.ReadConfigurationFile(output.NewNilBus())
 	type args struct {
 		c *internal.Configuration
 	}
@@ -42,7 +43,7 @@ func Test_newRepairCommand(t *testing.T) {
 		args
 		wantDryRun bool
 		wantOk     bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name:       "ordinary defaults",
@@ -59,32 +60,32 @@ func Test_newRepairCommand(t *testing.T) {
 		{
 			name: "bad dryRun default",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"repair": map[string]any{
 						"dryRun": 42,
 					},
 				}),
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"repair\": invalid boolean value \"42\" for -dryRun: parse error.\n",
-				WantLogOutput:   "level='error' error='invalid boolean value \"42\" for -dryRun: parse error' section='repair' msg='invalid content in configuration file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"repair\": invalid boolean value \"42\" for -dryRun: parse error.\n",
+				Log:   "level='error' error='invalid boolean value \"42\" for -dryRun: parse error' section='repair' msg='invalid content in configuration file'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			repair, gotOk := newRepairCommand(o, tt.args.c, flag.NewFlagSet("repair", flag.ContinueOnError))
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk %t wantOk %t", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 			if repair != nil {
-				if _, ok := repair.sf.ProcessArgs(internal.NewNilOutputBus(), []string{
+				if _, ok := repair.sf.ProcessArgs(output.NewNilBus(), []string{
 					"-topDir", topDir,
 					"-ext", ".mp3",
 				}); ok {
@@ -100,7 +101,7 @@ func Test_newRepairCommand(t *testing.T) {
 }
 
 func newRepairForTesting() *repair {
-	r, _ := newRepairCommand(internal.NewNilOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError))
+	r, _ := newRepairCommand(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError))
 	return r
 }
 
@@ -171,14 +172,14 @@ func Test_repair_Exec(t *testing.T) {
 		name string
 		r    *repair
 		args
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "help",
 			r:    newRepairForTesting(),
 			args: args{[]string{"--help"}},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "Usage of repair:\n" +
+			WantedRecording: output.WantedRecording{
+				Error: "Usage of repair:\n" +
 					"  -albumFilter regular expression\n" +
 					"    \tregular expression specifying which albums to select (default \".*\")\n" +
 					"  -artistFilter regular expression\n" +
@@ -189,17 +190,17 @@ func Test_repair_Exec(t *testing.T) {
 					"    \textension identifying music files (default \".mp3\")\n" +
 					"  -topDir directory\n" +
 					"    \ttop directory specifying where to find music files (default \"C:\\\\Users\\\\The User\\\\Music\")\n",
-				WantLogOutput: "level='error' arguments='[--help]' msg='flag: help requested'\n",
+				Log: "level='error' arguments='[--help]' msg='flag: help requested'\n",
 			},
 		},
 		{
 			name: "dry run, no usable content",
 			r:    newRepairForTesting(),
 			args: args{[]string{"-topDir", topDirName, "-dryRun"}},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: noProblemsFound + ".\n",
-				WantErrorOutput:   generateStandardTrackErrorReport(),
-				WantLogOutput: "level='info' -dryRun='true' command='repair' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: noProblemsFound + ".\n",
+				Error:   generateStandardTrackErrorReport(),
+				Log: "level='info' -dryRun='true' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='repairExec' msg='reading filtered music files'\n" +
 					generateStandardTrackLogReport(),
 			},
@@ -208,10 +209,10 @@ func Test_repair_Exec(t *testing.T) {
 			name: "real repair, no usable content",
 			r:    newRepairForTesting(),
 			args: args{[]string{"-topDir", topDirName, "-dryRun=false"}},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: noProblemsFound + ".\n",
-				WantErrorOutput:   generateStandardTrackErrorReport(),
-				WantLogOutput: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: noProblemsFound + ".\n",
+				Error:   generateStandardTrackErrorReport(),
+				Log: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='repairExec' msg='reading filtered music files'\n" +
 					generateStandardTrackLogReport(),
 			},
@@ -220,14 +221,14 @@ func Test_repair_Exec(t *testing.T) {
 			name: "dry run, usable content",
 			r:    newRepairForTesting(),
 			args: args{[]string{"-topDir", topDirWithContent, "-dryRun"}},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: strings.Join([]string{
+			WantedRecording: output.WantedRecording{
+				Console: strings.Join([]string{
 					"\"new artist\"",
 					"    \"new album\"",
 					"         1 \"new track\" need to repair track numbering; track name; album name; artist name;\n",
 				}, "\n"),
-				WantErrorOutput: "An error occurred when trying to read ID3V1 tag information for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
-				WantLogOutput: "level='info' -dryRun='true' command='repair' msg='executing command'\n" +
+				Error: "An error occurred when trying to read ID3V1 tag information for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
+				Log: "level='info' -dryRun='true' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n" +
 					"level='error' albumName='new album' artistName='new artist' error='no id3v1 tag found in file \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\"' trackName='new track' msg='id3v1 tag error'\n",
 			},
@@ -236,13 +237,13 @@ func Test_repair_Exec(t *testing.T) {
 			name: "real repair, usable content",
 			r:    newRepairForTesting(),
 			args: args{[]string{"-topDir", topDirWithContent, "-dryRun=false"}},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: strings.Join([]string{
+			WantedRecording: output.WantedRecording{
+				Console: strings.Join([]string{
 					"The track \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" has been backed up to \"realContent\\\\new artist\\\\new album\\\\pre-repair-backup\\\\1.mp3\".",
 					"\"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" repaired.\n",
 				}, "\n"),
-				WantErrorOutput: "An error occurred when trying to read ID3V1 tag information for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
-				WantLogOutput: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
+				Error: "An error occurred when trying to read ID3V1 tag information for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
+				Log: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n" +
 					"level='error' albumName='new album' artistName='new artist' error='no id3v1 tag found in file \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\"' trackName='new track' msg='id3v1 tag error'\n" +
 					"level='info' fileName='repairExec\\mp3\\metadata.dirty' msg='metadata dirty file written'\n",
@@ -256,9 +257,9 @@ func Test_repair_Exec(t *testing.T) {
 			dirtyFolder = appFolder
 			dirtyFolderFound = true
 			dirtyFolderValid = true
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			tt.r.Exec(o, tt.args.args)
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -318,7 +319,7 @@ func Test_getAlbumPaths(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
 	s := files.CreateFilteredSearchForTesting(topDir, "^.*$", "^.*$")
-	a, _ := s.LoadData(internal.NewNilOutputBus())
+	a, _ := s.LoadData(output.NewNilBus())
 	var tSlice []*files.Track
 	for _, artist := range a {
 		for _, album := range artist.Albums() {
@@ -478,24 +479,24 @@ func Test_repair_makeBackupDirectories(t *testing.T) {
 		name string
 		r    *repair
 		args
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{name: "degenerate case", r: &repair{dryRun: &fFlag}, args: args{paths: nil}},
 		{
 			name: "useful case",
 			r:    &repair{dryRun: &fFlag},
 			args: args{paths: []string{topDir, albumDir, albumDir2}},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The directory \"makeBackupDirectories\\\\album\\\\pre-repair-backup\" cannot be created: file exists and is not a directory.\n",
-				WantLogOutput:   "level='error' command='repair' directory='makeBackupDirectories\\album\\pre-repair-backup' error='file exists and is not a directory' msg='cannot create directory'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The directory \"makeBackupDirectories\\\\album\\\\pre-repair-backup\" cannot be created: file exists and is not a directory.\n",
+				Log:   "level='error' command='repair' directory='makeBackupDirectories\\album\\pre-repair-backup' error='file exists and is not a directory' msg='cannot create directory'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			makeBackupDirectories(o, tt.args.paths)
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -531,7 +532,7 @@ func Test_repair_backupTracks(t *testing.T) {
 		name string
 		r    *repair
 		args
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{name: "degenerate case", r: &repair{dryRun: &fFlag}, args: args{tracks: nil}},
 		{
@@ -544,18 +545,18 @@ func Test_repair_backupTracks(t *testing.T) {
 					files.NewTrack(files.NewAlbum("", nil, topDir), goodTrackName, "", 2),
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: fmt.Sprintf("The track %q has been backed up to %q.\n", filepath.Join(topDir, goodTrackName), filepath.Join(files.CreateBackupPath(topDir), "1.mp3")),
-				WantLogOutput:     "level='error' command='repair' destination='backupTracks\\pre-repair-backup\\2.mp3' error='open backupTracks\\pre-repair-backup\\2.mp3: is a directory' source='backupTracks\\1 good track.mp3' msg='error copying file'\n",
-				WantErrorOutput:   fmt.Sprintf("The track %q cannot be backed up.\n", filepath.Join(topDir, goodTrackName)),
+			WantedRecording: output.WantedRecording{
+				Console: fmt.Sprintf("The track %q has been backed up to %q.\n", filepath.Join(topDir, goodTrackName), filepath.Join(files.CreateBackupPath(topDir), "1.mp3")),
+				Log:     "level='error' command='repair' destination='backupTracks\\pre-repair-backup\\2.mp3' error='open backupTracks\\pre-repair-backup\\2.mp3: is a directory' source='backupTracks\\1 good track.mp3' msg='error copying file'\n",
+				Error:   fmt.Sprintf("The track %q cannot be backed up.\n", filepath.Join(topDir, goodTrackName)),
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			backupTracks(o, tt.args.tracks)
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -607,7 +608,7 @@ func Test_repair_fixTracks(t *testing.T) {
 		name string
 		r    *repair
 		args
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{name: "degenerate case", r: &repair{dryRun: &fFlag}, args: args{tracks: nil}},
 		{
@@ -619,19 +620,19 @@ func Test_repair_fixTracks(t *testing.T) {
 					"non-existent-track", "", 0),
 				trackWithData,
 			}},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "An error occurred repairing track \"fixTracks\\\\non-existent-track\".\n" +
+			WantedRecording: output.WantedRecording{
+				Error: "An error occurred repairing track \"fixTracks\\\\non-existent-track\".\n" +
 					"An error occurred repairing track \"fixTracks\\\\01 repairable track.mp3\".\n",
-				WantLogOutput: "level='error' directory='fixTracks' error='[no edit required]' executing command='repair' fileName='non-existent-track' msg='cannot edit track'\n" +
+				Log: "level='error' directory='fixTracks' error='[no edit required]' executing command='repair' fileName='non-existent-track' msg='cannot edit track'\n" +
 					"level='error' directory='fixTracks' error='[no edit required]' executing command='repair' fileName='01 repairable track.mp3' msg='cannot edit track'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			fixTracks(o, tt.args.tracks)
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

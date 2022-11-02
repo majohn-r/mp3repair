@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mp3/internal"
 	"mp3/internal/commands"
+	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -44,11 +45,11 @@ func Test_run(t *testing.T) {
 	tests := []struct {
 		name string
 		args
-		wantReturnValue   int
-		wantConsoleOutput string
-		wantErrorOutput   string
-		wantLogPrefix     string
-		wantLogSuffix     string
+		wantReturnValue int
+		Console         string
+		Error           string
+		wantLogPrefix   string
+		wantLogSuffix   string
 	}{
 		// TODO [#85] need more tests: explicitly call list, check, repair,
 		// postRepair
@@ -63,7 +64,7 @@ func Test_run(t *testing.T) {
 				cmdlineArgs: []string{"./mp3", "foo"},
 			},
 			wantReturnValue: 1,
-			wantErrorOutput: "There is no command named \"foo\"; valid commands include [about check export list postRepair repair resetDatabase].\n",
+			Error:           "There is no command named \"foo\"; valid commands include [about check export list postRepair repair resetDatabase].\n",
 			wantLogPrefix: "level='info' args='[./mp3 foo]' dependencies='[]' go version='go1.x' timeStamp='' version='unknown version!' msg='execution starts'\n" +
 				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", filepath.Join(thisDir, internal.AppName)) +
 				"level='error' command='foo' msg='unrecognized command'\n" +
@@ -86,21 +87,21 @@ func Test_run(t *testing.T) {
 				"level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='false' -sort='numeric' command='list' msg='executing command'\n" +
 				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='./Music' msg='reading filtered music files'\n" +
 				"level='info' duration='",
-			wantLogSuffix:     "' exitCode='0' msg='execution ends'\n",
-			wantConsoleOutput: "Artist: myArtist\n  Album: myAlbum\n",
+			wantLogSuffix: "' exitCode='0' msg='execution ends'\n",
+			Console:       "Artist: myArtist\n  Album: myAlbum\n",
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			if gotReturnValue := run(o, tt.args.f, tt.args.cmdlineArgs); gotReturnValue != tt.wantReturnValue {
 				t.Errorf("%s = %d, want %d", fnName, gotReturnValue, tt.wantReturnValue)
 			}
-			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.wantErrorOutput {
-				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.wantErrorOutput)
+			if gotErrorOutput := o.ErrorOutput(); gotErrorOutput != tt.Error {
+				t.Errorf("%s error output = %q, want %q", fnName, gotErrorOutput, tt.Error)
 			}
-			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.wantConsoleOutput {
-				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.wantConsoleOutput)
+			if gotConsoleOutput := o.ConsoleOutput(); gotConsoleOutput != tt.Console {
+				t.Errorf("%s console output = %q, want %q", fnName, gotConsoleOutput, tt.Console)
 			}
 			gotLog := o.LogOutput()
 			if !strings.HasPrefix(gotLog, tt.wantLogPrefix) {
@@ -123,22 +124,22 @@ func Test_report(t *testing.T) {
 	tests := []struct {
 		name string
 		args
-		internal.WantedOutput
+		output.WantedRecording
 	}{
-		{name: "success", args: args{returnValue: 0}, WantedOutput: internal.WantedOutput{WantErrorOutput: ""}},
+		{name: "success", args: args{returnValue: 0}, WantedRecording: output.WantedRecording{Error: ""}},
 		{
 			name: "failure",
 			args: args{returnValue: 1},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "\"mp3\" version 1.2.3, created at " + creation + ", failed.\n",
+			WantedRecording: output.WantedRecording{
+				Error: "\"mp3\" version 1.2.3, created at " + creation + ", failed.\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			report(o, tt.args.returnValue)
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -150,7 +151,7 @@ func Test_report(t *testing.T) {
 func Test_exec(t *testing.T) {
 	fnName := "exec()"
 	type args struct {
-		logInit func(internal.OutputBus) bool
+		logInit func(output.Bus) bool
 		cmdLine []string
 	}
 	tests := []struct {
@@ -161,7 +162,7 @@ func Test_exec(t *testing.T) {
 		{
 			name: "init logging fails",
 			args: args{
-				logInit: func(internal.OutputBus) bool {
+				logInit: func(output.Bus) bool {
 					return false
 				},
 			},
@@ -170,7 +171,7 @@ func Test_exec(t *testing.T) {
 		{
 			name: "run fails",
 			args: args{
-				logInit: func(internal.OutputBus) bool {
+				logInit: func(output.Bus) bool {
 					return true
 				},
 				cmdLine: []string{"mp3", "no-such-command"},
@@ -180,7 +181,7 @@ func Test_exec(t *testing.T) {
 		{
 			name: "success",
 			args: args{
-				logInit: func(internal.OutputBus) bool {
+				logInit: func(output.Bus) bool {
 					return true
 				},
 				cmdLine: []string{"mp3"},

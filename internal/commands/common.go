@@ -3,13 +3,14 @@ package commands
 import (
 	"flag"
 	"mp3/internal"
+	"mp3/internal/output"
 	"sort"
 	"strings"
 )
 
 type commandData struct {
 	isDefault    bool
-	initFunction func(internal.OutputBus, *internal.Configuration, *flag.FlagSet) (CommandProcessor, bool)
+	initFunction func(output.Bus, *internal.Configuration, *flag.FlagSet) (CommandProcessor, bool)
 }
 
 var commandMap = map[string]commandData{}
@@ -25,18 +26,18 @@ const (
 
 // CommandProcessor defines the functions needed to run a command
 type CommandProcessor interface {
-	Exec(internal.OutputBus, []string) bool
+	Exec(output.Bus, []string) bool
 }
 
 type commandInitializer struct {
 	name           string
 	defaultCommand bool
-	initializer    func(internal.OutputBus, *internal.Configuration, *flag.FlagSet) (CommandProcessor, bool)
+	initializer    func(output.Bus, *internal.Configuration, *flag.FlagSet) (CommandProcessor, bool)
 }
 
 // ProcessCommand selects which command to be run and returns the relevant
 // CommandProcessor, command line arguments and ok status
-func ProcessCommand(o internal.OutputBus, args []string) (cmd CommandProcessor, cmdArgs []string, ok bool) {
+func ProcessCommand(o output.Bus, args []string) (cmd CommandProcessor, cmdArgs []string, ok bool) {
 	var c *internal.Configuration
 	if c, ok = internal.ReadConfigurationFile(o); !ok {
 		return nil, nil, false
@@ -57,7 +58,7 @@ func ProcessCommand(o internal.OutputBus, args []string) (cmd CommandProcessor, 
 	return
 }
 
-func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[string]bool, ok bool) {
+func getDefaultSettings(o output.Bus, c *internal.Configuration) (m map[string]bool, ok bool) {
 	m = map[string]bool{}
 	defaultCommand, ok := c.StringValue("default")
 	if !ok { // no definition
@@ -77,7 +78,7 @@ func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[
 	}
 	switch len(defaultCommands) {
 	case 0:
-		o.Log(internal.Error, internal.LogErrorInvalidDefaultCommand, map[string]any{fieldKeyCommandName: defaultCommand})
+		o.Log(output.Error, internal.LogErrorInvalidDefaultCommand, map[string]any{fieldKeyCommandName: defaultCommand})
 		o.WriteCanonicalError(internal.UserInvalidDefaultCommand, defaultCommand)
 		m = nil
 		ok = false
@@ -93,9 +94,9 @@ func getDefaultSettings(o internal.OutputBus, c *internal.Configuration) (m map[
 	return
 }
 
-func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, ok bool) {
+func selectCommand(o output.Bus, c *internal.Configuration, i []commandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, ok bool) {
 	if len(i) == 0 {
-		o.Log(internal.Error, internal.LogErrorCommandCount, map[string]any{fieldKeyCount: 0})
+		o.Log(output.Error, internal.LogErrorCommandCount, map[string]any{fieldKeyCount: 0})
 		o.WriteCanonicalError(internal.UserNoCommandsDefined)
 		return
 	}
@@ -108,7 +109,7 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 		}
 	}
 	if defaultInitializers != 1 {
-		o.Log(internal.Error, internal.LogErrorDefaultCommandCount, map[string]any{fieldKeyCount: defaultInitializers})
+		o.Log(output.Error, internal.LogErrorDefaultCommandCount, map[string]any{fieldKeyCount: defaultInitializers})
 		o.WriteCanonicalError(internal.UserIncorrectNumberOfDefaultCommandsDefined, defaultInitializers)
 		return
 	}
@@ -143,7 +144,7 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 	if !found {
 		cmd = nil
 		callingArgs = nil
-		o.Log(internal.Error, internal.LogErrorUnrecognizedCommand, map[string]any{fieldKeyCommandName: commandName})
+		o.Log(output.Error, internal.LogErrorUnrecognizedCommand, map[string]any{fieldKeyCommandName: commandName})
 		var commandNames []string
 		for _, initializer := range i {
 			commandNames = append(commandNames, initializer.name)
@@ -157,9 +158,9 @@ func selectCommand(o internal.OutputBus, c *internal.Configuration, i []commandI
 	return
 }
 
-func reportBadDefault(o internal.OutputBus, section string, err error) {
+func reportBadDefault(o output.Bus, section string, err error) {
 	o.WriteCanonicalError(internal.UserConfigurationFileInvalid, internal.DefaultConfigFileName, section, err)
-	o.Log(internal.Error, internal.LogErrorInvalidConfigurationData, map[string]any{
+	o.Log(output.Error, internal.LogErrorInvalidConfigurationData, map[string]any{
 		internal.FieldKeySection: section,
 		internal.FieldKeyError:   err,
 	})

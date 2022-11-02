@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"mp3/internal/output"
 	"os"
 )
 
@@ -61,10 +62,10 @@ func Mkdir(dirName string) (err error) {
 }
 
 // ReadDirectory returns the contents of a specified directory
-func ReadDirectory(o OutputBus, dir string) (files []fs.DirEntry, ok bool) {
+func ReadDirectory(o output.Bus, dir string) (files []fs.DirEntry, ok bool) {
 	var err error
 	if files, err = os.ReadDir(dir); err != nil {
-		o.Log(Error, LogErrorCannotReadDirectory, map[string]any{
+		o.Log(output.Error, LogErrorCannotReadDirectory, map[string]any{
 			FieldKeyDirectory: dir,
 			FieldKeyError:     err,
 		})

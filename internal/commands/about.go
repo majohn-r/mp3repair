@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"mp3/internal"
+	"mp3/internal/output"
 	"time"
 )
 
@@ -47,14 +48,14 @@ const (
 type aboutCmd struct {
 }
 
-func newAboutCmd(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
+func newAboutCmd(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
 	return &aboutCmd{}, true
 }
 
 // Exec runs the command. The args parameter is ignored, and the methid always
 // returns true.
-func (v *aboutCmd) Exec(o internal.OutputBus, args []string) (ok bool) {
-	o.Log(internal.Info, internal.LogInfoExecutingCommand, map[string]any{fieldKeyCommandName: aboutCommandName})
+func (v *aboutCmd) Exec(o output.Bus, args []string) (ok bool) {
+	o.Log(output.Info, internal.LogInfoExecutingCommand, map[string]any{fieldKeyCommandName: aboutCommandName})
 	var elements []string
 	timeStamp := translateTimestamp(AboutSettings.BuildTimestamp)
 	description := fmt.Sprintf("%s version %s, built on %s", internal.AppName, AboutSettings.AppVersion, timeStamp)
@@ -77,7 +78,7 @@ func translateTimestamp(t string) string {
 	return rT.Format("Monday, January 2 2006, 15:04:05 MST")
 }
 
-func reportAbout(o internal.OutputBus, data []string) {
+func reportAbout(o output.Bus, data []string) {
 	maxLineLength := 0
 	for _, s := range data {
 		if len(s) > maxLineLength {
@@ -126,11 +127,11 @@ func formatCopyright(firstYear, lastYear int) string {
 
 }
 
-func finalYear(o internal.OutputBus, timestamp string) int {
+func finalYear(o output.Bus, timestamp string) int {
 	var y = firstYear
 	if t, err := time.Parse(time.RFC3339, timestamp); err != nil {
 		o.WriteCanonicalError(internal.UserCannotParseTimestamp, timestamp, err)
-		o.Log(internal.Error, "parse error", map[string]any{
+		o.Log(output.Error, "parse error", map[string]any{
 			internal.FieldKeyError: err,
 			internal.FieldKeyValue: timestamp,
 		})

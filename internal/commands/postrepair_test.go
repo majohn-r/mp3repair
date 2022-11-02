@@ -4,6 +4,7 @@ import (
 	"flag"
 	"mp3/internal"
 	"mp3/internal/files"
+	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"testing"
@@ -11,7 +12,7 @@ import (
 
 func makePostRepairCommandForTesting() *postrepair {
 	pr, _ := newPostRepairCommand(
-		internal.NewNilOutputBus(),
+		output.NewNilBus(),
 		internal.EmptyConfiguration(),
 		flag.NewFlagSet("postRepair", flag.ContinueOnError))
 	return pr
@@ -71,14 +72,14 @@ func Test_postrepair_Exec(t *testing.T) {
 		name string
 		p    *postrepair
 		args
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "help",
 			p:    makePostRepairCommandForTesting(),
 			args: args{args: []string{"--help"}},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "Usage of postRepair:\n" +
+			WantedRecording: output.WantedRecording{
+				Error: "Usage of postRepair:\n" +
 					"  -albumFilter regular expression\n" +
 					"    \tregular expression specifying which albums to select (default \".*\")\n" +
 					"  -artistFilter regular expression\n" +
@@ -87,25 +88,25 @@ func Test_postrepair_Exec(t *testing.T) {
 					"    \textension identifying music files (default \".mp3\")\n" +
 					"  -topDir directory\n" +
 					"    \ttop directory specifying where to find music files (default \"C:\\\\Users\\\\The User\\\\Music\")\n",
-				WantLogOutput: "level='error' arguments='[--help]' msg='flag: help requested'\n",
+				Log: "level='error' arguments='[--help]' msg='flag: help requested'\n",
 			},
 		},
 		{
 			name: "handle bad common arguments",
 			p:    makePostRepairCommandForTesting(),
 			args: args{args: []string{"-topDir", "non-existent directory"}},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The -topDir value you specified, \"non-existent directory\", cannot be read: CreateFile non-existent directory: The system cannot find the file specified.\n",
-				WantLogOutput:   "level='error' -topDir='non-existent directory' error='CreateFile non-existent directory: The system cannot find the file specified.' msg='cannot read directory'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The -topDir value you specified, \"non-existent directory\", cannot be read: CreateFile non-existent directory: The system cannot find the file specified.\n",
+				Log:   "level='error' -topDir='non-existent directory' error='CreateFile non-existent directory: The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
 		},
 		{
 			name: "handle normal processing with nothing to do",
 			p:    makePostRepairCommandForTesting(),
 			args: args{args: []string{"-topDir", topDirName}},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "There are no backup directories to delete.\n",
-				WantLogOutput: "level='info' command='postRepair' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: "There are no backup directories to delete.\n",
+				Log: "level='info' command='postRepair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='postRepairExec' msg='reading filtered music files'\n",
 			},
 		},
@@ -113,18 +114,18 @@ func Test_postrepair_Exec(t *testing.T) {
 			name: "handle normal processing",
 			p:    makePostRepairCommandForTesting(),
 			args: args{args: []string{"-topDir", topDir2Name}},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "The backup directory for artist \"the artist\" album \"the album\" has been deleted.\n",
-				WantLogOutput: "level='info' command='postRepair' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: "The backup directory for artist \"the artist\" album \"the album\" has been deleted.\n",
+				Log: "level='info' command='postRepair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='postRepairExec2' msg='reading filtered music files'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			tt.p.Exec(o, tt.args.args)
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -168,29 +169,29 @@ func Test_removeBackupDirectory(t *testing.T) {
 	tests := []struct {
 		name string
 		args
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "error case",
 			args: args{d: "dir/.", a: nil},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The directory \"dir/.\" cannot be deleted: RemoveAll dir/.: invalid argument.\n",
-				WantLogOutput:   "level='error' directory='dir/.' error='RemoveAll dir/.: invalid argument' msg='cannot delete directory'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The directory \"dir/.\" cannot be deleted: RemoveAll dir/.: invalid argument.\n",
+				Log:   "level='error' directory='dir/.' error='RemoveAll dir/.: invalid argument' msg='cannot delete directory'\n",
 			},
 		},
 		{
 			name: "normal case",
 			args: args{d: backupDirectory, a: album},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "The backup directory for artist \"the artist\" album \"the album\" has been deleted.\n",
+			WantedRecording: output.WantedRecording{
+				Console: "The backup directory for artist \"the artist\" album \"the album\" has been deleted.\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			removeBackupDirectory(o, tt.args.d, tt.args.a)
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -215,7 +216,7 @@ func Test_newPostRepairCommand(t *testing.T) {
 		args
 		wantPostRepair bool
 		wantOk         bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "success",
@@ -229,22 +230,22 @@ func Test_newPostRepairCommand(t *testing.T) {
 		{
 			name: "failure",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"common": map[string]any{
 						"topDir": "%FOO%",
 					},
 				}),
 				fSet: flag.NewFlagSet("postRepair", flag.ContinueOnError),
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"%FOO%\" for flag -topDir: missing environment variables: [FOO].\n",
-				WantLogOutput:   "level='error' error='invalid value \"%FOO%\" for flag -topDir: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"%FOO%\" for flag -topDir: missing environment variables: [FOO].\n",
+				Log:   "level='error' error='invalid value \"%FOO%\" for flag -topDir: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			got, gotOk := newPostRepairCommand(o, tt.args.c, tt.args.fSet)
 			if (got != nil) != tt.wantPostRepair {
 				t.Errorf("%s got = %v, want %v", fnName, got, tt.wantPostRepair)
@@ -252,7 +253,7 @@ func Test_newPostRepairCommand(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

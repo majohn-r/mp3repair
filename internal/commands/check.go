@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"mp3/internal"
 	"mp3/internal/files"
+	"mp3/internal/output"
 	"sort"
 )
 
@@ -24,7 +25,7 @@ type check struct {
 	sf                        *files.SearchFlags
 }
 
-func newCheck(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
+func newCheck(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
 	return newCheckCommand(o, c, fSet)
 }
 
@@ -50,7 +51,7 @@ type checkDefaults struct {
 	integrity bool
 }
 
-func newCheckCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*check, bool) {
+func newCheckCommand(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (*check, bool) {
 	defaults, defaultsOk := evaluateCheckDefaults(o, c.SubConfiguration(checkCommandName), checkCommandName)
 	sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet)
 	if defaultsOk && sFlagsOk {
@@ -67,7 +68,7 @@ func newCheckCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag
 	return nil, false
 }
 
-func evaluateCheckDefaults(o internal.OutputBus, c *internal.Configuration, name string) (defaults checkDefaults, ok bool) {
+func evaluateCheckDefaults(o output.Bus, c *internal.Configuration, name string) (defaults checkDefaults, ok bool) {
 	ok = true
 	var err error
 	defaults = checkDefaults{}
@@ -89,7 +90,7 @@ func evaluateCheckDefaults(o internal.OutputBus, c *internal.Configuration, name
 	return
 }
 
-func (c *check) Exec(o internal.OutputBus, args []string) (ok bool) {
+func (c *check) Exec(o output.Bus, args []string) (ok bool) {
 	if s, argsOk := c.sf.ProcessArgs(o, args); argsOk {
 		ok = c.runCommand(o, s)
 	}
@@ -154,12 +155,12 @@ func (a *artistWithIssues) hasIssues() bool {
 	return false
 }
 
-func (c *check) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
+func (c *check) runCommand(o output.Bus, s *files.Search) (ok bool) {
 	if !*c.checkEmptyFolders && !*c.checkGapsInTrackNumbering && !*c.checkIntegrity {
 		o.WriteCanonicalError(internal.UserSpecifiedNoWork, checkCommandName)
-		o.Log(internal.Error, internal.LogErrorNothingToDo, c.logFields())
+		o.Log(output.Error, internal.LogErrorNothingToDo, c.logFields())
 	} else {
-		o.Log(internal.Info, internal.LogInfoExecutingCommand, c.logFields())
+		o.Log(output.Info, internal.LogInfoExecutingCommand, c.logFields())
 		artists, artistsWithEmptyIssues, analysisOk := c.performEmptyFolderAnalysis(o, s)
 		if analysisOk {
 			artists, ok = c.filterArtists(o, s, artists)
@@ -173,7 +174,7 @@ func (c *check) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 	return
 }
 
-func reportResults(o internal.OutputBus, artistsWithIssues ...[]*artistWithIssues) {
+func reportResults(o output.Bus, artistsWithIssues ...[]*artistWithIssues) {
 	var filteredArtistSets [][]*artistWithIssues
 	for _, artists := range artistsWithIssues {
 		filteredArtistSets = append(filteredArtistSets, filterAndSortArtists(artists))
@@ -249,7 +250,7 @@ func merge(sets [][]*artistWithIssues) []*artistWithIssues {
 	return results
 }
 
-func (c *check) filterArtists(o internal.OutputBus, s *files.Search, artists []*files.Artist) (filteredArtists []*files.Artist, ok bool) {
+func (c *check) filterArtists(o output.Bus, s *files.Search, artists []*files.Artist) (filteredArtists []*files.Artist, ok bool) {
 	if *c.checkGapsInTrackNumbering || *c.checkIntegrity {
 		if len(artists) == 0 {
 			filteredArtists, ok = s.LoadData(o)
@@ -354,7 +355,7 @@ func sortArtists(filteredArtists []*artistWithIssues) {
 	}
 }
 
-func (c *check) performEmptyFolderAnalysis(o internal.OutputBus, s *files.Search) (artists []*files.Artist, conflictedArtists []*artistWithIssues, ok bool) {
+func (c *check) performEmptyFolderAnalysis(o output.Bus, s *files.Search) (artists []*files.Artist, conflictedArtists []*artistWithIssues, ok bool) {
 	if !*c.checkEmptyFolders {
 		ok = true
 		return
@@ -402,7 +403,7 @@ func createBareConflictedIssues(artists []*files.Artist) (conflictedArtists []*a
 	return
 }
 
-func (c *check) performIntegrityCheck(o internal.OutputBus, artists []*files.Artist) []*artistWithIssues {
+func (c *check) performIntegrityCheck(o output.Bus, artists []*files.Artist) []*artistWithIssues {
 	conflictedArtists := make([]*artistWithIssues, 0)
 	if *c.checkIntegrity {
 		files.ReadMetadata(o, artists)
@@ -426,7 +427,7 @@ func (c *check) performIntegrityCheck(o internal.OutputBus, artists []*files.Art
 	return conflictedArtists
 }
 
-func (c *check) performGapAnalysis(o internal.OutputBus, artists []*files.Artist) []*artistWithIssues {
+func (c *check) performGapAnalysis(o output.Bus, artists []*files.Artist) []*artistWithIssues {
 	conflictedArtists := make([]*artistWithIssues, 0)
 	if *c.checkGapsInTrackNumbering {
 		conflictedArtists = createBareConflictedIssues(artists)

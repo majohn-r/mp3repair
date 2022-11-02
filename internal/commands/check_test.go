@@ -4,6 +4,7 @@ import (
 	"flag"
 	"mp3/internal"
 	"mp3/internal/files"
+	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -63,16 +64,16 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 		wantArtists         []*files.Artist
 		wantFilteredArtists []*artistWithIssues
 		wantOk              bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{name: "no work to do", c: &check{checkEmptyFolders: &fFlag}, args: args{}, wantOk: true},
 		{
 			name: "empty topDir",
 			c:    &check{checkEmptyFolders: &tFlag},
 			args: args{s: files.CreateSearchForTesting(emptyDirName)},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "No music files could be found using the specified parameters.\n",
-				WantLogOutput: "level='info' -ext='.mp3' -topDir='empty' msg='reading unfiltered music files'\n" +
+			WantedRecording: output.WantedRecording{
+				Error: "No music files could be found using the specified parameters.\n",
+				Log: "level='info' -ext='.mp3' -topDir='empty' msg='reading unfiltered music files'\n" +
 					"level='error' -ext='.mp3' -topDir='empty' msg='cannot find any artist directories'\n",
 			},
 		},
@@ -82,9 +83,9 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 			args:        args{s: files.CreateSearchForTesting(goodFolderDirName)},
 			wantArtists: []*files.Artist{goodArtist},
 			wantOk:      true,
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "Empty Folder Analysis: no empty folders found.\n",
-				WantLogOutput:     "level='info' -ext='.mp3' -topDir='good' msg='reading unfiltered music files'\n",
+			WantedRecording: output.WantedRecording{
+				Console: "Empty Folder Analysis: no empty folders found.\n",
+				Log:     "level='info' -ext='.mp3' -topDir='good' msg='reading unfiltered music files'\n",
 			},
 		},
 		{
@@ -139,14 +140,14 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 					issues: []string{"no albums found"},
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantLogOutput: "level='info' -ext='.mp3' -topDir='dirty' msg='reading unfiltered music files'\n",
+			WantedRecording: output.WantedRecording{
+				Log: "level='info' -ext='.mp3' -topDir='dirty' msg='reading unfiltered music files'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			gotArtists, gotArtistsWithIssues, gotOk := tt.c.performEmptyFolderAnalysis(o, tt.args.s)
 			if !reflect.DeepEqual(gotArtists, tt.wantArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotArtists, tt.wantArtists)
@@ -159,7 +160,7 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -181,8 +182,8 @@ func Test_filterArtists(t *testing.T) {
 		t.Errorf("%s error populating %q: %v", fnName, topDirName, err)
 	}
 	searchStruct := files.CreateSearchForTesting(topDirName)
-	fullArtists, _ := searchStruct.LoadUnfilteredData(internal.NewNilOutputBus())
-	filteredArtists, _ := searchStruct.LoadData(internal.NewNilOutputBus())
+	fullArtists, _ := searchStruct.LoadUnfilteredData(output.NewNilBus())
+	filteredArtists, _ := searchStruct.LoadData(output.NewNilBus())
 	type args struct {
 		s       *files.Search
 		artists []*files.Artist
@@ -193,7 +194,7 @@ func Test_filterArtists(t *testing.T) {
 		args
 		wantFilteredArtists []*files.Artist
 		wantOk              bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name:   "neither gap analysis nor integrity enabled",
@@ -207,8 +208,8 @@ func Test_filterArtists(t *testing.T) {
 			args:                args{s: searchStruct},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
-			WantedOutput: internal.WantedOutput{
-				WantLogOutput: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='reading filtered music files'\n",
+			WantedRecording: output.WantedRecording{
+				Log: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='reading filtered music files'\n",
 			},
 		},
 		{
@@ -217,8 +218,8 @@ func Test_filterArtists(t *testing.T) {
 			args:                args{s: searchStruct, artists: fullArtists},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
-			WantedOutput: internal.WantedOutput{
-				WantLogOutput: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='filtering music files'\n",
+			WantedRecording: output.WantedRecording{
+				Log: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='filtering music files'\n",
 			},
 		},
 		{
@@ -227,8 +228,8 @@ func Test_filterArtists(t *testing.T) {
 			args:                args{s: searchStruct},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
-			WantedOutput: internal.WantedOutput{
-				WantLogOutput: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='reading filtered music files'\n",
+			WantedRecording: output.WantedRecording{
+				Log: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='reading filtered music files'\n",
 			},
 		},
 		{
@@ -237,8 +238,8 @@ func Test_filterArtists(t *testing.T) {
 			args:                args{s: searchStruct, artists: fullArtists},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
-			WantedOutput: internal.WantedOutput{
-				WantLogOutput: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='filtering music files'\n",
+			WantedRecording: output.WantedRecording{
+				Log: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='filtering music files'\n",
 			},
 		},
 		{
@@ -247,8 +248,8 @@ func Test_filterArtists(t *testing.T) {
 			args:                args{s: searchStruct},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
-			WantedOutput: internal.WantedOutput{
-				WantLogOutput: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='reading filtered music files'\n",
+			WantedRecording: output.WantedRecording{
+				Log: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='reading filtered music files'\n",
 			},
 		},
 		{
@@ -257,14 +258,14 @@ func Test_filterArtists(t *testing.T) {
 			args:                args{s: searchStruct, artists: fullArtists},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
-			WantedOutput: internal.WantedOutput{
-				WantLogOutput: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='filtering music files'\n",
+			WantedRecording: output.WantedRecording{
+				Log: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='filtering music files'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			gotFilteredArtists, gotOk := tt.c.filterArtists(o, tt.args.s, tt.args.artists)
 			if !reflect.DeepEqual(gotFilteredArtists, tt.wantFilteredArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotFilteredArtists, tt.wantFilteredArtists)
@@ -272,7 +273,7 @@ func Test_filterArtists(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -304,23 +305,23 @@ func Test_check_performGapAnalysis(t *testing.T) {
 		c    *check
 		args
 		wantConflictedArtists []*artistWithIssues
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{name: "no analysis", c: &check{checkGapsInTrackNumbering: &fFlag}, args: args{}},
 		{
 			name: "no content",
 			c:    &check{checkGapsInTrackNumbering: &tFlag},
 			args: args{},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "Check Gaps: no gaps found.\n",
+			WantedRecording: output.WantedRecording{
+				Console: "Check Gaps: no gaps found.\n",
 			},
 		},
 		{
 			name: "good artist",
 			c:    &check{checkGapsInTrackNumbering: &tFlag},
 			args: args{artists: []*files.Artist{goodArtist}},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "Check Gaps: no gaps found.\n",
+			WantedRecording: output.WantedRecording{
+				Console: "Check Gaps: no gaps found.\n",
 			},
 		},
 		{
@@ -349,11 +350,11 @@ func Test_check_performGapAnalysis(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			if gotConflictedArtists := filterAndSortArtists(tt.c.performGapAnalysis(o, tt.args.artists)); !reflect.DeepEqual(gotConflictedArtists, tt.wantConflictedArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotConflictedArtists, tt.wantConflictedArtists)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -385,7 +386,7 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 		t.Errorf("%s error creating track", fnName)
 	}
 	s := files.CreateSearchForTesting(topDirName)
-	a, _ := s.LoadUnfilteredData(internal.NewNilOutputBus())
+	a, _ := s.LoadUnfilteredData(output.NewNilBus())
 	type args struct {
 		artists []*files.Artist
 	}
@@ -394,24 +395,24 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 		c    *check
 		args
 		wantConflictedArtists []*artistWithIssues
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{name: "degenerate case", c: &check{checkIntegrity: &fFlag}, args: args{}},
 		{
 			name: "no artists",
 			c:    &check{checkIntegrity: &tFlag},
 			args: args{},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "Integrity Analysis: no issues found.\n"},
+			WantedRecording: output.WantedRecording{
+				Console: "Integrity Analysis: no issues found.\n"},
 		},
 		{
 			name: "meaningful case",
 			c:    &check{checkIntegrity: &tFlag},
 			args: args{artists: a},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "An error occurred when trying to read ID3V1 tag information for track \"track\" on album \"album\" by artist \"artist\": \"seek integrity\\\\artist\\\\album\\\\01 track.mp3: An attempt was made to move the file pointer before the beginning of the file.\".\n" +
+			WantedRecording: output.WantedRecording{
+				Error: "An error occurred when trying to read ID3V1 tag information for track \"track\" on album \"album\" by artist \"artist\": \"seek integrity\\\\artist\\\\album\\\\01 track.mp3: An attempt was made to move the file pointer before the beginning of the file.\".\n" +
 					"An error occurred when trying to read ID3V2 tag information for track \"track\" on album \"album\" by artist \"artist\": \"zero length\".\n",
-				WantLogOutput: "level='error' albumName='album' artistName='artist' error='seek integrity\\artist\\album\\01 track.mp3: An attempt was made to move the file pointer before the beginning of the file.' trackName='track' msg='id3v1 tag error'\n" +
+				Log: "level='error' albumName='album' artistName='artist' error='seek integrity\\artist\\album\\01 track.mp3: An attempt was made to move the file pointer before the beginning of the file.' trackName='track' msg='id3v1 tag error'\n" +
 					"level='error' albumName='album' artistName='artist' error='zero length' trackName='track' msg='id3v2 tag error'\n",
 			},
 			wantConflictedArtists: []*artistWithIssues{
@@ -435,11 +436,11 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			if gotConflictedArtists := filterAndSortArtists(tt.c.performIntegrityCheck(o, tt.args.artists)); !reflect.DeepEqual(gotConflictedArtists, tt.wantConflictedArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotConflictedArtists, tt.wantConflictedArtists)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -449,7 +450,7 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 }
 
 func makeCheckCommand() *check {
-	c, _ := newCheckCommand(internal.NewNilOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError))
+	c, _ := newCheckCommand(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError))
 	return c
 }
 
@@ -481,14 +482,14 @@ func Test_check_Exec(t *testing.T) {
 		c    *check
 		args
 		wantOk bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "help",
 			c:    makeCheckCommand(),
 			args: args{[]string{"--help"}},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "Usage of check:\n" +
+			WantedRecording: output.WantedRecording{
+				Error: "Usage of check:\n" +
 					"  -albumFilter regular expression\n" +
 					"    \tregular expression specifying which albums to select (default \".*\")\n" +
 					"  -artistFilter regular expression\n" +
@@ -503,16 +504,16 @@ func Test_check_Exec(t *testing.T) {
 					"    \tcheck for disagreement between the file system and audio file metadata (default true)\n" +
 					"  -topDir directory\n" +
 					"    \ttop directory specifying where to find music files (default \"C:\\\\Users\\\\The User\\\\Music\")\n",
-				WantLogOutput: "level='error' arguments='[--help]' msg='flag: help requested'\n",
+				Log: "level='error' arguments='[--help]' msg='flag: help requested'\n",
 			},
 		},
 		{
 			name: "do nothing",
 			c:    makeCheckCommand(),
 			args: args{[]string{"-topDir", topDirName, "-empty=false", "-gaps=false", "-integrity=false"}},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "You disabled all functionality for the command \"check\".\n",
-				WantLogOutput:   "level='error' -empty='false' -gaps='false' -integrity='false' command='check' msg='the user disabled all functionality'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "You disabled all functionality for the command \"check\".\n",
+				Log:   "level='error' -empty='false' -gaps='false' -integrity='false' command='check' msg='the user disabled all functionality'\n",
 			},
 		},
 		{
@@ -520,8 +521,8 @@ func Test_check_Exec(t *testing.T) {
 			c:      makeCheckCommand(),
 			args:   args{[]string{"-topDir", topDirName, "-empty=true", "-gaps=false", "-integrity=false"}},
 			wantOk: true,
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: strings.Join([]string{
+			WantedRecording: output.WantedRecording{
+				Console: strings.Join([]string{
 					"Test Artist 0",
 					"    Test Album 999",
 					"      no tracks found",
@@ -556,18 +557,18 @@ func Test_check_Exec(t *testing.T) {
 					"  no albums found",
 					"",
 				}, "\n"),
-				WantLogOutput: "level='info' -empty='true' -gaps='false' -integrity='false' command='check' msg='executing command'\n" +
+				Log: "level='info' -empty='true' -gaps='false' -integrity='false' command='check' msg='executing command'\n" +
 					"level='info' -ext='.mp3' -topDir='checkExec' msg='reading unfiltered music files'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			if gotOk := tt.c.Exec(o, tt.args.args); gotOk != tt.wantOk {
 				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -597,7 +598,7 @@ func Test_newCheckCommand(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	defaultConfig, _ := internal.ReadConfigurationFile(internal.NewNilOutputBus())
+	defaultConfig, _ := internal.ReadConfigurationFile(output.NewNilBus())
 	type args struct {
 		c *internal.Configuration
 	}
@@ -608,7 +609,7 @@ func Test_newCheckCommand(t *testing.T) {
 		wantGapsInTrackNumbering bool
 		wantIntegrity            bool
 		wantOk                   bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name:                     "ordinary defaults",
@@ -629,63 +630,63 @@ func Test_newCheckCommand(t *testing.T) {
 		{
 			name: "bad default empty folder",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"check": map[string]any{
 						emptyFoldersFlag: "Empty!!",
 					},
 				}),
 			},
 			wantOk: false,
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"check\": invalid boolean value \"Empty!!\" for -empty: parse error.\n",
-				WantLogOutput:   "level='error' error='invalid boolean value \"Empty!!\" for -empty: parse error' section='check' msg='invalid content in configuration file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"check\": invalid boolean value \"Empty!!\" for -empty: parse error.\n",
+				Log:   "level='error' error='invalid boolean value \"Empty!!\" for -empty: parse error' section='check' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
 			name: "bad default gaps",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"check": map[string]any{
 						gapsInTrackNumberingFlag: "No",
 					},
 				}),
 			},
 			wantOk: false,
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"check\": invalid boolean value \"No\" for -gaps: parse error.\n",
-				WantLogOutput:   "level='error' error='invalid boolean value \"No\" for -gaps: parse error' section='check' msg='invalid content in configuration file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"check\": invalid boolean value \"No\" for -gaps: parse error.\n",
+				Log:   "level='error' error='invalid boolean value \"No\" for -gaps: parse error' section='check' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
 			name: "bad default integrity",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"check": map[string]any{
 						integrityFlag: "Off",
 					},
 				}),
 			},
 			wantOk: false,
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"check\": invalid boolean value \"Off\" for -integrity: parse error.\n",
-				WantLogOutput:   "level='error' error='invalid boolean value \"Off\" for -integrity: parse error' section='check' msg='invalid content in configuration file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"check\": invalid boolean value \"Off\" for -integrity: parse error.\n",
+				Log:   "level='error' error='invalid boolean value \"Off\" for -integrity: parse error' section='check' msg='invalid content in configuration file'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			check, gotOk := newCheckCommand(o, tt.args.c, flag.NewFlagSet("check", flag.ContinueOnError))
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk %t wantOk %t", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 			if check != nil {
-				if _, ok := check.sf.ProcessArgs(internal.NewNilOutputBus(), []string{
+				if _, ok := check.sf.ProcessArgs(output.NewNilBus(), []string{
 					"-topDir", topDir,
 					"-ext", ".mp3",
 				}); ok {
@@ -998,7 +999,7 @@ func Test_reportResults(t *testing.T) {
 	tests := []struct {
 		name string
 		args
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{name: "degenerate case", args: args{}},
 		{
@@ -1078,8 +1079,8 @@ func Test_reportResults(t *testing.T) {
 					},
 				},
 			}},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: strings.Join([]string{
+			WantedRecording: output.WantedRecording{
+				Console: strings.Join([]string{
 					"artist1",
 					"  bad artist",
 					"  really awful artist",
@@ -1108,9 +1109,9 @@ func Test_reportResults(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			reportResults(o, tt.args.artistsWithIssues...)
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

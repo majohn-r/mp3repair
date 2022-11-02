@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mp3/internal"
 	"mp3/internal/commands"
+	"mp3/internal/output"
 	"os"
 	"runtime/debug"
 	"time"
@@ -30,9 +31,9 @@ const (
 	statusFormat                 = "%q version %s, created at %s, failed"
 )
 
-func exec(logInit func(internal.OutputBus) bool, cmdLine []string) (returnValue int) {
+func exec(logInit func(output.Bus) bool, cmdLine []string) (returnValue int) {
 	returnValue = 1
-	o := internal.NewDefaultOutputBus(internal.ProductionLogger{})
+	o := output.NewDefaultBus(internal.ProductionLogger{})
 	if logInit(o) {
 		returnValue = run(o, debug.ReadBuildInfo, cmdLine)
 	}
@@ -40,13 +41,13 @@ func exec(logInit func(internal.OutputBus) bool, cmdLine []string) (returnValue 
 	return
 }
 
-func report(o internal.OutputBus, returnValue int) {
+func report(o output.Bus, returnValue int) {
 	if returnValue != 0 {
 		o.WriteCanonicalError(statusFormat, internal.AppName, version, creation)
 	}
 }
 
-func run(o internal.OutputBus, f func() (*debug.BuildInfo, bool), cmdlineArgs []string) (returnValue int) {
+func run(o output.Bus, f func() (*debug.BuildInfo, bool), cmdlineArgs []string) (returnValue int) {
 	returnValue = 1
 	startTime := time.Now()
 	// initialize about command
@@ -61,15 +62,15 @@ func run(o internal.OutputBus, f func() (*debug.BuildInfo, bool), cmdlineArgs []
 			returnValue = 0
 		}
 	}
-	o.Log(internal.Info, internal.LogInfoEndExecution, map[string]any{
+	o.Log(output.Info, internal.LogInfoEndExecution, map[string]any{
 		fieldKeyDuration: time.Since(startTime),
 		fieldKeyExitCode: returnValue,
 	})
 	return
 }
 
-func logBegin(o internal.OutputBus, goVersion string, dependencies []string, cmdLineArgs []string) {
-	o.Log(internal.Info, internal.LogInfoBeginExecution, map[string]any{
+func logBegin(o output.Bus, goVersion string, dependencies []string, cmdLineArgs []string) {
+	o.Log(output.Info, internal.LogInfoBeginExecution, map[string]any{
 		fieldKeyVersion:              version,
 		fieldKeyTImeStamp:            creation,
 		fieldKeyGoVersion:            goVersion,

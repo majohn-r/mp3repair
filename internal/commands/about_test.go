@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"mp3/internal"
+	"mp3/internal/output"
 	"reflect"
 	"testing"
 )
@@ -15,7 +15,7 @@ func Test_finalYear(t *testing.T) {
 		name string
 		args
 		want int
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "normal",
@@ -26,19 +26,19 @@ func Test_finalYear(t *testing.T) {
 			name: "weird time",
 			args: args{timestamp: "in the year 2525"},
 			want: 2021,
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The build time \"in the year 2525\" cannot be parsed: parsing time \"in the year 2525\" as \"2006-01-02T15:04:05Z07:00\": cannot parse \"in the year 2525\" as \"2006\".\n",
-				WantLogOutput:   "level='error' error='parsing time \"in the year 2525\" as \"2006-01-02T15:04:05Z07:00\": cannot parse \"in the year 2525\" as \"2006\"' value='in the year 2525' msg='parse error'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The build time \"in the year 2525\" cannot be parsed: parsing time \"in the year 2525\" as \"2006-01-02T15:04:05Z07:00\": cannot parse \"in the year 2525\" as \"2006\".\n",
+				Log:   "level='error' error='parsing time \"in the year 2525\" as \"2006-01-02T15:04:05Z07:00\": cannot parse \"in the year 2525\" as \"2006\"' value='in the year 2525' msg='parse error'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			if got := finalYear(o, tt.args.timestamp); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -137,7 +137,7 @@ func Test_reportAbout(t *testing.T) {
 	tests := []struct {
 		name string
 		args
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "normal",
@@ -147,8 +147,8 @@ func Test_reportAbout(t *testing.T) {
 				"build data",
 				" - foo/bar/baz v1.2.3",
 			}},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "+------------------------------------+\n" +
+			WantedRecording: output.WantedRecording{
+				Console: "+------------------------------------+\n" +
 					"| blah blah blah                     |\n" +
 					"| Copyright © 2021-2025 Marc Johnson |\n" +
 					"| build data                         |\n" +
@@ -159,9 +159,9 @@ func Test_reportAbout(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			reportAbout(o, tt.args.data)
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -174,7 +174,7 @@ func Test_aboutCmd_Exec(t *testing.T) {
 	fnName := "aboutCmd.Exec()"
 	AboutBuildData = &BuildData{}
 	type args struct {
-		o    internal.OutputBus
+		o    output.Bus
 		args []string
 	}
 	tests := []struct {
@@ -186,7 +186,7 @@ func Test_aboutCmd_Exec(t *testing.T) {
 		{
 			name:   "for sake of completeness",
 			v:      &aboutCmd{},
-			args:   args{o: internal.NewNilOutputBus()},
+			args:   args{o: output.NewNilBus()},
 			wantOk: true,
 		},
 	}

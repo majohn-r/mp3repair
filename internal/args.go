@@ -3,6 +3,7 @@ package internal
 import (
 	"flag"
 	"fmt"
+	"mp3/internal/output"
 )
 
 const (
@@ -11,7 +12,7 @@ const (
 
 // ProcessArgs processes a slice of command line arguments and handles common
 // errors therein
-func ProcessArgs(o OutputBus, f *flag.FlagSet, args []string) (ok bool) {
+func ProcessArgs(o output.Bus, f *flag.FlagSet, args []string) (ok bool) {
 	dereferencedArgs := make([]string, len(args))
 	ok = true
 	for i, arg := range args {
@@ -19,7 +20,7 @@ func ProcessArgs(o OutputBus, f *flag.FlagSet, args []string) (ok bool) {
 		dereferencedArgs[i], err = InterpretEnvVarReferences(arg)
 		if err != nil {
 			o.WriteCanonicalError(UserBadArgument, arg, err)
-			o.Log(Error, LogErrorBadArgument, map[string]any{
+			o.Log(output.Error, LogErrorBadArgument, map[string]any{
 				FieldKeyValue: arg,
 				FieldKeyError: err,
 			})
@@ -32,7 +33,7 @@ func ProcessArgs(o OutputBus, f *flag.FlagSet, args []string) (ok bool) {
 	f.SetOutput(o.ErrorWriter())
 	// note: Parse outputs errors to o.ErrorWriter*()
 	if err := f.Parse(dereferencedArgs); err != nil {
-		o.Log(Error, fmt.Sprintf("%v", err), map[string]any{
+		o.Log(output.Error, fmt.Sprintf("%v", err), map[string]any{
 			fieldKeyArguments: dereferencedArgs,
 		})
 		ok = false

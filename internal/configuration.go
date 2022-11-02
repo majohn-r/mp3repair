@@ -3,6 +3,7 @@ package internal
 import (
 	"errors"
 	"fmt"
+	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"sort"
@@ -41,7 +42,7 @@ func SetAppSpecificPathForTesting(p string, v bool) {
 
 // ReadConfigurationFile reads defaults.yaml from the specified path and returns
 // a pointer to a cooked Configuration instance
-func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
+func ReadConfigurationFile(o output.Bus) (c *Configuration, ok bool) {
 	var appDataValue string
 	var appDataSet bool
 	if appDataValue, appDataSet = LookupAppData(o); !appDataSet {
@@ -66,7 +67,7 @@ func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
 	yfile, _ := os.ReadFile(configFile) // only probable error circumvented by verifyFileExists failure
 	data, err := readYaml(yfile)
 	if err != nil {
-		o.Log(Error, LogErrorCannotUnmarshalYAML, map[string]any{
+		o.Log(output.Error, LogErrorCannotUnmarshalYAML, map[string]any{
 			FieldKeyDirectory: path,
 			FieldKeyFileName:  DefaultConfigFileName,
 			FieldKeyError:     err,
@@ -76,7 +77,7 @@ func ReadConfigurationFile(o OutputBus) (c *Configuration, ok bool) {
 	}
 	c = CreateConfiguration(o, data)
 	ok = true
-	o.Log(Info, LogInfoConfigurationFileRead, map[string]any{
+	o.Log(output.Info, LogInfoConfigurationFileRead, map[string]any{
 		FieldKeyDirectory: path,
 		FieldKeyFileName:  DefaultConfigFileName,
 		FieldKeyValue:     c,
@@ -91,21 +92,21 @@ func readYaml(yfile []byte) (data map[string]any, err error) {
 }
 
 // LookupAppData looks up the environment variable for finding application data
-func LookupAppData(o OutputBus) (string, bool) {
+func LookupAppData(o output.Bus) (string, bool) {
 	if value, ok := os.LookupEnv(appDataVar); ok {
 		return value, ok
 	}
-	o.Log(Info, LogInfoNotSet, map[string]any{
+	o.Log(output.Info, LogInfoNotSet, map[string]any{
 		fieldKeyVarName: appDataVar,
 	})
 	return "", false
 }
 
-func verifyFileExists(o OutputBus, path string) (ok bool, err error) {
+func verifyFileExists(o output.Bus, path string) (ok bool, err error) {
 	f, err := os.Stat(path)
 	if err == nil {
 		if f.IsDir() {
-			o.Log(Error, LogErrorFileIsDirectory, map[string]any{
+			o.Log(output.Error, LogErrorFileIsDirectory, map[string]any{
 				FieldKeyDirectory: filepath.Dir(path),
 				FieldKeyFileName:  filepath.Base(path),
 			})
@@ -117,7 +118,7 @@ func verifyFileExists(o OutputBus, path string) (ok bool, err error) {
 		return
 	}
 	if errors.Is(err, os.ErrNotExist) {
-		o.Log(Info, LogInfoNoSuchFile, map[string]any{
+		o.Log(output.Info, LogInfoNoSuchFile, map[string]any{
 			FieldKeyDirectory: filepath.Dir(path),
 			FieldKeyFileName:  filepath.Base(path),
 		})
@@ -292,7 +293,7 @@ type Configuration struct {
 
 // CreateConfiguration returns a Configuration instance populated as specified
 // by the data parameter
-func CreateConfiguration(o OutputBus, data map[string]any) *Configuration {
+func CreateConfiguration(o output.Bus, data map[string]any) *Configuration {
 	c := EmptyConfiguration()
 	for key, v := range data {
 		switch t := v.(type) {
@@ -305,7 +306,7 @@ func CreateConfiguration(o OutputBus, data map[string]any) *Configuration {
 		case map[string]any:
 			c.cMap[key] = CreateConfiguration(o, t)
 		default:
-			o.Log(Error, LogErrorUnexpectedValueType, map[string]any{
+			o.Log(output.Error, LogErrorUnexpectedValueType, map[string]any{
 				fieldKeyKeyName: key,
 				FieldKeyValue:   v,
 				fieldKeyType:    fmt.Sprintf("%T", v),

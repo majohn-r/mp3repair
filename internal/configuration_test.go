@@ -2,6 +2,7 @@ package internal
 
 import (
 	"fmt"
+	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -21,7 +22,7 @@ func Test_Configuration_SubConfiguration(t *testing.T) {
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	testConfiguration, _ := ReadConfigurationFile(NewNilOutputBus())
+	testConfiguration, _ := ReadConfigurationFile(output.NewNilBus())
 	type args struct {
 		key string
 	}
@@ -63,7 +64,7 @@ func Test_Configuration_BoolDefault(t *testing.T) {
 		saved.RestoreForTesting()
 	}()
 	os.Unsetenv("FOO")
-	testConfiguration, _ := ReadConfigurationFile(NewNilOutputBus())
+	testConfiguration, _ := ReadConfigurationFile(output.NewNilBus())
 	type args struct {
 		key          string
 		defaultValue bool
@@ -259,7 +260,7 @@ func Test_Configuration_StringDefault(t *testing.T) {
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	testConfiguration, _ := ReadConfigurationFile(NewNilOutputBus())
+	testConfiguration, _ := ReadConfigurationFile(output.NewNilBus())
 	type args struct {
 		key          string
 		defaultValue string
@@ -324,34 +325,34 @@ func Test_verifyFileExists(t *testing.T) {
 		args
 		wantOk  bool
 		wantErr bool
-		WantedOutput
+		output.WantedRecording
 	}{
 		{
-			name:         "ordinary success",
-			args:         args{path: "./configuration_test.go"},
-			wantOk:       true,
-			WantedOutput: WantedOutput{},
+			name:            "ordinary success",
+			args:            args{path: "./configuration_test.go"},
+			wantOk:          true,
+			WantedRecording: output.WantedRecording{},
 		},
 		{
 			name:    "look for dir!",
 			args:    args{path: "."},
 			wantErr: true,
-			WantedOutput: WantedOutput{
-				WantErrorOutput: "The configuration file \".\" is a directory.\n",
-				WantLogOutput:   "level='error' directory='.' fileName='.' msg='file is a directory'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The configuration file \".\" is a directory.\n",
+				Log:   "level='error' directory='.' fileName='.' msg='file is a directory'\n",
 			},
 		},
 		{
 			name: "non-existent file",
 			args: args{path: "./no-such-file.txt"},
-			WantedOutput: WantedOutput{
-				WantLogOutput: "level='info' directory='.' fileName='no-such-file.txt' msg='file does not exist'\n",
+			WantedRecording: output.WantedRecording{
+				Log: "level='info' directory='.' fileName='no-such-file.txt' msg='file does not exist'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := NewRecordingOutputBus()
+			o := output.NewRecorder()
 			gotOk, err := verifyFileExists(o, tt.args.path)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
@@ -360,7 +361,7 @@ func Test_verifyFileExists(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -413,7 +414,7 @@ func TestReadConfigurationFile(t *testing.T) {
 		wantOk                   bool
 		wantAppSpecificPath      string
 		wantAppSpecificPathValid bool
-		WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name:  "good",
@@ -467,9 +468,9 @@ func TestReadConfigurationFile(t *testing.T) {
 			wantOk:                   true,
 			wantAppSpecificPath:      mp3Path,
 			wantAppSpecificPathValid: true,
-			WantedOutput: WantedOutput{
-				WantErrorOutput: "The key \"value\", with value '1.25', has an unexpected type float64.\n",
-				WantLogOutput: fmt.Sprintf("level='error' key='value' type='float64' value='1.25' msg='unexpected value type'\n"+
+			WantedRecording: output.WantedRecording{
+				Error: "The key \"value\", with value '1.25', has an unexpected type float64.\n",
+				Log: fmt.Sprintf("level='error' key='value' type='float64' value='1.25' msg='unexpected value type'\n"+
 					"level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] list:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1.25]]' msg='read configuration file'\n", mp3Path),
 			},
 		},
@@ -478,8 +479,8 @@ func TestReadConfigurationFile(t *testing.T) {
 			state:  &SavedEnvVar{Name: appDataVar},
 			wantC:  EmptyConfiguration(),
 			wantOk: true,
-			WantedOutput: WantedOutput{
-				WantLogOutput: "level='info' environment variable='APPDATA' msg='not set'\n",
+			WantedRecording: output.WantedRecording{
+				Log: "level='info' environment variable='APPDATA' msg='not set'\n",
 			},
 		},
 		{
@@ -487,9 +488,9 @@ func TestReadConfigurationFile(t *testing.T) {
 			state:                    &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(badDir), Set: true},
 			wantAppSpecificPath:      SecureAbsolutePathForTesting(filepath.Join(badDir, "mp3")),
 			wantAppSpecificPathValid: true,
-			WantedOutput: WantedOutput{
-				WantErrorOutput: fmt.Sprintf("The configuration file %q is a directory.\n", yamlAsDir),
-				WantLogOutput:   fmt.Sprintf("level='error' directory='%s' fileName='defaults.yaml' msg='file is a directory'\n", SecureAbsolutePathForTesting(badDir2)),
+			WantedRecording: output.WantedRecording{
+				Error: fmt.Sprintf("The configuration file %q is a directory.\n", yamlAsDir),
+				Log:   fmt.Sprintf("level='error' directory='%s' fileName='defaults.yaml' msg='file is a directory'\n", SecureAbsolutePathForTesting(badDir2)),
 			},
 		},
 		{
@@ -499,8 +500,8 @@ func TestReadConfigurationFile(t *testing.T) {
 			wantOk:                   true,
 			wantAppSpecificPath:      SecureAbsolutePathForTesting(filepath.Join(yamlAsDir, "mp3")),
 			wantAppSpecificPathValid: true,
-			WantedOutput: WantedOutput{
-				WantLogOutput: fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", SecureAbsolutePathForTesting(filepath.Join(yamlAsDir, AppName))),
+			WantedRecording: output.WantedRecording{
+				Log: fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", SecureAbsolutePathForTesting(filepath.Join(yamlAsDir, AppName))),
 			},
 		},
 		{
@@ -508,18 +509,18 @@ func TestReadConfigurationFile(t *testing.T) {
 			state:                    &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(badDir2), Set: true},
 			wantAppSpecificPath:      SecureAbsolutePathForTesting(filepath.Join(badDir2, "mp3")),
 			wantAppSpecificPathValid: true,
-			WantedOutput: WantedOutput{
-				WantErrorOutput: fmt.Sprintf(
+			WantedRecording: output.WantedRecording{
+				Error: fmt.Sprintf(
 					"The configuration file %q is not well-formed YAML: yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}.\n",
 					SecureAbsolutePathForTesting(filepath.Join(gibberishDir, DefaultConfigFileName))),
-				WantLogOutput: fmt.Sprintf("level='error' directory='%s' error='yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}' fileName='defaults.yaml' msg='cannot unmarshal yaml content'\n", SecureAbsolutePathForTesting(gibberishDir)),
+				Log: fmt.Sprintf("level='error' directory='%s' error='yaml: unmarshal errors:\n  line 1: cannot unmarshal !!str `gibberish` into map[string]interface {}' fileName='defaults.yaml' msg='cannot unmarshal yaml content'\n", SecureAbsolutePathForTesting(gibberishDir)),
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.state.RestoreForTesting()
-			o := NewRecordingOutputBus()
+			o := output.NewRecorder()
 			appSpecificPath = ""
 			appSpecificPathValid = false
 			gotC, gotOk := ReadConfigurationFile(o)
@@ -529,7 +530,7 @@ func TestReadConfigurationFile(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -558,27 +559,27 @@ func Test_appData(t *testing.T) {
 		state *SavedEnvVar
 		want  string
 		want1 bool
-		WantedOutput
+		output.WantedRecording
 	}{
 		{
-			name:         "value is set",
-			state:        &SavedEnvVar{Name: appDataVar, Value: "appData!", Set: true},
-			want:         "appData!",
-			want1:        true,
-			WantedOutput: WantedOutput{},
+			name:            "value is set",
+			state:           &SavedEnvVar{Name: appDataVar, Value: "appData!", Set: true},
+			want:            "appData!",
+			want1:           true,
+			WantedRecording: output.WantedRecording{},
 		},
 		{
 			name:  "value is not set",
 			state: &SavedEnvVar{Name: appDataVar},
-			WantedOutput: WantedOutput{
-				WantLogOutput: "level='info' environment variable='APPDATA' msg='not set'\n",
+			WantedRecording: output.WantedRecording{
+				Log: "level='info' environment variable='APPDATA' msg='not set'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.state.RestoreForTesting()
-			o := NewRecordingOutputBus()
+			o := output.NewRecorder()
 			got, got1 := LookupAppData(o)
 			if got != tt.want {
 				t.Errorf("%s got = %q, want %q", fnName, got, tt.want)
@@ -586,7 +587,7 @@ func Test_appData(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("%s got1 = %v, want %v", fnName, got1, tt.want1)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -823,7 +824,7 @@ func Test_createConfiguration(t *testing.T) {
 		name string
 		args
 		want *Configuration
-		WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "busy!",
@@ -842,19 +843,19 @@ func Test_createConfiguration(t *testing.T) {
 				sMap: map[string]string{"stringValue": "foo", "weirdValue": "1.2345"},
 				cMap: map[string]*Configuration{"mapValue": EmptyConfiguration()},
 			},
-			WantedOutput: WantedOutput{
-				WantErrorOutput: "The key \"weirdValue\", with value '1.2345', has an unexpected type float64.\n",
-				WantLogOutput:   "level='error' key='weirdValue' type='float64' value='1.2345' msg='unexpected value type'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The key \"weirdValue\", with value '1.2345', has an unexpected type float64.\n",
+				Log:   "level='error' key='weirdValue' type='float64' value='1.2345' msg='unexpected value type'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := NewRecordingOutputBus()
+			o := output.NewRecorder()
 			if got := CreateConfiguration(o, tt.args.data); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

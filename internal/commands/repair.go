@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"mp3/internal"
 	"mp3/internal/files"
+	"mp3/internal/output"
 	"path/filepath"
 	"sort"
 )
@@ -21,7 +22,7 @@ type repair struct {
 	sf     *files.SearchFlags
 }
 
-func newRepair(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
+func newRepair(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
 	return newRepairCommand(o, c, fSet)
 }
 
@@ -38,7 +39,7 @@ const (
 	noProblemsFound = "No repairable track defects found"
 )
 
-func newRepairCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*repair, bool) {
+func newRepairCommand(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (*repair, bool) {
 	ok := true
 	defDryRun, err := c.SubConfiguration(repairCommandName).BoolDefault(dryRunFlag, defaultDryRun)
 	if err != nil {
@@ -56,7 +57,7 @@ func newRepairCommand(o internal.OutputBus, c *internal.Configuration, fSet *fla
 	return nil, false
 }
 
-func (r *repair) Exec(o internal.OutputBus, args []string) (ok bool) {
+func (r *repair) Exec(o output.Bus, args []string) (ok bool) {
 	if s, argsOk := r.sf.ProcessArgs(o, args); argsOk {
 		ok = r.runCommand(o, s)
 	}
@@ -70,8 +71,8 @@ func (r *repair) logFields() map[string]any {
 	}
 }
 
-func (r *repair) runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
-	o.Log(internal.Info, internal.LogInfoExecutingCommand, r.logFields())
+func (r *repair) runCommand(o output.Bus, s *files.Search) (ok bool) {
+	o.Log(output.Info, internal.LogInfoExecutingCommand, r.logFields())
 	artists, ok := s.LoadData(o)
 	if ok {
 		files.ReadMetadata(o, artists)
@@ -105,7 +106,7 @@ func findConflictedTracks(artists []*files.Artist) []*files.Track {
 	return t
 }
 
-func reportTracks(o internal.OutputBus, tracks []*files.Track) {
+func reportTracks(o output.Bus, tracks []*files.Track) {
 	lastArtistName := ""
 	lastAlbumName := ""
 	for _, t := range tracks {
@@ -137,11 +138,11 @@ func reportProblem(b bool, problem string) (s string) {
 	return
 }
 
-func fixTracks(o internal.OutputBus, tracks []*files.Track) {
+func fixTracks(o output.Bus, tracks []*files.Track) {
 	for _, t := range tracks {
 		if err := t.EditTags(); len(err) != 0 {
 			o.WriteCanonicalError(internal.UserErrorRepairingTrackFile, t)
-			o.Log(internal.Error, internal.LogErrorCannotEditTrack, map[string]any{
+			o.Log(output.Error, internal.LogErrorCannotEditTrack, map[string]any{
 				internal.LogInfoExecutingCommand: repairCommandName,
 				internal.FieldKeyDirectory:       t.Directory(),
 				internal.FieldKeyFileName:        t.FileName(),
@@ -154,25 +155,25 @@ func fixTracks(o internal.OutputBus, tracks []*files.Track) {
 	}
 }
 
-func createBackups(o internal.OutputBus, tracks []*files.Track) {
+func createBackups(o output.Bus, tracks []*files.Track) {
 	albumPaths := getAlbumPaths(tracks)
 	makeBackupDirectories(o, albumPaths)
 	backupTracks(o, tracks)
 }
 
-func backupTracks(o internal.OutputBus, tracks []*files.Track) {
+func backupTracks(o output.Bus, tracks []*files.Track) {
 	for _, track := range tracks {
 		backupTrack(o, track)
 	}
 }
 
-func backupTrack(o internal.OutputBus, t *files.Track) {
+func backupTrack(o output.Bus, t *files.Track) {
 	backupDir := t.BackupDirectory()
 	destinationPath := filepath.Join(backupDir, fmt.Sprintf("%d.mp3", t.Number()))
 	if internal.DirExists(backupDir) && !internal.PlainFileExists(destinationPath) {
 		if err := t.Copy(destinationPath); err != nil {
 			o.WriteCanonicalError(internal.UserErrorCreatingBackupFile, t)
-			o.Log(internal.Error, internal.LogErrorCannotCopyFile, map[string]any{
+			o.Log(output.Error, internal.LogErrorCannotCopyFile, map[string]any{
 				fieldKeyCommandName:    repairCommandName,
 				fieldKeySource:         t.Path(),
 				fieldKeyDestination:    destinationPath,
@@ -184,13 +185,13 @@ func backupTrack(o internal.OutputBus, t *files.Track) {
 	}
 }
 
-func makeBackupDirectories(o internal.OutputBus, paths []string) {
+func makeBackupDirectories(o output.Bus, paths []string) {
 	for _, path := range paths {
 		newPath := files.CreateBackupPath(path)
 		if !internal.DirExists(newPath) {
 			if err := internal.Mkdir(newPath); err != nil {
 				o.WriteCanonicalError(internal.UserCannotCreateDirectory, newPath, err)
-				o.Log(internal.Error, internal.LogErrorCannotCreateDirectory, map[string]any{
+				o.Log(output.Error, internal.LogErrorCannotCreateDirectory, map[string]any{
 					fieldKeyCommandName:        repairCommandName,
 					internal.FieldKeyDirectory: newPath,
 					internal.FieldKeyError:     err,

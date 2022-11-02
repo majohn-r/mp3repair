@@ -3,6 +3,7 @@ package files
 import (
 	"flag"
 	"mp3/internal"
+	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -35,9 +36,9 @@ const (
 	fieldKeyTopDirFlag          = "-" + topDirectoryFlag
 )
 
-func reportBadDefault(o internal.OutputBus, err error) {
+func reportBadDefault(o output.Bus, err error) {
 	o.WriteCanonicalError(internal.UserConfigurationFileInvalid, internal.DefaultConfigFileName, defaultSectionName, err)
-	o.Log(internal.Error, internal.LogErrorInvalidConfigurationData, map[string]any{
+	o.Log(output.Error, internal.LogErrorInvalidConfigurationData, map[string]any{
 		internal.FieldKeySection: defaultSectionName,
 		internal.FieldKeyError:   err,
 	})
@@ -45,11 +46,11 @@ func reportBadDefault(o internal.OutputBus, err error) {
 
 // NewSearchFlags are used by commands that use the common top directory, target
 // extension, and album and artist filter regular expressions.
-func NewSearchFlags(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*SearchFlags, bool) {
+func NewSearchFlags(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (*SearchFlags, bool) {
 	return makeSearchFlags(o, c.SubConfiguration(defaultSectionName), fSet)
 }
 
-func makeSearchFlags(o internal.OutputBus, configuration *internal.Configuration, fSet *flag.FlagSet) (*SearchFlags, bool) {
+func makeSearchFlags(o output.Bus, configuration *internal.Configuration, fSet *flag.FlagSet) (*SearchFlags, bool) {
 	var ok = true
 	defTopDirectory, err := configuration.StringDefault(topDirectoryFlag, filepath.Join("%HOMEPATH%", "Music"))
 	if err != nil {
@@ -88,7 +89,7 @@ func makeSearchFlags(o internal.OutputBus, configuration *internal.Configuration
 }
 
 // ProcessArgs consumes the command line arguments.
-func (sf *SearchFlags) ProcessArgs(o internal.OutputBus, args []string) (s *Search, ok bool) {
+func (sf *SearchFlags) ProcessArgs(o output.Bus, args []string) (s *Search, ok bool) {
 	if ok = internal.ProcessArgs(o, sf.f, args); ok {
 		s, ok = sf.NewSearch(o)
 	}
@@ -97,7 +98,7 @@ func (sf *SearchFlags) ProcessArgs(o internal.OutputBus, args []string) (s *Sear
 
 // NewSearch validates the common search parameters and creates a Search
 // instance based on them.
-func (sf *SearchFlags) NewSearch(o internal.OutputBus) (s *Search, ok bool) {
+func (sf *SearchFlags) NewSearch(o output.Bus) (s *Search, ok bool) {
 	albumsFilter, artistsFilter, validated := sf.validate(o)
 	if validated {
 		s = &Search{
@@ -111,11 +112,11 @@ func (sf *SearchFlags) NewSearch(o internal.OutputBus) (s *Search, ok bool) {
 	return
 }
 
-func (sf *SearchFlags) validateTopLevelDirectory(o internal.OutputBus) bool {
+func (sf *SearchFlags) validateTopLevelDirectory(o output.Bus) bool {
 	file, err := os.Stat(*sf.topDirectory)
 	if err != nil {
 		o.WriteCanonicalError(internal.UserCannotReadTopDir, *sf.topDirectory, err)
-		o.Log(internal.Error, internal.LogErrorCannotReadDirectory, map[string]any{
+		o.Log(output.Error, internal.LogErrorCannotReadDirectory, map[string]any{
 			fieldKeyTopDirFlag:     *sf.topDirectory,
 			internal.FieldKeyError: err,
 		})
@@ -125,18 +126,18 @@ func (sf *SearchFlags) validateTopLevelDirectory(o internal.OutputBus) bool {
 		return true
 	}
 	o.WriteCanonicalError(internal.UserTopDirNotADirectory, *sf.topDirectory)
-	o.Log(internal.Error, internal.LogErrorNotADirectory, map[string]any{
+	o.Log(output.Error, internal.LogErrorNotADirectory, map[string]any{
 		fieldKeyTopDirFlag: *sf.topDirectory,
 	})
 	return false
 }
 
-func (sf *SearchFlags) validateExtension(o internal.OutputBus) (ok bool) {
+func (sf *SearchFlags) validateExtension(o output.Bus) (ok bool) {
 	ok = true
 	if !strings.HasPrefix(*sf.fileExtension, ".") || strings.Contains(strings.TrimPrefix(*sf.fileExtension, "."), ".") {
 		ok = false
 		o.WriteCanonicalError(internal.UserExtensionInvalidFormat, *sf.fileExtension)
-		o.Log(internal.Error, internal.LogErrorInvalidExtensionFormat, map[string]any{
+		o.Log(output.Error, internal.LogErrorInvalidExtensionFormat, map[string]any{
 			fieldKeyTargetExtensionFlag: *sf.fileExtension,
 		})
 	}
@@ -145,7 +146,7 @@ func (sf *SearchFlags) validateExtension(o internal.OutputBus) (ok bool) {
 	if e != nil {
 		ok = false
 		o.WriteCanonicalError(internal.UserExtensionGarbled, *sf.fileExtension, e)
-		o.Log(internal.Error, internal.LogErrorGarbledExtension, map[string]any{
+		o.Log(output.Error, internal.LogErrorGarbledExtension, map[string]any{
 			fieldKeyTargetExtensionFlag: *sf.fileExtension,
 			internal.FieldKeyError:      e,
 		})
@@ -153,10 +154,10 @@ func (sf *SearchFlags) validateExtension(o internal.OutputBus) (ok bool) {
 	return
 }
 
-func validateRegexp(o internal.OutputBus, pattern string, name string) (filter *regexp.Regexp, ok bool) {
+func validateRegexp(o output.Bus, pattern string, name string) (filter *regexp.Regexp, ok bool) {
 	if f, err := regexp.Compile(pattern); err != nil {
 		o.WriteCanonicalError(internal.UserFilterGarbled, name, pattern, err)
-		o.Log(internal.Error, internal.LogErrorGarbledFilter, map[string]any{
+		o.Log(output.Error, internal.LogErrorGarbledFilter, map[string]any{
 			name:                   pattern,
 			internal.FieldKeyError: err,
 		})
@@ -167,7 +168,7 @@ func validateRegexp(o internal.OutputBus, pattern string, name string) (filter *
 	return
 }
 
-func (sf *SearchFlags) validate(o internal.OutputBus) (albumsFilter *regexp.Regexp, artistsFilter *regexp.Regexp, ok bool) {
+func (sf *SearchFlags) validate(o output.Bus) (albumsFilter *regexp.Regexp, artistsFilter *regexp.Regexp, ok bool) {
 	ok = true
 	if !sf.validateTopLevelDirectory(o) {
 		ok = false

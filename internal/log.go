@@ -2,6 +2,7 @@ package internal
 
 import (
 	"io/fs"
+	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"sort"
@@ -38,9 +39,9 @@ func configureLogging(path string) *cronowriter.CronoWriter {
 	return cronowriter.MustNew(logFileTemplate, cronowriter.WithSymlink(symlink), cronowriter.WithInit())
 }
 
-func cleanupLogFiles(o OutputBus, path string) {
+func cleanupLogFiles(o output.Bus, path string) {
 	if files, err := os.ReadDir(path); err != nil {
-		o.Log(Error, LogErrorCannotReadDirectory, map[string]any{
+		o.Log(output.Error, LogErrorCannotReadDirectory, map[string]any{
 			FieldKeyDirectory: path,
 			FieldKeyError:     err,
 		})
@@ -69,14 +70,14 @@ func cleanupLogFiles(o OutputBus, path string) {
 				fileName := fileMap[times[k]].Name()
 				logFilePath := filepath.Join(path, fileName)
 				if err := os.Remove(logFilePath); err != nil {
-					o.Log(Error, LogErrorCannotDeleteFile, map[string]any{
+					o.Log(output.Error, LogErrorCannotDeleteFile, map[string]any{
 						FieldKeyDirectory: path,
 						FieldKeyFileName:  fileName,
 						FieldKeyError:     err,
 					})
 					o.WriteCanonicalError(UserLogFileCannotBeDeleted, logFilePath, err)
 				} else {
-					o.Log(Info, LogInfoFileDeleted, map[string]any{
+					o.Log(output.Info, LogInfoFileDeleted, map[string]any{
 						FieldKeyDirectory: path,
 						FieldKeyFileName:  fileName,
 					})
@@ -90,7 +91,7 @@ func cleanupLogFiles(o OutputBus, path string) {
 var logger *cronowriter.CronoWriter
 
 // InitLogging sets up logging
-func InitLogging(o OutputBus) bool {
+func InitLogging(o output.Bus) bool {
 	var tmpFolder string
 	var found bool
 	if tmpFolder, found = os.LookupEnv("TMP"); !found {

@@ -4,6 +4,7 @@ import (
 	"flag"
 	"io/fs"
 	"mp3/internal"
+	"mp3/internal/output"
 	"regexp"
 )
 
@@ -16,15 +17,15 @@ type Search struct {
 	artistFilter    *regexp.Regexp
 }
 
-func (s *Search) contents(o internal.OutputBus) ([]fs.DirEntry, bool) {
+func (s *Search) contents(o output.Bus) ([]fs.DirEntry, bool) {
 	return internal.ReadDirectory(o, s.topDirectory)
 }
 
 // LoadUnfilteredData loads artists, albums, and tracks from the specified top
 // directory, honoring the specified track extension, but ignoring the album and
 // artist filter expressions.
-func (s *Search) LoadUnfilteredData(o internal.OutputBus) (artists []*Artist, ok bool) {
-	o.Log(internal.Info, internal.LogInfoReadingUnfilteredFiles, s.LogFields(false))
+func (s *Search) LoadUnfilteredData(o output.Bus) (artists []*Artist, ok bool) {
+	o.Log(output.Info, internal.LogInfoReadingUnfilteredFiles, s.LogFields(false))
 	if artistFiles, ok := s.contents(o); ok {
 		for _, artistFile := range artistFiles {
 			if artistFile.IsDir() {
@@ -54,7 +55,7 @@ func (s *Search) LoadUnfilteredData(o internal.OutputBus) (artists []*Artist, ok
 	}
 	ok = len(artists) != 0
 	if !ok {
-		o.Log(internal.Error, internal.LogErrorNoArtistDirectories, s.LogFields(false))
+		o.Log(output.Error, internal.LogErrorNoArtistDirectories, s.LogFields(false))
 		o.WriteCanonicalError(internal.UserNoMusicFilesFound)
 	}
 	return
@@ -75,8 +76,8 @@ func (s *Search) LogFields(includeFilters bool) map[string]any {
 
 // FilterArtists filters out the unwanted artists and albums from the input. The
 // result is a new, filtered, copy of the original slice of Artists.
-func (s *Search) FilterArtists(o internal.OutputBus, unfilteredArtists []*Artist) (artists []*Artist, ok bool) {
-	o.Log(internal.Info, internal.LogInfoFilteringFiles, s.LogFields(true))
+func (s *Search) FilterArtists(o output.Bus, unfilteredArtists []*Artist) (artists []*Artist, ok bool) {
+	o.Log(output.Info, internal.LogInfoFilteringFiles, s.LogFields(true))
 	for _, unfilteredArtist := range unfilteredArtists {
 		if s.artistFilter.MatchString(unfilteredArtist.Name()) {
 			artist := copyArtist(unfilteredArtist)
@@ -95,7 +96,7 @@ func (s *Search) FilterArtists(o internal.OutputBus, unfilteredArtists []*Artist
 	}
 	ok = len(artists) != 0
 	if !ok {
-		o.Log(internal.Error, internal.LogErrorNoArtistDirectories, s.LogFields(true))
+		o.Log(output.Error, internal.LogErrorNoArtistDirectories, s.LogFields(true))
 		o.WriteCanonicalError(internal.UserNoMusicFilesFound)
 	}
 	return
@@ -103,8 +104,8 @@ func (s *Search) FilterArtists(o internal.OutputBus, unfilteredArtists []*Artist
 
 // LoadData collects the artists, albums, and mp3 tracks, honoring all the
 // search parameters.
-func (s *Search) LoadData(o internal.OutputBus) (artists []*Artist, ok bool) {
-	o.Log(internal.Info, internal.LogInfoReadingFilteredFiles, s.LogFields(true))
+func (s *Search) LoadData(o output.Bus) (artists []*Artist, ok bool) {
+	o.Log(output.Info, internal.LogInfoReadingFilteredFiles, s.LogFields(true))
 	if artistFiles, ok := s.contents(o); ok {
 		for _, artistFile := range artistFiles {
 			if !artistFile.IsDir() || !s.artistFilter.MatchString(artistFile.Name()) {
@@ -139,7 +140,7 @@ func (s *Search) LoadData(o internal.OutputBus) (artists []*Artist, ok bool) {
 	}
 	ok = len(artists) != 0
 	if !ok {
-		o.Log(internal.Error, internal.LogErrorNoArtistDirectories, s.LogFields(true))
+		o.Log(output.Error, internal.LogErrorNoArtistDirectories, s.LogFields(true))
 		o.WriteCanonicalError(internal.UserNoMusicFilesFound)
 	}
 	return
@@ -149,7 +150,7 @@ func (s *Search) LoadData(o internal.OutputBus) (artists []*Artist, ok bool) {
 // only!
 func CreateSearchForTesting(topDir string) *Search {
 	realFlagSet := flag.NewFlagSet("testing", flag.ContinueOnError)
-	o := internal.NewNilOutputBus()
+	o := output.NewNilBus()
 	sf, _ := NewSearchFlags(o, internal.EmptyConfiguration(), realFlagSet)
 	s, _ := sf.ProcessArgs(o, []string{"-topDir", topDir})
 	return s
@@ -159,7 +160,7 @@ func CreateSearchForTesting(topDir string) *Search {
 // specified search parameters
 func CreateFilteredSearchForTesting(topDir string, artistFilter string, albumFilter string) *Search {
 	realFlagSet := flag.NewFlagSet("testing", flag.ContinueOnError)
-	o := internal.NewNilOutputBus()
+	o := output.NewNilBus()
 	sf, _ := NewSearchFlags(o, internal.EmptyConfiguration(), realFlagSet)
 	s, _ := sf.ProcessArgs(o, []string{
 		"-topDir", topDir,

@@ -2,6 +2,7 @@ package commands
 
 import (
 	"mp3/internal"
+	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"testing"
@@ -98,23 +99,23 @@ func TestMarkDirty(t *testing.T) {
 		name                      string
 		initialDirtyFolder        string
 		initialMarkDirtyAttempted bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name:                      "typical first use",
 			initialDirtyFolder:        testDir,
 			initialMarkDirtyAttempted: false,
-			WantedOutput: internal.WantedOutput{
-				WantLogOutput: "level='info' fileName='markDirty\\metadata.dirty' msg='metadata dirty file written'\n",
+			WantedRecording: output.WantedRecording{
+				Log: "level='info' fileName='markDirty\\metadata.dirty' msg='metadata dirty file written'\n",
 			},
 		},
 		{
 			name:                      "error first case",
 			initialDirtyFolder:        "no such dir",
 			initialMarkDirtyAttempted: false,
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The file \"no such dir\\\\metadata.dirty\" cannot be created: open no such dir\\metadata.dirty: The system cannot find the path specified.\n",
-				WantLogOutput:   "level='error' error='open no such dir\\metadata.dirty: The system cannot find the path specified.' fileName='no such dir\\metadata.dirty' msg='cannot create file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The file \"no such dir\\\\metadata.dirty\" cannot be created: open no such dir\\metadata.dirty: The system cannot find the path specified.\n",
+				Log:   "level='error' error='open no such dir\\metadata.dirty: The system cannot find the path specified.' fileName='no such dir\\metadata.dirty' msg='cannot create file'\n",
 			},
 		},
 		{
@@ -129,9 +130,9 @@ func TestMarkDirty(t *testing.T) {
 			dirtyFolderValid = true // yes, of course it's valid (even if it isn't)
 			dirtyFolder = tt.initialDirtyFolder
 			markDirtyAttempted = tt.initialMarkDirtyAttempted
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			MarkDirty(o)
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -231,14 +232,14 @@ func TestClearDirty(t *testing.T) {
 		name                    string
 		initialDirtyFolder      string
 		initialDirtyFolderValid bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name:                    "successful removal",
 			initialDirtyFolder:      testDir,
 			initialDirtyFolderValid: true,
-			WantedOutput: internal.WantedOutput{
-				WantLogOutput: "level='info' fileName='clearDirty\\metadata.dirty' msg='metadata dirty file deleted'\n",
+			WantedRecording: output.WantedRecording{
+				Log: "level='info' fileName='clearDirty\\metadata.dirty' msg='metadata dirty file deleted'\n",
 			},
 		},
 		{
@@ -250,9 +251,9 @@ func TestClearDirty(t *testing.T) {
 			name:                    "unremovable file",
 			initialDirtyFolder:      testDir2,
 			initialDirtyFolderValid: true,
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The file \"clearDirty2\\\\metadata.dirty\" cannot be deleted: remove clearDirty2\\metadata.dirty: The process cannot access the file because it is being used by another process.\n",
-				WantLogOutput:   "level='error' error='remove clearDirty2\\metadata.dirty: The process cannot access the file because it is being used by another process.' fileName='clearDirty2\\metadata.dirty' msg='cannot delete file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The file \"clearDirty2\\\\metadata.dirty\" cannot be deleted: remove clearDirty2\\metadata.dirty: The process cannot access the file because it is being used by another process.\n",
+				Log:   "level='error' error='remove clearDirty2\\metadata.dirty: The process cannot access the file because it is being used by another process.' fileName='clearDirty2\\metadata.dirty' msg='cannot delete file'\n",
 			},
 		},
 	}
@@ -261,9 +262,9 @@ func TestClearDirty(t *testing.T) {
 			dirtyFolderFound = true // short-circuit finding the folder
 			dirtyFolderValid = tt.initialDirtyFolderValid
 			dirtyFolder = tt.initialDirtyFolder
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			ClearDirty(o)
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

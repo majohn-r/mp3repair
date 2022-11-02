@@ -3,6 +3,7 @@ package commands
 import (
 	"errors"
 	"mp3/internal"
+	"mp3/internal/output"
 	"os"
 	"path/filepath"
 )
@@ -19,19 +20,19 @@ var (
 )
 
 // MarkDirty creates the 'dirty' file if it doesn't already exist.
-func MarkDirty(o internal.OutputBus) {
+func MarkDirty(o output.Bus) {
 	if !markDirtyAttempted {
 		if path, ok := findAppFolder(); ok {
 			dirtyFile := filepath.Join(path, dirtyFileName)
 			if _, err := os.Stat(dirtyFile); err != nil && errors.Is(err, os.ErrNotExist) {
 				if writeErr := os.WriteFile(dirtyFile, []byte("dirty"), 0644); writeErr != nil {
 					o.WriteCanonicalError(internal.UserCannotCreateFile, dirtyFile, writeErr)
-					o.Log(internal.Error, internal.LogErrorCannotCreateFile, map[string]any{
+					o.Log(output.Error, internal.LogErrorCannotCreateFile, map[string]any{
 						internal.FieldKeyFileName: dirtyFile,
 						internal.FieldKeyError:    writeErr,
 					})
 				} else {
-					o.Log(internal.Info, internal.LogInfoDirtyFileWritten, map[string]any{
+					o.Log(output.Info, internal.LogInfoDirtyFileWritten, map[string]any{
 						internal.FieldKeyFileName: dirtyFile,
 					})
 				}
@@ -60,18 +61,18 @@ func findAppFolder() (folder string, ok bool) {
 }
 
 // ClearDirty deletes the 'dirty' file if it exists.
-func ClearDirty(o internal.OutputBus) {
+func ClearDirty(o output.Bus) {
 	if path, ok := findAppFolder(); ok {
 		dirtyFile := filepath.Join(path, dirtyFileName)
 		if internal.PlainFileExists(dirtyFile) {
 			if err := os.Remove(dirtyFile); err != nil {
 				o.WriteCanonicalError(internal.UserCannotDeleteFile, dirtyFile, err)
-				o.Log(internal.Error, internal.LogErrorCannotDeleteFile, map[string]any{
+				o.Log(output.Error, internal.LogErrorCannotDeleteFile, map[string]any{
 					internal.FieldKeyFileName: dirtyFile,
 					internal.FieldKeyError:    err,
 				})
 			} else {
-				o.Log(internal.Info, internal.LogInfoDirtyFileDeleted, map[string]any{
+				o.Log(output.Info, internal.LogInfoDirtyFileDeleted, map[string]any{
 					internal.FieldKeyFileName: dirtyFile,
 				})
 			}

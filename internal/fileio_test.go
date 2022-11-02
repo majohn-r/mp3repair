@@ -2,6 +2,7 @@ package internal
 
 import (
 	"io/fs"
+	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -142,21 +143,21 @@ func TestReadDirectory(t *testing.T) {
 		args
 		wantFiles []fs.DirEntry
 		wantOk    bool
-		WantedOutput
+		output.WantedRecording
 	}{
 		{name: "default", args: args{topDir}, wantFiles: []fs.DirEntry{}, wantOk: true},
 		{
 			name: "non-existent dir",
 			args: args{"non-existent directory"},
-			WantedOutput: WantedOutput{
-				WantErrorOutput: "The directory \"non-existent directory\" cannot be read: open non-existent directory: The system cannot find the file specified.\n",
-				WantLogOutput:   "level='error' directory='non-existent directory' error='open non-existent directory: The system cannot find the file specified.' msg='cannot read directory'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The directory \"non-existent directory\" cannot be read: open non-existent directory: The system cannot find the file specified.\n",
+				Log:   "level='error' directory='non-existent directory' error='open non-existent directory: The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := NewRecordingOutputBus()
+			o := output.NewRecorder()
 			gotFiles, gotOk := ReadDirectory(o, tt.args.dir)
 			if !reflect.DeepEqual(gotFiles, tt.wantFiles) {
 				t.Errorf("%s gotFiles = %v, want %v", fnName, gotFiles, tt.wantFiles)
@@ -164,7 +165,7 @@ func TestReadDirectory(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

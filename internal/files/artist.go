@@ -3,6 +3,7 @@ package files
 import (
 	"io/fs"
 	"mp3/internal"
+	"mp3/internal/output"
 	"path/filepath"
 )
 
@@ -31,7 +32,7 @@ func NewArtist(n, p string) *Artist {
 	return &Artist{name: n, path: p, canonicalName: n}
 }
 
-func (a *Artist) contents(o internal.OutputBus) ([]fs.DirEntry, bool) {
+func (a *Artist) contents(o output.Bus) ([]fs.DirEntry, bool) {
 	return internal.ReadDirectory(o, a.path)
 }
 

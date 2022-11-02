@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"mp3/internal"
+	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -27,7 +28,7 @@ func Test_parseTrackName(t *testing.T) {
 		wantSimpleName  string
 		wantTrackNumber int
 		wantValid       bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name:            "expected use case",
@@ -55,9 +56,9 @@ func Test_parseTrackName(t *testing.T) {
 			name:            "wrong extension",
 			wantSimpleName:  "track name.mp4",
 			wantTrackNumber: 59,
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The track \"59 track name.mp4\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
-				WantLogOutput:   "level='error' albumName='some album' artistName='some artist' trackName='59 track name.mp4' msg='the track name cannot be parsed'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The track \"59 track name.mp4\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
+				Log:   "level='error' albumName='some album' artistName='some artist' trackName='59 track name.mp4' msg='the track name cannot be parsed'\n",
 			},
 			args: args{
 				name:  "59 track name.mp4",
@@ -68,9 +69,9 @@ func Test_parseTrackName(t *testing.T) {
 		{
 			name:           "missing track number",
 			wantSimpleName: "name",
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The track \"track name.mp3\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
-				WantLogOutput:   "level='error' albumName='some album' artistName='some artist' trackName='track name.mp3' msg='the track name cannot be parsed'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The track \"track name.mp3\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
+				Log:   "level='error' albumName='some album' artistName='some artist' trackName='track name.mp3' msg='the track name cannot be parsed'\n",
 			},
 			args: args{
 				name:  "track name.mp3",
@@ -80,9 +81,9 @@ func Test_parseTrackName(t *testing.T) {
 		},
 		{
 			name: "missing track number, simple name",
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The track \"trackName.mp3\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
-				WantLogOutput:   "level='error' albumName='some album' artistName='some artist' trackName='trackName.mp3' msg='the track name cannot be parsed'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The track \"trackName.mp3\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
+				Log:   "level='error' albumName='some album' artistName='some artist' trackName='trackName.mp3' msg='the track name cannot be parsed'\n",
 			},
 			args: args{
 				name:  "trackName.mp3",
@@ -93,7 +94,7 @@ func Test_parseTrackName(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			gotSimpleName, gotTrackNumber, gotValid := parseTrackName(o, tt.args.name, tt.args.album, tt.args.ext)
 			if tt.wantValid {
 				if gotSimpleName != tt.wantSimpleName {
@@ -106,7 +107,7 @@ func Test_parseTrackName(t *testing.T) {
 			if gotValid != tt.wantValid {
 				t.Errorf("%s gotValid = %v, want %v", fnName, gotValid, tt.wantValid)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -823,7 +824,7 @@ func TestReadMetadata(t *testing.T) {
 	tests := []struct {
 		name string
 		args
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "thorough test",
@@ -832,9 +833,9 @@ func TestReadMetadata(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			ReadMetadata(o, tt.args.artists)
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -1190,7 +1191,7 @@ func Test_processArtistMetadata(t *testing.T) {
 	tests := []struct {
 		name string
 		args
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "unanimous choice",
@@ -1203,17 +1204,17 @@ func Test_processArtistMetadata(t *testing.T) {
 		{
 			name: "ambiguous choice",
 			args: args{artists: []*Artist{artist3}},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "There are multiple artist name fields for \"artist_name\", and there is no unambiguously preferred choice; candidates are {\"artist:name\": 5 instances, \"artist_name\": 5 instances}.\n",
-				WantLogOutput:   "level='error' artistName='artist_name' field='artist name' settings='map[artist:name:5 artist_name:5]' msg='no value has a majority of instances'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "There are multiple artist name fields for \"artist_name\", and there is no unambiguously preferred choice; candidates are {\"artist:name\": 5 instances, \"artist_name\": 5 instances}.\n",
+				Log:   "level='error' artistName='artist_name' field='artist name' settings='map[artist:name:5 artist_name:5]' msg='no value has a majority of instances'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			processArtistMetadata(o, tt.args.artists)
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -1301,7 +1302,7 @@ func Test_processAlbumMetadata(t *testing.T) {
 	tests := []struct {
 		name string
 		args
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "ordinary test",
@@ -1314,12 +1315,12 @@ func Test_processAlbumMetadata(t *testing.T) {
 		{
 			name: "errors",
 			args: args{artists: artists3},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "There are multiple genre fields for \"problematic_album by problematic artist\", and there is no unambiguously preferred choice; candidates are {\"folk\": 1 instance, \"pop\": 1 instance, \"rock\": 1 instance}.\n" +
+			WantedRecording: output.WantedRecording{
+				Error: "There are multiple genre fields for \"problematic_album by problematic artist\", and there is no unambiguously preferred choice; candidates are {\"folk\": 1 instance, \"pop\": 1 instance, \"rock\": 1 instance}.\n" +
 					"There are multiple year fields for \"problematic_album by problematic artist\", and there is no unambiguously preferred choice; candidates are {\"2021\": 1 instance, \"2022\": 1 instance, \"2023\": 1 instance}.\n" +
 					"There are multiple album title fields for \"problematic_album by problematic artist\", and there is no unambiguously preferred choice; candidates are {\"Problematic:album\": 1 instance, \"problematic:Album\": 1 instance, \"problematic:album\": 1 instance}.\n" +
 					"There are multiple MCDI frame fields for \"problematic_album by problematic artist\", and there is no unambiguously preferred choice; candidates are {\"\\x01\\x02\\x03\": 1 instance, \"\\x01\\x02\\x03\\x04\": 1 instance, \"\\x01\\x02\\x03\\x04\\x05\": 1 instance}.\n",
-				WantLogOutput: "level='error' albumName='problematic_album' artistName='problematic artist' field='genre' settings='map[folk:1 pop:1 rock:1]' msg='no value has a majority of instances'\n" +
+				Log: "level='error' albumName='problematic_album' artistName='problematic artist' field='genre' settings='map[folk:1 pop:1 rock:1]' msg='no value has a majority of instances'\n" +
 					"level='error' albumName='problematic_album' artistName='problematic artist' field='year' settings='map[2021:1 2022:1 2023:1]' msg='no value has a majority of instances'\n" +
 					"level='error' albumName='problematic_album' artistName='problematic artist' field='album title' settings='map[Problematic:album:1 problematic:Album:1 problematic:album:1]' msg='no value has a majority of instances'\n" +
 					"level='error' albumName='problematic_album' artistName='problematic artist' field='mcdi frame' settings='map[\x01\x02\x03:1 \x01\x02\x03\x04:1 \x01\x02\x03\x04\x05:1]' msg='no value has a majority of instances'\n",
@@ -1328,9 +1329,9 @@ func Test_processAlbumMetadata(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			processAlbumMetadata(o, tt.args.artists)
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -1349,7 +1350,7 @@ func Test_reportTrackErrors(t *testing.T) {
 	tests := []struct {
 		name string
 		args
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "error handling",
@@ -1363,19 +1364,19 @@ func Test_reportTrackErrors(t *testing.T) {
 				album:  &Album{name: "silly album"},
 				artist: &Artist{name: "silly artist"},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "An error occurred when trying to read ID3V1 tag information for track \"silly track\" on album \"silly album\" by artist \"silly artist\": \"id3v1 error!\".\n" +
+			WantedRecording: output.WantedRecording{
+				Error: "An error occurred when trying to read ID3V1 tag information for track \"silly track\" on album \"silly album\" by artist \"silly artist\": \"id3v1 error!\".\n" +
 					"An error occurred when trying to read ID3V2 tag information for track \"silly track\" on album \"silly album\" by artist \"silly artist\": \"id3v2 error!\".\n",
-				WantLogOutput: "level='error' albumName='silly album' artistName='silly artist' error='id3v1 error!' trackName='silly track' msg='id3v1 tag error'\n" +
+				Log: "level='error' albumName='silly album' artistName='silly artist' error='id3v1 error!' trackName='silly track' msg='id3v1 tag error'\n" +
 					"level='error' albumName='silly album' artistName='silly artist' error='id3v2 error!' trackName='silly track' msg='id3v2 tag error'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			reportTrackErrors(o, tt.args.track, tt.args.album, tt.args.artist)
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

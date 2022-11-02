@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"mp3/internal"
 	"mp3/internal/files"
+	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"sort"
@@ -19,7 +20,7 @@ func Test_list_validateTrackSorting(t *testing.T) {
 		sortingInput  string
 		includeAlbums bool
 		wantSorting   string
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{name: "alpha sorting with albums", sortingInput: "alpha", includeAlbums: true, wantSorting: "alpha"},
 		{name: "alpha sorting without albums", sortingInput: "alpha", includeAlbums: false, wantSorting: "alpha"},
@@ -29,9 +30,9 @@ func Test_list_validateTrackSorting(t *testing.T) {
 			sortingInput:  "numeric",
 			includeAlbums: false,
 			wantSorting:   "alpha",
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
-				WantLogOutput:   "level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+				Log:   "level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n",
 			},
 		},
 		{
@@ -39,9 +40,9 @@ func Test_list_validateTrackSorting(t *testing.T) {
 			sortingInput:  "nonsense",
 			includeAlbums: true,
 			wantSorting:   "numeric",
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The \"-sort\" value you specified, \"nonsense\", is not valid.\n",
-				WantLogOutput:   "level='error' -sort='nonsense' command='list' msg='flag value is not valid'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The \"-sort\" value you specified, \"nonsense\", is not valid.\n",
+				Log:   "level='error' -sort='nonsense' command='list' msg='flag value is not valid'\n",
 			},
 		},
 		{
@@ -49,16 +50,16 @@ func Test_list_validateTrackSorting(t *testing.T) {
 			sortingInput:  "nonsense",
 			includeAlbums: false,
 			wantSorting:   "alpha",
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The \"-sort\" value you specified, \"nonsense\", is not valid.\n",
-				WantLogOutput:   "level='error' -sort='nonsense' command='list' msg='flag value is not valid'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The \"-sort\" value you specified, \"nonsense\", is not valid.\n",
+				Log:   "level='error' -sort='nonsense' command='list' msg='flag value is not valid'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			fs := flag.NewFlagSet("list", flag.ContinueOnError)
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			listCommand, _ := newListCommand(o, internal.EmptyConfiguration(), fs)
 			listCommand.trackSorting = &tt.sortingInput
 			listCommand.includeAlbums = &tt.includeAlbums
@@ -66,7 +67,7 @@ func Test_list_validateTrackSorting(t *testing.T) {
 			if *listCommand.trackSorting != tt.wantSorting {
 				t.Errorf("%s: got %q, want %q", fnName, *listCommand.trackSorting, tt.wantSorting)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -207,7 +208,7 @@ func generateTrackListings(testTracks []*testTrack, spacer string, artists, albu
 }
 
 func newListForTesting() *list {
-	l, _ := newListCommand(internal.NewNilOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("list", flag.ContinueOnError))
+	l, _ := newListCommand(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("list", flag.ContinueOnError))
 	return l
 }
 
@@ -239,14 +240,14 @@ func Test_list_Exec(t *testing.T) {
 		name string
 		l    *list
 		args
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "help",
 			l:    newListForTesting(),
 			args: args{[]string{"--help"}},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "Usage of list:\n" +
+			WantedRecording: output.WantedRecording{
+				Error: "Usage of list:\n" +
 					"  -albumFilter regular expression\n" +
 					"    \tregular expression specifying which albums to select (default \".*\")\n" +
 					"  -annotate\n" +
@@ -269,7 +270,7 @@ func Test_list_Exec(t *testing.T) {
 					"    \ttrack sorting, 'numeric' in track number order, or 'alpha' in track name order (default \"numeric\")\n" +
 					"  -topDir directory\n" +
 					"    \ttop directory specifying where to find music files (default \"C:\\\\Users\\\\The User\\\\Music\")\n",
-				WantLogOutput: "level='error' arguments='[--help]' msg='flag: help requested'\n",
+				Log: "level='error' arguments='[--help]' msg='flag: help requested'\n",
 			},
 		},
 		{
@@ -283,10 +284,10 @@ func Test_list_Exec(t *testing.T) {
 					"-includeTracks=false",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(false, false, false, false, false),
-				WantErrorOutput:   "You disabled all functionality for the command \"list\".\n",
-				WantLogOutput:     "level='error' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='false' -includeTracks='false' -sort='numeric' command='list' msg='the user disabled all functionality'\n",
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(false, false, false, false, false),
+				Error:   "You disabled all functionality for the command \"list\".\n",
+				Log:     "level='error' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='false' -includeTracks='false' -sort='numeric' command='list' msg='the user disabled all functionality'\n",
 			},
 		},
 		// tracks only
@@ -302,10 +303,10 @@ func Test_list_Exec(t *testing.T) {
 					"-annotate=false",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(false, false, true, false, false),
-				WantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
-				WantLogOutput: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(false, false, true, false, false),
+				Error:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+				Log: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
@@ -322,10 +323,10 @@ func Test_list_Exec(t *testing.T) {
 					"-annotate=true",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(false, false, true, true, false),
-				WantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
-				WantLogOutput: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(false, false, true, true, false),
+				Error:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+				Log: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
@@ -343,10 +344,10 @@ func Test_list_Exec(t *testing.T) {
 					"-sort=numeric",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(false, false, true, false, true),
-				WantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
-				WantLogOutput: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(false, false, true, false, true),
+				Error:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+				Log: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
@@ -364,10 +365,10 @@ func Test_list_Exec(t *testing.T) {
 					"-sort", "numeric",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(false, false, true, true, true),
-				WantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
-				WantLogOutput: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(false, false, true, true, true),
+				Error:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+				Log: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
@@ -385,9 +386,9 @@ func Test_list_Exec(t *testing.T) {
 					"-annotate=false",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(false, true, false, false, false),
-				WantLogOutput: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='false' -includeTracks='false' -sort='numeric' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(false, true, false, false, false),
+				Log: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='false' -includeTracks='false' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
@@ -403,9 +404,9 @@ func Test_list_Exec(t *testing.T) {
 					"-annotate=true",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(false, true, false, true, false),
-				WantLogOutput: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='false' -includeTracks='false' -sort='numeric' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(false, true, false, true, false),
+				Log: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='false' -includeTracks='false' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
@@ -422,9 +423,9 @@ func Test_list_Exec(t *testing.T) {
 					"-annotate=false",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(true, false, false, false, false),
-				WantLogOutput: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='true' -includeTracks='false' -sort='numeric' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(true, false, false, false, false),
+				Log: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='true' -includeTracks='false' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
@@ -440,9 +441,9 @@ func Test_list_Exec(t *testing.T) {
 					"-annotate=true",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(true, false, false, true, false),
-				WantLogOutput: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='true' -includeTracks='false' -sort='numeric' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(true, false, false, true, false),
+				Log: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='true' -includeTracks='false' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
@@ -459,9 +460,9 @@ func Test_list_Exec(t *testing.T) {
 					"-annotate=false",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(true, true, false, false, false),
-				WantLogOutput: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='false' -sort='numeric' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(true, true, false, false, false),
+				Log: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='false' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
@@ -477,9 +478,9 @@ func Test_list_Exec(t *testing.T) {
 					"-annotate=true",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(true, true, false, true, false),
-				WantLogOutput: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='false' -sort='numeric' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(true, true, false, true, false),
+				Log: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='false' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
@@ -497,9 +498,9 @@ func Test_list_Exec(t *testing.T) {
 					"-sort", "alpha",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(false, true, true, false, false),
-				WantLogOutput: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='alpha' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(false, true, true, false, false),
+				Log: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='alpha' command='list' msg='executing command'\n" +
 					"level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='alpha' command='list' msg='one or more flags were overridden'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
@@ -517,9 +518,9 @@ func Test_list_Exec(t *testing.T) {
 					"-sort", "alpha",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(false, true, true, true, false),
-				WantLogOutput: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='alpha' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(false, true, true, true, false),
+				Log: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='alpha' command='list' msg='executing command'\n" +
 					"level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='alpha' command='list' msg='one or more flags were overridden'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
@@ -537,9 +538,9 @@ func Test_list_Exec(t *testing.T) {
 					"-sort", "numeric",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(false, true, true, false, true),
-				WantLogOutput: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(false, true, true, false, true),
+				Log: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
@@ -556,9 +557,9 @@ func Test_list_Exec(t *testing.T) {
 					"-sort", "numeric",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(false, true, true, true, true),
-				WantLogOutput: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(false, true, true, true, true),
+				Log: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='false' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
@@ -576,9 +577,9 @@ func Test_list_Exec(t *testing.T) {
 					"-sort", "alpha",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(true, false, true, false, false),
-				WantLogOutput: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='alpha' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(true, false, true, false, false),
+				Log: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='alpha' command='list' msg='executing command'\n" +
 					"level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='alpha' command='list' msg='one or more flags were overridden'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
@@ -596,9 +597,9 @@ func Test_list_Exec(t *testing.T) {
 					"-sort", "alpha",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(true, false, true, true, false),
-				WantLogOutput: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='alpha' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(true, false, true, true, false),
+				Log: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='alpha' command='list' msg='executing command'\n" +
 					"level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='alpha' command='list' msg='one or more flags were overridden'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
@@ -616,10 +617,10 @@ func Test_list_Exec(t *testing.T) {
 					"-sort", "numeric",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(true, false, true, false, true),
-				WantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
-				WantLogOutput: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(true, false, true, false, true),
+				Error:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+				Log: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
@@ -637,10 +638,10 @@ func Test_list_Exec(t *testing.T) {
 					"-sort", "numeric",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(true, false, true, true, true),
-				WantErrorOutput:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
-				WantLogOutput: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(true, false, true, true, true),
+				Error:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+				Log: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
@@ -659,9 +660,9 @@ func Test_list_Exec(t *testing.T) {
 					"-sort", "alpha",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(true, true, true, false, false),
-				WantLogOutput: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='alpha' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(true, true, true, false, false),
+				Log: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='alpha' command='list' msg='executing command'\n" +
 					"level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='alpha' command='list' msg='one or more flags were overridden'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
@@ -679,9 +680,9 @@ func Test_list_Exec(t *testing.T) {
 					"-sort", "alpha",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(true, true, true, true, false),
-				WantLogOutput: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='alpha' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(true, true, true, true, false),
+				Log: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='alpha' command='list' msg='executing command'\n" +
 					"level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='alpha' command='list' msg='one or more flags were overridden'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
@@ -699,9 +700,9 @@ func Test_list_Exec(t *testing.T) {
 					"-sort", "numeric",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(true, true, true, false, true),
-				WantLogOutput: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(true, true, true, false, true),
+				Log: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
@@ -718,18 +719,18 @@ func Test_list_Exec(t *testing.T) {
 					"-sort", "numeric",
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: generateListing(true, true, true, true, true),
-				WantLogOutput: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: generateListing(true, true, true, true, true),
+				Log: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			tt.l.Exec(o, tt.args.args)
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -762,7 +763,7 @@ func Test_newListCommand(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	defaultConfig, _ := internal.ReadConfigurationFile(internal.NewNilOutputBus())
+	defaultConfig, _ := internal.ReadConfigurationFile(output.NewNilBus())
 	type args struct {
 		c *internal.Configuration
 	}
@@ -775,7 +776,7 @@ func Test_newListCommand(t *testing.T) {
 		wantTrackSorting     string
 		wantAnnotateListings bool
 		wantOk               bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name:                 "ordinary defaults",
@@ -800,116 +801,116 @@ func Test_newListCommand(t *testing.T) {
 		{
 			name: "bad default for includeAlbums",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
 						"includeAlbums": "nope",
 					},
 				}),
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"list\": invalid boolean value \"nope\" for -includeAlbums: parse error.\n",
-				WantLogOutput:   "level='error' error='invalid boolean value \"nope\" for -includeAlbums: parse error' section='list' msg='invalid content in configuration file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"list\": invalid boolean value \"nope\" for -includeAlbums: parse error.\n",
+				Log:   "level='error' error='invalid boolean value \"nope\" for -includeAlbums: parse error' section='list' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
 			name: "bad default for includeArtists",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
 						"includeArtists": "yes",
 					},
 				}),
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"list\": invalid boolean value \"yes\" for -includeArtists: parse error.\n",
-				WantLogOutput:   "level='error' error='invalid boolean value \"yes\" for -includeArtists: parse error' section='list' msg='invalid content in configuration file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"list\": invalid boolean value \"yes\" for -includeArtists: parse error.\n",
+				Log:   "level='error' error='invalid boolean value \"yes\" for -includeArtists: parse error' section='list' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
 			name: "bad default for includeTracks",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
 						"includeTracks": "sure",
 					},
 				}),
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"list\": invalid boolean value \"sure\" for -includeTracks: parse error.\n",
-				WantLogOutput:   "level='error' error='invalid boolean value \"sure\" for -includeTracks: parse error' section='list' msg='invalid content in configuration file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"list\": invalid boolean value \"sure\" for -includeTracks: parse error.\n",
+				Log:   "level='error' error='invalid boolean value \"sure\" for -includeTracks: parse error' section='list' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
 			name: "bad default for annotate",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
 						"annotate": "+2",
 					},
 				}),
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"list\": invalid boolean value \"+2\" for -annotate: parse error.\n",
-				WantLogOutput:   "level='error' error='invalid boolean value \"+2\" for -annotate: parse error' section='list' msg='invalid content in configuration file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"list\": invalid boolean value \"+2\" for -annotate: parse error.\n",
+				Log:   "level='error' error='invalid boolean value \"+2\" for -annotate: parse error' section='list' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
 			name: "bad default for details",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
 						"details": "no!",
 					},
 				}),
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"list\": invalid boolean value \"no!\" for -details: parse error.\n",
-				WantLogOutput:   "level='error' error='invalid boolean value \"no!\" for -details: parse error' section='list' msg='invalid content in configuration file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"list\": invalid boolean value \"no!\" for -details: parse error.\n",
+				Log:   "level='error' error='invalid boolean value \"no!\" for -details: parse error' section='list' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
 			name: "bad default for diagnostics",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
 						"diagnostic": "no!",
 					},
 				}),
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"list\": invalid boolean value \"no!\" for -diagnostic: parse error.\n",
-				WantLogOutput:   "level='error' error='invalid boolean value \"no!\" for -diagnostic: parse error' section='list' msg='invalid content in configuration file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"list\": invalid boolean value \"no!\" for -diagnostic: parse error.\n",
+				Log:   "level='error' error='invalid boolean value \"no!\" for -diagnostic: parse error' section='list' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
 			name: "bad default for sorting",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
 						"sort": "$FOO",
 					},
 				}),
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"list\": invalid value \"$FOO\" for flag -sort: missing environment variables: [FOO].\n",
-				WantLogOutput:   "level='error' error='invalid value \"$FOO\" for flag -sort: missing environment variables: [FOO]' section='list' msg='invalid content in configuration file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"list\": invalid value \"$FOO\" for flag -sort: missing environment variables: [FOO].\n",
+				Log:   "level='error' error='invalid value \"$FOO\" for flag -sort: missing environment variables: [FOO]' section='list' msg='invalid content in configuration file'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			list, gotOk := newListCommand(o, tt.args.c, flag.NewFlagSet("list", flag.ContinueOnError))
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk %t wantOk %t", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 			if list != nil {
-				if _, ok := list.sf.ProcessArgs(internal.NewNilOutputBus(), []string{
+				if _, ok := list.sf.ProcessArgs(output.NewNilBus(), []string{
 					"-topDir", topDir,
 					"-ext", ".mp3",
 				}); ok {
@@ -942,7 +943,7 @@ func Test_list_outputTrackDiagnostics(t *testing.T) {
 	badAlbum := files.NewAlbum("bad album", badArtist, "BadAlbum")
 	badTrack := files.NewTrack(badAlbum, "01 bad track.mp3", "bad track", 1)
 	makeList := func() *list {
-		l, _ := newListCommand(internal.NewNilOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("list", flag.ContinueOnError))
+		l, _ := newListCommand(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("list", flag.ContinueOnError))
 		t := true
 		l.diagnostics = &t
 		return l
@@ -991,16 +992,16 @@ func Test_list_outputTrackDiagnostics(t *testing.T) {
 		name string
 		l    *list
 		args
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "error case",
 			l:    makeList(),
 			args: args{t: badTrack},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "An error occurred when trying to read ID3V2 tag information for track \"bad track\" on album \"bad album\" by artist \"bad artist\": \"open BadAlbum\\\\01 bad track.mp3: The system cannot find the path specified.\".\n" +
+			WantedRecording: output.WantedRecording{
+				Error: "An error occurred when trying to read ID3V2 tag information for track \"bad track\" on album \"bad album\" by artist \"bad artist\": \"open BadAlbum\\\\01 bad track.mp3: The system cannot find the path specified.\".\n" +
 					"An error occurred when trying to read ID3V1 tag information for track \"bad track\" on album \"bad album\" by artist \"bad artist\": \"open BadAlbum\\\\01 bad track.mp3: The system cannot find the path specified.\".\n",
-				WantLogOutput: "level='error' error='open BadAlbum\\01 bad track.mp3: The system cannot find the path specified.' track='BadAlbum\\01 bad track.mp3' msg='id3v2 tag error'\n" +
+				Log: "level='error' error='open BadAlbum\\01 bad track.mp3: The system cannot find the path specified.' track='BadAlbum\\01 bad track.mp3' msg='id3v2 tag error'\n" +
 					"level='error' error='open BadAlbum\\01 bad track.mp3: The system cannot find the path specified.' track='BadAlbum\\01 bad track.mp3' msg='id3v1 tag error'\n",
 			},
 		},
@@ -1008,8 +1009,8 @@ func Test_list_outputTrackDiagnostics(t *testing.T) {
 			name: "success case",
 			l:    makeList(),
 			args: args{t: goodTrack, prefix: "      "},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "      ID3V2 Version: 3\n" +
+			WantedRecording: output.WantedRecording{
+				Console: "      ID3V2 Version: 3\n" +
 					"      ID3V2 Encoding: \"ISO-8859-1\"\n" +
 					"      ID3V2 TALB = \"unknown album\"\n" +
 					"      ID3V2 TCOM = \"a couple of idiots\"\n" +
@@ -1030,9 +1031,9 @@ func Test_list_outputTrackDiagnostics(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			tt.l.outputTrackDiagnostics(o, tt.args.t, tt.args.prefix)
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -1047,7 +1048,7 @@ func Test_list_outputTrackDetails(t *testing.T) {
 	badAlbum := files.NewAlbum("bad album", badArtist, "BadAlbum")
 	badTrack := files.NewTrack(badAlbum, "01 bad track.mp3", "bad track", 1)
 	makeList := func() *list {
-		l, _ := newListCommand(internal.NewNilOutputBus(), internal.EmptyConfiguration(), flag.NewFlagSet("list", flag.ContinueOnError))
+		l, _ := newListCommand(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("list", flag.ContinueOnError))
 		t := true
 		l.details = &t
 		return l
@@ -1102,23 +1103,23 @@ func Test_list_outputTrackDetails(t *testing.T) {
 		name string
 		l    *list
 		args
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "error case",
 			l:    makeList(),
 			args: args{t: badTrack},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The details are not available for track \"bad track\" on album \"bad album\" by artist \"bad artist\": \"open BadAlbum\\\\01 bad track.mp3: The system cannot find the path specified.\".\n",
-				WantLogOutput:   "level='error' error='open BadAlbum\\01 bad track.mp3: The system cannot find the path specified.' track='BadAlbum\\01 bad track.mp3' msg='cannot get details'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The details are not available for track \"bad track\" on album \"bad album\" by artist \"bad artist\": \"open BadAlbum\\\\01 bad track.mp3: The system cannot find the path specified.\".\n",
+				Log:   "level='error' error='open BadAlbum\\01 bad track.mp3: The system cannot find the path specified.' track='BadAlbum\\01 bad track.mp3' msg='cannot get details'\n",
 			},
 		},
 		{
 			name: "success case",
 			l:    makeList(),
 			args: args{t: goodTrack, prefix: "-->"},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "-->Details:\n" +
+			WantedRecording: output.WantedRecording{
+				Console: "-->Details:\n" +
 					"-->  Composer = \"a couple of idiots\"\n" +
 					"-->  Conductor = \"Someone with a stick\"\n" +
 					"-->  Key = \"D Major\"\n" +
@@ -1130,9 +1131,9 @@ func Test_list_outputTrackDetails(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			tt.l.outputTrackDetails(o, tt.args.t, tt.args.prefix)
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

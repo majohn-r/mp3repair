@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -242,7 +243,7 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 				defer func() {
 					savedState.RestoreForTesting()
 				}()
-				c, _ := ReadConfigurationFile(NewNilOutputBus())
+				c, _ := ReadConfigurationFile(output.NewNilBus())
 				if common := c.cMap["common"]; common == nil {
 					t.Errorf("%s 'good test': configuration does not contain common subtree", fnName)
 				} else {

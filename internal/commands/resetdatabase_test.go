@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/fs"
 	"mp3/internal"
+	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -75,13 +76,13 @@ func Test_listAvailableServices(t *testing.T) {
 	tests := []struct {
 		name string
 		args
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "no services available",
 			args: args{},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "The following services are available:\n" +
+			WantedRecording: output.WantedRecording{
+				Console: "The following services are available:\n" +
 					"  - none -\n",
 			},
 		},
@@ -96,8 +97,8 @@ func Test_listAvailableServices(t *testing.T) {
 				},
 				services: []string{"svc1", "svc2", "svc3"},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "The following services are available:\n" +
+			WantedRecording: output.WantedRecording{
+				Console: "The following services are available:\n" +
 					"  State \"access denied\":\n" +
 					"    \"svc2\"\n" +
 					"    \"svc3\"\n" +
@@ -108,9 +109,9 @@ func Test_listAvailableServices(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			listAvailableServices(o, tt.args.sM, tt.args.services)
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -134,7 +135,7 @@ func Test_resetDatabase_waitForStop(t *testing.T) {
 		r    *resetDatabase
 		args
 		wantOk bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "already stopped",
@@ -143,8 +144,8 @@ func Test_resetDatabase_waitForStop(t *testing.T) {
 			},
 			args:   args{status: svc.Status{State: svc.Stopped}},
 			wantOk: true,
-			WantedOutput: internal.WantedOutput{
-				WantLogOutput: "level='info' service='test service' status='stopped' msg='service status'\n",
+			WantedRecording: output.WantedRecording{
+				Log: "level='info' service='test service' status='stopped' msg='service status'\n",
 			},
 		},
 		{
@@ -154,9 +155,9 @@ func Test_resetDatabase_waitForStop(t *testing.T) {
 				status:  svc.Status{State: svc.Running},
 				timeout: time.Now().Add(-1 * time.Second),
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The service \"test service\" could not be stopped within the 10 second timeout.\n",
-				WantLogOutput:   "level='error' error='operation timed out' operation='stop service' service='test service' timeout in seconds='10' msg='service issue'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The service \"test service\" could not be stopped within the 10 second timeout.\n",
+				Log:   "level='error' error='operation timed out' operation='stop service' service='test service' timeout in seconds='10' msg='service issue'\n",
 			},
 		},
 		{
@@ -169,8 +170,8 @@ func Test_resetDatabase_waitForStop(t *testing.T) {
 				checkFreq: 1 * time.Millisecond,
 			},
 			wantOk: true,
-			WantedOutput: internal.WantedOutput{
-				WantLogOutput: "level='info' service='test service' status='stopped' msg='service status'\n",
+			WantedRecording: output.WantedRecording{
+				Log: "level='info' service='test service' status='stopped' msg='service status'\n",
 			},
 		},
 		{
@@ -182,19 +183,19 @@ func Test_resetDatabase_waitForStop(t *testing.T) {
 				timeout:   time.Now().Add(1 * time.Second),
 				checkFreq: 1 * time.Millisecond,
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The status for the service \"test service\" cannot be obtained: access denied.\n",
-				WantLogOutput:   "level='error' error='access denied' operation='query service status' service='test service' msg='service issue'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The status for the service \"test service\" cannot be obtained: access denied.\n",
+				Log:   "level='error' error='access denied' operation='query service status' service='test service' msg='service issue'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			if gotOk := tt.r.waitForStop(o, tt.args.s, tt.args.status, tt.args.timeout, tt.args.checkFreq); gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -215,7 +216,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 		r    *resetDatabase
 		want bool
 		args
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "connect failure",
@@ -226,9 +227,9 @@ func Test_resetDatabase_stopService(t *testing.T) {
 					return nil, fmt.Errorf("access denied")
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The service manager cannot be accessed. Try running the program again as an administrator. Error: access denied.\n",
-				WantLogOutput:   "level='error' error='access denied' operation='connect to service manager' msg='service manager issue'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The service manager cannot be accessed. Try running the program again as an administrator. Error: access denied.\n",
+				Log:   "level='error' error='access denied' operation='connect to service manager' msg='service manager issue'\n",
 			},
 		},
 		{
@@ -244,10 +245,10 @@ func Test_resetDatabase_stopService(t *testing.T) {
 					}, nil
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "The following services are available:\n  - none -\n",
-				WantErrorOutput:   "The service \"mp3 management service\" cannot be opened: access denied.\n",
-				WantLogOutput:     "level='error' error='access denied' operation='open service' service='mp3 management service' msg='service issue'\n",
+			WantedRecording: output.WantedRecording{
+				Console: "The following services are available:\n  - none -\n",
+				Error:   "The service \"mp3 management service\" cannot be opened: access denied.\n",
+				Log:     "level='error' error='access denied' operation='open service' service='mp3 management service' msg='service issue'\n",
 			},
 		},
 		{
@@ -267,9 +268,9 @@ func Test_resetDatabase_stopService(t *testing.T) {
 					}, nil
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The status for the service \"mp3 management service\" cannot be obtained: query failure.\n",
-				WantLogOutput:   "level='error' error='query failure' operation='query service status' service='mp3 management service' msg='service issue'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The status for the service \"mp3 management service\" cannot be obtained: query failure.\n",
+				Log:   "level='error' error='query failure' operation='query service status' service='mp3 management service' msg='service issue'\n",
 			},
 		},
 		{
@@ -291,8 +292,8 @@ func Test_resetDatabase_stopService(t *testing.T) {
 					}, nil
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantLogOutput: "level='info' service='mp3 management service' status='stopped' msg='service status'\n",
+			WantedRecording: output.WantedRecording{
+				Log: "level='info' service='mp3 management service' status='stopped' msg='service status'\n",
 			},
 		},
 		{
@@ -315,9 +316,9 @@ func Test_resetDatabase_stopService(t *testing.T) {
 					}, nil
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The service \"mp3 management service\" cannot be stopped: stop command rejected.\n",
-				WantLogOutput:   "level='error' error='stop command rejected' operation='stop service' service='mp3 management service' msg='service issue'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The service \"mp3 management service\" cannot be stopped: stop command rejected.\n",
+				Log:   "level='error' error='stop command rejected' operation='stop service' service='mp3 management service' msg='service issue'\n",
 			},
 		},
 		{
@@ -339,9 +340,9 @@ func Test_resetDatabase_stopService(t *testing.T) {
 					}, nil
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The service \"mp3 management service\" cannot be stopped: stop command rejected.\n",
-				WantLogOutput:   "level='error' error='stop command rejected' operation='stop service' service='mp3 management service' msg='service issue'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The service \"mp3 management service\" cannot be stopped: stop command rejected.\n",
+				Log:   "level='error' error='stop command rejected' operation='stop service' service='mp3 management service' msg='service issue'\n",
 			},
 		},
 		{
@@ -367,9 +368,9 @@ func Test_resetDatabase_stopService(t *testing.T) {
 					}, nil
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The service \"mp3 management service\" could not be stopped within the -1 second timeout.\n",
-				WantLogOutput:   "level='error' error='operation timed out' operation='stop service' service='mp3 management service' timeout in seconds='-1' msg='service issue'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The service \"mp3 management service\" could not be stopped within the -1 second timeout.\n",
+				Log:   "level='error' error='operation timed out' operation='stop service' service='mp3 management service' timeout in seconds='-1' msg='service issue'\n",
 			},
 		},
 		{
@@ -394,9 +395,9 @@ func Test_resetDatabase_stopService(t *testing.T) {
 					}, nil
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The service \"mp3 management service\" could not be stopped within the -1 second timeout.\n",
-				WantLogOutput:   "level='error' error='operation timed out' operation='stop service' service='mp3 management service' timeout in seconds='-1' msg='service issue'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The service \"mp3 management service\" could not be stopped within the -1 second timeout.\n",
+				Log:   "level='error' error='operation timed out' operation='stop service' service='mp3 management service' timeout in seconds='-1' msg='service issue'\n",
 			},
 		},
 		{
@@ -422,8 +423,8 @@ func Test_resetDatabase_stopService(t *testing.T) {
 					}, nil
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantLogOutput: "level='info' service='mp3 management service' status='stopped' msg='service status'\n",
+			WantedRecording: output.WantedRecording{
+				Log: "level='info' service='mp3 management service' status='stopped' msg='service status'\n",
 			},
 		},
 		{
@@ -449,18 +450,18 @@ func Test_resetDatabase_stopService(t *testing.T) {
 					}, nil
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantLogOutput: "level='info' service='mp3 management service' status='stopped' msg='service status'\n",
+			WantedRecording: output.WantedRecording{
+				Log: "level='info' service='mp3 management service' status='stopped' msg='service status'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			if got := tt.r.stopService(o, tt.args.connect); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -494,7 +495,7 @@ func Test_resetDatabase_filterMetadataFiles(t *testing.T) {
 	if err := internal.Mkdir(filepath.Join(testDir, subDir)); err != nil {
 		t.Errorf("%s could not create directory %q: %v", fnName, subDir, err)
 	}
-	files, _ := internal.ReadDirectory(internal.NewNilOutputBus(), testDir)
+	files, _ := internal.ReadDirectory(output.NewNilBus(), testDir)
 	type args struct {
 		files []fs.DirEntry
 	}
@@ -568,7 +569,7 @@ func Test_resetDatabase_deleteMetadataFiles(t *testing.T) {
 		r    *resetDatabase
 		args
 		want bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "complete test",
@@ -585,10 +586,10 @@ func Test_resetDatabase_deleteMetadataFiles(t *testing.T) {
 				filepath.Join(testDir, "file8.wmdb"),
 			}},
 			want: false,
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "8 out of 9 metadata files have been deleted from \"deleteMetadataFiles\".\n",
-				WantErrorOutput:   "The file \"deleteMetadataFiles\\\\file8.wmdb\" cannot be deleted: remove deleteMetadataFiles\\file8.wmdb: The directory is not empty.\n",
-				WantLogOutput:     "level='error' error='remove deleteMetadataFiles\\file8.wmdb: The directory is not empty.' fileName='deleteMetadataFiles\\file8.wmdb' msg='cannot delete file'\n",
+			WantedRecording: output.WantedRecording{
+				Console: "8 out of 9 metadata files have been deleted from \"deleteMetadataFiles\".\n",
+				Error:   "The file \"deleteMetadataFiles\\\\file8.wmdb\" cannot be deleted: remove deleteMetadataFiles\\file8.wmdb: The directory is not empty.\n",
+				Log:     "level='error' error='remove deleteMetadataFiles\\file8.wmdb: The directory is not empty.' fileName='deleteMetadataFiles\\file8.wmdb' msg='cannot delete file'\n",
 			},
 		},
 		{
@@ -596,18 +597,18 @@ func Test_resetDatabase_deleteMetadataFiles(t *testing.T) {
 			r:    &resetDatabase{metadata: &testDir},
 			args: args{paths: nil},
 			want: true,
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "0 out of 0 metadata files have been deleted from \"deleteMetadataFiles\".\n",
+			WantedRecording: output.WantedRecording{
+				Console: "0 out of 0 metadata files have been deleted from \"deleteMetadataFiles\".\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			if gotOk := tt.r.deleteMetadataFiles(o, tt.args.paths); gotOk != tt.want {
 				t.Errorf("%s gotOK %t want %t", fnName, gotOk, tt.want)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -644,41 +645,41 @@ func Test_resetDatabase_deleteMetadata(t *testing.T) {
 		name string
 		r    *resetDatabase
 		want bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "dir read failure",
 			r:    &resetDatabase{metadata: &fnName},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The directory \"resetDatabase.deleteMetadata()\" cannot be read: open resetDatabase.deleteMetadata(): The system cannot find the file specified.\n",
-				WantLogOutput:   "level='error' directory='resetDatabase.deleteMetadata()' error='open resetDatabase.deleteMetadata(): The system cannot find the file specified.' msg='cannot read directory'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The directory \"resetDatabase.deleteMetadata()\" cannot be read: open resetDatabase.deleteMetadata(): The system cannot find the file specified.\n",
+				Log:   "level='error' directory='resetDatabase.deleteMetadata()' error='open resetDatabase.deleteMetadata(): The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
 		},
 		{
 			name: "empty dir",
 			r:    &resetDatabase{metadata: &emptyDir, extension: &extension},
 			want: true,
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "No metadata files were found in \"deleteMetadata\\\\empty\".\n",
-				WantLogOutput:     "level='info' directory='deleteMetadata\\empty' file extension='.wmbd' msg='no files found'\n",
+			WantedRecording: output.WantedRecording{
+				Console: "No metadata files were found in \"deleteMetadata\\\\empty\".\n",
+				Log:     "level='info' directory='deleteMetadata\\empty' file extension='.wmbd' msg='no files found'\n",
 			},
 		},
 		{
 			name: "full dir",
 			r:    &resetDatabase{metadata: &fullDir, extension: &extension},
 			want: true,
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "10 out of 10 metadata files have been deleted from \"deleteMetadata\\\\full\".\n",
+			WantedRecording: output.WantedRecording{
+				Console: "10 out of 10 metadata files have been deleted from \"deleteMetadata\\\\full\".\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			if got := tt.r.deleteMetadata(o); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -714,7 +715,7 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 		r    *resetDatabase
 		args
 		wantOk bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "fail to stop service",
@@ -738,9 +739,9 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 					}, nil
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The service \"mp3 service\" cannot be stopped: stop command rejected.\n",
-				WantLogOutput: "level='info' -extension='.wmdb' -metadata='runCommand' -service='mp3 service' -timeout='-1' command='resetDatabase' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Error: "The service \"mp3 service\" cannot be stopped: stop command rejected.\n",
+				Log: "level='info' -extension='.wmdb' -metadata='runCommand' -service='mp3 service' -timeout='-1' command='resetDatabase' msg='executing command'\n" +
 					"level='error' error='stop command rejected' operation='stop service' service='mp3 service' msg='service issue'\n",
 			},
 		},
@@ -757,10 +758,10 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 					return nil, fmt.Errorf("access denied")
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The service manager cannot be accessed. Try running the program again as an administrator. Error: access denied.\n" +
+			WantedRecording: output.WantedRecording{
+				Error: "The service manager cannot be accessed. Try running the program again as an administrator. Error: access denied.\n" +
 					"The directory \"resetdatabase_test.go\" cannot be read: readdir resetdatabase_test.go: The system cannot find the path specified.\n",
-				WantLogOutput: "level='info' -extension='.wmdb' -metadata='resetdatabase_test.go' -service='mp3 service' -timeout='-1' command='resetDatabase' msg='executing command'\n" +
+				Log: "level='info' -extension='.wmdb' -metadata='resetdatabase_test.go' -service='mp3 service' -timeout='-1' command='resetDatabase' msg='executing command'\n" +
 					"level='error' error='access denied' operation='connect to service manager' msg='service manager issue'\n" +
 					"level='error' directory='resetdatabase_test.go' error='readdir resetdatabase_test.go: The system cannot find the path specified.' msg='cannot read directory'\n",
 			},
@@ -779,21 +780,21 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 				},
 			},
 			wantOk: true,
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "10 out of 10 metadata files have been deleted from \"runCommand\".\n",
-				WantErrorOutput:   "The service manager cannot be accessed. Try running the program again as an administrator. Error: access denied.\n",
-				WantLogOutput: "level='info' -extension='.wmdb' -metadata='runCommand' -service='mp3 service' -timeout='-1' command='resetDatabase' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: "10 out of 10 metadata files have been deleted from \"runCommand\".\n",
+				Error:   "The service manager cannot be accessed. Try running the program again as an administrator. Error: access denied.\n",
+				Log: "level='info' -extension='.wmdb' -metadata='runCommand' -service='mp3 service' -timeout='-1' command='resetDatabase' msg='executing command'\n" +
 					"level='error' error='access denied' operation='connect to service manager' msg='service manager issue'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			if gotOk := tt.r.runCommand(o, tt.args.connect); gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -804,7 +805,7 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 
 func newResetDatabaseCommandForTesting() *resetDatabase {
 	r, _ := newResetDatabaseCommand(
-		internal.NewNilOutputBus(),
+		output.NewNilBus(),
 		internal.EmptyConfiguration(),
 		flag.NewFlagSet("resetDatabase", flag.ContinueOnError))
 	return r
@@ -848,7 +849,7 @@ func Test_resetDatabase_Exec(t *testing.T) {
 		markMetadataDirty bool
 		args
 		wantOk bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "help",
@@ -856,8 +857,8 @@ func Test_resetDatabase_Exec(t *testing.T) {
 			args: args{
 				args: []string{"-help"},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "Usage of resetDatabase:\n" +
+			WantedRecording: output.WantedRecording{
+				Error: "Usage of resetDatabase:\n" +
 					"  -extension extension\n" +
 					"    \textension for metadata files (default \".wmdb\")\n" +
 					"  -metadata directory\n" +
@@ -866,7 +867,7 @@ func Test_resetDatabase_Exec(t *testing.T) {
 					"    \tname of the media player service (default \"WMPNetworkSVC\")\n" +
 					"  -timeout int\n" +
 					"    \ttimeout in seconds (minimum 1, maximum 60) for stopping the media player service (default 10)\n",
-				WantLogOutput: "level='error' arguments='[-help]' msg='flag: help requested'\n",
+				Log: "level='error' arguments='[-help]' msg='flag: help requested'\n",
 			},
 		},
 		{
@@ -876,8 +877,8 @@ func Test_resetDatabase_Exec(t *testing.T) {
 				args: []string{"-metadata", "no such dir"},
 			},
 			wantOk: true,
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "Running \"resetDatabase\" is not necessary, as no track files have been edited.\n",
+			WantedRecording: output.WantedRecording{
+				Console: "Running \"resetDatabase\" is not necessary, as no track files have been edited.\n",
 			},
 		},
 		{
@@ -887,10 +888,10 @@ func Test_resetDatabase_Exec(t *testing.T) {
 			args: args{
 				args: []string{"-metadata", "no such dir"},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The service manager cannot be accessed. Try running the program again as an administrator. Error: Access is denied.\n" +
+			WantedRecording: output.WantedRecording{
+				Error: "The service manager cannot be accessed. Try running the program again as an administrator. Error: Access is denied.\n" +
 					"The directory \"no such dir\" cannot be read: open no such dir: The system cannot find the file specified.\n",
-				WantLogOutput: "level='info' -extension='.wmdb' -metadata='no such dir' -service='WMPNetworkSVC' -timeout='10' command='resetDatabase' msg='executing command'\n" +
+				Log: "level='info' -extension='.wmdb' -metadata='no such dir' -service='WMPNetworkSVC' -timeout='10' command='resetDatabase' msg='executing command'\n" +
 					"level='error' error='Access is denied.' operation='connect to service manager' msg='service manager issue'\n" +
 					"level='error' directory='no such dir' error='open no such dir: The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
@@ -902,8 +903,8 @@ func Test_resetDatabase_Exec(t *testing.T) {
 				args: []string{"-metadata", testDir},
 			},
 			wantOk: true,
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "Running \"resetDatabase\" is not necessary, as no track files have been edited.\n",
+			WantedRecording: output.WantedRecording{
+				Console: "Running \"resetDatabase\" is not necessary, as no track files have been edited.\n",
 			},
 		},
 		{
@@ -914,10 +915,10 @@ func Test_resetDatabase_Exec(t *testing.T) {
 				args: []string{"-metadata", testDir},
 			},
 			wantOk: true,
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "No metadata files were found in \"Exec\".\n",
-				WantErrorOutput:   "The service manager cannot be accessed. Try running the program again as an administrator. Error: Access is denied.\n",
-				WantLogOutput: "level='info' -extension='.wmdb' -metadata='Exec' -service='WMPNetworkSVC' -timeout='10' command='resetDatabase' msg='executing command'\n" +
+			WantedRecording: output.WantedRecording{
+				Console: "No metadata files were found in \"Exec\".\n",
+				Error:   "The service manager cannot be accessed. Try running the program again as an administrator. Error: Access is denied.\n",
+				Log: "level='info' -extension='.wmdb' -metadata='Exec' -service='WMPNetworkSVC' -timeout='10' command='resetDatabase' msg='executing command'\n" +
 					"level='error' error='Access is denied.' operation='connect to service manager' msg='service manager issue'\n" +
 					"level='info' directory='Exec' file extension='.wmdb' msg='no files found'\n" +
 					"level='info' fileName='Exec\\mp3\\metadata.dirty' msg='metadata dirty file deleted'\n",
@@ -932,19 +933,19 @@ func Test_resetDatabase_Exec(t *testing.T) {
 			dirtyFolderFound = true
 			dirtyFolderValid = true
 			if tt.markMetadataDirty {
-				MarkDirty(internal.NewNilOutputBus())
+				MarkDirty(output.NewNilBus())
 			}
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			if gotOk := tt.r.Exec(o, tt.args.args); gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
 			}
 			if tt.markMetadataDirty {
-				ClearDirty(internal.NewNilOutputBus())
+				ClearDirty(output.NewNilBus())
 			}
 		})
 	}
@@ -963,7 +964,7 @@ func Test_resetDatabase_openService(t *testing.T) {
 		args
 		wantM bool
 		wantS bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name: "fail to connect to manager",
@@ -973,9 +974,9 @@ func Test_resetDatabase_openService(t *testing.T) {
 					return nil, fmt.Errorf("access denied")
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The service manager cannot be accessed. Try running the program again as an administrator. Error: access denied.\n",
-				WantLogOutput:   "level='error' error='access denied' operation='connect to service manager' msg='service manager issue'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The service manager cannot be accessed. Try running the program again as an administrator. Error: access denied.\n",
+				Log:   "level='error' error='access denied' operation='connect to service manager' msg='service manager issue'\n",
 			},
 		},
 		{
@@ -989,10 +990,10 @@ func Test_resetDatabase_openService(t *testing.T) {
 					}, nil
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The service \"mp3 management service\" cannot be opened: access denied.\n" +
+			WantedRecording: output.WantedRecording{
+				Error: "The service \"mp3 management service\" cannot be opened: access denied.\n" +
 					"The list of available services cannot be obtained: cannot list services.\n",
-				WantLogOutput: "level='error' error='access denied' operation='open service' service='mp3 management service' msg='service issue'\n" +
+				Log: "level='error' error='access denied' operation='open service' service='mp3 management service' msg='service issue'\n" +
 					"level='error' error='cannot list services' operation='list services' msg='service manager issue'\n",
 			},
 		},
@@ -1012,12 +1013,12 @@ func Test_resetDatabase_openService(t *testing.T) {
 					}, nil
 				},
 			},
-			WantedOutput: internal.WantedOutput{
-				WantConsoleOutput: "The following services are available:\n" +
+			WantedRecording: output.WantedRecording{
+				Console: "The following services are available:\n" +
 					"  State \"running\":\n" +
 					"    \"other service\"\n",
-				WantErrorOutput: "The service \"mp3 management service\" cannot be opened: access denied.\n",
-				WantLogOutput:   "level='error' error='access denied' operation='open service' service='mp3 management service' msg='service issue'\n",
+				Error: "The service \"mp3 management service\" cannot be opened: access denied.\n",
+				Log:   "level='error' error='access denied' operation='open service' service='mp3 management service' msg='service issue'\n",
 			},
 		},
 		{
@@ -1042,7 +1043,7 @@ func Test_resetDatabase_openService(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			returnedM, returnedS := tt.r.openService(o, tt.args.connect)
 			gotM := returnedM != nil
 			gotS := returnedS != nil
@@ -1052,7 +1053,7 @@ func Test_resetDatabase_openService(t *testing.T) {
 			if gotS != tt.wantS {
 				t.Errorf("%s gotS = %t, want %t", fnName, gotS, tt.wantS)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}
@@ -1075,7 +1076,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		name string
 		args
 		wantOk bool
-		internal.WantedOutput
+		output.WantedRecording
 	}{
 		{
 			name:   "normal case",
@@ -1085,63 +1086,63 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		{
 			name: "bad default timeout",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"resetDatabase": map[string]any{
 						"timeout": "forever",
 					},
 				}),
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"resetDatabase\": invalid value \"forever\" for flag -timeout: parse error.\n",
-				WantLogOutput:   "level='error' error='invalid value \"forever\" for flag -timeout: parse error' section='resetDatabase' msg='invalid content in configuration file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"resetDatabase\": invalid value \"forever\" for flag -timeout: parse error.\n",
+				Log:   "level='error' error='invalid value \"forever\" for flag -timeout: parse error' section='resetDatabase' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
 			name: "bad default service",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"resetDatabase": map[string]any{
 						"service": "Win$FOO",
 					},
 				}),
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"resetDatabase\": invalid value \"Win$FOO\" for flag -service: missing environment variables: [FOO].\n",
-				WantLogOutput:   "level='error' error='invalid value \"Win$FOO\" for flag -service: missing environment variables: [FOO]' section='resetDatabase' msg='invalid content in configuration file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"resetDatabase\": invalid value \"Win$FOO\" for flag -service: missing environment variables: [FOO].\n",
+				Log:   "level='error' error='invalid value \"Win$FOO\" for flag -service: missing environment variables: [FOO]' section='resetDatabase' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
 			name: "bad default metadata",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"resetDatabase": map[string]any{
 						"metadata": "%FOO%/data",
 					},
 				}),
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"resetDatabase\": invalid value \"%FOO%/data\" for flag -metadata: missing environment variables: [FOO].\n",
-				WantLogOutput:   "level='error' error='invalid value \"%FOO%/data\" for flag -metadata: missing environment variables: [FOO]' section='resetDatabase' msg='invalid content in configuration file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"resetDatabase\": invalid value \"%FOO%/data\" for flag -metadata: missing environment variables: [FOO].\n",
+				Log:   "level='error' error='invalid value \"%FOO%/data\" for flag -metadata: missing environment variables: [FOO]' section='resetDatabase' msg='invalid content in configuration file'\n",
 			},
 		},
 		{
 			name: "bad default extension",
 			args: args{
-				c: internal.CreateConfiguration(internal.NewNilOutputBus(), map[string]any{
+				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"resetDatabase": map[string]any{
 						"extension": ".%FOO%",
 					},
 				}),
 			},
-			WantedOutput: internal.WantedOutput{
-				WantErrorOutput: "The configuration file \"defaults.yaml\" contains an invalid value for \"resetDatabase\": invalid value \".%FOO%\" for flag -extension: missing environment variables: [FOO].\n",
-				WantLogOutput:   "level='error' error='invalid value \".%FOO%\" for flag -extension: missing environment variables: [FOO]' section='resetDatabase' msg='invalid content in configuration file'\n",
+			WantedRecording: output.WantedRecording{
+				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"resetDatabase\": invalid value \".%FOO%\" for flag -extension: missing environment variables: [FOO].\n",
+				Log:   "level='error' error='invalid value \".%FOO%\" for flag -extension: missing environment variables: [FOO]' section='resetDatabase' msg='invalid content in configuration file'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			o := internal.NewRecordingOutputBus()
+			o := output.NewRecorder()
 			got, gotOk := newResetDatabaseCommand(o, tt.args.c, flag.NewFlagSet("resetDatabase", flag.ContinueOnError))
 			if gotOk != tt.wantOk {
 				t.Errorf("%s got1 = %v, want %v", fnName, gotOk, tt.wantOk)
@@ -1149,7 +1150,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 			if gotOk && got == nil {
 				t.Errorf("%s got nil instance", fnName)
 			}
-			if issues, ok := o.VerifyOutput(tt.WantedOutput); !ok {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
 				}

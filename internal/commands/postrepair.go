@@ -4,6 +4,7 @@ import (
 	"flag"
 	"mp3/internal"
 	"mp3/internal/files"
+	"mp3/internal/output"
 	"os"
 	"sort"
 )
@@ -18,7 +19,7 @@ type postrepair struct {
 	sf *files.SearchFlags
 }
 
-func newPostRepairCommand(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (*postrepair, bool) {
+func newPostRepairCommand(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (*postrepair, bool) {
 	sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet)
 	if sFlagsOk {
 		return &postrepair{sf: sFlags}, true
@@ -26,11 +27,11 @@ func newPostRepairCommand(o internal.OutputBus, c *internal.Configuration, fSet 
 	return nil, false
 }
 
-func newPostRepair(o internal.OutputBus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
+func newPostRepair(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
 	return newPostRepairCommand(o, c, fSet)
 }
 
-func (p *postrepair) Exec(o internal.OutputBus, args []string) (ok bool) {
+func (p *postrepair) Exec(o output.Bus, args []string) (ok bool) {
 	if s, argsOk := p.sf.ProcessArgs(o, args); argsOk {
 		ok = runCommand(o, s)
 	}
@@ -41,8 +42,8 @@ func logFields() map[string]any {
 	return map[string]any{fieldKeyCommandName: postRepairCommandName}
 }
 
-func runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
-	o.Log(internal.Info, internal.LogInfoExecutingCommand, logFields())
+func runCommand(o output.Bus, s *files.Search) (ok bool) {
+	o.Log(output.Info, internal.LogInfoExecutingCommand, logFields())
 	artists, ok := s.LoadData(o)
 	if ok {
 		backups := make(map[string]*files.Album)
@@ -68,9 +69,9 @@ func runCommand(o internal.OutputBus, s *files.Search) (ok bool) {
 	return
 }
 
-func removeBackupDirectory(o internal.OutputBus, d string, a *files.Album) {
+func removeBackupDirectory(o output.Bus, d string, a *files.Album) {
 	if err := os.RemoveAll(d); err != nil {
-		o.Log(internal.Error, internal.LogErrorCannotDeleteDirectory, map[string]any{
+		o.Log(output.Error, internal.LogErrorCannotDeleteDirectory, map[string]any{
 			internal.FieldKeyDirectory: d,
 			internal.FieldKeyError:     err,
 		})
