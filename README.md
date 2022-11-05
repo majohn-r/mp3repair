@@ -448,6 +448,8 @@ _F_, _false_, _FALSE_, or _False_.
 
 **mp3** uses the following third party libraries:
 
+- Console/Error/Log output control:
+  [https://github.com/majohn-r/output](https://github.com/majohn-r/output).
 - Log rotation:
   [https://github.com/utahta/go-cronowriter](https://github.com/utahta/go-cronowriter).
 - Logging:
