@@ -1,12 +1,13 @@
 package internal
 
 import (
-	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/majohn-r/output"
 )
 
 func TestCreateAlbumNameForTesting(t *testing.T) {

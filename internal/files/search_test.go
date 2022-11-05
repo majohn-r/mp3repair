@@ -3,9 +3,10 @@ package files
 import (
 	"flag"
 	"mp3/internal"
-	"mp3/internal/output"
 	"reflect"
 	"testing"
+
+	"github.com/majohn-r/output"
 )
 
 func TestSearch_FilterArtists(t *testing.T) {

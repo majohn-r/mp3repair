@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io"
 	"mp3/internal"
-	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -13,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/bogem/id3v2/v2"
+	"github.com/majohn-r/output"
 )
 
 func Test_parseTrackName(t *testing.T) {

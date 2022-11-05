@@ -2,11 +2,12 @@ package internal
 
 import (
 	"io/fs"
-	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/majohn-r/output"
 )
 
 func TestMkdir(t *testing.T) {

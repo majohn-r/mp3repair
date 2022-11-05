@@ -3,10 +3,11 @@ package commands
 import (
 	"flag"
 	"mp3/internal"
-	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/majohn-r/output"
 )
 
 var (

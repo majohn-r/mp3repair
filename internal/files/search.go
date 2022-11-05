@@ -4,8 +4,9 @@ import (
 	"flag"
 	"io/fs"
 	"mp3/internal"
-	"mp3/internal/output"
 	"regexp"
+
+	"github.com/majohn-r/output"
 )
 
 // Search encapsulates the parameters used to find mp3 files and filter them by

@@ -3,9 +3,10 @@ package commands
 import (
 	"errors"
 	"mp3/internal"
-	"mp3/internal/output"
 	"os"
 	"path/filepath"
+
+	"github.com/majohn-r/output"
 )
 
 const (

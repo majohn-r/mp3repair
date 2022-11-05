@@ -2,9 +2,10 @@ package internal
 
 import (
 	"flag"
-	"mp3/internal/output"
 	"os"
 	"testing"
+
+	"github.com/majohn-r/output"
 )
 
 func TestProcessArgs(t *testing.T) {

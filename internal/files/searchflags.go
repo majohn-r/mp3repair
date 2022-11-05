@@ -3,11 +3,12 @@ package files
 import (
 	"flag"
 	"mp3/internal"
-	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
+
+	"github.com/majohn-r/output"
 )
 
 // SearchFlags defines the common flags used to specify how the top directory,

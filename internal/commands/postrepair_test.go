@@ -4,10 +4,11 @@ import (
 	"flag"
 	"mp3/internal"
 	"mp3/internal/files"
-	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/majohn-r/output"
 )
 
 func makePostRepairCommandForTesting() *postrepair {

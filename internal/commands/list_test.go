@@ -5,12 +5,13 @@ import (
 	"fmt"
 	"mp3/internal"
 	"mp3/internal/files"
-	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/majohn-r/output"
 )
 
 func Test_list_validateTrackSorting(t *testing.T) {

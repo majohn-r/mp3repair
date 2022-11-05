@@ -2,13 +2,13 @@ package internal
 
 import (
 	"io/fs"
-	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
+	"github.com/majohn-r/output"
 	"github.com/sirupsen/logrus"
 	"github.com/utahta/go-cronowriter"
 )

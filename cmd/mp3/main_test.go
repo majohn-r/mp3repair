@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"mp3/internal"
 	"mp3/internal/commands"
-	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -12,6 +11,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/majohn-r/output"
 )
 
 func Test_run(t *testing.T) {

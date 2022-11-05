@@ -3,9 +3,10 @@ package commands
 import (
 	"flag"
 	"mp3/internal"
-	"mp3/internal/output"
 	"sort"
 	"strings"
+
+	"github.com/majohn-r/output"
 )
 
 type commandData struct {

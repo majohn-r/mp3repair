@@ -3,10 +3,10 @@ package files
 import (
 	"io/fs"
 	"mp3/internal"
-	"mp3/internal/output"
 	"path/filepath"
 
 	"github.com/bogem/id3v2/v2"
+	"github.com/majohn-r/output"
 )
 
 // Album encapsulates information about a music album

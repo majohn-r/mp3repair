@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"mp3/internal/output"
 	"os"
+
+	"github.com/majohn-r/output"
 )
 
 // PlainFileExists returns whether the specified file exists as a plain file

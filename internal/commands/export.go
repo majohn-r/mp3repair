@@ -4,10 +4,10 @@ import (
 	"flag"
 	"mp3/internal"
 	"mp3/internal/files"
-	"mp3/internal/output"
 	"os"
 	"path/filepath"
 
+	"github.com/majohn-r/output"
 	"gopkg.in/yaml.v3"
 )
 

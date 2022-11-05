@@ -4,13 +4,14 @@ import (
 	"flag"
 	"mp3/internal"
 	"mp3/internal/files"
-	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
+
+	"github.com/majohn-r/output"
 )
 
 var (

@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"mp3/internal"
 	"mp3/internal/files"
-	"mp3/internal/output"
 	"sort"
+
+	"github.com/majohn-r/output"
 )
 
 func init() {

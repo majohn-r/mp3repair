@@ -3,7 +3,8 @@ package internal
 import (
 	"flag"
 	"fmt"
-	"mp3/internal/output"
+
+	"github.com/majohn-r/output"
 )
 
 const (

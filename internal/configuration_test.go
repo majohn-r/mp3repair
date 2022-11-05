@@ -2,11 +2,12 @@ package internal
 
 import (
 	"fmt"
-	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/majohn-r/output"
 )
 
 func Test_Configuration_SubConfiguration(t *testing.T) {

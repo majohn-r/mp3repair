@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"mp3/internal"
 	"mp3/internal/commands"
-	"mp3/internal/output"
 	"os"
 	"runtime/debug"
 	"time"
+
+	"github.com/majohn-r/output"
 )
 
-// these variables' values are injected by the mage build
+// these variables' values are injected by the mage build - do not rename them!
 var (
-	version  = "unknown version!" // semantic version; read by the mage build from version.txt
+	version  = "unknown version!" // semantic version; the mage build rads this from version.txt
 	creation string               // build timestamp in RFC3339 format (2006-01-02T15:04:05Z07:00)
 )
 

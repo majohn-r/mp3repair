@@ -4,11 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"mp3/internal"
-	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"github.com/majohn-r/output"
 )
 
 func makeCheck() CommandProcessor {

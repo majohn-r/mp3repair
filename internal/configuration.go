@@ -3,13 +3,13 @@ package internal
 import (
 	"errors"
 	"fmt"
-	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
 
+	"github.com/majohn-r/output"
 	"gopkg.in/yaml.v3"
 )
 

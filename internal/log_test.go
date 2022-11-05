@@ -3,12 +3,13 @@ package internal
 import (
 	"fmt"
 	"io/fs"
-	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/majohn-r/output"
 )
 
 func Test_configureLogging(t *testing.T) {

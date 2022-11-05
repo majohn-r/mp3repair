@@ -2,10 +2,11 @@ package commands
 
 import (
 	"mp3/internal"
-	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/majohn-r/output"
 )
 
 func Test_findAppFolder(t *testing.T) {

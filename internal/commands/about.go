@@ -4,8 +4,9 @@ import (
 	"flag"
 	"fmt"
 	"mp3/internal"
-	"mp3/internal/output"
 	"time"
+
+	"github.com/majohn-r/output"
 )
 
 func init() {

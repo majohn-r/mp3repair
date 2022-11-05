@@ -4,12 +4,13 @@ import (
 	"bytes"
 	"flag"
 	"mp3/internal"
-	"mp3/internal/output"
 	"os"
 	"path/filepath"
 	"reflect"
 	"regexp"
 	"testing"
+
+	"github.com/majohn-r/output"
 )
 
 func Test_NewSearchFlags(t *testing.T) {

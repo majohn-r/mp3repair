@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"io/fs"
 	"mp3/internal"
-	"mp3/internal/output"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -12,6 +11,7 @@ import (
 	"time"
 
 	"github.com/bogem/id3v2/v2"
+	"github.com/majohn-r/output"
 )
 
 const (

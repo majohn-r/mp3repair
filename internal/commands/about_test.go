@@ -1,9 +1,10 @@
 package commands
 
 import (
-	"mp3/internal/output"
 	"reflect"
 	"testing"
+
+	"github.com/majohn-r/output"
 )
 
 func Test_finalYear(t *testing.T) {

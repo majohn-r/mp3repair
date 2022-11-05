@@ -3,8 +3,9 @@ package files
 import (
 	"io/fs"
 	"mp3/internal"
-	"mp3/internal/output"
 	"path/filepath"
+
+	"github.com/majohn-r/output"
 )
 
 // Artist encapsulates information about a recording artist (a solo performer, a
