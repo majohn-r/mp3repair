@@ -200,7 +200,7 @@ func Test_repair_Exec(t *testing.T) {
 			args: args{[]string{"-topDir", topDirName, "-dryRun"}},
 			WantedRecording: output.WantedRecording{
 				Console: noProblemsFound + ".\n",
-				Error:   generateStandardTrackErrorReport(),
+				Error:   "Reading track metadata.\n" + generateStandardTrackErrorReport(),
 				Log: "level='info' -dryRun='true' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='repairExec' msg='reading filtered music files'\n" +
 					generateStandardTrackLogReport(),
@@ -212,7 +212,7 @@ func Test_repair_Exec(t *testing.T) {
 			args: args{[]string{"-topDir", topDirName, "-dryRun=false"}},
 			WantedRecording: output.WantedRecording{
 				Console: noProblemsFound + ".\n",
-				Error:   generateStandardTrackErrorReport(),
+				Error:   "Reading track metadata.\n" + generateStandardTrackErrorReport(),
 				Log: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='repairExec' msg='reading filtered music files'\n" +
 					generateStandardTrackLogReport(),
@@ -228,7 +228,8 @@ func Test_repair_Exec(t *testing.T) {
 					"    \"new album\"",
 					"         1 \"new track\" need to repair track numbering; track name; album name; artist name;\n",
 				}, "\n"),
-				Error: "An error occurred when trying to read ID3V1 tag information for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
+				Error: "Reading track metadata.\n" +
+					"An error occurred when trying to read ID3V1 tag information for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
 				Log: "level='info' -dryRun='true' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n" +
 					"level='error' albumName='new album' artistName='new artist' error='no id3v1 tag found in file \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\"' trackName='new track' msg='id3v1 tag error'\n",
@@ -243,7 +244,8 @@ func Test_repair_Exec(t *testing.T) {
 					"The track \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" has been backed up to \"realContent\\\\new artist\\\\new album\\\\pre-repair-backup\\\\1.mp3\".",
 					"\"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" repaired.\n",
 				}, "\n"),
-				Error: "An error occurred when trying to read ID3V1 tag information for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
+				Error: "Reading track metadata.\n" +
+					"An error occurred when trying to read ID3V1 tag information for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
 				Log: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n" +
 					"level='error' albumName='new album' artistName='new artist' error='no id3v1 tag found in file \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\"' trackName='new track' msg='id3v1 tag error'\n" +

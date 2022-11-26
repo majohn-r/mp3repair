@@ -454,7 +454,9 @@ _F_, _false_, _FALSE_, or _False_.
   [https://github.com/utahta/go-cronowriter](https://github.com/utahta/go-cronowriter).
 - Logging:
   [https://github.com/sirupsen/logrus](https://github.com/sirupsen/logrus).
-- Reading and writing the mp3 file metadata:
+- Progress bar:
+  [https://github.com/cheggaaa/pb](https://github.com/cheggaaa/pb).
+- Reading and writing the mp3 file ID3V2 metadata:
   [https://github.com/bogem/id3v2](https://github.com/bogem/id3v2).
 - Reading configuration files:
   [https://pkg.go.dev/gopkg.in/yaml.v3](https://pkg.go.dev/gopkg.in/yaml.v3)

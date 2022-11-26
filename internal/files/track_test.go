@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/bogem/id3v2/v2"
+	"github.com/cheggaaa/pb/v3"
 	"github.com/majohn-r/output"
 )
 
@@ -756,8 +757,12 @@ func TestTrack_readTags(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.tr.readTags()
+			bar := pb.New(1)
+			bar.SetWriter(output.NewNilBus().ErrorWriter())
+			bar.Start()
+			tt.tr.readTags(bar)
 			waitForSemaphoresDrained()
+			bar.Finish()
 			if !reflect.DeepEqual(tt.tr.tM, tt.want) {
 				t.Errorf("%s got %#v want %#v", fnName, tt.tr.tM, tt.want)
 			}
@@ -827,8 +832,9 @@ func TestReadMetadata(t *testing.T) {
 		output.WantedRecording
 	}{
 		{
-			name: "thorough test",
-			args: args{artists: artists},
+			name:            "thorough test",
+			args:            args{artists: artists},
+			WantedRecording: output.WantedRecording{Error: "Reading track metadata.\n"},
 		},
 	}
 	for _, tt := range tests {

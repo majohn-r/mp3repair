@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/bogem/id3v2/v2"
+	"github.com/cheggaaa/pb/v3"
 	"github.com/majohn-r/output"
 )
 
@@ -308,11 +309,12 @@ type empty struct{}
 
 var semaphores = make(chan empty, 20) // 20 is a typical limit for open files
 
-func (t *Track) readTags() {
+func (t *Track) readTags(bar *pb.ProgressBar) {
 	if t.needsMetadata() {
 		semaphores <- empty{} // block while full
 		go func() {
 			defer func() {
+				bar.Increment()
 				<-semaphores // read to release a slot
 			}()
 			t.SetMetadata(readMetadata(t.path))
@@ -322,14 +324,24 @@ func (t *Track) readTags() {
 
 // ReadMetadata reads the metadata for all the artists' tracks.
 func ReadMetadata(o output.Bus, artists []*Artist) {
+	// get count of tracks
+	tracks := 0
+	for _, artist := range artists {
+		for _, album := range artist.Albums() {
+			tracks += len(album.Tracks())
+		}
+	}
+	o.WriteCanonicalError("Reading track metadata")
+	bar := pb.StartNew(tracks)
 	for _, artist := range artists {
 		for _, album := range artist.Albums() {
 			for _, track := range album.Tracks() {
-				track.readTags()
+				track.readTags(bar)
 			}
 		}
 	}
 	waitForSemaphoresDrained()
+	bar.Finish()
 	processAlbumMetadata(o, artists)
 	processArtistMetadata(o, artists)
 	reportAllTrackErrors(o, artists)
