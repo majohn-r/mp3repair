@@ -16,6 +16,6 @@ require (
 	github.com/majohn-r/output v0.1.0
 	github.com/sirupsen/logrus v1.9.0
 	github.com/utahta/go-cronowriter v1.2.0
-	golang.org/x/sys v0.1.0
+	golang.org/x/sys v0.2.0
 	gopkg.in/yaml.v3 v3.0.1
 )
