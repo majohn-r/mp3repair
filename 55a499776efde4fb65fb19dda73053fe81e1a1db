@@ -1,0 +1,5 @@
+test results:
+ok      mp3/cmd/mp3           coverage:  96.3% of statements
+ok      mp3/internal          coverage:  99.7% of statements
+ok      mp3/internal/commands coverage:  99.7% of statements
+ok      mp3/internal/files    coverage: 100.0% of statements
