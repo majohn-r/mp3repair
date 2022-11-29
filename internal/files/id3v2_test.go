@@ -1,6 +1,7 @@
 package files
 
 import (
+	"bytes"
 	"fmt"
 	"mp3/internal"
 	"os"
@@ -50,7 +51,7 @@ func TestNewID3V2TaggedTrackDataForTesting(t *testing.T) {
 				got.artist != tt.want.artist ||
 				got.title != tt.want.title ||
 				got.track != tt.want.track ||
-				string(got.musicCDIdentifier.Body) != string(tt.want.musicCDIdentifier.Body) {
+				!bytes.Equal(got.musicCDIdentifier.Body, tt.want.musicCDIdentifier.Body) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
@@ -497,20 +498,22 @@ func Test_normalizeGenre(t *testing.T) {
 			})
 		}
 	}
-	tests = append(tests, test{
-		name: "prog rock",
-		args: args{
-			g: "prog rock",
+	tests = append(tests,
+		test{
+			name: "prog rock",
+			args: args{
+				g: "prog rock",
+			},
+			want: "prog rock",
 		},
-		want: "prog rock",
-	})
-	tests = append(tests, test{
-		name: "unexpected k/v",
-		args: args{
-			g: "(256)martian folk rock",
+		test{
+			name: "unexpected k/v",
+			args: args{
+				g: "(256)martian folk rock",
+			},
+			want: "(256)martian folk rock",
 		},
-		want: "(256)martian folk rock",
-	})
+	)
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			if got := normalizeGenre(tt.args.g); got != tt.want {

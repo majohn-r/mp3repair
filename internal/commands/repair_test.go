@@ -280,8 +280,9 @@ func generateStandardTrackErrorReport() string {
 				} else {
 					sep = " "
 				}
-				result = append(result, fmt.Sprintf("An error occurred when trying to read ID3V1 tag information for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"seek repairExec\\\\Test Artist %d\\\\Test Album %d\\\\%02d%sTest Track[%02d].mp3: An attempt was made to move the file pointer before the beginning of the file.\".\n", track, album, artist, artist, album, track, sep, track))
-				result = append(result, fmt.Sprintf("An error occurred when trying to read ID3V2 tag information for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"zero length\".\n", track, album, artist))
+				result = append(result,
+					fmt.Sprintf("An error occurred when trying to read ID3V1 tag information for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"seek repairExec\\\\Test Artist %d\\\\Test Album %d\\\\%02d%sTest Track[%02d].mp3: An attempt was made to move the file pointer before the beginning of the file.\".\n", track, album, artist, artist, album, track, sep, track),
+					fmt.Sprintf("An error occurred when trying to read ID3V2 tag information for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"zero length\".\n", track, album, artist))
 			}
 		}
 	}
@@ -299,8 +300,9 @@ func generateStandardTrackLogReport() string {
 				} else {
 					sep = " "
 				}
-				result = append(result, fmt.Sprintf("level='error' albumName='Test Album %d' artistName='Test Artist %d' error='seek repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3: An attempt was made to move the file pointer before the beginning of the file.' trackName='Test Track[%02d]' msg='id3v1 tag error'\n", album, artist, artist, album, track, sep, track, track))
-				result = append(result, fmt.Sprintf("level='error' albumName='Test Album %d' artistName='Test Artist %d' error='zero length' trackName='Test Track[%02d]' msg='id3v2 tag error'\n", album, artist, track))
+				result = append(result,
+					fmt.Sprintf("level='error' albumName='Test Album %d' artistName='Test Artist %d' error='seek repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3: An attempt was made to move the file pointer before the beginning of the file.' trackName='Test Track[%02d]' msg='id3v1 tag error'\n", album, artist, artist, album, track, sep, track, track),
+					fmt.Sprintf("level='error' albumName='Test Album %d' artistName='Test Artist %d' error='zero length' trackName='Test Track[%02d]' msg='id3v2 tag error'\n", album, artist, track))
 			}
 		}
 	}

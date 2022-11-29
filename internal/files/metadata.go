@@ -1,6 +1,8 @@
 package files
 
 import (
+	"bytes"
+
 	"github.com/bogem/id3v2/v2"
 )
 
@@ -224,7 +226,7 @@ func (tM *trackMetadata) yearDiffers(year string) (differs bool) {
 }
 
 func (tM *trackMetadata) mcdiDiffers(f id3v2.UnknownFrame) (differs bool) {
-	if tM.err[id3v2Source] == "" && string(tM.musicCDIdentifier.Body) != string(f.Body) {
+	if tM.err[id3v2Source] == "" && !bytes.Equal(tM.musicCDIdentifier.Body, f.Body) {
 		differs = true
 		tM.requiresEdit[id3v2Source] = true
 		tM.correctedMusicCDIdentifier = f

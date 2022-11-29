@@ -411,9 +411,7 @@ func readID3v1Metadata(path string) ([]string, error) {
 		return nil, err
 	}
 	var output []string
-	output = append(output, fmt.Sprintf("Artist: %q", v1.getArtist()))
-	output = append(output, fmt.Sprintf("Album: %q", v1.getAlbum()))
-	output = append(output, fmt.Sprintf("Title: %q", v1.getTitle()))
+	output = append(output, fmt.Sprintf("Artist: %q", v1.getArtist()), fmt.Sprintf("Album: %q", v1.getAlbum()), fmt.Sprintf("Title: %q", v1.getTitle()))
 	if track, ok := v1.getTrack(); ok {
 		output = append(output, fmt.Sprintf("Track: %d", track))
 	}

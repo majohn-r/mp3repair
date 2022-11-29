@@ -314,8 +314,7 @@ func (l *list) outputTracks(o output.Bus, tracks []*files.Track, prefix string) 
 				var c2 []string
 				c2 = append(c2, fmt.Sprintf("%q", components[0]))
 				for k := 1; k < len(components); k += 2 {
-					c2 = append(c2, components[k])
-					c2 = append(c2, fmt.Sprintf("%q", components[k+1]))
+					c2 = append(c2, components[k], fmt.Sprintf("%q", components[k+1]))
 				}
 				trackName = strings.Join(c2, " ")
 			} else {
