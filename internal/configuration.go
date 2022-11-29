@@ -40,6 +40,14 @@ func SetAppSpecificPathForTesting(p string, v bool) {
 	appSpecificPathValid = v
 }
 
+// Configuration defines the data structure for configuration information.
+type Configuration struct {
+	sMap map[string]string
+	bMap map[string]bool
+	iMap map[string]int
+	cMap map[string]*Configuration
+}
+
 // ReadConfigurationFile reads defaults.yaml from the specified path and returns
 // a pointer to a cooked Configuration instance
 func ReadConfigurationFile(o output.Bus) (c *Configuration, ok bool) {
@@ -128,20 +136,20 @@ func verifyFileExists(o output.Bus, path string) (ok bool, err error) {
 }
 
 func (c *Configuration) String() string {
-	var output []string
+	var s []string
 	if len(c.bMap) != 0 {
-		output = append(output, fmt.Sprintf("%v", c.bMap))
+		s = append(s, fmt.Sprintf("%v", c.bMap))
 	}
 	if len(c.iMap) != 0 {
-		output = append(output, fmt.Sprintf("%v", c.iMap))
+		s = append(s, fmt.Sprintf("%v", c.iMap))
 	}
 	if len(c.sMap) != 0 {
-		output = append(output, fmt.Sprintf("%v", c.sMap))
+		s = append(s, fmt.Sprintf("%v", c.sMap))
 	}
 	if len(c.cMap) != 0 {
-		output = append(output, fmt.Sprintf("%v", c.cMap))
+		s = append(s, fmt.Sprintf("%v", c.cMap))
 	}
-	return strings.Join(output, ", ")
+	return strings.Join(s, ", ")
 }
 
 // EmptyConfiguration creates an empty Configuration instance
@@ -247,18 +255,19 @@ func (c *Configuration) IntDefault(key string, sortedBounds *IntBounds) (i int, 
 }
 
 func constrainedValue(value int, sortedBounds *IntBounds) (i int) {
-	if value < sortedBounds.minValue {
+	switch {
+	case value < sortedBounds.minValue:
 		i = sortedBounds.minValue
-	} else if value > sortedBounds.maxValue {
+	case value > sortedBounds.maxValue:
 		i = sortedBounds.maxValue
-	} else {
+	default:
 		i = value
 	}
 	return
 }
 
 // StringDefault returns a string value for a specified key
-func (c *Configuration) StringDefault(key string, defaultValue string) (s string, err error) {
+func (c *Configuration) StringDefault(key, defaultValue string) (s string, err error) {
 	var dereferenceErr error
 	s, dereferenceErr = InterpretEnvVarReferences(defaultValue)
 	if dereferenceErr == nil {
@@ -281,14 +290,6 @@ func (c *Configuration) StringDefault(key string, defaultValue string) (s string
 func (c *Configuration) StringValue(key string) (value string, ok bool) {
 	value, ok = c.sMap[key]
 	return
-}
-
-// Configuration defines the data structure for configuration information.
-type Configuration struct {
-	sMap map[string]string
-	bMap map[string]bool
-	iMap map[string]int
-	cMap map[string]*Configuration
 }
 
 // CreateConfiguration returns a Configuration instance populated as specified

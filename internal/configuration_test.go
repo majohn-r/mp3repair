@@ -388,7 +388,7 @@ func TestReadConfigurationFile(t *testing.T) {
 	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	badDir := filepath.Join("./mp3", "fake")
+	badDir := filepath.Join(".", "mp3", "fake")
 	if err := Mkdir(badDir); err != nil {
 		t.Errorf("%s error creating fake dir: %v", fnName, err)
 	}

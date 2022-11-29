@@ -98,23 +98,23 @@ func CreateID3V2TaggedDataForTesting(payload []byte, frames map[string]string) [
 	factor := 128 * 128 * 128
 	for k := 0; k < 4; k++ {
 		content[6+k] = byte(contentLength / factor)
-		contentLength = contentLength % factor
-		factor = factor / 128
+		contentLength %= factor
+		factor /= 128
 	}
 	// add payload
 	content = append(content, payload...)
 	return content
 }
 
-func makeTextFrame(id string, content string) []byte {
+func makeTextFrame(id, content string) []byte {
 	frame := make([]byte, 0)
 	frame = append(frame, []byte(id)...)
 	contentSize := 1 + len(content)
 	factor := 256 * 256 * 256
 	for k := 0; k < 4; k++ {
 		frame = append(frame, byte(contentSize/factor))
-		contentSize = contentSize % factor
-		factor = factor / 256
+		contentSize %= factor
+		factor /= 256
 	}
 	frame = append(frame, []byte{0, 0, 0}...)
 	frame = append(frame, []byte(content)...)

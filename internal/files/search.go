@@ -159,7 +159,7 @@ func CreateSearchForTesting(topDir string) *Search {
 
 // CreateFilteredSearchForTesting creates a Search instance configured for
 // specified search parameters
-func CreateFilteredSearchForTesting(topDir string, artistFilter string, albumFilter string) *Search {
+func CreateFilteredSearchForTesting(topDir, artistFilter, albumFilter string) *Search {
 	realFlagSet := flag.NewFlagSet("testing", flag.ContinueOnError)
 	o := output.NewNilBus()
 	sf, _ := NewSearchFlags(o, internal.EmptyConfiguration(), realFlagSet)

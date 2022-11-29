@@ -58,7 +58,7 @@ func CreateTrackNameForTesting(k int) string {
 }
 
 // DestroyDirectoryForTesting destroys a directory and its contents.
-func DestroyDirectoryForTesting(fnName string, dirName string) {
+func DestroyDirectoryForTesting(fnName, dirName string) {
 	if err := os.RemoveAll(dirName); err != nil {
 		fmt.Fprintf(os.Stderr, "%s error destroying test directory %q: %v", fnName, dirName, err)
 	}
@@ -91,7 +91,7 @@ func PopulateTopDirForTesting(topDir string) error {
 	return nil
 }
 
-func createAlbumDirForTesting(artistDir string, n int, tracks int) error {
+func createAlbumDirForTesting(artistDir string, n, tracks int) error {
 	albumDir := filepath.Join(artistDir, CreateAlbumNameForTesting(n))
 	dummyDir := filepath.Join(albumDir, "ignore this folder")
 	directories := []string{albumDir, dummyDir}
@@ -150,16 +150,14 @@ func CreateNamedFileForTesting(fileName string, content []byte) (err error) {
 	_, err = os.Stat(fileName)
 	if err == nil {
 		err = fmt.Errorf("file %q already exists", fileName)
-	} else {
-		if errors.Is(err, os.ErrNotExist) {
-			err = os.WriteFile(fileName, content, 0644)
-		}
+	} else if errors.Is(err, os.ErrNotExist) {
+		err = os.WriteFile(fileName, content, 0o644)
 	}
 	return
 }
 
 // CreateFileForTestingWithContent creates a file in a specified directory.
-func CreateFileForTestingWithContent(dir string, name string, content []byte) error {
+func CreateFileForTestingWithContent(dir, name string, content []byte) error {
 	fileName := filepath.Join(dir, name)
 	return CreateNamedFileForTesting(fileName, content)
 }

@@ -1,6 +1,7 @@
 package files
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"io/fs"
@@ -248,7 +249,7 @@ var (
 	id3v1Genre    = initID3v1Field(genreOffset, genreLength)
 )
 
-func initID3v1Field(offset int, length int) id3v1Field {
+func initID3v1Field(offset, length int) id3v1Field {
 	return id3v1Field{
 		startOffset: offset,
 		length:      length,
@@ -293,21 +294,13 @@ func (v1 *id3v1Metadata) getTitle() string {
 	return v1.readStringField(id3v1Title)
 }
 
-func createField(i int) []byte {
-	b := make([]byte, i)
-	for k := 0; k < i; k++ {
-		b[k] = 0
-	}
-	return b
-}
-
 func (v1 *id3v1Metadata) writeStringField(s string, f id3v1Field) {
-	b := createField(f.length)
+	copy(v1.data[f.startOffset:f.endOffset], bytes.Repeat([]byte{0}, f.length))
+	// truncate long strings ...
 	if len(s) > f.length {
 		s = s[0:f.length]
 	}
-	copy(b, s)
-	copy(v1.data[f.startOffset:f.endOffset], b)
+	copy(v1.data[f.startOffset:f.endOffset], s)
 }
 
 func repairName(origin string) string {
@@ -406,18 +399,8 @@ func (v1 *id3v1Metadata) setGenre(s string) {
 }
 
 func trim(s string) string {
-	if strings.HasSuffix(s, " ") {
-		return stripTrailing(s, " ")
-	}
-	if strings.HasSuffix(s, "\u0000") {
-		return stripTrailing(s, "\u0000")
-	}
-	return s
-}
-
-func stripTrailing(s string, suffix string) string {
-	for strings.HasSuffix(s, suffix) {
-		s = strings.TrimSuffix(s, suffix)
+	for len(s) > 0 && (s[len(s)-1:] == " " || s[len(s)-1:] == "\u0000") {
+		s = s[:len(s)-1]
 	}
 	return s
 }
@@ -482,15 +465,15 @@ func updateID3V1Tag(t *Track, src sourceType) (err error) {
 		var v1 *id3v1Metadata
 		if v1, err = internalReadID3V1Metadata(t.path, fileReader); err == nil {
 			albumTitle := t.tM.correctedAlbum[src]
-			if len(albumTitle) != 0 {
+			if albumTitle != "" {
 				v1.setAlbum(albumTitle)
 			}
 			artistName := t.tM.correctedArtist[src]
-			if len(artistName) != 0 {
+			if artistName != "" {
 				v1.setArtist(artistName)
 			}
 			trackTitle := t.tM.correctedTitle[src]
-			if len(trackTitle) != 0 {
+			if trackTitle != "" {
 				v1.setTitle(trackTitle)
 			}
 			trackNumber := t.tM.correctedTrack[src]
@@ -498,11 +481,11 @@ func updateID3V1Tag(t *Track, src sourceType) (err error) {
 				_ = v1.setTrack(trackNumber)
 			}
 			genre := t.tM.correctedGenre[src]
-			if len(genre) != 0 {
+			if genre != "" {
 				v1.setGenre(genre)
 			}
 			year := t.tM.correctedYear[src]
-			if len(year) != 0 {
+			if year != "" {
 				v1.setYear(year)
 			}
 			err = v1.write(t.path)

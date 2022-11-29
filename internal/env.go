@@ -47,8 +47,8 @@ func InterpretEnvVarReferences(s string) (string, error) {
 }
 
 var (
-	unixPattern    = regexp.MustCompile(`[$][a-zA-Z_]{1,}[a-zA-Z0-9_]{0,}`)
-	windowsPattern = regexp.MustCompile(`%[a-zA-Z_]{1,}[a-zA-Z0-9_]{0,}%`)
+	unixPattern    = regexp.MustCompile(`[$][a-zA-Z_]+[a-zA-Z0-9_]*`)
+	windowsPattern = regexp.MustCompile(`%[a-zA-Z_]+[a-zA-Z0-9_]*%`)
 )
 
 type byLength []string

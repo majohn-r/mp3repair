@@ -155,7 +155,7 @@ func (sf *SearchFlags) validateExtension(o output.Bus) (ok bool) {
 	return
 }
 
-func validateRegexp(o output.Bus, pattern string, name string) (filter *regexp.Regexp, ok bool) {
+func validateRegexp(o output.Bus, pattern, name string) (filter *regexp.Regexp, ok bool) {
 	if f, err := regexp.Compile(pattern); err != nil {
 		o.WriteCanonicalError(internal.UserFilterGarbled, name, pattern, err)
 		o.Log(output.Error, internal.LogErrorGarbledFilter, map[string]any{
@@ -169,7 +169,7 @@ func validateRegexp(o output.Bus, pattern string, name string) (filter *regexp.R
 	return
 }
 
-func (sf *SearchFlags) validate(o output.Bus) (albumsFilter *regexp.Regexp, artistsFilter *regexp.Regexp, ok bool) {
+func (sf *SearchFlags) validate(o output.Bus) (albumsFilter, artistsFilter *regexp.Regexp, ok bool) {
 	ok = true
 	if !sf.validateTopLevelDirectory(o) {
 		ok = false
@@ -191,11 +191,13 @@ func (sf *SearchFlags) validate(o output.Bus) (albumsFilter *regexp.Regexp, arti
 }
 
 // SearchDefaults returns the defaults for the search parameters
-func SearchDefaults() (string, map[string]any) {
-	return defaultSectionName, map[string]any{
+func SearchDefaults() (sectionName string, defaults map[string]any) {
+	sectionName = defaultSectionName
+	defaults = map[string]any{
 		albumRegexFlag:    defaultRegex,
 		artistRegexFlag:   defaultRegex,
 		fileExtensionFlag: defaultFileExtension,
 		topDirectoryFlag:  filepath.Join("%HOMEPATH%", "Music"),
 	}
+	return
 }

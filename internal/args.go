@@ -2,7 +2,6 @@ package internal
 
 import (
 	"flag"
-	"fmt"
 
 	"github.com/majohn-r/output"
 )
@@ -34,7 +33,7 @@ func ProcessArgs(o output.Bus, f *flag.FlagSet, args []string) (ok bool) {
 	f.SetOutput(o.ErrorWriter())
 	// note: Parse outputs errors to o.ErrorWriter*()
 	if err := f.Parse(dereferencedArgs); err != nil {
-		o.Log(output.Error, fmt.Sprintf("%v", err), map[string]any{
+		o.Log(output.Error, err.Error(), map[string]any{
 			fieldKeyArguments: dereferencedArgs,
 		})
 		ok = false

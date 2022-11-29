@@ -114,12 +114,9 @@ func TestCleanupLogFiles(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		defer func() {
-			DestroyDirectoryForTesting(fnName, tt.args.path)
-		}()
 		var filesToClose []*os.File
 		if tt.createFolder {
-			if err := os.MkdirAll(tt.args.path, 0755); err != nil {
+			if err := os.MkdirAll(tt.args.path, 0o755); err != nil {
 				t.Errorf("%s cannot create %q: %v", fnName, tt.args.path, err)
 			}
 			// create required files
@@ -183,6 +180,7 @@ func TestCleanupLogFiles(t *testing.T) {
 				}
 			}
 		})
+		DestroyDirectoryForTesting(fnName, tt.args.path)
 	}
 }
 

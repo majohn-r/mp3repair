@@ -341,18 +341,16 @@ func (l *list) outputTrackDetails(o output.Bus, t *files.Track, prefix string) {
 				internal.FieldKeyError: err,
 				fieldKeyTrack:          t.String(),
 			})
-			o.WriteCanonicalError(internal.UserCannotReadTrackDetails, t.Name(), t.AlbumName(), t.RecordingArtist(), fmt.Sprintf("%v", err))
-		} else {
-			if len(m) != 0 {
-				var keys []string
-				for k := range m {
-					keys = append(keys, k)
-				}
-				sort.Strings(keys)
-				o.WriteConsole("%sDetails:\n", prefix)
-				for _, k := range keys {
-					o.WriteConsole("%s  %s = %q\n", prefix, k, m[k])
-				}
+			o.WriteCanonicalError(internal.UserCannotReadTrackDetails, t.Name(), t.AlbumName(), t.RecordingArtist(), err.Error())
+		} else if len(m) != 0 {
+			var keys []string
+			for k := range m {
+				keys = append(keys, k)
+			}
+			sort.Strings(keys)
+			o.WriteConsole("%sDetails:\n", prefix)
+			for _, k := range keys {
+				o.WriteConsole("%s  %s = %q\n", prefix, k, m[k])
 			}
 		}
 	}
@@ -365,7 +363,7 @@ func (l *list) outputTrackDiagnostics(o output.Bus, t *files.Track, prefix strin
 				internal.FieldKeyError: err,
 				fieldKeyTrack:          t.String(),
 			})
-			o.WriteCanonicalError(internal.UserID3v2TagError, t.Name(), t.AlbumName(), t.RecordingArtist(), fmt.Sprintf("%v", err))
+			o.WriteCanonicalError(internal.UserID3v2TagError, t.Name(), t.AlbumName(), t.RecordingArtist(), err.Error())
 		} else {
 			o.WriteConsole("%sID3V2 Version: %v\n", prefix, version)
 			o.WriteConsole("%sID3V2 Encoding: %q\n", prefix, enc)
@@ -378,7 +376,7 @@ func (l *list) outputTrackDiagnostics(o output.Bus, t *files.Track, prefix strin
 				internal.FieldKeyError: err,
 				fieldKeyTrack:          t.String(),
 			})
-			o.WriteCanonicalError(internal.UserID3v1TagError, t.Name(), t.AlbumName(), t.RecordingArtist(), fmt.Sprintf("%v", err))
+			o.WriteCanonicalError(internal.UserID3v1TagError, t.Name(), t.AlbumName(), t.RecordingArtist(), err.Error())
 		} else {
 			for _, datum := range id3v1Data {
 				o.WriteConsole("%sID3V1 %s\n", prefix, datum)

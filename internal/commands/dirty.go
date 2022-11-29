@@ -26,7 +26,7 @@ func MarkDirty(o output.Bus) {
 		if path, ok := findAppFolder(); ok {
 			dirtyFile := filepath.Join(path, dirtyFileName)
 			if _, err := os.Stat(dirtyFile); err != nil && errors.Is(err, os.ErrNotExist) {
-				if writeErr := os.WriteFile(dirtyFile, []byte("dirty"), 0644); writeErr != nil {
+				if writeErr := os.WriteFile(dirtyFile, []byte("dirty"), 0o644); writeErr != nil {
 					o.WriteCanonicalError(internal.UserCannotCreateFile, dirtyFile, writeErr)
 					o.Log(output.Error, internal.LogErrorCannotCreateFile, map[string]any{
 						internal.FieldKeyFileName: dirtyFile,

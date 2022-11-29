@@ -114,21 +114,21 @@ func TestPopulateTopDirForTesting(t *testing.T) {
 			dirName string
 			e       error
 		}
-		output := []results{}
+		listing := []results{}
 		if err := os.RemoveAll(cleanDirName); err != nil {
-			output = append(output, results{dirName: cleanDirName, e: err})
+			listing = append(listing, results{dirName: cleanDirName, e: err})
 		}
 		if err := os.RemoveAll(forceEarlyErrorDirName); err != nil {
-			output = append(output, results{dirName: forceEarlyErrorDirName, e: err})
+			listing = append(listing, results{dirName: forceEarlyErrorDirName, e: err})
 		}
 		if err := os.RemoveAll(albumDirErrName); err != nil {
-			output = append(output, results{dirName: albumDirErrName, e: err})
+			listing = append(listing, results{dirName: albumDirErrName, e: err})
 		}
 		if err := os.RemoveAll(badTrackFileName); err != nil {
-			output = append(output, results{dirName: badTrackFileName, e: err})
+			listing = append(listing, results{dirName: badTrackFileName, e: err})
 		}
-		if len(output) != 0 {
-			t.Errorf("%s errors deleting test directories %v", fnName, output)
+		if len(listing) != 0 {
+			t.Errorf("%s errors deleting test directories %v", fnName, listing)
 		}
 	}()
 	if err := Mkdir(cleanDirName); err != nil {
@@ -392,7 +392,7 @@ func TestSecureAbsolutePathForTesting(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := SecureAbsolutePathForTesting(tt.args.path)
-			if tt.want && len(got) == 0 {
+			if tt.want && got == "" {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})

@@ -1,12 +1,10 @@
 package files
 
 import (
-	// "bytes"
 	"fmt"
 	"mp3/internal"
 	"os"
 
-	// "path/filepath"
 	"reflect"
 	"testing"
 
@@ -121,11 +119,11 @@ func TestRawReadID3V2Tag(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotD := RawReadID3V2Tag(tt.args.path)
-			if len(gotD.err) != 0 {
-				if len(tt.wantD.err) == 0 {
+			if gotD.err != "" {
+				if tt.wantD.err == "" {
 					t.Errorf("%s = %v, want %v", fnName, gotD, tt.wantD)
 				}
-			} else if len(tt.wantD.err) != 0 {
+			} else if tt.wantD.err != "" {
 				t.Errorf("%s = %v, want %v", fnName, gotD, tt.wantD)
 			}
 		})

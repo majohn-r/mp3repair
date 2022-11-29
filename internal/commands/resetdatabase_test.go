@@ -554,7 +554,7 @@ func Test_resetDatabase_deleteMetadataFiles(t *testing.T) {
 		}
 	}
 	subDir := filepath.Join(testDir, "file8"+extension)
-	if err := internal.Mkdir(filepath.Join(subDir)); err != nil {
+	if err := internal.Mkdir(subDir); err != nil {
 		t.Errorf("%s could not create directory %q: %v", fnName, subDir, err)
 	}
 	// make file8 impossible to trivially remove

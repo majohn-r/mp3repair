@@ -88,7 +88,7 @@ func newTrackFromFile(a *Album, f fs.DirEntry, simpleName string, trackNumber in
 }
 
 // NewTrack creates a new instance of Track without (expensive) tag data.
-func NewTrack(a *Album, fullName string, simpleName string, trackNumber int) *Track {
+func NewTrack(a *Album, fullName, simpleName string, trackNumber int) *Track {
 	return &Track{
 		path:            a.subDirectory(fullName),
 		name:            simpleName,
@@ -364,10 +364,8 @@ func processArtistMetadata(o output.Bus, artists []*Artist) {
 				fieldKeySettings:   names,
 				fieldKeyArtistName: artist.Name(),
 			})
-		} else {
-			if len(chosenName) > 0 {
-				artist.canonicalName = chosenName
-			}
+		} else if len(chosenName) > 0 {
+			artist.canonicalName = chosenName
 		}
 	}
 }
@@ -381,21 +379,22 @@ func processAlbumMetadata(o output.Bus, artists []*Artist) {
 			years := make(map[string]int)
 			albumTitles := make(map[string]int)
 			for _, track := range album.Tracks() {
-				if track.tM != nil && track.tM.isValid() {
-					genre := strings.ToLower(track.tM.canonicalGenre())
-					if len(genre) > 0 && !strings.HasPrefix(genre, "unknown") {
-						genres[track.tM.canonicalGenre()]++
-					}
-					if len(track.tM.canonicalYear()) != 0 {
-						years[track.tM.canonicalYear()]++
-					}
-					if track.tM.canonicalAlbumTitleMatches(album.name) {
-						albumTitles[track.tM.canonicalAlbum()]++
-					}
-					mcdiKey := string(track.tM.canonicalMusicCDIdentifier().Body)
-					mcdis[mcdiKey]++
-					mcdiFrames[mcdiKey] = track.tM.canonicalMusicCDIdentifier()
+				if track.tM == nil || !track.tM.isValid() {
+					continue
 				}
+				genre := strings.ToLower(track.tM.canonicalGenre())
+				if len(genre) > 0 && !strings.HasPrefix(genre, "unknown") {
+					genres[track.tM.canonicalGenre()]++
+				}
+				if track.tM.canonicalYear() != "" {
+					years[track.tM.canonicalYear()]++
+				}
+				if track.tM.canonicalAlbumTitleMatches(album.name) {
+					albumTitles[track.tM.canonicalAlbum()]++
+				}
+				mcdiKey := string(track.tM.canonicalMusicCDIdentifier().Body)
+				mcdis[mcdiKey]++
+				mcdiFrames[mcdiKey] = track.tM.canonicalMusicCDIdentifier()
 			}
 			if chosenGenre, ok := pickKey(genres); !ok {
 				o.WriteCanonicalError(internal.UserAmbiguousChoices, "genre", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(genres))
@@ -427,10 +426,8 @@ func processAlbumMetadata(o output.Bus, artists []*Artist) {
 					fieldKeyAlbumName:  album.Name(),
 					fieldKeyArtistName: artist.Name(),
 				})
-			} else {
-				if len(chosenAlbumTitle) != 0 {
-					album.canonicalTitle = chosenAlbumTitle
-				}
+			} else if chosenAlbumTitle != "" {
+				album.canonicalTitle = chosenAlbumTitle
 			}
 			if chosenMCDI, ok := pickKey(mcdis); !ok {
 				o.WriteCanonicalError(internal.UserAmbiguousChoices, "MCDI frame", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(mcdis))
@@ -512,7 +509,7 @@ func reportTrackErrors(o output.Bus, track *Track, album *Album, artist *Artist)
 	if track.hasTagError() {
 		for _, source := range []sourceType{id3v1Source, id3v2Source} {
 			e := track.tM.err[source]
-			if len(e) != 0 {
+			if e != "" {
 				o.WriteCanonicalError(tagConsoleErrors[source], track.name, album.name, artist.name, e)
 				o.Log(output.Error, tagLogErrors[source], map[string]any{
 					fieldKeyTrackName:      track.name,
@@ -607,9 +604,9 @@ func (t *Track) ID3V1Diagnostics() ([]string, error) {
 
 // ID3V2Diagnostics returns ID3V2 tag data - the ID3V2 version, its encoding,
 // and a slice of all the frames in the tag.
-func (t *Track) ID3V2Diagnostics() (byte, string, []string, error) {
-	v, e, f, _, err := readID3V2Metadata(t.path)
-	return v, e, f, err
+func (t *Track) ID3V2Diagnostics() (version byte, encoding string, frames []string, e error) {
+	version, encoding, frames, _, e = readID3V2Metadata(t.path)
+	return
 }
 
 var frameToName = map[string]string{

@@ -99,7 +99,7 @@ func generateListing(artists, albums, tracks, annotated, sortNumerically bool) s
 			}
 		}
 	}
-	var output []string
+	var listing []string
 	switch artists {
 	case true:
 		tracksByArtist := make(map[string][]*testTrack)
@@ -113,16 +113,16 @@ func generateListing(artists, albums, tracks, annotated, sortNumerically bool) s
 		}
 		sort.Strings(artistNames)
 		for _, artistName := range artistNames {
-			output = append(output, fmt.Sprintf("Artist: %s", artistName))
-			output = append(output, generateAlbumListings(tracksByArtist[artistName], "  ", artists, albums, tracks, annotated, sortNumerically)...)
+			listing = append(listing, fmt.Sprintf("Artist: %s", artistName))
+			listing = append(listing, generateAlbumListings(tracksByArtist[artistName], "  ", artists, albums, tracks, annotated, sortNumerically)...)
 		}
 	case false:
-		output = append(output, generateAlbumListings(trackCollection, "", artists, albums, tracks, annotated, sortNumerically)...)
+		listing = append(listing, generateAlbumListings(trackCollection, "", artists, albums, tracks, annotated, sortNumerically)...)
 	}
-	if len(output) != 0 {
-		output = append(output, "") // force trailing newline
+	if len(listing) != 0 {
+		listing = append(listing, "") // force trailing newline
 	}
-	return strings.Join(output, "\n")
+	return strings.Join(listing, "\n")
 }
 
 type albumType struct {
@@ -148,7 +148,7 @@ func (a albumTypes) Swap(i, j int) {
 }
 
 func generateAlbumListings(testTracks []*testTrack, spacer string, artists, albums, tracks, annotated, sortNumerically bool) []string {
-	var output []string
+	var listing []string
 	switch albums {
 	case true:
 		albumsToList := make(map[albumType][]*testTrack)
@@ -170,17 +170,17 @@ func generateAlbumListings(testTracks []*testTrack, spacer string, artists, albu
 
 		sort.Sort(albumNames)
 		for _, albumTitle := range albumNames {
-			output = append(output, fmt.Sprintf("%sAlbum: %s", spacer, albumTitle.albumName))
-			output = append(output, generateTrackListings(albumsToList[albumTitle], spacer+"  ", artists, albums, tracks, annotated, sortNumerically)...)
+			listing = append(listing, fmt.Sprintf("%sAlbum: %s", spacer, albumTitle.albumName))
+			listing = append(listing, generateTrackListings(albumsToList[albumTitle], spacer+"  ", artists, albums, tracks, annotated, sortNumerically)...)
 		}
 	case false:
-		output = append(output, generateTrackListings(testTracks, spacer, artists, albums, tracks, annotated, sortNumerically)...)
+		listing = append(listing, generateTrackListings(testTracks, spacer, artists, albums, tracks, annotated, sortNumerically)...)
 	}
-	return output
+	return listing
 }
 
 func generateTrackListings(testTracks []*testTrack, spacer string, artists, albums, tracks, annotated, sortNumerically bool) []string {
-	var output []string
+	var listing []string
 	if tracks {
 		var tracksToList []string
 		for _, tt := range testTracks {
@@ -202,10 +202,10 @@ func generateTrackListings(testTracks []*testTrack, spacer string, artists, albu
 		}
 		sort.Strings(tracksToList)
 		for _, trackName := range tracksToList {
-			output = append(output, fmt.Sprintf("%s%s", spacer, trackName))
+			listing = append(listing, fmt.Sprintf("%s%s", spacer, trackName))
 		}
 	}
-	return output
+	return listing
 }
 
 func newListForTesting() *list {

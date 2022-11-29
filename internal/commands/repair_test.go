@@ -240,10 +240,8 @@ func Test_repair_Exec(t *testing.T) {
 			r:    newRepairForTesting(),
 			args: args{[]string{"-topDir", topDirWithContent, "-dryRun=false"}},
 			WantedRecording: output.WantedRecording{
-				Console: strings.Join([]string{
-					"The track \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" has been backed up to \"realContent\\\\new artist\\\\new album\\\\pre-repair-backup\\\\1.mp3\".",
+				Console: "The track \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" has been backed up to \"realContent\\\\new artist\\\\new album\\\\pre-repair-backup\\\\1.mp3\".\n" +
 					"\"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" repaired.\n",
-				}, "\n"),
 				Error: "Reading track metadata.\n" +
 					"An error occurred when trying to read ID3V1 tag information for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
 				Log: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +

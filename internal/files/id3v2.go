@@ -25,7 +25,7 @@ type ID3V2TaggedTrackData struct {
 // NewID3V2TaggedTrackDataForTesting creates a new instance of
 // ID3V2TaggedTrackData. The method is public so it can be called from unit
 // tests.
-func NewID3V2TaggedTrackDataForTesting(albumFrame string, artistFrame string, titleFrame string, evaluatedNumberFrame int, mcdi []byte) *ID3V2TaggedTrackData {
+func NewID3V2TaggedTrackDataForTesting(albumFrame, artistFrame, titleFrame string, evaluatedNumberFrame int, mcdi []byte) *ID3V2TaggedTrackData {
 	return &ID3V2TaggedTrackData{
 		album:             albumFrame,
 		artist:            artistFrame,
@@ -47,12 +47,12 @@ func RawReadID3V2Tag(path string) (d *ID3V2TaggedTrackData) {
 	var tag *id3v2.Tag
 	var err error
 	if tag, err = readID3V2Tag(path); err != nil {
-		d.err = fmt.Sprintf("%v", err)
+		d.err = err.Error()
 		return
 	}
 	defer tag.Close()
 	if trackNumber, err := toTrackNumber(tag.GetTextFrame(trackFrame).Text); err != nil {
-		d.err = fmt.Sprintf("%v", err)
+		d.err = err.Error()
 	} else {
 		d.album = removeLeadingBOMs(tag.Album())
 		d.artist = removeLeadingBOMs(tag.Artist())
@@ -91,7 +91,7 @@ func normalizeGenre(g string) string {
 func toTrackNumber(s string) (i int, err error) {
 	// this is more complicated than I wanted, because some mp3 rippers produce
 	// track numbers like "12/14", meaning 12th track of 14
-	if len(s) == 0 {
+	if s == "" {
 		err = fmt.Errorf(internal.ErrorZeroLength)
 		return
 	}
@@ -121,7 +121,7 @@ func toTrackNumber(s string) (i int, err error) {
 
 // depending on encoding, frame values may begin with a BOM (byte order mark)
 func removeLeadingBOMs(s string) string {
-	if len(s) == 0 {
+	if s == "" {
 		return s
 	}
 	r := []rune(s)
@@ -150,15 +150,15 @@ func updateID3V2Tag(t *Track, src sourceType) (err error) {
 			defer tag.Close()
 			tag.SetDefaultEncoding(id3v2.EncodingUTF8)
 			albumTitle := t.tM.correctedAlbum[src]
-			if len(albumTitle) != 0 {
+			if albumTitle != "" {
 				tag.SetAlbum(albumTitle)
 			}
 			artistName := t.tM.correctedArtist[src]
-			if len(artistName) != 0 {
+			if artistName != "" {
 				tag.SetArtist(artistName)
 			}
 			trackTitle := t.tM.correctedTitle[src]
-			if len(trackTitle) != 0 {
+			if trackTitle != "" {
 				tag.SetTitle(trackTitle)
 			}
 			trackNumber := t.tM.correctedTrack[src]
@@ -166,11 +166,11 @@ func updateID3V2Tag(t *Track, src sourceType) (err error) {
 				tag.AddTextFrame("TRCK", tag.DefaultEncoding(), fmt.Sprintf("%d", trackNumber))
 			}
 			genre := t.tM.correctedGenre[src]
-			if len(genre) != 0 {
+			if genre != "" {
 				tag.SetGenre(genre)
 			}
 			year := t.tM.correctedYear[src]
-			if len(year) != 0 {
+			if year != "" {
 				tag.SetYear(year)
 			}
 			mcdi := t.tM.correctedMusicCDIdentifier

@@ -168,16 +168,12 @@ func Test_sortTracks(t *testing.T) {
 			artist2 := album2.RecordingArtistName()
 			if artist1 > artist2 {
 				t.Errorf("%s track[%d] artist name %q comes after track[%d] artist name %q", fnName, i-1, artist1, i, artist2)
-			} else {
-				if artist1 == artist2 {
-					if album1.Name() > album2.Name() {
-						t.Errorf("%s track[%d] album name %q comes after track[%d] album name %q", fnName, i-1, album1.Name(), i, album2.Name())
-					} else {
-						if album1.Name() == album2.Name() {
-							if track1.number > track2.number {
-								t.Errorf("%s track[%d] track %d comes after track[%d] track %d", fnName, i-1, track1.number, i, track2.number)
-							}
-						}
+			} else if artist1 == artist2 {
+				if album1.Name() > album2.Name() {
+					t.Errorf("%s track[%d] album name %q comes after track[%d] album name %q", fnName, i-1, album1.Name(), i, album2.Name())
+				} else if album1.Name() == album2.Name() {
+					if track1.number > track2.number {
+						t.Errorf("%s track[%d] track %d comes after track[%d] track %d", fnName, i-1, track1.number, i, track2.number)
 					}
 				}
 			}
@@ -851,10 +847,8 @@ func TestReadMetadata(t *testing.T) {
 					for _, track := range album.tracks {
 						if track.needsMetadata() {
 							t.Errorf("%s track %q has no metadata", fnName, track.path)
-						} else {
-							if track.hasTagError() {
-								t.Errorf("%s track %q is defective: %v", fnName, track.path, track.tM.errors())
-							}
+						} else if track.hasTagError() {
+							t.Errorf("%s track %q is defective: %v", fnName, track.path, track.tM.errors())
 						}
 					}
 				}
@@ -1132,17 +1126,15 @@ func TestTrack_EditTags(t *testing.T) {
 			gotE := tt.tr.EditTags()
 			var eStrings []string
 			for _, e := range gotE {
-				eStrings = append(eStrings, fmt.Sprintf("%v", e))
+				eStrings = append(eStrings, e.Error())
 			}
 			if !reflect.DeepEqual(eStrings, tt.wantE) {
 				t.Errorf("%s = %v, want %v", fnName, eStrings, tt.wantE)
-			} else {
-				if len(gotE) == 0 && tt.tr.tM != nil {
-					// verify file was correctly rewritten
-					gotTm := readMetadata(tt.tr.path)
-					if !reflect.DeepEqual(gotTm, tt.wantTm) {
-						t.Errorf("%s read %#v, want %#v", fnName, gotTm, tt.wantTm)
-					}
+			} else if len(gotE) == 0 && tt.tr.tM != nil {
+				// verify file was correctly rewritten
+				gotTm := readMetadata(tt.tr.path)
+				if !reflect.DeepEqual(gotTm, tt.wantTm) {
+					t.Errorf("%s read %#v, want %#v", fnName, gotTm, tt.wantTm)
 				}
 			}
 		})
@@ -1302,6 +1294,9 @@ func Test_processAlbumMetadata(t *testing.T) {
 	track3c.tM.album[src] = "Problematic:album"
 	track3c.tM.musicCDIdentifier = id3v2.UnknownFrame{Body: []byte{1, 2, 3, 4, 5}}
 	album3.AddTrack(track3c)
+	// verify code can handle missing metadata
+	track4 := NewTrack(album1, "04 track4.mp3", "track4", 4)
+	album3.AddTrack(track4)
 	type args struct {
 		artists []*Artist
 	}

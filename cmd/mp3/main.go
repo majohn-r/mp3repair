@@ -70,7 +70,7 @@ func run(o output.Bus, f func() (*debug.BuildInfo, bool), cmdlineArgs []string) 
 	return
 }
 
-func logBegin(o output.Bus, goVersion string, dependencies []string, cmdLineArgs []string) {
+func logBegin(o output.Bus, goVersion string, dependencies, cmdLineArgs []string) {
 	o.Log(output.Info, internal.LogInfoBeginExecution, map[string]any{
 		fieldKeyVersion:              version,
 		fieldKeyTImeStamp:            creation,

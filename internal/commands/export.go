@@ -176,18 +176,16 @@ func (ex *export) overwriteFile(o output.Bus, fileName string, content []byte) (
 				fKOriginalFile:         fileName,
 				fKBackupFile:           backupFileName,
 			})
-		} else {
-			if createFile(o, fileName, content) {
-				os.Remove(backupFileName)
-				ok = true
-			}
+		} else if createFile(o, fileName, content) {
+			os.Remove(backupFileName)
+			ok = true
 		}
 	}
 	return
 }
 
 func createFile(o output.Bus, fileName string, content []byte) bool {
-	if err := os.WriteFile(fileName, content, 0644); err != nil {
+	if err := os.WriteFile(fileName, content, 0o644); err != nil {
 		o.WriteCanonicalError(internal.UserCannotCreateFile, fileName, err)
 		o.Log(output.Error, internal.LogErrorCannotCreateFile, map[string]any{
 			internal.FieldKeyFileName: fileName,

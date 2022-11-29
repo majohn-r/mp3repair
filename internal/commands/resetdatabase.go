@@ -367,12 +367,12 @@ func listAvailableServices(o output.Bus, sM serviceGateway, services []string) {
 				key := stateToStatus[stat.State]
 				sMap[key] = append(sMap[key], service)
 			} else {
-				e := fmt.Sprintf("%v", err)
+				e := err.Error()
 				sMap[e] = append(sMap[e], service)
 			}
 			s.Close()
 		} else {
-			e := fmt.Sprintf("%v", err)
+			e := err.Error()
 			sMap[e] = append(sMap[e], service)
 		}
 	}
