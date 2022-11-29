@@ -36,6 +36,7 @@ func Build() (err error) {
 	unifiedOutput := &bytes.Buffer{}
 	cmd.Stderr = unifiedOutput
 	cmd.Stdout = unifiedOutput
+	fmt.Printf("running %q\n", cmd)
 	err = cmd.Run()
 	printOutput(unifiedOutput)
 	return
@@ -86,10 +87,10 @@ func Clean() error {
 // Execute lint
 func Lint() (err error) {
 	unifiedOutput := &bytes.Buffer{}
-	cmd := exec.Command("golint", "-set_exit_status", "./...")
+	cmd := exec.Command("gocritic", "check", "-enableAll", "./...")
 	cmd.Stderr = unifiedOutput
 	cmd.Stdout = unifiedOutput
-	fmt.Println("running lint on all files")
+	fmt.Printf("running %q\n", cmd)
 	err = cmd.Run()
 	printOutput(unifiedOutput)
 	return
@@ -102,7 +103,7 @@ func Test() (err error) {
 	cmd := exec.Command("go", "test", "-cover", "./...")
 	cmd.Stderr = unifiedOutput
 	cmd.Stdout = unifiedOutput
-	fmt.Println("running all unit tests with code coverage")
+	fmt.Printf("running %q\n", cmd)
 	err = cmd.Run()
 	printOutput(unifiedOutput)
 	return
@@ -110,15 +111,12 @@ func Test() (err error) {
 
 // Execute all unit tests and generate a code coverage report
 func CoverageReport() (err error) {
-	// go test -coverprofile=coverage.out ./...
 	cmd := exec.Command("go", "test", "-coverprofile=coverage.out", "./...")
-	fmt.Println("generating code coverage data")
+	fmt.Printf("running %q\n", cmd)
 	err = cmd.Run()
 	if err == nil {
-		// go tool cover -html=coverage.out
 		cmd = exec.Command("go", "tool", "cover", "-html=coverage.out")
-		fmt.Println("generating report from code coverage data")
-		// ignore error return
+		fmt.Printf("running %q\n", cmd)
 		err = cmd.Run()
 	}
 	return err
@@ -130,13 +128,13 @@ func Doc() (err error) {
 	if folders, err = getCodeFolders(); err == nil {
 		unifiedOutput := &bytes.Buffer{}
 		for _, folder := range folders {
-			// go doc -all .\\{folder}
 			if !strings.HasPrefix(folder, ".") {
 				folder = ".\\" + folder
 			}
 			cmd := exec.Command("go", "doc", "-all", folder)
 			cmd.Stderr = unifiedOutput
 			cmd.Stdout = unifiedOutput
+			fmt.Printf("running %q\n", cmd)
 			if err = cmd.Run(); err != nil {
 				break
 			}
@@ -152,7 +150,7 @@ func Format() (err error) {
 	cmd := exec.Command("gofmt", "-e", "-l", "-s", "-d", ".")
 	cmd.Stderr = unifiedOutput
 	cmd.Stdout = unifiedOutput
-	fmt.Println("performing formatting analysis")
+	fmt.Printf("running %q\n", cmd)
 	err = cmd.Run()
 	printOutput(unifiedOutput)
 	return
