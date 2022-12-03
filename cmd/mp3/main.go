@@ -11,9 +11,9 @@ import (
 	"github.com/majohn-r/output"
 )
 
-// these variables' values are injected by the mage build - do not rename them!
+// these variables' values are injected by the build process - do not rename them!
 var (
-	version  = "unknown version!" // semantic version; the mage build rads this from version.txt
+	version  = "unknown version!" // semantic version; the build reads this from build/version.txt
 	creation string               // build timestamp in RFC3339 format (2006-01-02T15:04:05Z07:00)
 )
 
