@@ -1,4 +1,4 @@
-module github.com/majohn-r/output/build
+module mp3/build
 
 go 1.19
 
