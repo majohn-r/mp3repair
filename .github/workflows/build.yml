@@ -30,8 +30,8 @@ jobs:
           name: format results
           path: format-issues.txt
       - name: Execute unit tests with code coverage
-        run: go test -coverprofile=coverage.txt -covermode=atomic ./...
+        run: go test -coverprofile=coverage-covermode=atomic ./...
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
-          file: ./coverage.txt   
+          file: ./coverage 
