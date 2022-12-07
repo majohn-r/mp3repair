@@ -3,7 +3,7 @@ name: build
 on: [push]
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     steps:
       - name: Check out source code
         uses: actions/checkout@v3
@@ -11,6 +11,8 @@ jobs:
         uses: actions/setup-go@v3
         with:
           go-version: 1.19.x
+      - name: Get dependencies
+        run: go get -u ./...
       - name: Install linter
         run: go install -v github.com/go-critic/go-critic/cmd/gocritic@latest
       - name: Run linter
