@@ -14,7 +14,7 @@ jobs:
       - name: Install linter
         run: go install -v github.com/go-critic/go-critic/cmd/gocritic@latest
       - name: Run linter
-        run: gocritic check -enableAll ./ > lint-issues.txt
+        run: gocritic check -enableAll ./... > lint-issues.txt
       - name: Post lint issues
         uses: actions/upload-artifact@v3
         with:
@@ -28,7 +28,7 @@ jobs:
           name: format results
           path: format-issues.txt
       - name: Execute unit tests with code coverage
-        run: go test -coverprofile=coverage.out -covermode=atomic
+        run: go test -coverprofile=coverage.out -covermode=atomic ./...
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
