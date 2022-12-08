@@ -151,6 +151,25 @@ func Test_report(t *testing.T) {
 
 func Test_exec(t *testing.T) {
 	fnName := "exec()"
+	savedVar := internal.SaveEnvVarForTesting("HOMEPATH")
+	if err := internal.Mkdir("Music"); err != nil {
+		t.Errorf("%s error creating Music: %v", fnName, err)
+	}
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, "Music")
+		savedVar.RestoreForTesting()
+	}()
+	thisDir := internal.SecureAbsolutePathForTesting(".")
+	if err := internal.Mkdir("Music/myArtist"); err != nil {
+		t.Errorf("%s error creating Music/myArtist: %v", fnName, err)
+	}
+	if err := internal.Mkdir("Music/myArtist/myAlbum"); err != nil {
+		t.Errorf("%s error creating Music/myArtist/myAlbum: %v", fnName, err)
+	}
+	if err := internal.CreateFileForTestingWithContent("Music/myArtist/myAlbum", "01 myTrack.mp3", []byte("no real content")); err != nil {
+		t.Errorf("%s error creating Music/myArtist/myAlbum/01 myTrack.mp3: %v", fnName, err)
+	}
+	os.Setenv("HOMEPATH", thisDir)
 	type args struct {
 		logInit func(output.Bus) bool
 		cmdLine []string

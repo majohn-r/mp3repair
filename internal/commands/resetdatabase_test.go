@@ -14,6 +14,7 @@ import (
 
 	"github.com/majohn-r/output"
 	"golang.org/x/sys/windows/svc"
+	"golang.org/x/sys/windows/svc/mgr"
 )
 
 type testService struct {
@@ -840,6 +841,16 @@ func Test_resetDatabase_Exec(t *testing.T) {
 		Set:   true,
 	}
 	userProfile.RestoreForTesting()
+	// depending on the environment, a connection to the service manager may or
+	// may not be possible. Therefore, check whether a connection is possible,
+	// and tailor the wanted recordings accordingly.
+	var connectionsPossible bool
+	if m, err := mgr.Connect(); err != nil {
+		connectionsPossible = false
+	} else {
+		_ = m.Disconnect()
+		connectionsPossible = true
+	}
 	type args struct {
 		args []string
 	}
@@ -848,8 +859,9 @@ func Test_resetDatabase_Exec(t *testing.T) {
 		r                 *resetDatabase
 		markMetadataDirty bool
 		args
-		wantOk bool
-		output.WantedRecording
+		wantOk            bool
+		withConnection    output.WantedRecording
+		withoutConnection output.WantedRecording
 	}{
 		{
 			name: "help",
@@ -857,7 +869,19 @@ func Test_resetDatabase_Exec(t *testing.T) {
 			args: args{
 				args: []string{"-help"},
 			},
-			WantedRecording: output.WantedRecording{
+			withConnection: output.WantedRecording{
+				Error: "Usage of resetDatabase:\n" +
+					"  -extension extension\n" +
+					"    \textension for metadata files (default \".wmdb\")\n" +
+					"  -metadata directory\n" +
+					"    \tdirectory where the media player service metadata files are stored (default \"C:\\\\Users\\\\The User\\\\AppData\\\\Local\\\\Microsoft\\\\Media Player\")\n" +
+					"  -service service\n" +
+					"    \tname of the media player service (default \"WMPNetworkSVC\")\n" +
+					"  -timeout int\n" +
+					"    \ttimeout in seconds (minimum 1, maximum 60) for stopping the media player service (default 10)\n",
+				Log: "level='error' arguments='[-help]' msg='flag: help requested'\n",
+			},
+			withoutConnection: output.WantedRecording{
 				Error: "Usage of resetDatabase:\n" +
 					"  -extension extension\n" +
 					"    \textension for metadata files (default \".wmdb\")\n" +
@@ -877,7 +901,10 @@ func Test_resetDatabase_Exec(t *testing.T) {
 				args: []string{"-metadata", "no such dir"},
 			},
 			wantOk: true,
-			WantedRecording: output.WantedRecording{
+			withConnection: output.WantedRecording{
+				Console: "Running \"resetDatabase\" is not necessary, as no track files have been edited.\n",
+			},
+			withoutConnection: output.WantedRecording{
 				Console: "Running \"resetDatabase\" is not necessary, as no track files have been edited.\n",
 			},
 		},
@@ -888,7 +915,13 @@ func Test_resetDatabase_Exec(t *testing.T) {
 			args: args{
 				args: []string{"-metadata", "no such dir"},
 			},
-			WantedRecording: output.WantedRecording{
+			withConnection: output.WantedRecording{
+				Error: "The directory \"no such dir\" cannot be read: open no such dir: The system cannot find the file specified.\n",
+				Log: "level='info' -extension='.wmdb' -metadata='no such dir' -service='WMPNetworkSVC' -timeout='10' command='resetDatabase' msg='executing command'\n" +
+					"level='info' service='WMPNetworkSVC' status='stopped' msg='service status'\n" +
+					"level='error' directory='no such dir' error='open no such dir: The system cannot find the file specified.' msg='cannot read directory'\n",
+			},
+			withoutConnection: output.WantedRecording{
 				Error: "The service manager cannot be accessed. Try running the program again as an administrator. Error: Access is denied.\n" +
 					"The directory \"no such dir\" cannot be read: open no such dir: The system cannot find the file specified.\n",
 				Log: "level='info' -extension='.wmdb' -metadata='no such dir' -service='WMPNetworkSVC' -timeout='10' command='resetDatabase' msg='executing command'\n" +
@@ -903,7 +936,10 @@ func Test_resetDatabase_Exec(t *testing.T) {
 				args: []string{"-metadata", testDir},
 			},
 			wantOk: true,
-			WantedRecording: output.WantedRecording{
+			withConnection: output.WantedRecording{
+				Console: "Running \"resetDatabase\" is not necessary, as no track files have been edited.\n",
+			},
+			withoutConnection: output.WantedRecording{
 				Console: "Running \"resetDatabase\" is not necessary, as no track files have been edited.\n",
 			},
 		},
@@ -915,7 +951,14 @@ func Test_resetDatabase_Exec(t *testing.T) {
 				args: []string{"-metadata", testDir},
 			},
 			wantOk: true,
-			WantedRecording: output.WantedRecording{
+			withConnection: output.WantedRecording{
+				Console: "No metadata files were found in \"Exec\".\n",
+				Log: "level='info' -extension='.wmdb' -metadata='Exec' -service='WMPNetworkSVC' -timeout='10' command='resetDatabase' msg='executing command'\n" +
+					"level='info' service='WMPNetworkSVC' status='stopped' msg='service status'\n" +
+					"level='info' directory='Exec' file extension='.wmdb' msg='no files found'\n" +
+					"level='info' fileName='Exec\\mp3\\metadata.dirty' msg='metadata dirty file deleted'\n",
+			},
+			withoutConnection: output.WantedRecording{
 				Console: "No metadata files were found in \"Exec\".\n",
 				Error:   "The service manager cannot be accessed. Try running the program again as an administrator. Error: Access is denied.\n",
 				Log: "level='info' -extension='.wmdb' -metadata='Exec' -service='WMPNetworkSVC' -timeout='10' command='resetDatabase' msg='executing command'\n" +
@@ -939,10 +982,19 @@ func Test_resetDatabase_Exec(t *testing.T) {
 			if gotOk := tt.r.Exec(o, tt.args.args); gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("%s %s", fnName, issue)
+			if connectionsPossible {
+				if issues, ok := o.Verify(tt.withConnection); !ok {
+					for _, issue := range issues {
+						t.Errorf("%s %s", fnName, issue)
+					}
 				}
+			} else {
+				if issues, ok := o.Verify(tt.withoutConnection); !ok {
+					for _, issue := range issues {
+						t.Errorf("%s %s", fnName, issue)
+					}
+				}
+
 			}
 			if tt.markMetadataDirty {
 				ClearDirty(output.NewNilBus())
