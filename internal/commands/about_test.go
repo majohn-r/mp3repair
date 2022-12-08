@@ -214,7 +214,7 @@ func Test_translateTimestamp(t *testing.T) {
 		{
 			name: "good time",
 			args: args{t: "2022-08-10T13:29:57-04:00"},
-			want: "Wednesday, August 10 2022, 13:29:57 EDT",
+			want: "Wednesday, August 10 2022, 13:29:57",
 		},
 		{
 			name: "badly formatted time",
