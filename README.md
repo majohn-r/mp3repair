@@ -1,5 +1,14 @@
 # mp3
 
+[![GoDoc Reference](https://godoc.org/github.com/majohn-r/mp3?status.svg)](https://pkg.go.dev/github.com/majohn-r/mp3)
+[![go.mod](https://img.shields.io/github/go-mod/go-version/majohn-r/mp3)](go.mod)
+[![LICENSE](https://img.shields.io/github/license/majohn-r/mp3)](LICENSE)
+
+[![Release](https://img.shields.io/github/release/majohn-r/mp3.svg)](https://github.com/majohn-r/mp3/releases)
+[![Code Coverage Report](https://codecov.io/github/majohn-r/mp3/branch/main/graph/badge.svg)](https://codecov.io/github/majohn-r/mp3)
+[![Go Report Card](https://goreportcard.com/badge/github.com/majohn-r/mp3)](https://goreportcard.com/report/github.com/majohn-r/mp3)
+[![Build Status](https://img.shields.io/github/workflow/status/majohn-r/mp3/build)](https://github.com/majohn-r/mp3/actions?query=workflow%3Abuild+branch%3Amain)
+
 - [mp3](#mp3)
   - [Purpose](#purpose)
   - [Commands](#commands)
