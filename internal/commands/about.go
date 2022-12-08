@@ -75,7 +75,7 @@ func translateTimestamp(t string) string {
 	if err != nil {
 		return t
 	}
-	return rT.Format("Monday, January 2 2006, 15:04:05 MST -0700")
+	return rT.Format("Monday, January 2 2006, 15:04:05 MST")
 }
 
 func reportAbout(o output.Bus, data []string) {

@@ -2,6 +2,7 @@ package commands
 
 import (
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/majohn-r/output"
@@ -213,7 +214,7 @@ func Test_translateTimestamp(t *testing.T) {
 		{
 			name: "good time",
 			args: args{t: "2022-08-10T13:29:57-04:00"},
-			want: "Wednesday, August 10 2022, 13:29:57 EDT -0400",
+			want: "Wednesday, August 10 2022, 13:29:57 EDT",
 		},
 		{
 			name: "badly formatted time",
@@ -223,8 +224,8 @@ func Test_translateTimestamp(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := translateTimestamp(tt.args.t); got != tt.want {
-				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
+			if got := translateTimestamp(tt.args.t); !strings.HasPrefix(got, tt.want) {
+				t.Errorf("%s = %q, want to start with %q", fnName, got, tt.want)
 			}
 		})
 	}
