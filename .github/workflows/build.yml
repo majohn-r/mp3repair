@@ -23,7 +23,7 @@ jobs:
           name: lint results
           path: lint-issues.txt
       - name: Run format check
-        run: gofmt -e -l -s -w ./ > format-issues.txt
+        run: gofmt -d -e -l ./ > format-issues.txt
       - name: Post format issues
         uses: actions/upload-artifact@v3
         with:
