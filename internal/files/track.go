@@ -324,15 +324,19 @@ func (t *Track) readTags(bar *pb.ProgressBar) {
 
 // ReadMetadata reads the metadata for all the artists' tracks.
 func ReadMetadata(o output.Bus, artists []*Artist) {
-	// get count of tracks
-	tracks := 0
+	// count the tracks
+	count := 0
 	for _, artist := range artists {
 		for _, album := range artist.Albums() {
-			tracks += len(album.Tracks())
+			count += len(album.Tracks())
 		}
 	}
 	o.WriteCanonicalError("Reading track metadata")
-	bar := pb.StartNew(tracks)
+	// derived from the Default ProgressBarTemplate used by the progress bar,
+	// following guidance in the ElementSpeed definition to change the output to
+	// display the speed in tracks per second
+	t := `{{with string . "prefix"}}{{.}} {{end}}{{counters . }} {{bar . }} {{percent . }} {{speed . "%s tracks per second"}}{{with string . "suffix"}} {{.}}{{end}}`
+	bar := pb.New(count).SetTemplateString(t).Start()
 	for _, artist := range artists {
 		for _, album := range artist.Albums() {
 			for _, track := range album.Tracks() {
