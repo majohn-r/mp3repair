@@ -98,7 +98,7 @@ func Test_postrepair_Exec(t *testing.T) {
 			args: args{args: []string{"-topDir", "non-existent directory"}},
 			WantedRecording: output.WantedRecording{
 				Error: "The -topDir value you specified, \"non-existent directory\", cannot be read: CreateFile non-existent directory: The system cannot find the file specified.\n",
-				Log:   "level='error' -topDir='non-existent directory' error='CreateFile non-existent directory: The system cannot find the file specified.' msg='cannot read directory'\n",
+				Log:   "level='error' directory='non-existent directory' error='CreateFile non-existent directory: The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
 		},
 		{

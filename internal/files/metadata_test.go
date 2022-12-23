@@ -1,6 +1,7 @@
 package files
 
 import (
+	"fmt"
 	"mp3/internal"
 	"path/filepath"
 	"reflect"
@@ -33,7 +34,7 @@ func Test_trackMetadata_setId3v1Values(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              undefinedSource,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -89,7 +90,7 @@ func Test_trackMetadata_setId3v2Values(t *testing.T) {
 				track:                      []int{0, 0, 1},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0, 2, 4}},
 				canonicalType:              undefinedSource,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -171,10 +172,10 @@ func Test_readMetadata(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
+				err: []error{
+					nil,
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -198,10 +199,10 @@ func Test_readMetadata(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file.",
-					"zero length",
+				err: []error{
+					nil,
+					fmt.Errorf("seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file."),
+					fmt.Errorf("zero length"),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -225,7 +226,7 @@ func Test_readMetadata(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -248,7 +249,7 @@ func Test_readMetadata(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -271,7 +272,7 @@ func Test_readMetadata(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -285,11 +286,91 @@ func Test_readMetadata(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := readMetadata(tt.args.path); !reflect.DeepEqual(got, tt.want) {
+			if got := readMetadata(tt.args.path); !metadataEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}
+}
+
+func metadataEqual(got, want *trackMetadata) (ok bool) {
+	if !reflect.DeepEqual(got.album, want.album) {
+		return
+	}
+	if !reflect.DeepEqual(got.artist, want.artist) {
+		return
+	}
+	if !reflect.DeepEqual(got.title, want.title) {
+		return
+	}
+	if !reflect.DeepEqual(got.genre, want.genre) {
+		return
+	}
+	if !reflect.DeepEqual(got.year, want.year) {
+		return
+	}
+	if !reflect.DeepEqual(got.track, want.track) {
+		return
+	}
+	if !reflect.DeepEqual(got.musicCDIdentifier, want.musicCDIdentifier) {
+		return
+	}
+	if !reflect.DeepEqual(got.canonicalType, want.canonicalType) {
+		return
+	}
+	if len(got.err) != len(want.err) {
+		return
+	}
+	if !errorSliceEqual(got.err, want.err) {
+		return
+	}
+	if !reflect.DeepEqual(got.correctedAlbum, want.correctedAlbum) {
+		return
+	}
+	if !reflect.DeepEqual(got.correctedArtist, want.correctedArtist) {
+		return
+	}
+	if !reflect.DeepEqual(got.correctedTitle, want.correctedTitle) {
+		return
+	}
+	if !reflect.DeepEqual(got.correctedGenre, want.correctedGenre) {
+		return
+	}
+	if !reflect.DeepEqual(got.correctedYear, want.correctedYear) {
+		return
+	}
+	if !reflect.DeepEqual(got.correctedTrack, want.correctedTrack) {
+		return
+	}
+	if !reflect.DeepEqual(got.correctedMusicCDIdentifier, want.correctedMusicCDIdentifier) {
+		return
+	}
+	if !reflect.DeepEqual(got.requiresEdit, want.requiresEdit) {
+		return
+	}
+	ok = true
+	return
+}
+
+func errorSliceEqual(got, want []error) (ok bool) {
+	if len(got) != len(want) {
+		return
+	}
+	for i, e := range got {
+		if e == nil && want[i] != nil {
+			return
+		}
+		if e != nil && want[i] == nil {
+			return
+		}
+		if e != nil && want[i] != nil {
+			if e.Error() != want[i].Error() {
+				return
+			}
+		}
+	}
+	ok = true
+	return
 }
 
 func Test_trackMetadata_isValid(t *testing.T) {
@@ -315,10 +396,10 @@ func Test_trackMetadata_isValid(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
+				err: []error{
+					nil,
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -342,10 +423,10 @@ func Test_trackMetadata_isValid(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file.",
-					"zero length",
+				err: []error{
+					nil,
+					fmt.Errorf("seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file."),
+					fmt.Errorf("zero length"),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -369,7 +450,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -392,7 +473,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -415,7 +496,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -455,7 +536,7 @@ func Test_trackMetadata_canonicalArtist(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -478,7 +559,7 @@ func Test_trackMetadata_canonicalArtist(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -501,7 +582,7 @@ func Test_trackMetadata_canonicalArtist(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -541,7 +622,7 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -564,7 +645,7 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -587,7 +668,7 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -627,7 +708,7 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -650,7 +731,7 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -673,7 +754,7 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -713,7 +794,7 @@ func Test_trackMetadata_canonicalYear(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -736,7 +817,7 @@ func Test_trackMetadata_canonicalYear(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -759,7 +840,7 @@ func Test_trackMetadata_canonicalYear(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -799,7 +880,7 @@ func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -822,7 +903,7 @@ func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -845,7 +926,7 @@ func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -872,12 +953,12 @@ func Test_trackMetadata_errors(t *testing.T) {
 	tests := []struct {
 		name string
 		tM   *trackMetadata
-		want []string
+		want []error
 	}{
 		{
 			name: "uninitialized data",
 			tM:   newTrackMetadata(),
-			want: []string{},
+			want: []error{},
 		},
 		{
 			name: "after read failure",
@@ -890,10 +971,10 @@ func Test_trackMetadata_errors(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
+				err: []error{
+					nil,
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -904,9 +985,9 @@ func Test_trackMetadata_errors(t *testing.T) {
 				correctedMusicCDIdentifier: id3v2.UnknownFrame{},
 				requiresEdit:               []bool{false, false, false},
 			},
-			want: []string{
-				"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
-				"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
+			want: []error{
+				fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
+				fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
 			},
 		},
 		{
@@ -920,10 +1001,10 @@ func Test_trackMetadata_errors(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file.",
-					"zero length",
+				err: []error{
+					nil,
+					fmt.Errorf("seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file."),
+					fmt.Errorf("zero length"),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -934,9 +1015,9 @@ func Test_trackMetadata_errors(t *testing.T) {
 				correctedMusicCDIdentifier: id3v2.UnknownFrame{},
 				requiresEdit:               []bool{false, false, false},
 			},
-			want: []string{
-				"seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file.",
-				"zero length",
+			want: []error{
+				fmt.Errorf("seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file."),
+				fmt.Errorf("zero length"),
 			},
 		},
 		{
@@ -950,7 +1031,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -960,7 +1041,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 				correctedMusicCDIdentifier: id3v2.UnknownFrame{},
 				requiresEdit:               []bool{false, false, false},
 			},
-			want: []string{"zero length"},
+			want: []error{fmt.Errorf("zero length")},
 		},
 		{
 			name: "after reading only id3v2 tag",
@@ -973,7 +1054,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -983,7 +1064,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 				correctedMusicCDIdentifier: id3v2.UnknownFrame{},
 				requiresEdit:               []bool{false, false, false},
 			},
-			want: []string{"no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""},
+			want: []error{fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"")},
 		},
 		{
 			name: "after reading both tags",
@@ -996,7 +1077,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1006,12 +1087,12 @@ func Test_trackMetadata_errors(t *testing.T) {
 				correctedMusicCDIdentifier: id3v2.UnknownFrame{},
 				requiresEdit:               []bool{false, false, false},
 			},
-			want: []string{},
+			want: []error{},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.tM.errors(); !reflect.DeepEqual(got, tt.want) {
+			if got := tt.tM.errors(); !errorSliceEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
@@ -1041,10 +1122,10 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
+				err: []error{
+					nil,
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -1066,10 +1147,10 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
+				err: []error{
+					nil,
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -1092,10 +1173,10 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file.",
-					"zero length",
+				err: []error{
+					nil,
+					fmt.Errorf("seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file."),
+					fmt.Errorf("zero length"),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -1117,10 +1198,10 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file.",
-					"zero length",
+				err: []error{
+					nil,
+					fmt.Errorf("seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file."),
+					fmt.Errorf("zero length"),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -1143,7 +1224,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1164,7 +1245,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1186,7 +1267,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1207,7 +1288,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1229,7 +1310,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1250,7 +1331,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1297,10 +1378,10 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
+				err: []error{
+					nil,
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -1322,10 +1403,10 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
+				err: []error{
+					nil,
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -1348,10 +1429,10 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file.",
-					"zero length",
+				err: []error{
+					nil,
+					fmt.Errorf("seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file."),
+					fmt.Errorf("zero length"),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -1373,10 +1454,10 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file.",
-					"zero length",
+				err: []error{
+					nil,
+					fmt.Errorf("seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file."),
+					fmt.Errorf("zero length"),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -1399,7 +1480,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1420,7 +1501,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "track name", ""},
@@ -1442,7 +1523,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1463,7 +1544,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", "track name"},
@@ -1485,7 +1566,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1506,7 +1587,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "track name", "track name"},
@@ -1528,7 +1609,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1549,7 +1630,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1596,10 +1677,10 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
+				err: []error{
+					nil,
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -1621,10 +1702,10 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
+				err: []error{
+					nil,
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -1647,10 +1728,10 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file.",
-					"zero length",
+				err: []error{
+					nil,
+					fmt.Errorf("seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file."),
+					fmt.Errorf("zero length"),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -1672,10 +1753,10 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file.",
-					"zero length",
+				err: []error{
+					nil,
+					fmt.Errorf("seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file."),
+					fmt.Errorf("zero length"),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -1698,7 +1779,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1719,7 +1800,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "album name", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1741,7 +1822,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1762,7 +1843,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", "album name"},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1784,7 +1865,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1805,7 +1886,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "album name", "album name"},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1852,10 +1933,10 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
+				err: []error{
+					nil,
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -1877,10 +1958,10 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
+				err: []error{
+					nil,
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -1903,10 +1984,10 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file.",
-					"zero length",
+				err: []error{
+					nil,
+					fmt.Errorf("seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file."),
+					fmt.Errorf("zero length"),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -1928,10 +2009,10 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file.",
-					"zero length",
+				err: []error{
+					nil,
+					fmt.Errorf("seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file."),
+					fmt.Errorf("zero length"),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -1954,7 +2035,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1975,7 +2056,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "artist name", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1997,7 +2078,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2018,7 +2099,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", "artist name"},
 				correctedTitle:             []string{"", "", ""},
@@ -2040,7 +2121,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2061,7 +2142,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "artist name", "artist name"},
 				correctedTitle:             []string{"", "", ""},
@@ -2108,10 +2189,10 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
+				err: []error{
+					nil,
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -2133,10 +2214,10 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
+				err: []error{
+					nil,
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -2159,10 +2240,10 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file.",
-					"zero length",
+				err: []error{
+					nil,
+					fmt.Errorf("seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file."),
+					fmt.Errorf("zero length"),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -2184,10 +2265,10 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file.",
-					"zero length",
+				err: []error{
+					nil,
+					fmt.Errorf("seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file."),
+					fmt.Errorf("zero length"),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -2210,7 +2291,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2231,7 +2312,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2253,7 +2334,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2274,7 +2355,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2296,7 +2377,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2317,7 +2398,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2364,10 +2445,10 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
+				err: []error{
+					nil,
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -2389,10 +2470,10 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
+				err: []error{
+					nil,
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -2415,10 +2496,10 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file.",
-					"zero length",
+				err: []error{
+					nil,
+					fmt.Errorf("seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file."),
+					fmt.Errorf("zero length"),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -2440,10 +2521,10 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file.",
-					"zero length",
+				err: []error{
+					nil,
+					fmt.Errorf("seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file."),
+					fmt.Errorf("zero length"),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -2466,7 +2547,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2487,7 +2568,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2509,7 +2590,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2530,7 +2611,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2552,7 +2633,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2573,7 +2654,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2620,10 +2701,10 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
+				err: []error{
+					nil,
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -2645,10 +2726,10 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
-					"open readMetadata\\no such file.mp3: The system cannot find the file specified.",
+				err: []error{
+					nil,
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
+					fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -2671,10 +2752,10 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file.",
-					"zero length",
+				err: []error{
+					nil,
+					fmt.Errorf("seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file."),
+					fmt.Errorf("zero length"),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -2696,10 +2777,10 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				track:             []int{0, 0, 0},
 				musicCDIdentifier: id3v2.UnknownFrame{},
 				canonicalType:     undefinedSource,
-				err: []string{
-					"",
-					"seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file.",
-					"zero length",
+				err: []error{
+					nil,
+					fmt.Errorf("seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file."),
+					fmt.Errorf("zero length"),
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -2722,7 +2803,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2743,7 +2824,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2765,7 +2846,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2786,7 +2867,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2808,7 +2889,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2829,7 +2910,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2875,7 +2956,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2899,7 +2980,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2923,7 +3004,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2947,7 +3028,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2971,7 +3052,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2995,7 +3076,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -3040,7 +3121,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -3064,7 +3145,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -3088,7 +3169,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -3112,7 +3193,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []string{"", "", "zero length"},
+				err:                        []error{nil, nil, fmt.Errorf("zero length")},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -3136,7 +3217,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"", ""},
+				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -3160,7 +3241,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 				track:                      []int{0, 29, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              id3v2Source,
-				err:                        []string{"", "", ""},
+				err:                        []error{nil, nil, nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},

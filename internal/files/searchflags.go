@@ -39,10 +39,7 @@ const (
 
 func reportBadDefault(o output.Bus, err error) {
 	o.WriteCanonicalError(internal.UserConfigurationFileInvalid, internal.DefaultConfigFileName, defaultSectionName, err)
-	o.Log(output.Error, internal.LogErrorInvalidConfigurationData, map[string]any{
-		internal.FieldKeySection: defaultSectionName,
-		internal.FieldKeyError:   err,
-	})
+	internal.LogInvalidConfigurationData(o, defaultSectionName, err)
 }
 
 // NewSearchFlags are used by commands that use the common top directory, target
@@ -116,18 +113,15 @@ func (sf *SearchFlags) NewSearch(o output.Bus) (s *Search, ok bool) {
 func (sf *SearchFlags) validateTopLevelDirectory(o output.Bus) bool {
 	file, err := os.Stat(*sf.topDirectory)
 	if err != nil {
-		o.WriteCanonicalError(internal.UserCannotReadTopDir, *sf.topDirectory, err)
-		o.Log(output.Error, internal.LogErrorCannotReadDirectory, map[string]any{
-			fieldKeyTopDirFlag:     *sf.topDirectory,
-			internal.FieldKeyError: err,
-		})
+		o.WriteCanonicalError("The -topDir value you specified, %q, cannot be read: %v", *sf.topDirectory, err)
+		internal.LogUnreadableDirectory(o, *sf.topDirectory, err)
 		return false
 	}
 	if file.IsDir() {
 		return true
 	}
-	o.WriteCanonicalError(internal.UserTopDirNotADirectory, *sf.topDirectory)
-	o.Log(output.Error, internal.LogErrorNotADirectory, map[string]any{
+	o.WriteCanonicalError("The -topDir value you specified, %q, is not a directory", *sf.topDirectory)
+	o.Log(output.Error, "the file is not a directory", map[string]any{
 		fieldKeyTopDirFlag: *sf.topDirectory,
 	})
 	return false
@@ -137,8 +131,8 @@ func (sf *SearchFlags) validateExtension(o output.Bus) (ok bool) {
 	ok = true
 	if !strings.HasPrefix(*sf.fileExtension, ".") || strings.Contains(strings.TrimPrefix(*sf.fileExtension, "."), ".") {
 		ok = false
-		o.WriteCanonicalError(internal.UserExtensionInvalidFormat, *sf.fileExtension)
-		o.Log(output.Error, internal.LogErrorInvalidExtensionFormat, map[string]any{
+		o.WriteCanonicalError("The -ext value you specified, %q, must contain exactly one '.' and '.' must be the first character", *sf.fileExtension)
+		o.Log(output.Error, "the file extension must begin with '.' and contain no other '.' characters", map[string]any{
 			fieldKeyTargetExtensionFlag: *sf.fileExtension,
 		})
 	}
@@ -146,10 +140,10 @@ func (sf *SearchFlags) validateExtension(o output.Bus) (ok bool) {
 	trackNameRegex, e = regexp.Compile("^\\d+[\\s-].+\\." + strings.TrimPrefix(*sf.fileExtension, ".") + "$")
 	if e != nil {
 		ok = false
-		o.WriteCanonicalError(internal.UserExtensionGarbled, *sf.fileExtension, e)
-		o.Log(output.Error, internal.LogErrorGarbledExtension, map[string]any{
+		o.WriteCanonicalError("The -ext value you specified, %q, cannot be used for file matching: %v", *sf.fileExtension, e)
+		o.Log(output.Error, "the file extension cannot be parsed as a regular expression", map[string]any{
 			fieldKeyTargetExtensionFlag: *sf.fileExtension,
-			internal.FieldKeyError:      e,
+			"error":                     e,
 		})
 	}
 	return
@@ -157,10 +151,10 @@ func (sf *SearchFlags) validateExtension(o output.Bus) (ok bool) {
 
 func validateRegexp(o output.Bus, pattern, name string) (filter *regexp.Regexp, ok bool) {
 	if f, err := regexp.Compile(pattern); err != nil {
-		o.WriteCanonicalError(internal.UserFilterGarbled, name, pattern, err)
-		o.Log(output.Error, internal.LogErrorGarbledFilter, map[string]any{
-			name:                   pattern,
-			internal.FieldKeyError: err,
+		o.WriteCanonicalError("The %s filter value you specified, %q, cannot be used: %v", name, pattern, err)
+		o.Log(output.Error, "the filter cannot be parsed as a regular expression", map[string]any{
+			name:    pattern,
+			"error": err,
 		})
 	} else {
 		filter = f

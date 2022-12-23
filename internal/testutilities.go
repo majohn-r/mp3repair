@@ -217,11 +217,11 @@ func SaveEnvVarForTesting(name string) *SavedEnvVar {
 }
 
 // RestoreForTesting resets a saved environment variable to its original state
-func (e *SavedEnvVar) RestoreForTesting() {
-	if e.Set {
-		os.Setenv(e.Name, e.Value)
+func (s *SavedEnvVar) RestoreForTesting() {
+	if s.Set {
+		os.Setenv(s.Name, s.Value)
 	} else {
-		os.Unsetenv(e.Name)
+		os.Unsetenv(s.Name)
 	}
 }
 

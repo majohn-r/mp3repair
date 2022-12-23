@@ -98,7 +98,7 @@ func TestRawReadID3V2Tag(t *testing.T) {
 		args
 		wantD *ID3V2TaggedTrackData
 	}{
-		{name: "bad test", args: args{path: "./noSuchFile!.mp3"}, wantD: &ID3V2TaggedTrackData{err: "foo"}},
+		{name: "bad test", args: args{path: "./noSuchFile!.mp3"}, wantD: &ID3V2TaggedTrackData{err: fmt.Errorf("foo")}},
 		{
 			name: "good test",
 			args: args{path: "./goodFile.mp3"},
@@ -113,18 +113,18 @@ func TestRawReadID3V2Tag(t *testing.T) {
 			name: "bad data test",
 			args: args{path: "./badFile.mp3"},
 			wantD: &ID3V2TaggedTrackData{
-				err: internal.ErrorDoesNotBeginWithDigit,
+				err: fmt.Errorf(internal.ErrorDoesNotBeginWithDigit),
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			gotD := RawReadID3V2Tag(tt.args.path)
-			if gotD.err != "" {
-				if tt.wantD.err == "" {
+			if gotD.err != nil {
+				if tt.wantD.err == nil {
 					t.Errorf("%s = %v, want %v", fnName, gotD, tt.wantD)
 				}
-			} else if tt.wantD.err != "" {
+			} else if tt.wantD.err != nil {
 				t.Errorf("%s = %v, want %v", fnName, gotD, tt.wantD)
 			}
 		})

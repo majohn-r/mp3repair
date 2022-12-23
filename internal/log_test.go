@@ -100,8 +100,8 @@ func TestCleanupLogFiles(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Error: "The log file \"testlogs\\\\mp3.00.log\" cannot be deleted: remove testlogs\\mp3.00.log: The process cannot access the file because it is being used by another process.\n" +
 					"The log file \"testlogs\\\\mp3.01.log\" cannot be deleted: remove testlogs\\mp3.01.log: The process cannot access the file because it is being used by another process.\n",
-				Log: "level='error' directory='testlogs' error='remove testlogs\\mp3.00.log: The process cannot access the file because it is being used by another process.' fileName='mp3.00.log' msg='cannot delete file'\n" +
-					"level='error' directory='testlogs' error='remove testlogs\\mp3.01.log: The process cannot access the file because it is being used by another process.' fileName='mp3.01.log' msg='cannot delete file'\n",
+				Log: "level='error' error='remove testlogs\\mp3.00.log: The process cannot access the file because it is being used by another process.' fileName='testlogs\\mp3.00.log' msg='cannot delete file'\n" +
+					"level='error' error='remove testlogs\\mp3.01.log: The process cannot access the file because it is being used by another process.' fileName='testlogs\\mp3.01.log' msg='cannot delete file'\n",
 			},
 		},
 		{

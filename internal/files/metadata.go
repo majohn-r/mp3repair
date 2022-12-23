@@ -25,7 +25,7 @@ type trackMetadata struct {
 	track             []int
 	musicCDIdentifier id3v2.UnknownFrame
 	canonicalType     sourceType
-	err               []string
+	err               []error
 	// these fields are set by the various xDiffers methods
 	correctedAlbum             []string
 	correctedArtist            []string
@@ -45,7 +45,7 @@ func newTrackMetadata() *trackMetadata {
 		genre:           make([]string, totalSources),
 		year:            make([]string, totalSources),
 		track:           make([]int, totalSources),
-		err:             make([]string, totalSources),
+		err:             make([]error, totalSources),
 		correctedAlbum:  make([]string, totalSources),
 		correctedArtist: make([]string, totalSources),
 		correctedTitle:  make([]string, totalSources),
@@ -61,14 +61,14 @@ func readMetadata(path string) *trackMetadata {
 	d := RawReadID3V2Tag(path)
 	tM := newTrackMetadata()
 	switch {
-	case id3v1Err != nil && d.err != "":
-		tM.err[id3v1Source] = id3v1Err.Error()
+	case id3v1Err != nil && d.err != nil:
+		tM.err[id3v1Source] = id3v1Err
 		tM.err[id3v2Source] = d.err
 	case id3v1Err != nil:
-		tM.err[id3v1Source] = id3v1Err.Error()
+		tM.err[id3v1Source] = id3v1Err
 		tM.setID3v2Values(d)
 		tM.canonicalType = id3v2Source
-	case d.err != "":
+	case d.err != nil:
 		tM.err[id3v2Source] = d.err
 		tM.setID3v1Values(v1)
 		tM.canonicalType = id3v1Source
@@ -129,14 +129,13 @@ func (tM *trackMetadata) canonicalMusicCDIdentifier() id3v2.UnknownFrame {
 	return tM.musicCDIdentifier
 }
 
-func (tM *trackMetadata) errors() []string {
-	s := []string{}
+func (tM *trackMetadata) errors() (errs []error) {
 	for _, e := range tM.err {
-		if len(e) > 0 {
-			s = append(s, e)
+		if e != nil {
+			errs = append(errs, e)
 		}
 	}
-	return s
+	return
 }
 
 type comparableStrings struct {
@@ -157,7 +156,7 @@ var (
 
 func (tM *trackMetadata) trackDiffers(track int) (differs bool) {
 	for _, source := range []sourceType{id3v1Source, id3v2Source} {
-		if tM.err[source] == "" && tM.track[source] != track {
+		if tM.err[source] == nil && tM.track[source] != track {
 			differs = true
 			tM.requiresEdit[source] = true
 			tM.correctedTrack[source] = track
@@ -169,7 +168,7 @@ func (tM *trackMetadata) trackDiffers(track int) (differs bool) {
 func (tM *trackMetadata) trackTitleDiffers(title string) (differs bool) {
 	for _, source := range []sourceType{id3v1Source, id3v2Source} {
 		comparison := comparableStrings{externalName: title, metadataName: tM.title[source]}
-		if tM.err[source] == "" && nameComparators[source](comparison) {
+		if tM.err[source] == nil && nameComparators[source](comparison) {
 			differs = true
 			tM.requiresEdit[source] = true
 			tM.correctedTitle[source] = title
@@ -181,7 +180,7 @@ func (tM *trackMetadata) trackTitleDiffers(title string) (differs bool) {
 func (tM *trackMetadata) albumTitleDiffers(albumTitle string) (differs bool) {
 	for _, source := range []sourceType{id3v1Source, id3v2Source} {
 		comparison := comparableStrings{externalName: albumTitle, metadataName: tM.album[source]}
-		if tM.err[source] == "" && nameComparators[source](comparison) {
+		if tM.err[source] == nil && nameComparators[source](comparison) {
 			differs = true
 			tM.requiresEdit[source] = true
 			tM.correctedAlbum[source] = albumTitle
@@ -193,7 +192,7 @@ func (tM *trackMetadata) albumTitleDiffers(albumTitle string) (differs bool) {
 func (tM *trackMetadata) artistNameDiffers(artistName string) (differs bool) {
 	for _, source := range []sourceType{id3v1Source, id3v2Source} {
 		comparison := comparableStrings{externalName: artistName, metadataName: tM.artist[source]}
-		if tM.err[source] == "" && nameComparators[source](comparison) {
+		if tM.err[source] == nil && nameComparators[source](comparison) {
 			differs = true
 			tM.requiresEdit[source] = true
 			tM.correctedArtist[source] = artistName
@@ -205,7 +204,7 @@ func (tM *trackMetadata) artistNameDiffers(artistName string) (differs bool) {
 func (tM *trackMetadata) genreDiffers(genre string) (differs bool) {
 	for _, source := range []sourceType{id3v1Source, id3v2Source} {
 		comparison := comparableStrings{externalName: genre, metadataName: tM.genre[source]}
-		if tM.err[source] == "" && genreComparators[source](comparison) {
+		if tM.err[source] == nil && genreComparators[source](comparison) {
 			differs = true
 			tM.requiresEdit[source] = true
 			tM.correctedGenre[source] = genre
@@ -216,7 +215,7 @@ func (tM *trackMetadata) genreDiffers(genre string) (differs bool) {
 
 func (tM *trackMetadata) yearDiffers(year string) (differs bool) {
 	for _, source := range []sourceType{id3v1Source, id3v2Source} {
-		if tM.err[source] == "" && tM.year[source] != year {
+		if tM.err[source] == nil && tM.year[source] != year {
 			differs = true
 			tM.requiresEdit[source] = true
 			tM.correctedYear[source] = year
@@ -226,7 +225,7 @@ func (tM *trackMetadata) yearDiffers(year string) (differs bool) {
 }
 
 func (tM *trackMetadata) mcdiDiffers(f id3v2.UnknownFrame) (differs bool) {
-	if tM.err[id3v2Source] == "" && !bytes.Equal(tM.musicCDIdentifier.Body, f.Body) {
+	if tM.err[id3v2Source] == nil && !bytes.Equal(tM.musicCDIdentifier.Body, f.Body) {
 		differs = true
 		tM.requiresEdit[id3v2Source] = true
 		tM.correctedMusicCDIdentifier = f

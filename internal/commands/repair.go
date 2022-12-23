@@ -73,7 +73,7 @@ func (r *repair) logFields() map[string]any {
 }
 
 func (r *repair) runCommand(o output.Bus, s *files.Search) (ok bool) {
-	o.Log(output.Info, internal.LogInfoExecutingCommand, r.logFields())
+	logStart(o, repairCommandName, r.logFields())
 	artists, ok := s.LoadData(o)
 	if ok {
 		files.ReadMetadata(o, artists)
@@ -142,16 +142,16 @@ func reportProblem(b bool, problem string) (s string) {
 func fixTracks(o output.Bus, tracks []*files.Track) {
 	for _, t := range tracks {
 		if err := t.EditTags(); len(err) != 0 {
-			o.WriteCanonicalError(internal.UserErrorRepairingTrackFile, t)
-			o.Log(output.Error, internal.LogErrorCannotEditTrack, map[string]any{
-				internal.LogInfoExecutingCommand: repairCommandName,
-				internal.FieldKeyDirectory:       t.Directory(),
-				internal.FieldKeyFileName:        t.FileName(),
-				internal.FieldKeyError:           err,
+			o.WriteCanonicalError("An error occurred repairing track %q", t)
+			o.Log(output.Error, "cannot edit track", map[string]any{
+				fieldKeyCommandName: repairCommandName,
+				"directory":         t.Directory(),
+				"fileName":          t.FileName(),
+				"error":             err,
 			})
 		} else {
 			o.WriteConsole("%q repaired.\n", t)
-			MarkDirty(o)
+			MarkDirty(o, repairCommandName)
 		}
 	}
 }
@@ -173,12 +173,12 @@ func backupTrack(o output.Bus, t *files.Track) {
 	destinationPath := filepath.Join(backupDir, fmt.Sprintf("%d.mp3", t.Number()))
 	if internal.DirExists(backupDir) && !internal.PlainFileExists(destinationPath) {
 		if err := t.Copy(destinationPath); err != nil {
-			o.WriteCanonicalError(internal.UserErrorCreatingBackupFile, t)
-			o.Log(output.Error, internal.LogErrorCannotCopyFile, map[string]any{
-				fieldKeyCommandName:    repairCommandName,
-				fieldKeySource:         t.Path(),
-				fieldKeyDestination:    destinationPath,
-				internal.FieldKeyError: err,
+			o.WriteCanonicalError("The track %q cannot be backed up", t)
+			o.Log(output.Error, "error copying file", map[string]any{
+				fieldKeyCommandName: repairCommandName,
+				fieldKeySource:      t.Path(),
+				fieldKeyDestination: destinationPath,
+				"error":             err,
 			})
 		} else {
 			o.WriteCanonicalConsole("The track %q has been backed up to %q", t, destinationPath)
@@ -192,11 +192,7 @@ func makeBackupDirectories(o output.Bus, paths []string) {
 		if !internal.DirExists(newPath) {
 			if err := internal.Mkdir(newPath); err != nil {
 				o.WriteCanonicalError(internal.UserCannotCreateDirectory, newPath, err)
-				o.Log(output.Error, internal.LogErrorCannotCreateDirectory, map[string]any{
-					fieldKeyCommandName:        repairCommandName,
-					internal.FieldKeyDirectory: newPath,
-					internal.FieldKeyError:     err,
-				})
+				logDirectoryCreationFailure(o, repairCommandName, newPath, err)
 			}
 		}
 	}

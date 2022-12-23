@@ -171,58 +171,58 @@ type MetadataState struct {
 // HasNumberingConflict returns true if there is a conflict between the track
 // number (as derived from the track's file name) and the value of the track's
 // ID3V2 TRCK frame.
-func (s MetadataState) HasNumberingConflict() bool {
-	return s.numberingConflict
+func (m MetadataState) HasNumberingConflict() bool {
+	return m.numberingConflict
 }
 
 // HasTrackNameConflict returns true if there is a conflict between the track
 // name (as derived from the track's file name) and the value of the track's
 // ID3V2 TIT2 frame.
-func (s MetadataState) HasTrackNameConflict() bool {
-	return s.trackNameConflict
+func (m MetadataState) HasTrackNameConflict() bool {
+	return m.trackNameConflict
 }
 
 // HasAlbumNameConflict returns true if there is a conflict between the name of
 // the album the track is associated with and the value of the track's ID3V2
 // TALB frame.
-func (s MetadataState) HasAlbumNameConflict() bool {
-	return s.albumNameConflict
+func (m MetadataState) HasAlbumNameConflict() bool {
+	return m.albumNameConflict
 }
 
 // HasArtistNameConflict returns true if there is a conflict between the track's
 // recording artist and the value of the track's ID3V2 TPE1 frame.
-func (s MetadataState) HasArtistNameConflict() bool {
-	return s.artistNameConflict
+func (m MetadataState) HasArtistNameConflict() bool {
+	return m.artistNameConflict
 }
 
 // HasTaggingConflicts returns true if there are any conflicts between the
 // track's ID3V2 frame values and their corresponding file-based values.
-func (s MetadataState) HasTaggingConflicts() bool {
-	return s.numberingConflict ||
-		s.trackNameConflict ||
-		s.albumNameConflict ||
-		s.artistNameConflict ||
-		s.genreConflict ||
-		s.yearConflict ||
-		s.mcdiConflict
+func (m MetadataState) HasTaggingConflicts() bool {
+	return m.numberingConflict ||
+		m.trackNameConflict ||
+		m.albumNameConflict ||
+		m.artistNameConflict ||
+		m.genreConflict ||
+		m.yearConflict ||
+		m.mcdiConflict
 }
 
 // HasMCDIConflict returns true if there is conflict between the track's album's
 // music CD identifier and the value of the track's ID3V2 MCDI frame.
-func (s MetadataState) HasMCDIConflict() bool {
-	return s.mcdiConflict
+func (m MetadataState) HasMCDIConflict() bool {
+	return m.mcdiConflict
 }
 
 // HasGenreConflict returns true if there is conflict between the track's
 // album's genre and the value of the track's ID3V2 TCON frame.
-func (s MetadataState) HasGenreConflict() bool {
-	return s.genreConflict
+func (m MetadataState) HasGenreConflict() bool {
+	return m.genreConflict
 }
 
 // HasYearConflict returns true if there is conflict between the track's album's
 // year and the value of the track's ID3V2 TYER frame.
-func (s MetadataState) HasYearConflict() bool {
-	return s.yearConflict
+func (m MetadataState) HasYearConflict() bool {
+	return m.yearConflict
 }
 
 // ReconcileMetadata determines whether there are problems with the track's
@@ -363,7 +363,7 @@ func processArtistMetadata(o output.Bus, artists []*Artist) {
 		}
 		if chosenName, ok := pickKey(names); !ok {
 			o.WriteCanonicalError(internal.UserAmbiguousChoices, "artist name", artist.Name(), friendlyEncode(names))
-			o.Log(output.Error, internal.LogErrorAmbiguousValue, map[string]any{
+			logAmbiguousValue(o, map[string]any{
 				fieldKeyFieldName:  "artist name",
 				fieldKeySettings:   names,
 				fieldKeyArtistName: artist.Name(),
@@ -372,6 +372,10 @@ func processArtistMetadata(o output.Bus, artists []*Artist) {
 			artist.canonicalName = chosenName
 		}
 	}
+}
+
+func logAmbiguousValue(o output.Bus, m map[string]any) {
+	o.Log(output.Error, "no value has a majority of instances", m)
 }
 
 func processAlbumMetadata(o output.Bus, artists []*Artist) {
@@ -402,7 +406,7 @@ func processAlbumMetadata(o output.Bus, artists []*Artist) {
 			}
 			if chosenGenre, ok := pickKey(genres); !ok {
 				o.WriteCanonicalError(internal.UserAmbiguousChoices, "genre", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(genres))
-				o.Log(output.Error, internal.LogErrorAmbiguousValue, map[string]any{
+				logAmbiguousValue(o, map[string]any{
 					fieldKeyFieldName:  "genre",
 					fieldKeySettings:   genres,
 					fieldKeyAlbumName:  album.Name(),
@@ -413,7 +417,7 @@ func processAlbumMetadata(o output.Bus, artists []*Artist) {
 			}
 			if chosenYear, ok := pickKey(years); !ok {
 				o.WriteCanonicalError(internal.UserAmbiguousChoices, "year", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(years))
-				o.Log(output.Error, internal.LogErrorAmbiguousValue, map[string]any{
+				logAmbiguousValue(o, map[string]any{
 					fieldKeyFieldName:  "year",
 					fieldKeySettings:   years,
 					fieldKeyAlbumName:  album.Name(),
@@ -424,7 +428,7 @@ func processAlbumMetadata(o output.Bus, artists []*Artist) {
 			}
 			if chosenAlbumTitle, ok := pickKey(albumTitles); !ok {
 				o.WriteCanonicalError(internal.UserAmbiguousChoices, "album title", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(albumTitles))
-				o.Log(output.Error, internal.LogErrorAmbiguousValue, map[string]any{
+				logAmbiguousValue(o, map[string]any{
 					fieldKeyFieldName:  "album title",
 					fieldKeySettings:   albumTitles,
 					fieldKeyAlbumName:  album.Name(),
@@ -435,7 +439,7 @@ func processAlbumMetadata(o output.Bus, artists []*Artist) {
 			}
 			if chosenMCDI, ok := pickKey(mcdis); !ok {
 				o.WriteCanonicalError(internal.UserAmbiguousChoices, "MCDI frame", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(mcdis))
-				o.Log(output.Error, internal.LogErrorAmbiguousValue, map[string]any{
+				logAmbiguousValue(o, map[string]any{
 					fieldKeyFieldName:  "mcdi frame",
 					fieldKeySettings:   mcdis,
 					fieldKeyAlbumName:  album.Name(),
@@ -493,12 +497,27 @@ var (
 		id3v1Source: internal.UserID3v1TagError,
 		id3v2Source: internal.UserID3v2TagError,
 	}
-	tagLogErrors = map[sourceType]string{
-		id3v1Source: internal.LogErrorID3v1TagError,
-		id3v2Source: internal.LogErrorID3v2TagError,
+	tagLogErrors = map[sourceType]func(output.Bus, *Track, error){
+		id3v1Source: LogID3V1TagError,
+		id3v2Source: LogID3V2TagError,
 	}
 )
 
+// Log a problem reading the ID3V1 tag
+func LogID3V1TagError(o output.Bus, t *Track, e error) {
+	o.Log(output.Error, "id3v1 tag error", map[string]any{
+		"track": t.String(),
+		"error": e,
+	})
+}
+
+// Log a problem reading the ID3V2 tag
+func LogID3V2TagError(o output.Bus, t *Track, e error) {
+	o.Log(output.Error, "id3v2 tag error", map[string]any{
+		"track": t.String(),
+		"error": e,
+	})
+}
 func reportAllTrackErrors(o output.Bus, artists []*Artist) {
 	for _, artist := range artists {
 		for _, album := range artist.Albums() {
@@ -513,14 +532,9 @@ func reportTrackErrors(o output.Bus, track *Track, album *Album, artist *Artist)
 	if track.hasTagError() {
 		for _, source := range []sourceType{id3v1Source, id3v2Source} {
 			e := track.tM.err[source]
-			if e != "" {
+			if e != nil {
 				o.WriteCanonicalError(tagConsoleErrors[source], track.name, album.name, artist.name, e)
-				o.Log(output.Error, tagLogErrors[source], map[string]any{
-					fieldKeyTrackName:      track.name,
-					fieldKeyAlbumName:      album.name,
-					fieldKeyArtistName:     artist.name,
-					internal.FieldKeyError: e,
-				})
+				tagLogErrors[source](o, track, e)
 			}
 		}
 	}
@@ -542,12 +556,12 @@ func ParseTrackNameForTesting(name string) (simpleName string, trackNumber int) 
 
 func parseTrackName(o output.Bus, name string, album *Album, ext string) (simpleName string, trackNumber int, valid bool) {
 	if !trackNameRegex.MatchString(name) {
-		o.Log(output.Error, internal.LogErrorInvalidTrackName, map[string]any{
+		o.Log(output.Error, "the track name cannot be parsed", map[string]any{
 			fieldKeyTrackName:  name,
 			fieldKeyAlbumName:  album.name,
 			fieldKeyArtistName: album.RecordingArtistName(),
 		})
-		o.WriteCanonicalError(internal.UserTrackNameGarbled, name, album.name, album.RecordingArtistName())
+		o.WriteCanonicalError("The track %q on album %q by artist %q cannot be parsed", name, album.name, album.RecordingArtistName())
 		return
 	}
 	wantDigit := true

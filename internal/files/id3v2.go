@@ -19,7 +19,7 @@ type ID3V2TaggedTrackData struct {
 	year              string
 	track             int
 	musicCDIdentifier id3v2.UnknownFrame
-	err               string
+	err               error
 }
 
 // NewID3V2TaggedTrackDataForTesting creates a new instance of
@@ -32,7 +32,7 @@ func NewID3V2TaggedTrackDataForTesting(albumFrame, artistFrame, titleFrame strin
 		title:             titleFrame,
 		track:             evaluatedNumberFrame,
 		musicCDIdentifier: id3v2.UnknownFrame{Body: mcdi},
-		err:               "",
+		err:               nil,
 	}
 }
 
@@ -47,12 +47,12 @@ func RawReadID3V2Tag(path string) (d *ID3V2TaggedTrackData) {
 	var tag *id3v2.Tag
 	var err error
 	if tag, err = readID3V2Tag(path); err != nil {
-		d.err = err.Error()
+		d.err = err
 		return
 	}
 	defer tag.Close()
 	if trackNumber, err := toTrackNumber(tag.GetTextFrame(trackFrame).Text); err != nil {
-		d.err = err.Error()
+		d.err = err
 	} else {
 		d.album = removeLeadingBOMs(tag.Album())
 		d.artist = removeLeadingBOMs(tag.Artist())
@@ -92,7 +92,7 @@ func toTrackNumber(s string) (i int, err error) {
 	// this is more complicated than I wanted, because some mp3 rippers produce
 	// track numbers like "12/14", meaning 12th track of 14
 	if s == "" {
-		err = fmt.Errorf(internal.ErrorZeroLength)
+		err = fmt.Errorf("zero length")
 		return
 	}
 	s = removeLeadingBOMs(s)
@@ -191,8 +191,8 @@ type id3v2TrackFrame struct {
 
 // String returns the contents of an ID3V2TrackFrame formatted in the form
 // "name = \"value\"".
-func (f *id3v2TrackFrame) String() string {
-	return fmt.Sprintf("%s = %q", f.name, f.value)
+func (itf *id3v2TrackFrame) String() string {
+	return fmt.Sprintf("%s = %q", itf.name, itf.value)
 }
 
 func readID3V2Metadata(path string) (version byte, enc string, f []string, f2 []*id3v2TrackFrame, e error) {

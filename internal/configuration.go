@@ -16,11 +16,7 @@ import (
 // DefaultConfigFileName is the name of the configuration file that contains defaults for the commands
 const DefaultConfigFileName = "defaults.yaml"
 
-const (
-	appDataVar      = "APPDATA"
-	fieldKeyKeyName = "key"
-	fieldKeyType    = "type"
-)
+const appDataVar = "APPDATA"
 
 var (
 	appSpecificPath      string
@@ -75,20 +71,20 @@ func ReadConfigurationFile(o output.Bus) (c *Configuration, ok bool) {
 	yfile, _ := os.ReadFile(configFile) // only probable error circumvented by verifyFileExists failure
 	data, err := readYaml(yfile)
 	if err != nil {
-		o.Log(output.Error, LogErrorCannotUnmarshalYAML, map[string]any{
-			FieldKeyDirectory: path,
-			FieldKeyFileName:  DefaultConfigFileName,
-			FieldKeyError:     err,
+		o.Log(output.Error, "cannot unmarshal yaml content", map[string]any{
+			"directory": path,
+			"fileName":  DefaultConfigFileName,
+			"error":     err,
 		})
-		o.WriteCanonicalError(UserConfigurationFileGarbled, configFile, err)
+		o.WriteCanonicalError("The configuration file %q is not well-formed YAML: %v", configFile, err)
 		return
 	}
 	c = CreateConfiguration(o, data)
 	ok = true
-	o.Log(output.Info, LogInfoConfigurationFileRead, map[string]any{
-		FieldKeyDirectory: path,
-		FieldKeyFileName:  DefaultConfigFileName,
-		FieldKeyValue:     c,
+	o.Log(output.Info, "read configuration file", map[string]any{
+		"directory": path,
+		"fileName":  DefaultConfigFileName,
+		"value":     c,
 	})
 	return
 }
@@ -104,9 +100,7 @@ func LookupAppData(o output.Bus) (string, bool) {
 	if value, ok := os.LookupEnv(appDataVar); ok {
 		return value, ok
 	}
-	o.Log(output.Info, LogInfoNotSet, map[string]any{
-		fieldKeyVarName: appDataVar,
-	})
+	o.Log(output.Info, "not set", map[string]any{"environment variable": appDataVar})
 	return "", false
 }
 
@@ -114,21 +108,21 @@ func verifyFileExists(o output.Bus, path string) (ok bool, err error) {
 	f, err := os.Stat(path)
 	if err == nil {
 		if f.IsDir() {
-			o.Log(output.Error, LogErrorFileIsDirectory, map[string]any{
-				FieldKeyDirectory: filepath.Dir(path),
-				FieldKeyFileName:  filepath.Base(path),
+			o.Log(output.Error, "file is a directory", map[string]any{
+				"directory": filepath.Dir(path),
+				"fileName":  filepath.Base(path),
 			})
-			o.WriteCanonicalError(UserConfigurationFileIsDir, path)
-			err = fmt.Errorf(ErrorFileIsDir)
+			o.WriteCanonicalError("The configuration file %q is a directory", path)
+			err = fmt.Errorf("file exists but is a directory")
 			return
 		}
 		ok = true
 		return
 	}
 	if errors.Is(err, os.ErrNotExist) {
-		o.Log(output.Info, LogInfoNoSuchFile, map[string]any{
-			FieldKeyDirectory: filepath.Dir(path),
-			FieldKeyFileName:  filepath.Base(path),
+		o.Log(output.Info, "file does not exist", map[string]any{
+			"directory": filepath.Dir(path),
+			"fileName":  filepath.Base(path),
 		})
 		err = nil
 	}
@@ -307,12 +301,12 @@ func CreateConfiguration(o output.Bus, data map[string]any) *Configuration {
 		case map[string]any:
 			c.cMap[key] = CreateConfiguration(o, t)
 		default:
-			o.Log(output.Error, LogErrorUnexpectedValueType, map[string]any{
-				fieldKeyKeyName: key,
-				FieldKeyValue:   v,
-				fieldKeyType:    fmt.Sprintf("%T", v),
+			o.Log(output.Error, "unexpected value type", map[string]any{
+				"key":   key,
+				"value": v,
+				"type":  fmt.Sprintf("%T", v),
 			})
-			o.WriteCanonicalError(UserUnexpectedValueType, key, v, v)
+			o.WriteCanonicalError("The key %q, with value '%v', has an unexpected type %T", key, v, v)
 			c.sMap[key] = fmt.Sprintf("%v", v)
 		}
 	}

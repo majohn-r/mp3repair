@@ -280,27 +280,27 @@ func newID3v1Metadata() *id3v1Metadata {
 	return &id3v1Metadata{data: make([]byte, id3v1Length)}
 }
 
-func (v1 *id3v1Metadata) readStringField(f id3v1Field) string {
-	s := string(v1.data[f.startOffset:f.endOffset])
+func (im *id3v1Metadata) readStringField(f id3v1Field) string {
+	s := string(im.data[f.startOffset:f.endOffset])
 	return trim(s)
 }
 
-func (v1 *id3v1Metadata) isValid() bool {
-	tag := v1.readStringField(id3v1Tag)
+func (im *id3v1Metadata) isValid() bool {
+	tag := im.readStringField(id3v1Tag)
 	return tag == "TAG"
 }
 
-func (v1 *id3v1Metadata) getTitle() string {
-	return v1.readStringField(id3v1Title)
+func (im *id3v1Metadata) getTitle() string {
+	return im.readStringField(id3v1Title)
 }
 
-func (v1 *id3v1Metadata) writeStringField(s string, f id3v1Field) {
-	copy(v1.data[f.startOffset:f.endOffset], bytes.Repeat([]byte{0}, f.length))
+func (im *id3v1Metadata) writeStringField(s string, f id3v1Field) {
+	copy(im.data[f.startOffset:f.endOffset], bytes.Repeat([]byte{0}, f.length))
 	// truncate long strings ...
 	if len(s) > f.length {
 		s = s[0:f.length]
 	}
-	copy(v1.data[f.startOffset:f.endOffset], s)
+	copy(im.data[f.startOffset:f.endOffset], s)
 }
 
 func repairName(origin string) string {
@@ -315,69 +315,69 @@ func repairName(origin string) string {
 	return string(externalBytes)
 }
 
-func (v1 *id3v1Metadata) setTitle(s string) {
-	v1.writeStringField(repairName(s), id3v1Title)
+func (im *id3v1Metadata) setTitle(s string) {
+	im.writeStringField(repairName(s), id3v1Title)
 }
 
-func (v1 *id3v1Metadata) getArtist() string {
-	return v1.readStringField(id3v1Artist)
+func (im *id3v1Metadata) getArtist() string {
+	return im.readStringField(id3v1Artist)
 }
 
-func (v1 *id3v1Metadata) setArtist(s string) {
-	v1.writeStringField(repairName(s), id3v1Artist)
+func (im *id3v1Metadata) setArtist(s string) {
+	im.writeStringField(repairName(s), id3v1Artist)
 }
 
-func (v1 *id3v1Metadata) getAlbum() string {
-	return v1.readStringField(id3v1Album)
+func (im *id3v1Metadata) getAlbum() string {
+	return im.readStringField(id3v1Album)
 }
 
-func (v1 *id3v1Metadata) setAlbum(s string) {
-	v1.writeStringField(repairName(s), id3v1Album)
+func (im *id3v1Metadata) setAlbum(s string) {
+	im.writeStringField(repairName(s), id3v1Album)
 }
 
-func (v1 *id3v1Metadata) getYear() string {
-	return v1.readStringField(id3v1Year)
+func (im *id3v1Metadata) getYear() string {
+	return im.readStringField(id3v1Year)
 }
 
-func (v1 *id3v1Metadata) setYear(s string) {
-	v1.writeStringField(s, id3v1Year)
+func (im *id3v1Metadata) setYear(s string) {
+	im.writeStringField(s, id3v1Year)
 }
 
-func (v1 *id3v1Metadata) getComment() string {
-	return v1.readStringField(id3v1Comment)
+func (im *id3v1Metadata) getComment() string {
+	return im.readStringField(id3v1Comment)
 }
 
-func (v1 *id3v1Metadata) setComment(s string) {
-	v1.writeStringField(s, id3v1Comment)
+func (im *id3v1Metadata) setComment(s string) {
+	im.writeStringField(s, id3v1Comment)
 }
 
-func (v1 *id3v1Metadata) readByteField(f id3v1Field) int {
-	return int(v1.data[f.startOffset])
+func (im *id3v1Metadata) readByteField(f id3v1Field) int {
+	return int(im.data[f.startOffset])
 }
 
-func (v1 *id3v1Metadata) getTrack() (i int, ok bool) {
-	if v1.readByteField(id3v1ZeroByte) == 0 {
-		i = v1.readByteField(id3v1Track)
+func (im *id3v1Metadata) getTrack() (i int, ok bool) {
+	if im.readByteField(id3v1ZeroByte) == 0 {
+		i = im.readByteField(id3v1Track)
 		ok = true
 	}
 	return
 }
 
-func (v1 *id3v1Metadata) setByteField(v int, f id3v1Field) {
-	v1.data[f.startOffset] = byte(v)
+func (im *id3v1Metadata) setByteField(v int, f id3v1Field) {
+	im.data[f.startOffset] = byte(v)
 }
 
-func (v1 *id3v1Metadata) setTrack(t int) bool {
+func (im *id3v1Metadata) setTrack(t int) bool {
 	if t < 1 || t > 255 {
 		return false
 	}
-	v1.setByteField(0, id3v1ZeroByte)
-	v1.setByteField(t, id3v1Track)
+	im.setByteField(0, id3v1ZeroByte)
+	im.setByteField(t, id3v1Track)
 	return true
 }
 
-func (v1 *id3v1Metadata) getGenre() (string, bool) {
-	s, ok := genreMap[v1.readByteField(id3v1Genre)]
+func (im *id3v1Metadata) getGenre() (string, bool) {
+	s, ok := genreMap[im.readByteField(id3v1Genre)]
 	return s, ok
 }
 
@@ -389,12 +389,12 @@ func initGenreIndices() {
 	}
 }
 
-func (v1 *id3v1Metadata) setGenre(s string) {
+func (im *id3v1Metadata) setGenre(s string) {
 	initGenreIndices()
 	if index, ok := genreIndicesMap[strings.ToLower(s)]; !ok {
-		v1.setByteField(genreIndicesMap["other"], id3v1Genre)
+		im.setByteField(genreIndicesMap["other"], id3v1Genre)
 	} else {
-		v1.setByteField(index, id3v1Genre)
+		im.setByteField(index, id3v1Genre)
 	}
 }
 
@@ -450,8 +450,8 @@ func internalReadID3V1Metadata(path string, readFunc func(f *os.File, b []byte) 
 	return nil, fmt.Errorf("no id3v1 tag found in file %q", path)
 }
 
-func (v1 *id3v1Metadata) write(path string) error {
-	return v1.internalWrite(path, writeToFile)
+func (im *id3v1Metadata) write(path string) error {
+	return im.internalWrite(path, writeToFile)
 }
 
 func writeToFile(f *os.File, b []byte) (int, error) {
@@ -492,7 +492,7 @@ func updateID3V1Tag(t *Track, src sourceType) (err error) {
 	return
 }
 
-func (v1 *id3v1Metadata) internalWrite(originalPath string, writeFunc func(f *os.File, b []byte) (int, error)) (err error) {
+func (im *id3v1Metadata) internalWrite(originalPath string, writeFunc func(f *os.File, b []byte) (int, error)) (err error) {
 	var oldFile *os.File
 	if oldFile, err = os.Open(originalPath); err == nil {
 		defer oldFile.Close()
@@ -513,7 +513,7 @@ func (v1 *id3v1Metadata) internalWrite(originalPath string, writeFunc func(f *os
 					oldFile.Close()
 					if _, err = newFile.Seek(-id3v1Length, io.SeekEnd); err == nil {
 						var n int
-						if n, err = writeFunc(newFile, v1.data); err == nil {
+						if n, err = writeFunc(newFile, im.data); err == nil {
 							newFile.Close()
 							if n != id3v1Length {
 								err = fmt.Errorf("wrote %d bytes to %q, expected to write %d bytes", n, newPath, id3v1Length)

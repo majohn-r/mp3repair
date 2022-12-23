@@ -55,8 +55,8 @@ func newAboutCmd(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (C
 
 // Exec runs the command. The args parameter is ignored, and the methid always
 // returns true.
-func (v *aboutCmd) Exec(o output.Bus, args []string) (ok bool) {
-	o.Log(output.Info, internal.LogInfoExecutingCommand, map[string]any{fieldKeyCommandName: aboutCommandName})
+func (a *aboutCmd) Exec(o output.Bus, args []string) (ok bool) {
+	logStart(o, aboutCommandName, map[string]any{})
 	var elements []string
 	timeStamp := translateTimestamp(AboutSettings.BuildTimestamp)
 	description := fmt.Sprintf("%s version %s, built on %s", internal.AppName, AboutSettings.AppVersion, timeStamp)
@@ -130,10 +130,10 @@ func formatCopyright(firstYear, lastYear int) string {
 func finalYear(o output.Bus, timestamp string) int {
 	var y = firstYear
 	if t, err := time.Parse(time.RFC3339, timestamp); err != nil {
-		o.WriteCanonicalError(internal.UserCannotParseTimestamp, timestamp, err)
+		o.WriteCanonicalError("The build time %q cannot be parsed: %v", timestamp, err)
 		o.Log(output.Error, "parse error", map[string]any{
-			internal.FieldKeyError: err,
-			internal.FieldKeyValue: timestamp,
+			"error": err,
+			"value": timestamp,
 		})
 	} else {
 		y = t.Year()

@@ -98,12 +98,14 @@ func TestMarkDirty(t *testing.T) {
 	}()
 	tests := []struct {
 		name                      string
+		command                   string
 		initialDirtyFolder        string
 		initialMarkDirtyAttempted bool
 		output.WantedRecording
 	}{
 		{
 			name:                      "typical first use",
+			command:                   "calling command",
 			initialDirtyFolder:        testDir,
 			initialMarkDirtyAttempted: false,
 			WantedRecording: output.WantedRecording{
@@ -112,15 +114,17 @@ func TestMarkDirty(t *testing.T) {
 		},
 		{
 			name:                      "error first case",
+			command:                   "calling command",
 			initialDirtyFolder:        "no such dir",
 			initialMarkDirtyAttempted: false,
 			WantedRecording: output.WantedRecording{
 				Error: "The file \"no such dir\\\\metadata.dirty\" cannot be created: open no such dir\\metadata.dirty: The system cannot find the path specified.\n",
-				Log:   "level='error' error='open no such dir\\metadata.dirty: The system cannot find the path specified.' fileName='no such dir\\metadata.dirty' msg='cannot create file'\n",
+				Log:   "level='error' command='calling command' error='open no such dir\\metadata.dirty: The system cannot find the path specified.' fileName='no such dir\\metadata.dirty' msg='cannot create file'\n",
 			},
 		},
 		{
 			name:                      "error second case",
+			command:                   "calling command",
 			initialDirtyFolder:        "no such dir",
 			initialMarkDirtyAttempted: true,
 		},
@@ -132,7 +136,7 @@ func TestMarkDirty(t *testing.T) {
 			dirtyFolder = tt.initialDirtyFolder
 			markDirtyAttempted = tt.initialMarkDirtyAttempted
 			o := output.NewRecorder()
-			MarkDirty(o)
+			MarkDirty(o, tt.command)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)

@@ -57,7 +57,7 @@ func Mkdir(dirName string) (err error) {
 		return
 	}
 	if !status.IsDir() {
-		err = fmt.Errorf(ErrorDirIsFile)
+		err = fmt.Errorf("file exists and is not a directory")
 	}
 	return
 }
@@ -66,11 +66,8 @@ func Mkdir(dirName string) (err error) {
 func ReadDirectory(o output.Bus, dir string) (files []fs.DirEntry, ok bool) {
 	var err error
 	if files, err = os.ReadDir(dir); err != nil {
-		o.Log(output.Error, LogErrorCannotReadDirectory, map[string]any{
-			FieldKeyDirectory: dir,
-			FieldKeyError:     err,
-		})
-		o.WriteCanonicalError(UserCannotReadDirectory, dir, err)
+		LogUnreadableDirectory(o, dir, err)
+		o.WriteCanonicalError("The directory %q cannot be read: %v", dir, err)
 		return
 	}
 	ok = true

@@ -232,7 +232,7 @@ func Test_repair_Exec(t *testing.T) {
 					"An error occurred when trying to read ID3V1 tag information for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
 				Log: "level='info' -dryRun='true' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n" +
-					"level='error' albumName='new album' artistName='new artist' error='no id3v1 tag found in file \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\"' trackName='new track' msg='id3v1 tag error'\n",
+					"level='error' error='no id3v1 tag found in file \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\"' track='realContent\\new artist\\new album\\01 new track.mp3' msg='id3v1 tag error'\n",
 			},
 		},
 		{
@@ -246,7 +246,7 @@ func Test_repair_Exec(t *testing.T) {
 					"An error occurred when trying to read ID3V1 tag information for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
 				Log: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n" +
-					"level='error' albumName='new album' artistName='new artist' error='no id3v1 tag found in file \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\"' trackName='new track' msg='id3v1 tag error'\n" +
+					"level='error' error='no id3v1 tag found in file \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\"' track='realContent\\new artist\\new album\\01 new track.mp3' msg='id3v1 tag error'\n" +
 					"level='info' fileName='repairExec\\mp3\\metadata.dirty' msg='metadata dirty file written'\n",
 			},
 		},
@@ -301,8 +301,8 @@ func generateStandardTrackLogReport() string {
 					sep = " "
 				}
 				result = append(result,
-					fmt.Sprintf("level='error' albumName='Test Album %d' artistName='Test Artist %d' error='seek repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3: An attempt was made to move the file pointer before the beginning of the file.' trackName='Test Track[%02d]' msg='id3v1 tag error'\n", album, artist, artist, album, track, sep, track, track),
-					fmt.Sprintf("level='error' albumName='Test Album %d' artistName='Test Artist %d' error='zero length' trackName='Test Track[%02d]' msg='id3v2 tag error'\n", album, artist, track))
+					fmt.Sprintf("level='error' error='seek repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3: An attempt was made to move the file pointer before the beginning of the file.' track='repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3' msg='id3v1 tag error'\n", artist, album, track, sep, track, artist, album, track, sep, track),
+					fmt.Sprintf("level='error' error='zero length' track='repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3' msg='id3v2 tag error'\n", artist, album, track, sep, track))
 			}
 		}
 	}
@@ -626,8 +626,8 @@ func Test_repair_fixTracks(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Error: "An error occurred repairing track \"fixTracks\\\\non-existent-track\".\n" +
 					"An error occurred repairing track \"fixTracks\\\\01 repairable track.mp3\".\n",
-				Log: "level='error' directory='fixTracks' error='[no edit required]' executing command='repair' fileName='non-existent-track' msg='cannot edit track'\n" +
-					"level='error' directory='fixTracks' error='[no edit required]' executing command='repair' fileName='01 repairable track.mp3' msg='cannot edit track'\n",
+				Log: "level='error' command='repair' directory='fixTracks' error='[no edit required]' fileName='non-existent-track' msg='cannot edit track'\n" +
+					"level='error' command='repair' directory='fixTracks' error='[no edit required]' fileName='01 repairable track.mp3' msg='cannot edit track'\n",
 			},
 		},
 	}

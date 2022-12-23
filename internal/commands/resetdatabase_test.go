@@ -24,16 +24,16 @@ type testService struct {
 	desiredControlError  error
 }
 
-func (t *testService) Close() error {
+func (ts *testService) Close() error {
 	return nil
 }
 
-func (t *testService) Query() (svc.Status, error) {
-	return t.desiredQueryStatus, t.desiredQueryError
+func (ts *testService) Query() (svc.Status, error) {
+	return ts.desiredQueryStatus, ts.desiredQueryError
 }
 
-func (t *testService) Control(c svc.Cmd) (svc.Status, error) {
-	return t.desiredControlStatus, t.desiredControlError
+func (ts *testService) Control(c svc.Cmd) (svc.Status, error) {
+	return ts.desiredControlStatus, ts.desiredControlError
 }
 
 type testManager struct {
@@ -976,7 +976,7 @@ func Test_resetDatabase_Exec(t *testing.T) {
 			dirtyFolderFound = true
 			dirtyFolderValid = true
 			if tt.markMetadataDirty {
-				MarkDirty(output.NewNilBus())
+				MarkDirty(output.NewNilBus(), resetDatabaseCommandName)
 			}
 			o := output.NewRecorder()
 			if gotOk := tt.r.Exec(o, tt.args.args); gotOk != tt.wantOk {

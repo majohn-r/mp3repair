@@ -1,113 +1,48 @@
 package internal
 
-// informational log messages
-const (
-	LogInfoBeginExecution         = "execution starts"
-	LogInfoConfigurationFileRead  = "read configuration file"
-	LogInfoDirtyFileDeleted       = "metadata dirty file deleted"
-	LogInfoDirtyFileWritten       = "metadata dirty file written"
-	LogInfoEndExecution           = "execution ends"
-	LogInfoExecutingCommand       = "executing command"
-	LogInfoFileDeleted            = "successfully deleted file"
-	LogInfoFilteringFiles         = "filtering music files"
-	LogInfoNoFilesFound           = "no files found"
-	LogInfoNoSuchFile             = "file does not exist"
-	LogInfoNotSet                 = "not set"
-	LogInfoParametersOverridden   = "one or more flags were overridden"
-	LogInfoReadingFilteredFiles   = "reading filtered music files"
-	LogInfoReadingUnfilteredFiles = "reading unfiltered music files"
-	LogInfoServiceStatus          = "service status"
-)
+import "github.com/majohn-r/output"
 
-// error log messages
-const (
-	LogErrorAmbiguousValue            = "no value has a majority of instances"
-	LogErrorBadArgument               = "argument cannot be used"
-	LogErrorCannotCopyFile            = "error copying file"
-	LogErrorCannotCreateDirectory     = "cannot create directory"
-	LogErrorCannotCreateFile          = "cannot create file"
-	LogErrorCannotDeleteDirectory     = "cannot delete directory"
-	LogErrorCannotDeleteFile          = "cannot delete file"
-	LogErrorCannotEditTrack           = "cannot edit track"
-	LogErrorCannotGetTrackDetails     = "cannot get details"
-	LogErrorCannotUnmarshalYAML       = "cannot unmarshal yaml content"
-	LogErrorGarbledExtension          = "the file extension cannot be parsed as a regular expression"
-	LogErrorGarbledFilter             = "the filter cannot be parsed as a regular expression"
-	LogErrorCannotReadDirectory       = "cannot read directory"
-	LogErrorCommandCount              = "incorrect number of commands"
-	LogErrorDefaultCommandCount       = "incorrect number of default commands"
-	LogErrorFileIsDirectory           = "file is a directory"
-	LogErrorID3v1TagError             = "id3v1 tag error"
-	LogErrorID3v2TagError             = "id3v2 tag error"
-	LogErrorInvalidConfigurationData  = "invalid content in configuration file"
-	LogErrorInvalidDefaultCommand     = "invalid default command"
-	LogErrorInvalidExtensionFormat    = "the file extension must begin with '.' and contain no other '.' characters"
-	LogErrorInvalidFlagSetting        = "flag value is not valid"
-	LogErrorInvalidTrackName          = "the track name cannot be parsed"
-	LogErrorNoArtistDirectories       = "cannot find any artist directories"
-	LogErrorNotADirectory             = "the file is not a directory"
-	LogErrorNothingToDo               = "the user disabled all functionality"
-	LogErrorOverwriteDisabled         = "overwrite is not permitted"
-	LogErrorRenameError               = "rename failed"
-	LogErrorServiceIssue              = "service issue"
-	LogErrorServiceManagerIssue       = "service manager issue"
-	LogErrorSortingOptionUnacceptable = "numeric track sorting is not applicable"
-	LogErrorUnexpectedValueType       = "unexpected value type"
-	LogErrorUnrecognizedCommand       = "unrecognized command"
-)
+// LogInvalidConfigurationData logs errors found when attempting to parse a YAML
+// configuration file
+func LogInvalidConfigurationData(o output.Bus, s string, e error) {
+	o.Log(output.Error, "invalid content in configuration file", map[string]any{
+		"section": s,
+		"error":   e,
+	})
+}
+
+// LogUnreadableDirectory logs errors when a directory cannot be read
+func LogUnreadableDirectory(o output.Bus, s string, e error) {
+	o.Log(output.Error, "cannot read directory", map[string]any{
+		"directory": s,
+		"error":     e,
+	})
+}
+
+// LogFileDeletionFailure logs errors when a file cannot be deleted
+func LogFileDeletionFailure(o output.Bus, s string, e error) {
+	o.Log(output.Error, "cannot delete file", map[string]any{
+		"fileName": s,
+		"error":    e,
+	})
+}
 
 // for output to user
 const (
-	UserAmbiguousChoices                        = "There are multiple %s fields for %q, and there is no unambiguously preferred choice; candidates are %v"
-	UserBadArgument                             = "The value for argument %q cannot be used: %v"
-	UserCannotCreateDirectory                   = "The directory %q cannot be created: %v"
-	UserCannotCreateFile                        = "The file %q cannot be created: %v"
-	UserCannotDeleteDirectory                   = "The directory %q cannot be deleted: %v"
-	UserCannotDeleteFile                        = "The file %q cannot be deleted: %v"
-	UserCannotListServices                      = "The list of available services cannot be obtained: %v"
-	UserCannotOpenService                       = "The service %q cannot be opened: %v"
-	UserCannotParseTimestamp                    = "The build time %q cannot be parsed: %v"
-	UserCannotReadTrackDetails                  = "The details are not available for track %q on album %q by artist %q: %q"
-	UserCannotQueryService                      = "The status for the service %q cannot be obtained: %v"
-	UserCannotReadDirectory                     = "The directory %q cannot be read: %v"
-	UserCannotReadTopDir                        = "The -topDir value you specified, %q, cannot be read: %v"
-	UserCannotRenameFile                        = "The file %q cannot be renamed to %q: %v"
-	UserCannotStopService                       = "The service %q cannot be stopped: %v"
-	UserConfigurationFileInvalid                = "The configuration file %q contains an invalid value for %q: %v"
-	UserConfigurationFileGarbled                = "The configuration file %q is not well-formed YAML: %v"
-	UserConfigurationFileIsDir                  = "The configuration file %q is a directory"
-	UserErrorCreatingBackupFile                 = "The track %q cannot be backed up"
-	UserErrorRepairingTrackFile                 = "An error occurred repairing track %q"
-	UserExtensionInvalidFormat                  = "The -ext value you specified, %q, must contain exactly one '.' and '.' must be the first character"
-	UserExtensionGarbled                        = "The -ext value you specified, %q, cannot be used for file matching: %v"
-	UserFilterGarbled                           = "The %s filter value you specified, %q, cannot be used: %v"
-	UserID3v1TagError                           = "An error occurred when trying to read ID3V1 tag information for track %q on album %q by artist %q: %q"
-	UserID3v2TagError                           = "An error occurred when trying to read ID3V2 tag information for track %q on album %q by artist %q: %q"
-	UserIncorrectNumberOfDefaultCommandsDefined = "An internal error has occurred: there are %d default commands!"
-	UserInvalidDefaultCommand                   = "The configuration file specifies %q as the default command. There is no such command"
-	UserInvalidSortingApplied                   = "The value of the %s flag, '%s', cannot be used unless '%s' is true; track sorting will be alphabetic"
-	UserLogDirCannotBeRead                      = "The log file directory %q cannot be read: %v"
-	UserLogFileCannotBeDeleted                  = "The log file %q cannot be deleted: %v"
-	UserNoCommandsDefined                       = "An internal error has occurred: no commands are defined!"
-	UserNoMusicFilesFound                       = "No music files could be found using the specified parameters"
-	UserNoOverwriteAllowed                      = "The file %q exists; set the %s flag to true if you want it overwritten"
-	UserNoSuchCommand                           = "There is no command named %q; valid commands include %v"
-	UserNoTempFolder                            = "Neither the TMP nor TEMP environment variables are defined"
-	UserServiceMgrConnectionFailed              = "The service manager cannot be accessed. Try running the program again as an administrator. Error: %v"
-	UserServiceStopTimedOut                     = "The service %q could not be stopped within the %d second timeout"
-	UserSpecifiedNoWork                         = "You disabled all functionality for the command %q"
-	UserTopDirNotADirectory                     = "The -topDir value you specified, %q, is not a directory"
-	UserTrackNameGarbled                        = "The track %q on album %q by artist %q cannot be parsed"
-	UserUnexpectedValueType                     = "The key %q, with value '%v', has an unexpected type %T"
-	UserUnrecognizedValue                       = "The %q value you specified, %q, is not valid"
+	UserAmbiguousChoices         = "There are multiple %s fields for %q, and there is no unambiguously preferred choice; candidates are %v"
+	UserCannotCreateDirectory    = "The directory %q cannot be created: %v"
+	UserCannotCreateFile         = "The file %q cannot be created: %v"
+	UserCannotDeleteFile         = "The file %q cannot be deleted: %v"
+	UserCannotQueryService       = "The status for the service %q cannot be obtained: %v"
+	UserConfigurationFileInvalid = "The configuration file %q contains an invalid value for %q: %v"
+	UserID3v1TagError            = "An error occurred when trying to read ID3V1 tag information for track %q on album %q by artist %q: %q"
+	UserID3v2TagError            = "An error occurred when trying to read ID3V2 tag information for track %q on album %q by artist %q: %q"
+	UserNoMusicFilesFound        = "No music files could be found using the specified parameters"
+	UserSpecifiedNoWork          = "You disabled all functionality for the command %q"
 )
 
 // these constants are errors to be used
 const (
-	ErrorDirIsFile             = "file exists and is not a directory"
 	ErrorDoesNotBeginWithDigit = "first character is not a digit"
 	ErrorEditUnnecessary       = "no edit required"
-	ErrorFileIsDir             = "file exists but is a directory"
-	ErrorMissingEnvVars        = "missing environment variables: %v"
-	ErrorZeroLength            = "zero length"
 )

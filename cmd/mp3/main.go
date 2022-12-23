@@ -21,17 +21,6 @@ func main() {
 	os.Exit(exec(internal.InitLogging, os.Args))
 }
 
-const (
-	fieldKeyCommandLineArguments = "args"
-	fieldKeyDuration             = "duration"
-	fieldKeyExitCode             = "exitCode"
-	fieldKeyTImeStamp            = "timeStamp"
-	fieldKeyVersion              = "version"
-	fieldKeyGoVersion            = "go version"
-	fieldKeyDependencies         = "dependencies"
-	statusFormat                 = "%q version %s, created at %s, failed"
-)
-
 func exec(logInit func(output.Bus) bool, cmdLine []string) (returnValue int) {
 	returnValue = 1
 	o := output.NewDefaultBus(internal.ProductionLogger{})
@@ -44,7 +33,7 @@ func exec(logInit func(output.Bus) bool, cmdLine []string) (returnValue int) {
 
 func report(o output.Bus, returnValue int) {
 	if returnValue != 0 {
-		o.WriteCanonicalError(statusFormat, internal.AppName, version, creation)
+		o.WriteCanonicalError("%q version %s, created at %s, failed", internal.AppName, version, creation)
 	}
 }
 
@@ -63,20 +52,20 @@ func run(o output.Bus, f func() (*debug.BuildInfo, bool), cmdlineArgs []string) 
 			returnValue = 0
 		}
 	}
-	o.Log(output.Info, internal.LogInfoEndExecution, map[string]any{
-		fieldKeyDuration: time.Since(startTime),
-		fieldKeyExitCode: returnValue,
+	o.Log(output.Info, "execution ends", map[string]any{
+		"duration": time.Since(startTime),
+		"exitCode": returnValue,
 	})
 	return
 }
 
 func logBegin(o output.Bus, goVersion string, dependencies, cmdLineArgs []string) {
-	o.Log(output.Info, internal.LogInfoBeginExecution, map[string]any{
-		fieldKeyVersion:              version,
-		fieldKeyTImeStamp:            creation,
-		fieldKeyGoVersion:            goVersion,
-		fieldKeyDependencies:         dependencies,
-		fieldKeyCommandLineArguments: cmdLineArgs,
+	o.Log(output.Info, "execution starts", map[string]any{
+		"version":      version,
+		"timeStamp":    creation,
+		"go version":   goVersion,
+		"dependencies": dependencies,
+		"args":         cmdLineArgs,
 	})
 }
 

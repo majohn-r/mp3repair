@@ -740,7 +740,7 @@ func TestTrack_readTags(t *testing.T) {
 				track:             []int{0, track, track},
 				musicCDIdentifier: id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:     id3v2Source,
-				err:               []string{"", "", ""},
+				err:               []error{nil, nil, nil},
 				correctedAlbum:    []string{"", "", ""},
 				correctedArtist:   []string{"", "", ""},
 				correctedTitle:    []string{"", "", ""},
@@ -894,7 +894,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	metadata2.album[src2] = "good album"
 	metadata2.artist[src2] = "good artist"
 	metadata2.title[src2] = "good track"
-	metadata2.err[id3v2Source] = "no id3v2 metadata, how odd"
+	metadata2.err[id3v2Source] = fmt.Errorf("no id3v2 metadata, how odd")
 	goodAlbum.AddTrack(goodTrack)
 	goodArtist.AddAlbum(goodAlbum)
 
@@ -903,56 +903,6 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 		tr   *Track
 		want []string
 	}{
-		// {
-		// 	name: "typical use case",
-		// 	tr: &Track{
-		// 		number:          1,
-		// 		name:            "track name",
-		// 		containingAlbum: NewAlbum("album name", NewArtist("artist name", ""), ""),
-		// 		tM: &trackMetadata{
-		// 			track:  1,
-		// 			title:  "track name",
-		// 			album:  "album name",
-		// 			artist: "artist name",
-		// 		},
-		// 	},
-		// 	want: nil,
-		// },
-		// 		{
-		// 			name: "another OK use case",
-		// 			tr: &Track{
-		// 				number:          1,
-		// 				name:            "track name",
-		// 				containingAlbum: NewAlbum("album name", NewArtist("artist name", ""), ""),
-		// 				ID3V2TaggedTrackData: ID3V2TaggedTrackData{
-		// 					track:  1,
-		// 					title:  "track:name",
-		// 					album:  "album name",
-		// 					artist: "artist name",
-		// 				},
-		// 			},
-		// 			want: nil,
-		// 		},
-		// 		{
-		// 			name: "oops",
-		// 			tr: &Track{
-		// 				number:          2,
-		// 				name:            "track:name",
-		// 				containingAlbum: NewAlbum("album:name", NewArtist("artist:name", ""), ""),
-		// 				ID3V2TaggedTrackData: ID3V2TaggedTrackData{
-		// 					track:  1,
-		// 					title:  "track name",
-		// 					album:  "album name",
-		// 					artist: "artist name",
-		// 				},
-		// 			},
-		// 			want: []string{
-		// 				"album \"album:name\" does not agree with album tag \"album name\"",
-		// 				"artist \"artist:name\" does not agree with artist tag \"artist name\"",
-		// 				"title \"track:name\" does not agree with title tag \"track name\"",
-		// 				"track number 2 does not agree with track tag 1",
-		// 			},
-		// 		},
 		{
 			name: "unread tags",
 			tr:   &Track{tM: nil},
@@ -960,7 +910,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 		},
 		{
 			name: "track with error",
-			tr:   &Track{tM: &trackMetadata{err: []string{"", "oops", "oops"}}},
+			tr:   &Track{tM: &trackMetadata{err: []error{nil, fmt.Errorf("oops"), fmt.Errorf("oops")}}},
 			want: []string{metadataReadError},
 		},
 		{
@@ -1035,7 +985,7 @@ func TestTrack_EditTags(t *testing.T) {
 			year:            []string{"", "1900", "1900"},
 			track:           []int{0, 1, 1},
 			canonicalType:   id3v2Source,
-			err:             []string{"", "", ""},
+			err:             []error{nil, nil, nil},
 			correctedAlbum:  make([]string, 3),
 			correctedArtist: make([]string, 3),
 			correctedTitle:  make([]string, 3),
@@ -1068,7 +1018,7 @@ func TestTrack_EditTags(t *testing.T) {
 			year:            []string{"", "1900", "1900"},
 			track:           []int{0, 1, 1},
 			canonicalType:   id3v2Source,
-			err:             []string{"", "", ""},
+			err:             []error{nil, nil, nil},
 			correctedAlbum:  make([]string, 3),
 			correctedArtist: make([]string, 3),
 			correctedTitle:  make([]string, 3),
@@ -1087,7 +1037,7 @@ func TestTrack_EditTags(t *testing.T) {
 		track:             []int{0, 2, 2},
 		musicCDIdentifier: id3v2.UnknownFrame{Body: []byte("fine album")},
 		canonicalType:     id3v2Source,
-		err:               []string{"", "", ""},
+		err:               []error{nil, nil, nil},
 		correctedAlbum:    make([]string, 3),
 		correctedArtist:   make([]string, 3),
 		correctedTitle:    make([]string, 3),
@@ -1358,8 +1308,9 @@ func Test_reportTrackErrors(t *testing.T) {
 			args: args{
 				track: &Track{
 					name: "silly track",
+					path: "Music\\silly artist\\silly album\\01 silly track.mp3",
 					tM: &trackMetadata{
-						err: []string{"", "id3v1 error!", "id3v2 error!"},
+						err: []error{nil, fmt.Errorf("id3v1 error!"), fmt.Errorf("id3v2 error!")},
 					},
 				},
 				album:  &Album{name: "silly album"},
@@ -1368,8 +1319,8 @@ func Test_reportTrackErrors(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Error: "An error occurred when trying to read ID3V1 tag information for track \"silly track\" on album \"silly album\" by artist \"silly artist\": \"id3v1 error!\".\n" +
 					"An error occurred when trying to read ID3V2 tag information for track \"silly track\" on album \"silly album\" by artist \"silly artist\": \"id3v2 error!\".\n",
-				Log: "level='error' albumName='silly album' artistName='silly artist' error='id3v1 error!' trackName='silly track' msg='id3v1 tag error'\n" +
-					"level='error' albumName='silly album' artistName='silly artist' error='id3v2 error!' trackName='silly track' msg='id3v2 tag error'\n",
+				Log: "level='error' error='id3v1 error!' track='Music\\silly artist\\silly album\\01 silly track.mp3' msg='id3v1 tag error'\n" +
+					"level='error' error='id3v2 error!' track='Music\\silly artist\\silly album\\01 silly track.mp3' msg='id3v2 tag error'\n",
 			},
 		},
 	}

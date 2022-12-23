@@ -46,7 +46,7 @@ func Test_createFile(t *testing.T) {
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "The file \"createFile\\\\unwritable.txt\" cannot be created: open createFile\\unwritable.txt: is a directory.\n",
-				Log:   "level='error' error='open createFile\\unwritable.txt: is a directory' fileName='createFile\\unwritable.txt' msg='cannot create file'\n",
+				Log:   "level='error' command='export' error='open createFile\\unwritable.txt: is a directory' fileName='createFile\\unwritable.txt' msg='cannot create file'\n",
 			},
 		},
 		{
@@ -198,7 +198,7 @@ func Test_export_writeDefaults(t *testing.T) {
 			appDataValue: &internal.SavedEnvVar{Name: "APPDATA", Value: "no such dir", Set: true},
 			WantedRecording: output.WantedRecording{
 				Error: "The directory \"no such dir\\\\mp3\" cannot be created: mkdir no such dir\\mp3: The system cannot find the path specified.\n",
-				Log:   "level='error' directory='no such dir\\mp3' error='mkdir no such dir\\mp3: The system cannot find the path specified.' msg='cannot create directory'\n",
+				Log:   "level='error' command='export' directory='no such dir\\mp3' error='mkdir no such dir\\mp3: The system cannot find the path specified.' msg='cannot create directory'\n",
 			},
 		},
 		{

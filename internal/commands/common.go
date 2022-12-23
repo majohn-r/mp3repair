@@ -79,8 +79,8 @@ func getDefaultSettings(o output.Bus, c *internal.Configuration) (m map[string]b
 	}
 	switch len(defaultCommands) {
 	case 0:
-		o.Log(output.Error, internal.LogErrorInvalidDefaultCommand, map[string]any{fieldKeyCommandName: defaultCommand})
-		o.WriteCanonicalError(internal.UserInvalidDefaultCommand, defaultCommand)
+		o.Log(output.Error, "invalid default command", map[string]any{fieldKeyCommandName: defaultCommand})
+		o.WriteCanonicalError("The configuration file specifies %q as the default command. There is no such command", defaultCommand)
 		m = nil
 		ok = false
 	case 1:
@@ -97,8 +97,8 @@ func getDefaultSettings(o output.Bus, c *internal.Configuration) (m map[string]b
 
 func selectCommand(o output.Bus, c *internal.Configuration, i []commandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, ok bool) {
 	if len(i) == 0 {
-		o.Log(output.Error, internal.LogErrorCommandCount, map[string]any{fieldKeyCount: 0})
-		o.WriteCanonicalError(internal.UserNoCommandsDefined)
+		o.Log(output.Error, "incorrect number of commands", map[string]any{fieldKeyCount: 0})
+		o.WriteCanonicalError("An internal error has occurred: no commands are defined!")
 		return
 	}
 	var defaultInitializers int
@@ -110,8 +110,8 @@ func selectCommand(o output.Bus, c *internal.Configuration, i []commandInitializ
 		}
 	}
 	if defaultInitializers != 1 {
-		o.Log(output.Error, internal.LogErrorDefaultCommandCount, map[string]any{fieldKeyCount: defaultInitializers})
-		o.WriteCanonicalError(internal.UserIncorrectNumberOfDefaultCommandsDefined, defaultInitializers)
+		o.Log(output.Error, "incorrect number of default commands", map[string]any{fieldKeyCount: defaultInitializers})
+		o.WriteCanonicalError("An internal error has occurred: there are %d default commands!", defaultInitializers)
 		return
 	}
 	processorMap := make(map[string]CommandProcessor)
@@ -145,13 +145,13 @@ func selectCommand(o output.Bus, c *internal.Configuration, i []commandInitializ
 	if !found {
 		cmd = nil
 		callingArgs = nil
-		o.Log(output.Error, internal.LogErrorUnrecognizedCommand, map[string]any{fieldKeyCommandName: commandName})
+		o.Log(output.Error, "unrecognized command", map[string]any{fieldKeyCommandName: commandName})
 		var commandNames []string
 		for _, initializer := range i {
 			commandNames = append(commandNames, initializer.name)
 		}
 		sort.Strings(commandNames)
-		o.WriteCanonicalError(internal.UserNoSuchCommand, commandName, commandNames)
+		o.WriteCanonicalError("There is no command named %q; valid commands include %v", commandName, commandNames)
 		return
 	}
 	callingArgs = args[2:]
@@ -161,8 +161,30 @@ func selectCommand(o output.Bus, c *internal.Configuration, i []commandInitializ
 
 func reportBadDefault(o output.Bus, section string, err error) {
 	o.WriteCanonicalError(internal.UserConfigurationFileInvalid, internal.DefaultConfigFileName, section, err)
-	o.Log(output.Error, internal.LogErrorInvalidConfigurationData, map[string]any{
-		internal.FieldKeySection: section,
-		internal.FieldKeyError:   err,
+	internal.LogInvalidConfigurationData(o, section, err)
+}
+
+func logStart(o output.Bus, name string, flags map[string]any) {
+	flags["command"] = name
+	o.Log(output.Info, "executing command", flags)
+}
+
+func logDirectoryCreationFailure(o output.Bus, cmd, dir string, e error) {
+	o.Log(output.Error, "cannot create directory", map[string]any{
+		"command":   cmd,
+		"directory": dir,
+		"error":     e,
 	})
+}
+
+func logFileCreationFailure(o output.Bus, cmd, file string, e error) {
+	o.Log(output.Error, "cannot create file", map[string]any{
+		"command":  cmd,
+		"fileName": file,
+		"error":    e,
+	})
+}
+
+func logNothingToDo(o output.Bus, fields map[string]any) {
+	o.Log(output.Error, "the user disabled all functionality", fields)
 }

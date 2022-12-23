@@ -172,13 +172,13 @@ func (l *list) logFields() map[string]any {
 func (l *list) runCommand(o output.Bus, s *files.Search) (ok bool) {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
 		o.WriteCanonicalError(internal.UserSpecifiedNoWork, listCommandName)
-		o.Log(output.Error, internal.LogErrorNothingToDo, l.logFields())
+		logNothingToDo(o, l.logFields())
 		return
 	}
-	o.Log(output.Info, internal.LogInfoExecutingCommand, l.logFields())
+	logStart(o, listCommandName, l.logFields())
 	if *l.includeTracks {
 		if l.validateTrackSorting(o) {
-			o.Log(output.Info, internal.LogInfoParametersOverridden, l.logFields())
+			o.Log(output.Info, "one or more flags were overridden", l.logFields())
 		}
 	}
 	artists, ok := s.LoadData(o)
@@ -247,8 +247,8 @@ func (l *list) validateTrackSorting(o output.Bus) (ok bool) {
 	switch *l.trackSorting {
 	case numericSorting:
 		if !*l.includeAlbums {
-			o.WriteCanonicalError(internal.UserInvalidSortingApplied, fieldKeyTrackSortingFlag, *l.trackSorting, fieldKeyIncludeAlbumsFlag)
-			o.Log(output.Error, internal.LogErrorSortingOptionUnacceptable, map[string]any{
+			o.WriteCanonicalError("The value of the %s flag, '%s', cannot be used unless '%s' is true; track sorting will be alphabetic", fieldKeyTrackSortingFlag, *l.trackSorting, fieldKeyIncludeAlbumsFlag)
+			o.Log(output.Error, "numeric track sorting is not applicable", map[string]any{
 				fieldKeyTrackSortingFlag:  *l.trackSorting,
 				fieldKeyIncludeAlbumsFlag: *l.includeAlbums,
 			})
@@ -258,8 +258,8 @@ func (l *list) validateTrackSorting(o output.Bus) (ok bool) {
 	case alphabeticSorting:
 		ok = true
 	default:
-		o.WriteCanonicalError(internal.UserUnrecognizedValue, fieldKeyTrackSortingFlag, *l.trackSorting)
-		o.Log(output.Error, internal.LogErrorInvalidFlagSetting, map[string]any{
+		o.WriteCanonicalError("The %q value you specified, %q, is not valid", fieldKeyTrackSortingFlag, *l.trackSorting)
+		o.Log(output.Error, "flag value is not valid", map[string]any{
 			fieldKeyCommandName:      listCommandName,
 			fieldKeyTrackSortingFlag: *l.trackSorting,
 		})
@@ -336,11 +336,11 @@ func (l *list) outputTrackDetails(o output.Bus, t *files.Track, prefix string) {
 	if *l.details {
 		// go get information from track and display it
 		if m, err := t.Details(); err != nil {
-			o.Log(output.Error, internal.LogErrorCannotGetTrackDetails, map[string]any{
-				internal.FieldKeyError: err,
-				fieldKeyTrack:          t.String(),
+			o.Log(output.Error, "cannot get details", map[string]any{
+				"error":       err,
+				fieldKeyTrack: t.String(),
 			})
-			o.WriteCanonicalError(internal.UserCannotReadTrackDetails, t.Name(), t.AlbumName(), t.RecordingArtist(), err.Error())
+			o.WriteCanonicalError("The details are not available for track %q on album %q by artist %q: %q", t.Name(), t.AlbumName(), t.RecordingArtist(), err.Error())
 		} else if len(m) != 0 {
 			var keys []string
 			for k := range m {
@@ -358,10 +358,7 @@ func (l *list) outputTrackDetails(o output.Bus, t *files.Track, prefix string) {
 func (l *list) outputTrackDiagnostics(o output.Bus, t *files.Track, prefix string) {
 	if *l.diagnostics {
 		if version, enc, frames, err := t.ID3V2Diagnostics(); err != nil {
-			o.Log(output.Error, internal.LogErrorID3v2TagError, map[string]any{
-				internal.FieldKeyError: err,
-				fieldKeyTrack:          t.String(),
-			})
+			files.LogID3V2TagError(o, t, err)
 			o.WriteCanonicalError(internal.UserID3v2TagError, t.Name(), t.AlbumName(), t.RecordingArtist(), err.Error())
 		} else {
 			o.WriteConsole("%sID3V2 Version: %v\n", prefix, version)
@@ -371,10 +368,7 @@ func (l *list) outputTrackDiagnostics(o output.Bus, t *files.Track, prefix strin
 			}
 		}
 		if id3v1Data, err := t.ID3V1Diagnostics(); err != nil {
-			o.Log(output.Error, internal.LogErrorID3v1TagError, map[string]any{
-				internal.FieldKeyError: err,
-				fieldKeyTrack:          t.String(),
-			})
+			files.LogID3V1TagError(o, t, err)
 			o.WriteCanonicalError(internal.UserID3v1TagError, t.Name(), t.AlbumName(), t.RecordingArtist(), err.Error())
 		} else {
 			for _, datum := range id3v1Data {

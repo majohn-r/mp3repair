@@ -159,9 +159,9 @@ func (a *artistWithIssues) hasIssues() bool {
 func (c *check) runCommand(o output.Bus, s *files.Search) (ok bool) {
 	if !*c.checkEmptyFolders && !*c.checkGapsInTrackNumbering && !*c.checkIntegrity {
 		o.WriteCanonicalError(internal.UserSpecifiedNoWork, checkCommandName)
-		o.Log(output.Error, internal.LogErrorNothingToDo, c.logFields())
+		logNothingToDo(o, c.logFields())
 	} else {
-		o.Log(output.Info, internal.LogInfoExecutingCommand, c.logFields())
+		logStart(o, checkCommandName, c.logFields())
 		artists, artistsWithEmptyIssues, analysisOk := c.performEmptyFolderAnalysis(o, s)
 		if analysisOk {
 			artists, ok = c.filterArtists(o, s, artists)

@@ -17,7 +17,6 @@ import (
 const (
 	coverageFile = "coverage.out"
 	executable   = "mp3.exe"
-	versionFile  = "version.txt"
 )
 
 var (
@@ -25,17 +24,17 @@ var (
 		Name:  "build",
 		Usage: "build the executable",
 		Action: func(a *goyek.A) {
-			versionArgument, version := createVersionArgument()
-			fmt.Printf("Creating %s version %s\n", executable, version)
+			vArg, v := versionArgument()
+			fmt.Printf("Creating %s version %s\n", executable, v)
 			var args []string
-			if versionArgument != "" {
-				args = append(args, versionArgument)
+			if vArg != "" {
+				args = append(args, vArg)
 			}
-			args = append(args, createCreationArgument())
-			cmdLine := fmt.Sprintf("go build -ldflags %q -o %s ./cmd/mp3/", strings.Join(args, " "), executable)
-			unifiedOutput := &bytes.Buffer{}
-			cmd.Exec(a, cmdLine, makeOptions(unifiedOutput)...)
-			printOutput(unifiedOutput)
+			args = append(args, creationArgument())
+			l := fmt.Sprintf("go build -ldflags %q -o %s ./cmd/mp3/", strings.Join(args, " "), executable)
+			o := &bytes.Buffer{}
+			cmd.Exec(a, l, options(o)...)
+			print(o)
 		},
 	})
 
@@ -52,11 +51,11 @@ var (
 		Name:  "coverage",
 		Usage: "run unit tests and produce a coverage report",
 		Action: func(a *goyek.A) {
-			o := makeOptions(nil)
-			cmdLine := fmt.Sprintf("go test -coverprofile=%s ./...", coverageFile)
-			if cmd.Exec(a, cmdLine, o...) {
-				cmdLine = fmt.Sprintf("go tool cover -html=%s", coverageFile)
-				cmd.Exec(a, cmdLine, o...)
+			o := options(nil)
+			l := fmt.Sprintf("go test -coverprofile=%s ./...", coverageFile)
+			if cmd.Exec(a, l, o...) {
+				l = fmt.Sprintf("go tool cover -html=%s", coverageFile)
+				cmd.Exec(a, l, o...)
 			}
 		},
 	})
@@ -65,19 +64,19 @@ var (
 		Name:  "doc",
 		Usage: "generate documentation",
 		Action: func(a *goyek.A) {
-			if folders, err := getCodeFolders(); err == nil {
-				unifiedOutput := &bytes.Buffer{}
-				for _, folder := range folders {
-					folder = folder[3:]
-					if folder == "build" {
+			if folders, err := codeFolders(); err == nil {
+				o := &bytes.Buffer{}
+				for _, f := range folders {
+					f = f[3:]
+					if f == "build" {
 						continue
 					}
-					cmdLine := fmt.Sprintf("go doc -all ./%s", strings.ReplaceAll(folder, "\\", "/"))
-					if !cmd.Exec(a, cmdLine, makeOptions(unifiedOutput)...) {
+					l := fmt.Sprintf("go doc -all ./%s", strings.ReplaceAll(f, "\\", "/"))
+					if !cmd.Exec(a, l, options(o)...) {
 						break
 					}
 				}
-				printOutput(unifiedOutput)
+				print(o)
 			}
 		},
 	})
@@ -86,9 +85,9 @@ var (
 		Name:  "format",
 		Usage: "clean up source code formatting",
 		Action: func(a *goyek.A) {
-			unifiedOutput := &bytes.Buffer{}
-			cmd.Exec(a, "gofmt -e -l -s -w .", makeOptions(unifiedOutput)...)
-			printOutput(unifiedOutput)
+			o := &bytes.Buffer{}
+			cmd.Exec(a, "gofmt -e -l -s -w .", options(o)...)
+			print(o)
 		},
 	})
 
@@ -96,9 +95,9 @@ var (
 		Name:  "lint",
 		Usage: "run the linter on source code",
 		Action: func(a *goyek.A) {
-			unifiedOutput := &bytes.Buffer{}
-			cmd.Exec(a, "gocritic check -enableAll ./...", makeOptions(unifiedOutput)...)
-			printOutput(unifiedOutput)
+			o := &bytes.Buffer{}
+			cmd.Exec(a, "gocritic check -enableAll ./...", options(o)...)
+			print(o)
 		},
 	})
 
@@ -106,40 +105,40 @@ var (
 		Name:  "tests",
 		Usage: "run unit tests",
 		Action: func(a *goyek.A) {
-			unifiedOutput := &bytes.Buffer{}
-			cmd.Exec(a, "go test -cover ./...", makeOptions(unifiedOutput)...)
-			printOutput(unifiedOutput)
+			o := &bytes.Buffer{}
+			cmd.Exec(a, "go test -cover ./...", options(o)...)
+			print(o)
 		},
 	})
 )
 
-func createCreationArgument() string {
+func creationArgument() string {
 	return fmt.Sprintf("-X main.creation=%s", time.Now().Format(time.RFC3339))
 }
 
-func createVersionArgument() (arg, version string) {
-	version = readFirstLine()
-	if version != "" {
-		arg = fmt.Sprintf("-X main.version=%s", version)
+func versionArgument() (vArg, v string) {
+	v = firstLine("version.txt")
+	if v != "" {
+		vArg = fmt.Sprintf("-X main.version=%s", v)
 	} else {
-		version = "unknown"
+		v = "unknown"
 	}
 	return
 }
 
-func getAllFolders(topDir string) (folders []string, err error) {
+func allFolders(top string) (folders []string, err error) {
 	var dirs []fs.DirEntry
-	if dirs, err = os.ReadDir(topDir); err != nil {
+	if dirs, err = os.ReadDir(top); err != nil {
 		return
 	}
 	for _, d := range dirs {
 		if !d.IsDir() {
 			continue
 		}
-		folder := filepath.Join(topDir, d.Name())
-		folders = append(folders, folder)
+		f := filepath.Join(top, d.Name())
+		folders = append(folders, f)
 		var subfolders []string
-		if subfolders, err = getAllFolders(folder); err != nil {
+		if subfolders, err = allFolders(f); err != nil {
 			return
 		}
 		folders = append(folders, subfolders...)
@@ -147,26 +146,26 @@ func getAllFolders(topDir string) (folders []string, err error) {
 	return
 }
 
-func getCodeFolders() (folders []string, err error) {
+func codeFolders() (folders []string, err error) {
 	var candidates []string
-	if candidates, err = getAllFolders(".."); err != nil {
+	if candidates, err = allFolders(".."); err != nil {
 		return
 	}
-	for _, folder := range candidates {
-		var entries []fs.DirEntry
-		if entries, err = os.ReadDir(folder); err != nil {
+	for _, f := range candidates {
+		var e []fs.DirEntry
+		if e, err = os.ReadDir(f); err != nil {
 			return
 		}
-		if includesCode(entries) {
-			folders = append(folders, folder)
+		if includesCode(e) {
+			folders = append(folders, f)
 		}
 	}
 	return
 }
 
 func includesCode(entries []fs.DirEntry) (ok bool) {
-	for _, entry := range entries {
-		if isCode(entry) {
+	for _, e := range entries {
+		if isCode(e) {
 			ok = true
 			return
 		}
@@ -176,37 +175,36 @@ func includesCode(entries []fs.DirEntry) (ok bool) {
 
 func isCode(entry fs.DirEntry) (ok bool) {
 	if entry.Type().IsRegular() {
-		name := entry.Name()
-		ok = strings.HasSuffix(name, ".go") && !strings.HasSuffix(name, "_test.go") && !strings.HasPrefix(name, "testing")
+		n := entry.Name()
+		ok = strings.HasSuffix(n, ".go") && !strings.HasSuffix(n, "_test.go") && !strings.HasPrefix(n, "testing")
 	}
 	return
 }
-func makeOptions(b *bytes.Buffer) []cmd.Option {
-	var outputOptions []cmd.Option
-	outputOptions = append(outputOptions, cmd.Dir(".."))
+func options(b *bytes.Buffer) (o []cmd.Option) {
+	o = append(o, cmd.Dir(".."))
 	if b != nil {
-		outputOptions = append(outputOptions, cmd.Stderr(b), cmd.Stdout(b))
+		o = append(o, cmd.Stderr(b), cmd.Stdout(b))
 	}
-	return outputOptions
+	return o
 }
 
-func printOutput(b *bytes.Buffer) {
-	output := b.String()
-	if output != "" {
-		fmt.Println(output)
+func print(b *bytes.Buffer) {
+	s := b.String()
+	if s != "" {
+		fmt.Println(s)
 	}
 }
 
-func readFirstLine() (line string) {
-	if file, err := os.Open(versionFile); err != nil {
-		fmt.Fprintf(os.Stderr, "error opening %s: %v", versionFile, err)
+func firstLine(file string) (line string) {
+	if f, err := os.Open(file); err != nil {
+		fmt.Fprintf(os.Stderr, "error opening %s: %v", file, err)
 	} else {
-		defer file.Close()
-		scanner := bufio.NewScanner(file)
-		if !scanner.Scan() {
-			fmt.Fprintf(os.Stderr, "%s is empty!\n", versionFile)
+		defer f.Close()
+		s := bufio.NewScanner(f)
+		if !s.Scan() {
+			fmt.Fprintf(os.Stderr, "%s is empty!\n", file)
 		} else {
-			line = scanner.Text()
+			line = s.Text()
 		}
 	}
 	return

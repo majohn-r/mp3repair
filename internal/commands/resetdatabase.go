@@ -169,8 +169,7 @@ func (r *resetDatabase) Exec(o output.Bus, args []string) (ok bool) {
 }
 
 func (r *resetDatabase) runCommand(o output.Bus, connect func() (serviceGateway, error)) (ok bool) {
-	o.Log(output.Info, internal.LogInfoExecutingCommand, map[string]any{
-		fieldKeyCommandName:   resetDatabaseCommandName,
+	logStart(o, resetDatabaseCommandName, map[string]any{
 		fieldKeyServiceFlag:   *r.service,
 		fieldKeyTimeoutFlag:   *r.timeout,
 		fieldKeyMetadataFlag:  *r.metadata,
@@ -193,9 +192,9 @@ func (r *resetDatabase) deleteMetadata(o output.Bus) bool {
 		return r.deleteMetadataFiles(o, pathsToDelete)
 	}
 	o.WriteCanonicalConsole("No metadata files were found in %q", *r.metadata)
-	o.Log(output.Info, internal.LogInfoNoFilesFound, map[string]any{
-		internal.FieldKeyDirectory: *r.metadata,
-		fieldKeyFileExtension:      *r.extension,
+	o.Log(output.Info, "no files found", map[string]any{
+		"directory":           *r.metadata,
+		fieldKeyFileExtension: *r.extension,
 	})
 	return true
 }
@@ -205,10 +204,7 @@ func (r *resetDatabase) deleteMetadataFiles(o output.Bus, paths []string) bool {
 	for _, path := range paths {
 		if err := os.Remove(path); err != nil {
 			o.WriteCanonicalError(internal.UserCannotDeleteFile, path, err)
-			o.Log(output.Error, internal.LogErrorCannotDeleteFile, map[string]any{
-				internal.FieldKeyFileName: path,
-				internal.FieldKeyError:    err,
-			})
+			internal.LogFileDeletionFailure(o, path, err)
 		} else {
 			count++
 		}
@@ -246,11 +242,7 @@ func (r *resetDatabase) stopService(o output.Bus, connect func() (serviceGateway
 	status, err := s.Query()
 	if err != nil {
 		o.WriteCanonicalError(internal.UserCannotQueryService, *r.service, err)
-		o.Log(output.Error, internal.LogErrorServiceIssue, map[string]any{
-			internal.FieldKeyError: err,
-			fieldKeyService:        *r.service,
-			fieldKeyOperation:      operationQueryService,
-		})
+		logServiceIssue(o, r.makeServiceErrorFields(operationQueryService, err))
 		return true
 	}
 	if status.State == svc.Stopped {
@@ -265,18 +257,27 @@ func (r *resetDatabase) stopService(o output.Bus, connect func() (serviceGateway
 			ok = true
 		}
 	} else {
-		o.WriteCanonicalError(internal.UserCannotStopService, *r.service, err)
-		o.Log(output.Error, internal.LogErrorServiceIssue, map[string]any{
-			internal.FieldKeyError: err,
-			fieldKeyService:        *r.service,
-			fieldKeyOperation:      operationStopService,
-		})
+		o.WriteCanonicalError("The service %q cannot be stopped: %v", *r.service, err)
+		logServiceIssue(o, r.makeServiceErrorFields(operationStopService, err))
 	}
 	return ok
 }
 
+func logServiceIssue(o output.Bus, fields map[string]any) {
+	o.Log(output.Error, "service issue", fields)
+}
+
+func (r *resetDatabase) makeServiceErrorFields(s string, e error) map[string]any {
+	m := map[string]any{
+		"error":           e,
+		fieldKeyService:   *r.service,
+		fieldKeyOperation: s,
+	}
+	return m
+}
+
 func (r *resetDatabase) logServiceStopped(o output.Bus) {
-	o.Log(output.Info, internal.LogInfoServiceStatus, map[string]any{
+	o.Log(output.Info, "service status", map[string]any{
 		fieldKeyService:       *r.service,
 		fieldKeyServiceStatus: statusStopped,
 	})
@@ -285,27 +286,17 @@ func (r *resetDatabase) logServiceStopped(o output.Bus) {
 func (r *resetDatabase) openService(o output.Bus, connect func() (serviceGateway, error)) (sM serviceGateway, s service) {
 	sM, err := connect()
 	if err != nil {
-		o.WriteCanonicalError(internal.UserServiceMgrConnectionFailed, err)
-		o.Log(output.Error, internal.LogErrorServiceManagerIssue, map[string]any{
-			internal.FieldKeyError: err,
-			fieldKeyOperation:      operationConnect,
-		})
+		o.WriteCanonicalError("The service manager cannot be accessed. Try running the program again as an administrator. Error: %v", err)
+		logServiceManagerIssue(o, operationConnect, err)
 	} else {
 		s, err = sM.openService(*r.service)
 		if err != nil {
-			o.WriteCanonicalError(internal.UserCannotOpenService, *r.service, err)
-			o.Log(output.Error, internal.LogErrorServiceIssue, map[string]any{
-				internal.FieldKeyError: err,
-				fieldKeyService:        *r.service,
-				fieldKeyOperation:      operationOpenService,
-			})
+			o.WriteCanonicalError("The service %q cannot be opened: %v", *r.service, err)
+			logServiceIssue(o, r.makeServiceErrorFields(operationOpenService, err))
 			services, err := sM.manager().ListServices()
 			if err != nil {
-				o.WriteCanonicalError(internal.UserCannotListServices, err)
-				o.Log(output.Error, internal.LogErrorServiceManagerIssue, map[string]any{
-					internal.FieldKeyError: err,
-					fieldKeyOperation:      operationListServices,
-				})
+				o.WriteCanonicalError("The list of available services cannot be obtained: %v", err)
+				logServiceManagerIssue(o, operationListServices, err)
 			} else {
 				listAvailableServices(o, sM, services)
 			}
@@ -317,6 +308,13 @@ func (r *resetDatabase) openService(o output.Bus, connect func() (serviceGateway
 	return
 }
 
+func logServiceManagerIssue(o output.Bus, operation string, e error) {
+	o.Log(output.Error, "service manager issue", map[string]any{
+		"error":           e,
+		fieldKeyOperation: operation,
+	})
+}
+
 func (r *resetDatabase) waitForStop(o output.Bus, s service, status svc.Status, timeout time.Time, checkFreq time.Duration) (ok bool) {
 	if status.State == svc.Stopped {
 		r.logServiceStopped(o)
@@ -325,24 +323,17 @@ func (r *resetDatabase) waitForStop(o output.Bus, s service, status svc.Status, 
 	}
 	for !ok {
 		if timeout.Before(time.Now()) {
-			o.WriteCanonicalError(internal.UserServiceStopTimedOut, *r.service, *r.timeout)
-			o.Log(output.Error, internal.LogErrorServiceIssue, map[string]any{
-				fieldKeyService:        *r.service,
-				fieldKeyTimeout:        *r.timeout,
-				fieldKeyOperation:      operationStopService,
-				internal.FieldKeyError: errTimeout,
-			})
+			o.WriteCanonicalError("The service %q could not be stopped within the %d second timeout", *r.service, *r.timeout)
+			m := r.makeServiceErrorFields(operationStopService, fmt.Errorf(errTimeout))
+			m[fieldKeyTimeout] = *r.timeout
+			logServiceIssue(o, m)
 			break
 		}
 		time.Sleep(checkFreq)
 		status, err := s.Query()
 		if err != nil {
 			o.WriteCanonicalError(internal.UserCannotQueryService, *r.service, err)
-			o.Log(output.Error, internal.LogErrorServiceIssue, map[string]any{
-				internal.FieldKeyError: err,
-				fieldKeyService:        *r.service,
-				fieldKeyOperation:      operationQueryService,
-			})
+			logServiceIssue(o, r.makeServiceErrorFields(operationQueryService, err))
 			break
 		}
 		if status.State == svc.Stopped {
@@ -416,10 +407,10 @@ type sysMgr struct {
 	m *mgr.Mgr
 }
 
-func (m *sysMgr) openService(name string) (service, error) {
-	return m.m.OpenService(name)
+func (s *sysMgr) openService(name string) (service, error) {
+	return s.m.OpenService(name)
 }
 
-func (m *sysMgr) manager() manager {
-	return m.m
+func (s *sysMgr) manager() manager {
+	return s.m
 }

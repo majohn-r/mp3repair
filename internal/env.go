@@ -53,16 +53,16 @@ var (
 
 type byLength []string
 
-func (a byLength) Len() int {
-	return len(a)
+func (bl byLength) Len() int {
+	return len(bl)
 }
 
-func (a byLength) Less(i, j int) bool {
-	return len(a[i]) > len(a[j])
+func (bl byLength) Less(i, j int) bool {
+	return len(bl[i]) > len(bl[j])
 }
 
-func (a byLength) Swap(i, j int) {
-	a[i], a[j] = a[j], a[i]
+func (bl byLength) Swap(i, j int) {
+	bl[i], bl[j] = bl[j], bl[i]
 }
 
 func findReferences(s string) []string {

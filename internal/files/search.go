@@ -26,7 +26,7 @@ func (s *Search) contents(o output.Bus) ([]fs.DirEntry, bool) {
 // directory, honoring the specified track extension, but ignoring the album and
 // artist filter expressions.
 func (s *Search) LoadUnfilteredData(o output.Bus) (artists []*Artist, ok bool) {
-	o.Log(output.Info, internal.LogInfoReadingUnfilteredFiles, s.LogFields(false))
+	o.Log(output.Info, "reading unfiltered music files", s.LogFields(false))
 	if artistFiles, ok := s.contents(o); ok {
 		for _, artistFile := range artistFiles {
 			if artistFile.IsDir() {
@@ -56,10 +56,14 @@ func (s *Search) LoadUnfilteredData(o output.Bus) (artists []*Artist, ok bool) {
 	}
 	ok = len(artists) != 0
 	if !ok {
-		o.Log(output.Error, internal.LogErrorNoArtistDirectories, s.LogFields(false))
+		s.logNoArtistDirectories(o, false)
 		o.WriteCanonicalError(internal.UserNoMusicFilesFound)
 	}
 	return
+}
+
+func (s *Search) logNoArtistDirectories(o output.Bus, filtered bool) {
+	o.Log(output.Error, "cannot find any artist directories", s.LogFields(filtered))
 }
 
 // LogFields returns an appropriate set of fields for logging
@@ -78,7 +82,7 @@ func (s *Search) LogFields(includeFilters bool) map[string]any {
 // FilterArtists filters out the unwanted artists and albums from the input. The
 // result is a new, filtered, copy of the original slice of Artists.
 func (s *Search) FilterArtists(o output.Bus, unfilteredArtists []*Artist) (artists []*Artist, ok bool) {
-	o.Log(output.Info, internal.LogInfoFilteringFiles, s.LogFields(true))
+	o.Log(output.Info, "filtering music files", s.LogFields(true))
 	for _, unfilteredArtist := range unfilteredArtists {
 		if s.artistFilter.MatchString(unfilteredArtist.Name()) {
 			artist := copyArtist(unfilteredArtist)
@@ -97,7 +101,7 @@ func (s *Search) FilterArtists(o output.Bus, unfilteredArtists []*Artist) (artis
 	}
 	ok = len(artists) != 0
 	if !ok {
-		o.Log(output.Error, internal.LogErrorNoArtistDirectories, s.LogFields(true))
+		s.logNoArtistDirectories(o, true)
 		o.WriteCanonicalError(internal.UserNoMusicFilesFound)
 	}
 	return
@@ -106,7 +110,7 @@ func (s *Search) FilterArtists(o output.Bus, unfilteredArtists []*Artist) (artis
 // LoadData collects the artists, albums, and mp3 tracks, honoring all the
 // search parameters.
 func (s *Search) LoadData(o output.Bus) (artists []*Artist, ok bool) {
-	o.Log(output.Info, internal.LogInfoReadingFilteredFiles, s.LogFields(true))
+	o.Log(output.Info, "reading filtered music files", s.LogFields(true))
 	if artistFiles, ok := s.contents(o); ok {
 		for _, artistFile := range artistFiles {
 			if !artistFile.IsDir() || !s.artistFilter.MatchString(artistFile.Name()) {
@@ -141,7 +145,7 @@ func (s *Search) LoadData(o output.Bus) (artists []*Artist, ok bool) {
 	}
 	ok = len(artists) != 0
 	if !ok {
-		o.Log(output.Error, internal.LogErrorNoArtistDirectories, s.LogFields(true))
+		s.logNoArtistDirectories(o, true)
 		o.WriteCanonicalError(internal.UserNoMusicFilesFound)
 	}
 	return
