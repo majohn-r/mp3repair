@@ -43,11 +43,6 @@ const (
 
 	defaultsFlag  = "defaults"
 	overwriteFlag = "overwrite"
-
-	fKBackupFile    = "backup"
-	fKDefaultsFlag  = "-" + defaultsFlag
-	fKOriginalFile  = "original"
-	fKOverwriteFlag = "-" + overwriteFlag
 )
 
 type exportDefaultValues struct {
@@ -95,16 +90,15 @@ func (e *export) Exec(o output.Bus, args []string) (ok bool) {
 
 func (e *export) logFields() map[string]any {
 	return map[string]any{
-		fieldKeyCommandName: exportCommandName,
-		fKDefaultsFlag:      *e.defaults,
-		fKOverwriteFlag:     *e.overwrite,
+		"command":           exportCommandName,
+		"-" + defaultsFlag:  *e.defaults,
+		"-" + overwriteFlag: *e.overwrite,
 	}
 }
 
 func (e *export) runCommand(o output.Bus) (ok bool) {
 	if !*e.defaults {
-		o.WriteCanonicalError(internal.UserSpecifiedNoWork, exportCommandName)
-		logNothingToDo(o, e.logFields())
+		reportNothingToDo(o, exportCommandName, e.logFields())
 		return
 	}
 	return e.exportDefaults(o)
@@ -148,8 +142,7 @@ func ensurePathExists(o output.Bus, path string) (ok bool) {
 		ok = true
 	} else {
 		if err := internal.Mkdir(path); err != nil {
-			o.WriteCanonicalError(internal.UserCannotCreateDirectory, path, err)
-			logDirectoryCreationFailure(o, exportCommandName, path, err)
+			reportDirectoryCreationFailure(o, exportCommandName, path, err)
 		} else {
 			ok = true
 		}
@@ -161,17 +154,17 @@ func (e *export) overwriteFile(o output.Bus, fileName string, content []byte) (o
 	if !*e.overwrite {
 		o.WriteCanonicalError("The file %q exists; set the %s flag to true if you want it overwritten", fileName, overwriteFlag)
 		o.Log(output.Error, "overwrite is not permitted", map[string]any{
-			fKOverwriteFlag: false,
-			"fileName":      fileName,
+			"-" + overwriteFlag: false,
+			"fileName":          fileName,
 		})
 	} else {
 		backupFileName := fileName + "-backup"
 		if err := os.Rename(fileName, backupFileName); err != nil {
 			o.WriteCanonicalError("The file %q cannot be renamed to %q: %v", fileName, backupFileName, err)
 			o.Log(output.Error, "rename failed", map[string]any{
-				"error":        err,
-				fKOriginalFile: fileName,
-				fKBackupFile:   backupFileName,
+				"error":    err,
+				"original": fileName,
+				"backup":   backupFileName,
 			})
 		} else if createFile(o, fileName, content) {
 			os.Remove(backupFileName)
@@ -183,8 +176,7 @@ func (e *export) overwriteFile(o output.Bus, fileName string, content []byte) (o
 
 func createFile(o output.Bus, fileName string, content []byte) bool {
 	if err := os.WriteFile(fileName, content, 0o644); err != nil {
-		o.WriteCanonicalError(internal.UserCannotCreateFile, fileName, err)
-		logFileCreationFailure(o, exportCommandName, fileName, err)
+		reportFileCreationFailure(o, exportCommandName, fileName, err)
 		return false
 	}
 	return true

@@ -61,15 +61,6 @@ const (
 	includeArtistsFlag    = "includeArtists"
 	includeTracksFlag     = "includeTracks"
 	trackSortingFlag      = "sort"
-
-	fieldKeyAnnotateListingsFLag  = "-" + annotateListingsFlag
-	fieldKeyDetailsListingFlag    = "-" + detailsListingFlag
-	fieldKeyDiagnosticListingFlag = "-" + diagnosticListingFlag
-	fieldKeyIncludeAlbumsFlag     = "-" + includeAlbumsFlag
-	fieldKeyIncludeArtistsFlag    = "-" + includeArtistsFlag
-	fieldKeyIncludeTracksFlag     = "-" + includeTracksFlag
-	fieldKeyTrackSortingFlag      = "-" + trackSortingFlag
-	fieldKeyTrack                 = "track"
 )
 
 type listDefaults struct {
@@ -158,21 +149,20 @@ func (l *list) Exec(o output.Bus, args []string) (ok bool) {
 
 func (l *list) logFields() map[string]any {
 	return map[string]any{
-		fieldKeyCommandName:           listCommandName,
-		fieldKeyIncludeAlbumsFlag:     *l.includeAlbums,
-		fieldKeyIncludeArtistsFlag:    *l.includeArtists,
-		fieldKeyIncludeTracksFlag:     *l.includeTracks,
-		fieldKeyTrackSortingFlag:      *l.trackSorting,
-		fieldKeyAnnotateListingsFLag:  *l.annotateListings,
-		fieldKeyDiagnosticListingFlag: *l.diagnostics,
-		fieldKeyDetailsListingFlag:    *l.details,
+		"command":                   listCommandName,
+		"-" + includeAlbumsFlag:     *l.includeAlbums,
+		"-" + includeArtistsFlag:    *l.includeArtists,
+		"-" + includeTracksFlag:     *l.includeTracks,
+		"-" + trackSortingFlag:      *l.trackSorting,
+		"-" + annotateListingsFlag:  *l.annotateListings,
+		"-" + diagnosticListingFlag: *l.diagnostics,
+		"-" + detailsListingFlag:    *l.details,
 	}
 }
 
 func (l *list) runCommand(o output.Bus, s *files.Search) (ok bool) {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
-		o.WriteCanonicalError(internal.UserSpecifiedNoWork, listCommandName)
-		logNothingToDo(o, l.logFields())
+		reportNothingToDo(o, listCommandName, l.logFields())
 		return
 	}
 	logStart(o, listCommandName, l.logFields())
@@ -247,10 +237,10 @@ func (l *list) validateTrackSorting(o output.Bus) (ok bool) {
 	switch *l.trackSorting {
 	case numericSorting:
 		if !*l.includeAlbums {
-			o.WriteCanonicalError("The value of the %s flag, '%s', cannot be used unless '%s' is true; track sorting will be alphabetic", fieldKeyTrackSortingFlag, *l.trackSorting, fieldKeyIncludeAlbumsFlag)
+			o.WriteCanonicalError(`The "-%s" value you specified, %q, is not valid unless "-%s" is true; track sorting will be alphabetic`, trackSortingFlag, *l.trackSorting, includeAlbumsFlag)
 			o.Log(output.Error, "numeric track sorting is not applicable", map[string]any{
-				fieldKeyTrackSortingFlag:  *l.trackSorting,
-				fieldKeyIncludeAlbumsFlag: *l.includeAlbums,
+				"-" + trackSortingFlag:  *l.trackSorting,
+				"-" + includeAlbumsFlag: *l.includeAlbums,
 			})
 			preferredValue := alphabeticSorting
 			l.trackSorting = &preferredValue
@@ -258,10 +248,10 @@ func (l *list) validateTrackSorting(o output.Bus) (ok bool) {
 	case alphabeticSorting:
 		ok = true
 	default:
-		o.WriteCanonicalError("The %q value you specified, %q, is not valid", fieldKeyTrackSortingFlag, *l.trackSorting)
+		o.WriteCanonicalError(`The "-%s" value you specified, %q, is not valid`, trackSortingFlag, *l.trackSorting)
 		o.Log(output.Error, "flag value is not valid", map[string]any{
-			fieldKeyCommandName:      listCommandName,
-			fieldKeyTrackSortingFlag: *l.trackSorting,
+			"command":              listCommandName,
+			"-" + trackSortingFlag: *l.trackSorting,
 		})
 		var preferredValue string
 		switch *l.includeAlbums {
@@ -337,8 +327,8 @@ func (l *list) outputTrackDetails(o output.Bus, t *files.Track, prefix string) {
 		// go get information from track and display it
 		if m, err := t.Details(); err != nil {
 			o.Log(output.Error, "cannot get details", map[string]any{
-				"error":       err,
-				fieldKeyTrack: t.String(),
+				"error": err,
+				"track": t.String(),
 			})
 			o.WriteCanonicalError("The details are not available for track %q on album %q by artist %q: %q", t.Name(), t.AlbumName(), t.RecordingArtist(), err.Error())
 		} else if len(m) != 0 {
@@ -358,8 +348,7 @@ func (l *list) outputTrackDetails(o output.Bus, t *files.Track, prefix string) {
 func (l *list) outputTrackDiagnostics(o output.Bus, t *files.Track, prefix string) {
 	if *l.diagnostics {
 		if version, enc, frames, err := t.ID3V2Diagnostics(); err != nil {
-			files.LogID3V2TagError(o, t, err)
-			o.WriteCanonicalError(internal.UserID3v2TagError, t.Name(), t.AlbumName(), t.RecordingArtist(), err.Error())
+			files.ReportID3V2TagError(o, t, err)
 		} else {
 			o.WriteConsole("%sID3V2 Version: %v\n", prefix, version)
 			o.WriteConsole("%sID3V2 Encoding: %q\n", prefix, enc)
@@ -368,8 +357,7 @@ func (l *list) outputTrackDiagnostics(o output.Bus, t *files.Track, prefix strin
 			}
 		}
 		if id3v1Data, err := t.ID3V1Diagnostics(); err != nil {
-			files.LogID3V1TagError(o, t, err)
-			o.WriteCanonicalError(internal.UserID3v1TagError, t.Name(), t.AlbumName(), t.RecordingArtist(), err.Error())
+			files.ReportID3V1TagError(o, t, err)
 		} else {
 			for _, datum := range id3v1Data {
 				o.WriteConsole("%sID3V1 %s\n", prefix, datum)

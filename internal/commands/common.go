@@ -20,11 +20,6 @@ func addCommandData(name string, d commandData) {
 	commandMap[name] = d
 }
 
-const (
-	fieldKeyCommandName = "command"
-	fieldKeyCount       = "count"
-)
-
 // CommandProcessor defines the functions needed to run a command
 type CommandProcessor interface {
 	Exec(output.Bus, []string) bool
@@ -79,14 +74,13 @@ func getDefaultSettings(o output.Bus, c *internal.Configuration) (m map[string]b
 	}
 	switch len(defaultCommands) {
 	case 0:
-		o.Log(output.Error, "invalid default command", map[string]any{fieldKeyCommandName: defaultCommand})
+		o.Log(output.Error, "invalid default command", map[string]any{"command": defaultCommand})
 		o.WriteCanonicalError("The configuration file specifies %q as the default command. There is no such command", defaultCommand)
 		m = nil
 		ok = false
 	case 1:
 		ok = true
 	default:
-		// not using a well-defined constant: this is a developer error.
 		sort.Strings(defaultCommands)
 		o.WriteCanonicalError("Internal error: %d commands self-selected as default: %v; pick one!", len(defaultCommands), defaultCommands)
 		m = nil
@@ -97,7 +91,7 @@ func getDefaultSettings(o output.Bus, c *internal.Configuration) (m map[string]b
 
 func selectCommand(o output.Bus, c *internal.Configuration, i []commandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, ok bool) {
 	if len(i) == 0 {
-		o.Log(output.Error, "incorrect number of commands", map[string]any{fieldKeyCount: 0})
+		o.Log(output.Error, "incorrect number of commands", map[string]any{"count": 0})
 		o.WriteCanonicalError("An internal error has occurred: no commands are defined!")
 		return
 	}
@@ -110,7 +104,7 @@ func selectCommand(o output.Bus, c *internal.Configuration, i []commandInitializ
 		}
 	}
 	if defaultInitializers != 1 {
-		o.Log(output.Error, "incorrect number of default commands", map[string]any{fieldKeyCount: defaultInitializers})
+		o.Log(output.Error, "incorrect number of default commands", map[string]any{"count": defaultInitializers})
 		o.WriteCanonicalError("An internal error has occurred: there are %d default commands!", defaultInitializers)
 		return
 	}
@@ -145,7 +139,7 @@ func selectCommand(o output.Bus, c *internal.Configuration, i []commandInitializ
 	if !found {
 		cmd = nil
 		callingArgs = nil
-		o.Log(output.Error, "unrecognized command", map[string]any{fieldKeyCommandName: commandName})
+		o.Log(output.Error, "unrecognized command", map[string]any{"command": commandName})
 		var commandNames []string
 		for _, initializer := range i {
 			commandNames = append(commandNames, initializer.name)
@@ -160,8 +154,7 @@ func selectCommand(o output.Bus, c *internal.Configuration, i []commandInitializ
 }
 
 func reportBadDefault(o output.Bus, section string, err error) {
-	o.WriteCanonicalError(internal.UserConfigurationFileInvalid, internal.DefaultConfigFileName, section, err)
-	internal.LogInvalidConfigurationData(o, section, err)
+	internal.ReportInvalidConfigurationData(o, section, err)
 }
 
 func logStart(o output.Bus, name string, flags map[string]any) {
@@ -169,7 +162,8 @@ func logStart(o output.Bus, name string, flags map[string]any) {
 	o.Log(output.Info, "executing command", flags)
 }
 
-func logDirectoryCreationFailure(o output.Bus, cmd, dir string, e error) {
+func reportDirectoryCreationFailure(o output.Bus, cmd, dir string, e error) {
+	internal.WriteDirectoryCreationError(o, dir, e)
 	o.Log(output.Error, "cannot create directory", map[string]any{
 		"command":   cmd,
 		"directory": dir,
@@ -177,7 +171,8 @@ func logDirectoryCreationFailure(o output.Bus, cmd, dir string, e error) {
 	})
 }
 
-func logFileCreationFailure(o output.Bus, cmd, file string, e error) {
+func reportFileCreationFailure(o output.Bus, cmd, file string, e error) {
+	o.WriteCanonicalError("The file %q cannot be created: %v", file, e)
 	o.Log(output.Error, "cannot create file", map[string]any{
 		"command":  cmd,
 		"fileName": file,
@@ -185,6 +180,12 @@ func logFileCreationFailure(o output.Bus, cmd, file string, e error) {
 	})
 }
 
-func logNothingToDo(o output.Bus, fields map[string]any) {
+func reportFileDeletionFailure(o output.Bus, file string, e error) {
+	o.WriteCanonicalError("The file %q cannot be deleted: %v", file, e)
+	internal.LogFileDeletionFailure(o, file, e)
+}
+
+func reportNothingToDo(o output.Bus, cmd string, fields map[string]any) {
+	o.WriteCanonicalError("You disabled all functionality for the command %q", cmd)
 	o.Log(output.Error, "the user disabled all functionality", fields)
 }

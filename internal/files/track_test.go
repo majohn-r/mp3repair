@@ -906,12 +906,12 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 		{
 			name: "unread tags",
 			tr:   &Track{tM: nil},
-			want: []string{noMetadata},
+			want: []string{"differences cannot be determined: metadata has not been read"},
 		},
 		{
 			name: "track with error",
 			tr:   &Track{tM: &trackMetadata{err: []error{nil, fmt.Errorf("oops"), fmt.Errorf("oops")}}},
-			want: []string{metadataReadError},
+			want: []string{"differences cannot be determined: there was an error reading metadata"},
 		},
 		{
 			name: "track with metadata differences",
@@ -1063,7 +1063,7 @@ func TestTrack_EditTags(t *testing.T) {
 		{
 			name:  "no edit required",
 			tr:    &Track{tM: nil},
-			wantE: []string{internal.ErrorEditUnnecessary},
+			wantE: []string{noEditNeededError.Error()},
 		},
 		{
 			name:   "edit required",
@@ -1294,9 +1294,7 @@ func Test_processAlbumMetadata(t *testing.T) {
 func Test_reportTrackErrors(t *testing.T) {
 	fnName := "reportTrackErrors()"
 	type args struct {
-		track  *Track
-		album  *Album
-		artist *Artist
+		track *Track
 	}
 	tests := []struct {
 		name string
@@ -1312,9 +1310,11 @@ func Test_reportTrackErrors(t *testing.T) {
 					tM: &trackMetadata{
 						err: []error{nil, fmt.Errorf("id3v1 error!"), fmt.Errorf("id3v2 error!")},
 					},
+					containingAlbum: &Album{
+						name:            "silly album",
+						recordingArtist: &Artist{name: "silly artist"},
+					},
 				},
-				album:  &Album{name: "silly album"},
-				artist: &Artist{name: "silly artist"},
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "An error occurred when trying to read ID3V1 tag information for track \"silly track\" on album \"silly album\" by artist \"silly artist\": \"id3v1 error!\".\n" +
@@ -1327,7 +1327,7 @@ func Test_reportTrackErrors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := output.NewRecorder()
-			reportTrackErrors(o, tt.args.track, tt.args.album, tt.args.artist)
+			reportTrackErrors(o, tt.args.track)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)

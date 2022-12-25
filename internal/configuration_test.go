@@ -481,7 +481,7 @@ func TestReadConfigurationFile(t *testing.T) {
 			wantC:  EmptyConfiguration(),
 			wantOk: true,
 			WantedRecording: output.WantedRecording{
-				Log: "level='info' environment variable='APPDATA' msg='not set'\n",
+				Log: "level='info' environmentVariable='APPDATA' msg='not set'\n",
 			},
 		},
 		{
@@ -573,7 +573,7 @@ func Test_appData(t *testing.T) {
 			name:  "value is not set",
 			state: &SavedEnvVar{Name: appDataVar},
 			WantedRecording: output.WantedRecording{
-				Log: "level='info' environment variable='APPDATA' msg='not set'\n",
+				Log: "level='info' environmentVariable='APPDATA' msg='not set'\n",
 			},
 		},
 	}

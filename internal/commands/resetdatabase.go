@@ -41,44 +41,20 @@ const (
 
 	defaultService   = "WMPNetworkSVC" // Windows Media Player Network Sharing Service
 	defaultExtension = ".wmdb"
-
-	fieldKeyServiceFlag   = "-" + serviceFlag
-	fieldKeyTimeoutFlag   = "-" + timeoutFlag
-	fieldKeyMetadataFlag  = "-" + metadataFlag
-	fieldKeyExtensionFlag = "-" + extensionFlag
-	fieldKeyFileExtension = "file extension"
-	fieldKeyOperation     = "operation"
-	fieldKeyService       = "service"
-	fieldKeyServiceStatus = "status"
-	fieldKeyTimeout       = "timeout in seconds"
-
-	operationConnect      = "connect to service manager"
-	operationListServices = "list services"
-	operationOpenService  = "open service"
-	operationQueryService = "query service status"
-	operationStopService  = "stop service"
-
-	statusContinuePending = "continue pending"
-	statusPaused          = "paused"
-	statusPausePending    = "pause pending"
-	statusRunning         = "running"
-	statusStartPending    = "start pending"
-	statusStopped         = "stopped"
-	statusStopPending     = "stop pending"
-
-	errTimeout = "operation timed out"
 )
 
 var defaultMetadata string
 
+var timeoutError = fmt.Errorf("operation timed out")
+
 var stateToStatus = map[svc.State]string{
-	svc.Stopped:         statusStopped,
-	svc.StartPending:    statusStartPending,
-	svc.StopPending:     statusStopPending,
-	svc.Running:         statusRunning,
-	svc.ContinuePending: statusContinuePending,
-	svc.PausePending:    statusPausePending,
-	svc.Paused:          statusPaused,
+	svc.Stopped:         "stopped",
+	svc.StartPending:    "start pending",
+	svc.StopPending:     "stop pending",
+	svc.Running:         "running",
+	svc.ContinuePending: "continue pending",
+	svc.PausePending:    "pause pending",
+	svc.Paused:          "paused",
 }
 
 func newResetDatabase(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
@@ -170,10 +146,10 @@ func (r *resetDatabase) Exec(o output.Bus, args []string) (ok bool) {
 
 func (r *resetDatabase) runCommand(o output.Bus, connect func() (serviceGateway, error)) (ok bool) {
 	logStart(o, resetDatabaseCommandName, map[string]any{
-		fieldKeyServiceFlag:   *r.service,
-		fieldKeyTimeoutFlag:   *r.timeout,
-		fieldKeyMetadataFlag:  *r.metadata,
-		fieldKeyExtensionFlag: *r.extension,
+		"-" + serviceFlag:   *r.service,
+		"-" + timeoutFlag:   *r.timeout,
+		"-" + metadataFlag:  *r.metadata,
+		"-" + extensionFlag: *r.extension,
 	})
 	if !r.stopService(o, connect) {
 		return
@@ -193,8 +169,8 @@ func (r *resetDatabase) deleteMetadata(o output.Bus) bool {
 	}
 	o.WriteCanonicalConsole("No metadata files were found in %q", *r.metadata)
 	o.Log(output.Info, "no files found", map[string]any{
-		"directory":           *r.metadata,
-		fieldKeyFileExtension: *r.extension,
+		"directory": *r.metadata,
+		"extension": *r.extension,
 	})
 	return true
 }
@@ -203,8 +179,7 @@ func (r *resetDatabase) deleteMetadataFiles(o output.Bus, paths []string) bool {
 	var count int
 	for _, path := range paths {
 		if err := os.Remove(path); err != nil {
-			o.WriteCanonicalError(internal.UserCannotDeleteFile, path, err)
-			internal.LogFileDeletionFailure(o, path, err)
+			reportFileDeletionFailure(o, path, err)
 		} else {
 			count++
 		}
@@ -241,8 +216,7 @@ func (r *resetDatabase) stopService(o output.Bus, connect func() (serviceGateway
 	}()
 	status, err := s.Query()
 	if err != nil {
-		o.WriteCanonicalError(internal.UserCannotQueryService, *r.service, err)
-		logServiceIssue(o, r.makeServiceErrorFields(operationQueryService, err))
+		r.reportServiceQueryIssue(o, err)
 		return true
 	}
 	if status.State == svc.Stopped {
@@ -258,9 +232,14 @@ func (r *resetDatabase) stopService(o output.Bus, connect func() (serviceGateway
 		}
 	} else {
 		o.WriteCanonicalError("The service %q cannot be stopped: %v", *r.service, err)
-		logServiceIssue(o, r.makeServiceErrorFields(operationStopService, err))
+		logServiceIssue(o, r.makeServiceErrorFields("stop service", err))
 	}
 	return ok
+}
+
+func (r *resetDatabase) reportServiceQueryIssue(o output.Bus, e error) {
+	o.WriteCanonicalError("The status for the service %q cannot be obtained: %v", *r.service, e)
+	logServiceIssue(o, r.makeServiceErrorFields("query service status", e))
 }
 
 func logServiceIssue(o output.Bus, fields map[string]any) {
@@ -269,17 +248,17 @@ func logServiceIssue(o output.Bus, fields map[string]any) {
 
 func (r *resetDatabase) makeServiceErrorFields(s string, e error) map[string]any {
 	m := map[string]any{
-		"error":           e,
-		fieldKeyService:   *r.service,
-		fieldKeyOperation: s,
+		"error":     e,
+		"service":   *r.service,
+		"operation": s,
 	}
 	return m
 }
 
 func (r *resetDatabase) logServiceStopped(o output.Bus) {
 	o.Log(output.Info, "service status", map[string]any{
-		fieldKeyService:       *r.service,
-		fieldKeyServiceStatus: statusStopped,
+		"service": *r.service,
+		"status":  "stopped",
 	})
 }
 
@@ -287,16 +266,16 @@ func (r *resetDatabase) openService(o output.Bus, connect func() (serviceGateway
 	sM, err := connect()
 	if err != nil {
 		o.WriteCanonicalError("The service manager cannot be accessed. Try running the program again as an administrator. Error: %v", err)
-		logServiceManagerIssue(o, operationConnect, err)
+		logServiceManagerIssue(o, "connect to service manager", err)
 	} else {
 		s, err = sM.openService(*r.service)
 		if err != nil {
 			o.WriteCanonicalError("The service %q cannot be opened: %v", *r.service, err)
-			logServiceIssue(o, r.makeServiceErrorFields(operationOpenService, err))
+			logServiceIssue(o, r.makeServiceErrorFields("open service", err))
 			services, err := sM.manager().ListServices()
 			if err != nil {
 				o.WriteCanonicalError("The list of available services cannot be obtained: %v", err)
-				logServiceManagerIssue(o, operationListServices, err)
+				logServiceManagerIssue(o, "list services", err)
 			} else {
 				listAvailableServices(o, sM, services)
 			}
@@ -310,8 +289,8 @@ func (r *resetDatabase) openService(o output.Bus, connect func() (serviceGateway
 
 func logServiceManagerIssue(o output.Bus, operation string, e error) {
 	o.Log(output.Error, "service manager issue", map[string]any{
-		"error":           e,
-		fieldKeyOperation: operation,
+		"error":     e,
+		"operation": operation,
 	})
 }
 
@@ -324,16 +303,15 @@ func (r *resetDatabase) waitForStop(o output.Bus, s service, status svc.Status, 
 	for !ok {
 		if timeout.Before(time.Now()) {
 			o.WriteCanonicalError("The service %q could not be stopped within the %d second timeout", *r.service, *r.timeout)
-			m := r.makeServiceErrorFields(operationStopService, fmt.Errorf(errTimeout))
-			m[fieldKeyTimeout] = *r.timeout
+			m := r.makeServiceErrorFields("stop service", timeoutError)
+			m["timeout in seconds"] = *r.timeout
 			logServiceIssue(o, m)
 			break
 		}
 		time.Sleep(checkFreq)
 		status, err := s.Query()
 		if err != nil {
-			o.WriteCanonicalError(internal.UserCannotQueryService, *r.service, err)
-			logServiceIssue(o, r.makeServiceErrorFields(operationQueryService, err))
+			r.reportServiceQueryIssue(o, err)
 			break
 		}
 		if status.State == svc.Stopped {

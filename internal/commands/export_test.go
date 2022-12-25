@@ -190,7 +190,7 @@ func Test_export_writeDefaults(t *testing.T) {
 			name:         "no location",
 			appDataValue: &internal.SavedEnvVar{Name: "APPDATA"},
 			WantedRecording: output.WantedRecording{
-				Log: "level='info' environment variable='APPDATA' msg='not set'\n",
+				Log: "level='info' environmentVariable='APPDATA' msg='not set'\n",
 			},
 		},
 		{
@@ -375,7 +375,7 @@ func Test_export_Exec(t *testing.T) {
 			args:   args{args: []string{"-defaults"}},
 			wantOk: false,
 			WantedRecording: output.WantedRecording{
-				Log: "level='info' environment variable='APPDATA' msg='not set'\n",
+				Log: "level='info' environmentVariable='APPDATA' msg='not set'\n",
 			},
 		},
 	}

@@ -56,25 +56,25 @@ func (s *Search) LoadUnfilteredData(o output.Bus) (artists []*Artist, ok bool) {
 	}
 	ok = len(artists) != 0
 	if !ok {
-		s.logNoArtistDirectories(o, false)
-		o.WriteCanonicalError(internal.UserNoMusicFilesFound)
+		s.reportNoArtistDirectories(o, false)
 	}
 	return
 }
 
-func (s *Search) logNoArtistDirectories(o output.Bus, filtered bool) {
+func (s *Search) reportNoArtistDirectories(o output.Bus, filtered bool) {
+	o.WriteCanonicalError("No music files could be found using the specified parameters.")
 	o.Log(output.Error, "cannot find any artist directories", s.LogFields(filtered))
 }
 
 // LogFields returns an appropriate set of fields for logging
 func (s *Search) LogFields(includeFilters bool) map[string]any {
 	m := map[string]any{
-		fieldKeyTopDirFlag:          s.topDirectory,
-		fieldKeyTargetExtensionFlag: s.targetExtension,
+		"-" + topDirectoryFlag:  s.topDirectory,
+		"-" + fileExtensionFlag: s.targetExtension,
 	}
 	if includeFilters {
-		m[fieldKeyAlbumFilterFlag] = s.albumFilter
-		m[fieldKeyArtistFilterFlag] = s.artistFilter
+		m["-"+albumRegexFlag] = s.albumFilter
+		m["-"+artistRegexFlag] = s.artistFilter
 	}
 	return m
 }
@@ -101,8 +101,7 @@ func (s *Search) FilterArtists(o output.Bus, unfilteredArtists []*Artist) (artis
 	}
 	ok = len(artists) != 0
 	if !ok {
-		s.logNoArtistDirectories(o, true)
-		o.WriteCanonicalError(internal.UserNoMusicFilesFound)
+		s.reportNoArtistDirectories(o, true)
 	}
 	return
 }
@@ -145,8 +144,7 @@ func (s *Search) LoadData(o output.Bus) (artists []*Artist, ok bool) {
 	}
 	ok = len(artists) != 0
 	if !ok {
-		s.logNoArtistDirectories(o, true)
-		o.WriteCanonicalError(internal.UserNoMusicFilesFound)
+		s.reportNoArtistDirectories(o, true)
 	}
 	return
 }

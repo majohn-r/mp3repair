@@ -40,10 +40,6 @@ const (
 	emptyFoldersFlag         = "empty"
 	gapsInTrackNumberingFlag = "gaps"
 	integrityFlag            = "integrity"
-
-	fieldKeyEmptyFoldersFlag      = "-" + emptyFoldersFlag
-	fieldKeyGapAnalysisFlag       = "-" + gapsInTrackNumberingFlag
-	fieldKeyIntegrityAnalysisFlag = "-" + integrityFlag
 )
 
 type checkDefaults struct {
@@ -100,10 +96,10 @@ func (c *check) Exec(o output.Bus, args []string) (ok bool) {
 
 func (c *check) logFields() map[string]any {
 	return map[string]any{
-		fieldKeyCommandName:           checkCommandName,
-		fieldKeyEmptyFoldersFlag:      *c.checkEmptyFolders,
-		fieldKeyGapAnalysisFlag:       *c.checkGapsInTrackNumbering,
-		fieldKeyIntegrityAnalysisFlag: *c.checkIntegrity,
+		"command":                      checkCommandName,
+		"-" + emptyFoldersFlag:         *c.checkEmptyFolders,
+		"-" + gapsInTrackNumberingFlag: *c.checkGapsInTrackNumbering,
+		"-" + integrityFlag:            *c.checkIntegrity,
 	}
 }
 
@@ -158,8 +154,7 @@ func (a *artistWithIssues) hasIssues() bool {
 
 func (c *check) runCommand(o output.Bus, s *files.Search) (ok bool) {
 	if !*c.checkEmptyFolders && !*c.checkGapsInTrackNumbering && !*c.checkIntegrity {
-		o.WriteCanonicalError(internal.UserSpecifiedNoWork, checkCommandName)
-		logNothingToDo(o, c.logFields())
+		reportNothingToDo(o, checkCommandName, c.logFields())
 	} else {
 		logStart(o, checkCommandName, c.logFields())
 		artists, artistsWithEmptyIssues, analysisOk := c.performEmptyFolderAnalysis(o, s)

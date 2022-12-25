@@ -16,20 +16,12 @@ import (
 )
 
 const (
+	rawExtension            = "mp3"
 	defaultFileExtension    = "." + rawExtension
 	defaultTrackNamePattern = "^\\d+[\\s-].+\\." + rawExtension + "$"
 
-	fieldKeyAlbumName  = "albumName"
-	fieldKeyArtistName = "artistName"
-	fieldKeyFieldName  = "field"
-	fieldKeySettings   = "settings"
-	fieldKeyTrackName  = "trackName"
-
-	mcdiFrame         = "MCDI"
-	rawExtension      = "mp3"
-	noMetadata        = "differences cannot be determined: metadata has not been read"
-	metadataReadError = "differences cannot be determined: there was an error reading metadata"
-	trackFrame        = "TRCK"
+	mcdiFrame  = "MCDI"
+	trackFrame = "TRCK"
 )
 
 // Track encapsulates data about a track in an album.
@@ -250,10 +242,10 @@ func (t *Track) ReconcileMetadata() MetadataState {
 func (t *Track) ReportMetadataProblems() []string {
 	s := t.ReconcileMetadata()
 	if s.hasError {
-		return []string{metadataReadError}
+		return []string{"differences cannot be determined: there was an error reading metadata"}
 	}
 	if s.noMetadata {
-		return []string{noMetadata}
+		return []string{"differences cannot be determined: metadata has not been read"}
 	}
 	if !s.HasTaggingConflicts() {
 		return nil
@@ -291,11 +283,13 @@ func (t *Track) ReportMetadataProblems() []string {
 	return differences
 }
 
+var noEditNeededError = fmt.Errorf("no edit required")
+
 // EditTags verifies that a track's tags need to be edited and then performs
 // that work
 func (t *Track) EditTags() (e []error) {
 	if !t.ReconcileMetadata().HasTaggingConflicts() {
-		e = append(e, fmt.Errorf(internal.ErrorEditUnnecessary))
+		e = append(e, noEditNeededError)
 	} else {
 		e = append(e, editTags(t)...)
 	}
@@ -362,16 +356,20 @@ func processArtistMetadata(o output.Bus, artists []*Artist) {
 			}
 		}
 		if chosenName, ok := pickKey(names); !ok {
-			o.WriteCanonicalError(internal.UserAmbiguousChoices, "artist name", artist.Name(), friendlyEncode(names))
+			reportAmbiguousChoices(o, "artist name", artist.Name(), names)
 			logAmbiguousValue(o, map[string]any{
-				fieldKeyFieldName:  "artist name",
-				fieldKeySettings:   names,
-				fieldKeyArtistName: artist.Name(),
+				"field":      "artist name",
+				"settings":   names,
+				"artistName": artist.Name(),
 			})
 		} else if len(chosenName) > 0 {
 			artist.canonicalName = chosenName
 		}
 	}
+}
+
+func reportAmbiguousChoices(o output.Bus, subject, context string, choices map[string]int) {
+	o.WriteCanonicalError("There are multiple %s fields for %q, and there is no unambiguously preferred choice; candidates are %v", subject, context, friendlyEncode(choices))
 }
 
 func logAmbiguousValue(o output.Bus, m map[string]any) {
@@ -405,45 +403,45 @@ func processAlbumMetadata(o output.Bus, artists []*Artist) {
 				mcdiFrames[mcdiKey] = track.tM.canonicalMusicCDIdentifier()
 			}
 			if chosenGenre, ok := pickKey(genres); !ok {
-				o.WriteCanonicalError(internal.UserAmbiguousChoices, "genre", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(genres))
+				reportAmbiguousChoices(o, "genre", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), genres)
 				logAmbiguousValue(o, map[string]any{
-					fieldKeyFieldName:  "genre",
-					fieldKeySettings:   genres,
-					fieldKeyAlbumName:  album.Name(),
-					fieldKeyArtistName: artist.Name(),
+					"field":      "genre",
+					"settings":   genres,
+					"albumName":  album.Name(),
+					"artistName": artist.Name(),
 				})
 			} else {
 				album.canonicalGenre = chosenGenre
 			}
 			if chosenYear, ok := pickKey(years); !ok {
-				o.WriteCanonicalError(internal.UserAmbiguousChoices, "year", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(years))
+				reportAmbiguousChoices(o, "year", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), years)
 				logAmbiguousValue(o, map[string]any{
-					fieldKeyFieldName:  "year",
-					fieldKeySettings:   years,
-					fieldKeyAlbumName:  album.Name(),
-					fieldKeyArtistName: artist.Name(),
+					"field":      "year",
+					"settings":   years,
+					"albumName":  album.Name(),
+					"artistName": artist.Name(),
 				})
 			} else {
 				album.canonicalYear = chosenYear
 			}
 			if chosenAlbumTitle, ok := pickKey(albumTitles); !ok {
-				o.WriteCanonicalError(internal.UserAmbiguousChoices, "album title", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(albumTitles))
+				reportAmbiguousChoices(o, "album title", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), albumTitles)
 				logAmbiguousValue(o, map[string]any{
-					fieldKeyFieldName:  "album title",
-					fieldKeySettings:   albumTitles,
-					fieldKeyAlbumName:  album.Name(),
-					fieldKeyArtistName: artist.Name(),
+					"field":      "album title",
+					"settings":   albumTitles,
+					"albumName":  album.Name(),
+					"artistName": artist.Name(),
 				})
 			} else if chosenAlbumTitle != "" {
 				album.canonicalTitle = chosenAlbumTitle
 			}
 			if chosenMCDI, ok := pickKey(mcdis); !ok {
-				o.WriteCanonicalError(internal.UserAmbiguousChoices, "MCDI frame", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), friendlyEncode(mcdis))
+				reportAmbiguousChoices(o, "MCDI frame", fmt.Sprintf("%s by %s", album.Name(), artist.Name()), mcdis)
 				logAmbiguousValue(o, map[string]any{
-					fieldKeyFieldName:  "mcdi frame",
-					fieldKeySettings:   mcdis,
-					fieldKeyAlbumName:  album.Name(),
-					fieldKeyArtistName: artist.Name(),
+					"field":      "mcdi frame",
+					"settings":   mcdis,
+					"albumName":  album.Name(),
+					"artistName": artist.Name(),
 				})
 			} else {
 				album.musicCDIdentifier = mcdiFrames[chosenMCDI]
@@ -493,26 +491,26 @@ func pickKey(m map[string]int) (s string, ok bool) {
 }
 
 var (
-	tagConsoleErrors = map[sourceType]string{
-		id3v1Source: internal.UserID3v1TagError,
-		id3v2Source: internal.UserID3v2TagError,
-	}
-	tagLogErrors = map[sourceType]func(output.Bus, *Track, error){
-		id3v1Source: LogID3V1TagError,
-		id3v2Source: LogID3V2TagError,
+	reportTagError = map[sourceType]func(output.Bus, *Track, error){
+		id3v1Source: ReportID3V1TagError,
+		id3v2Source: ReportID3V2TagError,
 	}
 )
 
-// Log a problem reading the ID3V1 tag
-func LogID3V1TagError(o output.Bus, t *Track, e error) {
+// ReportID3V1TagError outputs a problem reading the ID3V1 tag as an error and
+// as a log record
+func ReportID3V1TagError(o output.Bus, t *Track, e error) {
+	o.WriteCanonicalError("An error occurred when trying to read ID3V1 tag information for track %q on album %q by artist %q: %q", t.Name(), t.AlbumName(), t.RecordingArtist(), e.Error())
 	o.Log(output.Error, "id3v1 tag error", map[string]any{
 		"track": t.String(),
 		"error": e,
 	})
 }
 
-// Log a problem reading the ID3V2 tag
-func LogID3V2TagError(o output.Bus, t *Track, e error) {
+// ReportID3V2TagError outputs a problem reading the ID3V2 tag as an error and
+// as a log record
+func ReportID3V2TagError(o output.Bus, t *Track, e error) {
+	o.WriteCanonicalError("An error occurred when trying to read ID3V2 tag information for track %q on album %q by artist %q: %q", t.Name(), t.AlbumName(), t.RecordingArtist(), e.Error())
 	o.Log(output.Error, "id3v2 tag error", map[string]any{
 		"track": t.String(),
 		"error": e,
@@ -522,19 +520,18 @@ func reportAllTrackErrors(o output.Bus, artists []*Artist) {
 	for _, artist := range artists {
 		for _, album := range artist.Albums() {
 			for _, track := range album.Tracks() {
-				reportTrackErrors(o, track, album, artist)
+				reportTrackErrors(o, track)
 			}
 		}
 	}
 }
 
-func reportTrackErrors(o output.Bus, track *Track, album *Album, artist *Artist) {
+func reportTrackErrors(o output.Bus, track *Track) {
 	if track.hasTagError() {
 		for _, source := range []sourceType{id3v1Source, id3v2Source} {
 			e := track.tM.err[source]
 			if e != nil {
-				o.WriteCanonicalError(tagConsoleErrors[source], track.name, album.name, artist.name, e)
-				tagLogErrors[source](o, track, e)
+				reportTagError[source](o, track, e)
 			}
 		}
 	}
@@ -557,9 +554,9 @@ func ParseTrackNameForTesting(name string) (simpleName string, trackNumber int) 
 func parseTrackName(o output.Bus, name string, album *Album, ext string) (simpleName string, trackNumber int, valid bool) {
 	if !trackNameRegex.MatchString(name) {
 		o.Log(output.Error, "the track name cannot be parsed", map[string]any{
-			fieldKeyTrackName:  name,
-			fieldKeyAlbumName:  album.name,
-			fieldKeyArtistName: album.RecordingArtistName(),
+			"trackName":  name,
+			"albumName":  album.name,
+			"artistName": album.RecordingArtistName(),
 		})
 		o.WriteCanonicalError("The track %q on album %q by artist %q cannot be parsed", name, album.name, album.RecordingArtistName())
 		return

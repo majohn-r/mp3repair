@@ -63,7 +63,7 @@ func logBegin(o output.Bus, goVersion string, dependencies, cmdLineArgs []string
 	o.Log(output.Info, "execution starts", map[string]any{
 		"version":      version,
 		"timeStamp":    creation,
-		"go version":   goVersion,
+		"goVersion":    goVersion,
 		"dependencies": dependencies,
 		"args":         cmdLineArgs,
 	})

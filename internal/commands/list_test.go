@@ -32,7 +32,7 @@ func Test_list_validateTrackSorting(t *testing.T) {
 			includeAlbums: false,
 			wantSorting:   "alpha",
 			WantedRecording: output.WantedRecording{
-				Error: "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+				Error: "The \"-sort\" value you specified, \"numeric\", is not valid unless \"-includeAlbums\" is true; track sorting will be alphabetic.\n",
 				Log:   "level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n",
 			},
 		},
@@ -306,7 +306,7 @@ func Test_list_Exec(t *testing.T) {
 			},
 			WantedRecording: output.WantedRecording{
 				Console: generateListing(false, false, true, false, false),
-				Error:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+				Error:   "The \"-sort\" value you specified, \"numeric\", is not valid unless \"-includeAlbums\" is true; track sorting will be alphabetic.\n",
 				Log: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
@@ -326,7 +326,7 @@ func Test_list_Exec(t *testing.T) {
 			},
 			WantedRecording: output.WantedRecording{
 				Console: generateListing(false, false, true, true, false),
-				Error:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+				Error:   "The \"-sort\" value you specified, \"numeric\", is not valid unless \"-includeAlbums\" is true; track sorting will be alphabetic.\n",
 				Log: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
@@ -347,7 +347,7 @@ func Test_list_Exec(t *testing.T) {
 			},
 			WantedRecording: output.WantedRecording{
 				Console: generateListing(false, false, true, false, true),
-				Error:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+				Error:   "The \"-sort\" value you specified, \"numeric\", is not valid unless \"-includeAlbums\" is true; track sorting will be alphabetic.\n",
 				Log: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
@@ -368,7 +368,7 @@ func Test_list_Exec(t *testing.T) {
 			},
 			WantedRecording: output.WantedRecording{
 				Console: generateListing(false, false, true, true, true),
-				Error:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+				Error:   "The \"-sort\" value you specified, \"numeric\", is not valid unless \"-includeAlbums\" is true; track sorting will be alphabetic.\n",
 				Log: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='false' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
@@ -620,7 +620,7 @@ func Test_list_Exec(t *testing.T) {
 			},
 			WantedRecording: output.WantedRecording{
 				Console: generateListing(true, false, true, false, true),
-				Error:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+				Error:   "The \"-sort\" value you specified, \"numeric\", is not valid unless \"-includeAlbums\" is true; track sorting will be alphabetic.\n",
 				Log: "level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
@@ -641,7 +641,7 @@ func Test_list_Exec(t *testing.T) {
 			},
 			WantedRecording: output.WantedRecording{
 				Console: generateListing(true, false, true, true, true),
-				Error:   "The value of the -sort flag, 'numeric', cannot be used unless '-includeAlbums' is true; track sorting will be alphabetic.\n",
+				Error:   "The \"-sort\" value you specified, \"numeric\", is not valid unless \"-includeAlbums\" is true; track sorting will be alphabetic.\n",
 				Log: "level='info' -annotate='true' -details='false' -diagnostic='false' -includeAlbums='false' -includeArtists='true' -includeTracks='true' -sort='numeric' command='list' msg='executing command'\n" +
 					"level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",

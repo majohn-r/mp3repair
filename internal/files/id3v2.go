@@ -2,7 +2,6 @@ package files
 
 import (
 	"fmt"
-	"mp3/internal"
 	"sort"
 	"strings"
 
@@ -88,6 +87,8 @@ func normalizeGenre(g string) string {
 	return g
 }
 
+var malformedTrackNumberError = fmt.Errorf("first character is not a digit")
+
 func toTrackNumber(s string) (i int, err error) {
 	// this is more complicated than I wanted, because some mp3 rippers produce
 	// track numbers like "12/14", meaning 12th track of 14
@@ -106,7 +107,7 @@ func toTrackNumber(s string) (i int, err error) {
 		} else {
 			switch j {
 			case 0: // never saw a digit
-				err = fmt.Errorf(internal.ErrorDoesNotBeginWithDigit)
+				err = malformedTrackNumberError
 				return
 			default: // found something other than a digit, but read at least one
 				i = n

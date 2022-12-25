@@ -27,8 +27,7 @@ func MarkDirty(o output.Bus, cmd string) {
 			dirtyFile := filepath.Join(path, dirtyFileName)
 			if _, err := os.Stat(dirtyFile); err != nil && errors.Is(err, os.ErrNotExist) {
 				if writeErr := os.WriteFile(dirtyFile, []byte("dirty"), 0o644); writeErr != nil {
-					o.WriteCanonicalError(internal.UserCannotCreateFile, dirtyFile, writeErr)
-					logFileCreationFailure(o, cmd, dirtyFile, writeErr)
+					reportFileCreationFailure(o, cmd, dirtyFile, writeErr)
 				} else {
 					o.Log(output.Info, "metadata dirty file written", map[string]any{"fileName": dirtyFile})
 				}
@@ -62,8 +61,7 @@ func ClearDirty(o output.Bus) {
 		dirtyFile := filepath.Join(path, dirtyFileName)
 		if internal.PlainFileExists(dirtyFile) {
 			if err := os.Remove(dirtyFile); err != nil {
-				o.WriteCanonicalError(internal.UserCannotDeleteFile, dirtyFile, err)
-				internal.LogFileDeletionFailure(o, dirtyFile, err)
+				reportFileDeletionFailure(o, dirtyFile, err)
 			} else {
 				o.Log(output.Info, "metadata dirty file deleted", map[string]any{"fileName": dirtyFile})
 			}

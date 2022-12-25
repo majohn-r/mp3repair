@@ -30,16 +30,10 @@ const (
 	topDirectoryFlag  = "topDir"
 
 	defaultRegex = ".*"
-
-	fieldKeyAlbumFilterFlag     = "-" + albumRegexFlag
-	fieldKeyArtistFilterFlag    = "-" + artistRegexFlag
-	fieldKeyTargetExtensionFlag = "-" + fileExtensionFlag
-	fieldKeyTopDirFlag          = "-" + topDirectoryFlag
 )
 
 func reportBadDefault(o output.Bus, err error) {
-	o.WriteCanonicalError(internal.UserConfigurationFileInvalid, internal.DefaultConfigFileName, defaultSectionName, err)
-	internal.LogInvalidConfigurationData(o, defaultSectionName, err)
+	internal.ReportInvalidConfigurationData(o, defaultSectionName, err)
 }
 
 // NewSearchFlags are used by commands that use the common top directory, target
@@ -122,7 +116,7 @@ func (sf *SearchFlags) validateTopLevelDirectory(o output.Bus) bool {
 	}
 	o.WriteCanonicalError("The -topDir value you specified, %q, is not a directory", *sf.topDirectory)
 	o.Log(output.Error, "the file is not a directory", map[string]any{
-		fieldKeyTopDirFlag: *sf.topDirectory,
+		"-" + topDirectoryFlag: *sf.topDirectory,
 	})
 	return false
 }
@@ -133,7 +127,7 @@ func (sf *SearchFlags) validateExtension(o output.Bus) (ok bool) {
 		ok = false
 		o.WriteCanonicalError("The -ext value you specified, %q, must contain exactly one '.' and '.' must be the first character", *sf.fileExtension)
 		o.Log(output.Error, "the file extension must begin with '.' and contain no other '.' characters", map[string]any{
-			fieldKeyTargetExtensionFlag: *sf.fileExtension,
+			"-" + fileExtensionFlag: *sf.fileExtension,
 		})
 	}
 	var e error
@@ -142,8 +136,8 @@ func (sf *SearchFlags) validateExtension(o output.Bus) (ok bool) {
 		ok = false
 		o.WriteCanonicalError("The -ext value you specified, %q, cannot be used for file matching: %v", *sf.fileExtension, e)
 		o.Log(output.Error, "the file extension cannot be parsed as a regular expression", map[string]any{
-			fieldKeyTargetExtensionFlag: *sf.fileExtension,
-			"error":                     e,
+			"-" + fileExtensionFlag: *sf.fileExtension,
+			"error":                 e,
 		})
 	}
 	return
@@ -171,12 +165,12 @@ func (sf *SearchFlags) validate(o output.Bus) (albumsFilter, artistsFilter *rege
 	if !sf.validateExtension(o) {
 		ok = false
 	}
-	if filter, regexOk := validateRegexp(o, *sf.albumRegex, fieldKeyAlbumFilterFlag); !regexOk {
+	if filter, regexOk := validateRegexp(o, *sf.albumRegex, "-"+albumRegexFlag); !regexOk {
 		ok = false
 	} else {
 		albumsFilter = filter
 	}
-	if filter, regexOk := validateRegexp(o, *sf.artistRegex, fieldKeyArtistFilterFlag); !regexOk {
+	if filter, regexOk := validateRegexp(o, *sf.artistRegex, "-"+artistRegexFlag); !regexOk {
 		ok = false
 	} else {
 		artistsFilter = filter

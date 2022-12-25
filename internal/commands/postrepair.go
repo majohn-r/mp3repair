@@ -40,7 +40,7 @@ func (p *postrepair) Exec(o output.Bus, args []string) (ok bool) {
 }
 
 func logFields() map[string]any {
-	return map[string]any{fieldKeyCommandName: postRepairCommandName}
+	return map[string]any{"command": postRepairCommandName}
 }
 
 func runCommand(o output.Bus, s *files.Search) (ok bool) {

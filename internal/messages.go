@@ -2,9 +2,11 @@ package internal
 
 import "github.com/majohn-r/output"
 
-// LogInvalidConfigurationData logs errors found when attempting to parse a YAML
-// configuration file
-func LogInvalidConfigurationData(o output.Bus, s string, e error) {
+// ReportInvalidConfigurationData handles errors found when attempting to parse
+// a YAML configuration file, both logging the error and notifying the user of
+// the error
+func ReportInvalidConfigurationData(o output.Bus, s string, e error) {
+	o.WriteCanonicalError("The configuration file %q contains an invalid value for %q: %v", DefaultConfigFileName, s, e)
 	o.Log(output.Error, "invalid content in configuration file", map[string]any{
 		"section": s,
 		"error":   e,
@@ -27,22 +29,8 @@ func LogFileDeletionFailure(o output.Bus, s string, e error) {
 	})
 }
 
-// for output to user
-const (
-	UserAmbiguousChoices         = "There are multiple %s fields for %q, and there is no unambiguously preferred choice; candidates are %v"
-	UserCannotCreateDirectory    = "The directory %q cannot be created: %v"
-	UserCannotCreateFile         = "The file %q cannot be created: %v"
-	UserCannotDeleteFile         = "The file %q cannot be deleted: %v"
-	UserCannotQueryService       = "The status for the service %q cannot be obtained: %v"
-	UserConfigurationFileInvalid = "The configuration file %q contains an invalid value for %q: %v"
-	UserID3v1TagError            = "An error occurred when trying to read ID3V1 tag information for track %q on album %q by artist %q: %q"
-	UserID3v2TagError            = "An error occurred when trying to read ID3V2 tag information for track %q on album %q by artist %q: %q"
-	UserNoMusicFilesFound        = "No music files could be found using the specified parameters"
-	UserSpecifiedNoWork          = "You disabled all functionality for the command %q"
-)
-
-// these constants are errors to be used
-const (
-	ErrorDoesNotBeginWithDigit = "first character is not a digit"
-	ErrorEditUnnecessary       = "no edit required"
-)
+// WriteDirectoryCreationError writes a suitable error message to the user when
+// a directory cannot be created
+func WriteDirectoryCreationError(o output.Bus, d string, e error) {
+	o.WriteCanonicalError("The directory %q cannot be created: %v", d, e)
+}

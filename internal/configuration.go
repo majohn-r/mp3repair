@@ -100,7 +100,7 @@ func LookupAppData(o output.Bus) (string, bool) {
 	if value, ok := os.LookupEnv(appDataVar); ok {
 		return value, ok
 	}
-	o.Log(output.Info, "not set", map[string]any{"environment variable": appDataVar})
+	o.Log(output.Info, "not set", map[string]any{"environmentVariable": appDataVar})
 	return "", false
 }
 

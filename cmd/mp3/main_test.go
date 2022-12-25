@@ -66,7 +66,7 @@ func Test_run(t *testing.T) {
 			},
 			wantReturnValue: 1,
 			Error:           "There is no command named \"foo\"; valid commands include [about check export list postRepair repair resetDatabase].\n",
-			wantLogPrefix: "level='info' args='[./mp3 foo]' dependencies='[]' go version='go1.x' timeStamp='' version='unknown version!' msg='execution starts'\n" +
+			wantLogPrefix: "level='info' args='[./mp3 foo]' dependencies='[]' goVersion='go1.x' timeStamp='' version='unknown version!' msg='execution starts'\n" +
 				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", filepath.Join(thisDir, internal.AppName)) +
 				"level='error' command='foo' msg='unrecognized command'\n" +
 				"level='info' duration='",
@@ -83,7 +83,7 @@ func Test_run(t *testing.T) {
 				cmdlineArgs: []string{"./mp3", "-topDir", "./Music"},
 			},
 			wantReturnValue: 0,
-			wantLogPrefix: "level='info' args='[./mp3 -topDir ./Music]' dependencies='[]' go version='go1.x' timeStamp='' version='unknown version!' msg='execution starts'\n" +
+			wantLogPrefix: "level='info' args='[./mp3 -topDir ./Music]' dependencies='[]' goVersion='go1.x' timeStamp='' version='unknown version!' msg='execution starts'\n" +
 				fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", filepath.Join(thisDir, internal.AppName)) +
 				"level='info' -annotate='false' -details='false' -diagnostic='false' -includeAlbums='true' -includeArtists='true' -includeTracks='false' -sort='numeric' command='list' msg='executing command'\n" +
 				"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='./Music' msg='reading filtered music files'\n" +

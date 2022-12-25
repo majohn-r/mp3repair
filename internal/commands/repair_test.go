@@ -199,7 +199,7 @@ func Test_repair_Exec(t *testing.T) {
 			r:    newRepairForTesting(),
 			args: args{[]string{"-topDir", topDirName, "-dryRun"}},
 			WantedRecording: output.WantedRecording{
-				Console: noProblemsFound + ".\n",
+				Console: "No repairable track defects found.\n",
 				Error:   "Reading track metadata.\n" + generateStandardTrackErrorReport(),
 				Log: "level='info' -dryRun='true' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='repairExec' msg='reading filtered music files'\n" +
@@ -211,7 +211,7 @@ func Test_repair_Exec(t *testing.T) {
 			r:    newRepairForTesting(),
 			args: args{[]string{"-topDir", topDirName, "-dryRun=false"}},
 			WantedRecording: output.WantedRecording{
-				Console: noProblemsFound + ".\n",
+				Console: "No repairable track defects found.\n",
 				Error:   "Reading track metadata.\n" + generateStandardTrackErrorReport(),
 				Log: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='repairExec' msg='reading filtered music files'\n" +
