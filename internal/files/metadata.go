@@ -93,14 +93,14 @@ func (tM *trackMetadata) setID3v2Values(d *ID3V2TaggedTrackData) {
 
 func (tM *trackMetadata) setID3v1Values(v1 *id3v1Metadata) {
 	index := id3v1Source
-	tM.album[index] = v1.getAlbum()
-	tM.artist[index] = v1.getArtist()
-	tM.title[index] = v1.getTitle()
-	if genre, ok := v1.getGenre(); ok {
+	tM.album[index] = v1.album()
+	tM.artist[index] = v1.artist()
+	tM.title[index] = v1.title()
+	if genre, ok := v1.genre(); ok {
 		tM.genre[index] = genre
 	}
-	tM.year[index] = v1.getYear()
-	if track, ok := v1.getTrack(); ok {
+	tM.year[index] = v1.year()
+	if track, ok := v1.track(); ok {
 		tM.track[index] = track
 	}
 }

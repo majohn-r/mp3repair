@@ -275,8 +275,8 @@ func Test_export_exportDefaults(t *testing.T) {
 	}
 }
 
-func Test_getDefaultsContent(t *testing.T) {
-	const fnName = "getDefaultsContent()"
+func Test_defaultsContent(t *testing.T) {
+	const fnName = "defaultsContent()"
 	tests := []struct {
 		name string
 		want string
@@ -316,7 +316,7 @@ func Test_getDefaultsContent(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := string(getDefaultsContent()); got != tt.want {
+			if got := string(defaultsContent()); got != tt.want {
 				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})

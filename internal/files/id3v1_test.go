@@ -160,7 +160,7 @@ func Test_id3v1Metadata_getTitle(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.v1.getTitle(); got != tt.want {
+			if got := tt.v1.title(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
@@ -257,7 +257,7 @@ func Test_id3v1Metadata_getArtist(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.v1.getArtist(); got != tt.want {
+			if got := tt.v1.artist(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
@@ -354,7 +354,7 @@ func Test_id3v1Metadata_getAlbum(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.v1.getAlbum(); got != tt.want {
+			if got := tt.v1.album(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
@@ -456,7 +456,7 @@ func Test_id3v1Metadata_getYear(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := tt.v1.getYear()
+			got := tt.v1.year()
 			if got != tt.want {
 				t.Errorf("%s gotY = %v, want %v", fnName, got, tt.want)
 			}
@@ -520,7 +520,7 @@ func Test_id3v1Metadata_getComment(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.v1.getComment(); got != tt.want {
+			if got := tt.v1.comment(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
@@ -617,7 +617,7 @@ func Test_id3v1Metadata_getTrack(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotI, gotOk := tt.v1.getTrack()
+			gotI, gotOk := tt.v1.track()
 			if gotI != tt.wantI {
 				t.Errorf("%s gotI = %v, want %v", fnName, gotI, tt.wantI)
 			}
@@ -720,7 +720,7 @@ func Test_id3v1Metadata_getGenre(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotS, gotOk := tt.v1.getGenre()
+			gotS, gotOk := tt.v1.genre()
 			if gotS != tt.wantS {
 				t.Errorf("%s gotS = %v, want %v", fnName, gotS, tt.wantS)
 			}

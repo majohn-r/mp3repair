@@ -151,8 +151,7 @@ func fixTracks(o output.Bus, tracks []*files.Track) {
 }
 
 func createBackups(o output.Bus, tracks []*files.Track) {
-	albumPaths := getAlbumPaths(tracks)
-	makeBackupDirectories(o, albumPaths)
+	makeBackupDirectories(o, albumPaths(tracks))
 	backupTracks(o, tracks)
 }
 
@@ -191,13 +190,13 @@ func makeBackupDirectories(o output.Bus, paths []string) {
 	}
 }
 
-func getAlbumPaths(tracks []*files.Track) []string {
-	albumPaths := map[string]bool{}
+func albumPaths(tracks []*files.Track) []string {
+	m := map[string]bool{}
 	for _, t := range tracks {
-		albumPaths[t.AlbumPath()] = true
+		m[t.AlbumPath()] = true
 	}
 	var result []string
-	for path := range albumPaths {
+	for path := range m {
 		result = append(result, path)
 	}
 	sort.Strings(result)

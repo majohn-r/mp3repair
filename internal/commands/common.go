@@ -38,15 +38,15 @@ func ProcessCommand(o output.Bus, args []string) (cmd CommandProcessor, cmdArgs 
 	if c, ok = internal.ReadConfigurationFile(o); !ok {
 		return nil, nil, false
 	}
-	var defaultSettings map[string]bool
-	if defaultSettings, ok = getDefaultSettings(o, c.SubConfiguration("command")); !ok {
+	var m map[string]bool
+	if m, ok = defaultSettings(o, c.SubConfiguration("command")); !ok {
 		return nil, nil, false
 	}
 	var initializers []commandInitializer
 	for name, d := range commandMap {
 		initializers = append(initializers, commandInitializer{
 			name:           name,
-			defaultCommand: defaultSettings[name],
+			defaultCommand: m[name],
 			initializer:    d.initFunction,
 		})
 	}
@@ -54,7 +54,7 @@ func ProcessCommand(o output.Bus, args []string) (cmd CommandProcessor, cmdArgs 
 	return
 }
 
-func getDefaultSettings(o output.Bus, c *internal.Configuration) (m map[string]bool, ok bool) {
+func defaultSettings(o output.Bus, c *internal.Configuration) (m map[string]bool, ok bool) {
 	m = map[string]bool{}
 	defaultCommand, ok := c.StringValue("default")
 	if !ok { // no definition

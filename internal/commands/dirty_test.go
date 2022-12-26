@@ -14,7 +14,7 @@ func Test_findAppFolder(t *testing.T) {
 	savedDirtyFolderFound := dirtyFolderFound
 	savedDirtyFolder := dirtyFolder
 	savedDirtyFolderValid := dirtyFolderValid
-	savedAppSpecificPath, savedAppSpecificPathValid := internal.GetAppSpecificPath()
+	savedAppSpecificPath, savedAppSpecificPathValid := internal.AppSpecificPath()
 	defer func() {
 		dirtyFolderFound = savedDirtyFolderFound
 		dirtyFolder = savedDirtyFolder

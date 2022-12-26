@@ -296,8 +296,8 @@ func Test_selectCommand(t *testing.T) {
 	}
 }
 
-func Test_getDefaultSettings(t *testing.T) {
-	fnName := "getDefaultSettings()"
+func Test_defaultSettings(t *testing.T) {
+	fnName := "defaultSettings()"
 	const (
 		aboutCommand         = "about"
 		checkCommand         = "check"
@@ -320,7 +320,7 @@ func Test_getDefaultSettings(t *testing.T) {
 	defer func() {
 		savedState.RestoreForTesting()
 		commandMap = savedCommandMap
-		internal.DestroyDirectoryForTesting("getDefaultSettings", topDir)
+		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
 	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting(topDir))
 	tests := []struct {
@@ -408,7 +408,7 @@ func Test_getDefaultSettings(t *testing.T) {
 				t.Errorf("%s error reading defaults.yaml %q", fnName, content)
 			}
 			o := output.NewRecorder()
-			gotM, gotOk := getDefaultSettings(o, c.SubConfiguration("command"))
+			gotM, gotOk := defaultSettings(o, c.SubConfiguration("command"))
 			if !reflect.DeepEqual(gotM, tt.wantM) {
 				t.Errorf("%s gotM = %v, want %v", fnName, gotM, tt.wantM)
 			}

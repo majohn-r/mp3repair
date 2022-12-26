@@ -108,12 +108,12 @@ func (e *export) exportDefaults(o output.Bus) bool {
 	if !*e.defaults {
 		return true
 	}
-	return e.writeDefaults(o, getDefaultsContent())
+	return e.writeDefaults(o, defaultsContent())
 }
 
-func getDefaultsContent() []byte {
-	// get the search content - it cannot be registered as the commands register
-	// their content, due to circular dependency issues
+func defaultsContent() []byte {
+	// get the search content - it cannot be registered the same way that
+	// commands register their content, due to circular dependency issues
 	searchName, searchDefaults := files.SearchDefaults()
 	defaultMapping[searchName] = searchDefaults
 	// ignoring error return, as we're not marshalling structs, where mischief

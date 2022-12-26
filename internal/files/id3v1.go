@@ -290,7 +290,7 @@ func (im *id3v1Metadata) isValid() bool {
 	return tag == "TAG"
 }
 
-func (im *id3v1Metadata) getTitle() string {
+func (im *id3v1Metadata) title() string {
 	return im.readStringField(id3v1Title)
 }
 
@@ -319,7 +319,7 @@ func (im *id3v1Metadata) setTitle(s string) {
 	im.writeStringField(repairName(s), id3v1Title)
 }
 
-func (im *id3v1Metadata) getArtist() string {
+func (im *id3v1Metadata) artist() string {
 	return im.readStringField(id3v1Artist)
 }
 
@@ -327,7 +327,7 @@ func (im *id3v1Metadata) setArtist(s string) {
 	im.writeStringField(repairName(s), id3v1Artist)
 }
 
-func (im *id3v1Metadata) getAlbum() string {
+func (im *id3v1Metadata) album() string {
 	return im.readStringField(id3v1Album)
 }
 
@@ -335,7 +335,7 @@ func (im *id3v1Metadata) setAlbum(s string) {
 	im.writeStringField(repairName(s), id3v1Album)
 }
 
-func (im *id3v1Metadata) getYear() string {
+func (im *id3v1Metadata) year() string {
 	return im.readStringField(id3v1Year)
 }
 
@@ -343,7 +343,7 @@ func (im *id3v1Metadata) setYear(s string) {
 	im.writeStringField(s, id3v1Year)
 }
 
-func (im *id3v1Metadata) getComment() string {
+func (im *id3v1Metadata) comment() string {
 	return im.readStringField(id3v1Comment)
 }
 
@@ -355,7 +355,7 @@ func (im *id3v1Metadata) readByteField(f id3v1Field) int {
 	return int(im.data[f.startOffset])
 }
 
-func (im *id3v1Metadata) getTrack() (i int, ok bool) {
+func (im *id3v1Metadata) track() (i int, ok bool) {
 	if im.readByteField(id3v1ZeroByte) == 0 {
 		i = im.readByteField(id3v1Track)
 		ok = true
@@ -376,7 +376,7 @@ func (im *id3v1Metadata) setTrack(t int) bool {
 	return true
 }
 
-func (im *id3v1Metadata) getGenre() (string, bool) {
+func (im *id3v1Metadata) genre() (string, bool) {
 	s, ok := genreMap[im.readByteField(id3v1Genre)]
 	return s, ok
 }
@@ -411,15 +411,15 @@ func readID3v1Metadata(path string) ([]string, error) {
 		return nil, err
 	}
 	var output []string
-	output = append(output, fmt.Sprintf("Artist: %q", v1.getArtist()), fmt.Sprintf("Album: %q", v1.getAlbum()), fmt.Sprintf("Title: %q", v1.getTitle()))
-	if track, ok := v1.getTrack(); ok {
+	output = append(output, fmt.Sprintf("Artist: %q", v1.artist()), fmt.Sprintf("Album: %q", v1.album()), fmt.Sprintf("Title: %q", v1.title()))
+	if track, ok := v1.track(); ok {
 		output = append(output, fmt.Sprintf("Track: %d", track))
 	}
-	output = append(output, fmt.Sprintf("Year: %q", v1.getYear()))
-	if genre, ok := v1.getGenre(); ok {
+	output = append(output, fmt.Sprintf("Year: %q", v1.year()))
+	if genre, ok := v1.genre(); ok {
 		output = append(output, fmt.Sprintf("Genre: %q", genre))
 	}
-	if comment := v1.getComment(); len(comment) > 0 {
+	if comment := v1.comment(); len(comment) > 0 {
 		output = append(output, fmt.Sprintf("Comment: %q", comment))
 	}
 	return output, nil

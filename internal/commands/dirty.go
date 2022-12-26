@@ -39,7 +39,7 @@ func MarkDirty(o output.Bus, cmd string) {
 
 func findAppFolder() (folder string, ok bool) {
 	if !dirtyFolderFound {
-		appSpecificPath, appSpecificPathValid := internal.GetAppSpecificPath()
+		appSpecificPath, appSpecificPathValid := internal.AppSpecificPath()
 		if appSpecificPathValid {
 			if info, err := os.Stat(appSpecificPath); err == nil {
 				if info.IsDir() {

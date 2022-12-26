@@ -23,9 +23,9 @@ var (
 	appSpecificPathValid bool
 )
 
-// GetAppSpecificPath returns the location for application-specific files
+// AppSpecificPath returns the location for application-specific files
 // (%APPPATH%\mp3) and whether that value is trustworthy
-func GetAppSpecificPath() (string, bool) {
+func AppSpecificPath() (string, bool) {
 	return appSpecificPath, appSpecificPathValid
 }
 

@@ -373,7 +373,7 @@ func Test_verifyFileExists(t *testing.T) {
 
 func TestReadConfigurationFile(t *testing.T) {
 	fnName := "ReadConfigurationFile()"
-	savedAppPath, savedAppPathValid := GetAppSpecificPath()
+	savedAppPath, savedAppPathValid := AppSpecificPath()
 	savedState := SaveEnvVarForTesting(appDataVar)
 	canonicalPath := SecureAbsolutePathForTesting(".")
 	mp3Path := SecureAbsolutePathForTesting("mp3")
@@ -537,7 +537,7 @@ func TestReadConfigurationFile(t *testing.T) {
 				}
 			}
 			// check side effects
-			gotPath, gotPathValid := GetAppSpecificPath()
+			gotPath, gotPathValid := AppSpecificPath()
 			if gotPath != tt.wantAppSpecificPath {
 				t.Errorf("%s got path %q want %q", fnName, gotPath, tt.wantAppSpecificPath)
 			}
