@@ -2,6 +2,7 @@ package commands
 
 import (
 	"reflect"
+	"runtime/debug"
 	"strings"
 	"testing"
 
@@ -9,7 +10,7 @@ import (
 )
 
 func Test_finalYear(t *testing.T) {
-	fnName := "finalYear()"
+	const fnName = "finalYear()"
 	type args struct {
 		timestamp string
 	}
@@ -50,7 +51,7 @@ func Test_finalYear(t *testing.T) {
 }
 
 func Test_formatCopyright(t *testing.T) {
-	fnName := "formatCopyright()"
+	const fnName = "formatCopyright()"
 	type args struct {
 		firstYear int
 		lastYear  int
@@ -95,27 +96,25 @@ func Test_formatCopyright(t *testing.T) {
 }
 
 func Test_formatBuildData(t *testing.T) {
-	fnName := "formatBuildData()"
-	type args struct {
-		bD *BuildData
-	}
+	const fnName = "formatBuildData()"
+	originalGoVersion := goVersion
+	originalDependencies := buildDependencies
+	defer func() {
+		goVersion = originalGoVersion
+		buildDependencies = originalDependencies
+	}()
 	tests := []struct {
-		name string
-		args
-		want []string
+		name         string
+		version      string
+		dependencies []string
+		want         []string
 	}{
 		{
-			name: "success",
-			args: args{
-				bD: &BuildData{
-					GoVersion: "go1.x",
-					Dependencies: []string{
-						"github.com/bogem/id3v2/v2 v2.1.2",
-						"github.com/lestrrat-go/strftime v1.0.6",
-					},
-				},
-			},
+			name:         "success",
+			version:      "go1.x",
+			dependencies: []string{"github.com/bogem/id3v2/v2 v2.1.2", "github.com/lestrrat-go/strftime v1.0.6"},
 			want: []string{
+				"Build Information",
 				" - Go version: go1.x",
 				" - Dependency: github.com/bogem/id3v2/v2 v2.1.2",
 				" - Dependency: github.com/lestrrat-go/strftime v1.0.6",
@@ -124,7 +123,9 @@ func Test_formatBuildData(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := formatBuildData(tt.args.bD); !reflect.DeepEqual(got, tt.want) {
+			goVersion = tt.version
+			buildDependencies = tt.dependencies
+			if got := formatBuildData(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
@@ -132,9 +133,9 @@ func Test_formatBuildData(t *testing.T) {
 }
 
 func Test_reportAbout(t *testing.T) {
-	fnName := "reportAbout()"
+	const fnName = "reportAbout()"
 	type args struct {
-		data []string
+		lines []string
 	}
 	tests := []struct {
 		name string
@@ -143,7 +144,7 @@ func Test_reportAbout(t *testing.T) {
 	}{
 		{
 			name: "normal",
-			args: args{data: []string{
+			args: args{lines: []string{
 				"blah blah blah",
 				formatCopyright(2021, 2025),
 				"build data",
@@ -162,7 +163,7 @@ func Test_reportAbout(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := output.NewRecorder()
-			reportAbout(o, tt.args.data)
+			reportAbout(o, tt.args.lines)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
@@ -173,28 +174,27 @@ func Test_reportAbout(t *testing.T) {
 }
 
 func Test_aboutCmd_Exec(t *testing.T) {
-	fnName := "aboutCmd.Exec()"
-	AboutBuildData = &BuildData{}
+	const fnName = "aboutCmd.Exec()"
 	type args struct {
 		o    output.Bus
 		args []string
 	}
 	tests := []struct {
 		name string
-		v    *aboutCmd
+		a    *aboutCmd
 		args
 		wantOk bool
 	}{
 		{
 			name:   "for sake of completeness",
-			v:      &aboutCmd{},
+			a:      &aboutCmd{},
 			args:   args{o: output.NewNilBus()},
 			wantOk: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if gotOk := tt.v.Exec(tt.args.o, tt.args.args); gotOk != tt.wantOk {
+			if gotOk := tt.a.Exec(tt.args.o, tt.args.args); gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 		})
@@ -202,7 +202,7 @@ func Test_aboutCmd_Exec(t *testing.T) {
 }
 
 func Test_translateTimestamp(t *testing.T) {
-	fnName := "translateTimestamp()"
+	const fnName = "translateTimestamp()"
 	type args struct {
 		t string
 	}
@@ -227,6 +227,83 @@ func Test_translateTimestamp(t *testing.T) {
 			if got := translateTimestamp(tt.args.t); !strings.HasPrefix(got, tt.want) {
 				t.Errorf("%s = %q, want to start with %q", fnName, got, tt.want)
 			}
+		})
+	}
+}
+
+func TestInitBuildData(t *testing.T) {
+	const fnName = "InitBuildData()"
+	type args struct {
+		f        func() (*debug.BuildInfo, bool)
+		version  string
+		creation string
+	}
+	tests := []struct {
+		name string
+		args
+		wantGoVersion         string
+		wantBuildDependencies []string
+	}{
+		{
+			name: "happy path",
+			args: args{
+				f: func() (*debug.BuildInfo, bool) {
+					return &debug.BuildInfo{
+						GoVersion: "go1.x",
+						Deps: []*debug.Module{
+							{
+								Path:    "blah/foo",
+								Version: "v1.1.1",
+							},
+							{
+								Path:    "foo/blah/v2",
+								Version: "v2.2.2",
+							},
+						},
+					}, true
+				},
+				version:  "0.1.1",
+				creation: "today",
+			},
+			wantGoVersion: "go1.x",
+			wantBuildDependencies: []string{
+				"blah/foo v1.1.1",
+				"foo/blah/v2 v2.2.2",
+			},
+		},
+		{
+			name: "unhappy path",
+			args: args{
+				f: func() (*debug.BuildInfo, bool) {
+					return nil, false
+				},
+				version:  "unknown",
+				creation: "tomorrow",
+			},
+			wantGoVersion: "unknown",
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			originalGoVersion := goVersion
+			originalDependencies := buildDependencies
+			goVersion = ""
+			buildDependencies = nil
+			InitBuildData(tt.args.f, tt.args.version, tt.args.creation)
+			if appVersion != tt.args.version {
+				t.Errorf("%s = %v, appVersion %v", fnName, appVersion, tt.args.version)
+			}
+			if buildTimestamp != tt.args.creation {
+				t.Errorf("%s = %v, buildTimestamp %v", fnName, buildTimestamp, tt.args.creation)
+			}
+			if got := GoVersion(); got != tt.wantGoVersion {
+				t.Errorf("%s = %v, wantGoVersion %v", fnName, got, tt.wantGoVersion)
+			}
+			if got := BuildDependencies(); !reflect.DeepEqual(got, tt.wantBuildDependencies) {
+				t.Errorf("%s = %v, wantBuildDependencies %v", fnName, got, tt.wantBuildDependencies)
+			}
+			goVersion = originalGoVersion
+			buildDependencies = originalDependencies
 		})
 	}
 }

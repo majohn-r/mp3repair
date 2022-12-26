@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"mp3/internal"
+	"runtime/debug"
 	"time"
 
 	"github.com/majohn-r/output"
@@ -13,31 +14,24 @@ func init() {
 	addCommandData(aboutCommandName, commandData{isDefault: false, initFunction: newAboutCmd})
 }
 
-// AboutData contains data about the image itself.
-type AboutData struct {
-	// AppVersion is the semantic version of the application.
-	AppVersion string
-	// BuildTimeStamp is the time when the application was built and is
-	// formatted per time.RFC3339.
-	BuildTimestamp string
-}
-
-// BuildData contains data about how the image was built.
-type BuildData struct {
-	// GoVersion contains the version of go used to build the image.
-	GoVersion string
-	// Dependencies contains information about the modules used to build the
-	// image. Each element in the slice consists of a module's path and its
-	// version.
-	Dependencies []string
-}
-
 var (
-	// AboutSettings is set by main's run method.
-	AboutSettings AboutData
-	// AboutBuildData is set by main's run method.
-	AboutBuildData *BuildData
+	// these are set by InitBuildData
+	appVersion        string
+	buildTimestamp    string
+	goVersion         string
+	buildDependencies []string
 )
+
+// GoVersion returns the version of Go used to compile the program
+func GoVersion() string {
+	return goVersion
+}
+
+// BuildDependencies returns information about the dependencies used to compile
+// the program
+func BuildDependencies() []string {
+	return buildDependencies
+}
 
 const (
 	aboutCommandName = "about"
@@ -46,10 +40,25 @@ const (
 	firstYear = 2021 // the year that development began
 )
 
+// InitBuildData captures information about how the program was compiled, the
+// version of the program, and the timestamp for when the program was built.
+func InitBuildData(f func() (*debug.BuildInfo, bool), version, creation string) {
+	if b, ok := f(); ok {
+		goVersion = b.GoVersion
+		for _, d := range b.Deps {
+			buildDependencies = append(buildDependencies, fmt.Sprintf("%s %s", d.Path, d.Version))
+		}
+	} else {
+		goVersion = "unknown"
+	}
+	appVersion = version
+	buildTimestamp = creation
+}
+
 type aboutCmd struct {
 }
 
-func newAboutCmd(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
+func newAboutCmd(o output.Bus, _ *internal.Configuration, _ *flag.FlagSet) (CommandProcessor, bool) {
 	return &aboutCmd{}, true
 }
 
@@ -57,63 +66,59 @@ func newAboutCmd(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (C
 // returns true.
 func (a *aboutCmd) Exec(o output.Bus, args []string) (ok bool) {
 	logStart(o, aboutCommandName, map[string]any{})
-	var elements []string
-	timeStamp := translateTimestamp(AboutSettings.BuildTimestamp)
-	description := fmt.Sprintf("%s version %s, built on %s", internal.AppName, AboutSettings.AppVersion, timeStamp)
-	elements = append(elements, description)
-	lastYear := finalYear(o, AboutSettings.BuildTimestamp)
-	copyright := formatCopyright(firstYear, lastYear)
-	elements = append(elements, copyright, "Build Information")
-	b := formatBuildData(AboutBuildData)
-	elements = append(elements, b...)
-	reportAbout(o, elements)
+	var s []string
+	s = append(s,
+		fmt.Sprintf("%s version %s, built on %s", internal.AppName, appVersion, translateTimestamp(buildTimestamp)),
+		formatCopyright(firstYear, finalYear(o, buildTimestamp)))
+	s = append(s, formatBuildData()...)
+	reportAbout(o, s)
 	return true
 }
 
-func translateTimestamp(t string) string {
-	rT, err := time.Parse(time.RFC3339, t)
+func translateTimestamp(s string) string {
+	t, err := time.Parse(time.RFC3339, s)
 	if err != nil {
-		return t
+		return s
 	}
-	return rT.Format("Monday, January 2 2006, 15:04:05 MST")
+	return t.Format("Monday, January 2 2006, 15:04:05 MST")
 }
 
-func reportAbout(o output.Bus, data []string) {
-	maxLineLength := 0
-	for _, s := range data {
-		if len(s) > maxLineLength {
-			maxLineLength = len([]rune(s))
+func reportAbout(o output.Bus, lines []string) {
+	max := 0
+	for _, s := range lines {
+		if len(s) > max {
+			max = len([]rune(s))
 		}
 	}
-	var formattedData []string
-	for _, s := range data {
-		b := make([]rune, maxLineLength)
+	var formattedLines []string
+	for _, s := range lines {
+		b := make([]rune, max)
 		i := 0
 		for _, s1 := range s {
 			b[i] = s1
 			i++
 		}
-		for ; i < maxLineLength; i++ {
+		for ; i < max; i++ {
 			b[i] = ' '
 		}
-		formattedData = append(formattedData, string(b))
+		formattedLines = append(formattedLines, string(b))
 	}
-	bHeader := make([]rune, maxLineLength)
-	for i := 0; i < maxLineLength; i++ {
-		bHeader[i] = '-'
+	verticalLine := make([]rune, max)
+	for i := 0; i < max; i++ {
+		verticalLine[i] = '-'
 	}
-	header := string(bHeader)
+	header := string(verticalLine)
 	o.WriteConsole("+-%s-+\n", header)
-	for _, s := range formattedData {
+	for _, s := range formattedLines {
 		o.WriteConsole("| %s |\n", s)
 	}
 	o.WriteConsole("+-%s-+\n", header)
 }
 
-func formatBuildData(bD *BuildData) []string {
+func formatBuildData() []string {
 	var s []string
-	s = append(s, fmt.Sprintf(" - Go version: %s", bD.GoVersion))
-	for _, dep := range bD.Dependencies {
+	s = append(s, "Build Information", fmt.Sprintf(" - Go version: %s", goVersion))
+	for _, dep := range buildDependencies {
 		s = append(s, fmt.Sprintf(" - Dependency: %s", dep))
 	}
 	return s
