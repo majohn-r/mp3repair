@@ -13,17 +13,17 @@ import (
 func init() {
 	addCommandData(checkCommandName, commandData{isDefault: false, initFunction: newCheck})
 	addDefaultMapping(checkCommandName, map[string]any{
-		emptyFoldersFlag:         defaultEmptyFolders,
-		gapsInTrackNumberingFlag: defaultGapsInTrackNumbering,
-		integrityFlag:            defaultIntegrity,
+		emptyFolders:       defaultEmptyFolders,
+		trackNumberingGaps: defaultTrackNumberingGaps,
+		integrity:          defaultIntegrity,
 	})
 }
 
 type check struct {
-	checkEmptyFolders         *bool
-	checkGapsInTrackNumbering *bool
-	checkIntegrity            *bool
-	sf                        *files.SearchFlags
+	emptyFolders       *bool
+	trackNumberingGaps *bool
+	integrity          *bool
+	sf                 *files.SearchFlags
 }
 
 func newCheck(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
@@ -33,13 +33,13 @@ func newCheck(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (Comm
 const (
 	checkCommandName = "check"
 
-	defaultEmptyFolders         = false
-	defaultGapsInTrackNumbering = false
-	defaultIntegrity            = true
+	defaultEmptyFolders       = false
+	defaultTrackNumberingGaps = false
+	defaultIntegrity          = true
 
-	emptyFoldersFlag         = "empty"
-	gapsInTrackNumberingFlag = "gaps"
-	integrityFlag            = "integrity"
+	emptyFolders       = "empty"
+	trackNumberingGaps = "gaps"
+	integrity          = "integrity"
 )
 
 type checkDefaults struct {
@@ -49,39 +49,36 @@ type checkDefaults struct {
 }
 
 func newCheckCommand(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (*check, bool) {
-	defaults, defaultsOk := evaluateCheckDefaults(o, c.SubConfiguration(checkCommandName), checkCommandName)
+	defaults, defaultsOk := evaluateCheckDefaults(o, c.SubConfiguration(checkCommandName))
 	sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet)
 	if defaultsOk && sFlagsOk {
-		emptyUsage := internal.DecorateBoolFlagUsage("check for empty artist and album folders", defaults.empty)
-		gapsUsage := internal.DecorateBoolFlagUsage("check for gaps in track numbers", defaults.gaps)
-		integrityUsage := internal.DecorateBoolFlagUsage("check for disagreement between the file system and audio file metadata", defaults.integrity)
 		return &check{
-			checkEmptyFolders:         fSet.Bool(emptyFoldersFlag, defaults.empty, emptyUsage),
-			checkGapsInTrackNumbering: fSet.Bool(gapsInTrackNumberingFlag, defaults.gaps, gapsUsage),
-			checkIntegrity:            fSet.Bool(integrityFlag, defaults.integrity, integrityUsage),
-			sf:                        sFlags,
+			emptyFolders:       fSet.Bool(emptyFolders, defaults.empty, internal.DecorateBoolFlagUsage("check for empty artist and album folders", defaults.empty)),
+			trackNumberingGaps: fSet.Bool(trackNumberingGaps, defaults.gaps, internal.DecorateBoolFlagUsage("check for gaps in track numbers", defaults.gaps)),
+			integrity:          fSet.Bool(integrity, defaults.integrity, internal.DecorateBoolFlagUsage("check for disagreement between the file system and audio file metadata", defaults.integrity)),
+			sf:                 sFlags,
 		}, true
 	}
 	return nil, false
 }
 
-func evaluateCheckDefaults(o output.Bus, c *internal.Configuration, name string) (defaults checkDefaults, ok bool) {
+func evaluateCheckDefaults(o output.Bus, c *internal.Configuration) (defaults checkDefaults, ok bool) {
 	ok = true
 	var err error
 	defaults = checkDefaults{}
-	defaults.empty, err = c.BoolDefault(emptyFoldersFlag, defaultEmptyFolders)
+	defaults.empty, err = c.BoolDefault(emptyFolders, defaultEmptyFolders)
 	if err != nil {
-		reportBadDefault(o, name, err)
+		reportBadDefault(o, checkCommandName, err)
 		ok = false
 	}
-	defaults.gaps, err = c.BoolDefault(gapsInTrackNumberingFlag, defaultGapsInTrackNumbering)
+	defaults.gaps, err = c.BoolDefault(trackNumberingGaps, defaultTrackNumberingGaps)
 	if err != nil {
-		reportBadDefault(o, name, err)
+		reportBadDefault(o, checkCommandName, err)
 		ok = false
 	}
-	defaults.integrity, err = c.BoolDefault(integrityFlag, defaultIntegrity)
+	defaults.integrity, err = c.BoolDefault(integrity, defaultIntegrity)
 	if err != nil {
-		reportBadDefault(o, name, err)
+		reportBadDefault(o, checkCommandName, err)
 		ok = false
 	}
 	return
@@ -96,56 +93,52 @@ func (c *check) Exec(o output.Bus, args []string) (ok bool) {
 
 func (c *check) logFields() map[string]any {
 	return map[string]any{
-		"command":                      checkCommandName,
-		"-" + emptyFoldersFlag:         *c.checkEmptyFolders,
-		"-" + gapsInTrackNumberingFlag: *c.checkGapsInTrackNumbering,
-		"-" + integrityFlag:            *c.checkIntegrity,
+		"command":                checkCommandName,
+		"-" + emptyFolders:       *c.emptyFolders,
+		"-" + trackNumberingGaps: *c.trackNumberingGaps,
+		"-" + integrity:          *c.integrity,
 	}
 }
 
-type trackWithIssues struct {
-	number int
-	name   string
-	issues []string
-	track  *files.Track
+type checkedTrack struct {
+	issues  []string
+	backing *files.Track
 }
 
-func (t *trackWithIssues) hasIssues() bool {
-	return len(t.issues) > 0
+func (cT *checkedTrack) hasIssues() bool {
+	return len(cT.issues) > 0
 }
 
-type albumWithIssues struct {
-	name   string
-	issues []string
-	tracks []*trackWithIssues
-	album  *files.Album
+type checkedAlbum struct {
+	issues  []string
+	tracks  []*checkedTrack
+	backing *files.Album
 }
 
-func (a *albumWithIssues) hasIssues() bool {
-	if len(a.issues) > 0 {
+func (cAl *checkedAlbum) hasIssues() bool {
+	if len(cAl.issues) > 0 {
 		return true
 	}
-	for _, t := range a.tracks {
-		if t.hasIssues() {
+	for _, cT := range cAl.tracks {
+		if cT.hasIssues() {
 			return true
 		}
 	}
 	return false
 }
 
-type artistWithIssues struct {
-	name   string
-	issues []string
-	albums []*albumWithIssues
-	artist *files.Artist
+type checkedArtist struct {
+	issues  []string
+	albums  []*checkedAlbum
+	backing *files.Artist
 }
 
-func (a *artistWithIssues) hasIssues() bool {
-	if len(a.issues) > 0 {
+func (cAr *checkedArtist) hasIssues() bool {
+	if len(cAr.issues) > 0 {
 		return true
 	}
-	for _, album := range a.albums {
-		if album.hasIssues() {
+	for _, cAl := range cAr.albums {
+		if cAl.hasIssues() {
 			return true
 		}
 	}
@@ -153,43 +146,43 @@ func (a *artistWithIssues) hasIssues() bool {
 }
 
 func (c *check) runCommand(o output.Bus, s *files.Search) (ok bool) {
-	if !*c.checkEmptyFolders && !*c.checkGapsInTrackNumbering && !*c.checkIntegrity {
+	if !*c.emptyFolders && !*c.trackNumberingGaps && !*c.integrity {
 		reportNothingToDo(o, checkCommandName, c.logFields())
 	} else {
 		logStart(o, checkCommandName, c.logFields())
-		artists, artistsWithEmptyIssues, analysisOk := c.performEmptyFolderAnalysis(o, s)
+		artists, artistsWithEmptyFolders, analysisOk := c.analyzeEmptyFolders(o, s)
 		if analysisOk {
 			artists, ok = c.filterArtists(o, s, artists)
 			if ok {
-				artistsWithGaps := c.performGapAnalysis(o, artists)
-				artistsWithIntegrityIssues := c.performIntegrityCheck(o, artists)
-				reportResults(o, artistsWithEmptyIssues, artistsWithGaps, artistsWithIntegrityIssues)
+				artistsWithGaps := c.analyzeGaps(o, artists)
+				artistsWithIntegrityIssues := c.analyzeIntegrity(o, artists)
+				reportResults(o, artistsWithEmptyFolders, artistsWithGaps, artistsWithIntegrityIssues)
 			}
 		}
 	}
 	return
 }
 
-func reportResults(o output.Bus, artistsWithIssues ...[]*artistWithIssues) {
-	var filteredArtistSets [][]*artistWithIssues
-	for _, artists := range artistsWithIssues {
-		filteredArtistSets = append(filteredArtistSets, filterAndSortArtists(artists))
+func reportResults(o output.Bus, checkedArtists ...[]*checkedArtist) {
+	var filteredArtistSets [][]*checkedArtist
+	for _, artists := range checkedArtists {
+		filteredArtistSets = append(filteredArtistSets, filterAndSortCheckedArtists(artists))
 	}
 	filteredArtists := merge(filteredArtistSets)
 	if len(filteredArtists) > 0 {
-		for _, artist := range filteredArtists {
-			o.WriteConsole("%s\n", artist.name)
-			for _, issue := range artist.issues {
+		for _, cAr := range filteredArtists {
+			o.WriteConsole("%s\n", cAr.backing.Name())
+			for _, issue := range cAr.issues {
 				o.WriteConsole("  %s\n", issue)
 			}
-			for _, album := range artist.albums {
-				o.WriteConsole("    %s\n", album.name)
-				for _, issue := range album.issues {
+			for _, cAl := range cAr.albums {
+				o.WriteConsole("    %s\n", cAl.backing.Name())
+				for _, issue := range cAl.issues {
 					o.WriteConsole("      %s\n", issue)
 				}
-				for _, track := range album.tracks {
-					o.WriteConsole("        %2d %s\n", track.number, track.name)
-					for _, issue := range track.issues {
+				for _, cT := range cAl.tracks {
+					o.WriteConsole("        %2d %s\n", cT.backing.Number(), cT.backing.Name())
+					for _, issue := range cT.issues {
 						o.WriteConsole("          %s\n", issue)
 					}
 				}
@@ -198,33 +191,33 @@ func reportResults(o output.Bus, artistsWithIssues ...[]*artistWithIssues) {
 	}
 }
 
-func merge(sets [][]*artistWithIssues) []*artistWithIssues {
-	m := make(map[string]*artistWithIssues)
+func merge(sets [][]*checkedArtist) []*checkedArtist {
+	m := make(map[string]*checkedArtist)
 	for _, set := range sets {
 		for _, instance := range set {
-			if artist, ok := m[instance.name]; !ok {
-				m[instance.name] = instance
+			if cAr, ok := m[instance.backing.Name()]; !ok {
+				m[instance.backing.Name()] = instance
 			} else {
 				// merge instance into artist
-				artist.issues = append(artist.issues, instance.issues...)
-				for _, album := range instance.albums {
+				cAr.issues = append(cAr.issues, instance.issues...)
+				for _, cAl := range instance.albums {
 					mergedAlbum := false
-					for _, existingAlbum := range artist.albums {
-						if existingAlbum.name == album.name {
+					for _, existingAlbum := range cAr.albums {
+						if existingAlbum.backing.Name() == cAl.backing.Name() {
 							// merge album into existingAlbum
-							existingAlbum.issues = append(existingAlbum.issues, album.issues...)
-							for _, track := range album.tracks {
+							existingAlbum.issues = append(existingAlbum.issues, cAl.issues...)
+							for _, cT := range cAl.tracks {
 								mergedTrack := false
 								for _, existingTrack := range existingAlbum.tracks {
-									if existingTrack.number == track.number {
+									if existingTrack.backing.Number() == cT.backing.Number() {
 										// merge track into existingTrack
-										existingTrack.issues = append(existingTrack.issues, track.issues...)
+										existingTrack.issues = append(existingTrack.issues, cT.issues...)
 										mergedTrack = true
 										break
 									}
 								}
 								if !mergedTrack {
-									existingAlbum.tracks = append(existingAlbum.tracks, track)
+									existingAlbum.tracks = append(existingAlbum.tracks, cT)
 								}
 							}
 							mergedAlbum = true
@@ -232,127 +225,126 @@ func merge(sets [][]*artistWithIssues) []*artistWithIssues {
 						}
 					}
 					if !mergedAlbum {
-						artist.albums = append(artist.albums, album)
+						cAr.albums = append(cAr.albums, cAl)
 					}
 				}
 			}
 		}
 	}
-	var results []*artistWithIssues
+	var checked []*checkedArtist
 	for _, artist := range m {
-		results = append(results, artist)
+		checked = append(checked, artist)
 	}
-	sortArtists(results)
-	return results
+	sortCheckedArtists(checked)
+	return checked
 }
 
-func (c *check) filterArtists(o output.Bus, s *files.Search, artists []*files.Artist) (filteredArtists []*files.Artist, ok bool) {
-	if *c.checkGapsInTrackNumbering || *c.checkIntegrity {
+func (c *check) filterArtists(o output.Bus, s *files.Search, artists []*files.Artist) (filtered []*files.Artist, ok bool) {
+	if *c.trackNumberingGaps || *c.integrity {
 		if len(artists) == 0 {
-			filteredArtists, ok = s.LoadData(o)
+			filtered, ok = s.LoadData(o)
 		} else {
-			filteredArtists, ok = s.FilterArtists(o, artists)
+			filtered, ok = s.FilterArtists(o, artists)
 		}
 	} else {
-		filteredArtists = artists
+		filtered = artists
 		ok = true
 	}
 	return
 }
 
-type artistSlice []*artistWithIssues
+type checkedArtistSlice []*checkedArtist
 
-func (a artistSlice) Len() int {
-	return len(a)
+func (cArS checkedArtistSlice) Len() int {
+	return len(cArS)
 }
 
-func (a artistSlice) Less(i, j int) bool {
-	return a[i].name < a[j].name
+func (cArS checkedArtistSlice) Less(i, j int) bool {
+	return cArS[i].backing.Name() < cArS[j].backing.Name()
 }
 
-func (a artistSlice) Swap(i, j int) {
-	a[i], a[j] = a[j], a[i]
+func (cArS checkedArtistSlice) Swap(i, j int) {
+	cArS[i], cArS[j] = cArS[j], cArS[i]
 }
 
-type albumSlice []*albumWithIssues
+type checkedAlbumSlice []*checkedAlbum
 
-func (a albumSlice) Len() int {
-	return len(a)
+func (cAlS checkedAlbumSlice) Len() int {
+	return len(cAlS)
 }
 
-func (a albumSlice) Less(i, j int) bool {
-	return a[i].name < a[j].name
+func (cAlS checkedAlbumSlice) Less(i, j int) bool {
+	return cAlS[i].backing.Name() < cAlS[j].backing.Name()
 }
 
-func (a albumSlice) Swap(i, j int) {
-	a[i], a[j] = a[j], a[i]
+func (cAlS checkedAlbumSlice) Swap(i, j int) {
+	cAlS[i], cAlS[j] = cAlS[j], cAlS[i]
 }
 
-type trackSlice []*trackWithIssues
+type checkedTrackSlice []*checkedTrack
 
-func (t trackSlice) Len() int {
-	return len(t)
+func (cTS checkedTrackSlice) Len() int {
+	return len(cTS)
 }
 
-func (t trackSlice) Less(i, j int) bool {
-	return t[i].number < t[j].number
+func (cTS checkedTrackSlice) Less(i, j int) bool {
+	return cTS[i].backing.Number() < cTS[j].backing.Number()
 }
 
-func (t trackSlice) Swap(i, j int) {
-	t[i], t[j] = t[j], t[i]
+func (cTS checkedTrackSlice) Swap(i, j int) {
+	cTS[i], cTS[j] = cTS[j], cTS[i]
 }
 
-func filterAndSortArtists(artists []*artistWithIssues) []*artistWithIssues {
-	var filteredArtists []*artistWithIssues
-	for _, artist := range artists {
-		if artist.hasIssues() {
-			filteredArtist := artistWithIssues{
-				name:   artist.name,
-				issues: artist.issues,
+func filterAndSortCheckedArtists(checkedArtists []*checkedArtist) []*checkedArtist {
+	var filtered []*checkedArtist
+	for _, cAr := range checkedArtists {
+		if cAr.hasIssues() {
+			fAr := checkedArtist{
+				issues:  cAr.issues,
+				backing: cAr.backing,
 			}
-			for _, album := range artist.albums {
-				if album.hasIssues() {
-					filteredAlbum := albumWithIssues{
-						name:   album.name,
-						issues: album.issues,
+			for _, cAl := range cAr.albums {
+				if cAl.hasIssues() {
+					fAl := checkedAlbum{
+						issues:  cAl.issues,
+						backing: cAl.backing,
 					}
-					for _, track := range album.tracks {
-						if track.hasIssues() {
-							filteredTrack := trackWithIssues{
-								name:   track.name,
-								number: track.number,
-								issues: track.issues,
+					for _, cT := range cAl.tracks {
+						if cT.hasIssues() {
+							fT := checkedTrack{
+								issues:  cT.issues,
+								backing: cT.backing,
 							}
-							filteredAlbum.tracks = append(filteredAlbum.tracks, &filteredTrack)
+							fAl.tracks = append(fAl.tracks, &fT)
 						}
 					}
-					filteredArtist.albums = append(filteredArtist.albums, &filteredAlbum)
+					fAr.albums = append(fAr.albums, &fAl)
 				}
 			}
-			filteredArtists = append(filteredArtists, &filteredArtist)
+			filtered = append(filtered, &fAr)
 		}
 	}
-	sortArtists(filteredArtists)
-	return filteredArtists
+	sortCheckedArtists(filtered)
+	return filtered
 }
 
-func sortArtists(filteredArtists []*artistWithIssues) {
-	sort.Sort(artistSlice(filteredArtists))
-	for _, artist := range filteredArtists {
-		sort.Sort(albumSlice(artist.albums))
-		sort.Strings(artist.issues)
-		for _, album := range artist.albums {
-			sort.Sort(trackSlice(album.tracks))
-			sort.Strings(album.issues)
-			for _, track := range album.tracks {
-				sort.Strings(track.issues)
+func sortCheckedArtists(checkedArtists []*checkedArtist) {
+	sort.Sort(checkedArtistSlice(checkedArtists))
+	for _, cAr := range checkedArtists {
+		sort.Sort(checkedAlbumSlice(cAr.albums))
+		sort.Strings(cAr.issues)
+		for _, cAl := range cAr.albums {
+			sort.Sort(checkedTrackSlice(cAl.tracks))
+			sort.Strings(cAl.issues)
+			for _, cT := range cAl.tracks {
+				sort.Strings(cT.issues)
 			}
 		}
 	}
 }
 
-func (c *check) performEmptyFolderAnalysis(o output.Bus, s *files.Search) (artists []*files.Artist, conflictedArtists []*artistWithIssues, ok bool) {
-	if !*c.checkEmptyFolders {
+func (c *check) analyzeEmptyFolders(o output.Bus, s *files.Search) (artists []*files.Artist, emptyArtists []*checkedArtist, ok bool) {
+	if !*c.emptyFolders {
 		ok = true
 		return
 	}
@@ -361,56 +353,55 @@ func (c *check) performEmptyFolderAnalysis(o output.Bus, s *files.Search) (artis
 	if !loadedOk {
 		return
 	}
-	conflictedArtists = createBareConflictedIssues(artists)
-	issuesFound := false
-	for _, conflictedArtist := range conflictedArtists {
-		if !conflictedArtist.artist.HasAlbums() {
-			conflictedArtist.issues = append(conflictedArtist.issues, "no albums found")
-			issuesFound = true
+	emptyArtists = toCheckedArtists(artists)
+	emptyFoldersFound := false
+	for _, cAr := range emptyArtists {
+		if !cAr.backing.HasAlbums() {
+			cAr.issues = append(cAr.issues, "no albums found")
+			emptyFoldersFound = true
 		} else {
-			for _, conflictedAlbum := range conflictedArtist.albums {
-				if !conflictedAlbum.album.HasTracks() {
-					conflictedAlbum.issues = append(conflictedAlbum.issues, "no tracks found")
-					issuesFound = true
+			for _, cAl := range cAr.albums {
+				if !cAl.backing.HasTracks() {
+					cAl.issues = append(cAl.issues, "no tracks found")
+					emptyFoldersFound = true
 				}
 			}
 		}
 	}
-	if !issuesFound {
+	if !emptyFoldersFound {
 		o.WriteCanonicalConsole("Empty Folder Analysis: no empty folders found")
 	}
 	ok = true
 	return
 }
 
-func createBareConflictedIssues(artists []*files.Artist) (conflictedArtists []*artistWithIssues) {
-	for _, originalArtist := range artists {
-		artistWithIssues := artistWithIssues{name: originalArtist.Name(), artist: originalArtist}
-		conflictedArtists = append(conflictedArtists, &artistWithIssues)
-		for _, originalAlbum := range originalArtist.Albums() {
-			albumWithIssues := albumWithIssues{name: originalAlbum.Name(), album: originalAlbum}
-			artistWithIssues.albums = append(artistWithIssues.albums, &albumWithIssues)
-			for _, originalTrack := range originalAlbum.Tracks() {
-				trackWithIssues := trackWithIssues{number: originalTrack.Number(), name: originalTrack.Name(), track: originalTrack}
-				albumWithIssues.tracks = append(albumWithIssues.tracks, &trackWithIssues)
+func toCheckedArtists(artists []*files.Artist) (checkedArtists []*checkedArtist) {
+	for _, artist := range artists {
+		cAr := checkedArtist{backing: artist}
+		checkedArtists = append(checkedArtists, &cAr)
+		for _, album := range artist.Albums() {
+			cAl := checkedAlbum{backing: album}
+			cAr.albums = append(cAr.albums, &cAl)
+			for _, track := range album.Tracks() {
+				cAl.tracks = append(cAl.tracks, &checkedTrack{backing: track})
 			}
 		}
 	}
 	return
 }
 
-func (c *check) performIntegrityCheck(o output.Bus, artists []*files.Artist) []*artistWithIssues {
-	conflictedArtists := make([]*artistWithIssues, 0)
-	if *c.checkIntegrity {
+func (c *check) analyzeIntegrity(o output.Bus, artists []*files.Artist) []*checkedArtist {
+	checkedArtists := make([]*checkedArtist, 0)
+	if *c.integrity {
 		files.ReadMetadata(o, artists)
-		conflictedArtists = createBareConflictedIssues(artists)
+		checkedArtists = toCheckedArtists(artists)
 		issuesFound := false
-		for _, conflictedArtist := range conflictedArtists {
-			for _, conflictedAlbum := range conflictedArtist.albums {
-				for _, conflictedTrack := range conflictedAlbum.tracks {
-					differences := conflictedTrack.track.ReportMetadataProblems()
-					if len(differences) > 0 {
-						conflictedTrack.issues = append(conflictedTrack.issues, differences...)
+		for _, cAr := range checkedArtists {
+			for _, cAl := range cAr.albums {
+				for _, cT := range cAl.tracks {
+					issues := cT.backing.ReportMetadataProblems()
+					if len(issues) > 0 {
+						cT.issues = append(cT.issues, issues...)
 						issuesFound = true
 					}
 				}
@@ -420,53 +411,50 @@ func (c *check) performIntegrityCheck(o output.Bus, artists []*files.Artist) []*
 			o.WriteCanonicalConsole("Integrity Analysis: no issues found")
 		}
 	}
-	return conflictedArtists
+	return checkedArtists
 }
 
-func (c *check) performGapAnalysis(o output.Bus, artists []*files.Artist) []*artistWithIssues {
-	conflictedArtists := make([]*artistWithIssues, 0)
-	if *c.checkGapsInTrackNumbering {
-		conflictedArtists = createBareConflictedIssues(artists)
-		issuesFound := false
-		for _, conflictedArtist := range conflictedArtists {
-			for _, conflictedAlbum := range conflictedArtist.albums {
-				m := make(map[int]*trackWithIssues)
-				for _, track := range conflictedAlbum.tracks {
-					if t, ok := m[track.number]; ok {
-						complaint := fmt.Sprintf("track %d used by %q and %q", track.number, t.name, track.name)
-						conflictedAlbum.issues = append(conflictedAlbum.issues, complaint)
-						issuesFound = true
+func (c *check) analyzeGaps(o output.Bus, artists []*files.Artist) []*checkedArtist {
+	checkedArtists := make([]*checkedArtist, 0)
+	if *c.trackNumberingGaps {
+		checkedArtists = toCheckedArtists(artists)
+		gapsFound := false
+		for _, cAr := range checkedArtists {
+			for _, cAl := range cAr.albums {
+				m := make(map[int]*checkedTrack)
+				for _, cT := range cAl.tracks {
+					if priorCT, ok := m[cT.backing.Number()]; ok {
+						cAl.issues = append(cAl.issues, fmt.Sprintf("track %d used by %q and %q", cT.backing.Number(), priorCT.backing.Name(), cT.backing.Name()))
+						gapsFound = true
 					} else {
-						m[track.number] = track
+						m[cT.backing.Number()] = cT
 					}
 				}
-				missingTracks := 0
-				for trackNumber := 1; trackNumber <= len(conflictedAlbum.tracks); trackNumber++ {
-					if _, ok := m[trackNumber]; !ok {
-						missingTracks++
-						conflictedAlbum.issues = append(conflictedAlbum.issues, fmt.Sprintf("missing track %d", trackNumber))
-						issuesFound = true
+				c := 0
+				for n := 1; n <= len(cAl.tracks); n++ {
+					if _, ok := m[n]; !ok {
+						c++
+						cAl.issues = append(cAl.issues, fmt.Sprintf("missing track %d", n))
+						gapsFound = true
 					}
 				}
-				expectedTrackCount := len(conflictedAlbum.tracks) + missingTracks
-				validTracks := fmt.Sprintf("valid tracks are 1..%d", expectedTrackCount)
-				for trackNumber, track := range m {
+				maxNumber := len(cAl.tracks) + c
+				validTracks := fmt.Sprintf("valid tracks are 1..%d", maxNumber)
+				for n, t := range m {
 					switch {
-					case trackNumber < 1:
-						complaint := fmt.Sprintf("track %d (%q) is not a valid track number; %s", trackNumber, track.name, validTracks)
-						conflictedAlbum.issues = append(conflictedAlbum.issues, complaint)
-						issuesFound = true
-					case trackNumber > expectedTrackCount:
-						complaint := fmt.Sprintf("track %d (%q) is not a valid track number; %s", trackNumber, track.name, validTracks)
-						conflictedAlbum.issues = append(conflictedAlbum.issues, complaint)
-						issuesFound = true
+					case n < 1:
+						cAl.issues = append(cAl.issues, fmt.Sprintf("track %d (%q) is not a valid track number; %s", n, t.backing.Name(), validTracks))
+						gapsFound = true
+					case n > maxNumber:
+						cAl.issues = append(cAl.issues, fmt.Sprintf("track %d (%q) is not a valid track number; %s", n, t.backing.Name(), validTracks))
+						gapsFound = true
 					}
 				}
 			}
 		}
-		if !issuesFound {
+		if !gapsFound {
 			o.WriteCanonicalConsole("Check Gaps: no gaps found")
 		}
 	}
-	return conflictedArtists
+	return checkedArtists
 }

@@ -19,39 +19,39 @@ var (
 	tFlag = true
 )
 
-func Test_performEmptyFolderAnalysis(t *testing.T) {
-	fnName := "performEmptyFolderAnalysis()"
-	emptyDirName := "empty"
-	dirtyDirName := "dirty"
-	goodFolderDirName := "good"
-	if err := internal.Mkdir(emptyDirName); err != nil {
-		t.Errorf("%s error creating %s: %v", fnName, emptyDirName, err)
+func Test_analyzeEmptyFolders(t *testing.T) {
+	const fnName = "analyzeEmptyFolders()"
+	emptyDir := "empty"
+	dirtyDir := "dirty"
+	goodDir := "good"
+	if err := internal.Mkdir(emptyDir); err != nil {
+		t.Errorf("%s error creating %s: %v", fnName, emptyDir, err)
 	}
 	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, emptyDirName)
-		internal.DestroyDirectoryForTesting(fnName, dirtyDirName)
-		internal.DestroyDirectoryForTesting(fnName, goodFolderDirName)
+		internal.DestroyDirectoryForTesting(fnName, emptyDir)
+		internal.DestroyDirectoryForTesting(fnName, dirtyDir)
+		internal.DestroyDirectoryForTesting(fnName, goodDir)
 	}()
-	if err := internal.Mkdir(dirtyDirName); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, dirtyDirName, err)
+	if err := internal.Mkdir(dirtyDir); err != nil {
+		t.Errorf("%s error creating %q: %v", fnName, dirtyDir, err)
 	}
-	if err := internal.PopulateTopDirForTesting(dirtyDirName); err != nil {
-		t.Errorf("%s error populating %q: %v", fnName, dirtyDirName, err)
+	if err := internal.PopulateTopDirForTesting(dirtyDir); err != nil {
+		t.Errorf("%s error populating %q: %v", fnName, dirtyDir, err)
 	}
-	if err := internal.Mkdir(goodFolderDirName); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, goodFolderDirName, err)
+	if err := internal.Mkdir(goodDir); err != nil {
+		t.Errorf("%s error creating %q: %v", fnName, goodDir, err)
 	}
-	if err := internal.Mkdir(filepath.Join(goodFolderDirName, "goodArtist")); err != nil {
+	if err := internal.Mkdir(filepath.Join(goodDir, "goodArtist")); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, "goodArtist", err)
 	}
-	if err := internal.Mkdir(filepath.Join(goodFolderDirName, "goodArtist", "goodAlbum")); err != nil {
+	if err := internal.Mkdir(filepath.Join(goodDir, "goodArtist", "goodAlbum")); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, "good album", err)
 	}
-	if err := internal.CreateFileForTestingWithContent(filepath.Join(goodFolderDirName, "goodArtist", "goodAlbum"), "01 goodTrack.mp3", []byte("good content")); err != nil {
+	if err := internal.CreateFileForTestingWithContent(filepath.Join(goodDir, "goodArtist", "goodAlbum"), "01 goodTrack.mp3", []byte("good content")); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, "01 goodTrack.mp3", err)
 	}
-	goodArtist := files.NewArtist("goodArtist", filepath.Join(goodFolderDirName, "goodArtist"))
-	goodAlbum := files.NewAlbum("goodAlbum", goodArtist, filepath.Join(goodFolderDirName, "goodArtist", "goodAlbum"))
+	goodArtist := files.NewArtist("goodArtist", filepath.Join(goodDir, "goodArtist"))
+	goodAlbum := files.NewAlbum("goodAlbum", goodArtist, filepath.Join(goodDir, "goodArtist", "goodAlbum"))
 	goodArtist.AddAlbum(goodAlbum)
 	goodTrack := files.NewTrack(goodAlbum, "01 goodTrack.mp3", "goodTrack", 1)
 	goodAlbum.AddTrack(goodTrack)
@@ -63,15 +63,15 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 		c    *check
 		args
 		wantArtists         []*files.Artist
-		wantFilteredArtists []*artistWithIssues
+		wantFilteredArtists []*checkedArtist
 		wantOk              bool
 		output.WantedRecording
 	}{
-		{name: "no work to do", c: &check{checkEmptyFolders: &fFlag}, args: args{}, wantOk: true},
+		{name: "no work to do", c: &check{emptyFolders: &fFlag}, args: args{}, wantOk: true},
 		{
 			name: "empty topDir",
-			c:    &check{checkEmptyFolders: &tFlag},
-			args: args{s: files.CreateSearchForTesting(emptyDirName)},
+			c:    &check{emptyFolders: &tFlag},
+			args: args{s: files.CreateSearchForTesting(emptyDir)},
 			WantedRecording: output.WantedRecording{
 				Error: "No music files could be found using the specified parameters.\n",
 				Log: "level='info' -ext='.mp3' -topDir='empty' msg='reading unfiltered music files'\n" +
@@ -80,8 +80,8 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 		},
 		{
 			name:        "folders, no empty folders present",
-			c:           &check{checkEmptyFolders: &tFlag},
-			args:        args{s: files.CreateSearchForTesting(goodFolderDirName)},
+			c:           &check{emptyFolders: &tFlag},
+			args:        args{s: files.CreateSearchForTesting(goodDir)},
 			wantArtists: []*files.Artist{goodArtist},
 			wantOk:      true,
 			WantedRecording: output.WantedRecording{
@@ -91,54 +91,83 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 		},
 		{
 			name:        "empty folders present",
-			c:           &check{checkEmptyFolders: &tFlag},
-			args:        args{s: files.CreateSearchForTesting(dirtyDirName)},
-			wantArtists: files.CreateAllArtistsForTesting(dirtyDirName, true),
+			c:           &check{emptyFolders: &tFlag},
+			args:        args{s: files.CreateSearchForTesting(dirtyDir)},
+			wantArtists: files.CreateAllArtistsForTesting(dirtyDir, true),
 			wantOk:      true,
-			wantFilteredArtists: []*artistWithIssues{
+			wantFilteredArtists: []*checkedArtist{
 				{
-					name:   "Test Artist 0",
-					albums: []*albumWithIssues{{name: "Test Album 999", issues: []string{"no tracks found"}}},
+					backing: files.NewArtist("Test Artist 0", "Test Artist 0"),
+					albums: []*checkedAlbum{{
+						backing: files.NewAlbum("Test Album 999", nil, "Test Artist 0/Test Album 999"),
+						issues:  []string{"no tracks found"}}},
 				},
 				{
-					name:   "Test Artist 1",
-					albums: []*albumWithIssues{{name: "Test Album 999", issues: []string{"no tracks found"}}},
+					backing: files.NewArtist("Test Artist 1", "Test Artist 1"),
+					albums: []*checkedAlbum{{
+						backing: files.NewAlbum("Test Album 999", nil, "Test Artist 1/Test Album 999"),
+						issues:  []string{"no tracks found"},
+					}},
 				},
 				{
-					name:   "Test Artist 2",
-					albums: []*albumWithIssues{{name: "Test Album 999", issues: []string{"no tracks found"}}},
+					backing: files.NewArtist("Test Artist 2", "Test Artist 2"),
+					albums: []*checkedAlbum{{
+						backing: files.NewAlbum("Test Album 999", nil, "Test Artist 2/Test Album 999"),
+						issues:  []string{"no tracks found"},
+					}},
 				},
 				{
-					name:   "Test Artist 3",
-					albums: []*albumWithIssues{{name: "Test Album 999", issues: []string{"no tracks found"}}},
+					backing: files.NewArtist("Test Artist 3", "Test Artist 3"),
+					albums: []*checkedAlbum{{
+						backing: files.NewAlbum("Test Album 999", nil, "Test Artist 3/Test Album 999"),
+						issues:  []string{"no tracks found"},
+					}},
 				},
 				{
-					name:   "Test Artist 4",
-					albums: []*albumWithIssues{{name: "Test Album 999", issues: []string{"no tracks found"}}},
+					backing: files.NewArtist("Test Artist 4", "Test Artist 4"),
+					albums: []*checkedAlbum{{
+						backing: files.NewAlbum("Test Album 999", nil, "Test Artist 4/Test Album 999"),
+						issues:  []string{"no tracks found"},
+					}},
 				},
 				{
-					name:   "Test Artist 5",
-					albums: []*albumWithIssues{{name: "Test Album 999", issues: []string{"no tracks found"}}},
+					backing: files.NewArtist("Test Artist 5", "Test Artist 5"),
+					albums: []*checkedAlbum{{
+						backing: files.NewAlbum("Test Album 999", nil, "Test Artist 5/Test Album 999"),
+						issues:  []string{"no tracks found"},
+					}},
 				},
 				{
-					name:   "Test Artist 6",
-					albums: []*albumWithIssues{{name: "Test Album 999", issues: []string{"no tracks found"}}},
+					backing: files.NewArtist("Test Artist 6", "Test Artist 6"),
+					albums: []*checkedAlbum{{
+						backing: files.NewAlbum("Test Album 999", nil, "Test Artist 6/Test Album 999"),
+						issues:  []string{"no tracks found"},
+					}},
 				},
 				{
-					name:   "Test Artist 7",
-					albums: []*albumWithIssues{{name: "Test Album 999", issues: []string{"no tracks found"}}},
+					backing: files.NewArtist("Test Artist 7", "Test Artist 7"),
+					albums: []*checkedAlbum{{
+						backing: files.NewAlbum("Test Album 999", nil, "Test Artist 7/Test Album 999"),
+						issues:  []string{"no tracks found"},
+					}},
 				},
 				{
-					name:   "Test Artist 8",
-					albums: []*albumWithIssues{{name: "Test Album 999", issues: []string{"no tracks found"}}},
+					backing: files.NewArtist("Test Artist 8", "Test Artist 8"),
+					albums: []*checkedAlbum{{
+						backing: files.NewAlbum("Test Album 999", nil, "Test Artist 8/Test Album 999"),
+						issues:  []string{"no tracks found"},
+					}},
 				},
 				{
-					name:   "Test Artist 9",
-					albums: []*albumWithIssues{{name: "Test Album 999", issues: []string{"no tracks found"}}},
+					backing: files.NewArtist("Test Artist 9", "Test Artist 9"),
+					albums: []*checkedAlbum{{
+						backing: files.NewAlbum("Test Album 999", nil, "Test Artist 9/Test Album 999"),
+						issues:  []string{"no tracks found"},
+					}},
 				},
 				{
-					name:   "Test Artist 999",
-					issues: []string{"no albums found"},
+					backing: files.NewArtist("Test Artist 999", "Test Artist 999"),
+					issues:  []string{"no albums found"},
 				},
 			},
 			WantedRecording: output.WantedRecording{
@@ -149,12 +178,12 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := output.NewRecorder()
-			gotArtists, gotArtistsWithIssues, gotOk := tt.c.performEmptyFolderAnalysis(o, tt.args.s)
+			gotArtists, gotArtistsWithIssues, gotOk := tt.c.analyzeEmptyFolders(o, tt.args.s)
 			if !reflect.DeepEqual(gotArtists, tt.wantArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotArtists, tt.wantArtists)
 			} else {
-				filteredArtists := filterAndSortArtists(gotArtistsWithIssues)
-				if !reflect.DeepEqual(filteredArtists, tt.wantFilteredArtists) {
+				filteredArtists := filterAndSortCheckedArtists(gotArtistsWithIssues)
+				if !equalCheckedArtists(filteredArtists, tt.wantFilteredArtists) {
 					t.Errorf("%s = %v, want %v", fnName, filteredArtists, tt.wantFilteredArtists)
 				}
 			}
@@ -171,18 +200,18 @@ func Test_performEmptyFolderAnalysis(t *testing.T) {
 }
 
 func Test_filterArtists(t *testing.T) {
-	fnName := "filterArtists()"
-	topDirName := "filterArtists"
-	if err := internal.Mkdir(topDirName); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, topDirName, err)
+	const fnName = "filterArtists()"
+	topDir := "filterArtists"
+	if err := internal.Mkdir(topDir); err != nil {
+		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, topDirName)
+		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
-	if err := internal.PopulateTopDirForTesting(topDirName); err != nil {
-		t.Errorf("%s error populating %q: %v", fnName, topDirName, err)
+	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
+		t.Errorf("%s error populating %q: %v", fnName, topDir, err)
 	}
-	searchStruct := files.CreateSearchForTesting(topDirName)
+	searchStruct := files.CreateSearchForTesting(topDir)
 	fullArtists, _ := searchStruct.LoadUnfilteredData(output.NewNilBus())
 	filteredArtists, _ := searchStruct.LoadData(output.NewNilBus())
 	type args struct {
@@ -199,13 +228,13 @@ func Test_filterArtists(t *testing.T) {
 	}{
 		{
 			name:   "neither gap analysis nor integrity enabled",
-			c:      &check{checkGapsInTrackNumbering: &fFlag, checkIntegrity: &fFlag},
+			c:      &check{trackNumberingGaps: &fFlag, integrity: &fFlag},
 			args:   args{s: nil, artists: nil},
 			wantOk: true,
 		},
 		{
 			name:                "only gap analysis enabled, no artists supplied",
-			c:                   &check{checkGapsInTrackNumbering: &tFlag, checkIntegrity: &fFlag},
+			c:                   &check{trackNumberingGaps: &tFlag, integrity: &fFlag},
 			args:                args{s: searchStruct},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
@@ -215,7 +244,7 @@ func Test_filterArtists(t *testing.T) {
 		},
 		{
 			name:                "only gap analysis enabled, artists supplied",
-			c:                   &check{checkGapsInTrackNumbering: &tFlag, checkIntegrity: &fFlag},
+			c:                   &check{trackNumberingGaps: &tFlag, integrity: &fFlag},
 			args:                args{s: searchStruct, artists: fullArtists},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
@@ -225,7 +254,7 @@ func Test_filterArtists(t *testing.T) {
 		},
 		{
 			name:                "only integrity check enabled, no artists supplied",
-			c:                   &check{checkGapsInTrackNumbering: &fFlag, checkIntegrity: &tFlag},
+			c:                   &check{trackNumberingGaps: &fFlag, integrity: &tFlag},
 			args:                args{s: searchStruct},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
@@ -235,7 +264,7 @@ func Test_filterArtists(t *testing.T) {
 		},
 		{
 			name:                "only integrity check enabled, artists supplied",
-			c:                   &check{checkGapsInTrackNumbering: &fFlag, checkIntegrity: &tFlag},
+			c:                   &check{trackNumberingGaps: &fFlag, integrity: &tFlag},
 			args:                args{s: searchStruct, artists: fullArtists},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
@@ -245,7 +274,7 @@ func Test_filterArtists(t *testing.T) {
 		},
 		{
 			name:                "gap analysis and integrity check enabled, no artists supplied",
-			c:                   &check{checkGapsInTrackNumbering: &tFlag, checkIntegrity: &tFlag},
+			c:                   &check{trackNumberingGaps: &tFlag, integrity: &tFlag},
 			args:                args{s: searchStruct},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
@@ -255,7 +284,7 @@ func Test_filterArtists(t *testing.T) {
 		},
 		{
 			name:                "gap analysis and integrity check enabled, artists supplied",
-			c:                   &check{checkGapsInTrackNumbering: &tFlag, checkIntegrity: &tFlag},
+			c:                   &check{trackNumberingGaps: &tFlag, integrity: &tFlag},
 			args:                args{s: searchStruct, artists: fullArtists},
 			wantFilteredArtists: filteredArtists,
 			wantOk:              true,
@@ -283,8 +312,8 @@ func Test_filterArtists(t *testing.T) {
 	}
 }
 
-func Test_check_performGapAnalysis(t *testing.T) {
-	fnName := "check.performGapAnalysis()"
+func Test_check_analyzeGaps(t *testing.T) {
+	const fnName = "check.analyzeGaps()"
 	goodArtist := files.NewArtist("My Good Artist", "")
 	goodAlbum := files.NewAlbum("An Excellent Album", goodArtist, "")
 	goodArtist.AddAlbum(goodAlbum)
@@ -305,13 +334,13 @@ func Test_check_performGapAnalysis(t *testing.T) {
 		name string
 		c    *check
 		args
-		wantConflictedArtists []*artistWithIssues
+		wantConflictedArtists []*checkedArtist
 		output.WantedRecording
 	}{
-		{name: "no analysis", c: &check{checkGapsInTrackNumbering: &fFlag}, args: args{}},
+		{name: "no analysis", c: &check{trackNumberingGaps: &fFlag}, args: args{}},
 		{
 			name: "no content",
-			c:    &check{checkGapsInTrackNumbering: &tFlag},
+			c:    &check{trackNumberingGaps: &tFlag},
 			args: args{},
 			WantedRecording: output.WantedRecording{
 				Console: "Check Gaps: no gaps found.\n",
@@ -319,7 +348,7 @@ func Test_check_performGapAnalysis(t *testing.T) {
 		},
 		{
 			name: "good artist",
-			c:    &check{checkGapsInTrackNumbering: &tFlag},
+			c:    &check{trackNumberingGaps: &tFlag},
 			args: args{artists: []*files.Artist{goodArtist}},
 			WantedRecording: output.WantedRecording{
 				Console: "Check Gaps: no gaps found.\n",
@@ -327,14 +356,14 @@ func Test_check_performGapAnalysis(t *testing.T) {
 		},
 		{
 			name: "bad artist",
-			c:    &check{checkGapsInTrackNumbering: &tFlag},
+			c:    &check{trackNumberingGaps: &tFlag},
 			args: args{artists: []*files.Artist{badArtist}},
-			wantConflictedArtists: []*artistWithIssues{
+			wantConflictedArtists: []*checkedArtist{
 				{
-					name: "BadArtist",
-					albums: []*albumWithIssues{
+					backing: files.NewArtist("BadArtist", "BadArtist"),
+					albums: []*checkedAlbum{
 						{
-							name: "No Biscuits For You!",
+							backing: files.NewAlbum("No Biscuits For You!", badArtist, "BadArtist/No Biscuits for You!"),
 							issues: []string{
 								"missing track 2",
 								"missing track 3",
@@ -352,7 +381,7 @@ func Test_check_performGapAnalysis(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := output.NewRecorder()
-			if gotConflictedArtists := filterAndSortArtists(tt.c.performGapAnalysis(o, tt.args.artists)); !reflect.DeepEqual(gotConflictedArtists, tt.wantConflictedArtists) {
+			if gotConflictedArtists := filterAndSortCheckedArtists(tt.c.analyzeGaps(o, tt.args.artists)); !equalCheckedArtists(gotConflictedArtists, tt.wantConflictedArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotConflictedArtists, tt.wantConflictedArtists)
 			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -364,29 +393,34 @@ func Test_check_performGapAnalysis(t *testing.T) {
 	}
 }
 
-func Test_check_performIntegrityCheck(t *testing.T) {
-	fnName := "check.performIntegrityCheck()"
+func Test_check_analyzeIntegrity(t *testing.T) {
+	const fnName = "check.analyzeIntegrity()"
 	// create some data to work with
-	topDirName := "integrity"
-	if err := internal.Mkdir(topDirName); err != nil {
-		t.Errorf("%s cannot create %q: %v", fnName, topDirName, err)
+	topDir := "integrity"
+	if err := internal.Mkdir(topDir); err != nil {
+		t.Errorf("%s cannot create %q: %v", fnName, topDir, err)
 	}
 	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, topDirName)
+		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
 	// keep it simple: one artist, one album, one track
-	artistPath := filepath.Join(topDirName, "artist")
+	artistPath := filepath.Join(topDir, "artist")
 	if err := internal.Mkdir(artistPath); err != nil {
 		t.Errorf("%s error creating artist folder", fnName)
 	}
+	backingArtist := files.NewArtist("artist", artistPath)
 	albumPath := filepath.Join(artistPath, "album")
 	if err := internal.Mkdir(albumPath); err != nil {
 		t.Errorf("%s error creating album folder", fnName)
 	}
+	backingAlbum := files.NewAlbum("album", backingArtist, albumPath)
+	backingArtist.AddAlbum(backingAlbum)
 	if err := internal.CreateFileForTestingWithContent(albumPath, "01 track.mp3", nil); err != nil {
 		t.Errorf("%s error creating track", fnName)
 	}
-	s := files.CreateSearchForTesting(topDirName)
+	backingTrack := files.NewTrack(backingAlbum, "01 track.mp3", "track", 1)
+	backingAlbum.AddTrack(backingTrack)
+	s := files.CreateSearchForTesting(topDir)
 	a, _ := s.LoadUnfilteredData(output.NewNilBus())
 	type args struct {
 		artists []*files.Artist
@@ -395,13 +429,13 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 		name string
 		c    *check
 		args
-		wantConflictedArtists []*artistWithIssues
+		wantConflictedArtists []*checkedArtist
 		output.WantedRecording
 	}{
-		{name: "degenerate case", c: &check{checkIntegrity: &fFlag}, args: args{}},
+		{name: "degenerate case", c: &check{integrity: &fFlag}, args: args{}},
 		{
 			name: "no artists",
-			c:    &check{checkIntegrity: &tFlag},
+			c:    &check{integrity: &tFlag},
 			args: args{},
 			WantedRecording: output.WantedRecording{
 				Console: "Integrity Analysis: no issues found.\n",
@@ -410,7 +444,7 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 		},
 		{
 			name: "meaningful case",
-			c:    &check{checkIntegrity: &tFlag},
+			c:    &check{integrity: &tFlag},
 			args: args{artists: a},
 			WantedRecording: output.WantedRecording{
 				Error: "Reading track metadata.\n" +
@@ -419,17 +453,16 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 				Log: "level='error' error='seek integrity\\artist\\album\\01 track.mp3: An attempt was made to move the file pointer before the beginning of the file.' track='integrity\\artist\\album\\01 track.mp3' msg='id3v1 tag error'\n" +
 					"level='error' error='zero length' track='integrity\\artist\\album\\01 track.mp3' msg='id3v2 tag error'\n",
 			},
-			wantConflictedArtists: []*artistWithIssues{
+			wantConflictedArtists: []*checkedArtist{
 				{
-					name: "artist",
-					albums: []*albumWithIssues{
+					backing: backingArtist,
+					albums: []*checkedAlbum{
 						{
-							name: "album",
-							tracks: []*trackWithIssues{
+							backing: backingAlbum,
+							tracks: []*checkedTrack{
 								{
-									name:   "track",
-									number: 1,
-									issues: []string{"differences cannot be determined: there was an error reading metadata"},
+									backing: backingTrack,
+									issues:  []string{"differences cannot be determined: there was an error reading metadata"},
 								},
 							},
 						},
@@ -441,8 +474,9 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := output.NewRecorder()
-			if gotConflictedArtists := filterAndSortArtists(tt.c.performIntegrityCheck(o, tt.args.artists)); !reflect.DeepEqual(gotConflictedArtists, tt.wantConflictedArtists) {
-				t.Errorf("%s = %v, want %v", fnName, gotConflictedArtists, tt.wantConflictedArtists)
+			gotConflictedArtists := filterAndSortCheckedArtists(tt.c.analyzeIntegrity(o, tt.args.artists))
+			if !equalCheckedArtists(gotConflictedArtists, tt.wantConflictedArtists) {
+				t.Errorf("%s = %#v, want %#v", fnName, gotConflictedArtists, tt.wantConflictedArtists)
 			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
@@ -453,30 +487,96 @@ func Test_check_performIntegrityCheck(t *testing.T) {
 	}
 }
 
+func equalCheckedArtists(got, want []*checkedArtist) bool {
+	if len(got) != len(want) {
+		return false
+	}
+	for n, gotCAr := range got {
+		if !equalCheckedArtist(gotCAr, want[n]) {
+			return false
+		}
+	}
+	return true
+}
+
+func equalCheckedArtist(got, want *checkedArtist) bool {
+	if !reflect.DeepEqual(got.issues, want.issues) {
+		return false
+	}
+	if got.backing.Name() != want.backing.Name() {
+		return false
+	}
+	return equalCheckedAlbums(got.albums, want.albums)
+}
+
+func equalCheckedAlbums(got, want []*checkedAlbum) bool {
+	if len(got) != len(want) {
+		return false
+	}
+	for n, gotCAl := range got {
+		if !equalCheckedAlbum(gotCAl, want[n]) {
+			return false
+		}
+	}
+	return true
+}
+
+func equalCheckedAlbum(got, want *checkedAlbum) bool {
+	if !reflect.DeepEqual(got.issues, want.issues) {
+		return false
+	}
+	if got.backing.Name() != want.backing.Name() {
+		return false
+	}
+	return equalCheckedTracks(got.tracks, want.tracks)
+}
+
+func equalCheckedTracks(got, want []*checkedTrack) bool {
+	if len(got) != len(want) {
+		return false
+	}
+	for n, gotCT := range got {
+		if !equalCheckedTrack(gotCT, want[n]) {
+			return false
+		}
+	}
+	return true
+}
+
+func equalCheckedTrack(got, want *checkedTrack) bool {
+	if !reflect.DeepEqual(got.issues, want.issues) {
+		return false
+	}
+	if got.backing.Name() != want.backing.Name() {
+		return false
+	}
+	return got.backing.Number() == want.backing.Number()
+}
+
 func makeCheckCommand() *check {
 	c, _ := newCheckCommand(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError))
 	return c
 }
 
 func Test_check_Exec(t *testing.T) {
-	fnName := "check.Exec()"
-	topDirName := "checkExec"
-	if err := internal.Mkdir(topDirName); err != nil {
-		t.Errorf("%s error creating directory %q: %v", fnName, topDirName, err)
+	const fnName = "check.Exec()"
+	topDir := "checkExec"
+	if err := internal.Mkdir(topDir); err != nil {
+		t.Errorf("%s error creating directory %q: %v", fnName, topDir, err)
 	}
-	savedHome := internal.SaveEnvVarForTesting("HOMEPATH")
-	home := internal.SavedEnvVar{
+	savedHomePath := internal.SaveEnvVarForTesting("HOMEPATH")
+	homePath := internal.SavedEnvVar{
 		Name:  "HOMEPATH",
 		Value: "C:\\Users\\The User",
 		Set:   true,
 	}
-	home.RestoreForTesting()
+	homePath.RestoreForTesting()
 	defer func() {
-		savedHome.RestoreForTesting()
-		internal.DestroyDirectoryForTesting(fnName, topDirName)
+		savedHomePath.RestoreForTesting()
+		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
-	if err := internal.PopulateTopDirForTesting(topDirName); err != nil {
-		t.Errorf("%s error populating directory %q: %v", fnName, topDirName, err)
+	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
+		t.Errorf("%s error populating directory %q: %v", fnName, topDir, err)
 	}
 	type args struct {
 		args []string
@@ -514,7 +614,7 @@ func Test_check_Exec(t *testing.T) {
 		{
 			name: "do nothing",
 			c:    makeCheckCommand(),
-			args: args{[]string{"-topDir", topDirName, "-empty=false", "-gaps=false", "-integrity=false"}},
+			args: args{[]string{"-topDir", topDir, "-empty=false", "-gaps=false", "-integrity=false"}},
 			WantedRecording: output.WantedRecording{
 				Error: "You disabled all functionality for the command \"check\".\n",
 				Log:   "level='error' -empty='false' -gaps='false' -integrity='false' command='check' msg='the user disabled all functionality'\n",
@@ -523,7 +623,7 @@ func Test_check_Exec(t *testing.T) {
 		{
 			name:   "do something",
 			c:      makeCheckCommand(),
-			args:   args{[]string{"-topDir", topDirName, "-empty=true", "-gaps=false", "-integrity=false"}},
+			args:   args{[]string{"-topDir", topDir, "-empty=true", "-gaps=false", "-integrity=false"}},
 			wantOk: true,
 			WantedRecording: output.WantedRecording{
 				Console: strings.Join([]string{
@@ -582,11 +682,11 @@ func Test_check_Exec(t *testing.T) {
 }
 
 func Test_newCheckCommand(t *testing.T) {
-	fnName := "newCheckCommand()"
-	savedState := internal.SaveEnvVarForTesting("APPDATA")
+	const fnName = "newCheckCommand()"
+	savedAppData := internal.SaveEnvVarForTesting("APPDATA")
 	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
 	defer func() {
-		savedState.RestoreForTesting()
+		savedAppData.RestoreForTesting()
 	}()
 	topDir := "loadTest"
 	if err := internal.Mkdir(topDir); err != nil {
@@ -602,7 +702,7 @@ func Test_newCheckCommand(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	defaultConfig, _ := internal.ReadConfigurationFile(output.NewNilBus())
+	config, _ := internal.ReadConfigurationFile(output.NewNilBus())
 	type args struct {
 		c *internal.Configuration
 	}
@@ -625,7 +725,7 @@ func Test_newCheckCommand(t *testing.T) {
 		},
 		{
 			name:                     "overridden defaults",
-			args:                     args{c: defaultConfig},
+			args:                     args{c: config},
 			wantEmptyFolders:         true,
 			wantGapsInTrackNumbering: true,
 			wantIntegrity:            false,
@@ -636,7 +736,7 @@ func Test_newCheckCommand(t *testing.T) {
 			args: args{
 				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"check": map[string]any{
-						emptyFoldersFlag: "Empty!!",
+						emptyFolders: "Empty!!",
 					},
 				}),
 			},
@@ -651,7 +751,7 @@ func Test_newCheckCommand(t *testing.T) {
 			args: args{
 				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"check": map[string]any{
-						gapsInTrackNumberingFlag: "No",
+						trackNumberingGaps: "No",
 					},
 				}),
 			},
@@ -666,7 +766,7 @@ func Test_newCheckCommand(t *testing.T) {
 			args: args{
 				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"check": map[string]any{
-						integrityFlag: "Off",
+						integrity: "Off",
 					},
 				}),
 			},
@@ -680,7 +780,7 @@ func Test_newCheckCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := output.NewRecorder()
-			check, gotOk := newCheckCommand(o, tt.args.c, flag.NewFlagSet("check", flag.ContinueOnError))
+			c, gotOk := newCheckCommand(o, tt.args.c, flag.NewFlagSet("check", flag.ContinueOnError))
 			if gotOk != tt.wantOk {
 				t.Errorf("%s gotOk %t wantOk %t", fnName, gotOk, tt.wantOk)
 			}
@@ -689,19 +789,19 @@ func Test_newCheckCommand(t *testing.T) {
 					t.Errorf("%s %s", fnName, issue)
 				}
 			}
-			if check != nil {
-				if _, ok := check.sf.ProcessArgs(output.NewNilBus(), []string{
+			if c != nil {
+				if _, ok := c.sf.ProcessArgs(output.NewNilBus(), []string{
 					"-topDir", topDir,
 					"-ext", ".mp3",
 				}); ok {
-					if *check.checkEmptyFolders != tt.wantEmptyFolders {
-						t.Errorf("%s %q: got checkEmptyFolders %t want %t", fnName, tt.name, *check.checkEmptyFolders, tt.wantEmptyFolders)
+					if *c.emptyFolders != tt.wantEmptyFolders {
+						t.Errorf("%s %q: got checkEmptyFolders %t want %t", fnName, tt.name, *c.emptyFolders, tt.wantEmptyFolders)
 					}
-					if *check.checkGapsInTrackNumbering != tt.wantGapsInTrackNumbering {
-						t.Errorf("%s %q: got checkGapsInTrackNumbering %t want %t", fnName, tt.name, *check.checkGapsInTrackNumbering, tt.wantGapsInTrackNumbering)
+					if *c.trackNumberingGaps != tt.wantGapsInTrackNumbering {
+						t.Errorf("%s %q: got checkGapsInTrackNumbering %t want %t", fnName, tt.name, *c.trackNumberingGaps, tt.wantGapsInTrackNumbering)
 					}
-					if *check.checkIntegrity != tt.wantIntegrity {
-						t.Errorf("%s %q: got checkIntegrity %t want %t", fnName, tt.name, *check.checkIntegrity, tt.wantIntegrity)
+					if *c.integrity != tt.wantIntegrity {
+						t.Errorf("%s %q: got checkIntegrity %t want %t", fnName, tt.name, *c.integrity, tt.wantIntegrity)
 					}
 				} else {
 					t.Errorf("%s %q: error processing arguments", fnName, tt.name)
@@ -712,33 +812,32 @@ func Test_newCheckCommand(t *testing.T) {
 }
 
 func Test_merge(t *testing.T) {
-	fnName := "merge()"
+	const fnName = "merge()"
 	type args struct {
-		sets [][]*artistWithIssues
+		sets [][]*checkedArtist
 	}
 	tests := []struct {
 		name string
 		args
-		want []*artistWithIssues
+		want []*checkedArtist
 	}{
 		{name: "degenerate case", args: args{}},
 		{
 			name: "more interesting case",
-			args: args{sets: [][]*artistWithIssues{
+			args: args{sets: [][]*checkedArtist{
 				// set 1
 				{
 					{
-						name:   "artist1",
-						issues: []string{"bad artist"},
-						albums: []*albumWithIssues{
+						backing: files.NewArtist("artist1", "artist1"),
+						issues:  []string{"bad artist"},
+						albums: []*checkedAlbum{
 							{
-								name:   "album1",
-								issues: []string{"skips badly"},
-								tracks: []*trackWithIssues{
+								backing: files.NewAlbum("album1", nil, "artist1/album1"),
+								issues:  []string{"skips badly"},
+								tracks: []*checkedTrack{
 									{
-										number: 1,
-										name:   "track1",
-										issues: []string{"inaudible"},
+										backing: files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist1", "./artist1"), "./artist1/album1"), "01 track1.mp3", "track1", 1),
+										issues:  []string{"inaudible"},
 									},
 								},
 							},
@@ -748,50 +847,46 @@ func Test_merge(t *testing.T) {
 				// set 2
 				{
 					{
-						name:   "artist1",
-						issues: []string{"really awful artist"},
-						albums: []*albumWithIssues{
+						backing: files.NewArtist("artist1", "artist1"),
+						issues:  []string{"really awful artist"},
+						albums: []*checkedAlbum{
 							{
-								name:   "album1",
-								issues: []string{"bad cover art"},
-								tracks: []*trackWithIssues{
+								backing: files.NewAlbum("album1", nil, "artist1/album1"),
+								issues:  []string{"bad cover art"},
+								tracks: []*checkedTrack{
 									{
-										number: 1,
-										name:   "track1",
-										issues: []string{"plays backwards!"},
+										backing: files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist1", "./artist1"), "./artist1/album1"), "01 track1.mp3", "track1", 1),
+										issues:  []string{"plays backwards!"},
 									},
 									{
-										number: 2,
-										name:   "track2",
-										issues: []string{"truly insipid"},
+										backing: files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist1", "./artist1"), "./artist1/album1"), "02 track2.mp3", "track2", 2),
+										issues:  []string{"truly insipid"},
 									},
 								},
 							},
 							{
-								name:   "album2",
-								issues: []string{"horrible sequel"},
-								tracks: []*trackWithIssues{
+								backing: files.NewAlbum("album2", nil, "artist1/album2"),
+								issues:  []string{"horrible sequel"},
+								tracks: []*checkedTrack{
 									{
-										number: 3,
-										name:   "track3",
-										issues: []string{"singer is dreadful, band is worse"},
+										backing: files.NewTrack(files.NewAlbum("album2", files.NewArtist("artist1", "./artist1"), "./artist1/album2"), "03 track3.mp3", "track3", 3),
+										issues:  []string{"singer is dreadful, band is worse"},
 									},
 								},
 							},
 						},
 					},
 					{
-						name:   "artist2",
-						issues: []string{"tone deaf"},
-						albums: []*albumWithIssues{
+						backing: files.NewArtist("artist2", "artist2"),
+						issues:  []string{"tone deaf"},
+						albums: []*checkedAlbum{
 							{
-								name:   "album34",
-								issues: []string{"worst album I own"},
-								tracks: []*trackWithIssues{
+								backing: files.NewAlbum("album34", nil, "artist2/album34"),
+								issues:  []string{"worst album I own"},
+								tracks: []*checkedTrack{
 									{
-										number: 40,
-										name:   "track40",
-										issues: []string{"singer died in mid act and that improved the track"},
+										backing: files.NewTrack(files.NewAlbum("album34", files.NewArtist("artist2", "./artist2"), "./artist2/album34"), "40 track40.mp3", "track40", 40),
+										issues:  []string{"singer died in mid act and that improved the track"},
 									},
 								},
 							},
@@ -799,52 +894,48 @@ func Test_merge(t *testing.T) {
 					},
 				},
 			}},
-			want: []*artistWithIssues{
+			want: []*checkedArtist{
 				{
-					name:   "artist1",
-					issues: []string{"bad artist", "really awful artist"},
-					albums: []*albumWithIssues{
+					backing: files.NewArtist("artist1", "artist1"),
+					issues:  []string{"bad artist", "really awful artist"},
+					albums: []*checkedAlbum{
 						{
-							name:   "album1",
-							issues: []string{"bad cover art", "skips badly"},
-							tracks: []*trackWithIssues{
+							backing: files.NewAlbum("album1", nil, "artist1/album1"),
+							issues:  []string{"bad cover art", "skips badly"},
+							tracks: []*checkedTrack{
 								{
-									number: 1,
-									name:   "track1",
-									issues: []string{"inaudible", "plays backwards!"},
+									backing: files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist1", "./artist1"), "./artist1/album1"), "01 track1.mp3", "track1", 1),
+									issues:  []string{"inaudible", "plays backwards!"},
 								},
 								{
-									number: 2,
-									name:   "track2",
-									issues: []string{"truly insipid"},
+									backing: files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist1", "./artist1"), "./artist1/album1"), "02 track2.mp3", "track2", 2),
+									issues:  []string{"truly insipid"},
 								},
 							},
 						},
 						{
-							name:   "album2",
-							issues: []string{"horrible sequel"},
-							tracks: []*trackWithIssues{
+							backing: files.NewAlbum("album2", nil, "artist1/album2"),
+							issues:  []string{"horrible sequel"},
+							tracks: []*checkedTrack{
 								{
-									number: 3,
-									name:   "track3",
-									issues: []string{"singer is dreadful, band is worse"},
+									backing: files.NewTrack(files.NewAlbum("album2", files.NewArtist("artist1", "./artist1"), "./artist1/album2"), "03 track3.mp3", "track3", 3),
+									issues:  []string{"singer is dreadful, band is worse"},
 								},
 							},
 						},
 					},
 				},
 				{
-					name:   "artist2",
-					issues: []string{"tone deaf"},
-					albums: []*albumWithIssues{
+					backing: files.NewArtist("artist2", "artist2"),
+					issues:  []string{"tone deaf"},
+					albums: []*checkedAlbum{
 						{
-							name:   "album34",
-							issues: []string{"worst album I own"},
-							tracks: []*trackWithIssues{
+							backing: files.NewAlbum("album34", nil, "artist2/album34"),
+							issues:  []string{"worst album I own"},
+							tracks: []*checkedTrack{
 								{
-									number: 40,
-									name:   "track40",
-									issues: []string{"singer died in mid act and that improved the track"},
+									backing: files.NewTrack(files.NewAlbum("album34", files.NewArtist("artist2", "./artist2"), "./artist2/album34"), "40 track40.mp3", "track40", 40),
+									issues:  []string{"singer died in mid act and that improved the track"},
 								},
 							},
 						},
@@ -862,8 +953,8 @@ func Test_merge(t *testing.T) {
 				for i := range got {
 					gotArtist := got[i]
 					wantArtist := tt.want[i]
-					if gotArtist.name != wantArtist.name {
-						t.Errorf("%s artist[%d] name %q, want %q", fnName, i, gotArtist.name, wantArtist.name)
+					if gotArtist.backing.Name() != wantArtist.backing.Name() {
+						t.Errorf("%s artist[%d] name %q, want %q", fnName, i, gotArtist.backing.Name(), wantArtist.backing.Name())
 					}
 					if !reflect.DeepEqual(gotArtist.issues, wantArtist.issues) {
 						t.Errorf("%s artist[%d] issues %v, want %v", fnName, i, gotArtist.issues, wantArtist.issues)
@@ -874,8 +965,8 @@ func Test_merge(t *testing.T) {
 						for j := range gotArtist.albums {
 							gotAlbum := gotArtist.albums[j]
 							wantAlbum := wantArtist.albums[j]
-							if gotAlbum.name != wantAlbum.name {
-								t.Errorf("%s artist[%d] album[%d] name %q, want %q", fnName, i, j, gotAlbum.name, wantAlbum.name)
+							if gotAlbum.backing.Name() != wantAlbum.backing.Name() {
+								t.Errorf("%s artist[%d] album[%d] name %q, want %q", fnName, i, j, gotAlbum.backing.Name(), wantAlbum.backing.Name())
 							}
 							if !reflect.DeepEqual(gotAlbum.issues, wantAlbum.issues) {
 								t.Errorf("%s artist[%d] album[%d] issues %v, want %v", fnName, i, j, gotAlbum.issues, wantAlbum.issues)
@@ -886,11 +977,11 @@ func Test_merge(t *testing.T) {
 								for k := range gotAlbum.tracks {
 									gotTrack := gotAlbum.tracks[k]
 									wantTrack := wantAlbum.tracks[k]
-									if gotTrack.number != wantTrack.number {
-										t.Errorf("%s artist[%d] album[%d] track[%d] number %d, want %d", fnName, i, j, k, gotTrack.number, wantTrack.number)
+									if gotTrack.backing.Number() != wantTrack.backing.Number() {
+										t.Errorf("%s artist[%d] album[%d] track[%d] number %d, want %d", fnName, i, j, k, gotTrack.backing.Number(), wantTrack.backing.Number())
 									}
-									if gotTrack.name != wantTrack.name {
-										t.Errorf("%s artist[%d] album[%d] track[%d] name %q, want %q", fnName, i, j, k, gotTrack.name, wantTrack.name)
+									if gotTrack.backing.Name() != wantTrack.backing.Name() {
+										t.Errorf("%s artist[%d] album[%d] track[%d] name %q, want %q", fnName, i, j, k, gotTrack.backing.Name(), wantTrack.backing.Name())
 									}
 									if !reflect.DeepEqual(gotTrack.issues, wantTrack.issues) {
 										t.Errorf("%s artist[%d] album[%d] track[%d] issues %v, want %v", fnName, i, j, k, gotTrack.issues, wantTrack.issues)
@@ -905,19 +996,19 @@ func Test_merge(t *testing.T) {
 	}
 }
 
-func Test_sortArtistsWithIssues(t *testing.T) {
-	fnName := "sortArtistsWithIssues()"
+func Test_sortCheckedArtistsWithIssues(t *testing.T) {
+	const fnName = "sortCheckedArtistsWithIssues()"
 	tests := []struct {
 		name  string
-		input artistSlice
+		input checkedArtistSlice
 	}{
 		{name: "degenerate case", input: nil},
-		{name: "scrambled input", input: artistSlice([]*artistWithIssues{
-			{name: "10"},
-			{name: "2"},
-			{name: "35"},
-			{name: "1"},
-			{name: "3"},
+		{name: "scrambled input", input: checkedArtistSlice([]*checkedArtist{
+			{backing: files.NewArtist("10", "10")},
+			{backing: files.NewArtist("2", "2")},
+			{backing: files.NewArtist("35", "35")},
+			{backing: files.NewArtist("1", "1")},
+			{backing: files.NewArtist("2", "2")},
 		})},
 	}
 	for _, tt := range tests {
@@ -927,8 +1018,8 @@ func Test_sortArtistsWithIssues(t *testing.T) {
 				if i == 0 {
 					continue
 				}
-				if tt.input[i-1].name > tt.input[i].name {
-					t.Errorf("%s artist[%d] with name %q comes before artist[%d] with name %q", fnName, i-1, tt.input[i-1].name, i, tt.input[i].name)
+				if tt.input[i-1].backing.Name() > tt.input[i].backing.Name() {
+					t.Errorf("%s artist[%d] with name %q comes before artist[%d] with name %q", fnName, i-1, tt.input[i-1].backing.Name(), i, tt.input[i].backing.Name())
 				}
 			}
 		})
@@ -936,18 +1027,18 @@ func Test_sortArtistsWithIssues(t *testing.T) {
 }
 
 func Test_sortAlbumsWithIssues(t *testing.T) {
-	fnName := "sortAlbumsWithIssues()"
+	const fnName = "sortAlbumsWithIssues()"
 	tests := []struct {
 		name  string
-		input albumSlice
+		input checkedAlbumSlice
 	}{
 		{name: "degenerate case", input: nil},
-		{name: "scrambled input", input: albumSlice([]*albumWithIssues{
-			{name: "10"},
-			{name: "2"},
-			{name: "35"},
-			{name: "1"},
-			{name: "3"},
+		{name: "scrambled input", input: checkedAlbumSlice([]*checkedAlbum{
+			{backing: files.NewAlbum("10", nil, "artist/10")},
+			{backing: files.NewAlbum("2", nil, "artist/2")},
+			{backing: files.NewAlbum("35", nil, "artist/35")},
+			{backing: files.NewAlbum("1", nil, "artist/1")},
+			{backing: files.NewAlbum("3", nil, "artist/3")},
 		})},
 	}
 	for _, tt := range tests {
@@ -957,8 +1048,8 @@ func Test_sortAlbumsWithIssues(t *testing.T) {
 				if i == 0 {
 					continue
 				}
-				if tt.input[i-1].name > tt.input[i].name {
-					t.Errorf("%s album[%d] with name %q comes before album[%d] with name %q", fnName, i-1, tt.input[i-1].name, i, tt.input[i].name)
+				if tt.input[i-1].backing.Name() > tt.input[i].backing.Name() {
+					t.Errorf("%s album[%d] with name %q comes before album[%d] with name %q", fnName, i-1, tt.input[i-1].backing.Name(), i, tt.input[i].backing.Name())
 				}
 			}
 		})
@@ -966,18 +1057,18 @@ func Test_sortAlbumsWithIssues(t *testing.T) {
 }
 
 func Test_sortTracksWithIssues(t *testing.T) {
-	fnName := "sortTracksWithIssues()"
+	const fnName = "sortTracksWithIssues()"
 	tests := []struct {
 		name  string
-		input trackSlice
+		input checkedTrackSlice
 	}{
 		{name: "degenerate case", input: nil},
-		{name: "scrambled input", input: trackSlice([]*trackWithIssues{
-			{number: 10},
-			{number: 2},
-			{number: 35},
-			{number: 1},
-			{number: 3},
+		{name: "scrambled input", input: checkedTrackSlice([]*checkedTrack{
+			{backing: files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist1", "./artist1"), "./artist1/album1"), "10 track10.mp3", "track10", 10)},
+			{backing: files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist1", "./artist1"), "./artist1/album1"), "02 track2.mp3", "track2", 2)},
+			{backing: files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist1", "./artist1"), "./artist1/album1"), "35 track35.mp3", "track35", 35)},
+			{backing: files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist1", "./artist1"), "./artist1/album1"), "01 track1.mp3", "track1", 1)},
+			{backing: files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist1", "./artist1"), "./artist1/album1"), "03 track3.mp3", "track3", 3)},
 		})},
 	}
 	for _, tt := range tests {
@@ -987,8 +1078,8 @@ func Test_sortTracksWithIssues(t *testing.T) {
 				if i == 0 {
 					continue
 				}
-				if tt.input[i-1].number > tt.input[i].number {
-					t.Errorf("%s track[%d] with number %d comes before track[%d] with number %d", fnName, i-1, tt.input[i-1].number, i, tt.input[i].number)
+				if tt.input[i-1].backing.Number() > tt.input[i].backing.Number() {
+					t.Errorf("%s track[%d] with number %d comes before track[%d] with number %d", fnName, i-1, tt.input[i-1].backing.Number(), i, tt.input[i].backing.Number())
 				}
 			}
 		})
@@ -996,9 +1087,9 @@ func Test_sortTracksWithIssues(t *testing.T) {
 }
 
 func Test_reportResults(t *testing.T) {
-	fnName := "reportResults()"
+	const fnName = "reportResults()"
 	type args struct {
-		artistsWithIssues [][]*artistWithIssues
+		artistsWithIssues [][]*checkedArtist
 	}
 	tests := []struct {
 		name string
@@ -1008,21 +1099,20 @@ func Test_reportResults(t *testing.T) {
 		{name: "degenerate case", args: args{}},
 		{
 			name: "more interesting case",
-			args: args{artistsWithIssues: [][]*artistWithIssues{
+			args: args{artistsWithIssues: [][]*checkedArtist{
 				// set 1
 				{
 					{
-						name:   "artist1",
-						issues: []string{"bad artist"},
-						albums: []*albumWithIssues{
+						backing: files.NewArtist("artist1", "artist1"),
+						issues:  []string{"bad artist"},
+						albums: []*checkedAlbum{
 							{
-								name:   "album1",
-								issues: []string{"skips badly"},
-								tracks: []*trackWithIssues{
+								backing: files.NewAlbum("album1", nil, "artist1/album1"),
+								issues:  []string{"skips badly"},
+								tracks: []*checkedTrack{
 									{
-										number: 1,
-										name:   "track1",
-										issues: []string{"inaudible"},
+										backing: files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist1", "./artist1"), "./artist1/album1"), "01 track1.mp3", "track1", 1),
+										issues:  []string{"inaudible"},
 									},
 								},
 							},
@@ -1032,50 +1122,46 @@ func Test_reportResults(t *testing.T) {
 				// set 2
 				{
 					{
-						name:   "artist1",
-						issues: []string{"really awful artist"},
-						albums: []*albumWithIssues{
+						backing: files.NewArtist("artist1", "artist1"),
+						issues:  []string{"really awful artist"},
+						albums: []*checkedAlbum{
 							{
-								name:   "album1",
-								issues: []string{"bad cover art"},
-								tracks: []*trackWithIssues{
+								backing: files.NewAlbum("album1", nil, "artist1/album1"),
+								issues:  []string{"bad cover art"},
+								tracks: []*checkedTrack{
 									{
-										number: 1,
-										name:   "track1",
-										issues: []string{"plays backwards!"},
+										backing: files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist1", "./artist1"), "./artist1/album1"), "01 track1.mp3", "track1", 1),
+										issues:  []string{"plays backwards!"},
 									},
 									{
-										number: 2,
-										name:   "track2",
-										issues: []string{"truly insipid"},
+										backing: files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist1", "./artist1"), "./artist1/album1"), "02 track2.mp3", "track2", 2),
+										issues:  []string{"truly insipid"},
 									},
 								},
 							},
 							{
-								name:   "album2",
-								issues: []string{"horrible sequel"},
-								tracks: []*trackWithIssues{
+								backing: files.NewAlbum("album2", nil, "artist1/album2"),
+								issues:  []string{"horrible sequel"},
+								tracks: []*checkedTrack{
 									{
-										number: 3,
-										name:   "track3",
-										issues: []string{"singer is dreadful, band is worse"},
+										backing: files.NewTrack(files.NewAlbum("album2", files.NewArtist("artist1", "./artist1"), "./artist1/album2"), "03 track3.mp3", "track3", 3),
+										issues:  []string{"singer is dreadful, band is worse"},
 									},
 								},
 							},
 						},
 					},
 					{
-						name:   "artist2",
-						issues: []string{"tone deaf"},
-						albums: []*albumWithIssues{
+						backing: files.NewArtist("artist2", "artist2"),
+						issues:  []string{"tone deaf"},
+						albums: []*checkedAlbum{
 							{
-								name:   "album34",
-								issues: []string{"worst album I own"},
-								tracks: []*trackWithIssues{
+								backing: files.NewAlbum("album34", nil, "artist2/album34"),
+								issues:  []string{"worst album I own"},
+								tracks: []*checkedTrack{
 									{
-										number: 40,
-										name:   "track40",
-										issues: []string{"singer died in mid act and that improved the track"},
+										backing: files.NewTrack(files.NewAlbum("album34", files.NewArtist("artist2", "./artist2"), "./artist2/album34"), "40 track40.mp3", "track40", 40),
+										issues:  []string{"singer died in mid act and that improved the track"},
 									},
 								},
 							},
