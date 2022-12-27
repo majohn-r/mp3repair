@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	addCommandData(aboutCommandName, commandData{isDefault: false, initFunction: newAboutCmd})
+	addCommandData(aboutCommandName, commandData{isDefault: false, init: newAboutCmd})
 }
 
 var (

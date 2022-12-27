@@ -13,33 +13,31 @@ import (
 )
 
 func makeCheck() CommandProcessor {
-	cp, _ := newCheck(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ExitOnError))
-	return cp
+	cP, _ := newCheck(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ExitOnError))
+	return cP
 }
 
 func makeList() CommandProcessor {
-	list, _ := newList(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("list", flag.ExitOnError))
-	return list
+	cP, _ := newList(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("list", flag.ExitOnError))
+	return cP
 }
 
 func makeRepair() CommandProcessor {
-	r, _ := newRepair(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ExitOnError))
-	return r
+	cP, _ := newRepair(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ExitOnError))
+	return cP
 }
 
 func makePostRepair() CommandProcessor {
-	pr, _ := newPostRepair(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ExitOnError))
-	return pr
+	cP, _ := newPostRepair(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ExitOnError))
+	return cP
 }
 
 func TestProcessCommand(t *testing.T) {
-	fnName := "ProcessCommand()"
+	const fnName = "ProcessCommand()"
 	if err := internal.CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, "./mp3")
-	}()
+	defer internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	if err := internal.Mkdir("./mp3/mp3"); err != nil {
 		t.Errorf("%s error creating defective ./mp3/mp3: %v", fnName, err)
 	}
@@ -61,9 +59,9 @@ func TestProcessCommand(t *testing.T) {
 		t.Errorf("%s error creating bad data defaults.yaml: %v", fnName, err)
 	}
 	normalDir := internal.SecureAbsolutePathForTesting(".")
-	savedState := internal.SaveEnvVarForTesting("APPDATA")
+	savedAppData := internal.SaveEnvVarForTesting("APPDATA")
 	defer func() {
-		savedState.RestoreForTesting()
+		savedAppData.RestoreForTesting()
 	}()
 	type args struct {
 		args []string
@@ -72,9 +70,9 @@ func TestProcessCommand(t *testing.T) {
 		name  string
 		state *internal.SavedEnvVar
 		args
-		want  CommandProcessor
-		want1 []string
-		want2 bool
+		want        CommandProcessor
+		wantCmdArgs []string
+		wantOk      bool
 		output.WantedRecording
 	}{
 		{
@@ -95,12 +93,12 @@ func TestProcessCommand(t *testing.T) {
 			},
 		},
 		{
-			name:  "call list",
-			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
-			args:  args{args: []string{"mp3.exe", "list", "-track=true"}},
-			want:  makeList(),
-			want1: []string{"-track=true"},
-			want2: true,
+			name:        "call list",
+			state:       &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
+			args:        args{args: []string{"mp3.exe", "list", "-track=true"}},
+			want:        makeList(),
+			wantCmdArgs: []string{"-track=true"},
+			wantOk:      true,
 			WantedRecording: output.WantedRecording{
 				Error: "The key \"value\", with value '1.25', has an unexpected type float64.\n",
 				Log: "level='error' key='value' type='float64' value='1.25' msg='unexpected value type'\n" +
@@ -108,12 +106,12 @@ func TestProcessCommand(t *testing.T) {
 			},
 		},
 		{
-			name:  "call check",
-			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
-			args:  args{args: []string{"mp3.exe", "check", "-integrity=false"}},
-			want:  makeCheck(),
-			want1: []string{"-integrity=false"},
-			want2: true,
+			name:        "call check",
+			state:       &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
+			args:        args{args: []string{"mp3.exe", "check", "-integrity=false"}},
+			want:        makeCheck(),
+			wantCmdArgs: []string{"-integrity=false"},
+			wantOk:      true,
 			WantedRecording: output.WantedRecording{
 				Error: "The key \"value\", with value '1.25', has an unexpected type float64.\n",
 				Log: "level='error' key='value' type='float64' value='1.25' msg='unexpected value type'\n" +
@@ -121,12 +119,12 @@ func TestProcessCommand(t *testing.T) {
 			},
 		},
 		{
-			name:  "call repair",
-			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
-			args:  args{args: []string{"mp3.exe", "repair"}},
-			want:  makeRepair(),
-			want1: []string{},
-			want2: true,
+			name:        "call repair",
+			state:       &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
+			args:        args{args: []string{"mp3.exe", "repair"}},
+			want:        makeRepair(),
+			wantCmdArgs: []string{},
+			wantOk:      true,
 			WantedRecording: output.WantedRecording{
 				Error: "The key \"value\", with value '1.25', has an unexpected type float64.\n",
 				Log: "level='error' key='value' type='float64' value='1.25' msg='unexpected value type'\n" +
@@ -134,12 +132,12 @@ func TestProcessCommand(t *testing.T) {
 			},
 		},
 		{
-			name:  "call postRepair",
-			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
-			args:  args{args: []string{"mp3.exe", "postRepair"}},
-			want:  makePostRepair(),
-			want1: []string{},
-			want2: true,
+			name:        "call postRepair",
+			state:       &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
+			args:        args{args: []string{"mp3.exe", "postRepair"}},
+			want:        makePostRepair(),
+			wantCmdArgs: []string{},
+			wantOk:      true,
 			WantedRecording: output.WantedRecording{
 				Error: "The key \"value\", with value '1.25', has an unexpected type float64.\n",
 				Log: "level='error' key='value' type='float64' value='1.25' msg='unexpected value type'\n" +
@@ -147,12 +145,12 @@ func TestProcessCommand(t *testing.T) {
 			},
 		},
 		{
-			name:  "call default command",
-			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
-			args:  args{args: []string{"mp3.exe"}},
-			want:  makeList(),
-			want1: []string{"list"},
-			want2: true,
+			name:        "call default command",
+			state:       &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
+			args:        args{args: []string{"mp3.exe"}},
+			want:        makeList(),
+			wantCmdArgs: []string{"list"},
+			wantOk:      true,
 			WantedRecording: output.WantedRecording{
 				Error: "The key \"value\", with value '1.25', has an unexpected type float64.\n",
 				Log: "level='error' key='value' type='float64' value='1.25' msg='unexpected value type'\n" +
@@ -172,12 +170,12 @@ func TestProcessCommand(t *testing.T) {
 			},
 		},
 		{
-			name:  "pass arguments to default command",
-			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
-			args:  args{args: []string{"mp3.exe", "-album", "-artist", "-track"}},
-			want:  makeList(),
-			want1: []string{"-album", "-artist", "-track"},
-			want2: true,
+			name:        "pass arguments to default command",
+			state:       &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
+			args:        args{args: []string{"mp3.exe", "-album", "-artist", "-track"}},
+			want:        makeList(),
+			wantCmdArgs: []string{"-album", "-artist", "-track"},
+			wantOk:      true,
 			WantedRecording: output.WantedRecording{
 				Error: "The key \"value\", with value '1.25', has an unexpected type float64.\n",
 				Log: "level='error' key='value' type='float64' value='1.25' msg='unexpected value type'\n" +
@@ -189,7 +187,7 @@ func TestProcessCommand(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.state.RestoreForTesting()
 			o := output.NewRecorder()
-			got, got1, got2 := ProcessCommand(o, tt.args.args)
+			got, gotCmdArgs, gotOk := ProcessCommand(o, tt.args.args)
 			if got == nil {
 				if tt.want != nil {
 					t.Errorf("%s got = %v, want %v", fnName, got, tt.want)
@@ -199,11 +197,11 @@ func TestProcessCommand(t *testing.T) {
 					t.Errorf("%s got = %v, want %v", fnName, got, tt.want)
 				}
 			}
-			if !reflect.DeepEqual(got1, tt.want1) {
-				t.Errorf("%s got1 = %v, want %v", fnName, got1, tt.want1)
+			if !reflect.DeepEqual(gotCmdArgs, tt.wantCmdArgs) {
+				t.Errorf("%s gotCmdArgs = %v, want %v", fnName, gotCmdArgs, tt.wantCmdArgs)
 			}
-			if got2 != tt.want2 {
-				t.Errorf("%s got2 = %v, want %v", fnName, got2, tt.want2)
+			if gotOk != tt.wantOk {
+				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
@@ -215,23 +213,27 @@ func TestProcessCommand(t *testing.T) {
 }
 
 func Test_selectCommand(t *testing.T) {
-	fnName := "selectCommand()"
+	const fnName = "selectCommand()"
+	savedMap := commandMap
+	defer func() {
+		commandMap = savedMap
+	}()
 	type args struct {
 		c    *internal.Configuration
-		i    []commandInitializer
 		args []string
 	}
 	tests := []struct {
 		name string
 		args
-		wantCmd         CommandProcessor
-		wantCallingArgs []string
-		wantOk          bool
+		m           map[string]commandData
+		wantCmd     CommandProcessor
+		wantCmdArgs []string
+		wantOk      bool
 		output.WantedRecording
 	}{
 		// only handling error cases here, success cases are handled by TestProcessCommand
 		{
-			name: "no initializers",
+			name: "empty command map",
 			args: args{},
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error has occurred: no commands are defined!\n",
@@ -239,16 +241,11 @@ func Test_selectCommand(t *testing.T) {
 			},
 		},
 		{
-			name: "no default initializers",
-			args: args{i: []commandInitializer{{}}},
-			WantedRecording: output.WantedRecording{
-				Error: "An internal error has occurred: there are 0 default commands!\n",
-				Log:   "level='error' count='0' msg='incorrect number of default commands'\n",
-			},
-		},
-		{
 			name: "too many default initializers",
-			args: args{i: []commandInitializer{{defaultCommand: true}, {defaultCommand: true}}},
+			m: map[string]commandData{
+				"cmd1": {isDefault: true},
+				"cmd2": {isDefault: true},
+			},
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error has occurred: there are 2 default commands!\n",
 				Log:   "level='error' count='2' msg='incorrect number of default commands'\n",
@@ -262,11 +259,9 @@ func Test_selectCommand(t *testing.T) {
 						"includeTracks": "no!!",
 					},
 				}),
-				i: []commandInitializer{{
-					name:           "list",
-					defaultCommand: true,
-					initializer:    newList,
-				}},
+			},
+			m: map[string]commandData{
+				"list": {isDefault: true, init: newList},
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"list\": invalid boolean value \"no!!\" for -includeTracks: parse error.\n",
@@ -277,12 +272,13 @@ func Test_selectCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			o := output.NewRecorder()
-			gotCmd, gotCallingArgs, gotOk := selectCommand(o, tt.args.c, tt.args.i, tt.args.args)
+			commandMap = tt.m
+			gotCmd, gotCmdArgs, gotOk := selectCommand(o, tt.args.c, tt.args.args)
 			if !reflect.DeepEqual(gotCmd, tt.wantCmd) {
 				t.Errorf("%s gotCmd = %v, want %v", fnName, gotCmd, tt.wantCmd)
 			}
-			if !reflect.DeepEqual(gotCallingArgs, tt.wantCallingArgs) {
-				t.Errorf("%s gotCallingArgs = %v, want %v", fnName, gotCallingArgs, tt.wantCallingArgs)
+			if !reflect.DeepEqual(gotCmdArgs, tt.wantCmdArgs) {
+				t.Errorf("%s gotCmdArgs = %v, want %v", fnName, gotCmdArgs, tt.wantCmdArgs)
 			}
 			if gotOk != tt.wantOk {
 				t.Errorf("%s  gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
@@ -315,11 +311,11 @@ func Test_defaultSettings(t *testing.T) {
 	if err := internal.Mkdir(configDir); err != nil {
 		t.Errorf("%s error creating mp3 directory: %v", fnName, err)
 	}
-	savedCommandMap := commandMap
-	savedState := internal.SaveEnvVarForTesting("APPDATA")
+	savedCmdMap := commandMap
+	savedAppData := internal.SaveEnvVarForTesting("APPDATA")
 	defer func() {
-		savedState.RestoreForTesting()
-		commandMap = savedCommandMap
+		savedAppData.RestoreForTesting()
+		commandMap = savedCmdMap
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
 	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting(topDir))
@@ -394,7 +390,7 @@ func Test_defaultSettings(t *testing.T) {
 				content = "command:\n    nodefault: true\n"
 			}
 			if tt.cmds == nil {
-				commandMap = savedCommandMap
+				commandMap = savedCmdMap
 			} else {
 				commandMap = tt.cmds
 			}

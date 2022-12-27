@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	addCommandData(checkCommandName, commandData{isDefault: false, initFunction: newCheck})
+	addCommandData(checkCommandName, commandData{isDefault: false, init: newCheck})
 	addDefaultMapping(checkCommandName, map[string]any{
 		emptyFolders:       defaultEmptyFolders,
 		trackNumberingGaps: defaultTrackNumberingGaps,

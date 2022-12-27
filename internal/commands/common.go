@@ -10,8 +10,8 @@ import (
 )
 
 type commandData struct {
-	isDefault    bool
-	initFunction func(output.Bus, *internal.Configuration, *flag.FlagSet) (CommandProcessor, bool)
+	isDefault bool
+	init      func(output.Bus, *internal.Configuration, *flag.FlagSet) (CommandProcessor, bool)
 }
 
 var commandMap = map[string]commandData{}
@@ -25,32 +25,21 @@ type CommandProcessor interface {
 	Exec(output.Bus, []string) bool
 }
 
-type commandInitializer struct {
-	name           string
-	defaultCommand bool
-	initializer    func(output.Bus, *internal.Configuration, *flag.FlagSet) (CommandProcessor, bool)
-}
-
 // ProcessCommand selects which command to be run and returns the relevant
 // CommandProcessor, command line arguments and ok status
 func ProcessCommand(o output.Bus, args []string) (cmd CommandProcessor, cmdArgs []string, ok bool) {
 	var c *internal.Configuration
 	if c, ok = internal.ReadConfigurationFile(o); !ok {
-		return nil, nil, false
+		return
 	}
 	var m map[string]bool
 	if m, ok = defaultSettings(o, c.SubConfiguration("command")); !ok {
-		return nil, nil, false
+		return
 	}
-	var initializers []commandInitializer
 	for name, d := range commandMap {
-		initializers = append(initializers, commandInitializer{
-			name:           name,
-			defaultCommand: m[name],
-			initializer:    d.initFunction,
-		})
+		d.isDefault = m[name]
 	}
-	cmd, cmdArgs, ok = selectCommand(o, c, initializers, args)
+	cmd, cmdArgs, ok = selectCommand(o, c, args)
 	return
 }
 
@@ -89,66 +78,68 @@ func defaultSettings(o output.Bus, c *internal.Configuration) (m map[string]bool
 	return
 }
 
-func selectCommand(o output.Bus, c *internal.Configuration, i []commandInitializer, args []string) (cmd CommandProcessor, callingArgs []string, ok bool) {
-	if len(i) == 0 {
+func selectCommand(o output.Bus, c *internal.Configuration, args []string) (cmd CommandProcessor, cmdArgs []string, ok bool) {
+	if len(commandMap) == 0 {
 		o.Log(output.Error, "incorrect number of commands", map[string]any{"count": 0})
 		o.WriteCanonicalError("An internal error has occurred: no commands are defined!")
 		return
 	}
-	var defaultInitializers int
-	var defaultInitializerName string
-	for _, initializer := range i {
-		if initializer.defaultCommand {
-			defaultInitializers++
-			defaultInitializerName = initializer.name
+	var n int
+	var defaultCmd string
+	for name, cD := range commandMap {
+		if cD.isDefault {
+			n++
+			defaultCmd = name
 		}
 	}
-	if defaultInitializers != 1 {
-		o.Log(output.Error, "incorrect number of default commands", map[string]any{"count": defaultInitializers})
-		o.WriteCanonicalError("An internal error has occurred: there are %d default commands!", defaultInitializers)
+	if n != 1 {
+		o.Log(output.Error, "incorrect number of default commands", map[string]any{"count": n})
+		o.WriteCanonicalError("An internal error has occurred: there are %d default commands!", n)
 		return
 	}
-	processorMap := make(map[string]CommandProcessor)
-	allCommandsOk := true
-	for _, commandInitializer := range i {
-		fSet := flag.NewFlagSet(commandInitializer.name, flag.ContinueOnError)
-		command, cOk := commandInitializer.initializer(o, c, fSet)
+	m := make(map[string]CommandProcessor)
+	allCmdsOk := true
+	for name, cD := range commandMap {
+		fSet := flag.NewFlagSet(name, flag.ContinueOnError)
+		cmd, cOk := cD.init(o, c, fSet)
 		if cOk {
-			processorMap[commandInitializer.name] = command
+			m[name] = cmd
 		} else {
-			allCommandsOk = false
+			allCmdsOk = false
 		}
 	}
-	if !allCommandsOk {
+	if !allCmdsOk {
 		return
 	}
 	if len(args) < 2 {
-		cmd = processorMap[defaultInitializerName]
-		callingArgs = []string{defaultInitializerName}
+		// no arguments at all
+		cmd = m[defaultCmd]
+		cmdArgs = []string{defaultCmd}
 		ok = true
 		return
 	}
-	commandName := args[1]
-	if strings.HasPrefix(commandName, "-") {
-		cmd = processorMap[defaultInitializerName]
-		callingArgs = args[1:]
+	firstArg := args[1]
+	if strings.HasPrefix(firstArg, "-") {
+		// first argument is a flag
+		cmd = m[defaultCmd]
+		cmdArgs = args[1:]
 		ok = true
 		return
 	}
-	cmd, found := processorMap[commandName]
+	cmd, found := m[firstArg]
 	if !found {
 		cmd = nil
-		callingArgs = nil
-		o.Log(output.Error, "unrecognized command", map[string]any{"command": commandName})
+		cmdArgs = nil
+		o.Log(output.Error, "unrecognized command", map[string]any{"command": firstArg})
 		var commandNames []string
-		for _, initializer := range i {
-			commandNames = append(commandNames, initializer.name)
+		for name := range commandMap {
+			commandNames = append(commandNames, name)
 		}
 		sort.Strings(commandNames)
-		o.WriteCanonicalError("There is no command named %q; valid commands include %v", commandName, commandNames)
+		o.WriteCanonicalError("There is no command named %q; valid commands include %v", firstArg, commandNames)
 		return
 	}
-	callingArgs = args[2:]
+	cmdArgs = args[2:]
 	ok = true
 	return
 }
@@ -157,9 +148,9 @@ func reportBadDefault(o output.Bus, section string, err error) {
 	internal.ReportInvalidConfigurationData(o, section, err)
 }
 
-func logStart(o output.Bus, name string, flags map[string]any) {
-	flags["command"] = name
-	o.Log(output.Info, "executing command", flags)
+func logStart(o output.Bus, name string, m map[string]any) {
+	m["command"] = name
+	o.Log(output.Info, "executing command", m)
 }
 
 func reportDirectoryCreationFailure(o output.Bus, cmd, dir string, e error) {

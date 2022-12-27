@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	addCommandData(listCommandName, commandData{isDefault: true, initFunction: newList})
+	addCommandData(listCommandName, commandData{isDefault: true, init: newList})
 	addDefaultMapping(listCommandName, map[string]any{
 		annotateListingsFlag:  defaultAnnotateListings,
 		detailsListingFlag:    defaultDetailsListing,

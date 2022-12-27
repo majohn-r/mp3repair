@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	addCommandData(repairCommandName, commandData{isDefault: false, initFunction: newRepair})
+	addCommandData(repairCommandName, commandData{isDefault: false, init: newRepair})
 	addDefaultMapping(repairCommandName, map[string]any{
 		dryRunFlag: defaultDryRun,
 	})

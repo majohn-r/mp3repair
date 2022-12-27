@@ -11,7 +11,7 @@ import (
 )
 
 func init() {
-	addCommandData(postRepairCommandName, commandData{isDefault: false, initFunction: newPostRepair})
+	addCommandData(postRepairCommandName, commandData{isDefault: false, init: newPostRepair})
 }
 
 const postRepairCommandName = "postRepair"

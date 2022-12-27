@@ -12,7 +12,7 @@ import (
 )
 
 func init() {
-	addCommandData(exportCommandName, commandData{isDefault: false, initFunction: newExport})
+	addCommandData(exportCommandName, commandData{isDefault: false, init: newExport})
 	addDefaultMapping(exportCommandName, map[string]any{
 		defaultsFlag:  defaultDefaults,
 		overwriteFlag: defaultOverwrite,
