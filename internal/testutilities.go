@@ -151,7 +151,7 @@ func CreateNamedFileForTesting(fileName string, content []byte) (err error) {
 	if err == nil {
 		err = fmt.Errorf("file %q already exists", fileName)
 	} else if errors.Is(err, os.ErrNotExist) {
-		err = os.WriteFile(fileName, content, 0o644)
+		err = os.WriteFile(fileName, content, StdFilePermissions)
 	}
 	return
 }

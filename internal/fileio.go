@@ -10,6 +10,10 @@ import (
 	"github.com/majohn-r/output"
 )
 
+const (
+	StdFilePermissions = 0o644 // -rw-r--r--
+)
+
 // PlainFileExists returns whether the specified file exists as a plain file
 // (i.e., not a directory)
 func PlainFileExists(path string) bool {

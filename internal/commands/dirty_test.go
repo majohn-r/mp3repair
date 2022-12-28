@@ -79,12 +79,11 @@ func Test_findAppFolder(t *testing.T) {
 	}
 }
 
-func TestMarkDirty(t *testing.T) {
-	fnName := "MarkDirty()"
+func Test_markDirty(t *testing.T) {
+	fnName := "markDirty()"
 	savedDirtyFolderFound := dirtyFolderFound
 	savedDirtyFolder := dirtyFolder
 	savedDirtyFolderValid := dirtyFolderValid
-	savedMarkDirtyAttempted := markDirtyAttempted
 	testDir := "markDirty"
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
@@ -93,40 +92,30 @@ func TestMarkDirty(t *testing.T) {
 		dirtyFolderFound = savedDirtyFolderFound
 		dirtyFolder = savedDirtyFolder
 		dirtyFolderValid = savedDirtyFolderValid
-		markDirtyAttempted = savedMarkDirtyAttempted
 		internal.DestroyDirectoryForTesting(fnName, testDir)
 	}()
 	tests := []struct {
-		name                      string
-		command                   string
-		initialDirtyFolder        string
-		initialMarkDirtyAttempted bool
+		name               string
+		command            string
+		initialDirtyFolder string
 		output.WantedRecording
 	}{
 		{
-			name:                      "typical first use",
-			command:                   "calling command",
-			initialDirtyFolder:        testDir,
-			initialMarkDirtyAttempted: false,
+			name:               "typical first use",
+			command:            "calling command",
+			initialDirtyFolder: testDir,
 			WantedRecording: output.WantedRecording{
 				Log: "level='info' fileName='markDirty\\metadata.dirty' msg='metadata dirty file written'\n",
 			},
 		},
 		{
-			name:                      "error first case",
-			command:                   "calling command",
-			initialDirtyFolder:        "no such dir",
-			initialMarkDirtyAttempted: false,
+			name:               "error first case",
+			command:            "calling command",
+			initialDirtyFolder: "no such dir",
 			WantedRecording: output.WantedRecording{
 				Error: "The file \"no such dir\\\\metadata.dirty\" cannot be created: open no such dir\\metadata.dirty: The system cannot find the path specified.\n",
 				Log:   "level='error' command='calling command' error='open no such dir\\metadata.dirty: The system cannot find the path specified.' fileName='no such dir\\metadata.dirty' msg='cannot create file'\n",
 			},
-		},
-		{
-			name:                      "error second case",
-			command:                   "calling command",
-			initialDirtyFolder:        "no such dir",
-			initialMarkDirtyAttempted: true,
 		},
 	}
 	for _, tt := range tests {
@@ -134,9 +123,8 @@ func TestMarkDirty(t *testing.T) {
 			dirtyFolderFound = true // short-circuit finding the folder
 			dirtyFolderValid = true // yes, of course it's valid (even if it isn't)
 			dirtyFolder = tt.initialDirtyFolder
-			markDirtyAttempted = tt.initialMarkDirtyAttempted
 			o := output.NewRecorder()
-			MarkDirty(o, tt.command)
+			markDirty(o, tt.command)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
@@ -146,8 +134,8 @@ func TestMarkDirty(t *testing.T) {
 	}
 }
 
-func TestDirty(t *testing.T) {
-	fnName := "Dirty()"
+func Test_dirty(t *testing.T) {
+	fnName := "dirty()"
 	testDir := "dirty"
 	savedDirtyFolderFound := dirtyFolderFound
 	savedDirtyFolder := dirtyFolder
@@ -194,15 +182,15 @@ func TestDirty(t *testing.T) {
 			dirtyFolderFound = true // short-circuit finding the folder
 			dirtyFolderValid = tt.initialDirtyFolderValid
 			dirtyFolder = tt.initialDirtyFolder
-			if gotDirty := Dirty(); gotDirty != tt.wantDirty {
+			if gotDirty := dirty(); gotDirty != tt.wantDirty {
 				t.Errorf("%s = %t, want %t", fnName, gotDirty, tt.wantDirty)
 			}
 		})
 	}
 }
 
-func TestClearDirty(t *testing.T) {
-	fnName := "ClearDirty()"
+func Test_clearDirty(t *testing.T) {
+	fnName := "clearDirty()"
 	testDir := "clearDirty"
 	savedDirtyFolderFound := dirtyFolderFound
 	savedDirtyFolder := dirtyFolder
@@ -268,7 +256,7 @@ func TestClearDirty(t *testing.T) {
 			dirtyFolderValid = tt.initialDirtyFolderValid
 			dirtyFolder = tt.initialDirtyFolder
 			o := output.NewRecorder()
-			ClearDirty(o)
+			clearDirty(o)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)

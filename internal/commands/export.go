@@ -175,7 +175,7 @@ func (e *export) overwriteFile(o output.Bus, fileName string, content []byte) (o
 }
 
 func createFile(o output.Bus, fileName string, content []byte) bool {
-	if err := os.WriteFile(fileName, content, 0o644); err != nil {
+	if err := os.WriteFile(fileName, content, internal.StdFilePermissions); err != nil {
 		reportFileCreationFailure(o, exportCommandName, fileName, err)
 		return false
 	}

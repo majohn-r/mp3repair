@@ -826,14 +826,12 @@ func Test_resetDatabase_Exec(t *testing.T) {
 	savedDirtyFolderFound := dirtyFolderFound
 	savedDirtyFolder := dirtyFolder
 	savedDirtyFolderValid := dirtyFolderValid
-	savedMarkDirtyAttempted := markDirtyAttempted
 	defer func() {
 		savedUserProfile.RestoreForTesting()
 		internal.DestroyDirectoryForTesting(fnName, testDir)
 		dirtyFolderFound = savedDirtyFolderFound
 		dirtyFolder = savedDirtyFolder
 		dirtyFolderValid = savedDirtyFolderValid
-		markDirtyAttempted = savedMarkDirtyAttempted
 	}()
 	userProfile := internal.SavedEnvVar{
 		Name:  "USERPROFILE",
@@ -970,13 +968,11 @@ func Test_resetDatabase_Exec(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// fake out code for MarkDirty()
-			markDirtyAttempted = false
 			dirtyFolder = appFolder
 			dirtyFolderFound = true
 			dirtyFolderValid = true
 			if tt.markMetadataDirty {
-				MarkDirty(output.NewNilBus(), resetDatabaseCommandName)
+				markDirty(output.NewNilBus(), resetDatabaseCommandName)
 			}
 			o := output.NewRecorder()
 			if gotOk := tt.r.Exec(o, tt.args.args); gotOk != tt.wantOk {
@@ -997,7 +993,7 @@ func Test_resetDatabase_Exec(t *testing.T) {
 
 			}
 			if tt.markMetadataDirty {
-				ClearDirty(output.NewNilBus())
+				clearDirty(output.NewNilBus())
 			}
 		})
 	}

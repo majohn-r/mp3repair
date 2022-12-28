@@ -130,13 +130,11 @@ func Test_repair_Exec(t *testing.T) {
 	savedDirtyFolderFound := dirtyFolderFound
 	savedDirtyFolder := dirtyFolder
 	savedDirtyFolderValid := dirtyFolderValid
-	savedMarkDirtyAttempted := markDirtyAttempted
 	defer func() {
 		savedHome.RestoreForTesting()
 		dirtyFolderFound = savedDirtyFolderFound
 		dirtyFolder = savedDirtyFolder
 		dirtyFolderValid = savedDirtyFolderValid
-		markDirtyAttempted = savedMarkDirtyAttempted
 		internal.DestroyDirectoryForTesting(fnName, topDirName)
 		internal.DestroyDirectoryForTesting(fnName, topDirWithContent)
 	}()
@@ -253,8 +251,6 @@ func Test_repair_Exec(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// fake out code for MarkDirty()
-			markDirtyAttempted = false
 			dirtyFolder = appFolder
 			dirtyFolderFound = true
 			dirtyFolderValid = true

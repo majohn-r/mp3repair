@@ -125,7 +125,7 @@ type resetDatabase struct {
 
 func (r *resetDatabase) Exec(o output.Bus, args []string) (ok bool) {
 	if internal.ProcessArgs(o, r.f, args) {
-		if Dirty() {
+		if dirty() {
 			ok = r.runCommand(o, func() (serviceGateway, error) {
 				m, err := mgr.Connect()
 				if err != nil {
@@ -134,7 +134,7 @@ func (r *resetDatabase) Exec(o output.Bus, args []string) (ok bool) {
 				return &sysMgr{m: m}, err
 			})
 			if ok {
-				ClearDirty(o)
+				clearDirty(o)
 			}
 		} else {
 			o.WriteCanonicalConsole("Running %q is not necessary, as no track files have been edited", resetDatabaseCommandName)

@@ -14,36 +14,30 @@ const (
 )
 
 var (
-	markDirtyAttempted = false
-	dirtyFolderFound   = false
-	dirtyFolder        = ""
-	dirtyFolderValid   = false
+	dirtyFolderFound = false
+	dirtyFolder      = ""
+	dirtyFolderValid = false
 )
 
-// MarkDirty creates the 'dirty' file if it doesn't already exist.
-func MarkDirty(o output.Bus, cmd string) {
-	if !markDirtyAttempted {
-		if path, ok := findAppFolder(); ok {
-			dirtyFile := filepath.Join(path, dirtyFileName)
-			if _, err := os.Stat(dirtyFile); err != nil && errors.Is(err, os.ErrNotExist) {
-				if writeErr := os.WriteFile(dirtyFile, []byte("dirty"), 0o644); writeErr != nil {
-					reportFileCreationFailure(o, cmd, dirtyFile, writeErr)
-				} else {
-					o.Log(output.Info, "metadata dirty file written", map[string]any{"fileName": dirtyFile})
-				}
+func markDirty(o output.Bus, cmd string) {
+	if path, ok := findAppFolder(); ok {
+		dirtyFile := filepath.Join(path, dirtyFileName)
+		if _, err := os.Stat(dirtyFile); err != nil && errors.Is(err, os.ErrNotExist) {
+			if writeErr := os.WriteFile(dirtyFile, []byte("dirty"), internal.StdFilePermissions); writeErr != nil {
+				reportFileCreationFailure(o, cmd, dirtyFile, writeErr)
+			} else {
+				o.Log(output.Info, "metadata dirty file written", map[string]any{"fileName": dirtyFile})
 			}
 		}
 	}
-	markDirtyAttempted = true
 }
 
 func findAppFolder() (folder string, ok bool) {
 	if !dirtyFolderFound {
-		appSpecificPath, appSpecificPathValid := internal.AppSpecificPath()
-		if appSpecificPathValid {
-			if info, err := os.Stat(appSpecificPath); err == nil {
+		if path, ok := internal.AppSpecificPath(); ok {
+			if info, err := os.Stat(path); err == nil {
 				if info.IsDir() {
-					dirtyFolder = appSpecificPath
+					dirtyFolder = path
 					dirtyFolderValid = true
 				}
 			}
@@ -55,8 +49,7 @@ func findAppFolder() (folder string, ok bool) {
 	return
 }
 
-// ClearDirty deletes the 'dirty' file if it exists.
-func ClearDirty(o output.Bus) {
+func clearDirty(o output.Bus) {
 	if path, ok := findAppFolder(); ok {
 		dirtyFile := filepath.Join(path, dirtyFileName)
 		if internal.PlainFileExists(dirtyFile) {
@@ -69,14 +62,11 @@ func ClearDirty(o output.Bus) {
 	}
 }
 
-// Dirty returns false only if the 'dirty' file could exist, but does not.
-func Dirty() (dirty bool) {
+func dirty() bool {
 	if path, ok := findAppFolder(); ok {
-		dirty = internal.PlainFileExists(filepath.Join(path, dirtyFileName))
-	} else {
-		// can't find the app folder, so must assume same problem would have
-		// occurred when attempting to write the 'dirty' file
-		dirty = true
+		return internal.PlainFileExists(filepath.Join(path, dirtyFileName))
 	}
-	return
+	// can't find the app folder, so must assume same problem would have
+	// occurred when attempting to write the 'dirty' file
+	return true
 }

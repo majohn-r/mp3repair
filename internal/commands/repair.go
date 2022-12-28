@@ -134,6 +134,7 @@ func reportProblem(b bool, problem string) (s string) {
 }
 
 func fixTracks(o output.Bus, tracks []*files.Track) {
+	tracksFixed := false
 	for _, t := range tracks {
 		if err := t.EditTags(); len(err) != 0 {
 			o.WriteCanonicalError("An error occurred repairing track %q", t)
@@ -145,8 +146,11 @@ func fixTracks(o output.Bus, tracks []*files.Track) {
 			})
 		} else {
 			o.WriteConsole("%q repaired.\n", t)
-			MarkDirty(o, repairCommandName)
+			tracksFixed = true
 		}
+	}
+	if tracksFixed {
+		markDirty(o, repairCommandName)
 	}
 }
 
