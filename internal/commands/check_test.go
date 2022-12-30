@@ -685,9 +685,8 @@ func Test_newCheckCommand(t *testing.T) {
 	const fnName = "newCheckCommand()"
 	savedAppData := internal.SaveEnvVarForTesting("APPDATA")
 	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
-	defer func() {
-		savedAppData.RestoreForTesting()
-	}()
+	oldAppPath := internal.ApplicationPath()
+	internal.InitApplicationPath(output.NewNilBus())
 	topDir := "loadTest"
 	if err := internal.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
@@ -699,6 +698,8 @@ func Test_newCheckCommand(t *testing.T) {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
 	defer func() {
+		savedAppData.RestoreForTesting()
+		internal.SetApplicationPathForTesting(oldAppPath)
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()

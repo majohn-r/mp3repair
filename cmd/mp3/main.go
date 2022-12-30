@@ -23,7 +23,7 @@ func main() {
 func exec(logInit func(output.Bus) bool, cmdLine []string) (exitCode int) {
 	exitCode = 1
 	o := output.NewDefaultBus(internal.ProductionLogger{})
-	if logInit(o) {
+	if logInit(o) && internal.InitApplicationPath(o) {
 		exitCode = run(o, debug.ReadBuildInfo, cmdLine)
 	}
 	report(o, exitCode)

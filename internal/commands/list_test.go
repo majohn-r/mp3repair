@@ -744,12 +744,10 @@ func Test_newListCommand(t *testing.T) {
 	fnName := "newListCommand()"
 	savedAppData := internal.SaveEnvVarForTesting("APPDATA")
 	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
+	oldAppPath := internal.ApplicationPath()
+	internal.InitApplicationPath(output.NewNilBus())
 	savedFoo := internal.SaveEnvVarForTesting("FOO")
 	os.Unsetenv("FOO")
-	defer func() {
-		savedAppData.RestoreForTesting()
-		savedFoo.RestoreForTesting()
-	}()
 	topDir := "loadTest"
 	if err := internal.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
@@ -761,6 +759,9 @@ func Test_newListCommand(t *testing.T) {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
 	defer func() {
+		savedAppData.RestoreForTesting()
+		internal.SetApplicationPathForTesting(oldAppPath)
+		savedFoo.RestoreForTesting()
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()

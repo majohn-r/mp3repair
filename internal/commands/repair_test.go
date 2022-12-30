@@ -18,9 +18,8 @@ func Test_newRepairCommand(t *testing.T) {
 	fnName := "newRepairCommand()"
 	savedState := internal.SaveEnvVarForTesting("APPDATA")
 	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
-	defer func() {
-		savedState.RestoreForTesting()
-	}()
+	oldAppPath := internal.ApplicationPath()
+	internal.InitApplicationPath(output.NewNilBus())
 	topDir := "loadTest"
 	if err := internal.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
@@ -32,6 +31,8 @@ func Test_newRepairCommand(t *testing.T) {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
 	defer func() {
+		savedState.RestoreForTesting()
+		internal.SetApplicationPathForTesting(oldAppPath)
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
@@ -108,6 +109,11 @@ func newRepairForTesting() *repair {
 
 func Test_repair_Exec(t *testing.T) {
 	fnName := "repair.Exec()"
+	newAppPath := "appPath"
+	if err := internal.Mkdir(newAppPath); err != nil {
+		t.Errorf("%s error creating directory %q: %v", fnName, newAppPath, err)
+	}
+	oldAppPath := internal.SetApplicationPathForTesting(newAppPath)
 	topDirName := "repairExec"
 	topDirWithContent := "realContent"
 	if err := internal.Mkdir(topDirName); err != nil {
@@ -116,10 +122,6 @@ func Test_repair_Exec(t *testing.T) {
 	if err := internal.Mkdir(topDirWithContent); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, topDirWithContent, err)
 	}
-	appFolder := filepath.Join(topDirName, "mp3")
-	if err := internal.Mkdir(appFolder); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, appFolder, err)
-	}
 	savedHome := internal.SaveEnvVarForTesting("HOMEPATH")
 	home := internal.SavedEnvVar{
 		Name:  "HOMEPATH",
@@ -127,14 +129,10 @@ func Test_repair_Exec(t *testing.T) {
 		Set:   true,
 	}
 	home.RestoreForTesting()
-	savedDirtyFolderFound := dirtyFolderFound
-	savedDirtyFolder := dirtyFolder
-	savedDirtyFolderValid := dirtyFolderValid
 	defer func() {
+		internal.SetApplicationPathForTesting(oldAppPath)
+		internal.DestroyDirectoryForTesting(fnName, newAppPath)
 		savedHome.RestoreForTesting()
-		dirtyFolderFound = savedDirtyFolderFound
-		dirtyFolder = savedDirtyFolder
-		dirtyFolderValid = savedDirtyFolderValid
 		internal.DestroyDirectoryForTesting(fnName, topDirName)
 		internal.DestroyDirectoryForTesting(fnName, topDirWithContent)
 	}()
@@ -245,15 +243,12 @@ func Test_repair_Exec(t *testing.T) {
 				Log: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n" +
 					"level='error' error='no id3v1 tag found in file \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\"' track='realContent\\new artist\\new album\\01 new track.mp3' msg='id3v1 tag error'\n" +
-					"level='info' fileName='repairExec\\mp3\\metadata.dirty' msg='metadata dirty file written'\n",
+					"level='info' fileName='appPath\\metadata.dirty' msg='metadata dirty file written'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dirtyFolder = appFolder
-			dirtyFolderFound = true
-			dirtyFolderValid = true
 			o := output.NewRecorder()
 			tt.r.Exec(o, tt.args.args)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -575,6 +570,11 @@ func createTaggedContent(frames map[string]string) []byte {
 
 func Test_repair_fixTracks(t *testing.T) {
 	fnName := "repair.fixTracks()"
+	testAppPath := "appPath"
+	if err := internal.Mkdir(testAppPath); err != nil {
+		t.Errorf("%s error creating %q: %v", fnName, testAppPath, err)
+	}
+	oldAppPath := internal.SetApplicationPathForTesting(testAppPath)
 	fFlag := false
 	topDir := "fixTracks"
 	if err := internal.Mkdir(topDir); err != nil {
@@ -582,6 +582,8 @@ func Test_repair_fixTracks(t *testing.T) {
 	}
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
+		internal.DestroyDirectoryForTesting(fnName, testAppPath)
+		internal.SetApplicationPathForTesting(oldAppPath)
 	}()
 	frames := map[string]string{
 		"TYER": "2022",

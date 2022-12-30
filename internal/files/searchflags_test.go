@@ -17,22 +17,21 @@ func Test_NewSearchFlags(t *testing.T) {
 	fnName := "NewSearchFlags()"
 	savedAppData := internal.SaveEnvVarForTesting("APPDATA")
 	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
+	oldAppPath := internal.ApplicationPath()
+	internal.InitApplicationPath(output.NewNilBus())
 	savedFoo := internal.SaveEnvVarForTesting("FOO")
 	os.Unsetenv("FOO")
-	defer func() {
-		savedAppData.RestoreForTesting()
-		savedFoo.RestoreForTesting()
-	}()
 	oldHomePath := os.Getenv("HOMEPATH")
-	defer func() {
-		os.Setenv("HOMEPATH", oldHomePath)
-	}()
 	os.Setenv("HOMEPATH", ".")
 	if err := internal.CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
 	defer func() {
+		savedAppData.RestoreForTesting()
+		internal.SetApplicationPathForTesting(oldAppPath)
+		savedFoo.RestoreForTesting()
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
+		os.Setenv("HOMEPATH", oldHomePath)
 	}()
 	defaultConfig, _ := internal.ReadConfigurationFile(output.NewNilBus())
 	type args struct {

@@ -9,122 +9,51 @@ import (
 	"github.com/majohn-r/output"
 )
 
-func Test_findAppFolder(t *testing.T) {
-	fnName := "findAppFolder()"
-	savedDirtyFolderFound := dirtyFolderFound
-	savedDirtyFolder := dirtyFolder
-	savedDirtyFolderValid := dirtyFolderValid
-	savedAppSpecificPath, savedAppSpecificPathValid := internal.AppSpecificPath()
-	defer func() {
-		dirtyFolderFound = savedDirtyFolderFound
-		dirtyFolder = savedDirtyFolder
-		dirtyFolderValid = savedDirtyFolderValid
-		internal.SetAppSpecificPathForTesting(savedAppSpecificPath, savedAppSpecificPathValid)
-	}()
-	tests := []struct {
-		name                        string
-		initialAppSpecificPath      string
-		initialAppSpecificPathValid bool
-		initialDirtyFolder          string
-		initialDirtyFolderFound     bool
-		initialDirtyFolderValid     bool
-		wantFolder                  string
-		wantOk                      bool
-	}{
-		{
-			name:                        "expected first call",
-			initialAppSpecificPath:      ".",
-			initialAppSpecificPathValid: true,
-			initialDirtyFolder:          "",
-			initialDirtyFolderFound:     false,
-			initialDirtyFolderValid:     false,
-			wantFolder:                  ".",
-			wantOk:                      true,
-		},
-		{
-			name:                        "expected second call",
-			initialAppSpecificPath:      ".",
-			initialAppSpecificPathValid: true,
-			initialDirtyFolder:          "",
-			initialDirtyFolderFound:     true,
-			initialDirtyFolderValid:     false,
-			wantFolder:                  "",
-			wantOk:                      false,
-		},
-		{
-			name:                        "invalid folder",
-			initialAppSpecificPath:      "no such file/mp3",
-			initialAppSpecificPathValid: true,
-			initialDirtyFolder:          "",
-			initialDirtyFolderFound:     false,
-			initialDirtyFolderValid:     false,
-			wantFolder:                  "",
-			wantOk:                      false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			dirtyFolder = tt.initialDirtyFolder
-			dirtyFolderFound = tt.initialDirtyFolderFound
-			dirtyFolderValid = tt.initialDirtyFolderValid
-			internal.SetAppSpecificPathForTesting(tt.initialAppSpecificPath, tt.initialAppSpecificPathValid)
-			gotFolder, gotOk := findAppFolder()
-			if gotFolder != tt.wantFolder {
-				t.Errorf("%s gotFolder = %v, want %v", fnName, gotFolder, tt.wantFolder)
-			}
-			if gotOk != tt.wantOk {
-				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
-			}
-		})
-	}
-}
-
 func Test_markDirty(t *testing.T) {
-	fnName := "markDirty()"
-	savedDirtyFolderFound := dirtyFolderFound
-	savedDirtyFolder := dirtyFolder
-	savedDirtyFolderValid := dirtyFolderValid
-	testDir := "markDirty"
-	if err := internal.Mkdir(testDir); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
+	const fnName = "markDirty()"
+	emptyDir := "empty"
+	if err := internal.Mkdir(emptyDir); err != nil {
+		t.Errorf("%s error creating %q: %v", fnName, emptyDir, err)
+	}
+	filledDir := "filled"
+	if err := internal.Mkdir(filledDir); err != nil {
+		t.Errorf("%s error creating %q: %v", fnName, filledDir, err)
+	}
+	if err := internal.CreateFileForTesting(filledDir, dirtyFileName); err != nil {
+		t.Errorf("%s error creating %q: %v", fnName, filepath.Join(filledDir, dirtyFileName), err)
 	}
 	defer func() {
-		dirtyFolderFound = savedDirtyFolderFound
-		dirtyFolder = savedDirtyFolder
-		dirtyFolderValid = savedDirtyFolderValid
-		internal.DestroyDirectoryForTesting(fnName, testDir)
+		internal.DestroyDirectoryForTesting(fnName, emptyDir)
+		internal.DestroyDirectoryForTesting(fnName, filledDir)
 	}()
+	type args struct {
+		cmd string
+	}
 	tests := []struct {
-		name               string
-		command            string
-		initialDirtyFolder string
+		name    string
+		appPath string
+		args
 		output.WantedRecording
 	}{
 		{
-			name:               "typical first use",
-			command:            "calling command",
-			initialDirtyFolder: testDir,
+			name:    "typical first use",
+			appPath: emptyDir,
+			args:    args{cmd: "calling command"},
 			WantedRecording: output.WantedRecording{
-				Log: "level='info' fileName='markDirty\\metadata.dirty' msg='metadata dirty file written'\n",
+				Log: "level='info' fileName='empty\\metadata.dirty' msg='metadata dirty file written'\n",
 			},
 		},
 		{
-			name:               "error first case",
-			command:            "calling command",
-			initialDirtyFolder: "no such dir",
-			WantedRecording: output.WantedRecording{
-				Error: "The file \"no such dir\\\\metadata.dirty\" cannot be created: open no such dir\\metadata.dirty: The system cannot find the path specified.\n",
-				Log:   "level='error' command='calling command' error='open no such dir\\metadata.dirty: The system cannot find the path specified.' fileName='no such dir\\metadata.dirty' msg='cannot create file'\n",
-			},
+			name:    "typical second use",
+			appPath: filledDir,
+			args:    args{cmd: "calling command"},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dirtyFolderFound = true // short-circuit finding the folder
-			dirtyFolderValid = true // yes, of course it's valid (even if it isn't)
-			dirtyFolder = tt.initialDirtyFolder
 			o := output.NewRecorder()
-			markDirty(o, tt.command)
+			internal.SetApplicationPathForTesting(tt.appPath)
+			markDirty(o, tt.args.cmd)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
@@ -137,51 +66,37 @@ func Test_markDirty(t *testing.T) {
 func Test_dirty(t *testing.T) {
 	fnName := "dirty()"
 	testDir := "dirty"
-	savedDirtyFolderFound := dirtyFolderFound
-	savedDirtyFolder := dirtyFolder
-	savedDirtyFolderValid := dirtyFolderValid
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
+	oldAppPath := internal.SetApplicationPathForTesting(testDir)
 	defer func() {
-		dirtyFolderFound = savedDirtyFolderFound
-		dirtyFolder = savedDirtyFolder
-		dirtyFolderValid = savedDirtyFolderValid
 		internal.DestroyDirectoryForTesting(fnName, testDir)
+		internal.SetApplicationPathForTesting(oldAppPath)
 	}()
-	if err := internal.CreateFileForTestingWithContent(testDir, dirtyFileName, []byte("dirty")); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, dirtyFileName, err)
-	}
+
 	tests := []struct {
-		name                    string
-		initialDirtyFolder      string
-		initialDirtyFolderValid bool
-		wantDirty               bool
+		name      string
+		wantDirty bool
 	}{
 		{
-			name:                    "file definitively exists",
-			initialDirtyFolder:      testDir,
-			initialDirtyFolderValid: true,
-			wantDirty:               true,
+			name:      "file definitively exists",
+			wantDirty: true,
 		},
 		{
-			name:                    "file definitely does not exist",
-			initialDirtyFolder:      ".",
-			initialDirtyFolderValid: true,
-			wantDirty:               false,
-		},
-		{
-			name:                    "don't know",
-			initialDirtyFolder:      "",
-			initialDirtyFolderValid: false,
-			wantDirty:               true,
+			name:      "file definitely does not exist",
+			wantDirty: false,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dirtyFolderFound = true // short-circuit finding the folder
-			dirtyFolderValid = tt.initialDirtyFolderValid
-			dirtyFolder = tt.initialDirtyFolder
+			if tt.wantDirty {
+				if err := internal.CreateFileForTestingWithContent(testDir, dirtyFileName, []byte("dirty")); err != nil {
+					t.Errorf("%s error creating %q: %v", fnName, dirtyFileName, err)
+				}
+			} else {
+				os.Remove(filepath.Join(testDir, dirtyFileName))
+			}
 			if gotDirty := dirty(); gotDirty != tt.wantDirty {
 				t.Errorf("%s = %t, want %t", fnName, gotDirty, tt.wantDirty)
 			}
@@ -192,12 +107,10 @@ func Test_dirty(t *testing.T) {
 func Test_clearDirty(t *testing.T) {
 	fnName := "clearDirty()"
 	testDir := "clearDirty"
-	savedDirtyFolderFound := dirtyFolderFound
-	savedDirtyFolder := dirtyFolder
-	savedDirtyFolderValid := dirtyFolderValid
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
+	oldAppPath := internal.ApplicationPath()
 	if err := internal.CreateFileForTestingWithContent(testDir, dirtyFileName, []byte("dirty")); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, dirtyFileName, err)
 	}
@@ -214,36 +127,30 @@ func Test_clearDirty(t *testing.T) {
 		t.Errorf("%s error opening second %q: %v", fnName, dirtyFileName, err)
 	}
 	defer func() {
-		dirtyFolderFound = savedDirtyFolderFound
-		dirtyFolder = savedDirtyFolder
-		dirtyFolderValid = savedDirtyFolderValid
+		internal.SetApplicationPathForTesting(oldAppPath)
 		internal.DestroyDirectoryForTesting(fnName, testDir)
 		openFile.Close()
 		internal.DestroyDirectoryForTesting(fnName, testDir2)
 	}()
 	tests := []struct {
-		name                    string
-		initialDirtyFolder      string
-		initialDirtyFolderValid bool
+		name               string
+		initialDirtyFolder string
 		output.WantedRecording
 	}{
 		{
-			name:                    "successful removal",
-			initialDirtyFolder:      testDir,
-			initialDirtyFolderValid: true,
+			name:               "successful removal",
+			initialDirtyFolder: testDir,
 			WantedRecording: output.WantedRecording{
 				Log: "level='info' fileName='clearDirty\\metadata.dirty' msg='metadata dirty file deleted'\n",
 			},
 		},
 		{
-			name:                    "nothing to remove",
-			initialDirtyFolder:      ".",
-			initialDirtyFolderValid: true,
+			name:               "nothing to remove",
+			initialDirtyFolder: ".",
 		},
 		{
-			name:                    "unremovable file",
-			initialDirtyFolder:      testDir2,
-			initialDirtyFolderValid: true,
+			name:               "unremovable file",
+			initialDirtyFolder: testDir2,
 			WantedRecording: output.WantedRecording{
 				Error: "The file \"clearDirty2\\\\metadata.dirty\" cannot be deleted: remove clearDirty2\\metadata.dirty: The process cannot access the file because it is being used by another process.\n",
 				Log:   "level='error' error='remove clearDirty2\\metadata.dirty: The process cannot access the file because it is being used by another process.' fileName='clearDirty2\\metadata.dirty' msg='cannot delete file'\n",
@@ -252,9 +159,7 @@ func Test_clearDirty(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dirtyFolderFound = true // short-circuit finding the folder
-			dirtyFolderValid = tt.initialDirtyFolderValid
-			dirtyFolder = tt.initialDirtyFolder
+			internal.SetApplicationPathForTesting(tt.initialDirtyFolder)
 			o := output.NewRecorder()
 			clearDirty(o)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {

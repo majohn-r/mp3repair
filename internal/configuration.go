@@ -16,26 +16,6 @@ import (
 // DefaultConfigFileName is the name of the configuration file that contains defaults for the commands
 const DefaultConfigFileName = "defaults.yaml"
 
-const appDataVar = "APPDATA"
-
-var (
-	appSpecificPath      string
-	appSpecificPathValid bool
-)
-
-// AppSpecificPath returns the location for application-specific files
-// (%APPPATH%\mp3) and whether that value is trustworthy
-func AppSpecificPath() (string, bool) {
-	return appSpecificPath, appSpecificPathValid
-}
-
-// SetAppSpecificPathForTesting sets the app-specific path internal variables;
-// useful for test scenarios only
-func SetAppSpecificPathForTesting(p string, v bool) {
-	appSpecificPath = p
-	appSpecificPathValid = v
-}
-
 // Configuration defines the data structure for configuration information.
 type Configuration struct {
 	sMap map[string]string
@@ -47,16 +27,7 @@ type Configuration struct {
 // ReadConfigurationFile reads defaults.yaml from the specified path and returns
 // a pointer to a cooked Configuration instance
 func ReadConfigurationFile(o output.Bus) (c *Configuration, ok bool) {
-	var appDataValue string
-	var appDataSet bool
-	if appDataValue, appDataSet = LookupAppData(o); !appDataSet {
-		c = EmptyConfiguration()
-		ok = true
-		return
-	}
-	path := CreateAppSpecificPath(appDataValue)
-	appSpecificPath = path
-	appSpecificPathValid = true
+	path := ApplicationPath()
 	configFile := filepath.Join(path, DefaultConfigFileName)
 	var err error
 	var exists bool
@@ -93,15 +64,6 @@ func readYaml(yfile []byte) (data map[string]any, err error) {
 	data = make(map[string]any)
 	err = yaml.Unmarshal(yfile, &data)
 	return
-}
-
-// LookupAppData looks up the environment variable for finding application data
-func LookupAppData(o output.Bus) (string, bool) {
-	if value, ok := os.LookupEnv(appDataVar); ok {
-		return value, ok
-	}
-	o.Log(output.Info, "not set", map[string]any{"environmentVariable": appDataVar})
-	return "", false
 }
 
 func verifyFileExists(o output.Bus, path string) (ok bool, err error) {

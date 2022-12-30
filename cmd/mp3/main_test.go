@@ -20,14 +20,21 @@ func Test_run(t *testing.T) {
 	if err := internal.Mkdir("Music"); err != nil {
 		t.Errorf("%s error creating Music: %v", fnName, err)
 	}
+	if !internal.InitApplicationPath(output.NewNilBus()) {
+		t.Errorf("%s error creating initializing application path", fnName)
+	}
+	oldAppPath := internal.ApplicationPath()
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, "Music")
+		internal.DestroyDirectoryForTesting(fnName, "mp3")
 		savedAppData.RestoreForTesting()
 		savedHomePath.RestoreForTesting()
+		internal.SetApplicationPathForTesting(oldAppPath)
 	}()
 	here := internal.SecureAbsolutePathForTesting(".")
 	os.Setenv("APPDATA", here)
 	os.Setenv("HOMEPATH", here)
+	internal.InitApplicationPath(output.NewNilBus())
 	if err := internal.Mkdir("Music/myArtist"); err != nil {
 		t.Errorf("%s error creating Music/myArtist: %v", fnName, err)
 	}
@@ -150,12 +157,15 @@ func Test_report(t *testing.T) {
 func Test_exec(t *testing.T) {
 	const fnName = "exec()"
 	savedHomePath := internal.SaveEnvVarForTesting("HOMEPATH")
+	savedAppData := internal.SaveEnvVarForTesting("APPDATA")
 	if err := internal.Mkdir("Music"); err != nil {
 		t.Errorf("%s error creating Music: %v", fnName, err)
 	}
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, "Music")
+		internal.DestroyDirectoryForTesting(fnName, "mp3")
 		savedHomePath.RestoreForTesting()
+		savedAppData.RestoreForTesting()
 	}()
 	here := internal.SecureAbsolutePathForTesting(".")
 	if err := internal.Mkdir("Music/myArtist"); err != nil {
@@ -175,7 +185,8 @@ func Test_exec(t *testing.T) {
 	tests := []struct {
 		name string
 		args
-		want int
+		appData string
+		want    int
 	}{
 		{
 			name: "init logging fails",
@@ -184,7 +195,18 @@ func Test_exec(t *testing.T) {
 					return false
 				},
 			},
-			want: 1,
+			appData: here,
+			want:    1,
+		},
+		{
+			name: "acquisition of application path ",
+			args: args{
+				logInit: func(output.Bus) bool {
+					return true
+				},
+			},
+			appData: "no such directory",
+			want:    1,
 		},
 		{
 			name: "run fails",
@@ -194,7 +216,8 @@ func Test_exec(t *testing.T) {
 				},
 				cmdLine: []string{"mp3", "no-such-command"},
 			},
-			want: 1,
+			appData: here,
+			want:    1,
 		},
 		{
 			name: "success",
@@ -204,11 +227,13 @@ func Test_exec(t *testing.T) {
 				},
 				cmdLine: []string{"mp3"},
 			},
-			want: 0,
+			appData: here,
+			want:    0,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			os.Setenv("APPDATA", tt.appData)
 			if got := exec(tt.args.logInit, tt.args.cmdLine); got != tt.want {
 				t.Errorf("%s = %d, want %d", fnName, got, tt.want)
 			}

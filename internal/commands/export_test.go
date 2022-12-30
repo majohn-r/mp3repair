@@ -3,7 +3,6 @@ package commands
 import (
 	"flag"
 	"mp3/internal"
-	"os"
 	"path/filepath"
 	"testing"
 
@@ -155,14 +154,14 @@ func Test_export_overwriteFile(t *testing.T) {
 
 func Test_export_writeDefaults(t *testing.T) {
 	fnName := "export.writeDefaults()"
-	savedAppData := internal.SaveEnvVarForTesting("APPDATA")
+	oldAppPath := internal.ApplicationPath()
 	testDir := "writeDefaults"
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, testDir)
-		savedAppData.RestoreForTesting()
+		internal.SetApplicationPathForTesting(oldAppPath)
 	}()
 	testDir2 := filepath.Join(testDir, "2")
 	if err := internal.Mkdir(testDir2); err != nil {
@@ -179,45 +178,30 @@ func Test_export_writeDefaults(t *testing.T) {
 		content []byte
 	}
 	tests := []struct {
-		name         string
-		ex           *export
-		appDataValue *internal.SavedEnvVar
+		name    string
+		ex      *export
+		appPath string
 		args
 		wantOk bool
 		output.WantedRecording
 	}{
 		{
-			name:         "no location",
-			appDataValue: &internal.SavedEnvVar{Name: "APPDATA"},
-			WantedRecording: output.WantedRecording{
-				Log: "level='info' environmentVariable='APPDATA' msg='not set'\n",
-			},
+			name:    "valid location, not pre-existing",
+			appPath: testDir,
+			args:    args{content: []byte{1, 2, 3, 4}},
+			wantOk:  true,
 		},
 		{
-			name:         "no valid location",
-			appDataValue: &internal.SavedEnvVar{Name: "APPDATA", Value: "no such dir", Set: true},
-			WantedRecording: output.WantedRecording{
-				Error: "The directory \"no such dir\\\\mp3\" cannot be created: mkdir no such dir\\mp3: The system cannot find the path specified.\n",
-				Log:   "level='error' command='export' directory='no such dir\\mp3' error='mkdir no such dir\\mp3: The system cannot find the path specified.' msg='cannot create directory'\n",
-			},
-		},
-		{
-			name:         "valid location, not pre-existing",
-			appDataValue: &internal.SavedEnvVar{Name: "APPDATA", Value: testDir, Set: true},
-			args:         args{content: []byte{1, 2, 3, 4}},
-			wantOk:       true,
-		},
-		{
-			name:         "valid location, pre-existing",
-			appDataValue: &internal.SavedEnvVar{Name: "APPDATA", Value: testDir2, Set: true},
-			ex:           &export{overwrite: &tExportFlag},
-			args:         args{content: []byte{1, 2, 3, 4}},
-			wantOk:       true,
+			name:    "valid location, pre-existing",
+			appPath: occupiedMp3Path,
+			ex:      &export{overwrite: &tExportFlag},
+			args:    args{content: []byte{1, 2, 3, 4}},
+			wantOk:  true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tt.appDataValue.RestoreForTesting()
+			internal.SetApplicationPathForTesting(tt.appPath)
 			o := output.NewRecorder()
 			if gotOk := tt.ex.writeDefaults(o, tt.args.content); gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
@@ -233,16 +217,15 @@ func Test_export_writeDefaults(t *testing.T) {
 
 func Test_export_exportDefaults(t *testing.T) {
 	const fnName = "export.exportDefaults()"
-	savedAppData := internal.SaveEnvVarForTesting("APPDATA")
 	testDir := "exportDefaults"
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
+	oldAppPath := internal.SetApplicationPathForTesting(testDir)
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, testDir)
-		savedAppData.RestoreForTesting()
+		internal.SetApplicationPathForTesting(oldAppPath)
 	}()
-	os.Setenv("APPDATA", testDir)
 	tests := []struct {
 		name string
 		ex   *export
@@ -330,11 +313,15 @@ func makeExportForTesting() *export {
 
 func Test_export_Exec(t *testing.T) {
 	const fnName = "export.Exec()"
-	savedAppData := internal.SaveEnvVarForTesting("APPDATA")
+	testAppPath := "appPath"
+	if err := internal.Mkdir(testAppPath); err != nil {
+		t.Errorf("%s error creating %q: %v", fnName, testAppPath, err)
+	}
+	oldAppPath := internal.SetApplicationPathForTesting(testAppPath)
 	defer func() {
-		savedAppData.RestoreForTesting()
+		internal.SetApplicationPathForTesting(oldAppPath)
+		internal.DestroyDirectoryForTesting(fnName, testAppPath)
 	}()
-	os.Unsetenv("APPDATA") // make writes impossible
 	type args struct {
 		args []string
 	}
@@ -370,13 +357,10 @@ func Test_export_Exec(t *testing.T) {
 			},
 		},
 		{
-			name:   "try to do something, but fail",
+			name:   "work to do",
 			ex:     makeExportForTesting(),
-			args:   args{args: []string{"-defaults"}},
-			wantOk: false,
-			WantedRecording: output.WantedRecording{
-				Log: "level='info' environmentVariable='APPDATA' msg='not set'\n",
-			},
+			args:   args{args: []string{"-defaults=true", "-overwrite=true"}},
+			wantOk: true,
 		},
 	}
 	for _, tt := range tests {

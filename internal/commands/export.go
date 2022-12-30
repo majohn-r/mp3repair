@@ -123,29 +123,12 @@ func defaultsContent() []byte {
 }
 
 func (e *export) writeDefaults(o output.Bus, content []byte) (ok bool) {
-	if appData, appDataOk := internal.LookupAppData(o); appDataOk {
-		path := internal.CreateAppSpecificPath(appData)
-		if ensurePathExists(o, path) {
-			configFile := filepath.Join(path, internal.DefaultConfigFileName)
-			if internal.PlainFileExists(configFile) {
-				ok = e.overwriteFile(o, configFile, content)
-			} else {
-				ok = createFile(o, configFile, content)
-			}
-		}
-	}
-	return
-}
-
-func ensurePathExists(o output.Bus, path string) (ok bool) {
-	if internal.DirExists(path) {
-		ok = true
+	path := internal.ApplicationPath()
+	configFile := filepath.Join(path, internal.DefaultConfigFileName)
+	if internal.PlainFileExists(configFile) {
+		ok = e.overwriteFile(o, configFile, content)
 	} else {
-		if err := internal.Mkdir(path); err != nil {
-			reportDirectoryCreationFailure(o, exportCommandName, path, err)
-		} else {
-			ok = true
-		}
+		ok = createFile(o, configFile, content)
 	}
 	return
 }

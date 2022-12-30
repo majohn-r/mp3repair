@@ -241,8 +241,11 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 			postTest: func(t *testing.T) {
 				savedState := SaveEnvVarForTesting(appDataVar)
 				os.Setenv(appDataVar, SecureAbsolutePathForTesting("."))
+				oldAppPath := ApplicationPath()
+				InitApplicationPath(output.NewNilBus())
 				defer func() {
 					savedState.RestoreForTesting()
+					SetApplicationPathForTesting(oldAppPath)
 				}()
 				c, _ := ReadConfigurationFile(output.NewNilBus())
 				if common := c.cMap["common"]; common == nil {

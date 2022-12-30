@@ -37,7 +37,6 @@ func TestProcessCommand(t *testing.T) {
 	if err := internal.CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
-	defer internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	if err := internal.Mkdir("./mp3/mp3"); err != nil {
 		t.Errorf("%s error creating defective ./mp3/mp3: %v", fnName, err)
 	}
@@ -48,9 +47,6 @@ func TestProcessCommand(t *testing.T) {
 	if err := internal.Mkdir(badDir); err != nil {
 		t.Errorf("%s error creating bad data directory: %v", fnName, err)
 	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, badDir)
-	}()
 	badMp3Dir := filepath.Join(badDir, "mp3")
 	if err := internal.Mkdir(badMp3Dir); err != nil {
 		t.Errorf("%s error creating bad data mp3 directory: %v", fnName, err)
@@ -60,8 +56,12 @@ func TestProcessCommand(t *testing.T) {
 	}
 	normalDir := internal.SecureAbsolutePathForTesting(".")
 	savedAppData := internal.SaveEnvVarForTesting("APPDATA")
+	oldAppPath := internal.ApplicationPath()
 	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, "./mp3")
+		internal.DestroyDirectoryForTesting(fnName, badDir)
 		savedAppData.RestoreForTesting()
+		internal.SetApplicationPathForTesting(oldAppPath)
 	}()
 	type args struct {
 		args []string
@@ -186,6 +186,7 @@ func TestProcessCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.state.RestoreForTesting()
+			internal.InitApplicationPath(output.NewNilBus())
 			o := output.NewRecorder()
 			got, gotCmdArgs, gotOk := ProcessCommand(o, tt.args.args)
 			if got == nil {
@@ -313,12 +314,15 @@ func Test_defaultSettings(t *testing.T) {
 	}
 	savedCmdMap := commandMap
 	savedAppData := internal.SaveEnvVarForTesting("APPDATA")
+	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting(topDir))
+	oldAppPath := internal.ApplicationPath()
+	internal.InitApplicationPath(output.NewNilBus())
 	defer func() {
 		savedAppData.RestoreForTesting()
 		commandMap = savedCmdMap
 		internal.DestroyDirectoryForTesting(fnName, topDir)
+		internal.SetApplicationPathForTesting(oldAppPath)
 	}()
-	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting(topDir))
 	tests := []struct {
 		name           string
 		includeDefault bool

@@ -819,19 +819,16 @@ func Test_resetDatabase_Exec(t *testing.T) {
 		t.Errorf("%s error creating %s: %v", fnName, testDir, err)
 	}
 	savedUserProfile := internal.SaveEnvVarForTesting("USERPROFILE")
-	appFolder := filepath.Join(testDir, "mp3")
-	if err := internal.Mkdir(appFolder); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, appFolder, err)
+	testAppPath := "appPath"
+	if err := internal.Mkdir(testAppPath); err != nil {
+		t.Errorf("%s error creating %s: %v", fnName, testAppPath, err)
 	}
-	savedDirtyFolderFound := dirtyFolderFound
-	savedDirtyFolder := dirtyFolder
-	savedDirtyFolderValid := dirtyFolderValid
+	oldAppPath := internal.SetApplicationPathForTesting(testAppPath)
 	defer func() {
 		savedUserProfile.RestoreForTesting()
 		internal.DestroyDirectoryForTesting(fnName, testDir)
-		dirtyFolderFound = savedDirtyFolderFound
-		dirtyFolder = savedDirtyFolder
-		dirtyFolderValid = savedDirtyFolderValid
+		internal.DestroyDirectoryForTesting(fnName, testAppPath)
+		internal.SetApplicationPathForTesting(oldAppPath)
 	}()
 	userProfile := internal.SavedEnvVar{
 		Name:  "USERPROFILE",
@@ -954,7 +951,7 @@ func Test_resetDatabase_Exec(t *testing.T) {
 				Log: "level='info' -extension='.wmdb' -metadata='Exec' -service='WMPNetworkSVC' -timeout='10' command='resetDatabase' msg='executing command'\n" +
 					"level='info' service='WMPNetworkSVC' status='stopped' msg='service status'\n" +
 					"level='info' directory='Exec' extension='.wmdb' msg='no files found'\n" +
-					"level='info' fileName='Exec\\mp3\\metadata.dirty' msg='metadata dirty file deleted'\n",
+					"level='info' fileName='appPath\\metadata.dirty' msg='metadata dirty file deleted'\n",
 			},
 			withoutConnection: output.WantedRecording{
 				Console: "No metadata files were found in \"Exec\".\n",
@@ -962,17 +959,16 @@ func Test_resetDatabase_Exec(t *testing.T) {
 				Log: "level='info' -extension='.wmdb' -metadata='Exec' -service='WMPNetworkSVC' -timeout='10' command='resetDatabase' msg='executing command'\n" +
 					"level='error' error='Access is denied.' operation='connect to service manager' msg='service manager issue'\n" +
 					"level='info' directory='Exec' extension='.wmdb' msg='no files found'\n" +
-					"level='info' fileName='Exec\\mp3\\metadata.dirty' msg='metadata dirty file deleted'\n",
+					"level='info' fileName='appPath\\metadata.dirty' msg='metadata dirty file deleted'\n",
 			},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			dirtyFolder = appFolder
-			dirtyFolderFound = true
-			dirtyFolderValid = true
 			if tt.markMetadataDirty {
 				markDirty(output.NewNilBus(), resetDatabaseCommandName)
+			} else {
+				clearDirty(output.NewNilBus())
 			}
 			o := output.NewRecorder()
 			if gotOk := tt.r.Exec(o, tt.args.args); gotOk != tt.wantOk {
