@@ -12,15 +12,12 @@ import (
 )
 
 func makePostRepairCommandForTesting() *postrepair {
-	pr, _ := newPostRepairCommand(
-		output.NewNilBus(),
-		internal.EmptyConfiguration(),
-		flag.NewFlagSet("postRepair", flag.ContinueOnError))
+	pr, _ := newPostRepairCommand(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError))
 	return pr
 }
 
 func Test_postrepair_Exec(t *testing.T) {
-	fnName := "postrepair.Exec()"
+	const fnName = "postrepair.Exec()"
 	topDirName := "postRepairExec"
 	topDir2Name := "postRepairExec2"
 	if err := internal.Mkdir(topDirName); err != nil {
@@ -36,11 +33,6 @@ func Test_postrepair_Exec(t *testing.T) {
 		Set:   true,
 	}
 	home.RestoreForTesting()
-	defer func() {
-		savedHome.RestoreForTesting()
-		internal.DestroyDirectoryForTesting(fnName, topDirName)
-		internal.DestroyDirectoryForTesting(fnName, topDir2Name)
-	}()
 	if err := internal.PopulateTopDirForTesting(topDirName); err != nil {
 		t.Errorf("%s error populating directory %q: %v", fnName, topDirName, err)
 	}
@@ -66,17 +58,20 @@ func Test_postrepair_Exec(t *testing.T) {
 	if err := internal.CreateFileForTesting(backupDirectory, "1.mp3"); err != nil {
 		t.Errorf("%s error creating file in backup directory %q: %v", fnName, "1.mp3", err)
 	}
+	defer func() {
+		savedHome.RestoreForTesting()
+		internal.DestroyDirectoryForTesting(fnName, topDirName)
+		internal.DestroyDirectoryForTesting(fnName, topDir2Name)
+	}()
 	type args struct {
 		args []string
 	}
-	tests := []struct {
-		name string
-		p    *postrepair
+	tests := map[string]struct {
+		p *postrepair
 		args
 		output.WantedRecording
 	}{
-		{
-			name: "help",
+		"help": {
 			p:    makePostRepairCommandForTesting(),
 			args: args{args: []string{"--help"}},
 			WantedRecording: output.WantedRecording{
@@ -92,8 +87,7 @@ func Test_postrepair_Exec(t *testing.T) {
 				Log: "level='error' arguments='[--help]' msg='flag: help requested'\n",
 			},
 		},
-		{
-			name: "handle bad common arguments",
+		"handle bad common arguments": {
 			p:    makePostRepairCommandForTesting(),
 			args: args{args: []string{"-topDir", "non-existent directory"}},
 			WantedRecording: output.WantedRecording{
@@ -101,8 +95,7 @@ func Test_postrepair_Exec(t *testing.T) {
 				Log:   "level='error' directory='non-existent directory' error='CreateFile non-existent directory: The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
 		},
-		{
-			name: "handle normal processing with nothing to do",
+		"handle normal processing with nothing to do": {
 			p:    makePostRepairCommandForTesting(),
 			args: args{args: []string{"-topDir", topDirName}},
 			WantedRecording: output.WantedRecording{
@@ -111,8 +104,7 @@ func Test_postrepair_Exec(t *testing.T) {
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='postRepairExec' msg='reading filtered music files'\n",
 			},
 		},
-		{
-			name: "handle normal processing",
+		"handle normal processing": {
 			p:    makePostRepairCommandForTesting(),
 			args: args{args: []string{"-topDir", topDir2Name}},
 			WantedRecording: output.WantedRecording{
@@ -122,8 +114,8 @@ func Test_postrepair_Exec(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.p.Exec(o, tt.args.args)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -136,14 +128,11 @@ func Test_postrepair_Exec(t *testing.T) {
 }
 
 func Test_removeBackupDirectory(t *testing.T) {
-	fnName := "removeBackupDirectory()"
+	const fnName = "removeBackupDirectory()"
 	topDirName := "removeBackup"
 	if err := internal.Mkdir(topDirName); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, topDirName, err)
 	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, topDirName)
-	}()
 	artistDir := "the artist"
 	artistPath := filepath.Join(topDirName, artistDir)
 	if err := internal.Mkdir(artistPath); err != nil {
@@ -163,35 +152,35 @@ func Test_removeBackupDirectory(t *testing.T) {
 	if err := internal.CreateFileForTesting(backupDirectory, "1.mp3"); err != nil {
 		t.Errorf("%s error creating file in backup directory %q: %v", fnName, "1.mp3", err)
 	}
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, topDirName)
+	}()
 	type args struct {
-		d string
-		a *files.Album
+		dir string
+		a   *files.Album
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		output.WantedRecording
 	}{
-		{
-			name: "error case",
-			args: args{d: "dir/.", a: nil},
+		"error case": {
+			args: args{dir: "dir/.", a: nil},
 			WantedRecording: output.WantedRecording{
 				Error: "The directory \"dir/.\" cannot be deleted: RemoveAll dir/.: invalid argument.\n",
 				Log:   "level='error' directory='dir/.' error='RemoveAll dir/.: invalid argument' msg='cannot delete directory'\n",
 			},
 		},
-		{
-			name: "normal case",
-			args: args{d: backupDirectory, a: album},
+		"normal case": {
+			args: args{dir: backupDirectory, a: album},
 			WantedRecording: output.WantedRecording{
 				Console: "The backup directory for artist \"the artist\" album \"the album\" has been deleted.\n",
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			removeBackupDirectory(o, tt.args.d, tt.args.a)
+			removeBackupDirectory(o, tt.args.dir, tt.args.a)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
@@ -202,7 +191,7 @@ func Test_removeBackupDirectory(t *testing.T) {
 }
 
 func Test_newPostRepairCommand(t *testing.T) {
-	fnName := "newPostRepairCommand()"
+	const fnName = "newPostRepairCommand()"
 	savedFoo := internal.SaveEnvVarForTesting("FOO")
 	os.Unsetenv("FOO")
 	defer func() {
@@ -212,15 +201,13 @@ func Test_newPostRepairCommand(t *testing.T) {
 		c    *internal.Configuration
 		fSet *flag.FlagSet
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		wantPostRepair bool
 		wantOk         bool
 		output.WantedRecording
 	}{
-		{
-			name: "success",
+		"success": {
 			args: args{
 				c:    internal.EmptyConfiguration(),
 				fSet: flag.NewFlagSet("postRepair", flag.ContinueOnError),
@@ -228,8 +215,7 @@ func Test_newPostRepairCommand(t *testing.T) {
 			wantPostRepair: true,
 			wantOk:         true,
 		},
-		{
-			name: "failure",
+		"failure": {
 			args: args{
 				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"common": map[string]any{
@@ -244,8 +230,8 @@ func Test_newPostRepairCommand(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			got, gotOk := newPostRepairCommand(o, tt.args.c, tt.args.fSet)
 			if (got != nil) != tt.wantPostRepair {

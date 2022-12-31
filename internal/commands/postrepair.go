@@ -21,8 +21,7 @@ type postrepair struct {
 }
 
 func newPostRepairCommand(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (*postrepair, bool) {
-	sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet)
-	if sFlagsOk {
+	if sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet); sFlagsOk {
 		return &postrepair{sf: sFlags}, true
 	}
 	return nil, false
@@ -45,39 +44,39 @@ func logFields() map[string]any {
 
 func runCommand(o output.Bus, s *files.Search) (ok bool) {
 	logStart(o, postRepairCommandName, logFields())
-	artists, ok := s.LoadData(o)
-	if ok {
-		backups := make(map[string]*files.Album)
-		var backupDirectories []string
-		for _, artist := range artists {
-			for _, album := range artist.Albums() {
-				backupDirectory := album.BackupDirectory()
-				if internal.DirExists(backupDirectory) {
-					backupDirectories = append(backupDirectories, backupDirectory)
-					backups[backupDirectory] = album
+	if artists, artistsLoaded := s.LoadData(o); artistsLoaded {
+		ok = true
+		m := make(map[string]*files.Album)
+		var dirs []string
+		for _, aR := range artists {
+			for _, aL := range aR.Albums() {
+				dir := aL.BackupDirectory()
+				if internal.DirExists(dir) {
+					dirs = append(dirs, dir)
+					m[dir] = aL
 				}
 			}
 		}
-		if len(backupDirectories) == 0 {
+		if len(dirs) == 0 {
 			o.WriteCanonicalConsole("There are no backup directories to delete")
 		} else {
-			sort.Strings(backupDirectories)
-			for _, backupDirectory := range backupDirectories {
-				removeBackupDirectory(o, backupDirectory, backups[backupDirectory])
+			sort.Strings(dirs)
+			for _, dir := range dirs {
+				removeBackupDirectory(o, dir, m[dir])
 			}
 		}
 	}
 	return
 }
 
-func removeBackupDirectory(o output.Bus, d string, a *files.Album) {
-	if err := os.RemoveAll(d); err != nil {
+func removeBackupDirectory(o output.Bus, dir string, aL *files.Album) {
+	if err := os.RemoveAll(dir); err != nil {
 		o.Log(output.Error, "cannot delete directory", map[string]any{
-			"directory": d,
+			"directory": dir,
 			"error":     err,
 		})
-		o.WriteCanonicalError("The directory %q cannot be deleted: %v", d, err)
+		o.WriteCanonicalError("The directory %q cannot be deleted: %v", dir, err)
 	} else {
-		o.WriteCanonicalConsole("The backup directory for artist %q album %q has been deleted\n", a.RecordingArtistName(), a.Name())
+		o.WriteCanonicalConsole("The backup directory for artist %q album %q has been deleted\n", aL.RecordingArtistName(), aL.Name())
 	}
 }
