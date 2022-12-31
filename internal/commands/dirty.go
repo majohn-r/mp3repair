@@ -24,12 +24,12 @@ func markDirty(o output.Bus, cmd string) {
 }
 
 func clearDirty(o output.Bus) {
-	dirtyFile := filepath.Join(internal.ApplicationPath(), dirtyFileName)
-	if internal.PlainFileExists(dirtyFile) {
-		if err := os.Remove(dirtyFile); err != nil {
-			reportFileDeletionFailure(o, dirtyFile, err)
+	f := filepath.Join(internal.ApplicationPath(), dirtyFileName)
+	if internal.PlainFileExists(f) {
+		if err := os.Remove(f); err != nil {
+			reportFileDeletionFailure(o, f, err)
 		} else {
-			o.Log(output.Info, "metadata dirty file deleted", map[string]any{"fileName": dirtyFile})
+			o.Log(output.Info, "metadata dirty file deleted", map[string]any{"fileName": f})
 		}
 	}
 }

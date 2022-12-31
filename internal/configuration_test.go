@@ -15,15 +15,13 @@ func Test_Configuration_SubConfiguration(t *testing.T) {
 	savedState := SaveEnvVarForTesting(appDataVar)
 	os.Setenv(appDataVar, SecureAbsolutePathForTesting("."))
 	oldAppPath := ApplicationPath()
-	defer func() {
-		savedState.RestoreForTesting()
-		SetApplicationPathForTesting(oldAppPath)
-	}()
 	InitApplicationPath(output.NewNilBus())
 	if err := CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
 	defer func() {
+		savedState.RestoreForTesting()
+		SetApplicationPathForTesting(oldAppPath)
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
 	testConfiguration, _ := ReadConfigurationFile(output.NewNilBus())
@@ -256,16 +254,14 @@ func Test_Configuration_StringDefault(t *testing.T) {
 	os.Setenv(appDataVar, SecureAbsolutePathForTesting("."))
 	oldAppPath := ApplicationPath()
 	InitApplicationPath(output.NewNilBus())
+	if err := CreateDefaultYamlFileForTesting(); err != nil {
+		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
+	}
 	defer func() {
 		savedFoo.RestoreForTesting()
 		savedBar.RestoreForTesting()
 		savedState.RestoreForTesting()
 		SetApplicationPathForTesting(oldAppPath)
-	}()
-	if err := CreateDefaultYamlFileForTesting(); err != nil {
-		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
-	}
-	defer func() {
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
 	testConfiguration, _ := ReadConfigurationFile(output.NewNilBus())
