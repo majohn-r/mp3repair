@@ -51,8 +51,7 @@ type exportDefaultValues struct {
 }
 
 func newExportCommand(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (*export, bool) {
-	defaults, defaultsOk := evaluateExportDefaults(o, c.SubConfiguration(exportCommandName), exportCommandName)
-	if defaultsOk {
+	if defaults, ok := evaluateExportDefaults(o, c.SubConfiguration(exportCommandName)); ok {
 		defaultsUsage := internal.DecorateBoolFlagUsage("write defaults.yaml", defaults.defaults)
 		overwriteUsage := internal.DecorateBoolFlagUsage("overwrite file if it exists", defaults.overwrite)
 		return &export{
@@ -64,18 +63,16 @@ func newExportCommand(o output.Bus, c *internal.Configuration, fSet *flag.FlagSe
 	return nil, false
 }
 
-func evaluateExportDefaults(o output.Bus, c *internal.Configuration, name string) (defaults exportDefaultValues, ok bool) {
+func evaluateExportDefaults(o output.Bus, c *internal.Configuration) (v exportDefaultValues, ok bool) {
 	ok = true
-	defaults = exportDefaultValues{}
+	v = exportDefaultValues{}
 	var err error
-	defaults.defaults, err = c.BoolDefault(defaultsFlag, defaultDefaults)
-	if err != nil {
-		reportBadDefault(o, name, err)
+	if v.defaults, err = c.BoolDefault(defaultsFlag, defaultDefaults); err != nil {
+		reportBadDefault(o, exportCommandName, err)
 		ok = false
 	}
-	defaults.overwrite, err = c.BoolDefault(overwriteFlag, defaultOverwrite)
-	if err != nil {
-		reportBadDefault(o, name, err)
+	if v.overwrite, err = c.BoolDefault(overwriteFlag, defaultOverwrite); err != nil {
+		reportBadDefault(o, exportCommandName, err)
 		ok = false
 	}
 	return
@@ -96,10 +93,10 @@ func (e *export) logFields() map[string]any {
 	}
 }
 
-func (e *export) runCommand(o output.Bus) (ok bool) {
+func (e *export) runCommand(o output.Bus) bool {
 	if !*e.defaults {
 		reportNothingToDo(o, exportCommandName, e.logFields())
-		return
+		return false
 	}
 	return e.exportDefaults(o)
 }
@@ -112,54 +109,52 @@ func (e *export) exportDefaults(o output.Bus) bool {
 }
 
 func defaultsContent() []byte {
-	// get the search content - it cannot be registered the same way that
-	// commands register their content, due to circular dependency issues
-	searchName, searchDefaults := files.SearchDefaults()
-	defaultMapping[searchName] = searchDefaults
+	// get the search content - it could not be registered the same way that
+	// commands pre-register their content, due to circular dependency issues
+	s, m := files.SearchDefaults()
+	defaultMapping[s] = m
 	// ignoring error return, as we're not marshalling structs, where mischief
 	// can occur
-	content, _ := yaml.Marshal(defaultMapping)
-	return content
+	b, _ := yaml.Marshal(defaultMapping)
+	return b
 }
 
-func (e *export) writeDefaults(o output.Bus, content []byte) (ok bool) {
+func (e *export) writeDefaults(o output.Bus, b []byte) bool {
 	path := internal.ApplicationPath()
-	configFile := filepath.Join(path, internal.DefaultConfigFileName)
-	if internal.PlainFileExists(configFile) {
-		ok = e.overwriteFile(o, configFile, content)
-	} else {
-		ok = createFile(o, configFile, content)
+	f := filepath.Join(path, internal.DefaultConfigFileName)
+	if internal.PlainFileExists(f) {
+		return e.overwriteFile(o, f, b)
 	}
-	return
+	return createFile(o, f, b)
 }
 
-func (e *export) overwriteFile(o output.Bus, fileName string, content []byte) (ok bool) {
+func (e *export) overwriteFile(o output.Bus, f string, b []byte) (ok bool) {
 	if !*e.overwrite {
-		o.WriteCanonicalError("The file %q exists; set the %s flag to true if you want it overwritten", fileName, overwriteFlag)
+		o.WriteCanonicalError("The file %q exists; set the %s flag to true if you want it overwritten", f, overwriteFlag)
 		o.Log(output.Error, "overwrite is not permitted", map[string]any{
 			"-" + overwriteFlag: false,
-			"fileName":          fileName,
+			"fileName":          f,
 		})
 	} else {
-		backupFileName := fileName + "-backup"
-		if err := os.Rename(fileName, backupFileName); err != nil {
-			o.WriteCanonicalError("The file %q cannot be renamed to %q: %v", fileName, backupFileName, err)
+		backup := f + "-backup"
+		if err := os.Rename(f, backup); err != nil {
+			o.WriteCanonicalError("The file %q cannot be renamed to %q: %v", f, backup, err)
 			o.Log(output.Error, "rename failed", map[string]any{
-				"error":    err,
-				"original": fileName,
-				"backup":   backupFileName,
+				"error": err,
+				"old":   f,
+				"new":   backup,
 			})
-		} else if createFile(o, fileName, content) {
-			os.Remove(backupFileName)
+		} else if createFile(o, f, b) {
+			os.Remove(backup)
 			ok = true
 		}
 	}
 	return
 }
 
-func createFile(o output.Bus, fileName string, content []byte) bool {
-	if err := os.WriteFile(fileName, content, internal.StdFilePermissions); err != nil {
-		reportFileCreationFailure(o, exportCommandName, fileName, err)
+func createFile(o output.Bus, f string, content []byte) bool {
+	if err := os.WriteFile(f, content, internal.StdFilePermissions); err != nil {
+		reportFileCreationFailure(o, exportCommandName, f, err)
 		return false
 	}
 	return true

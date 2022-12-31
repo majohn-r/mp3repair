@@ -9,58 +9,50 @@ import (
 	"github.com/majohn-r/output"
 )
 
-var (
-	fExportFlag = false
-	tExportFlag = true
-)
-
 func Test_createFile(t *testing.T) {
-	fnName := "createFile()"
+	const fnName = "createFile()"
 	testDir := "createFile"
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, testDir)
-	}()
 	unwritable := filepath.Join(testDir, "unwritable.txt")
 	if err := internal.Mkdir(unwritable); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, unwritable, err)
 	}
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, testDir)
+	}()
 	type args struct {
-		fileName string
-		content  []byte
+		f string
+		b []byte
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want bool
 		output.WantedRecording
 	}{
-		{
-			name: "cannot be written",
+		"cannot be written": {
 			args: args{
-				fileName: unwritable,
-				content:  []byte{1, 2, 3, 4, 5},
+				f: unwritable,
+				b: []byte{1, 2, 3, 4, 5},
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "The file \"createFile\\\\unwritable.txt\" cannot be created: open createFile\\unwritable.txt: is a directory.\n",
 				Log:   "level='error' command='export' error='open createFile\\unwritable.txt: is a directory' fileName='createFile\\unwritable.txt' msg='cannot create file'\n",
 			},
 		},
-		{
-			name: "can be written",
+		"can be written": {
 			args: args{
-				fileName: filepath.Join(testDir, "write this"),
-				content:  []byte{1, 2, 3, 4, 5},
+				f: filepath.Join(testDir, "write this"),
+				b: []byte{1, 2, 3, 4, 5},
 			},
 			want: true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			if got := createFile(o, tt.args.fileName, tt.args.content); got != tt.want {
+			if got := createFile(o, tt.args.f, tt.args.b); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -73,14 +65,13 @@ func Test_createFile(t *testing.T) {
 }
 
 func Test_export_overwriteFile(t *testing.T) {
-	fnName := "export.overwriteFile()"
+	const fnName = "export.overwriteFile()"
+	fFlag := false
+	tFlag := true
 	testDir := "overwriteFile"
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, testDir)
-	}()
 	existingFile1 := filepath.Join(testDir, "existing1")
 	if err := internal.CreateFileForTestingWithContent(testDir, "existing1", []byte{0, 1, 2, 3}); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, existingFile1, err)
@@ -96,52 +87,51 @@ func Test_export_overwriteFile(t *testing.T) {
 	if err := internal.CreateFileForTestingWithContent(testDir, "existing2-backup", []byte{0, 1, 2, 3, 4}); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, existingFile2+"-backup", err)
 	}
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, testDir)
+	}()
 	type args struct {
-		fileName string
-		content  []byte
+		f string
+		b []byte
 	}
-	tests := []struct {
-		name string
-		ex   *export
+	tests := map[string]struct {
+		ex *export
 		args
-		wantOk bool
+		want bool
 		output.WantedRecording
 	}{
-		{
-			name: "not permitted",
-			ex:   &export{overwrite: &fExportFlag},
-			args: args{fileName: "foo"},
+		"not permitted": {
+			ex:   &export{overwrite: &fFlag},
+			args: args{f: "foo"},
 			WantedRecording: output.WantedRecording{
 				Error: "The file \"foo\" exists; set the overwrite flag to true if you want it overwritten.\n",
 				Log:   "level='error' -overwrite='false' fileName='foo' msg='overwrite is not permitted'\n",
 			},
 		},
-		{
-			name: "permitted but cannot backup existing file",
-			ex:   &export{overwrite: &tExportFlag},
+		"permitted but cannot backup existing file": {
+			ex: &export{overwrite: &tFlag},
 			args: args{
-				fileName: existingFile1,
+				f: existingFile1,
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "The file \"overwriteFile\\\\existing1\" cannot be renamed to \"overwriteFile\\\\existing1-backup\": rename overwriteFile\\existing1 overwriteFile\\existing1-backup: Access is denied.\n",
-				Log:   "level='error' backup='overwriteFile\\existing1-backup' error='rename overwriteFile\\existing1 overwriteFile\\existing1-backup: Access is denied.' original='overwriteFile\\existing1' msg='rename failed'\n",
+				Log:   "level='error' error='rename overwriteFile\\existing1 overwriteFile\\existing1-backup: Access is denied.' new='overwriteFile\\existing1-backup' old='overwriteFile\\existing1' msg='rename failed'\n",
 			},
 		},
-		{
-			name: "permitted and successful",
-			ex:   &export{overwrite: &tExportFlag},
+		"permitted and successful": {
+			ex: &export{overwrite: &tFlag},
 			args: args{
-				fileName: existingFile2,
-				content:  []byte{2, 3, 4, 5, 6},
+				f: existingFile2,
+				b: []byte{2, 3, 4, 5, 6},
 			},
-			wantOk: true,
+			want: true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			if gotOk := tt.ex.overwriteFile(o, tt.args.fileName, tt.args.content); gotOk != tt.wantOk {
-				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
+			if gotOk := tt.ex.overwriteFile(o, tt.args.f, tt.args.b); gotOk != tt.want {
+				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.want)
 			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
@@ -153,16 +143,12 @@ func Test_export_overwriteFile(t *testing.T) {
 }
 
 func Test_export_writeDefaults(t *testing.T) {
-	fnName := "export.writeDefaults()"
+	const fnName = "export.writeDefaults()"
 	oldAppPath := internal.ApplicationPath()
 	testDir := "writeDefaults"
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, testDir)
-		internal.SetApplicationPathForTesting(oldAppPath)
-	}()
 	testDir2 := filepath.Join(testDir, "2")
 	if err := internal.Mkdir(testDir2); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir2, err)
@@ -174,36 +160,38 @@ func Test_export_writeDefaults(t *testing.T) {
 	if err := internal.CreateFileForTesting(occupiedMp3Path, internal.DefaultConfigFileName); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, filepath.Join(occupiedMp3Path, internal.DefaultConfigFileName), err)
 	}
+	tFlag := true
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, testDir)
+		internal.SetApplicationPathForTesting(oldAppPath)
+	}()
 	type args struct {
-		content []byte
+		b []byte
 	}
-	tests := []struct {
-		name    string
+	tests := map[string]struct {
 		ex      *export
 		appPath string
 		args
 		wantOk bool
 		output.WantedRecording
 	}{
-		{
-			name:    "valid location, not pre-existing",
+		"valid location, not pre-existing": {
 			appPath: testDir,
-			args:    args{content: []byte{1, 2, 3, 4}},
+			args:    args{b: []byte{1, 2, 3, 4}},
 			wantOk:  true,
 		},
-		{
-			name:    "valid location, pre-existing",
+		"valid location, pre-existing": {
 			appPath: occupiedMp3Path,
-			ex:      &export{overwrite: &tExportFlag},
-			args:    args{content: []byte{1, 2, 3, 4}},
+			ex:      &export{overwrite: &tFlag},
+			args:    args{b: []byte{1, 2, 3, 4}},
 			wantOk:  true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			internal.SetApplicationPathForTesting(tt.appPath)
 			o := output.NewRecorder()
-			if gotOk := tt.ex.writeDefaults(o, tt.args.content); gotOk != tt.wantOk {
+			if gotOk := tt.ex.writeDefaults(o, tt.args.b); gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -217,6 +205,8 @@ func Test_export_writeDefaults(t *testing.T) {
 
 func Test_export_exportDefaults(t *testing.T) {
 	const fnName = "export.exportDefaults()"
+	fFlag := false
+	tFlag := true
 	testDir := "exportDefaults"
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
@@ -226,25 +216,22 @@ func Test_export_exportDefaults(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, testDir)
 		internal.SetApplicationPathForTesting(oldAppPath)
 	}()
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		ex   *export
 		want bool
 		output.WantedRecording
 	}{
-		{
-			name: "without permission",
-			ex:   &export{defaults: &fExportFlag},
+		"without permission": {
+			ex:   &export{defaults: &fFlag},
 			want: true,
 		},
-		{
-			name: "with permission",
-			ex:   &export{defaults: &tExportFlag},
+		"with permission": {
+			ex:   &export{defaults: &tFlag},
 			want: true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			if got := tt.ex.exportDefaults(o); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
@@ -260,12 +247,10 @@ func Test_export_exportDefaults(t *testing.T) {
 
 func Test_defaultsContent(t *testing.T) {
 	const fnName = "defaultsContent()"
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		want string
 	}{
-		{
-			name: "usual test case",
+		"usual test case": {
 			want: "check:\n" +
 				"    empty: false\n" +
 				"    gaps: false\n" +
@@ -297,8 +282,8 @@ func Test_defaultsContent(t *testing.T) {
 				"    timeout: 10\n",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := string(defaultsContent()); got != tt.want {
 				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
@@ -325,18 +310,16 @@ func Test_export_Exec(t *testing.T) {
 	type args struct {
 		args []string
 	}
-	tests := []struct {
-		name string
-		ex   *export
+	tests := map[string]struct {
+		ex *export
 		args
-		wantOk bool
+		want bool
 		output.WantedRecording
 	}{
-		{
-			name:   "need help",
-			ex:     makeExportForTesting(),
-			args:   args{args: []string{"--help"}},
-			wantOk: false,
+		"need help": {
+			ex:   makeExportForTesting(),
+			args: args{args: []string{"--help"}},
+			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "Usage of export:\n" +
 					"  -defaults\n" +
@@ -346,28 +329,26 @@ func Test_export_Exec(t *testing.T) {
 				Log: "level='error' arguments='[--help]' msg='flag: help requested'\n",
 			},
 		},
-		{
-			name:   "nothing to do",
-			ex:     makeExportForTesting(),
-			args:   args{args: []string{}},
-			wantOk: false,
+		"nothing to do": {
+			ex:   makeExportForTesting(),
+			args: args{args: []string{}},
+			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "You disabled all functionality for the command \"export\".\n",
 				Log:   "level='error' -defaults='false' -overwrite='false' command='export' msg='the user disabled all functionality'\n",
 			},
 		},
-		{
-			name:   "work to do",
-			ex:     makeExportForTesting(),
-			args:   args{args: []string{"-defaults=true", "-overwrite=true"}},
-			wantOk: true,
+		"work to do": {
+			ex:   makeExportForTesting(),
+			args: args{args: []string{"-defaults=true", "-overwrite=true"}},
+			want: true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			if gotOk := tt.ex.Exec(o, tt.args.args); gotOk != tt.wantOk {
-				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
+			if gotOk := tt.ex.Exec(o, tt.args.args); gotOk != tt.want {
+				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.want)
 			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
@@ -384,21 +365,18 @@ func Test_newExportCommand(t *testing.T) {
 		c    *internal.Configuration
 		fSet *flag.FlagSet
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
-		want  *export
-		want1 bool
+		want   *export
+		wantOk bool
 		output.WantedRecording
 	}{
-		{
-			name:  "normal",
-			args:  args{c: internal.EmptyConfiguration(), fSet: flag.NewFlagSet(exportCommandName, flag.ContinueOnError)},
-			want:  &export{},
-			want1: true,
+		"normal": {
+			args:   args{c: internal.EmptyConfiguration(), fSet: flag.NewFlagSet(exportCommandName, flag.ContinueOnError)},
+			want:   &export{},
+			wantOk: true,
 		},
-		{
-			name: "abnormal",
+		"abnormal": {
 			args: args{
 				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					exportCommandName: map[string]any{
@@ -408,8 +386,8 @@ func Test_newExportCommand(t *testing.T) {
 				}),
 				fSet: flag.NewFlagSet(exportCommandName, flag.ContinueOnError),
 			},
-			want:  nil,
-			want1: false,
+			want:   nil,
+			wantOk: false,
 			WantedRecording: output.WantedRecording{
 				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"export\": invalid boolean value \"Beats me\" for -defaults: parse error.\n" +
 					"The configuration file \"defaults.yaml\" contains an invalid value for \"export\": invalid boolean value \"12\" for -overwrite: parse error.\n",
@@ -418,17 +396,17 @@ func Test_newExportCommand(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			got, got1 := newExportCommand(o, tt.args.c, tt.args.fSet)
+			got, gotOk := newExportCommand(o, tt.args.c, tt.args.fSet)
 			if got == nil && tt.want != nil {
 				t.Errorf("%s got = %v, want %v", fnName, got, tt.want)
 			} else if got != nil && tt.want == nil {
 				t.Errorf("%s got = %v, want %v", fnName, got, tt.want)
 			}
-			if got1 != tt.want1 {
-				t.Errorf("%s got1 = %v, want %v", fnName, got1, tt.want1)
+			if gotOk != tt.wantOk {
+				t.Errorf("%s got1 = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
