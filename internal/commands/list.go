@@ -74,9 +74,9 @@ type listDefaults struct {
 }
 
 func newListCommand(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (*list, bool) {
-	defaults, defaultsOk := evaluateListDefaults(o, c.SubConfiguration(listCommandName), listCommandName)
+	defaults, ok := evaluateListDefaults(o, c.SubConfiguration(listCommandName))
 	sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet)
-	if defaultsOk && sFlagsOk {
+	if ok && sFlagsOk {
 		albumUsage := internal.DecorateBoolFlagUsage("include album names in listing", defaults.includeAlbums)
 		artistUsage := internal.DecorateBoolFlagUsage("include artist names in listing", defaults.includeArtists)
 		trackUsage := internal.DecorateBoolFlagUsage("include track names in listing", defaults.includeTracks)
@@ -98,43 +98,43 @@ func newListCommand(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet)
 	return nil, false
 }
 
-func evaluateListDefaults(o output.Bus, c *internal.Configuration, name string) (defaults listDefaults, ok bool) {
+func evaluateListDefaults(o output.Bus, c *internal.Configuration) (defaults listDefaults, ok bool) {
 	ok = true
 	defaults = listDefaults{}
 	var err error
 	defaults.includeAlbums, err = c.BoolDefault(includeAlbumsFlag, defaultIncludeAlbums)
 	if err != nil {
-		reportBadDefault(o, name, err)
+		reportBadDefault(o, listCommandName, err)
 		ok = false
 	}
 	defaults.includeArtists, err = c.BoolDefault(includeArtistsFlag, defaultIncludeArtists)
 	if err != nil {
-		reportBadDefault(o, name, err)
+		reportBadDefault(o, listCommandName, err)
 		ok = false
 	}
 	defaults.includeTracks, err = c.BoolDefault(includeTracksFlag, defaultIncludeTracks)
 	if err != nil {
-		reportBadDefault(o, name, err)
+		reportBadDefault(o, listCommandName, err)
 		ok = false
 	}
 	defaults.annotateTracks, err = c.BoolDefault(annotateListingsFlag, defaultAnnotateListings)
 	if err != nil {
-		reportBadDefault(o, name, err)
+		reportBadDefault(o, listCommandName, err)
 		ok = false
 	}
 	defaults.diagnostics, err = c.BoolDefault(diagnosticListingFlag, defaultDiagnosticListing)
 	if err != nil {
-		reportBadDefault(o, name, err)
+		reportBadDefault(o, listCommandName, err)
 		ok = false
 	}
 	defaults.details, err = c.BoolDefault(detailsListingFlag, defaultDetailsListing)
 	if err != nil {
-		reportBadDefault(o, name, err)
+		reportBadDefault(o, listCommandName, err)
 		ok = false
 	}
 	defaults.sorting, err = c.StringDefault(trackSortingFlag, defaultTrackSorting)
 	if err != nil {
-		reportBadDefault(o, name, err)
+		reportBadDefault(o, listCommandName, err)
 		ok = false
 	}
 	return
@@ -171,9 +171,9 @@ func (l *list) runCommand(o output.Bus, s *files.Search) (ok bool) {
 			o.Log(output.Info, "one or more flags were overridden", l.logFields())
 		}
 	}
-	artists, ok := s.LoadData(o)
-	if ok {
+	if artists, artistsLoaded := s.LoadData(o); artistsLoaded {
 		l.outputArtists(o, artists)
+		ok = true
 	}
 	return
 }
@@ -181,22 +181,21 @@ func (l *list) runCommand(o output.Bus, s *files.Search) (ok bool) {
 func (l *list) outputArtists(o output.Bus, artists []*files.Artist) {
 	switch *l.includeArtists {
 	case true:
-		artistsByArtistNames := make(map[string]*files.Artist)
-		var artistNames []string
-		for _, artist := range artists {
-			artistsByArtistNames[artist.Name()] = artist
-			artistNames = append(artistNames, artist.Name())
+		m := make(map[string]*files.Artist)
+		var names []string
+		for _, a := range artists {
+			m[a.Name()] = a
+			names = append(names, a.Name())
 		}
-		sort.Strings(artistNames)
-		for _, artistName := range artistNames {
-			o.WriteConsole("Artist: %s\n", artistName)
-			artist := artistsByArtistNames[artistName]
-			l.outputAlbums(o, artist.Albums(), "  ")
+		sort.Strings(names)
+		for _, s := range names {
+			o.WriteConsole("Artist: %s\n", s)
+			l.outputAlbums(o, m[s].Albums(), "  ")
 		}
 	case false:
 		var albums []*files.Album
-		for _, artist := range artists {
-			albums = append(albums, artist.Albums()...)
+		for _, a := range artists {
+			albums = append(albums, a.Albums()...)
 		}
 		l.outputAlbums(o, albums, "")
 	}
@@ -205,29 +204,28 @@ func (l *list) outputArtists(o output.Bus, artists []*files.Artist) {
 func (l *list) outputAlbums(o output.Bus, albums []*files.Album, prefix string) {
 	switch *l.includeAlbums {
 	case true:
-		albumsByAlbumName := make(map[string]*files.Album)
-		var albumNames []string
-		for _, album := range albums {
-			var name string
+		m := make(map[string]*files.Album)
+		var names []string
+		for _, a := range albums {
+			var s string
 			switch {
 			case !*l.includeArtists && *l.annotateListings:
-				name = fmt.Sprintf("%q by %q", album.Name(), album.RecordingArtistName())
+				s = fmt.Sprintf("%q by %q", a.Name(), a.RecordingArtistName())
 			default:
-				name = album.Name()
+				s = a.Name()
 			}
-			albumsByAlbumName[name] = album
-			albumNames = append(albumNames, name)
+			m[s] = a
+			names = append(names, s)
 		}
-		sort.Strings(albumNames)
-		for _, albumName := range albumNames {
-			o.WriteConsole("%sAlbum: %s\n", prefix, albumName)
-			album := albumsByAlbumName[albumName]
-			l.outputTracks(o, album.Tracks(), prefix+"  ")
+		sort.Strings(names)
+		for _, s := range names {
+			o.WriteConsole("%sAlbum: %s\n", prefix, s)
+			l.outputTracks(o, m[s].Tracks(), prefix+"  ")
 		}
 	case false:
 		var tracks []*files.Track
-		for _, album := range albums {
-			tracks = append(tracks, album.Tracks()...)
+		for _, a := range albums {
+			tracks = append(tracks, a.Tracks()...)
 		}
 		l.outputTracks(o, tracks, prefix)
 	}
@@ -242,8 +240,8 @@ func (l *list) validateTrackSorting(o output.Bus) (ok bool) {
 				"-" + trackSortingFlag:  *l.trackSorting,
 				"-" + includeAlbumsFlag: *l.includeAlbums,
 			})
-			preferredValue := alphabeticSorting
-			l.trackSorting = &preferredValue
+			v := alphabeticSorting
+			l.trackSorting = &v
 		}
 	case alphabeticSorting:
 		ok = true
@@ -253,14 +251,14 @@ func (l *list) validateTrackSorting(o output.Bus) (ok bool) {
 			"command":              listCommandName,
 			"-" + trackSortingFlag: *l.trackSorting,
 		})
-		var preferredValue string
+		var v string
 		switch *l.includeAlbums {
 		case true:
-			preferredValue = numericSorting
+			v = numericSorting
 		case false:
-			preferredValue = alphabeticSorting
+			v = alphabeticSorting
 		}
-		l.trackSorting = &preferredValue
+		l.trackSorting = &v
 	}
 	return
 }
@@ -271,53 +269,51 @@ func (l *list) outputTracks(o output.Bus, tracks []*files.Track, prefix string) 
 	}
 	switch *l.trackSorting {
 	case numericSorting:
-		trackNamesNumeric := make(map[int]string)
-		tracksNumeric := make(map[int]*files.Track)
-		var trackNumbers []int
-		for _, track := range tracks {
-			trackNumbers = append(trackNumbers, track.Number())
-			trackNamesNumeric[track.Number()] = track.Name()
-			tracksNumeric[track.Number()] = track
+		m := make(map[int]*files.Track)
+		var numbers []int
+		for _, t := range tracks {
+			numbers = append(numbers, t.Number())
+			m[t.Number()] = t
 		}
-		sort.Ints(trackNumbers)
-		for _, trackNumber := range trackNumbers {
-			o.WriteConsole("%s%2d. %s\n", prefix, trackNumber, trackNamesNumeric[trackNumber])
-			l.outputTrackDetails(o, tracksNumeric[trackNumber], prefix+"  ")
-			l.outputTrackDiagnostics(o, tracksNumeric[trackNumber], prefix+"  ")
+		sort.Ints(numbers)
+		for _, n := range numbers {
+			o.WriteConsole("%s%2d. %s\n", prefix, n, m[n].Name())
+			l.outputTrackDetails(o, m[n], prefix+"  ")
+			l.outputTrackDiagnostics(o, m[n], prefix+"  ")
 		}
 	case alphabeticSorting:
-		var trackNames []string
-		tracksByName := make(map[string]*files.Track)
-		for _, track := range tracks {
-			var components []string
-			components = append(components, track.Name())
+		var annotatedNames []string
+		m := make(map[string]*files.Track)
+		for _, t := range tracks {
+			var s []string
+			s = append(s, t.Name())
 			if *l.annotateListings && !(*l.includeAlbums && *l.includeArtists) {
 				if !*l.includeAlbums {
-					components = append(components, []string{"on", track.AlbumName()}...)
+					s = append(s, []string{"on", t.AlbumName()}...)
 					if !*l.includeArtists {
-						components = append(components, []string{"by", track.RecordingArtist()}...)
+						s = append(s, []string{"by", t.RecordingArtist()}...)
 					}
 				}
 			}
-			var trackName string
-			if len(components) > 1 {
+			var name string
+			if len(s) > 1 {
 				var c2 []string
-				c2 = append(c2, fmt.Sprintf("%q", components[0]))
-				for k := 1; k < len(components); k += 2 {
-					c2 = append(c2, components[k], fmt.Sprintf("%q", components[k+1]))
+				c2 = append(c2, fmt.Sprintf("%q", s[0]))
+				for k := 1; k < len(s); k += 2 {
+					c2 = append(c2, s[k], fmt.Sprintf("%q", s[k+1]))
 				}
-				trackName = strings.Join(c2, " ")
+				name = strings.Join(c2, " ")
 			} else {
-				trackName = components[0]
+				name = s[0]
 			}
-			trackNames = append(trackNames, trackName)
-			tracksByName[trackName] = track
+			annotatedNames = append(annotatedNames, name)
+			m[name] = t
 		}
-		sort.Strings(trackNames)
-		for _, trackName := range trackNames {
-			o.WriteConsole("%s%s\n", prefix, trackName)
-			l.outputTrackDetails(o, tracksByName[trackName], prefix+"  ")
-			l.outputTrackDiagnostics(o, tracksByName[trackName], prefix+"  ")
+		sort.Strings(annotatedNames)
+		for _, s := range annotatedNames {
+			o.WriteConsole("%s%s\n", prefix, s)
+			l.outputTrackDetails(o, m[s], prefix+"  ")
+			l.outputTrackDiagnostics(o, m[s], prefix+"  ")
 		}
 	}
 }
@@ -356,11 +352,11 @@ func (l *list) outputTrackDiagnostics(o output.Bus, t *files.Track, prefix strin
 				o.WriteConsole("%sID3V2 %s\n", prefix, frame)
 			}
 		}
-		if id3v1Data, err := t.ID3V1Diagnostics(); err != nil {
+		if v1, err := t.ID3V1Diagnostics(); err != nil {
 			files.ReportID3V1TagError(o, t, err)
 		} else {
-			for _, datum := range id3v1Data {
-				o.WriteConsole("%sID3V1 %s\n", prefix, datum)
+			for _, s := range v1 {
+				o.WriteConsole("%sID3V1 %s\n", prefix, s)
 			}
 		}
 	}

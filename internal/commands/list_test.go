@@ -15,58 +15,54 @@ import (
 )
 
 func Test_list_validateTrackSorting(t *testing.T) {
-	fnName := "list.validateTrackSorting()"
-	tests := []struct {
-		name          string
+	const fnName = "list.validateTrackSorting()"
+	tests := map[string]struct {
 		sortingInput  string
 		includeAlbums bool
-		wantSorting   string
+		want          string
 		output.WantedRecording
 	}{
-		{name: "alpha sorting with albums", sortingInput: "alpha", includeAlbums: true, wantSorting: "alpha"},
-		{name: "alpha sorting without albums", sortingInput: "alpha", includeAlbums: false, wantSorting: "alpha"},
-		{name: "numeric sorting with albums", sortingInput: "numeric", includeAlbums: true, wantSorting: "numeric"},
-		{
-			name:          "numeric sorting without albums",
+		"alpha sorting with albums":    {sortingInput: "alpha", includeAlbums: true, want: "alpha"},
+		"alpha sorting without albums": {sortingInput: "alpha", includeAlbums: false, want: "alpha"},
+		"numeric sorting with albums":  {sortingInput: "numeric", includeAlbums: true, want: "numeric"},
+		"numeric sorting without albums": {
 			sortingInput:  "numeric",
 			includeAlbums: false,
-			wantSorting:   "alpha",
+			want:          "alpha",
 			WantedRecording: output.WantedRecording{
 				Error: "The \"-sort\" value you specified, \"numeric\", is not valid unless \"-includeAlbums\" is true; track sorting will be alphabetic.\n",
 				Log:   "level='error' -includeAlbums='false' -sort='numeric' msg='numeric track sorting is not applicable'\n",
 			},
 		},
-		{
-			name:          "invalid sorting with albums",
+		"invalid sorting with albums": {
 			sortingInput:  "nonsense",
 			includeAlbums: true,
-			wantSorting:   "numeric",
+			want:          "numeric",
 			WantedRecording: output.WantedRecording{
 				Error: "The \"-sort\" value you specified, \"nonsense\", is not valid.\n",
 				Log:   "level='error' -sort='nonsense' command='list' msg='flag value is not valid'\n",
 			},
 		},
-		{
-			name:          "invalid sorting without albums",
+		"invalid sorting without albums": {
 			sortingInput:  "nonsense",
 			includeAlbums: false,
-			wantSorting:   "alpha",
+			want:          "alpha",
 			WantedRecording: output.WantedRecording{
 				Error: "The \"-sort\" value you specified, \"nonsense\", is not valid.\n",
 				Log:   "level='error' -sort='nonsense' command='list' msg='flag value is not valid'\n",
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			fs := flag.NewFlagSet("list", flag.ContinueOnError)
 			o := output.NewRecorder()
-			listCommand, _ := newListCommand(o, internal.EmptyConfiguration(), fs)
-			listCommand.trackSorting = &tt.sortingInput
-			listCommand.includeAlbums = &tt.includeAlbums
-			listCommand.validateTrackSorting(o)
-			if *listCommand.trackSorting != tt.wantSorting {
-				t.Errorf("%s: got %q, want %q", fnName, *listCommand.trackSorting, tt.wantSorting)
+			l, _ := newListCommand(o, internal.EmptyConfiguration(), fs)
+			l.trackSorting = &tt.sortingInput
+			l.includeAlbums = &tt.includeAlbums
+			l.validateTrackSorting(o)
+			if *l.trackSorting != tt.want {
+				t.Errorf("%s: got %q, want %q", fnName, *l.trackSorting, tt.want)
 			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
@@ -84,40 +80,35 @@ type testTrack struct {
 }
 
 func generateListing(artists, albums, tracks, annotated, sortNumerically bool) string {
-	var trackCollection []*testTrack
+	var ts []*testTrack
 	for j := 0; j < 10; j++ {
 		artist := internal.CreateArtistNameForTesting(j)
 		for k := 0; k < 10; k++ {
 			album := internal.CreateAlbumNameForTesting(k)
 			for m := 0; m < 10; m++ {
 				track := internal.CreateTrackNameForTesting(m)
-				trackCollection = append(trackCollection, &testTrack{
-					artistName: artist,
-					albumName:  album,
-					trackName:  track,
-				})
+				ts = append(ts, &testTrack{artistName: artist, albumName: album, trackName: track})
 			}
 		}
 	}
 	var listing []string
 	switch artists {
 	case true:
-		tracksByArtist := make(map[string][]*testTrack)
-		for _, tt := range trackCollection {
-			artistName := tt.artistName
-			tracksByArtist[artistName] = append(tracksByArtist[artistName], tt)
+		m := make(map[string][]*testTrack)
+		for _, tt := range ts {
+			m[tt.artistName] = append(m[tt.artistName], tt)
 		}
-		var artistNames []string
-		for key := range tracksByArtist {
-			artistNames = append(artistNames, key)
+		var names []string
+		for key := range m {
+			names = append(names, key)
 		}
-		sort.Strings(artistNames)
-		for _, artistName := range artistNames {
-			listing = append(listing, fmt.Sprintf("Artist: %s", artistName))
-			listing = append(listing, generateAlbumListings(tracksByArtist[artistName], "  ", artists, albums, tracks, annotated, sortNumerically)...)
+		sort.Strings(names)
+		for _, s := range names {
+			listing = append(listing, fmt.Sprintf("Artist: %s", s))
+			listing = append(listing, generateAlbumListings(m[s], "  ", artists, albums, tracks, annotated, sortNumerically)...)
 		}
 	case false:
-		listing = append(listing, generateAlbumListings(trackCollection, "", artists, albums, tracks, annotated, sortNumerically)...)
+		listing = append(listing, generateAlbumListings(ts, "", artists, albums, tracks, annotated, sortNumerically)...)
 	}
 	if len(listing) != 0 {
 		listing = append(listing, "") // force trailing newline
@@ -132,46 +123,46 @@ type albumType struct {
 
 type albumTypes []albumType
 
-func (a albumTypes) Len() int {
-	return len(a)
+func (aT albumTypes) Len() int {
+	return len(aT)
 }
 
-func (a albumTypes) Less(i, j int) bool {
-	if a[i].albumName == a[j].albumName {
-		return a[i].artistName < a[j].artistName
+func (aT albumTypes) Less(i, j int) bool {
+	if aT[i].albumName == aT[j].albumName {
+		return aT[i].artistName < aT[j].artistName
 	}
-	return a[i].albumName < a[j].albumName
+	return aT[i].albumName < aT[j].albumName
 }
 
-func (a albumTypes) Swap(i, j int) {
-	a[i], a[j] = a[j], a[i]
+func (aT albumTypes) Swap(i, j int) {
+	aT[i], aT[j] = aT[j], aT[i]
 }
 
 func generateAlbumListings(testTracks []*testTrack, spacer string, artists, albums, tracks, annotated, sortNumerically bool) []string {
 	var listing []string
 	switch albums {
 	case true:
-		albumsToList := make(map[albumType][]*testTrack)
+		m := make(map[albumType][]*testTrack)
 		for _, tt := range testTracks {
-			albumName := tt.albumName
-			var albumTitle string
+			name := tt.albumName
+			var title string
 			if annotated && !artists {
-				albumTitle = fmt.Sprintf("%q by %q", albumName, tt.artistName)
+				title = fmt.Sprintf("%q by %q", name, tt.artistName)
 			} else {
-				albumTitle = albumName
+				title = name
 			}
-			album := albumType{artistName: tt.artistName, albumName: albumTitle}
-			albumsToList[album] = append(albumsToList[album], tt)
+			aT := albumType{artistName: tt.artistName, albumName: title}
+			m[aT] = append(m[aT], tt)
 		}
-		var albumNames albumTypes
-		for key := range albumsToList {
-			albumNames = append(albumNames, key)
+		var names albumTypes
+		for key := range m {
+			names = append(names, key)
 		}
 
-		sort.Sort(albumNames)
-		for _, albumTitle := range albumNames {
-			listing = append(listing, fmt.Sprintf("%sAlbum: %s", spacer, albumTitle.albumName))
-			listing = append(listing, generateTrackListings(albumsToList[albumTitle], spacer+"  ", artists, albums, tracks, annotated, sortNumerically)...)
+		sort.Sort(names)
+		for _, aT := range names {
+			listing = append(listing, fmt.Sprintf("%sAlbum: %s", spacer, aT.albumName))
+			listing = append(listing, generateTrackListings(m[aT], spacer+"  ", artists, albums, tracks, annotated, sortNumerically)...)
 		}
 	case false:
 		listing = append(listing, generateTrackListings(testTracks, spacer, artists, albums, tracks, annotated, sortNumerically)...)
@@ -182,26 +173,25 @@ func generateAlbumListings(testTracks []*testTrack, spacer string, artists, albu
 func generateTrackListings(testTracks []*testTrack, spacer string, artists, albums, tracks, annotated, sortNumerically bool) []string {
 	var listing []string
 	if tracks {
-		var tracksToList []string
+		var tNames []string
 		for _, tt := range testTracks {
-			trackName, trackNumber := files.ParseTrackNameForTesting(tt.trackName)
-			key := trackName
+			name, number := files.ParseTrackNameForTesting(tt.trackName)
+			key := name
 			if annotated {
 				if !albums {
-					key = fmt.Sprintf("%q on %q by %q", trackName, tt.albumName, tt.artistName)
-					if !artists {
-					} else {
-						key = fmt.Sprintf("%q on %q", trackName, tt.albumName)
+					key = fmt.Sprintf("%q on %q by %q", name, tt.albumName, tt.artistName)
+					if artists {
+						key = fmt.Sprintf("%q on %q", name, tt.albumName)
 					}
 				}
 			}
 			if sortNumerically && albums {
-				key = fmt.Sprintf("%2d. %s", trackNumber, trackName)
+				key = fmt.Sprintf("%2d. %s", number, name)
 			}
-			tracksToList = append(tracksToList, key)
+			tNames = append(tNames, key)
 		}
-		sort.Strings(tracksToList)
-		for _, trackName := range tracksToList {
+		sort.Strings(tNames)
+		for _, trackName := range tNames {
 			listing = append(listing, fmt.Sprintf("%s%s", spacer, trackName))
 		}
 	}
@@ -214,7 +204,7 @@ func newListForTesting() *list {
 }
 
 func Test_list_Exec(t *testing.T) {
-	fnName := "list.Exec()"
+	const fnName = "list.Exec()"
 	// generate test data
 	topDir := "loadTest"
 	if err := internal.Mkdir(topDir); err != nil {
@@ -227,24 +217,22 @@ func Test_list_Exec(t *testing.T) {
 		Set:   true,
 	}
 	home.RestoreForTesting()
+	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
+		t.Errorf("%s error populating %q: %v", fnName, topDir, err)
+	}
 	defer func() {
 		savedHome.RestoreForTesting()
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
-	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
-		t.Errorf("%s error populating %q: %v", fnName, topDir, err)
-	}
 	type args struct {
 		args []string
 	}
-	tests := []struct {
-		name string
-		l    *list
+	tests := map[string]struct {
+		l *list
 		args
 		output.WantedRecording
 	}{
-		{
-			name: "help",
+		"help": {
 			l:    newListForTesting(),
 			args: args{[]string{"--help"}},
 			WantedRecording: output.WantedRecording{
@@ -274,9 +262,8 @@ func Test_list_Exec(t *testing.T) {
 				Log: "level='error' arguments='[--help]' msg='flag: help requested'\n",
 			},
 		},
-		{
-			name: "no output",
-			l:    newListForTesting(),
+		"no output": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -292,9 +279,8 @@ func Test_list_Exec(t *testing.T) {
 			},
 		},
 		// tracks only
-		{
-			name: "unannotated tracks only",
-			l:    newListForTesting(),
+		"unannotated tracks only": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -312,9 +298,8 @@ func Test_list_Exec(t *testing.T) {
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
-		{
-			name: "annotated tracks only",
-			l:    newListForTesting(),
+		"annotated tracks only": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -332,9 +317,8 @@ func Test_list_Exec(t *testing.T) {
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
-		{
-			name: "unannotated tracks only with numeric sorting",
-			l:    newListForTesting(),
+		"unannotated tracks only with numeric sorting": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -353,9 +337,8 @@ func Test_list_Exec(t *testing.T) {
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
-		{
-			name: "annotated tracks only with numeric sorting",
-			l:    newListForTesting(),
+		"annotated tracks only with numeric sorting": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -375,9 +358,8 @@ func Test_list_Exec(t *testing.T) {
 			},
 		},
 		// albums only
-		{
-			name: "unannotated albums only",
-			l:    newListForTesting(),
+		"unannotated albums only": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -393,9 +375,8 @@ func Test_list_Exec(t *testing.T) {
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
-		{
-			name: "annotated albums only",
-			l:    newListForTesting(),
+		"annotated albums only": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -412,9 +393,8 @@ func Test_list_Exec(t *testing.T) {
 			},
 		},
 		// artists only
-		{
-			name: "unannotated artists only",
-			l:    newListForTesting(),
+		"unannotated artists only": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -430,9 +410,8 @@ func Test_list_Exec(t *testing.T) {
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
-		{
-			name: "annotated artists only",
-			l:    newListForTesting(),
+		"annotated artists only": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -449,9 +428,8 @@ func Test_list_Exec(t *testing.T) {
 			},
 		},
 		// albums and artists
-		{
-			name: "unannotated artists and albums only",
-			l:    newListForTesting(),
+		"unannotated artists and albums only": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -467,9 +445,8 @@ func Test_list_Exec(t *testing.T) {
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
-		{
-			name: "annotated artists and albums only",
-			l:    newListForTesting(),
+		"annotated artists and albums only": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -486,9 +463,8 @@ func Test_list_Exec(t *testing.T) {
 			},
 		},
 		// albums and tracks
-		{
-			name: "unannotated albums and tracks with alpha sorting",
-			l:    newListForTesting(),
+		"unannotated albums and tracks with alpha sorting": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -506,9 +482,8 @@ func Test_list_Exec(t *testing.T) {
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
-		{
-			name: "annotated albums and tracks with alpha sorting",
-			l:    newListForTesting(),
+		"annotated albums and tracks with alpha sorting": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -526,9 +501,8 @@ func Test_list_Exec(t *testing.T) {
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
-		{
-			name: "unannotated albums and tracks with numeric sorting",
-			l:    newListForTesting(),
+		"unannotated albums and tracks with numeric sorting": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -545,9 +519,8 @@ func Test_list_Exec(t *testing.T) {
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
-		{
-			name: "annotated albums and tracks with numeric sorting",
-			l:    newListForTesting(),
+		"annotated albums and tracks with numeric sorting": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -565,9 +538,8 @@ func Test_list_Exec(t *testing.T) {
 			},
 		},
 		// artists and tracks
-		{
-			name: "unannotated artists and tracks with alpha sorting",
-			l:    newListForTesting(),
+		"unannotated artists and tracks with alpha sorting": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -585,9 +557,8 @@ func Test_list_Exec(t *testing.T) {
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
-		{
-			name: "annotated artists and tracks with alpha sorting",
-			l:    newListForTesting(),
+		"annotated artists and tracks with alpha sorting": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -605,9 +576,8 @@ func Test_list_Exec(t *testing.T) {
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
-		{
-			name: "unannotated artists and tracks with numeric sorting",
-			l:    newListForTesting(),
+		"unannotated artists and tracks with numeric sorting": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -626,9 +596,8 @@ func Test_list_Exec(t *testing.T) {
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
-		{
-			name: "annotated artists and tracks with numeric sorting",
-			l:    newListForTesting(),
+		"annotated artists and tracks with numeric sorting": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -648,9 +617,8 @@ func Test_list_Exec(t *testing.T) {
 			},
 		},
 		// albums, artists, and tracks
-		{
-			name: "unannotated artists, albums, and tracks with alpha sorting",
-			l:    newListForTesting(),
+		"unannotated artists, albums, and tracks with alpha sorting": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -668,9 +636,8 @@ func Test_list_Exec(t *testing.T) {
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
-		{
-			name: "annotated artists, albums, and tracks with alpha sorting",
-			l:    newListForTesting(),
+		"annotated artists, albums, and tracks with alpha sorting": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -688,9 +655,8 @@ func Test_list_Exec(t *testing.T) {
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
-		{
-			name: "unannotated artists, albums, and tracks with numeric sorting",
-			l:    newListForTesting(),
+		"unannotated artists, albums, and tracks with numeric sorting": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -707,9 +673,8 @@ func Test_list_Exec(t *testing.T) {
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
 			},
 		},
-		{
-			name: "annotated artists, albums, and tracks with numeric sorting",
-			l:    newListForTesting(),
+		"annotated artists, albums, and tracks with numeric sorting": {
+			l: newListForTesting(),
 			args: args{
 				[]string{
 					"-topDir", topDir,
@@ -727,8 +692,8 @@ func Test_list_Exec(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.l.Exec(o, tt.args.args)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -741,7 +706,7 @@ func Test_list_Exec(t *testing.T) {
 }
 
 func Test_newListCommand(t *testing.T) {
-	fnName := "newListCommand()"
+	const fnName = "newListCommand()"
 	savedAppData := internal.SaveEnvVarForTesting("APPDATA")
 	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
 	oldAppPath := internal.ApplicationPath()
@@ -758,6 +723,7 @@ func Test_newListCommand(t *testing.T) {
 	if err := internal.CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
+	defaultConfig, _ := internal.ReadConfigurationFile(output.NewNilBus())
 	defer func() {
 		savedAppData.RestoreForTesting()
 		internal.SetApplicationPathForTesting(oldAppPath)
@@ -765,12 +731,10 @@ func Test_newListCommand(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	defaultConfig, _ := internal.ReadConfigurationFile(output.NewNilBus())
 	type args struct {
 		c *internal.Configuration
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		wantIncludeAlbums    bool
 		wantIncludeArtists   bool
@@ -780,8 +744,7 @@ func Test_newListCommand(t *testing.T) {
 		wantOk               bool
 		output.WantedRecording
 	}{
-		{
-			name:                 "ordinary defaults",
+		"ordinary defaults": {
 			args:                 args{c: internal.EmptyConfiguration()},
 			wantIncludeAlbums:    true,
 			wantIncludeArtists:   true,
@@ -790,8 +753,7 @@ func Test_newListCommand(t *testing.T) {
 			wantAnnotateListings: false,
 			wantOk:               true,
 		},
-		{
-			name:                 "overridden defaults",
+		"overridden defaults": {
 			args:                 args{c: defaultConfig},
 			wantIncludeAlbums:    false,
 			wantIncludeArtists:   false,
@@ -800,8 +762,7 @@ func Test_newListCommand(t *testing.T) {
 			wantAnnotateListings: true,
 			wantOk:               true,
 		},
-		{
-			name: "bad default for includeAlbums",
+		"bad default for includeAlbums": {
 			args: args{
 				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
@@ -814,8 +775,7 @@ func Test_newListCommand(t *testing.T) {
 				Log:   "level='error' error='invalid boolean value \"nope\" for -includeAlbums: parse error' section='list' msg='invalid content in configuration file'\n",
 			},
 		},
-		{
-			name: "bad default for includeArtists",
+		"bad default for includeArtists": {
 			args: args{
 				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
@@ -828,8 +788,7 @@ func Test_newListCommand(t *testing.T) {
 				Log:   "level='error' error='invalid boolean value \"yes\" for -includeArtists: parse error' section='list' msg='invalid content in configuration file'\n",
 			},
 		},
-		{
-			name: "bad default for includeTracks",
+		"bad default for includeTracks": {
 			args: args{
 				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
@@ -842,8 +801,7 @@ func Test_newListCommand(t *testing.T) {
 				Log:   "level='error' error='invalid boolean value \"sure\" for -includeTracks: parse error' section='list' msg='invalid content in configuration file'\n",
 			},
 		},
-		{
-			name: "bad default for annotate",
+		"bad default for annotate": {
 			args: args{
 				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
@@ -856,8 +814,7 @@ func Test_newListCommand(t *testing.T) {
 				Log:   "level='error' error='invalid boolean value \"+2\" for -annotate: parse error' section='list' msg='invalid content in configuration file'\n",
 			},
 		},
-		{
-			name: "bad default for details",
+		"bad default for details": {
 			args: args{
 				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
@@ -870,8 +827,7 @@ func Test_newListCommand(t *testing.T) {
 				Log:   "level='error' error='invalid boolean value \"no!\" for -details: parse error' section='list' msg='invalid content in configuration file'\n",
 			},
 		},
-		{
-			name: "bad default for diagnostics",
+		"bad default for diagnostics": {
 			args: args{
 				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
@@ -884,8 +840,7 @@ func Test_newListCommand(t *testing.T) {
 				Log:   "level='error' error='invalid boolean value \"no!\" for -diagnostic: parse error' section='list' msg='invalid content in configuration file'\n",
 			},
 		},
-		{
-			name: "bad default for sorting",
+		"bad default for sorting": {
 			args: args{
 				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
@@ -899,8 +854,8 @@ func Test_newListCommand(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			list, gotOk := newListCommand(o, tt.args.c, flag.NewFlagSet("list", flag.ContinueOnError))
 			if gotOk != tt.wantOk {
@@ -917,22 +872,22 @@ func Test_newListCommand(t *testing.T) {
 					"-ext", ".mp3",
 				}); ok {
 					if *list.includeAlbums != tt.wantIncludeAlbums {
-						t.Errorf("%s %q: got includeAlbums %t want %t", fnName, tt.name, *list.includeAlbums, tt.wantIncludeAlbums)
+						t.Errorf("%s %q: got includeAlbums %t want %t", fnName, name, *list.includeAlbums, tt.wantIncludeAlbums)
 					}
 					if *list.includeArtists != tt.wantIncludeArtists {
-						t.Errorf("%s %q: got includeArtists %t want %t", fnName, tt.name, *list.includeArtists, tt.wantIncludeArtists)
+						t.Errorf("%s %q: got includeArtists %t want %t", fnName, name, *list.includeArtists, tt.wantIncludeArtists)
 					}
 					if *list.includeTracks != tt.wantIncludeTracks {
-						t.Errorf("%s %q: got includeTracks %t want %t", fnName, tt.name, *list.includeTracks, tt.wantIncludeTracks)
+						t.Errorf("%s %q: got includeTracks %t want %t", fnName, name, *list.includeTracks, tt.wantIncludeTracks)
 					}
 					if *list.annotateListings != tt.wantAnnotateListings {
-						t.Errorf("%s %q: got annotateListings %t want %t", fnName, tt.name, *list.annotateListings, tt.wantAnnotateListings)
+						t.Errorf("%s %q: got annotateListings %t want %t", fnName, name, *list.annotateListings, tt.wantAnnotateListings)
 					}
 					if *list.trackSorting != tt.wantTrackSorting {
-						t.Errorf("%s %q: got trackSorting %q want %q", fnName, tt.name, *list.trackSorting, tt.wantTrackSorting)
+						t.Errorf("%s %q: got trackSorting %q want %q", fnName, name, *list.trackSorting, tt.wantTrackSorting)
 					}
 				} else {
-					t.Errorf("%s %q: error processing arguments", fnName, tt.name)
+					t.Errorf("%s %q: error processing arguments", fnName, name)
 				}
 			}
 		})
@@ -940,7 +895,7 @@ func Test_newListCommand(t *testing.T) {
 }
 
 func Test_list_outputTrackDiagnostics(t *testing.T) {
-	fnName := "list.outputTrackDiagnostics"
+	const fnName = "list.outputTrackDiagnostics"
 	badArtist := files.NewArtist("bad artist", "./BadArtist")
 	badAlbum := files.NewAlbum("bad album", badArtist, "BadAlbum")
 	badTrack := files.NewTrack(badAlbum, "01 bad track.mp3", "bad track", 1)
@@ -964,9 +919,6 @@ func Test_list_outputTrackDiagnostics(t *testing.T) {
 	if err := internal.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, topDir)
-	}()
 	goodArtistDir := filepath.Join(topDir, "good artist")
 	if err := internal.Mkdir(goodArtistDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, goodArtistDir, err)
@@ -986,18 +938,20 @@ func Test_list_outputTrackDiagnostics(t *testing.T) {
 	artist.AddAlbum(album)
 	goodTrack := files.NewTrack(album, trackName, "new track", 1)
 	album.AddTrack(goodTrack)
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, topDir)
+	}()
 	type args struct {
 		t      *files.Track
 		prefix string
 	}
-	tests := []struct {
+	tests := map[string]struct {
 		name string
 		l    *list
 		args
 		output.WantedRecording
 	}{
-		{
-			name: "error case",
+		"error case": {
 			l:    makeList(),
 			args: args{t: badTrack},
 			WantedRecording: output.WantedRecording{
@@ -1007,8 +961,7 @@ func Test_list_outputTrackDiagnostics(t *testing.T) {
 					"level='error' error='open BadAlbum\\01 bad track.mp3: The system cannot find the path specified.' track='BadAlbum\\01 bad track.mp3' msg='id3v1 tag error'\n",
 			},
 		},
-		{
-			name: "success case",
+		"success case": {
 			l:    makeList(),
 			args: args{t: goodTrack, prefix: "      "},
 			WantedRecording: output.WantedRecording{
@@ -1031,8 +984,8 @@ func Test_list_outputTrackDiagnostics(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.l.outputTrackDiagnostics(o, tt.args.t, tt.args.prefix)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -1045,7 +998,7 @@ func Test_list_outputTrackDiagnostics(t *testing.T) {
 }
 
 func Test_list_outputTrackDetails(t *testing.T) {
-	fnName := "list.outputTrackDetails()"
+	const fnName = "list.outputTrackDetails()"
 	badArtist := files.NewArtist("bad artist", "./BadArtist")
 	badAlbum := files.NewAlbum("bad album", badArtist, "BadAlbum")
 	badTrack := files.NewTrack(badAlbum, "01 bad track.mp3", "bad track", 1)
@@ -1075,9 +1028,6 @@ func Test_list_outputTrackDetails(t *testing.T) {
 	if err := internal.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, topDir)
-	}()
 	goodArtistDir := filepath.Join(topDir, "good artist")
 	if err := internal.Mkdir(goodArtistDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, goodArtistDir, err)
@@ -1097,18 +1047,19 @@ func Test_list_outputTrackDetails(t *testing.T) {
 	artist.AddAlbum(album)
 	goodTrack := files.NewTrack(album, trackName, "new track", 1)
 	album.AddTrack(goodTrack)
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, topDir)
+	}()
 	type args struct {
 		t      *files.Track
 		prefix string
 	}
-	tests := []struct {
-		name string
-		l    *list
+	tests := map[string]struct {
+		l *list
 		args
 		output.WantedRecording
 	}{
-		{
-			name: "error case",
+		"error case": {
 			l:    makeList(),
 			args: args{t: badTrack},
 			WantedRecording: output.WantedRecording{
@@ -1116,8 +1067,7 @@ func Test_list_outputTrackDetails(t *testing.T) {
 				Log:   "level='error' error='open BadAlbum\\01 bad track.mp3: The system cannot find the path specified.' track='BadAlbum\\01 bad track.mp3' msg='cannot get details'\n",
 			},
 		},
-		{
-			name: "success case",
+		"success case": {
 			l:    makeList(),
 			args: args{t: goodTrack, prefix: "-->"},
 			WantedRecording: output.WantedRecording{
@@ -1131,8 +1081,8 @@ func Test_list_outputTrackDetails(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.l.outputTrackDetails(o, tt.args.t, tt.args.prefix)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
