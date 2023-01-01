@@ -15,8 +15,8 @@ import (
 )
 
 func Test_newRepairCommand(t *testing.T) {
-	fnName := "newRepairCommand()"
-	savedState := internal.SaveEnvVarForTesting("APPDATA")
+	const fnName = "newRepairCommand()"
+	savedAppData := internal.SaveEnvVarForTesting("APPDATA")
 	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
 	oldAppPath := internal.ApplicationPath()
 	internal.InitApplicationPath(output.NewNilBus())
@@ -30,37 +30,33 @@ func Test_newRepairCommand(t *testing.T) {
 	if err := internal.CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
+	defaultConfig, _ := internal.ReadConfigurationFile(output.NewNilBus())
 	defer func() {
-		savedState.RestoreForTesting()
+		savedAppData.RestoreForTesting()
 		internal.SetApplicationPathForTesting(oldAppPath)
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	defaultConfig, _ := internal.ReadConfigurationFile(output.NewNilBus())
 	type args struct {
 		c *internal.Configuration
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		wantDryRun bool
 		wantOk     bool
 		output.WantedRecording
 	}{
-		{
-			name:       "ordinary defaults",
+		"ordinary defaults": {
 			args:       args{c: internal.EmptyConfiguration()},
 			wantDryRun: false,
 			wantOk:     true,
 		},
-		{
-			name:       "overridden defaults",
+		"overridden defaults": {
 			args:       args{c: defaultConfig},
 			wantDryRun: true,
 			wantOk:     true,
 		},
-		{
-			name: "bad dryRun default",
+		"bad dryRun default": {
 			args: args{
 				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"repair": map[string]any{
@@ -74,8 +70,8 @@ func Test_newRepairCommand(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			repair, gotOk := newRepairCommand(o, tt.args.c, flag.NewFlagSet("repair", flag.ContinueOnError))
 			if gotOk != tt.wantOk {
@@ -92,10 +88,10 @@ func Test_newRepairCommand(t *testing.T) {
 					"-ext", ".mp3",
 				}); ok {
 					if *repair.dryRun != tt.wantDryRun {
-						t.Errorf("%s %q: got dryRun %t want %t", fnName, tt.name, *repair.dryRun, tt.wantDryRun)
+						t.Errorf("%s %q: got dryRun %t want %t", fnName, name, *repair.dryRun, tt.wantDryRun)
 					}
 				} else {
-					t.Errorf("%s %q: error processing arguments", fnName, tt.name)
+					t.Errorf("%s %q: error processing arguments", fnName, name)
 				}
 			}
 		})
@@ -108,7 +104,7 @@ func newRepairForTesting() *repair {
 }
 
 func Test_repair_Exec(t *testing.T) {
-	fnName := "repair.Exec()"
+	const fnName = "repair.Exec()"
 	newAppPath := "appPath"
 	if err := internal.Mkdir(newAppPath); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, newAppPath, err)
@@ -116,11 +112,15 @@ func Test_repair_Exec(t *testing.T) {
 	oldAppPath := internal.SetApplicationPathForTesting(newAppPath)
 	topDirName := "repairExec"
 	topDirWithContent := "realContent"
+	topDirWithContent2 := "realContent2"
 	if err := internal.Mkdir(topDirName); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, topDirName, err)
 	}
 	if err := internal.Mkdir(topDirWithContent); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, topDirWithContent, err)
+	}
+	if err := internal.Mkdir(topDirWithContent2); err != nil {
+		t.Errorf("%s error creating directory %q: %v", fnName, topDirWithContent2, err)
 	}
 	savedHome := internal.SaveEnvVarForTesting("HOMEPATH")
 	home := internal.SavedEnvVar{
@@ -129,13 +129,6 @@ func Test_repair_Exec(t *testing.T) {
 		Set:   true,
 	}
 	home.RestoreForTesting()
-	defer func() {
-		internal.SetApplicationPathForTesting(oldAppPath)
-		internal.DestroyDirectoryForTesting(fnName, newAppPath)
-		savedHome.RestoreForTesting()
-		internal.DestroyDirectoryForTesting(fnName, topDirName)
-		internal.DestroyDirectoryForTesting(fnName, topDirWithContent)
-	}()
 	if err := internal.PopulateTopDirForTesting(topDirName); err != nil {
 		t.Errorf("%s error populating directory %q: %v", fnName, topDirName, err)
 	}
@@ -143,9 +136,15 @@ func Test_repair_Exec(t *testing.T) {
 	if err := internal.Mkdir(filepath.Join(topDirWithContent, artist)); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, filepath.Join(topDirWithContent, artist), err)
 	}
+	if err := internal.Mkdir(filepath.Join(topDirWithContent2, artist)); err != nil {
+		t.Errorf("%s error creating directory %q: %v", fnName, filepath.Join(topDirWithContent2, artist), err)
+	}
 	album := "new album"
 	if err := internal.Mkdir(filepath.Join(topDirWithContent, artist, album)); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, filepath.Join(topDirWithContent, artist, album), err)
+	}
+	if err := internal.Mkdir(filepath.Join(topDirWithContent2, artist, album)); err != nil {
+		t.Errorf("%s error creating directory %q: %v", fnName, filepath.Join(topDirWithContent2, artist, album), err)
 	}
 	frames := map[string]string{
 		"TYER": "2022",
@@ -162,17 +161,26 @@ func Test_repair_Exec(t *testing.T) {
 	if err := internal.CreateFileForTestingWithContent(filepath.Join(topDirWithContent, artist, album), trackName, content); err != nil {
 		t.Errorf("%s error creating file %q: %v", fnName, filepath.Join(topDirWithContent, artist, album, trackName), err)
 	}
+	if err := internal.CreateFileForTestingWithContent(filepath.Join(topDirWithContent2, artist, album), trackName, content); err != nil {
+		t.Errorf("%s error creating file %q: %v", fnName, filepath.Join(topDirWithContent2, artist, album, trackName), err)
+	}
+	defer func() {
+		internal.SetApplicationPathForTesting(oldAppPath)
+		internal.DestroyDirectoryForTesting(fnName, newAppPath)
+		savedHome.RestoreForTesting()
+		internal.DestroyDirectoryForTesting(fnName, topDirName)
+		internal.DestroyDirectoryForTesting(fnName, topDirWithContent)
+		internal.DestroyDirectoryForTesting(fnName, topDirWithContent2)
+	}()
 	type args struct {
 		args []string
 	}
-	tests := []struct {
-		name string
-		r    *repair
+	tests := map[string]struct {
+		r *repair
 		args
 		output.WantedRecording
 	}{
-		{
-			name: "help",
+		"help": {
 			r:    newRepairForTesting(),
 			args: args{[]string{"--help"}},
 			WantedRecording: output.WantedRecording{
@@ -190,8 +198,7 @@ func Test_repair_Exec(t *testing.T) {
 				Log: "level='error' arguments='[--help]' msg='flag: help requested'\n",
 			},
 		},
-		{
-			name: "dry run, no usable content",
+		"dry run, no usable content": {
 			r:    newRepairForTesting(),
 			args: args{[]string{"-topDir", topDirName, "-dryRun"}},
 			WantedRecording: output.WantedRecording{
@@ -202,8 +209,7 @@ func Test_repair_Exec(t *testing.T) {
 					generateStandardTrackLogReport(),
 			},
 		},
-		{
-			name: "real repair, no usable content",
+		"real repair, no usable content": {
 			r:    newRepairForTesting(),
 			args: args{[]string{"-topDir", topDirName, "-dryRun=false"}},
 			WantedRecording: output.WantedRecording{
@@ -214,8 +220,7 @@ func Test_repair_Exec(t *testing.T) {
 					generateStandardTrackLogReport(),
 			},
 		},
-		{
-			name: "dry run, usable content",
+		"dry run, usable content": {
 			r:    newRepairForTesting(),
 			args: args{[]string{"-topDir", topDirWithContent, "-dryRun"}},
 			WantedRecording: output.WantedRecording{
@@ -231,24 +236,23 @@ func Test_repair_Exec(t *testing.T) {
 					"level='error' error='no id3v1 tag found in file \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\"' track='realContent\\new artist\\new album\\01 new track.mp3' msg='id3v1 tag error'\n",
 			},
 		},
-		{
-			name: "real repair, usable content",
+		"real repair, usable content": {
 			r:    newRepairForTesting(),
-			args: args{[]string{"-topDir", topDirWithContent, "-dryRun=false"}},
+			args: args{[]string{"-topDir", topDirWithContent2, "-dryRun=false"}},
 			WantedRecording: output.WantedRecording{
-				Console: "The track \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" has been backed up to \"realContent\\\\new artist\\\\new album\\\\pre-repair-backup\\\\1.mp3\".\n" +
-					"\"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\" repaired.\n",
+				Console: "The track \"realContent2\\\\new artist\\\\new album\\\\01 new track.mp3\" has been backed up to \"realContent2\\\\new artist\\\\new album\\\\pre-repair-backup\\\\1.mp3\".\n" +
+					"\"realContent2\\\\new artist\\\\new album\\\\01 new track.mp3\" repaired.\n",
 				Error: "Reading track metadata.\n" +
-					"An error occurred when trying to read ID3V1 tag information for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
+					"An error occurred when trying to read ID3V1 tag information for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent2\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
 				Log: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
-					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n" +
-					"level='error' error='no id3v1 tag found in file \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\"' track='realContent\\new artist\\new album\\01 new track.mp3' msg='id3v1 tag error'\n" +
+					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent2' msg='reading filtered music files'\n" +
+					"level='error' error='no id3v1 tag found in file \"realContent2\\\\new artist\\\\new album\\\\01 new track.mp3\"' track='realContent2\\new artist\\new album\\01 new track.mp3' msg='id3v1 tag error'\n" +
 					"level='info' fileName='appPath\\metadata.dirty' msg='metadata dirty file written'\n",
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.r.Exec(o, tt.args.args)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -262,18 +266,18 @@ func Test_repair_Exec(t *testing.T) {
 
 func generateStandardTrackErrorReport() string {
 	var result []string
-	for artist := 0; artist < 10; artist++ {
-		for album := 0; album < 10; album++ {
-			for track := 0; track < 10; track++ {
+	for aR := 0; aR < 10; aR++ {
+		for aL := 0; aL < 10; aL++ {
+			for t := 0; t < 10; t++ {
 				var sep string
-				if track%2 == 0 {
+				if t%2 == 0 {
 					sep = "-"
 				} else {
 					sep = " "
 				}
 				result = append(result,
-					fmt.Sprintf("An error occurred when trying to read ID3V1 tag information for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"seek repairExec\\\\Test Artist %d\\\\Test Album %d\\\\%02d%sTest Track[%02d].mp3: An attempt was made to move the file pointer before the beginning of the file.\".\n", track, album, artist, artist, album, track, sep, track),
-					fmt.Sprintf("An error occurred when trying to read ID3V2 tag information for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"zero length\".\n", track, album, artist))
+					fmt.Sprintf("An error occurred when trying to read ID3V1 tag information for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"seek repairExec\\\\Test Artist %d\\\\Test Album %d\\\\%02d%sTest Track[%02d].mp3: An attempt was made to move the file pointer before the beginning of the file.\".\n", t, aL, aR, aR, aL, t, sep, t),
+					fmt.Sprintf("An error occurred when trying to read ID3V2 tag information for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"zero length\".\n", t, aL, aR))
 			}
 		}
 	}
@@ -282,18 +286,18 @@ func generateStandardTrackErrorReport() string {
 
 func generateStandardTrackLogReport() string {
 	var result []string
-	for artist := 0; artist < 10; artist++ {
-		for album := 0; album < 10; album++ {
-			for track := 0; track < 10; track++ {
+	for aR := 0; aR < 10; aR++ {
+		for aL := 0; aL < 10; aL++ {
+			for t := 0; t < 10; t++ {
 				var sep string
-				if track%2 == 0 {
+				if t%2 == 0 {
 					sep = "-"
 				} else {
 					sep = " "
 				}
 				result = append(result,
-					fmt.Sprintf("level='error' error='seek repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3: An attempt was made to move the file pointer before the beginning of the file.' track='repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3' msg='id3v1 tag error'\n", artist, album, track, sep, track, artist, album, track, sep, track),
-					fmt.Sprintf("level='error' error='zero length' track='repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3' msg='id3v2 tag error'\n", artist, album, track, sep, track))
+					fmt.Sprintf("level='error' error='seek repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3: An attempt was made to move the file pointer before the beginning of the file.' track='repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3' msg='id3v1 tag error'\n", aR, aL, t, sep, t, aR, aL, t, sep, t),
+					fmt.Sprintf("level='error' error='zero length' track='repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3' msg='id3v2 tag error'\n", aR, aL, t, sep, t))
 			}
 		}
 	}
@@ -301,7 +305,7 @@ func generateStandardTrackLogReport() string {
 }
 
 func Test_albumPaths(t *testing.T) {
-	fnName := "albumPaths()"
+	const fnName = "albumPaths()"
 	topDir := "albumPaths"
 	if err := internal.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
@@ -309,27 +313,26 @@ func Test_albumPaths(t *testing.T) {
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
 		t.Errorf("%s error populating %q: %v", fnName, topDir, err)
 	}
+	s := files.CreateFilteredSearchForTesting(topDir, "^.*$", "^.*$")
+	a, _ := s.LoadData(output.NewNilBus())
+	var ts []*files.Track
+	for _, artist := range a {
+		for _, album := range artist.Albums() {
+			ts = append(ts, album.Tracks()...)
+		}
+	}
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
-	s := files.CreateFilteredSearchForTesting(topDir, "^.*$", "^.*$")
-	a, _ := s.LoadData(output.NewNilBus())
-	var tSlice []*files.Track
-	for _, artist := range a {
-		for _, album := range artist.Albums() {
-			tSlice = append(tSlice, album.Tracks()...)
-		}
-	}
 	type args struct {
 		tracks []*files.Track
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want []string
 	}{
-		{name: "degenerate case", args: args{}},
-		{name: "full blown case", args: args{tracks: tSlice}, want: []string{
+		"degenerate case": {args: args{}},
+		"full blown case": {args: args{tracks: ts}, want: []string{
 			"albumPaths\\Test Artist 0\\Test Album 0",
 			"albumPaths\\Test Artist 0\\Test Album 1",
 			"albumPaths\\Test Artist 0\\Test Album 2",
@@ -432,8 +435,8 @@ func Test_albumPaths(t *testing.T) {
 			"albumPaths\\Test Artist 9\\Test Album 9",
 		}},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := albumPaths(tt.args.tracks); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -442,14 +445,11 @@ func Test_albumPaths(t *testing.T) {
 }
 
 func Test_repair_makeBackupDirectories(t *testing.T) {
-	fnName := "repair.makeBackupDirectories()"
+	const fnName = "repair.makeBackupDirectories()"
 	topDir := "makeBackupDirectories"
 	if err := internal.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, topDir)
-	}()
 	backupDir := files.CreateBackupPath(topDir)
 	if err := internal.Mkdir(backupDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, backupDir, err)
@@ -466,18 +466,19 @@ func Test_repair_makeBackupDirectories(t *testing.T) {
 		t.Errorf("%s error creating %q: %v", fnName, albumDir2, err)
 	}
 	fFlag := false
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, topDir)
+	}()
 	type args struct {
 		paths []string
 	}
-	tests := []struct {
-		name string
-		r    *repair
+	tests := map[string]struct {
+		r *repair
 		args
 		output.WantedRecording
 	}{
-		{name: "degenerate case", r: &repair{dryRun: &fFlag}, args: args{paths: nil}},
-		{
-			name: "useful case",
+		"degenerate case": {r: &repair{dryRun: &fFlag}, args: args{paths: nil}},
+		"useful case": {
 			r:    &repair{dryRun: &fFlag},
 			args: args{paths: []string{topDir, albumDir, albumDir2}},
 			WantedRecording: output.WantedRecording{
@@ -486,8 +487,8 @@ func Test_repair_makeBackupDirectories(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			makeBackupDirectories(o, tt.args.paths)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -500,14 +501,11 @@ func Test_repair_makeBackupDirectories(t *testing.T) {
 }
 
 func Test_repair_backupTracks(t *testing.T) {
-	fnName := "repair.backupTracks()"
+	const fnName = "repair.backupTracks()"
 	topDir := "backupTracks"
 	if err := internal.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, topDir)
-	}()
 	goodTrackName := "1 good track.mp3"
 	if err := internal.CreateFileForTesting(topDir, goodTrackName); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, goodTrackName, err)
@@ -519,19 +517,20 @@ func Test_repair_backupTracks(t *testing.T) {
 		t.Errorf("%s error creating %q: %v", fnName, "2.mp3", err)
 	}
 	fFlag := false
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, topDir)
+	}()
 	type args struct {
 		tracks []*files.Track
 	}
-	tests := []struct {
-		name string
-		r    *repair
+	tests := map[string]struct {
+		r *repair
 		args
 		output.WantedRecording
 	}{
-		{name: "degenerate case", r: &repair{dryRun: &fFlag}, args: args{tracks: nil}},
-		{
-			name: "real tests",
-			r:    &repair{dryRun: &fFlag},
+		"degenerate case": {r: &repair{dryRun: &fFlag}, args: args{tracks: nil}},
+		"real tests": {
+			r: &repair{dryRun: &fFlag},
 			args: args{
 				tracks: []*files.Track{
 					files.NewTrack(files.NewAlbum("", nil, topDir), goodTrackName, "", 1),
@@ -546,8 +545,8 @@ func Test_repair_backupTracks(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			backupTracks(o, tt.args.tracks)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -560,16 +559,16 @@ func Test_repair_backupTracks(t *testing.T) {
 }
 
 func createTaggedContent(frames map[string]string) []byte {
-	payload := make([]byte, 0)
+	b := make([]byte, 0)
 	for k := 0; k < 256; k++ {
-		payload = append(payload, byte(k))
+		b = append(b, byte(k))
 	}
-	content := files.CreateID3V2TaggedDataForTesting(payload, frames)
+	content := files.CreateID3V2TaggedDataForTesting(b, frames)
 	return content
 }
 
 func Test_repair_fixTracks(t *testing.T) {
-	fnName := "repair.fixTracks()"
+	const fnName = "repair.fixTracks()"
 	testAppPath := "appPath"
 	if err := internal.Mkdir(testAppPath); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testAppPath, err)
@@ -580,11 +579,6 @@ func Test_repair_fixTracks(t *testing.T) {
 	if err := internal.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, topDir)
-		internal.DestroyDirectoryForTesting(fnName, testAppPath)
-		internal.SetApplicationPathForTesting(oldAppPath)
-	}()
 	frames := map[string]string{
 		"TYER": "2022",
 		"TALB": "unknown album",
@@ -602,19 +596,22 @@ func Test_repair_fixTracks(t *testing.T) {
 		t.Errorf("%s error creating %q: %v", fnName, filepath.Join(topDir, goodFileName), err)
 	}
 	trackWithData := files.NewTrack(files.NewAlbum("ok album", files.NewArtist("beautiful singer", ""), topDir), goodFileName, trackName, 1)
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, topDir)
+		internal.DestroyDirectoryForTesting(fnName, testAppPath)
+		internal.SetApplicationPathForTesting(oldAppPath)
+	}()
 	type args struct {
 		tracks []*files.Track
 	}
-	tests := []struct {
-		name string
-		r    *repair
+	tests := map[string]struct {
+		r *repair
 		args
 		output.WantedRecording
 	}{
-		{name: "degenerate case", r: &repair{dryRun: &fFlag}, args: args{tracks: nil}},
-		{
-			name: "actual tracks",
-			r:    &repair{dryRun: &fFlag},
+		"degenerate case": {r: &repair{dryRun: &fFlag}, args: args{tracks: nil}},
+		"actual tracks": {
+			r: &repair{dryRun: &fFlag},
 			args: args{tracks: []*files.Track{
 				files.NewTrack(
 					files.NewAlbum("ok album", files.NewArtist("beautiful singer", ""), topDir),
@@ -629,8 +626,8 @@ func Test_repair_fixTracks(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			fixTracks(o, tt.args.tracks)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
