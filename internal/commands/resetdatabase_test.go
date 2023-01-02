@@ -18,27 +18,27 @@ import (
 )
 
 type testService struct {
-	desiredQueryStatus   svc.Status
-	desiredQueryError    error
-	desiredControlStatus svc.Status
-	desiredControlError  error
+	wantQueryStatus   svc.Status
+	wantQueryError    error
+	wantControlStatus svc.Status
+	wantControlError  error
 }
 
-func (ts *testService) Close() error {
+func (tS *testService) Close() error {
 	return nil
 }
 
-func (ts *testService) Query() (svc.Status, error) {
-	return ts.desiredQueryStatus, ts.desiredQueryError
+func (tS *testService) Query() (svc.Status, error) {
+	return tS.wantQueryStatus, tS.wantQueryError
 }
 
-func (ts *testService) Control(c svc.Cmd) (svc.Status, error) {
-	return ts.desiredControlStatus, ts.desiredControlError
+func (tS *testService) Control(c svc.Cmd) (svc.Status, error) {
+	return tS.wantControlStatus, tS.wantControlError
 }
 
 type testManager struct {
-	serviceMap   map[string]service
-	desiredError error
+	m         map[string]service
+	wantError error
 }
 
 func (tM *testManager) Disconnect() error {
@@ -46,15 +46,15 @@ func (tM *testManager) Disconnect() error {
 }
 
 func (tM *testManager) ListServices() ([]string, error) {
-	if tM.desiredError != nil {
-		return nil, tM.desiredError
+	if tM.wantError != nil {
+		return nil, tM.wantError
 	}
-	var services []string
-	for k := range tM.serviceMap {
-		services = append(services, k)
+	var svcs []string
+	for k := range tM.m {
+		svcs = append(svcs, k)
 	}
-	sort.Strings(services)
-	return services, nil
+	sort.Strings(svcs)
+	return svcs, nil
 }
 
 func (tM *testManager) manager() manager {
@@ -62,38 +62,35 @@ func (tM *testManager) manager() manager {
 }
 
 func (tM *testManager) openService(name string) (service, error) {
-	if s, ok := tM.serviceMap[name]; ok {
+	if s, ok := tM.m[name]; ok {
 		return s, nil
 	}
 	return nil, fmt.Errorf("access denied")
 }
 
 func Test_listAvailableServices(t *testing.T) {
-	fnName := "listAvailableServices()"
+	const fnName = "listAvailableServices()"
 	type args struct {
 		sM       serviceGateway
 		services []string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		output.WantedRecording
 	}{
-		{
-			name: "no services available",
+		"no services available": {
 			args: args{},
 			WantedRecording: output.WantedRecording{
 				Console: "The following services are available:\n" +
 					"  - none -\n",
 			},
 		},
-		{
-			name: "several services available",
+		"several services available": {
 			args: args{
 				sM: &testManager{
-					serviceMap: map[string]service{
-						"svc1": &testService{desiredQueryStatus: svc.Status{State: svc.Running}},
-						"svc2": &testService{desiredQueryError: fmt.Errorf("access denied")},
+					m: map[string]service{
+						"svc1": &testService{wantQueryStatus: svc.Status{State: svc.Running}},
+						"svc2": &testService{wantQueryError: fmt.Errorf("access denied")},
 					},
 				},
 				services: []string{"svc1", "svc2", "svc3"},
@@ -108,8 +105,8 @@ func Test_listAvailableServices(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			listAvailableServices(o, tt.args.sM, tt.args.services)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -122,7 +119,7 @@ func Test_listAvailableServices(t *testing.T) {
 }
 
 func Test_resetDatabase_waitForStop(t *testing.T) {
-	fnName := "resetDatabase.waitForStop()"
+	const fnName = "resetDatabase.waitForStop()"
 	svcName := "test service"
 	timeout := 10
 	type args struct {
@@ -131,15 +128,13 @@ func Test_resetDatabase_waitForStop(t *testing.T) {
 		timeout   time.Time
 		checkFreq time.Duration
 	}
-	tests := []struct {
-		name string
-		r    *resetDatabase
+	tests := map[string]struct {
+		r *resetDatabase
 		args
 		wantOk bool
 		output.WantedRecording
 	}{
-		{
-			name: "already stopped",
+		"already stopped": {
 			r: &resetDatabase{
 				service: &svcName,
 			},
@@ -149,9 +144,8 @@ func Test_resetDatabase_waitForStop(t *testing.T) {
 				Log: "level='info' service='test service' status='stopped' msg='service status'\n",
 			},
 		},
-		{
-			name: "timed out",
-			r:    &resetDatabase{service: &svcName, timeout: &timeout},
+		"timed out": {
+			r: &resetDatabase{service: &svcName, timeout: &timeout},
 			args: args{
 				status:  svc.Status{State: svc.Running},
 				timeout: time.Now().Add(-1 * time.Second),
@@ -161,11 +155,10 @@ func Test_resetDatabase_waitForStop(t *testing.T) {
 				Log:   "level='error' error='operation timed out' operation='stop service' service='test service' timeout in seconds='10' msg='service issue'\n",
 			},
 		},
-		{
-			name: "stopped",
-			r:    &resetDatabase{service: &svcName, timeout: &timeout},
+		"stopped": {
+			r: &resetDatabase{service: &svcName, timeout: &timeout},
 			args: args{
-				s:         &testService{desiredQueryStatus: svc.Status{State: svc.Stopped}},
+				s:         &testService{wantQueryStatus: svc.Status{State: svc.Stopped}},
 				status:    svc.Status{State: svc.Running},
 				timeout:   time.Now().Add(1 * time.Second),
 				checkFreq: 1 * time.Millisecond,
@@ -175,11 +168,10 @@ func Test_resetDatabase_waitForStop(t *testing.T) {
 				Log: "level='info' service='test service' status='stopped' msg='service status'\n",
 			},
 		},
-		{
-			name: "query failure",
-			r:    &resetDatabase{service: &svcName, timeout: &timeout},
+		"query failure": {
+			r: &resetDatabase{service: &svcName, timeout: &timeout},
 			args: args{
-				s:         &testService{desiredQueryError: fmt.Errorf("access denied")},
+				s:         &testService{wantQueryError: fmt.Errorf("access denied")},
 				status:    svc.Status{State: svc.Running},
 				timeout:   time.Now().Add(1 * time.Second),
 				checkFreq: 1 * time.Millisecond,
@@ -190,8 +182,8 @@ func Test_resetDatabase_waitForStop(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			if gotOk := tt.r.waitForStop(o, tt.args.s, tt.args.status, tt.args.timeout, tt.args.checkFreq); gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
@@ -206,21 +198,19 @@ func Test_resetDatabase_waitForStop(t *testing.T) {
 }
 
 func Test_resetDatabase_stopService(t *testing.T) {
-	fnName := "resetDatabase.stopService()"
+	const fnName = "resetDatabase.stopService()"
 	serviceName := "mp3 management service"
 	fastTimeout := -1
 	type args struct {
 		connect func() (serviceGateway, error)
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		r    *resetDatabase
 		want bool
 		args
 		output.WantedRecording
 	}{
-		{
-			name: "connect failure",
+		"connect failure": {
 			r:    &resetDatabase{},
 			want: true,
 			args: args{
@@ -233,8 +223,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 				Log:   "level='error' error='access denied' operation='connect to service manager' msg='service manager issue'\n",
 			},
 		},
-		{
-			name: "connect successful, failure to open service",
+		"connect successful, failure to open service": {
 			r: &resetDatabase{
 				service: &serviceName,
 			},
@@ -242,7 +231,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			args: args{
 				connect: func() (serviceGateway, error) {
 					return &testManager{
-						serviceMap: map[string]service{},
+						m: map[string]service{},
 					}, nil
 				},
 			},
@@ -252,8 +241,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 				Log:     "level='error' error='access denied' operation='open service' service='mp3 management service' msg='service issue'\n",
 			},
 		},
-		{
-			name: "service opens but cannot be queried",
+		"service opens but cannot be queried": {
 			r: &resetDatabase{
 				service: &serviceName,
 			},
@@ -261,9 +249,9 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			args: args{
 				connect: func() (serviceGateway, error) {
 					return &testManager{
-						serviceMap: map[string]service{
+						m: map[string]service{
 							serviceName: &testService{
-								desiredQueryError: fmt.Errorf("query failure"),
+								wantQueryError: fmt.Errorf("query failure"),
 							},
 						},
 					}, nil
@@ -274,8 +262,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 				Log:   "level='error' error='query failure' operation='query service status' service='mp3 management service' msg='service issue'\n",
 			},
 		},
-		{
-			name: "service already stopped",
+		"service already stopped": {
 			r: &resetDatabase{
 				service: &serviceName,
 			},
@@ -283,9 +270,9 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			args: args{
 				connect: func() (serviceGateway, error) {
 					return &testManager{
-						serviceMap: map[string]service{
+						m: map[string]service{
 							serviceName: &testService{
-								desiredQueryStatus: svc.Status{
+								wantQueryStatus: svc.Status{
 									State: svc.Stopped,
 								},
 							},
@@ -297,8 +284,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 				Log: "level='info' service='mp3 management service' status='stopped' msg='service status'\n",
 			},
 		},
-		{
-			name: "service paused, fails to take stop command",
+		"service paused, fails to take stop command": {
 			r: &resetDatabase{
 				service: &serviceName,
 			},
@@ -306,12 +292,12 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			args: args{
 				connect: func() (serviceGateway, error) {
 					return &testManager{
-						serviceMap: map[string]service{
+						m: map[string]service{
 							serviceName: &testService{
-								desiredQueryStatus: svc.Status{
+								wantQueryStatus: svc.Status{
 									State: svc.Paused,
 								},
-								desiredControlError: fmt.Errorf("stop command rejected"),
+								wantControlError: fmt.Errorf("stop command rejected"),
 							},
 						},
 					}, nil
@@ -322,20 +308,19 @@ func Test_resetDatabase_stopService(t *testing.T) {
 				Log:   "level='error' error='stop command rejected' operation='stop service' service='mp3 management service' msg='service issue'\n",
 			},
 		},
-		{
-			name: "service running, fails to take stop command",
+		"service running, fails to take stop command": {
 			r: &resetDatabase{
 				service: &serviceName,
 			},
 			args: args{
 				connect: func() (serviceGateway, error) {
 					return &testManager{
-						serviceMap: map[string]service{
+						m: map[string]service{
 							serviceName: &testService{
-								desiredQueryStatus: svc.Status{
+								wantQueryStatus: svc.Status{
 									State: svc.Running,
 								},
-								desiredControlError: fmt.Errorf("stop command rejected"),
+								wantControlError: fmt.Errorf("stop command rejected"),
 							},
 						},
 					}, nil
@@ -346,8 +331,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 				Log:   "level='error' error='stop command rejected' operation='stop service' service='mp3 management service' msg='service issue'\n",
 			},
 		},
-		{
-			name: "service paused, times out waiting for stop",
+		"service paused, times out waiting for stop": {
 			r: &resetDatabase{
 				service: &serviceName,
 				timeout: &fastTimeout,
@@ -356,12 +340,12 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			args: args{
 				connect: func() (serviceGateway, error) {
 					return &testManager{
-						serviceMap: map[string]service{
+						m: map[string]service{
 							serviceName: &testService{
-								desiredQueryStatus: svc.Status{
+								wantQueryStatus: svc.Status{
 									State: svc.Paused,
 								},
-								desiredControlStatus: svc.Status{
+								wantControlStatus: svc.Status{
 									State: svc.Paused,
 								},
 							},
@@ -374,8 +358,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 				Log:   "level='error' error='operation timed out' operation='stop service' service='mp3 management service' timeout in seconds='-1' msg='service issue'\n",
 			},
 		},
-		{
-			name: "service running, times out stopping",
+		"service running, times out stopping": {
 			r: &resetDatabase{
 				service: &serviceName,
 				timeout: &fastTimeout,
@@ -383,12 +366,12 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			args: args{
 				connect: func() (serviceGateway, error) {
 					return &testManager{
-						serviceMap: map[string]service{
+						m: map[string]service{
 							serviceName: &testService{
-								desiredQueryStatus: svc.Status{
+								wantQueryStatus: svc.Status{
 									State: svc.Running,
 								},
-								desiredControlStatus: svc.Status{
+								wantControlStatus: svc.Status{
 									State: svc.Running,
 								},
 							},
@@ -401,8 +384,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 				Log:   "level='error' error='operation timed out' operation='stop service' service='mp3 management service' timeout in seconds='-1' msg='service issue'\n",
 			},
 		},
-		{
-			name: "service paused, successfully stopped",
+		"service paused, successfully stopped": {
 			r: &resetDatabase{
 				service: &serviceName,
 				timeout: &fastTimeout,
@@ -411,12 +393,12 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			args: args{
 				connect: func() (serviceGateway, error) {
 					return &testManager{
-						serviceMap: map[string]service{
+						m: map[string]service{
 							serviceName: &testService{
-								desiredQueryStatus: svc.Status{
+								wantQueryStatus: svc.Status{
 									State: svc.Paused,
 								},
-								desiredControlStatus: svc.Status{
+								wantControlStatus: svc.Status{
 									State: svc.Stopped,
 								},
 							},
@@ -428,8 +410,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 				Log: "level='info' service='mp3 management service' status='stopped' msg='service status'\n",
 			},
 		},
-		{
-			name: "service running, stopped",
+		"service running, stopped": {
 			r: &resetDatabase{
 				service: &serviceName,
 				timeout: &fastTimeout,
@@ -438,12 +419,12 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			args: args{
 				connect: func() (serviceGateway, error) {
 					return &testManager{
-						serviceMap: map[string]service{
+						m: map[string]service{
 							serviceName: &testService{
-								desiredQueryStatus: svc.Status{
+								wantQueryStatus: svc.Status{
 									State: svc.Running,
 								},
-								desiredControlStatus: svc.Status{
+								wantControlStatus: svc.Status{
 									State: svc.Stopped,
 								},
 							},
@@ -456,8 +437,8 @@ func Test_resetDatabase_stopService(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			if got := tt.r.stopService(o, tt.args.connect); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
@@ -472,15 +453,12 @@ func Test_resetDatabase_stopService(t *testing.T) {
 }
 
 func Test_resetDatabase_filterMetadataFiles(t *testing.T) {
-	fnName := "resetDatabase.filterMetadataFiles()"
+	const fnName = "resetDatabase.filterMetadataFiles()"
 	testDir := "filterMetadataFiles"
 	extension := ".wmdb"
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s could not create directory %q: %v", fnName, testDir, err)
 	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, testDir)
-	}()
 	for k := 0; k < 8; k++ {
 		var fileName string
 		if k%2 == 0 {
@@ -497,17 +475,18 @@ func Test_resetDatabase_filterMetadataFiles(t *testing.T) {
 		t.Errorf("%s could not create directory %q: %v", fnName, subDir, err)
 	}
 	files, _ := internal.ReadDirectory(output.NewNilBus(), testDir)
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, testDir)
+	}()
 	type args struct {
 		files []fs.DirEntry
 	}
-	tests := []struct {
-		name string
-		r    *resetDatabase
+	tests := map[string]struct {
+		r *resetDatabase
 		args
 		want []string
 	}{
-		{
-			name: "complete test",
+		"complete test": {
 			r: &resetDatabase{
 				metadata:  &testDir,
 				extension: &extension,
@@ -520,8 +499,7 @@ func Test_resetDatabase_filterMetadataFiles(t *testing.T) {
 				filepath.Join(testDir, "file6.wmdb"),
 			},
 		},
-		{
-			name: "nil test",
+		"nil test": {
 			r: &resetDatabase{
 				metadata:  &testDir,
 				extension: &extension,
@@ -529,8 +507,8 @@ func Test_resetDatabase_filterMetadataFiles(t *testing.T) {
 			args: args{files: nil},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := tt.r.filterMetadataFiles(tt.args.files); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -539,15 +517,12 @@ func Test_resetDatabase_filterMetadataFiles(t *testing.T) {
 }
 
 func Test_resetDatabase_deleteMetadataFiles(t *testing.T) {
-	fnName := "resetDatabase.deleteMetadataFiles()"
+	const fnName = "resetDatabase.deleteMetadataFiles()"
 	testDir := "deleteMetadataFiles"
 	extension := ".wmdb"
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s could not create directory %q: %v", fnName, testDir, err)
 	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, testDir)
-	}()
 	for k := 0; k < 8; k++ {
 		fileName := fmt.Sprintf("file%d%s", k, extension)
 		if err := internal.CreateFileForTesting(testDir, fileName); err != nil {
@@ -562,19 +537,20 @@ func Test_resetDatabase_deleteMetadataFiles(t *testing.T) {
 	if err := internal.CreateFileForTesting(subDir, "placeholder.txt"); err != nil {
 		t.Errorf("%s failed to create file %q: %v", fnName, "placeholder.txt", err)
 	}
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, testDir)
+	}()
 	type args struct {
 		paths []string
 	}
-	tests := []struct {
-		name string
-		r    *resetDatabase
+	tests := map[string]struct {
+		r *resetDatabase
 		args
 		want bool
 		output.WantedRecording
 	}{
-		{
-			name: "complete test",
-			r:    &resetDatabase{metadata: &testDir},
+		"complete test": {
+			r: &resetDatabase{metadata: &testDir},
 			args: args{paths: []string{
 				filepath.Join(testDir, "file0.wmdb"),
 				filepath.Join(testDir, "file1.wmdb"),
@@ -593,8 +569,7 @@ func Test_resetDatabase_deleteMetadataFiles(t *testing.T) {
 				Log:     "level='error' error='remove deleteMetadataFiles\\file8.wmdb: The directory is not empty.' fileName='deleteMetadataFiles\\file8.wmdb' msg='cannot delete file'\n",
 			},
 		},
-		{
-			name: "nil test",
+		"nil test": {
 			r:    &resetDatabase{metadata: &testDir},
 			args: args{paths: nil},
 			want: true,
@@ -603,8 +578,8 @@ func Test_resetDatabase_deleteMetadataFiles(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			if gotOk := tt.r.deleteMetadataFiles(o, tt.args.paths); gotOk != tt.want {
 				t.Errorf("%s gotOK %t want %t", fnName, gotOk, tt.want)
@@ -619,15 +594,12 @@ func Test_resetDatabase_deleteMetadataFiles(t *testing.T) {
 }
 
 func Test_resetDatabase_deleteMetadata(t *testing.T) {
-	fnName := "resetDatabase.deleteMetadata()"
+	const fnName = "resetDatabase.deleteMetadata()"
 	testDir := "deleteMetadata"
 	extension := ".wmbd"
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, testDir, err)
 	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, testDir)
-	}()
 	emptyDir := filepath.Join(testDir, "empty")
 	if err := internal.Mkdir(emptyDir); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, emptyDir, err)
@@ -642,22 +614,23 @@ func Test_resetDatabase_deleteMetadata(t *testing.T) {
 			t.Errorf("%s cannot create file %q: %v", fnName, fileName, err)
 		}
 	}
-	tests := []struct {
-		name string
+	fakeDir := fnName
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, testDir)
+	}()
+	tests := map[string]struct {
 		r    *resetDatabase
 		want bool
 		output.WantedRecording
 	}{
-		{
-			name: "dir read failure",
-			r:    &resetDatabase{metadata: &fnName},
+		"dir read failure": {
+			r: &resetDatabase{metadata: &fakeDir},
 			WantedRecording: output.WantedRecording{
 				Error: "The directory \"resetDatabase.deleteMetadata()\" cannot be read: open resetDatabase.deleteMetadata(): The system cannot find the file specified.\n",
 				Log:   "level='error' directory='resetDatabase.deleteMetadata()' error='open resetDatabase.deleteMetadata(): The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
 		},
-		{
-			name: "empty dir",
+		"empty dir": {
 			r:    &resetDatabase{metadata: &emptyDir, extension: &extension},
 			want: true,
 			WantedRecording: output.WantedRecording{
@@ -665,8 +638,7 @@ func Test_resetDatabase_deleteMetadata(t *testing.T) {
 				Log:     "level='info' directory='deleteMetadata\\empty' extension='.wmbd' msg='no files found'\n",
 			},
 		},
-		{
-			name: "full dir",
+		"full dir": {
 			r:    &resetDatabase{metadata: &fullDir, extension: &extension},
 			want: true,
 			WantedRecording: output.WantedRecording{
@@ -674,8 +646,8 @@ func Test_resetDatabase_deleteMetadata(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			if got := tt.r.deleteMetadata(o); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
@@ -690,7 +662,7 @@ func Test_resetDatabase_deleteMetadata(t *testing.T) {
 }
 
 func Test_resetDatabase_runCommand(t *testing.T) {
-	fnName := "resetDatabase.runCommand()"
+	const fnName = "resetDatabase.runCommand()"
 	fastTimeout := -1
 	serviceName := "mp3 service"
 	testDir := "runCommand"
@@ -699,27 +671,25 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, testDir, err)
 	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, testDir)
-	}()
 	for k := 0; k < 10; k++ {
 		fileName := fmt.Sprintf("file%d%s", k, ext)
 		if err := internal.CreateFileForTesting(testDir, fileName); err != nil {
 			t.Errorf("%s cannot create file %q: %v", fnName, fileName, err)
 		}
 	}
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, testDir)
+	}()
 	type args struct {
 		connect func() (serviceGateway, error)
 	}
-	tests := []struct {
-		name string
-		r    *resetDatabase
+	tests := map[string]struct {
+		r *resetDatabase
 		args
 		wantOk bool
 		output.WantedRecording
 	}{
-		{
-			name: "fail to stop service",
+		"fail to stop service": {
 			r: &resetDatabase{
 				timeout:   &fastTimeout,
 				service:   &serviceName,
@@ -729,12 +699,12 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 			args: args{
 				connect: func() (serviceGateway, error) {
 					return &testManager{
-						serviceMap: map[string]service{
+						m: map[string]service{
 							serviceName: &testService{
-								desiredQueryStatus: svc.Status{
+								wantQueryStatus: svc.Status{
 									State: svc.Running,
 								},
-								desiredControlError: fmt.Errorf("stop command rejected"),
+								wantControlError: fmt.Errorf("stop command rejected"),
 							},
 						},
 					}, nil
@@ -746,8 +716,7 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 					"level='error' error='stop command rejected' operation='stop service' service='mp3 service' msg='service issue'\n",
 			},
 		},
-		{
-			name: "fail to delete metadata",
+		"fail to delete metadata": {
 			r: &resetDatabase{
 				timeout:   &fastTimeout,
 				service:   &serviceName,
@@ -767,8 +736,7 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 					"level='error' directory='resetdatabase_test.go' error='readdir resetdatabase_test.go: The system cannot find the path specified.' msg='cannot read directory'\n",
 			},
 		},
-		{
-			name: "success",
+		"success": {
 			r: &resetDatabase{
 				timeout:   &fastTimeout,
 				service:   &serviceName,
@@ -789,8 +757,8 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			if gotOk := tt.r.runCommand(o, tt.args.connect); gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
@@ -805,15 +773,12 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 }
 
 func newResetDatabaseCommandForTesting() *resetDatabase {
-	r, _ := newResetDatabaseCommand(
-		output.NewNilBus(),
-		internal.EmptyConfiguration(),
-		flag.NewFlagSet("resetDatabase", flag.ContinueOnError))
+	r, _ := newResetDatabaseCommand(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("resetDatabase", flag.ContinueOnError))
 	return r
 }
 
 func Test_resetDatabase_Exec(t *testing.T) {
-	fnName := "resetDatabase.Exec()"
+	const fnName = "resetDatabase.Exec()"
 	testDir := "Exec"
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %s: %v", fnName, testDir, err)
@@ -824,12 +789,6 @@ func Test_resetDatabase_Exec(t *testing.T) {
 		t.Errorf("%s error creating %s: %v", fnName, testAppPath, err)
 	}
 	oldAppPath := internal.SetApplicationPathForTesting(testAppPath)
-	defer func() {
-		savedUserProfile.RestoreForTesting()
-		internal.DestroyDirectoryForTesting(fnName, testDir)
-		internal.DestroyDirectoryForTesting(fnName, testAppPath)
-		internal.SetApplicationPathForTesting(oldAppPath)
-	}()
 	userProfile := internal.SavedEnvVar{
 		Name:  "USERPROFILE",
 		Value: "C:\\Users\\The User",
@@ -846,11 +805,16 @@ func Test_resetDatabase_Exec(t *testing.T) {
 		_ = m.Disconnect()
 		connectionsPossible = true
 	}
+	defer func() {
+		savedUserProfile.RestoreForTesting()
+		internal.DestroyDirectoryForTesting(fnName, testDir)
+		internal.DestroyDirectoryForTesting(fnName, testAppPath)
+		internal.SetApplicationPathForTesting(oldAppPath)
+	}()
 	type args struct {
 		args []string
 	}
-	tests := []struct {
-		name              string
+	tests := map[string]struct {
 		r                 *resetDatabase
 		markMetadataDirty bool
 		args
@@ -858,9 +822,8 @@ func Test_resetDatabase_Exec(t *testing.T) {
 		withConnection    output.WantedRecording
 		withoutConnection output.WantedRecording
 	}{
-		{
-			name: "help",
-			r:    newResetDatabaseCommandForTesting(),
+		"help": {
+			r: newResetDatabaseCommandForTesting(),
 			args: args{
 				args: []string{"-help"},
 			},
@@ -889,9 +852,8 @@ func Test_resetDatabase_Exec(t *testing.T) {
 				Log: "level='error' arguments='[-help]' msg='flag: help requested'\n",
 			},
 		},
-		{
-			name: "runCommand fails but is short-circuited",
-			r:    newResetDatabaseCommandForTesting(),
+		"runCommand fails but is short-circuited": {
+			r: newResetDatabaseCommandForTesting(),
 			args: args{
 				args: []string{"-metadata", "no such dir"},
 			},
@@ -903,8 +865,7 @@ func Test_resetDatabase_Exec(t *testing.T) {
 				Console: "Running \"resetDatabase\" is not necessary, as no track files have been edited.\n",
 			},
 		},
-		{
-			name:              "runCommand fails",
+		"runCommand fails": {
 			r:                 newResetDatabaseCommandForTesting(),
 			markMetadataDirty: true,
 			args: args{
@@ -924,9 +885,8 @@ func Test_resetDatabase_Exec(t *testing.T) {
 					"level='error' directory='no such dir' error='open no such dir: The system cannot find the file specified.' msg='cannot read directory'\n",
 			},
 		},
-		{
-			name: "success, though no metadata has been written",
-			r:    newResetDatabaseCommandForTesting(),
+		"success, though no metadata has been written": {
+			r: newResetDatabaseCommandForTesting(),
 			args: args{
 				args: []string{"-metadata", testDir},
 			},
@@ -938,8 +898,7 @@ func Test_resetDatabase_Exec(t *testing.T) {
 				Console: "Running \"resetDatabase\" is not necessary, as no track files have been edited.\n",
 			},
 		},
-		{
-			name:              "success after metadata written",
+		"success after metadata written": {
 			r:                 newResetDatabaseCommandForTesting(),
 			markMetadataDirty: true,
 			args: args{
@@ -963,8 +922,8 @@ func Test_resetDatabase_Exec(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if tt.markMetadataDirty {
 				markDirty(output.NewNilBus(), resetDatabaseCommandName)
 			} else {
@@ -996,23 +955,21 @@ func Test_resetDatabase_Exec(t *testing.T) {
 }
 
 func Test_resetDatabase_openService(t *testing.T) {
-	fnName := "resetDatabase.openService()"
+	const fnName = "resetDatabase.openService()"
 	serviceName := "mp3 management service"
 	fastTimeout := -1
 	type args struct {
 		connect func() (serviceGateway, error)
 	}
-	tests := []struct {
-		name string
-		r    *resetDatabase
+	tests := map[string]struct {
+		r *resetDatabase
 		args
 		wantM bool
 		wantS bool
 		output.WantedRecording
 	}{
-		{
-			name: "fail to connect to manager",
-			r:    &resetDatabase{service: &serviceName, timeout: &fastTimeout},
+		"fail to connect to manager": {
+			r: &resetDatabase{service: &serviceName, timeout: &fastTimeout},
 			args: args{
 				connect: func() (serviceGateway, error) {
 					return nil, fmt.Errorf("access denied")
@@ -1023,14 +980,13 @@ func Test_resetDatabase_openService(t *testing.T) {
 				Log:   "level='error' error='access denied' operation='connect to service manager' msg='service manager issue'\n",
 			},
 		},
-		{
-			name: "connected to manager, cannot connect to service or list services",
-			r:    &resetDatabase{service: &serviceName, timeout: &fastTimeout},
+		"connected to manager, cannot connect to service or list services": {
+			r: &resetDatabase{service: &serviceName, timeout: &fastTimeout},
 			args: args{
 				connect: func() (serviceGateway, error) {
 					return &testManager{
-						serviceMap:   map[string]service{},
-						desiredError: fmt.Errorf("cannot list services"),
+						m:         map[string]service{},
+						wantError: fmt.Errorf("cannot list services"),
 					}, nil
 				},
 			},
@@ -1041,15 +997,14 @@ func Test_resetDatabase_openService(t *testing.T) {
 					"level='error' error='cannot list services' operation='list services' msg='service manager issue'\n",
 			},
 		},
-		{
-			name: "connected to manager, cannot connect to service, but can list services",
-			r:    &resetDatabase{service: &serviceName, timeout: &fastTimeout},
+		"connected to manager, cannot connect to service, but can list services": {
+			r: &resetDatabase{service: &serviceName, timeout: &fastTimeout},
 			args: args{
 				connect: func() (serviceGateway, error) {
 					return &testManager{
-						serviceMap: map[string]service{
+						m: map[string]service{
 							"other service": &testService{
-								desiredQueryStatus: svc.Status{
+								wantQueryStatus: svc.Status{
 									State: svc.Running,
 								},
 							},
@@ -1065,15 +1020,14 @@ func Test_resetDatabase_openService(t *testing.T) {
 				Log:   "level='error' error='access denied' operation='open service' service='mp3 management service' msg='service issue'\n",
 			},
 		},
-		{
-			name: "open manager and specified service",
-			r:    &resetDatabase{service: &serviceName, timeout: &fastTimeout},
+		"open manager and specified service": {
+			r: &resetDatabase{service: &serviceName, timeout: &fastTimeout},
 			args: args{
 				connect: func() (serviceGateway, error) {
 					return &testManager{
-						serviceMap: map[string]service{
+						m: map[string]service{
 							serviceName: &testService{
-								desiredQueryStatus: svc.Status{
+								wantQueryStatus: svc.Status{
 									State: svc.Running,
 								},
 							},
@@ -1085,8 +1039,8 @@ func Test_resetDatabase_openService(t *testing.T) {
 			wantS: true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			returnedM, returnedS := tt.r.openService(o, tt.args.connect)
 			gotM := returnedM != nil
@@ -1107,7 +1061,7 @@ func Test_resetDatabase_openService(t *testing.T) {
 }
 
 func Test_newResetDatabaseCommand(t *testing.T) {
-	fnName := "newResetDatabaseCommand()"
+	const fnName = "newResetDatabaseCommand()"
 	savedFoo := internal.SaveEnvVarForTesting("FOO")
 	os.Unsetenv("FOO")
 	defer func() {
@@ -1116,19 +1070,16 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 	type args struct {
 		c *internal.Configuration
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		wantOk bool
 		output.WantedRecording
 	}{
-		{
-			name:   "normal case",
+		"normal case": {
 			args:   args{c: internal.EmptyConfiguration()},
 			wantOk: true,
 		},
-		{
-			name: "bad default timeout",
+		"bad default timeout": {
 			args: args{
 				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"resetDatabase": map[string]any{
@@ -1141,8 +1092,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 				Log:   "level='error' error='invalid value \"forever\" for flag -timeout: parse error' section='resetDatabase' msg='invalid content in configuration file'\n",
 			},
 		},
-		{
-			name: "bad default service",
+		"bad default service": {
 			args: args{
 				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"resetDatabase": map[string]any{
@@ -1155,8 +1105,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 				Log:   "level='error' error='invalid value \"Win$FOO\" for flag -service: missing environment variables: [FOO]' section='resetDatabase' msg='invalid content in configuration file'\n",
 			},
 		},
-		{
-			name: "bad default metadata",
+		"bad default metadata": {
 			args: args{
 				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"resetDatabase": map[string]any{
@@ -1169,8 +1118,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 				Log:   "level='error' error='invalid value \"%FOO%/data\" for flag -metadata: missing environment variables: [FOO]' section='resetDatabase' msg='invalid content in configuration file'\n",
 			},
 		},
-		{
-			name: "bad default extension",
+		"bad default extension": {
 			args: args{
 				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"resetDatabase": map[string]any{
@@ -1184,8 +1132,8 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			got, gotOk := newResetDatabaseCommand(o, tt.args.c, flag.NewFlagSet("resetDatabase", flag.ContinueOnError))
 			if gotOk != tt.wantOk {

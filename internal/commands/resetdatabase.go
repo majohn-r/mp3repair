@@ -43,19 +43,19 @@ const (
 	defaultExtension = ".wmdb"
 )
 
-var defaultMetadata string
-
-var timeoutError = fmt.Errorf("operation timed out")
-
-var stateToStatus = map[svc.State]string{
-	svc.Stopped:         "stopped",
-	svc.StartPending:    "start pending",
-	svc.StopPending:     "stop pending",
-	svc.Running:         "running",
-	svc.ContinuePending: "continue pending",
-	svc.PausePending:    "pause pending",
-	svc.Paused:          "paused",
-}
+var (
+	defaultMetadata string
+	timeoutError    = fmt.Errorf("operation timed out")
+	stateToStatus   = map[svc.State]string{
+		svc.Stopped:         "stopped",
+		svc.StartPending:    "start pending",
+		svc.StopPending:     "stop pending",
+		svc.Running:         "running",
+		svc.ContinuePending: "continue pending",
+		svc.PausePending:    "pause pending",
+		svc.Paused:          "paused",
+	}
+)
 
 func newResetDatabase(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
 	return newResetDatabaseCommand(o, c, fSet)
@@ -69,7 +69,7 @@ type resetDatabaseDefaults struct {
 }
 
 func newResetDatabaseCommand(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (*resetDatabase, bool) {
-	defaults, defaultsOk := evaluateResetDatabaseDefaults(o, c.SubConfiguration(resetDatabaseCommandName), resetDatabaseCommandName)
+	defaults, defaultsOk := evaluateResetDatabaseDefaults(o, c.SubConfiguration(resetDatabaseCommandName))
 	if defaultsOk {
 		timeoutDescription := fmt.Sprintf(
 			"timeout in seconds (minimum %d, maximum %d) for stopping the media player service", minTimeout, maxTimeout)
@@ -88,28 +88,24 @@ func newResetDatabaseCommand(o output.Bus, c *internal.Configuration, fSet *flag
 	return nil, false
 }
 
-func evaluateResetDatabaseDefaults(o output.Bus, c *internal.Configuration, name string) (defaults resetDatabaseDefaults, ok bool) {
+func evaluateResetDatabaseDefaults(o output.Bus, c *internal.Configuration) (defaults resetDatabaseDefaults, ok bool) {
 	defaults = resetDatabaseDefaults{}
 	ok = true
 	var err error
-	defaults.timeout, err = c.IntDefault(timeoutFlag, internal.NewIntBounds(minTimeout, defaultTimeout, maxTimeout))
-	if err != nil {
-		reportBadDefault(o, name, err)
+	if defaults.timeout, err = c.IntDefault(timeoutFlag, internal.NewIntBounds(minTimeout, defaultTimeout, maxTimeout)); err != nil {
+		reportBadDefault(o, resetDatabaseCommandName, err)
 		ok = false
 	}
-	defaults.service, err = c.StringDefault(serviceFlag, defaultService)
-	if err != nil {
-		reportBadDefault(o, name, err)
+	if defaults.service, err = c.StringDefault(serviceFlag, defaultService); err != nil {
+		reportBadDefault(o, resetDatabaseCommandName, err)
 		ok = false
 	}
-	defaults.metadata, err = c.StringDefault(metadataFlag, defaultMetadata)
-	if err != nil {
-		reportBadDefault(o, name, err)
+	if defaults.metadata, err = c.StringDefault(metadataFlag, defaultMetadata); err != nil {
+		reportBadDefault(o, resetDatabaseCommandName, err)
 		ok = false
 	}
-	defaults.extension, err = c.StringDefault(extensionFlag, defaultExtension)
-	if err != nil {
-		reportBadDefault(o, name, err)
+	if defaults.extension, err = c.StringDefault(extensionFlag, defaultExtension); err != nil {
+		reportBadDefault(o, resetDatabaseCommandName, err)
 		ok = false
 	}
 	return
@@ -126,14 +122,13 @@ type resetDatabase struct {
 func (r *resetDatabase) Exec(o output.Bus, args []string) (ok bool) {
 	if internal.ProcessArgs(o, r.f, args) {
 		if dirty() {
-			ok = r.runCommand(o, func() (serviceGateway, error) {
+			if ok = r.runCommand(o, func() (serviceGateway, error) {
 				m, err := mgr.Connect()
 				if err != nil {
 					return nil, err
 				}
 				return &sysMgr{m: m}, err
-			})
-			if ok {
+			}); ok {
 				clearDirty(o)
 			}
 		} else {
@@ -158,21 +153,17 @@ func (r *resetDatabase) runCommand(o output.Bus, connect func() (serviceGateway,
 }
 
 func (r *resetDatabase) deleteMetadata(o output.Bus) bool {
-	var files []fs.DirEntry
-	var ok bool
-	if files, ok = internal.ReadDirectory(o, *r.metadata); !ok {
+	if files, ok := internal.ReadDirectory(o, *r.metadata); !ok {
 		return false
+	} else {
+		pathsToDelete := r.filterMetadataFiles(files)
+		if len(pathsToDelete) > 0 {
+			return r.deleteMetadataFiles(o, pathsToDelete)
+		}
+		o.WriteCanonicalConsole("No metadata files were found in %q", *r.metadata)
+		o.Log(output.Info, "no files found", map[string]any{"directory": *r.metadata, "extension": *r.extension})
+		return true
 	}
-	pathsToDelete := r.filterMetadataFiles(files)
-	if len(pathsToDelete) > 0 {
-		return r.deleteMetadataFiles(o, pathsToDelete)
-	}
-	o.WriteCanonicalConsole("No metadata files were found in %q", *r.metadata)
-	o.Log(output.Info, "no files found", map[string]any{
-		"directory": *r.metadata,
-		"extension": *r.extension,
-	})
-	return true
 }
 
 func (r *resetDatabase) deleteMetadataFiles(o output.Bus, paths []string) bool {
@@ -205,36 +196,35 @@ func (r *resetDatabase) filterMetadataFiles(files []fs.DirEntry) []string {
 // be stopped within the specified timeout
 func (r *resetDatabase) stopService(o output.Bus, connect func() (serviceGateway, error)) bool {
 	// this is a privileged operation and fails if the user is not an administrator
-	sM, s := r.openService(o, connect)
-	if s == nil {
+	if sM, s := r.openService(o, connect); s == nil {
 		// something unhappy happened, but, fine, we're done and we're not preventing progress
 		return true
-	}
-	defer func() {
-		_ = sM.manager().Disconnect()
-		_ = s.Close()
-	}()
-	status, err := s.Query()
-	if err != nil {
-		r.reportServiceQueryIssue(o, err)
-		return true
-	}
-	if status.State == svc.Stopped {
-		r.logServiceStopped(o)
-		return true
-	}
-	ok := status.State != svc.Running
-	status, err = s.Control(svc.Stop)
-	if err == nil {
-		timeout := time.Now().Add(time.Duration(*r.timeout) * time.Second)
-		if stopped := r.waitForStop(o, s, status, timeout, 100*time.Millisecond); stopped {
-			ok = true
-		}
 	} else {
-		o.WriteCanonicalError("The service %q cannot be stopped: %v", *r.service, err)
-		logServiceIssue(o, r.makeServiceErrorFields("stop service", err))
+		defer func() {
+			_ = sM.manager().Disconnect()
+			_ = s.Close()
+		}()
+		if status, err := s.Query(); err != nil {
+			r.reportServiceQueryIssue(o, err)
+			return true
+		} else {
+			if status.State == svc.Stopped {
+				r.logServiceStopped(o)
+				return true
+			}
+			ok := status.State != svc.Running
+			if status, err = s.Control(svc.Stop); err == nil {
+				timeout := time.Now().Add(time.Duration(*r.timeout) * time.Second)
+				if stopped := r.waitForStop(o, s, status, timeout, 100*time.Millisecond); stopped {
+					ok = true
+				}
+			} else {
+				o.WriteCanonicalError("The service %q cannot be stopped: %v", *r.service, err)
+				logServiceIssue(o, r.makeServiceErrorFields("stop service", err))
+			}
+			return ok
+		}
 	}
-	return ok
 }
 
 func (r *resetDatabase) reportServiceQueryIssue(o output.Bus, e error) {
@@ -247,12 +237,11 @@ func logServiceIssue(o output.Bus, fields map[string]any) {
 }
 
 func (r *resetDatabase) makeServiceErrorFields(s string, e error) map[string]any {
-	m := map[string]any{
+	return map[string]any{
 		"error":     e,
 		"service":   *r.service,
 		"operation": s,
 	}
-	return m
 }
 
 func (r *resetDatabase) logServiceStopped(o output.Bus) {
@@ -263,17 +252,15 @@ func (r *resetDatabase) logServiceStopped(o output.Bus) {
 }
 
 func (r *resetDatabase) openService(o output.Bus, connect func() (serviceGateway, error)) (sM serviceGateway, s service) {
-	sM, err := connect()
-	if err != nil {
+	var err error
+	if sM, err = connect(); err != nil {
 		o.WriteCanonicalError("The service manager cannot be accessed. Try running the program again as an administrator. Error: %v", err)
 		logServiceManagerIssue(o, "connect to service manager", err)
 	} else {
-		s, err = sM.openService(*r.service)
-		if err != nil {
+		if s, err = sM.openService(*r.service); err != nil {
 			o.WriteCanonicalError("The service %q cannot be opened: %v", *r.service, err)
 			logServiceIssue(o, r.makeServiceErrorFields("open service", err))
-			services, err := sM.manager().ListServices()
-			if err != nil {
+			if services, err := sM.manager().ListServices(); err != nil {
 				o.WriteCanonicalError("The list of available services cannot be obtained: %v", err)
 				logServiceManagerIssue(o, "list services", err)
 			} else {
@@ -309,12 +296,10 @@ func (r *resetDatabase) waitForStop(o output.Bus, s service, status svc.Status, 
 			break
 		}
 		time.Sleep(checkFreq)
-		status, err := s.Query()
-		if err != nil {
+		if status, err := s.Query(); err != nil {
 			r.reportServiceQueryIssue(o, err)
 			break
-		}
-		if status.State == svc.Stopped {
+		} else if status.State == svc.Stopped {
 			r.logServiceStopped(o)
 			ok = true
 		}
@@ -329,31 +314,31 @@ func listAvailableServices(o output.Bus, sM serviceGateway, services []string) {
 		return
 	}
 	sort.Strings(services)
-	sMap := make(map[string][]string)
-	for _, service := range services {
-		if s, err := sM.openService(service); err == nil {
-			if stat, err := s.Query(); err == nil {
-				key := stateToStatus[stat.State]
-				sMap[key] = append(sMap[key], service)
+	m := map[string][]string{}
+	for _, svc := range services {
+		if s, err := sM.openService(svc); err == nil {
+			if status, err := s.Query(); err == nil {
+				key := stateToStatus[status.State]
+				m[key] = append(m[key], svc)
 			} else {
 				e := err.Error()
-				sMap[e] = append(sMap[e], service)
+				m[e] = append(m[e], svc)
 			}
 			s.Close()
 		} else {
 			e := err.Error()
-			sMap[e] = append(sMap[e], service)
+			m[e] = append(m[e], svc)
 		}
 	}
 	var states []string
-	for k := range sMap {
+	for k := range m {
 		states = append(states, k)
 	}
 	sort.Strings(states)
 	for _, state := range states {
 		o.WriteConsole("  State %q:\n", state)
-		for _, service := range sMap[state] {
-			o.WriteConsole("    %q\n", service)
+		for _, svc := range m[state] {
+			o.WriteConsole("    %q\n", svc)
 		}
 	}
 }
