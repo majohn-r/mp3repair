@@ -11,9 +11,10 @@ import (
 // Artist encapsulates information about a recording artist (a solo performer, a
 // duo, a band, etc.)
 type Artist struct {
-	name          string
-	albums        []*Album
-	path          string
+	name   string
+	albums []*Album
+	path   string
+	// artist name as recorded in the metadata for each track in each album
 	canonicalName string
 }
 
