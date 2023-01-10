@@ -66,8 +66,7 @@ func TestProcessCommand(t *testing.T) {
 	type args struct {
 		args []string
 	}
-	tests := []struct {
-		name  string
+	tests := map[string]struct {
 		state *internal.SavedEnvVar
 		args
 		want        CommandProcessor
@@ -75,8 +74,7 @@ func TestProcessCommand(t *testing.T) {
 		wantOk      bool
 		output.WantedRecording
 	}{
-		{
-			name:  "problematic default command",
+		"problematic default command": {
 			state: &internal.SavedEnvVar{Name: "APPDATA", Value: internal.SecureAbsolutePathForTesting(badDir), Set: true},
 			WantedRecording: output.WantedRecording{
 				Error: "The configuration file specifies \"lister\" as the default command. There is no such command.\n",
@@ -84,16 +82,14 @@ func TestProcessCommand(t *testing.T) {
 					"level='error' command='lister' msg='invalid default command'\n",
 			},
 		},
-		{
-			name:  "problematic input",
+		"problematic input": {
 			state: &internal.SavedEnvVar{Name: "APPDATA", Value: internal.SecureAbsolutePathForTesting("./mp3"), Set: true},
 			WantedRecording: output.WantedRecording{
 				Error: fmt.Sprintf("The configuration file %q is a directory.\n", internal.SecureAbsolutePathForTesting(filepath.Join(".", "mp3", "mp3", "defaults.yaml"))),
 				Log:   fmt.Sprintf("level='error' directory='%s' fileName='defaults.yaml' msg='file is a directory'\n", internal.SecureAbsolutePathForTesting(filepath.Join(".", "mp3", "mp3"))),
 			},
 		},
-		{
-			name:        "call list",
+		"call list": {
 			state:       &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
 			args:        args{args: []string{"mp3.exe", "list", "-track=true"}},
 			want:        makeList(),
@@ -105,8 +101,7 @@ func TestProcessCommand(t *testing.T) {
 					fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] list:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1.25]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
 			},
 		},
-		{
-			name:        "call check",
+		"call check": {
 			state:       &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
 			args:        args{args: []string{"mp3.exe", "check", "-integrity=false"}},
 			want:        makeCheck(),
@@ -118,8 +113,7 @@ func TestProcessCommand(t *testing.T) {
 					fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] list:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1.25]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
 			},
 		},
-		{
-			name:        "call repair",
+		"call repair": {
 			state:       &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
 			args:        args{args: []string{"mp3.exe", "repair"}},
 			want:        makeRepair(),
@@ -131,8 +125,7 @@ func TestProcessCommand(t *testing.T) {
 					fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] list:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1.25]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
 			},
 		},
-		{
-			name:        "call postRepair",
+		"call postRepair": {
 			state:       &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
 			args:        args{args: []string{"mp3.exe", "postRepair"}},
 			want:        makePostRepair(),
@@ -144,8 +137,7 @@ func TestProcessCommand(t *testing.T) {
 					fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] list:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1.25]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
 			},
 		},
-		{
-			name:        "call default command",
+		"call default command": {
 			state:       &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
 			args:        args{args: []string{"mp3.exe"}},
 			want:        makeList(),
@@ -157,8 +149,7 @@ func TestProcessCommand(t *testing.T) {
 					fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] list:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1.25]]' msg='read configuration file'\n", internal.SecureAbsolutePathForTesting("mp3")),
 			},
 		},
-		{
-			name:  "call invalid command",
+		"call invalid command": {
 			state: &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
 			args:  args{args: []string{"mp3.exe", "no such command"}},
 			WantedRecording: output.WantedRecording{
@@ -169,8 +160,7 @@ func TestProcessCommand(t *testing.T) {
 					"level='error' command='no such command' msg='unrecognized command'\n",
 			},
 		},
-		{
-			name:        "pass arguments to default command",
+		"pass arguments to default command": {
 			state:       &internal.SavedEnvVar{Name: "APPDATA", Value: normalDir, Set: true},
 			args:        args{args: []string{"mp3.exe", "-album", "-artist", "-track"}},
 			want:        makeList(),
@@ -183,8 +173,8 @@ func TestProcessCommand(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			tt.state.RestoreForTesting()
 			internal.InitApplicationPath(output.NewNilBus())
 			o := output.NewRecorder()
@@ -223,8 +213,7 @@ func Test_selectCommand(t *testing.T) {
 		c    *internal.Configuration
 		args []string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		m           map[string]commandData
 		wantCmd     CommandProcessor
@@ -233,45 +222,31 @@ func Test_selectCommand(t *testing.T) {
 		output.WantedRecording
 	}{
 		// only handling error cases here, success cases are handled by TestProcessCommand
-		{
-			name: "empty command map",
+		"empty command map": {
 			args: args{},
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error has occurred: no commands are defined!\n",
 				Log:   "level='error' count='0' msg='incorrect number of commands'\n",
 			},
 		},
-		{
-			name: "too many default initializers",
-			m: map[string]commandData{
-				"cmd1": {isDefault: true},
-				"cmd2": {isDefault: true},
-			},
+		"too many default initializers": {
+			m: map[string]commandData{"cmd1": {isDefault: true}, "cmd2": {isDefault: true}},
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error has occurred: there are 2 default commands!\n",
 				Log:   "level='error' count='2' msg='incorrect number of default commands'\n",
 			},
 		},
-		{
-			name: "unfortunate defaults",
-			args: args{
-				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
-					"list": map[string]any{
-						"includeTracks": "no!!",
-					},
-				}),
-			},
-			m: map[string]commandData{
-				"list": {isDefault: true, init: newList},
-			},
+		"unfortunate defaults": {
+			args: args{c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{"list": map[string]any{"includeTracks": "no!!"}})},
+			m:    map[string]commandData{"list": {isDefault: true, init: newList}},
 			WantedRecording: output.WantedRecording{
 				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"list\": invalid boolean value \"no!!\" for -includeTracks: parse error.\n",
 				Log:   "level='error' error='invalid boolean value \"no!!\" for -includeTracks: parse error' section='list' msg='invalid content in configuration file'\n",
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			commandMap = tt.m
 			gotCmd, gotCmdArgs, gotOk := selectCommand(o, tt.args.c, tt.args.args)
@@ -323,8 +298,7 @@ func Test_defaultSettings(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.SetApplicationPathForTesting(oldAppPath)
 	}()
-	tests := []struct {
-		name           string
+	tests := map[string]struct {
 		includeDefault bool
 		defaultValue   string
 		cmds           map[string]commandData
@@ -332,8 +306,7 @@ func Test_defaultSettings(t *testing.T) {
 		wantOk         bool
 		output.WantedRecording
 	}{
-		{
-			name: "too many values defined in code",
+		"too many values defined in code": {
 			cmds: map[string]commandData{
 				listCommand:          {isDefault: true},
 				checkCommand:         {isDefault: true},
@@ -347,8 +320,7 @@ func Test_defaultSettings(t *testing.T) {
 				Error: "Internal error: 2 commands self-selected as default: [check list]; pick one!\n",
 			},
 		},
-		{
-			name: "no value defined",
+		"no value defined": {
 			wantM: map[string]bool{
 				listCommand:          true,
 				checkCommand:         false,
@@ -360,8 +332,7 @@ func Test_defaultSettings(t *testing.T) {
 			},
 			wantOk: true,
 		},
-		{
-			name:           "good value",
+		"good value": {
 			includeDefault: true,
 			defaultValue:   "check",
 			wantM: map[string]bool{
@@ -375,8 +346,7 @@ func Test_defaultSettings(t *testing.T) {
 			},
 			wantOk: true,
 		},
-		{
-			name:           "bad value",
+		"bad value": {
 			includeDefault: true,
 			defaultValue:   "lister",
 			WantedRecording: output.WantedRecording{
@@ -385,8 +355,8 @@ func Test_defaultSettings(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			var content string
 			if tt.includeDefault {
 				content = fmt.Sprintf("command:\n    default: %s\n", tt.defaultValue)

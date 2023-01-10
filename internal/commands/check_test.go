@@ -58,18 +58,16 @@ func Test_analyzeEmptyFolders(t *testing.T) {
 	type args struct {
 		s *files.Search
 	}
-	tests := []struct {
-		name string
-		c    *check
+	tests := map[string]struct {
+		c *check
 		args
 		wantArtists         []*files.Artist
 		wantFilteredArtists []*checkedArtist
 		wantOk              bool
 		output.WantedRecording
 	}{
-		{name: "no work to do", c: &check{emptyFolders: &fFlag}, args: args{}, wantOk: true},
-		{
-			name: "empty topDir",
+		"no work to do": {c: &check{emptyFolders: &fFlag}, args: args{}, wantOk: true},
+		"empty topDir": {
 			c:    &check{emptyFolders: &tFlag},
 			args: args{s: files.CreateSearchForTesting(emptyDir)},
 			WantedRecording: output.WantedRecording{
@@ -78,8 +76,7 @@ func Test_analyzeEmptyFolders(t *testing.T) {
 					"level='error' -ext='.mp3' -topDir='empty' msg='cannot find any artist directories'\n",
 			},
 		},
-		{
-			name:        "folders, no empty folders present",
+		"folders, no empty folders present": {
 			c:           &check{emptyFolders: &tFlag},
 			args:        args{s: files.CreateSearchForTesting(goodDir)},
 			wantArtists: []*files.Artist{goodArtist},
@@ -89,8 +86,7 @@ func Test_analyzeEmptyFolders(t *testing.T) {
 				Log:     "level='info' -ext='.mp3' -topDir='good' msg='reading unfiltered music files'\n",
 			},
 		},
-		{
-			name:        "empty folders present",
+		"empty folders present": {
 			c:           &check{emptyFolders: &tFlag},
 			args:        args{s: files.CreateSearchForTesting(dirtyDir)},
 			wantArtists: files.CreateAllArtistsForTesting(dirtyDir, true),
@@ -175,8 +171,8 @@ func Test_analyzeEmptyFolders(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			gotArtists, gotArtistsWithIssues, gotOk := tt.c.analyzeEmptyFolders(o, tt.args.s)
 			if !reflect.DeepEqual(gotArtists, tt.wantArtists) {
@@ -218,22 +214,19 @@ func Test_filterArtists(t *testing.T) {
 		s       *files.Search
 		artists []*files.Artist
 	}
-	tests := []struct {
-		name string
-		c    *check
+	tests := map[string]struct {
+		c *check
 		args
 		wantFilteredArtists []*files.Artist
 		wantOk              bool
 		output.WantedRecording
 	}{
-		{
-			name:   "neither gap analysis nor integrity enabled",
+		"neither gap analysis nor integrity enabled": {
 			c:      &check{trackNumberingGaps: &fFlag, integrity: &fFlag},
 			args:   args{s: nil, artists: nil},
 			wantOk: true,
 		},
-		{
-			name:                "only gap analysis enabled, no artists supplied",
+		"only gap analysis enabled, no artists supplied": {
 			c:                   &check{trackNumberingGaps: &tFlag, integrity: &fFlag},
 			args:                args{s: searchStruct},
 			wantFilteredArtists: filteredArtists,
@@ -242,8 +235,7 @@ func Test_filterArtists(t *testing.T) {
 				Log: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='reading filtered music files'\n",
 			},
 		},
-		{
-			name:                "only gap analysis enabled, artists supplied",
+		"only gap analysis enabled, artists supplied": {
 			c:                   &check{trackNumberingGaps: &tFlag, integrity: &fFlag},
 			args:                args{s: searchStruct, artists: fullArtists},
 			wantFilteredArtists: filteredArtists,
@@ -252,8 +244,7 @@ func Test_filterArtists(t *testing.T) {
 				Log: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='filtering music files'\n",
 			},
 		},
-		{
-			name:                "only integrity check enabled, no artists supplied",
+		"only integrity check enabled, no artists supplied": {
 			c:                   &check{trackNumberingGaps: &fFlag, integrity: &tFlag},
 			args:                args{s: searchStruct},
 			wantFilteredArtists: filteredArtists,
@@ -262,8 +253,7 @@ func Test_filterArtists(t *testing.T) {
 				Log: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='reading filtered music files'\n",
 			},
 		},
-		{
-			name:                "only integrity check enabled, artists supplied",
+		"only integrity check enabled, artists supplied": {
 			c:                   &check{trackNumberingGaps: &fFlag, integrity: &tFlag},
 			args:                args{s: searchStruct, artists: fullArtists},
 			wantFilteredArtists: filteredArtists,
@@ -272,8 +262,7 @@ func Test_filterArtists(t *testing.T) {
 				Log: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='filtering music files'\n",
 			},
 		},
-		{
-			name:                "gap analysis and integrity check enabled, no artists supplied",
+		"gap analysis and integrity check enabled, no artists supplied": {
 			c:                   &check{trackNumberingGaps: &tFlag, integrity: &tFlag},
 			args:                args{s: searchStruct},
 			wantFilteredArtists: filteredArtists,
@@ -282,8 +271,7 @@ func Test_filterArtists(t *testing.T) {
 				Log: "level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='filterArtists' msg='reading filtered music files'\n",
 			},
 		},
-		{
-			name:                "gap analysis and integrity check enabled, artists supplied",
+		"gap analysis and integrity check enabled, artists supplied": {
 			c:                   &check{trackNumberingGaps: &tFlag, integrity: &tFlag},
 			args:                args{s: searchStruct, artists: fullArtists},
 			wantFilteredArtists: filteredArtists,
@@ -293,8 +281,8 @@ func Test_filterArtists(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			gotFilteredArtists, gotOk := tt.c.filterArtists(o, tt.args.s, tt.args.artists)
 			if !reflect.DeepEqual(gotFilteredArtists, tt.wantFilteredArtists) {
@@ -330,32 +318,28 @@ func Test_check_analyzeGaps(t *testing.T) {
 	type args struct {
 		artists []*files.Artist
 	}
-	tests := []struct {
-		name string
-		c    *check
+	tests := map[string]struct {
+		c *check
 		args
 		wantConflictedArtists []*checkedArtist
 		output.WantedRecording
 	}{
-		{name: "no analysis", c: &check{trackNumberingGaps: &fFlag}, args: args{}},
-		{
-			name: "no content",
+		"no analysis": {c: &check{trackNumberingGaps: &fFlag}, args: args{}},
+		"no content": {
 			c:    &check{trackNumberingGaps: &tFlag},
 			args: args{},
 			WantedRecording: output.WantedRecording{
 				Console: "Check Gaps: no gaps found.\n",
 			},
 		},
-		{
-			name: "good artist",
+		"good artist": {
 			c:    &check{trackNumberingGaps: &tFlag},
 			args: args{artists: []*files.Artist{goodArtist}},
 			WantedRecording: output.WantedRecording{
 				Console: "Check Gaps: no gaps found.\n",
 			},
 		},
-		{
-			name: "bad artist",
+		"bad artist": {
 			c:    &check{trackNumberingGaps: &tFlag},
 			args: args{artists: []*files.Artist{badArtist}},
 			wantConflictedArtists: []*checkedArtist{
@@ -378,8 +362,8 @@ func Test_check_analyzeGaps(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			if gotConflictedArtists := filterAndSortCheckedArtists(tt.c.analyzeGaps(o, tt.args.artists)); !equalCheckedArtists(gotConflictedArtists, tt.wantConflictedArtists) {
 				t.Errorf("%s = %v, want %v", fnName, gotConflictedArtists, tt.wantConflictedArtists)
@@ -425,16 +409,14 @@ func Test_check_analyzeIntegrity(t *testing.T) {
 	type args struct {
 		artists []*files.Artist
 	}
-	tests := []struct {
-		name string
-		c    *check
+	tests := map[string]struct {
+		c *check
 		args
 		wantConflictedArtists []*checkedArtist
 		output.WantedRecording
 	}{
-		{name: "degenerate case", c: &check{integrity: &fFlag}, args: args{}},
-		{
-			name: "no artists",
+		"degenerate case": {c: &check{integrity: &fFlag}, args: args{}},
+		"no artists": {
 			c:    &check{integrity: &tFlag},
 			args: args{},
 			WantedRecording: output.WantedRecording{
@@ -442,8 +424,7 @@ func Test_check_analyzeIntegrity(t *testing.T) {
 				Error:   "Reading track metadata.\n",
 			},
 		},
-		{
-			name: "meaningful case",
+		"meaningful case": {
 			c:    &check{integrity: &tFlag},
 			args: args{artists: a},
 			WantedRecording: output.WantedRecording{
@@ -471,8 +452,8 @@ func Test_check_analyzeIntegrity(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			gotConflictedArtists := filterAndSortCheckedArtists(tt.c.analyzeIntegrity(o, tt.args.artists))
 			if !equalCheckedArtists(gotConflictedArtists, tt.wantConflictedArtists) {
@@ -581,15 +562,13 @@ func Test_check_Exec(t *testing.T) {
 	type args struct {
 		args []string
 	}
-	tests := []struct {
-		name string
-		c    *check
+	tests := map[string]struct {
+		c *check
 		args
 		wantOk bool
 		output.WantedRecording
 	}{
-		{
-			name: "help",
+		"help": {
 			c:    makeCheckCommand(),
 			args: args{[]string{"--help"}},
 			WantedRecording: output.WantedRecording{
@@ -611,8 +590,7 @@ func Test_check_Exec(t *testing.T) {
 				Log: "level='error' arguments='[--help]' msg='flag: help requested'\n",
 			},
 		},
-		{
-			name: "do nothing",
+		"do nothing": {
 			c:    makeCheckCommand(),
 			args: args{[]string{"-topDir", topDir, "-empty=false", "-gaps=false", "-integrity=false"}},
 			WantedRecording: output.WantedRecording{
@@ -620,8 +598,7 @@ func Test_check_Exec(t *testing.T) {
 				Log:   "level='error' -empty='false' -gaps='false' -integrity='false' command='check' msg='the user disabled all functionality'\n",
 			},
 		},
-		{
-			name:   "do something",
+		"do something": {
 			c:      makeCheckCommand(),
 			args:   args{[]string{"-topDir", topDir, "-empty=true", "-gaps=false", "-integrity=false"}},
 			wantOk: true,
@@ -666,8 +643,8 @@ func Test_check_Exec(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			if gotOk := tt.c.Exec(o, tt.args.args); gotOk != tt.wantOk {
 				t.Errorf("%s ok = %v, want %v", fnName, gotOk, tt.wantOk)
@@ -707,8 +684,7 @@ func Test_newCheckCommand(t *testing.T) {
 	type args struct {
 		c *internal.Configuration
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		wantEmptyFolders         bool
 		wantGapsInTrackNumbering bool
@@ -716,24 +692,21 @@ func Test_newCheckCommand(t *testing.T) {
 		wantOk                   bool
 		output.WantedRecording
 	}{
-		{
-			name:                     "ordinary defaults",
+		"ordinary defaults": {
 			args:                     args{c: internal.EmptyConfiguration()},
 			wantEmptyFolders:         false,
 			wantGapsInTrackNumbering: false,
 			wantIntegrity:            true,
 			wantOk:                   true,
 		},
-		{
-			name:                     "overridden defaults",
+		"overridden defaults": {
 			args:                     args{c: config},
 			wantEmptyFolders:         true,
 			wantGapsInTrackNumbering: true,
 			wantIntegrity:            false,
 			wantOk:                   true,
 		},
-		{
-			name: "bad default empty folder",
+		"bad default empty folder": {
 			args: args{
 				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"check": map[string]any{
@@ -747,8 +720,7 @@ func Test_newCheckCommand(t *testing.T) {
 				Log:   "level='error' error='invalid boolean value \"Empty!!\" for -empty: parse error' section='check' msg='invalid content in configuration file'\n",
 			},
 		},
-		{
-			name: "bad default gaps",
+		"bad default gaps": {
 			args: args{
 				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"check": map[string]any{
@@ -762,8 +734,7 @@ func Test_newCheckCommand(t *testing.T) {
 				Log:   "level='error' error='invalid boolean value \"No\" for -gaps: parse error' section='check' msg='invalid content in configuration file'\n",
 			},
 		},
-		{
-			name: "bad default integrity",
+		"bad default integrity": {
 			args: args{
 				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
 					"check": map[string]any{
@@ -778,8 +749,8 @@ func Test_newCheckCommand(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			c, gotOk := newCheckCommand(o, tt.args.c, flag.NewFlagSet("check", flag.ContinueOnError))
 			if gotOk != tt.wantOk {
@@ -796,16 +767,16 @@ func Test_newCheckCommand(t *testing.T) {
 					"-ext", ".mp3",
 				}); ok {
 					if *c.emptyFolders != tt.wantEmptyFolders {
-						t.Errorf("%s %q: got checkEmptyFolders %t want %t", fnName, tt.name, *c.emptyFolders, tt.wantEmptyFolders)
+						t.Errorf("%s %q: got checkEmptyFolders %t want %t", fnName, name, *c.emptyFolders, tt.wantEmptyFolders)
 					}
 					if *c.trackNumberingGaps != tt.wantGapsInTrackNumbering {
-						t.Errorf("%s %q: got checkGapsInTrackNumbering %t want %t", fnName, tt.name, *c.trackNumberingGaps, tt.wantGapsInTrackNumbering)
+						t.Errorf("%s %q: got checkGapsInTrackNumbering %t want %t", fnName, name, *c.trackNumberingGaps, tt.wantGapsInTrackNumbering)
 					}
 					if *c.integrity != tt.wantIntegrity {
-						t.Errorf("%s %q: got checkIntegrity %t want %t", fnName, tt.name, *c.integrity, tt.wantIntegrity)
+						t.Errorf("%s %q: got checkIntegrity %t want %t", fnName, name, *c.integrity, tt.wantIntegrity)
 					}
 				} else {
-					t.Errorf("%s %q: error processing arguments", fnName, tt.name)
+					t.Errorf("%s %q: error processing arguments", fnName, name)
 				}
 			}
 		})
@@ -817,14 +788,12 @@ func Test_merge(t *testing.T) {
 	type args struct {
 		sets [][]*checkedArtist
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want []*checkedArtist
 	}{
-		{name: "degenerate case", args: args{}},
-		{
-			name: "more interesting case",
+		"degenerate case": {args: args{}},
+		"more interesting case": {
 			args: args{sets: [][]*checkedArtist{
 				// set 1
 				{
@@ -945,8 +914,8 @@ func Test_merge(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			got := merge(tt.args.sets)
 			if len(got) != len(tt.want) {
 				t.Errorf("%s artist len = %d, want %d", fnName, len(got), len(tt.want))
@@ -999,12 +968,11 @@ func Test_merge(t *testing.T) {
 
 func Test_sortCheckedArtistsWithIssues(t *testing.T) {
 	const fnName = "sortCheckedArtistsWithIssues()"
-	tests := []struct {
-		name  string
+	tests := map[string]struct {
 		input checkedArtistSlice
 	}{
-		{name: "degenerate case", input: nil},
-		{name: "scrambled input", input: checkedArtistSlice([]*checkedArtist{
+		"degenerate case": {input: nil},
+		"scrambled input": {input: checkedArtistSlice([]*checkedArtist{
 			{backing: files.NewArtist("10", "10")},
 			{backing: files.NewArtist("2", "2")},
 			{backing: files.NewArtist("35", "35")},
@@ -1012,8 +980,8 @@ func Test_sortCheckedArtistsWithIssues(t *testing.T) {
 			{backing: files.NewArtist("2", "2")},
 		})},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			sort.Sort(tt.input)
 			for i := range tt.input {
 				if i == 0 {
@@ -1029,12 +997,11 @@ func Test_sortCheckedArtistsWithIssues(t *testing.T) {
 
 func Test_sortAlbumsWithIssues(t *testing.T) {
 	const fnName = "sortAlbumsWithIssues()"
-	tests := []struct {
-		name  string
+	tests := map[string]struct {
 		input checkedAlbumSlice
 	}{
-		{name: "degenerate case", input: nil},
-		{name: "scrambled input", input: checkedAlbumSlice([]*checkedAlbum{
+		"degenerate case": {input: nil},
+		"scrambled input": {input: checkedAlbumSlice([]*checkedAlbum{
 			{backing: files.NewAlbum("10", nil, "artist/10")},
 			{backing: files.NewAlbum("2", nil, "artist/2")},
 			{backing: files.NewAlbum("35", nil, "artist/35")},
@@ -1042,8 +1009,8 @@ func Test_sortAlbumsWithIssues(t *testing.T) {
 			{backing: files.NewAlbum("3", nil, "artist/3")},
 		})},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			sort.Sort(tt.input)
 			for i := range tt.input {
 				if i == 0 {
@@ -1059,12 +1026,11 @@ func Test_sortAlbumsWithIssues(t *testing.T) {
 
 func Test_sortTracksWithIssues(t *testing.T) {
 	const fnName = "sortTracksWithIssues()"
-	tests := []struct {
-		name  string
+	tests := map[string]struct {
 		input checkedTrackSlice
 	}{
-		{name: "degenerate case", input: nil},
-		{name: "scrambled input", input: checkedTrackSlice([]*checkedTrack{
+		"degenerate case": {input: nil},
+		"scrambled input": {input: checkedTrackSlice([]*checkedTrack{
 			{backing: files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist1", "./artist1"), "./artist1/album1"), "10 track10.mp3", "track10", 10)},
 			{backing: files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist1", "./artist1"), "./artist1/album1"), "02 track2.mp3", "track2", 2)},
 			{backing: files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist1", "./artist1"), "./artist1/album1"), "35 track35.mp3", "track35", 35)},
@@ -1072,8 +1038,8 @@ func Test_sortTracksWithIssues(t *testing.T) {
 			{backing: files.NewTrack(files.NewAlbum("album1", files.NewArtist("artist1", "./artist1"), "./artist1/album1"), "03 track3.mp3", "track3", 3)},
 		})},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			sort.Sort(tt.input)
 			for i := range tt.input {
 				if i == 0 {
@@ -1092,14 +1058,12 @@ func Test_reportResults(t *testing.T) {
 	type args struct {
 		artistsWithIssues [][]*checkedArtist
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		output.WantedRecording
 	}{
-		{name: "degenerate case", args: args{}},
-		{
-			name: "more interesting case",
+		"degenerate case": {args: args{}},
+		"more interesting case": {
 			args: args{artistsWithIssues: [][]*checkedArtist{
 				// set 1
 				{
@@ -1198,8 +1162,8 @@ func Test_reportResults(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			reportResults(o, tt.args.artistsWithIssues...)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {

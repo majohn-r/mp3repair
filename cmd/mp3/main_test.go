@@ -48,8 +48,7 @@ func Test_run(t *testing.T) {
 		f           func() (*debug.BuildInfo, bool)
 		cmdlineArgs []string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		wantReturnValue int
 		Console         string
@@ -59,8 +58,7 @@ func Test_run(t *testing.T) {
 	}{
 		// TODO [#85] need more tests: explicitly call list, check, repair,
 		// postRepair
-		{
-			name: "failure",
+		"failure": {
 			args: args{
 				f: func() (*debug.BuildInfo, bool) {
 					return &debug.BuildInfo{
@@ -77,8 +75,7 @@ func Test_run(t *testing.T) {
 				"level='info' duration='",
 			wantLogSuffix: "' exitCode='1' msg='execution ends'\n",
 		},
-		{
-			name: "success",
+		"success": {
 			args: args{
 				f: func() (*debug.BuildInfo, bool) {
 					return &debug.BuildInfo{
@@ -97,8 +94,8 @@ func Test_run(t *testing.T) {
 			Console:       "Artist: myArtist\n  Album: myAlbum\n",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			if gotReturnValue := run(o, tt.args.f, tt.args.cmdlineArgs); gotReturnValue != tt.wantReturnValue {
 				t.Errorf("%s = %d, want %d", fnName, gotReturnValue, tt.wantReturnValue)
@@ -127,22 +124,20 @@ func Test_report(t *testing.T) {
 	type args struct {
 		exitCode int
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		output.WantedRecording
 	}{
-		{name: "success", args: args{exitCode: 0}, WantedRecording: output.WantedRecording{Error: ""}},
-		{
-			name: "failure",
+		"success": {args: args{exitCode: 0}, WantedRecording: output.WantedRecording{Error: ""}},
+		"failure": {
 			args: args{exitCode: 1},
 			WantedRecording: output.WantedRecording{
 				Error: "\"mp3\" version 1.2.3, created at " + creation + ", failed.\n",
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			report(o, tt.args.exitCode)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -182,14 +177,12 @@ func Test_exec(t *testing.T) {
 		logInit func(output.Bus) bool
 		cmdLine []string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		appData string
 		want    int
 	}{
-		{
-			name: "init logging fails",
+		"init logging fails": {
 			args: args{
 				logInit: func(output.Bus) bool {
 					return false
@@ -198,8 +191,7 @@ func Test_exec(t *testing.T) {
 			appData: here,
 			want:    1,
 		},
-		{
-			name: "acquisition of application path ",
+		"acquisition of application path ": {
 			args: args{
 				logInit: func(output.Bus) bool {
 					return true
@@ -208,8 +200,7 @@ func Test_exec(t *testing.T) {
 			appData: "no such directory",
 			want:    1,
 		},
-		{
-			name: "run fails",
+		"run fails": {
 			args: args{
 				logInit: func(output.Bus) bool {
 					return true
@@ -219,8 +210,7 @@ func Test_exec(t *testing.T) {
 			appData: here,
 			want:    1,
 		},
-		{
-			name: "success",
+		"success": {
 			args: args{
 				logInit: func(output.Bus) bool {
 					return true
@@ -231,8 +221,8 @@ func Test_exec(t *testing.T) {
 			want:    0,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			os.Setenv("APPDATA", tt.appData)
 			if got := exec(tt.args.logInit, tt.args.cmdLine); got != tt.want {
 				t.Errorf("%s = %d, want %d", fnName, got, tt.want)

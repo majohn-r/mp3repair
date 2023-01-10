@@ -14,19 +14,13 @@ func Test_finalYear(t *testing.T) {
 	type args struct {
 		timestamp string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want int
 		output.WantedRecording
 	}{
-		{
-			name: "normal",
-			args: args{timestamp: "2022-08-09T12:32:21-04:00"},
-			want: 2022,
-		},
-		{
-			name: "weird time",
+		"normal": {args: args{timestamp: "2022-08-09T12:32:21-04:00"}, want: 2022},
+		"weird time": {
 			args: args{timestamp: "in the year 2525"},
 			want: 2021,
 			WantedRecording: output.WantedRecording{
@@ -35,8 +29,8 @@ func Test_finalYear(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			if got := finalYear(o, tt.args.timestamp); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
@@ -56,38 +50,25 @@ func Test_formatCopyright(t *testing.T) {
 		firstYear int
 		lastYear  int
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want string
 	}{
-		{
-			name: "older than first year",
-			args: args{
-				firstYear: 2021,
-				lastYear:  2020,
-			},
+		"older than first year": {
+			args: args{firstYear: 2021, lastYear: 2020},
 			want: "Copyright © 2021 Marc Johnson",
 		},
-		{
-			name: "same as first year",
-			args: args{
-				firstYear: 2021,
-				lastYear:  2021,
-			},
+		"same as first year": {
+			args: args{firstYear: 2021, lastYear: 2021},
 			want: "Copyright © 2021 Marc Johnson",
 		},
-		{
-			name: "newer than first year",
-			args: args{
-				firstYear: 2021,
-				lastYear:  2025,
-			},
+		"newer than first year": {
+			args: args{firstYear: 2021, lastYear: 2025},
 			want: "Copyright © 2021-2025 Marc Johnson",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := formatCopyright(tt.args.firstYear, tt.args.lastYear); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -103,14 +84,12 @@ func Test_formatBuildData(t *testing.T) {
 		goVersion = originalGoVersion
 		buildDependencies = originalDependencies
 	}()
-	tests := []struct {
-		name         string
+	tests := map[string]struct {
 		version      string
 		dependencies []string
 		want         []string
 	}{
-		{
-			name:         "success",
+		"success": {
 			version:      "go1.x",
 			dependencies: []string{"github.com/bogem/id3v2/v2 v2.1.2", "github.com/lestrrat-go/strftime v1.0.6"},
 			want: []string{
@@ -121,8 +100,8 @@ func Test_formatBuildData(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			goVersion = tt.version
 			buildDependencies = tt.dependencies
 			if got := formatBuildData(); !reflect.DeepEqual(got, tt.want) {
@@ -137,19 +116,12 @@ func Test_reportAbout(t *testing.T) {
 	type args struct {
 		lines []string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		output.WantedRecording
 	}{
-		{
-			name: "normal",
-			args: args{lines: []string{
-				"blah blah blah",
-				formatCopyright(2021, 2025),
-				"build data",
-				" - foo/bar/baz v1.2.3",
-			}},
+		"normal": {
+			args: args{lines: []string{"blah blah blah", formatCopyright(2021, 2025), "build data", " - foo/bar/baz v1.2.3"}},
 			WantedRecording: output.WantedRecording{
 				Console: "+------------------------------------+\n" +
 					"| blah blah blah                     |\n" +
@@ -160,8 +132,8 @@ func Test_reportAbout(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			reportAbout(o, tt.args.lines)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -179,21 +151,15 @@ func Test_aboutCmd_Exec(t *testing.T) {
 		o    output.Bus
 		args []string
 	}
-	tests := []struct {
-		name string
-		a    *aboutCmd
+	tests := map[string]struct {
+		a *aboutCmd
 		args
 		wantOk bool
 	}{
-		{
-			name:   "for sake of completeness",
-			a:      &aboutCmd{},
-			args:   args{o: output.NewNilBus()},
-			wantOk: true,
-		},
+		"for sake of completeness": {a: &aboutCmd{}, args: args{o: output.NewNilBus()}, wantOk: true},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if gotOk := tt.a.Exec(tt.args.o, tt.args.args); gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
 			}
@@ -206,24 +172,15 @@ func Test_translateTimestamp(t *testing.T) {
 	type args struct {
 		t string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want string
 	}{
-		{
-			name: "good time",
-			args: args{t: "2022-08-10T13:29:57-04:00"},
-			want: "Wednesday, August 10 2022, 13:29:57",
-		},
-		{
-			name: "badly formatted time",
-			args: args{t: "today is Monday!"},
-			want: "today is Monday!",
-		},
+		"good time":            {args: args{t: "2022-08-10T13:29:57-04:00"}, want: "Wednesday, August 10 2022, 13:29:57"},
+		"badly formatted time": {args: args{t: "today is Monday!"}, want: "today is Monday!"},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := translateTimestamp(tt.args.t); !strings.HasPrefix(got, tt.want) {
 				t.Errorf("%s = %q, want to start with %q", fnName, got, tt.want)
 			}
@@ -238,41 +195,29 @@ func TestInitBuildData(t *testing.T) {
 		version  string
 		creation string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		wantGoVersion         string
 		wantBuildDependencies []string
 	}{
-		{
-			name: "happy path",
+		"happy path": {
 			args: args{
 				f: func() (*debug.BuildInfo, bool) {
 					return &debug.BuildInfo{
 						GoVersion: "go1.x",
 						Deps: []*debug.Module{
-							{
-								Path:    "blah/foo",
-								Version: "v1.1.1",
-							},
-							{
-								Path:    "foo/blah/v2",
-								Version: "v2.2.2",
-							},
+							{Path: "blah/foo", Version: "v1.1.1"},
+							{Path: "foo/blah/v2", Version: "v2.2.2"},
 						},
 					}, true
 				},
 				version:  "0.1.1",
 				creation: "today",
 			},
-			wantGoVersion: "go1.x",
-			wantBuildDependencies: []string{
-				"blah/foo v1.1.1",
-				"foo/blah/v2 v2.2.2",
-			},
+			wantGoVersion:         "go1.x",
+			wantBuildDependencies: []string{"blah/foo v1.1.1", "foo/blah/v2 v2.2.2"},
 		},
-		{
-			name: "unhappy path",
+		"unhappy path": {
 			args: args{
 				f: func() (*debug.BuildInfo, bool) {
 					return nil, false
@@ -283,8 +228,8 @@ func TestInitBuildData(t *testing.T) {
 			wantGoVersion: "unknown",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			originalGoVersion := goVersion
 			originalDependencies := buildDependencies
 			goVersion = ""
