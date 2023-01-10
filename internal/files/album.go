@@ -11,23 +11,24 @@ import (
 
 // Album encapsulates information about a music album
 type Album struct {
-	name              string
-	tracks            []*Track
-	recordingArtist   *Artist
-	path              string
+	name            string
+	tracks          []*Track
+	recordingArtist *Artist
+	path            string
+	// the following fields are recorded in each track's metadata
 	canonicalGenre    string
 	canonicalYear     string
-	canonicalTitle    string             // this is what the tracks will record as their album title
-	musicCDIdentifier id3v2.UnknownFrame // MCDI frame value
+	canonicalTitle    string
+	musicCDIdentifier id3v2.UnknownFrame
 }
 
-func newAlbumFromFile(file fs.DirEntry, artist *Artist) *Album {
+func newAlbumFromFile(file fs.DirEntry, ar *Artist) *Album {
 	dirName := file.Name()
-	return NewAlbum(dirName, artist, artist.subDirectory(dirName))
+	return NewAlbum(dirName, ar, ar.subDirectory(dirName))
 }
 
-func copyAlbum(a *Album, artist *Artist) *Album {
-	a2 := NewAlbum(a.name, artist, a.path)
+func copyAlbum(a *Album, ar *Artist) *Album {
+	a2 := NewAlbum(a.name, ar, a.path)
 	for _, t := range a.tracks {
 		a2.AddTrack(copyTrack(t, a2))
 	}
@@ -39,8 +40,8 @@ func copyAlbum(a *Album, artist *Artist) *Album {
 }
 
 // NewAlbum creates a new Album instance
-func NewAlbum(title string, artist *Artist, albumPath string) *Album {
-	return &Album{name: title, recordingArtist: artist, path: albumPath, canonicalTitle: title}
+func NewAlbum(s string, ar *Artist, p string) *Album {
+	return &Album{name: s, recordingArtist: ar, path: p, canonicalTitle: s}
 }
 
 // BackupDirectory gets the path for the album's backup directory
@@ -58,11 +59,11 @@ func (a *Album) Name() string {
 }
 
 // RecordingArtistName returns the name of the album's recording artist
-func (a *Album) RecordingArtistName() string {
-	if a.recordingArtist == nil {
-		return ""
+func (a *Album) RecordingArtistName() (s string) {
+	if a.recordingArtist != nil {
+		s = a.recordingArtist.Name()
 	}
-	return a.recordingArtist.Name()
+	return
 }
 
 // AddTrack adds a new track to the album
