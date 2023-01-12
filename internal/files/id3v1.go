@@ -33,204 +33,6 @@ const (
 	id3v1Length    = genreOffset + genreLength // total length of the ID3V1 block
 )
 
-// per https://en.wikipedia.org/wiki/List_of_ID3v1_Genres as of August 16 2022
-var genreMap = map[int]string{
-	0:   "Blues",
-	1:   "Classic Rock",
-	2:   "Country",
-	3:   "Dance",
-	4:   "Disco",
-	5:   "Funk",
-	6:   "Grunge",
-	7:   "Hip-Hop",
-	8:   "Jazz",
-	9:   "Metal",
-	10:  "New Age",
-	11:  "Oldies",
-	12:  "Other",
-	13:  "Pop",
-	14:  "Rhythm and Blues",
-	15:  "Rap",
-	16:  "Reggae",
-	17:  "Rock",
-	18:  "Techno",
-	19:  "Industrial",
-	20:  "Alternative",
-	21:  "Ska",
-	22:  "Death Metal",
-	23:  "Pranks",
-	24:  "Soundtrack",
-	25:  "Euro-Techno",
-	26:  "Ambient",
-	27:  "Trip-Hop",
-	28:  "Vocal",
-	29:  "Jazz & Funk",
-	30:  "Fusion",
-	31:  "Trance",
-	32:  "Classical",
-	33:  "Instrumental",
-	34:  "Acid",
-	35:  "House",
-	36:  "Game",
-	37:  "Sound clip",
-	38:  "Gospel",
-	39:  "Noise",
-	40:  "Alternative Rock",
-	41:  "Bass",
-	42:  "Soul",
-	43:  "Punk",
-	44:  "Space",
-	45:  "Meditative",
-	46:  "Instrumental Pop",
-	47:  "Instrumental Rock",
-	48:  "Ethnic",
-	49:  "Gothic",
-	50:  "Darkwave",
-	51:  "Techno-Industrial",
-	52:  "Electronic",
-	53:  "Pop-Folk",
-	54:  "Eurodance",
-	55:  "Dream",
-	56:  "Southern Rock",
-	57:  "Comedy",
-	58:  "Cult",
-	59:  "Gangsta",
-	60:  "Top 40",
-	61:  "Christian Rap",
-	62:  "Pop/Funk",
-	63:  "Jungle music",
-	64:  "Native US",
-	65:  "Cabaret",
-	66:  "New Wave",
-	67:  "Psychedelic",
-	68:  "Rave",
-	69:  "Showtunes",
-	70:  "Trailer",
-	71:  "Lo-Fi",
-	72:  "Tribal",
-	73:  "Acid Punk",
-	74:  "Acid Jazz",
-	75:  "Polka",
-	76:  "Retro",
-	77:  "Musical",
-	78:  "Rock ’n’ Roll",
-	79:  "Hard Rock",
-	80:  "Folk",
-	81:  "Folk-Rock",
-	82:  "National Folk",
-	83:  "Swing",
-	84:  "Fast Fusion",
-	85:  "Bebop",
-	86:  "Latin",
-	87:  "Revival",
-	88:  "Celtic",
-	89:  "Bluegrass",
-	90:  "Avantgarde",
-	91:  "Gothic Rock",
-	92:  "Progressive Rock",
-	93:  "Psychedelic Rock",
-	94:  "Symphonic Rock",
-	95:  "Slow Rock",
-	96:  "Big Band",
-	97:  "Chorus",
-	98:  "Easy Listening",
-	99:  "Acoustic",
-	100: "Humour",
-	101: "Speech",
-	102: "Chanson",
-	103: "Opera",
-	104: "Chamber Music",
-	105: "Sonata",
-	106: "Symphony",
-	107: "Booty Bass",
-	108: "Primus",
-	109: "Porn Groove",
-	110: "Satire",
-	111: "Slow Jam",
-	112: "Club",
-	113: "Tango",
-	114: "Samba",
-	115: "Folklore",
-	116: "Ballad",
-	117: "Power Ballad",
-	118: "Rhythmic Soul",
-	119: "Freestyle",
-	120: "Duet",
-	121: "Punk Rock",
-	122: "Drum Solo",
-	123: "A cappella",
-	124: "Euro-House",
-	125: "Dance Hall",
-	126: "Goa music",
-	127: "Drum & Bass",
-	128: "Club-House",
-	129: "Hardcore Techno",
-	130: "Terror",
-	131: "Indie",
-	132: "BritPop",
-	133: "Negerpunk",
-	134: "Polsk Punk",
-	135: "Beat",
-	136: "Christian Gangsta Rap",
-	137: "Heavy Metal",
-	138: "Black Metal",
-	139: "Crossover",
-	140: "Contemporary Christian",
-	141: "Christian Rock",
-	142: "Merengue",
-	143: "Salsa",
-	144: "Thrash Metal",
-	145: "Anime",
-	146: "Jpop",
-	147: "Synthpop",
-	148: "Abstract",
-	149: "Art Rock",
-	150: "Baroque",
-	151: "Bhangra",
-	152: "Big beat",
-	153: "Breakbeat",
-	154: "Chillout",
-	155: "Downtempo",
-	156: "Dub",
-	157: "EBM",
-	158: "Eclectic",
-	159: "Electro",
-	160: "Electroclash",
-	161: "Emo",
-	162: "Experimental",
-	163: "Garage",
-	164: "Global",
-	165: "IDM",
-	166: "Illbient",
-	167: "Industro-Goth",
-	168: "Jam Band",
-	169: "Krautrock",
-	170: "Leftfield",
-	171: "Lounge",
-	172: "Math Rock",
-	173: "New Romantic",
-	174: "Nu-Breakz",
-	175: "Post-Punk",
-	176: "Post-Rock",
-	177: "Psytrance",
-	178: "Shoegaze",
-	179: "Space Rock",
-	180: "Trop Rock",
-	181: "World Music",
-	182: "Neoclassical",
-	183: "Audiobook",
-	184: "Audio Theatre",
-	185: "Neue Deutsche Welle",
-	186: "Podcast",
-	187: "Indie-Rock",
-	188: "G-Funk",
-	189: "Dubstep",
-	190: "Garage Rock",
-	191: "Psybient",
-}
-
-var genreIndicesMap = map[string]int{} // lazily initialized when needed; keys are all lowercase
-
 type id3v1Field struct {
 	startOffset int
 	length      int
@@ -238,6 +40,51 @@ type id3v1Field struct {
 }
 
 var (
+	// per https://en.wikipedia.org/wiki/List_of_ID3v1_Genres as of August 16 2022
+	genreMap = map[int]string{
+		0: "Blues", 1: "Classic Rock", 2: "Country", 3: "Dance", 4: "Disco",
+		5: "Funk", 6: "Grunge", 7: "Hip-Hop", 8: "Jazz", 9: "Metal",
+		10: "New Age", 11: "Oldies", 12: "Other", 13: "Pop", 14: "Rhythm and Blues",
+		15: "Rap", 16: "Reggae", 17: "Rock", 18: "Techno", 19: "Industrial",
+		20: "Alternative", 21: "Ska", 22: "Death Metal", 23: "Pranks", 24: "Soundtrack",
+		25: "Euro-Techno", 26: "Ambient", 27: "Trip-Hop", 28: "Vocal", 29: "Jazz & Funk",
+		30: "Fusion", 31: "Trance", 32: "Classical", 33: "Instrumental", 34: "Acid",
+		35: "House", 36: "Game", 37: "Sound clip", 38: "Gospel", 39: "Noise",
+		40: "Alternative Rock", 41: "Bass", 42: "Soul", 43: "Punk", 44: "Space",
+		45: "Meditative", 46: "Instrumental Pop", 47: "Instrumental Rock", 48: "Ethnic", 49: "Gothic",
+		50: "Darkwave", 51: "Techno-Industrial", 52: "Electronic", 53: "Pop-Folk", 54: "Eurodance",
+		55: "Dream", 56: "Southern Rock", 57: "Comedy", 58: "Cult", 59: "Gangsta",
+		60: "Top 40", 61: "Christian Rap", 62: "Pop/Funk", 63: "Jungle music", 64: "Native US",
+		65: "Cabaret", 66: "New Wave", 67: "Psychedelic", 68: "Rave", 69: "Showtunes",
+		70: "Trailer", 71: "Lo-Fi", 72: "Tribal", 73: "Acid Punk", 74: "Acid Jazz",
+		75: "Polka", 76: "Retro", 77: "Musical", 78: "Rock ’n’ Roll", 79: "Hard Rock",
+		80: "Folk", 81: "Folk-Rock", 82: "National Folk", 83: "Swing", 84: "Fast Fusion",
+		85: "Bebop", 86: "Latin", 87: "Revival", 88: "Celtic", 89: "Bluegrass",
+		90: "Avantgarde", 91: "Gothic Rock", 92: "Progressive Rock", 93: "Psychedelic Rock", 94: "Symphonic Rock",
+		95: "Slow Rock", 96: "Big Band", 97: "Chorus", 98: "Easy Listening", 99: "Acoustic",
+		100: "Humour", 101: "Speech", 102: "Chanson", 103: "Opera", 104: "Chamber Music",
+		105: "Sonata", 106: "Symphony", 107: "Booty Bass", 108: "Primus", 109: "Porn Groove",
+		110: "Satire", 111: "Slow Jam", 112: "Club", 113: "Tango", 114: "Samba",
+		115: "Folklore", 116: "Ballad", 117: "Power Ballad", 118: "Rhythmic Soul", 119: "Freestyle",
+		120: "Duet", 121: "Punk Rock", 122: "Drum Solo", 123: "A cappella", 124: "Euro-House",
+		125: "Dance Hall", 126: "Goa music", 127: "Drum & Bass", 128: "Club-House", 129: "Hardcore Techno",
+		130: "Terror", 131: "Indie", 132: "BritPop", 133: "Negerpunk", 134: "Polsk Punk",
+		135: "Beat", 136: "Christian Gangsta Rap", 137: "Heavy Metal", 138: "Black Metal", 139: "Crossover",
+		140: "Contemporary Christian", 141: "Christian Rock", 142: "Merengue", 143: "Salsa", 144: "Thrash Metal",
+		145: "Anime", 146: "Jpop", 147: "Synthpop", 148: "Abstract", 149: "Art Rock",
+		150: "Baroque", 151: "Bhangra", 152: "Big beat", 153: "Breakbeat", 154: "Chillout",
+		155: "Downtempo", 156: "Dub", 157: "EBM", 158: "Eclectic", 159: "Electro",
+		160: "Electroclash", 161: "Emo", 162: "Experimental", 163: "Garage", 164: "Global",
+		165: "IDM", 166: "Illbient", 167: "Industro-Goth", 168: "Jam Band", 169: "Krautrock",
+		170: "Leftfield", 171: "Lounge", 172: "Math Rock", 173: "New Romantic", 174: "Nu-Breakz",
+		175: "Post-Punk", 176: "Post-Rock", 177: "Psytrance", 178: "Shoegaze", 179: "Space Rock",
+		180: "Trop Rock", 181: "World Music", 182: "Neoclassical", 183: "Audiobook", 184: "Audio Theatre",
+		185: "Neue Deutsche Welle", 186: "Podcast", 187: "Indie-Rock", 188: "G-Funk", 189: "Dubstep",
+		190: "Garage Rock", 191: "Psybient",
+	}
+	// lazily initialized when needed; keys are all lowercase
+	genreIndicesMap = map[string]int{}
+	// ID3V1 tags
 	id3v1Tag      = initID3v1Field(tagOffset, tagLength)
 	id3v1Title    = initID3v1Field(titleOffset, titleLength)
 	id3v1Artist   = initID3v1Field(artistOffset, artistLength)
@@ -250,11 +97,7 @@ var (
 )
 
 func initID3v1Field(offset, length int) id3v1Field {
-	return id3v1Field{
-		startOffset: offset,
-		length:      length,
-		endOffset:   offset + length,
-	}
+	return id3v1Field{startOffset: offset, length: length, endOffset: offset + length}
 }
 
 type id3v1Metadata struct {
@@ -281,13 +124,11 @@ func newID3v1Metadata() *id3v1Metadata {
 }
 
 func (im *id3v1Metadata) readStringField(f id3v1Field) string {
-	s := string(im.data[f.startOffset:f.endOffset])
-	return trim(s)
+	return trim(string(im.data[f.startOffset:f.endOffset]))
 }
 
 func (im *id3v1Metadata) isValid() bool {
-	tag := im.readStringField(id3v1Tag)
-	return tag == "TAG"
+	return im.readStringField(id3v1Tag) == "TAG"
 }
 
 func (im *id3v1Metadata) title() string {
@@ -303,9 +144,9 @@ func (im *id3v1Metadata) writeStringField(s string, f id3v1Field) {
 	copy(im.data[f.startOffset:f.endOffset], s)
 }
 
-func repairName(origin string) string {
+func repairName(s string) string {
 	var externalBytes []byte
-	for _, r := range origin {
+	for _, r := range s {
 		if b, ok := runeByteMapping[r]; ok {
 			externalBytes = append(externalBytes, b...)
 		} else {
@@ -367,13 +208,13 @@ func (im *id3v1Metadata) setByteField(v int, f id3v1Field) {
 	im.data[f.startOffset] = byte(v)
 }
 
-func (im *id3v1Metadata) setTrack(t int) bool {
-	if t < 1 || t > 255 {
-		return false
+func (im *id3v1Metadata) setTrack(t int) (b bool) {
+	if t >= 1 && t <= 255 {
+		im.setByteField(0, id3v1ZeroByte)
+		im.setByteField(t, id3v1Track)
+		b = true
 	}
-	im.setByteField(0, id3v1ZeroByte)
-	im.setByteField(t, id3v1Track)
-	return true
+	return
 }
 
 func (im *id3v1Metadata) genre() (string, bool) {
@@ -458,68 +299,68 @@ func writeToFile(f *os.File, b []byte) (int, error) {
 	return f.Write(b)
 }
 
-func updateID3V1Tag(t *Track, src sourceType) (err error) {
-	if t.tM.requiresEdit[src] {
+func updateID3V1Tag(tM *trackMetadata, path string, sT sourceType) (err error) {
+	if tM.requiresEdit[sT] {
 		var v1 *id3v1Metadata
-		if v1, err = internalReadID3V1Metadata(t.path, fileReader); err == nil {
-			albumTitle := t.tM.correctedAlbum[src]
+		if v1, err = internalReadID3V1Metadata(path, fileReader); err == nil {
+			albumTitle := tM.correctedAlbum[sT]
 			if albumTitle != "" {
 				v1.setAlbum(albumTitle)
 			}
-			artistName := t.tM.correctedArtist[src]
+			artistName := tM.correctedArtist[sT]
 			if artistName != "" {
 				v1.setArtist(artistName)
 			}
-			trackTitle := t.tM.correctedTitle[src]
+			trackTitle := tM.correctedTitle[sT]
 			if trackTitle != "" {
 				v1.setTitle(trackTitle)
 			}
-			trackNumber := t.tM.correctedTrack[src]
+			trackNumber := tM.correctedTrack[sT]
 			if trackNumber != 0 {
 				_ = v1.setTrack(trackNumber)
 			}
-			genre := t.tM.correctedGenre[src]
+			genre := tM.correctedGenre[sT]
 			if genre != "" {
 				v1.setGenre(genre)
 			}
-			year := t.tM.correctedYear[src]
+			year := tM.correctedYear[sT]
 			if year != "" {
 				v1.setYear(year)
 			}
-			err = v1.write(t.path)
+			err = v1.write(path)
 		}
 	}
 	return
 }
 
-func (im *id3v1Metadata) internalWrite(originalPath string, writeFunc func(f *os.File, b []byte) (int, error)) (err error) {
-	var oldFile *os.File
-	if oldFile, err = os.Open(originalPath); err == nil {
-		defer oldFile.Close()
+func (im *id3v1Metadata) internalWrite(path string, writeFunc func(f *os.File, b []byte) (int, error)) (err error) {
+	var srcFile *os.File
+	if srcFile, err = os.Open(path); err == nil {
+		defer srcFile.Close()
 		var stat fs.FileInfo
-		if stat, err = oldFile.Stat(); err == nil {
-			newPath := originalPath + "-id3v1"
-			var newFile *os.File
-			if newFile, err = os.OpenFile(newPath, os.O_RDWR|os.O_CREATE, stat.Mode()); err == nil {
-				defer newFile.Close()
+		if stat, err = srcFile.Stat(); err == nil {
+			tmpPath := path + "-id3v1"
+			var tmpFile *os.File
+			if tmpFile, err = os.OpenFile(tmpPath, os.O_RDWR|os.O_CREATE, stat.Mode()); err == nil {
+				defer tmpFile.Close()
 				// borrowed this piece of logic from id3v2 tag.Save() method
 				tempfileShouldBeRemoved := true
 				defer func() {
 					if tempfileShouldBeRemoved {
-						os.Remove(newPath)
+						os.Remove(tmpPath)
 					}
 				}()
-				if _, err = io.Copy(newFile, oldFile); err == nil {
-					oldFile.Close()
-					if _, err = newFile.Seek(-id3v1Length, io.SeekEnd); err == nil {
+				if _, err = io.Copy(tmpFile, srcFile); err == nil {
+					srcFile.Close()
+					if _, err = tmpFile.Seek(-id3v1Length, io.SeekEnd); err == nil {
 						var n int
-						if n, err = writeFunc(newFile, im.data); err == nil {
-							newFile.Close()
+						if n, err = writeFunc(tmpFile, im.data); err == nil {
+							tmpFile.Close()
 							if n != id3v1Length {
-								err = fmt.Errorf("wrote %d bytes to %q, expected to write %d bytes", n, newPath, id3v1Length)
+								err = fmt.Errorf("wrote %d bytes to %q, expected to write %d bytes", n, tmpPath, id3v1Length)
 								return
 							}
-							if err = os.Rename(newPath, originalPath); err == nil {
+							if err = os.Rename(tmpPath, path); err == nil {
 								tempfileShouldBeRemoved = false
 							}
 						}
@@ -533,99 +374,18 @@ func (im *id3v1Metadata) internalWrite(originalPath string, writeFunc func(f *os
 
 var runeByteMapping = map[rune][]byte{
 	'…': {0x85},
-	'¡': {0xA1},
-	'¢': {0xA2},
-	'£': {0xA3},
-	'¤': {0xA4},
-	'¥': {0xA5},
-	'¦': {0xA6},
-	'§': {0xA7},
-	'¨': {0xA8},
-	'©': {0xA9},
-	'ª': {0xAA},
-	'«': {0xAB},
-	'¬': {0xAC},
-	'®': {0xAE},
-	'¯': {0xAF},
-	'°': {0xB0},
-	'±': {0xB1},
-	'²': {0xB2},
-	'³': {0xB3},
-	'´': {0xB4},
-	'µ': {0xB5},
-	'¶': {0xB6},
-	'·': {0xB7},
-	'¸': {0xB8},
-	'¹': {0xB9},
-	'º': {0xBA},
-	'»': {0xBB},
-	'¼': {0xBC},
-	'½': {0xBD},
-	'¾': {0xBE},
-	'¿': {0xBF},
-	'À': {0xC0},
-	'Á': {0xC1},
-	'Â': {0xC2},
-	'Ã': {0xC3},
-	'Ä': {0xC4},
-	'Å': {0xC5},
-	'Æ': {0xC6},
-	'Ç': {0xC7},
-	'È': {0xC8},
-	'É': {0xC9},
-	'Ê': {0xCA},
-	'Ë': {0xCB},
-	'Ì': {0xCC},
-	'Í': {0xCD},
-	'Î': {0xCE},
-	'Ï': {0xCF},
-	'Ð': {0xD0},
-	'Ñ': {0xD1},
-	'Ò': {0xD2},
-	'Ó': {0xD3},
-	'Ô': {0xD4},
-	'Õ': {0xD5},
-	'Ö': {0xD6},
-	'×': {0xD7},
-	'Ø': {0xD8},
-	'Ù': {0xD9},
-	'Ú': {0xDA},
-	'Û': {0xDB},
-	'Ü': {0xDC},
-	'Ý': {0xDD},
-	'Þ': {0xDE},
-	'ß': {0xDF},
-	'à': {0xE0},
-	'á': {0xE1},
-	'â': {0xE2},
-	'ã': {0xE3},
-	'ä': {0xE4},
-	'å': {0xE5},
-	'æ': {0xE6},
-	'ç': {0xE7},
-	'è': {0xE8},
-	'é': {0xE9},
-	'ê': {0xEA},
-	'ë': {0xEB},
-	'ì': {0xEC},
-	'í': {0xED},
-	'î': {0xEE},
-	'ï': {0xEF},
-	'ñ': {0xF1},
-	'ò': {0xF2},
-	'ó': {0xF3},
-	'ô': {0xF4},
-	'õ': {0xF5},
-	'ö': {0xF6},
-	'÷': {0xF7},
-	'ø': {0xF8},
-	'ù': {0xF9},
-	'ú': {0xFA},
-	'û': {0xFB},
-	'ü': {0xFC},
-	'ý': {0xFD},
-	'þ': {0xFE},
-	'ÿ': {0xFF},
+	'¡': {0xA1}, '¢': {0xA2}, '£': {0xA3}, '¤': {0xA4}, '¥': {0xA5}, '¦': {0xA6}, '§': {0xA7},
+	'¨': {0xA8}, '©': {0xA9}, 'ª': {0xAA}, '«': {0xAB}, '¬': {0xAC}, '®': {0xAE}, '¯': {0xAF},
+	'°': {0xB0}, '±': {0xB1}, '²': {0xB2}, '³': {0xB3}, '´': {0xB4}, 'µ': {0xB5}, '¶': {0xB6}, '·': {0xB7},
+	'¸': {0xB8}, '¹': {0xB9}, 'º': {0xBA}, '»': {0xBB}, '¼': {0xBC}, '½': {0xBD}, '¾': {0xBE}, '¿': {0xBF},
+	'À': {0xC0}, 'Á': {0xC1}, 'Â': {0xC2}, 'Ã': {0xC3}, 'Ä': {0xC4}, 'Å': {0xC5}, 'Æ': {0xC6}, 'Ç': {0xC7},
+	'È': {0xC8}, 'É': {0xC9}, 'Ê': {0xCA}, 'Ë': {0xCB}, 'Ì': {0xCC}, 'Í': {0xCD}, 'Î': {0xCE}, 'Ï': {0xCF},
+	'Ð': {0xD0}, 'Ñ': {0xD1}, 'Ò': {0xD2}, 'Ó': {0xD3}, 'Ô': {0xD4}, 'Õ': {0xD5}, 'Ö': {0xD6}, '×': {0xD7},
+	'Ø': {0xD8}, 'Ù': {0xD9}, 'Ú': {0xDA}, 'Û': {0xDB}, 'Ü': {0xDC}, 'Ý': {0xDD}, 'Þ': {0xDE}, 'ß': {0xDF},
+	'à': {0xE0}, 'á': {0xE1}, 'â': {0xE2}, 'ã': {0xE3}, 'ä': {0xE4}, 'å': {0xE5}, 'æ': {0xE6}, 'ç': {0xE7},
+	'è': {0xE8}, 'é': {0xE9}, 'ê': {0xEA}, 'ë': {0xEB}, 'ì': {0xEC}, 'í': {0xED}, 'î': {0xEE}, 'ï': {0xEF},
+	'ñ': {0xF1}, 'ò': {0xF2}, 'ó': {0xF3}, 'ô': {0xF4}, 'õ': {0xF5}, 'ö': {0xF6}, '÷': {0xF7},
+	'ø': {0xF8}, 'ù': {0xF9}, 'ú': {0xFA}, 'û': {0xFB}, 'ü': {0xFC}, 'ý': {0xFD}, 'þ': {0xFE}, 'ÿ': {0xFF},
 	'Ā': {'A'},      // Latin Capital letter A with macron
 	'ā': {'a'},      // Latin Small letter A with macron
 	'Ă': {'A'},      // Latin Capital letter A with breve
@@ -776,8 +536,8 @@ func id3v1NameDiffers(cS comparableStrings) bool {
 	if len(metadataRunes) != len(externalRunes) {
 		return true
 	}
-	for index, c := range metadataRunes {
-		if externalRunes[index] == c {
+	for i, c := range metadataRunes {
+		if externalRunes[i] == c {
 			continue
 		}
 		// allow for the metadata rune to be one that is illegal for file names:

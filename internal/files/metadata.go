@@ -244,15 +244,15 @@ func (tM *trackMetadata) canonicalArtistNameMatches(artistName string) bool {
 }
 
 var (
-	tagEditors = map[sourceType]func(t *Track, src sourceType) error{
+	tagEditors = map[sourceType]func(tM *trackMetadata, path string, src sourceType) error{
 		id3v1Source: updateID3V1Tag,
 		id3v2Source: updateID3V2Tag,
 	}
 )
 
-func editTags(t *Track) (e []error) {
+func editTags(tM *trackMetadata, path string) (e []error) {
 	for _, source := range []sourceType{id3v1Source, id3v2Source} {
-		if err := tagEditors[source](t, source); err != nil {
+		if err := tagEditors[source](tM, path, source); err != nil {
 			e = append(e, err)
 		}
 	}

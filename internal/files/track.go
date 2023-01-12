@@ -291,7 +291,7 @@ func (t *Track) EditTags() (e []error) {
 	if !t.ReconcileMetadata().HasTaggingConflicts() {
 		e = append(e, noEditNeededError)
 	} else {
-		e = append(e, editTags(t)...)
+		e = append(e, editTags(t.tM, t.path)...)
 	}
 	return
 }

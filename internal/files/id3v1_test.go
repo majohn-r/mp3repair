@@ -11,33 +11,20 @@ import (
 )
 
 func Test_trim(t *testing.T) {
-	fnName := "trim()"
+	const fnName = "trim()"
 	type args struct {
 		s string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want string
 	}{
-		{
-			name: "no trailing data",
-			args: args{s: "foo"},
-			want: "foo",
-		},
-		{
-			name: "trailing space",
-			args: args{s: "foo            "},
-			want: "foo",
-		},
-		{
-			name: "trailing nulls",
-			args: args{s: string([]byte{'f', 'o', 'o', 0, 0, 0, 0, 0})},
-			want: "foo",
-		},
+		"no trailing data": {args: args{s: "foo"}, want: "foo"},
+		"trailing space":   {args: args{s: "foo            "}, want: "foo"},
+		"trailing nulls":   {args: args{s: string([]byte{'f', 'o', 'o', 0, 0, 0, 0, 0})}, want: "foo"},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := trim(tt.args.s); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -46,17 +33,15 @@ func Test_trim(t *testing.T) {
 }
 
 func Test_newId3v1MetadataWithData(t *testing.T) {
-	fnName := "newId3v1MetadataWithData()"
+	const fnName = "newId3v1MetadataWithData()"
 	type args struct {
 		b []byte
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want *id3v1Metadata
 	}{
-		{
-			name: "short data",
+		"short data": {
 			args: args{b: []byte{1, 2, 3, 4}},
 			want: &id3v1Metadata{
 				data: []byte{
@@ -71,15 +56,13 @@ func Test_newId3v1MetadataWithData(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "just right",
+		"just right": {
 			args: args{b: internal.ID3V1DataSet1},
 			want: &id3v1Metadata{
 				data: internal.ID3V1DataSet1,
 			},
 		},
-		{
-			name: "too much data",
+		"too much data": {
 			args: args{b: []byte{
 				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 				10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -105,8 +88,8 @@ func Test_newId3v1MetadataWithData(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := newID3v1MetadataWithData(tt.args.b); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -115,24 +98,16 @@ func Test_newId3v1MetadataWithData(t *testing.T) {
 }
 
 func Test_id3v1Metadata_isValid(t *testing.T) {
-	fnName := "id3v1Metadata.isValid()"
-	tests := []struct {
-		name string
+	const fnName = "id3v1Metadata.isValid()"
+	tests := map[string]struct {
 		v1   *id3v1Metadata
 		want bool
 	}{
-		{
-			name: "expected",
-			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
-			want: true,
-		},
-		{
-			name: "bad",
-			v1:   newID3v1MetadataWithData([]byte{0, 1, 2}),
-		},
+		"expected": {v1: newID3v1MetadataWithData(internal.ID3V1DataSet1), want: true},
+		"bad":      {v1: newID3v1MetadataWithData([]byte{0, 1, 2})},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := tt.v1.isValid(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -141,25 +116,16 @@ func Test_id3v1Metadata_isValid(t *testing.T) {
 }
 
 func Test_id3v1Metadata_getTitle(t *testing.T) {
-	fnName := "id3v1Metadata.getTitle()"
-	tests := []struct {
-		name string
+	const fnName = "id3v1Metadata.getTitle()"
+	tests := map[string]struct {
 		v1   *id3v1Metadata
 		want string
 	}{
-		{
-			name: "ringo",
-			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
-			want: "Ringo - Pop Profile [Interview",
-		},
-		{
-			name: "julia",
-			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet2),
-			want: "Julia",
-		},
+		"ringo": {v1: newID3v1MetadataWithData(internal.ID3V1DataSet1), want: "Ringo - Pop Profile [Interview"},
+		"julia": {v1: newID3v1MetadataWithData(internal.ID3V1DataSet2), want: "Julia"},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := tt.v1.title(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -168,18 +134,16 @@ func Test_id3v1Metadata_getTitle(t *testing.T) {
 }
 
 func Test_id3v1Metadata_setTitle(t *testing.T) {
-	fnName := "id3v1Metadata.setTitle()"
+	const fnName = "id3v1Metadata.setTitle()"
 	type args struct {
 		s string
 	}
-	tests := []struct {
-		name string
-		v1   *id3v1Metadata
+	tests := map[string]struct {
+		v1 *id3v1Metadata
 		args
 		want *id3v1Metadata
 	}{
-		{
-			name: "short title",
+		"short title": {
 			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "short title"},
 			want: newID3v1MetadataWithData([]byte{
@@ -194,8 +158,7 @@ func Test_id3v1Metadata_setTitle(t *testing.T) {
 				12,
 			}),
 		},
-		{
-			name: "long title",
+		"long title": {
 			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "very long title, so long it cannot be copied intact"},
 			want: newID3v1MetadataWithData([]byte{
@@ -210,8 +173,7 @@ func Test_id3v1Metadata_setTitle(t *testing.T) {
 				12,
 			}),
 		},
-		{
-			name: "non-ASCII title",
+		"non-ASCII title": {
 			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "Grohg - Cortège Macabre"},
 			want: newID3v1MetadataWithData([]byte{
@@ -227,8 +189,8 @@ func Test_id3v1Metadata_setTitle(t *testing.T) {
 			}),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			tt.v1.setTitle(tt.args.s)
 			if !reflect.DeepEqual(tt.v1, tt.want) {
 				t.Errorf("%s got %v want %v", fnName, tt.v1, tt.want)
@@ -238,25 +200,16 @@ func Test_id3v1Metadata_setTitle(t *testing.T) {
 }
 
 func Test_id3v1Metadata_getArtist(t *testing.T) {
-	fnName := "id3v1Metadata.getArtist()"
-	tests := []struct {
-		name string
+	const fnName = "id3v1Metadata.getArtist()"
+	tests := map[string]struct {
 		v1   *id3v1Metadata
 		want string
 	}{
-		{
-			name: "beatles1",
-			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
-			want: "The Beatles",
-		},
-		{
-			name: "beatles2",
-			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet2),
-			want: "The Beatles",
-		},
+		"beatles1": {v1: newID3v1MetadataWithData(internal.ID3V1DataSet1), want: "The Beatles"},
+		"beatles2": {v1: newID3v1MetadataWithData(internal.ID3V1DataSet2), want: "The Beatles"},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := tt.v1.artist(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -265,18 +218,16 @@ func Test_id3v1Metadata_getArtist(t *testing.T) {
 }
 
 func Test_id3v1Metadata_setArtist(t *testing.T) {
-	fnName := "id3v1Metadata.setArtist()"
+	const fnName = "id3v1Metadata.setArtist()"
 	type args struct {
 		s string
 	}
-	tests := []struct {
-		name string
-		v1   *id3v1Metadata
+	tests := map[string]struct {
+		v1 *id3v1Metadata
 		args
 		want *id3v1Metadata
 	}{
-		{
-			name: "short name",
+		"short name": {
 			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "shorties"},
 			want: newID3v1MetadataWithData([]byte{
@@ -291,8 +242,7 @@ func Test_id3v1Metadata_setArtist(t *testing.T) {
 				12,
 			}),
 		},
-		{
-			name: "long name",
+		"long name": {
 			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "The greatest band ever known, bar none"},
 			want: newID3v1MetadataWithData([]byte{
@@ -307,8 +257,7 @@ func Test_id3v1Metadata_setArtist(t *testing.T) {
 				12,
 			}),
 		},
-		{
-			name: "non-ASCII name",
+		"non-ASCII name": {
 			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "Antonín Dvořák"},
 			want: newID3v1MetadataWithData([]byte{
@@ -324,8 +273,8 @@ func Test_id3v1Metadata_setArtist(t *testing.T) {
 			}),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			tt.v1.setArtist(tt.args.s)
 			if !reflect.DeepEqual(tt.v1, tt.want) {
 				t.Errorf("%s got %v want %v", fnName, tt.v1, tt.want)
@@ -335,25 +284,16 @@ func Test_id3v1Metadata_setArtist(t *testing.T) {
 }
 
 func Test_id3v1Metadata_getAlbum(t *testing.T) {
-	fnName := "id3v1Metadata.getAlbum()"
-	tests := []struct {
-		name string
+	const fnName = "id3v1Metadata.getAlbum()"
+	tests := map[string]struct {
 		v1   *id3v1Metadata
 		want string
 	}{
-		{
-			name: "BBC",
-			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
-			want: "On Air: Live At The BBC, Volum",
-		},
-		{
-			name: "White Album",
-			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet2),
-			want: "The White Album [Disc 1]",
-		},
+		"BBC":         {v1: newID3v1MetadataWithData(internal.ID3V1DataSet1), want: "On Air: Live At The BBC, Volum"},
+		"White Album": {v1: newID3v1MetadataWithData(internal.ID3V1DataSet2), want: "The White Album [Disc 1]"},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := tt.v1.album(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -362,18 +302,16 @@ func Test_id3v1Metadata_getAlbum(t *testing.T) {
 }
 
 func Test_id3v1Metadata_setAlbum(t *testing.T) {
-	fnName := "id3v1Metadata.setAlbum()"
+	const fnName = "id3v1Metadata.setAlbum()"
 	type args struct {
 		s string
 	}
-	tests := []struct {
-		name string
-		v1   *id3v1Metadata
+	tests := map[string]struct {
+		v1 *id3v1Metadata
 		args
 		want *id3v1Metadata
 	}{
-		{
-			name: "short name",
+		"short name": {
 			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "!"},
 			want: newID3v1MetadataWithData([]byte{
@@ -388,8 +326,7 @@ func Test_id3v1Metadata_setAlbum(t *testing.T) {
 				12,
 			}),
 		},
-		{
-			name: "long name",
+		"long name": {
 			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "The Most Amazing Album Ever Released"},
 			want: newID3v1MetadataWithData([]byte{
@@ -404,8 +341,7 @@ func Test_id3v1Metadata_setAlbum(t *testing.T) {
 				12,
 			}),
 		},
-		{
-			name: "non-ASCII name",
+		"non-ASCII name": {
 			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "Déjà Vu"},
 			want: newID3v1MetadataWithData([]byte{
@@ -421,8 +357,8 @@ func Test_id3v1Metadata_setAlbum(t *testing.T) {
 			}),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			tt.v1.setAlbum(tt.args.s)
 			if !reflect.DeepEqual(tt.v1, tt.want) {
 				t.Errorf("%s got %v want %v", fnName, tt.v1, tt.want)
@@ -432,30 +368,17 @@ func Test_id3v1Metadata_setAlbum(t *testing.T) {
 }
 
 func Test_id3v1Metadata_getYear(t *testing.T) {
-	fnName := "id3v1Metadata.getYear()"
-	tests := []struct {
-		name string
+	const fnName = "id3v1Metadata.getYear()"
+	tests := map[string]struct {
 		v1   *id3v1Metadata
 		want string
 	}{
-		{
-			name: "BBC",
-			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
-			want: "2013",
-		},
-		{
-			name: "White Album",
-			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet2),
-			want: "1968",
-		},
-		{
-			name: "no date",
-			v1:   newID3v1Metadata(),
-			want: "",
-		},
+		"BBC":         {v1: newID3v1MetadataWithData(internal.ID3V1DataSet1), want: "2013"},
+		"White Album": {v1: newID3v1MetadataWithData(internal.ID3V1DataSet2), want: "1968"},
+		"no date":     {v1: newID3v1Metadata(), want: ""},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			got := tt.v1.year()
 			if got != tt.want {
 				t.Errorf("%s gotY = %v, want %v", fnName, got, tt.want)
@@ -465,18 +388,16 @@ func Test_id3v1Metadata_getYear(t *testing.T) {
 }
 
 func Test_id3v1Metadata_setYear(t *testing.T) {
-	fnName := "id3v1Metadata.setYear()"
+	const fnName = "id3v1Metadata.setYear()"
 	type args struct {
 		s string
 	}
-	tests := []struct {
-		name string
-		v1   *id3v1Metadata
+	tests := map[string]struct {
+		v1 *id3v1Metadata
 		args
 		wantv1 *id3v1Metadata
 	}{
-		{
-			name: "realistic",
+		"realistic": {
 			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "2022"},
 			wantv1: newID3v1MetadataWithData([]byte{
@@ -492,8 +413,8 @@ func Test_id3v1Metadata_setYear(t *testing.T) {
 			}),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			tt.v1.setYear(tt.args.s)
 			if !reflect.DeepEqual(tt.v1, tt.wantv1) {
 				t.Errorf("%s got %v want %v", fnName, tt.v1, tt.wantv1)
@@ -503,23 +424,16 @@ func Test_id3v1Metadata_setYear(t *testing.T) {
 }
 
 func Test_id3v1Metadata_getComment(t *testing.T) {
-	fnName := "id3v1Metadata.getComment()"
-	tests := []struct {
-		name string
+	const fnName = "id3v1Metadata.getComment()"
+	tests := map[string]struct {
 		v1   *id3v1Metadata
 		want string
 	}{
-		{
-			name: "BBC",
-			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
-		},
-		{
-			name: "White Album",
-			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet2),
-		},
+		"BBC":         {v1: newID3v1MetadataWithData(internal.ID3V1DataSet1)},
+		"White Album": {v1: newID3v1MetadataWithData(internal.ID3V1DataSet2)},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := tt.v1.comment(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -528,18 +442,16 @@ func Test_id3v1Metadata_getComment(t *testing.T) {
 }
 
 func Test_id3v1Metadata_setComment(t *testing.T) {
-	fnName := "id3v1Metadata.setComment()"
+	const fnName = "id3v1Metadata.setComment()"
 	type args struct {
 		s string
 	}
-	tests := []struct {
-		name string
-		v1   *id3v1Metadata
+	tests := map[string]struct {
+		v1 *id3v1Metadata
 		args
 		want *id3v1Metadata
 	}{
-		{
-			name: "typical comment",
+		"typical comment": {
 			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: ""},
 			want: newID3v1MetadataWithData([]byte{
@@ -554,8 +466,7 @@ func Test_id3v1Metadata_setComment(t *testing.T) {
 				12,
 			}),
 		},
-		{
-			name: "long winded",
+		"long winded": {
 			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "This track is genuinely insightful"},
 			want: newID3v1MetadataWithData([]byte{
@@ -571,8 +482,8 @@ func Test_id3v1Metadata_setComment(t *testing.T) {
 			}),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			tt.v1.setComment(tt.args.s)
 			if !reflect.DeepEqual(tt.v1, tt.want) {
 				t.Errorf("%s got %v want %v", fnName, tt.v1, tt.want)
@@ -582,27 +493,15 @@ func Test_id3v1Metadata_setComment(t *testing.T) {
 }
 
 func Test_id3v1Metadata_getTrack(t *testing.T) {
-	fnName := "id3v1Metadata.getTrack()"
-	tests := []struct {
-		name   string
+	const fnName = "id3v1Metadata.getTrack()"
+	tests := map[string]struct {
 		v1     *id3v1Metadata
 		wantI  int
 		wantOk bool
 	}{
-		{
-			name:   "BBC",
-			v1:     newID3v1MetadataWithData(internal.ID3V1DataSet1),
-			wantI:  29,
-			wantOk: true,
-		},
-		{
-			name:   "White Album",
-			v1:     newID3v1MetadataWithData(internal.ID3V1DataSet2),
-			wantI:  17,
-			wantOk: true,
-		},
-		{
-			name: "bad zero byte",
+		"BBC":         {v1: newID3v1MetadataWithData(internal.ID3V1DataSet1), wantI: 29, wantOk: true},
+		"White Album": {v1: newID3v1MetadataWithData(internal.ID3V1DataSet2), wantI: 17, wantOk: true},
+		"bad zero byte": {
 			v1: newID3v1MetadataWithData([]byte{
 				1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 				1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -615,8 +514,8 @@ func Test_id3v1Metadata_getTrack(t *testing.T) {
 			}),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			gotI, gotOk := tt.v1.track()
 			if gotI != tt.wantI {
 				t.Errorf("%s gotI = %v, want %v", fnName, gotI, tt.wantI)
@@ -629,33 +528,19 @@ func Test_id3v1Metadata_getTrack(t *testing.T) {
 }
 
 func Test_id3v1Metadata_setTrack(t *testing.T) {
-	fnName := "id3v1Metadata.setTrack()"
+	const fnName = "id3v1Metadata.setTrack()"
 	type args struct {
 		t int
 	}
-	tests := []struct {
-		name string
-		v1   *id3v1Metadata
+	tests := map[string]struct {
+		v1 *id3v1Metadata
 		args
 		want   bool
 		wantv1 *id3v1Metadata
 	}{
-		{
-			name:   "low",
-			v1:     newID3v1MetadataWithData(internal.ID3V1DataSet1),
-			args:   args{t: 0},
-			want:   false,
-			wantv1: newID3v1MetadataWithData(internal.ID3V1DataSet1),
-		},
-		{
-			name:   "high",
-			v1:     newID3v1MetadataWithData(internal.ID3V1DataSet1),
-			args:   args{t: 256},
-			want:   false,
-			wantv1: newID3v1MetadataWithData(internal.ID3V1DataSet1),
-		},
-		{
-			name: "ok",
+		"low":  {v1: newID3v1MetadataWithData(internal.ID3V1DataSet1), args: args{t: 0}, want: false, wantv1: newID3v1MetadataWithData(internal.ID3V1DataSet1)},
+		"high": {v1: newID3v1MetadataWithData(internal.ID3V1DataSet1), args: args{t: 256}, want: false, wantv1: newID3v1MetadataWithData(internal.ID3V1DataSet1)},
+		"ok": {
 			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{t: 45},
 			want: true,
@@ -672,8 +557,8 @@ func Test_id3v1Metadata_setTrack(t *testing.T) {
 			}),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := tt.v1.setTrack(tt.args.t); got != tt.want {
 				t.Errorf("%s = %t, want %t", fnName, got, tt.want)
 			}
@@ -685,27 +570,15 @@ func Test_id3v1Metadata_setTrack(t *testing.T) {
 }
 
 func Test_id3v1Metadata_getGenre(t *testing.T) {
-	fnName := "id3v1Metadata.getGenre()"
-	tests := []struct {
-		name   string
+	const fnName = "id3v1Metadata.getGenre()"
+	tests := map[string]struct {
 		v1     *id3v1Metadata
 		wantS  string
 		wantOk bool
 	}{
-		{
-			name:   "BBC",
-			v1:     newID3v1MetadataWithData(internal.ID3V1DataSet1),
-			wantS:  "Other",
-			wantOk: true,
-		},
-		{
-			name:   "White Album",
-			v1:     newID3v1MetadataWithData(internal.ID3V1DataSet2),
-			wantS:  "Rock",
-			wantOk: true,
-		},
-		{
-			name: "bad zero byte",
+		"BBC":         {v1: newID3v1MetadataWithData(internal.ID3V1DataSet1), wantS: "Other", wantOk: true},
+		"White Album": {v1: newID3v1MetadataWithData(internal.ID3V1DataSet2), wantS: "Rock", wantOk: true},
+		"bad zero byte": {
 			v1: newID3v1MetadataWithData([]byte{
 				1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 				1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
@@ -718,8 +591,8 @@ func Test_id3v1Metadata_getGenre(t *testing.T) {
 			}),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			gotS, gotOk := tt.v1.genre()
 			if gotS != tt.wantS {
 				t.Errorf("%s gotS = %v, want %v", fnName, gotS, tt.wantS)
@@ -732,18 +605,16 @@ func Test_id3v1Metadata_getGenre(t *testing.T) {
 }
 
 func Test_id3v1Metadata_setGenre(t *testing.T) {
-	fnName := "id3v1Metadata.setGenre()"
+	const fnName = "id3v1Metadata.setGenre()"
 	type args struct {
 		s string
 	}
-	tests := []struct {
-		name string
-		v1   *id3v1Metadata
+	tests := map[string]struct {
+		v1 *id3v1Metadata
 		args
 		wantv1 *id3v1Metadata
 	}{
-		{
-			name: "no such genre",
+		"no such genre": {
 			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: "Subspace Radio"},
 			wantv1: newID3v1MetadataWithData([]byte{
@@ -758,8 +629,7 @@ func Test_id3v1Metadata_setGenre(t *testing.T) {
 				12,
 			}),
 		},
-		{
-			name: "known genre",
+		"known genre": {
 			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{s: genreMap[37]},
 			wantv1: newID3v1MetadataWithData([]byte{
@@ -775,8 +645,8 @@ func Test_id3v1Metadata_setGenre(t *testing.T) {
 			}),
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			tt.v1.setGenre(tt.args.s)
 			if !reflect.DeepEqual(tt.v1, tt.wantv1) {
 				t.Errorf("%s got %v want %v", fnName, tt.v1, tt.wantv1)
@@ -786,7 +656,7 @@ func Test_id3v1Metadata_setGenre(t *testing.T) {
 }
 
 func Test_initGenreIndices(t *testing.T) {
-	fnName := "initGenreIndices()"
+	const fnName = "initGenreIndices()"
 	initGenreIndices()
 	if len(genreIndicesMap) != len(genreMap) {
 		t.Errorf("%s size of genreIndicesMap is %d, genreMap is %d", fnName, len(genreIndicesMap), len(genreMap))
@@ -800,7 +670,7 @@ func Test_initGenreIndices(t *testing.T) {
 }
 
 func Test_internalReadId3V1Metadata(t *testing.T) {
-	fnName := "internalReadId3V1Metadata()"
+	const fnName = "internalReadId3V1Metadata()"
 	testDir := "id3v1read"
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
@@ -851,32 +721,14 @@ func Test_internalReadId3V1Metadata(t *testing.T) {
 		path     string
 		readFunc func(f *os.File, b []byte) (int, error)
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want    *id3v1Metadata
 		wantErr bool
 	}{
-		{
-			name: "non-existent file",
-			args: args{
-				path:     "./non-existent",
-				readFunc: nil,
-			},
-			want:    nil,
-			wantErr: true,
-		},
-		{
-			name: "short file",
-			args: args{
-				path:     filepath.Join(testDir, shortFile),
-				readFunc: nil,
-			},
-			want:    nil,
-			wantErr: true,
-		},
-		{
-			name: "read with error",
+		"non-existent file": {args: args{path: "./non-existent", readFunc: nil}, want: nil, wantErr: true},
+		"short file":        {args: args{path: filepath.Join(testDir, shortFile), readFunc: nil}, want: nil, wantErr: true},
+		"read with error": {
 			args: args{
 				path: filepath.Join(testDir, badFile),
 				readFunc: func(f *os.File, b []byte) (int, error) {
@@ -886,8 +738,7 @@ func Test_internalReadId3V1Metadata(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 		},
-		{
-			name: "short read",
+		"short read": {
 			args: args{
 				path: filepath.Join(testDir, badFile),
 				readFunc: func(f *os.File, b []byte) (int, error) {
@@ -897,27 +748,11 @@ func Test_internalReadId3V1Metadata(t *testing.T) {
 			want:    nil,
 			wantErr: true,
 		},
-		{
-			name: "bad file",
-			args: args{
-				path:     filepath.Join(testDir, badFile),
-				readFunc: fileReader,
-			},
-			want:    nil,
-			wantErr: true,
-		},
-		{
-			name: "good file",
-			args: args{
-				path:     filepath.Join(testDir, goodFile),
-				readFunc: fileReader,
-			},
-			want:    newID3v1MetadataWithData(internal.ID3V1DataSet1),
-			wantErr: false,
-		},
+		"bad file":  {args: args{path: filepath.Join(testDir, badFile), readFunc: fileReader}, want: nil, wantErr: true},
+		"good file": {args: args{path: filepath.Join(testDir, goodFile), readFunc: fileReader}, want: newID3v1MetadataWithData(internal.ID3V1DataSet1), wantErr: false},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			got, err := internalReadID3V1Metadata(tt.args.path, tt.args.readFunc)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
@@ -931,7 +766,7 @@ func Test_internalReadId3V1Metadata(t *testing.T) {
 }
 
 func Test_readId3v1Metadata(t *testing.T) {
-	fnName := "readId3v1Metadata()"
+	const fnName = "readId3v1Metadata()"
 	testDir := "id3v1read"
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
@@ -960,30 +795,28 @@ func Test_readId3v1Metadata(t *testing.T) {
 	type args struct {
 		path string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want    []string
 		wantErr bool
 	}{
 		// only testing good path ... all the error paths are handled in the
 		// internal read test
-		{
-			name: "good file",
+		"good file": {
 			args: args{path: filepath.Join(testDir, goodFile)},
 			want: []string{
-				"Artist: \"The Beatles\"",
-				"Album: \"On Air: Live At The BBC, Volum\"",
-				"Title: \"Ringo - Pop Profile [Interview\"",
+				`Artist: "The Beatles"`,
+				`Album: "On Air: Live At The BBC, Volum"`,
+				`Title: "Ringo - Pop Profile [Interview"`,
 				"Track: 29",
-				"Year: \"2013\"",
-				"Genre: \"Other\"",
+				`Year: "2013"`,
+				`Genre: "Other"`,
 			},
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			got, err := readID3v1Metadata(tt.args.path)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
@@ -997,7 +830,7 @@ func Test_readId3v1Metadata(t *testing.T) {
 }
 
 func Test_id3v1Metadata_internalWrite(t *testing.T) {
-	fnName := "id3v1Metadata.internalWrite()"
+	const fnName = "id3v1Metadata.internalWrite()"
 	testDir := "id3v1write"
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
@@ -1031,26 +864,16 @@ func Test_id3v1Metadata_internalWrite(t *testing.T) {
 		oldPath   string
 		writeFunc func(f *os.File, b []byte) (int, error)
 	}
-	tests := []struct {
-		name string
-		v1   *id3v1Metadata
+	tests := map[string]struct {
+		v1 *id3v1Metadata
 		args
 		wantErr  bool
 		wantData []byte
 	}{
-		{
-			name:    "non-existent file",
-			args:    args{oldPath: "./no such file"},
-			wantErr: true,
-		},
-		{
-			name:    "short file",
-			args:    args{oldPath: filepath.Join(testDir, shortFile)},
-			wantErr: true,
-		},
-		{
-			name: "error on write",
-			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
+		"non-existent file": {args: args{oldPath: "./no such file"}, wantErr: true},
+		"short file":        {args: args{oldPath: filepath.Join(testDir, shortFile)}, wantErr: true},
+		"error on write": {
+			v1: newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{
 				oldPath: filepath.Join(testDir, goodFile),
 				writeFunc: func(f *os.File, b []byte) (int, error) {
@@ -1059,9 +882,8 @@ func Test_id3v1Metadata_internalWrite(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		{
-			name: "short write",
-			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet1),
+		"short write": {
+			v1: newID3v1MetadataWithData(internal.ID3V1DataSet1),
 			args: args{
 				oldPath: filepath.Join(testDir, goodFile),
 				writeFunc: func(f *os.File, b []byte) (int, error) {
@@ -1070,9 +892,8 @@ func Test_id3v1Metadata_internalWrite(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		{
-			name: "good write",
-			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet2),
+		"good write": {
+			v1: newID3v1MetadataWithData(internal.ID3V1DataSet2),
 			args: args{
 				oldPath:   filepath.Join(testDir, goodFile),
 				writeFunc: writeToFile,
@@ -1102,8 +923,8 @@ func Test_id3v1Metadata_internalWrite(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			var err error
 			if err = tt.v1.internalWrite(tt.args.oldPath, tt.args.writeFunc); (err != nil) != tt.wantErr {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
@@ -1119,7 +940,7 @@ func Test_id3v1Metadata_internalWrite(t *testing.T) {
 }
 
 func Test_id3v1Metadata_write(t *testing.T) {
-	fnName := "id3v1Metadata.write()"
+	const fnName = "id3v1Metadata.write()"
 	testDir := "id3v1write"
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
@@ -1148,16 +969,14 @@ func Test_id3v1Metadata_write(t *testing.T) {
 	type args struct {
 		path string
 	}
-	tests := []struct {
-		name string
-		v1   *id3v1Metadata
+	tests := map[string]struct {
+		v1 *id3v1Metadata
 		args
 		wantErr  bool
 		wantData []byte
 	}{
-		{
-			name: "happy place",
-			v1:   newID3v1MetadataWithData(internal.ID3V1DataSet2),
+		"happy place": {
+			v1: newID3v1MetadataWithData(internal.ID3V1DataSet2),
 			args: args{
 				path: filepath.Join(testDir, goodFile),
 			},
@@ -1186,8 +1005,8 @@ func Test_id3v1Metadata_write(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			var err error
 			if err = tt.v1.write(tt.args.path); (err != nil) != tt.wantErr {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
@@ -1203,108 +1022,50 @@ func Test_id3v1Metadata_write(t *testing.T) {
 }
 
 func Test_id3v1NameDiffers(t *testing.T) {
-	fnName := "id3v1NameDiffers()"
+	const fnName = "id3v1NameDiffers()"
 	type args struct {
 		cS comparableStrings
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want bool
 	}{
-		{
-			name: "identical strings",
-			args: args{
-				comparableStrings{
-					externalName: "Fiddler On The Roof",
-					metadataName: "Fiddler On The Roof",
-				},
-			},
+		"identical strings": {
+			args: args{comparableStrings{externalName: "Fiddler On The Roof", metadataName: "Fiddler On The Roof"}},
 			want: false,
 		},
-		{
-			name: "unusable characters in metadata",
-			args: args{
-				comparableStrings{
-					externalName: "Theme From M-A-S-H",
-					metadataName: "Theme From M*A*S*H",
-				},
-			},
+		"unusable characters in metadata": {
+			args: args{comparableStrings{externalName: "Theme From M-A-S-H", metadataName: "Theme From M*A*S*H"}},
 			want: false,
 		},
-		{
-			name: "really long name",
-			args: args{
-				comparableStrings{
-					externalName: "A Funny Thing Happened On The Way To The Forum 1996 Broadway Revival Cast",
-					metadataName: "A Funny Thing Happened On The",
-				},
-			},
+		"really long name": {
+			args: args{comparableStrings{
+				externalName: "A Funny Thing Happened On The Way To The Forum 1996 Broadway Revival Cast",
+				metadataName: "A Funny Thing Happened On The",
+			}},
 			want: false,
 		},
-		{
-			name: "non-ASCII values",
-			args: args{
-				comparableStrings{
-					externalName: "Grohg - Cortège Macabre",
-					metadataName: "Grohg - Cort\xe8ge Macabre",
-				},
-			},
+		"non-ASCII values": {
+			args: args{comparableStrings{externalName: "Grohg - Cortège Macabre", metadataName: "Grohg - Cort\xe8ge Macabre"}},
 			want: false,
 		},
-		{
-			name: "larger non-ASCII values",
-			args: args{
-				comparableStrings{
-					externalName: "Dvořák",
-					metadataName: "Dvor\xe1k",
-				},
-			},
+		"larger non-ASCII values": {
+			args: args{comparableStrings{externalName: "Dvořák", metadataName: "Dvor\xe1k"}},
 			want: false,
 		},
-		{
-			name: "identical strings with case differences",
-			args: args{
-				comparableStrings{
-					externalName: "SIMPLE name",
-					metadataName: "simple NAME",
-				},
-			},
+		"identical strings with case differences": {
+			args: args{comparableStrings{externalName: "SIMPLE name", metadataName: "simple NAME"}},
 			want: false,
 		},
-		{
-			name: "strings of different length within name length limit",
-			args: args{
-				comparableStrings{
-					externalName: "simple name",
-					metadataName: "artist: simple name",
-				},
-			},
+		"strings of different length within name length limit": {
+			args: args{comparableStrings{externalName: "simple name", metadataName: "artist: simple name"}},
 			want: true,
 		},
-		{
-			name: "use of runes that are illegal for file names",
-			args: args{
-				comparableStrings{
-					externalName: "simple_name",
-					metadataName: "simple:name",
-				},
-			},
-			want: false,
-		},
-		{
-			name: "complex mismatch",
-			args: args{
-				comparableStrings{
-					externalName: "simple_name",
-					metadataName: "simple: nam",
-				},
-			},
-			want: true,
-		},
+		"use of runes that are illegal for file names": {args: args{comparableStrings{externalName: "simple_name", metadataName: "simple:name"}}, want: false},
+		"complex mismatch": {args: args{comparableStrings{externalName: "simple_name", metadataName: "simple: nam"}}, want: true},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := id3v1NameDiffers(tt.args.cS); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -1313,47 +1074,18 @@ func Test_id3v1NameDiffers(t *testing.T) {
 }
 
 func Test_id3v1GenreDiffers(t *testing.T) {
-	fnName := "id3v1GenreDiffers()"
+	const fnName = "id3v1GenreDiffers()"
 	type args struct {
 		cS comparableStrings
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want bool
 	}{
-		{
-			name: "match",
-			args: args{
-				cS: comparableStrings{
-					externalName: "Classic Rock",
-					metadataName: "Classic Rock",
-				},
-			},
-			want: false,
-		},
-		{
-			name: "no match",
-			args: args{
-				cS: comparableStrings{
-					externalName: "Classic Rock",
-					metadataName: "classic rock",
-				},
-			},
-			want: true,
-		},
-		{
-			name: "other",
-			args: args{
-				cS: comparableStrings{
-					externalName: "Prog Rock",
-					metadataName: "Other",
-				},
-			},
-			want: false,
-		},
-		{
-			name: "known genre",
+		"match":    {args: args{cS: comparableStrings{externalName: "Classic Rock", metadataName: "Classic Rock"}}, want: false},
+		"no match": {args: args{cS: comparableStrings{externalName: "Classic Rock", metadataName: "classic rock"}}, want: true},
+		"other":    {args: args{cS: comparableStrings{externalName: "Prog Rock", metadataName: "Other"}}, want: false},
+		"known genre": {
 			args: args{
 				cS: comparableStrings{
 					externalName: "Classic Rock", // known id3v1 genre - "Other" will not match
@@ -1363,8 +1095,8 @@ func Test_id3v1GenreDiffers(t *testing.T) {
 			want: true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := id3v1GenreDiffers(tt.args.cS); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}

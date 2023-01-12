@@ -143,38 +143,38 @@ func selectUnknownFrame(mcdiFramers []id3v2.Framer) id3v2.UnknownFrame {
 	return uf
 }
 
-func updateID3V2Tag(t *Track, src sourceType) (err error) {
-	if t.tM.requiresEdit[src] {
+func updateID3V2Tag(tM *trackMetadata, path string, src sourceType) (err error) {
+	if tM.requiresEdit[src] {
 		var tag *id3v2.Tag
-		tag, err = readID3V2Tag(t.path)
+		tag, err = readID3V2Tag(path)
 		if err == nil {
 			defer tag.Close()
 			tag.SetDefaultEncoding(id3v2.EncodingUTF8)
-			albumTitle := t.tM.correctedAlbum[src]
+			albumTitle := tM.correctedAlbum[src]
 			if albumTitle != "" {
 				tag.SetAlbum(albumTitle)
 			}
-			artistName := t.tM.correctedArtist[src]
+			artistName := tM.correctedArtist[src]
 			if artistName != "" {
 				tag.SetArtist(artistName)
 			}
-			trackTitle := t.tM.correctedTitle[src]
+			trackTitle := tM.correctedTitle[src]
 			if trackTitle != "" {
 				tag.SetTitle(trackTitle)
 			}
-			trackNumber := t.tM.correctedTrack[src]
+			trackNumber := tM.correctedTrack[src]
 			if trackNumber != 0 {
 				tag.AddTextFrame("TRCK", tag.DefaultEncoding(), fmt.Sprintf("%d", trackNumber))
 			}
-			genre := t.tM.correctedGenre[src]
+			genre := tM.correctedGenre[src]
 			if genre != "" {
 				tag.SetGenre(genre)
 			}
-			year := t.tM.correctedYear[src]
+			year := tM.correctedYear[src]
 			if year != "" {
 				tag.SetYear(year)
 			}
-			mcdi := t.tM.correctedMusicCDIdentifier
+			mcdi := tM.correctedMusicCDIdentifier
 			if len(mcdi.Body) != 0 {
 				tag.DeleteFrames(mcdiFrame)
 				tag.AddFrame(mcdiFrame, mcdi)
