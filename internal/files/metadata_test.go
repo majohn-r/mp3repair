@@ -59,7 +59,7 @@ func Test_trackMetadata_setId3v1Values(t *testing.T) {
 func Test_trackMetadata_setId3v2Values(t *testing.T) {
 	fnName := "trackMetadata.setId3v1Values()"
 	type args struct {
-		d *ID3V2TaggedTrackData
+		d *id3v2TaggedTrackData
 	}
 	tests := []struct {
 		name string
@@ -71,7 +71,7 @@ func Test_trackMetadata_setId3v2Values(t *testing.T) {
 			name: "complete test",
 			tM:   newTrackMetadata(),
 			args: args{
-				d: &ID3V2TaggedTrackData{
+				d: &id3v2TaggedTrackData{
 					album:             "Great album",
 					artist:            "Great artist",
 					title:             "Great track",
@@ -202,7 +202,7 @@ func Test_readMetadata(t *testing.T) {
 				err: []error{
 					nil,
 					fmt.Errorf("seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file."),
-					fmt.Errorf("zero length"),
+					missingTrackNumber,
 				},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
@@ -226,7 +226,7 @@ func Test_readMetadata(t *testing.T) {
 				track:                      []int{0, 29, 0},
 				musicCDIdentifier:          id3v2.UnknownFrame{},
 				canonicalType:              id3v1Source,
-				err:                        []error{nil, nil, fmt.Errorf("zero length")},
+				err:                        []error{nil, nil, missingTrackNumber},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},

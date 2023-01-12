@@ -58,7 +58,7 @@ func newTrackMetadata() *trackMetadata {
 
 func readMetadata(path string) *trackMetadata {
 	v1, id3v1Err := internalReadID3V1Metadata(path, fileReader)
-	d := RawReadID3V2Tag(path)
+	d := rawReadID3V2Tag(path)
 	tM := newTrackMetadata()
 	switch {
 	case id3v1Err != nil && d.err != nil:
@@ -80,7 +80,7 @@ func readMetadata(path string) *trackMetadata {
 	return tM
 }
 
-func (tM *trackMetadata) setID3v2Values(d *ID3V2TaggedTrackData) {
+func (tM *trackMetadata) setID3v2Values(d *id3v2TaggedTrackData) {
 	index := id3v2Source
 	tM.album[index] = d.album
 	tM.artist[index] = d.artist

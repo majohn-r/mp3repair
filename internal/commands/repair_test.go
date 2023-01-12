@@ -277,7 +277,7 @@ func generateStandardTrackErrorReport() string {
 				}
 				result = append(result,
 					fmt.Sprintf("An error occurred when trying to read ID3V1 tag information for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"seek repairExec\\\\Test Artist %d\\\\Test Album %d\\\\%02d%sTest Track[%02d].mp3: An attempt was made to move the file pointer before the beginning of the file.\".\n", t, aL, aR, aR, aL, t, sep, t),
-					fmt.Sprintf("An error occurred when trying to read ID3V2 tag information for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"zero length\".\n", t, aL, aR))
+					fmt.Sprintf("An error occurred when trying to read ID3V2 tag information for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"track number is zero length\".\n", t, aL, aR))
 			}
 		}
 	}
@@ -297,7 +297,7 @@ func generateStandardTrackLogReport() string {
 				}
 				result = append(result,
 					fmt.Sprintf("level='error' error='seek repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3: An attempt was made to move the file pointer before the beginning of the file.' track='repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3' msg='id3v1 tag error'\n", aR, aL, t, sep, t, aR, aL, t, sep, t),
-					fmt.Sprintf("level='error' error='zero length' track='repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3' msg='id3v2 tag error'\n", aR, aL, t, sep, t))
+					fmt.Sprintf("level='error' error='track number is zero length' track='repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3' msg='id3v2 tag error'\n", aR, aL, t, sep, t))
 			}
 		}
 	}
