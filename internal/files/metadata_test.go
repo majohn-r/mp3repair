@@ -11,20 +11,17 @@ import (
 )
 
 func Test_trackMetadata_setId3v1Values(t *testing.T) {
-	fnName := "trackMetadata.setId3v1Values()"
+	const fnName = "trackMetadata.setId3v1Values()"
 	type args struct {
 		v1 *id3v1Metadata
 	}
-	tests := []struct {
-		name string
-		tM   *trackMetadata
+	tests := map[string]struct {
+		tM *trackMetadata
 		args
 		wantTM *trackMetadata
 	}{
-		{
-			name: "complete test",
-			tM:   newTrackMetadata(),
-			args: args{v1: newID3v1MetadataWithData(internal.ID3V1DataSet1)},
+		"complete test": {
+			tM: newTrackMetadata(), args: args{v1: newID3v1MetadataWithData(internal.ID3V1DataSet1)},
 			wantTM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -46,8 +43,8 @@ func Test_trackMetadata_setId3v1Values(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			tt.tM.setID3v1Values(tt.args.v1)
 			if !reflect.DeepEqual(tt.tM, tt.wantTM) {
 				t.Errorf("%s got %v want %v", fnName, tt.tM, tt.wantTM)
@@ -57,19 +54,17 @@ func Test_trackMetadata_setId3v1Values(t *testing.T) {
 }
 
 func Test_trackMetadata_setId3v2Values(t *testing.T) {
-	fnName := "trackMetadata.setId3v1Values()"
+	const fnName = "trackMetadata.setId3v1Values()"
 	type args struct {
 		d *id3v2TaggedTrackData
 	}
-	tests := []struct {
-		name string
-		tM   *trackMetadata
+	tests := map[string]struct {
+		tM *trackMetadata
 		args
 		wantTM *trackMetadata
 	}{
-		{
-			name: "complete test",
-			tM:   newTrackMetadata(),
+		"complete test": {
+			tM: newTrackMetadata(),
 			args: args{
 				d: &id3v2TaggedTrackData{
 					album:             "Great album",
@@ -102,8 +97,8 @@ func Test_trackMetadata_setId3v2Values(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			tt.tM.setID3v2Values(tt.args.d)
 			if !reflect.DeepEqual(tt.tM, tt.wantTM) {
 				t.Errorf("%s got %v want %v", fnName, tt.tM, tt.wantTM)
@@ -113,14 +108,11 @@ func Test_trackMetadata_setId3v2Values(t *testing.T) {
 }
 
 func Test_readMetadata(t *testing.T) {
-	fnName := "readMetadata()"
+	const fnName = "readMetadata()"
 	testDir := "readMetadata"
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, testDir, err)
 	}
-	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, testDir)
-	}()
 	taglessFile := "01 tagless.mp3"
 	if err := internal.CreateFileForTesting(testDir, taglessFile); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, taglessFile, err)
@@ -152,16 +144,17 @@ func Test_readMetadata(t *testing.T) {
 	if err := internal.CreateFileForTestingWithContent(testDir, completeFile, payloadComplete); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, completeFile, err)
 	}
+	defer func() {
+		internal.DestroyDirectoryForTesting(fnName, testDir)
+	}()
 	type args struct {
 		path string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args args
 		want *trackMetadata
 	}{
-		{
-			name: "missing file",
+		"missing file": {
 			args: args{path: filepath.Join(testDir, "no such file.mp3")},
 			want: &trackMetadata{
 				album:             []string{"", "", ""},
@@ -187,8 +180,7 @@ func Test_readMetadata(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		{
-			name: "no tags",
+		"no tags": {
 			args: args{path: filepath.Join(testDir, taglessFile)},
 			want: &trackMetadata{
 				album:             []string{"", "", ""},
@@ -214,8 +206,7 @@ func Test_readMetadata(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		{
-			name: "only id3v1 tag",
+		"only id3v1 tag": {
 			args: args{path: filepath.Join(testDir, id3v1OnlyFile)},
 			want: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
@@ -237,8 +228,7 @@ func Test_readMetadata(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		{
-			name: "only id3v2 tag",
+		"only id3v2 tag": {
 			args: args{path: filepath.Join(testDir, id3v2OnlyFile)},
 			want: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
@@ -260,8 +250,7 @@ func Test_readMetadata(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		{
-			name: "both tags",
+		"both tags": {
 			args: args{path: filepath.Join(testDir, completeFile)},
 			want: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
@@ -284,8 +273,8 @@ func Test_readMetadata(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := readMetadata(tt.args.path); !metadataEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -374,19 +363,13 @@ func errorSliceEqual(got, want []error) (ok bool) {
 }
 
 func Test_trackMetadata_isValid(t *testing.T) {
-	fnName := "trackMetadata.isValid()"
-	tests := []struct {
-		name string
+	const fnName = "trackMetadata.isValid()"
+	tests := map[string]struct {
 		tM   *trackMetadata
 		want bool
 	}{
-		{
-			name: "uninitialized data",
-			tM:   newTrackMetadata(),
-			want: false,
-		},
-		{
-			name: "after read failure",
+		"uninitialized data": {tM: newTrackMetadata(), want: false},
+		"after read failure": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -412,8 +395,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 			},
 			want: false,
 		},
-		{
-			name: "after reading no tags",
+		"after reading no tags": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -439,8 +421,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 			},
 			want: false,
 		},
-		{
-			name: "after reading only id3v1 tag",
+		"after reading only id3v1 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -462,8 +443,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 			},
 			want: true,
 		},
-		{
-			name: "after reading only id3v2 tag",
+		"after reading only id3v2 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -485,8 +465,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 			},
 			want: true,
 		},
-		{
-			name: "after reading both tags",
+		"after reading both tags": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -509,8 +488,8 @@ func Test_trackMetadata_isValid(t *testing.T) {
 			want: true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := tt.tM.isValid(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -519,14 +498,12 @@ func Test_trackMetadata_isValid(t *testing.T) {
 }
 
 func Test_trackMetadata_canonicalArtist(t *testing.T) {
-	fnName := "trackMetadata.canonicalArtist()"
-	tests := []struct {
-		name string
+	const fnName = "trackMetadata.canonicalArtist()"
+	tests := map[string]struct {
 		tM   *trackMetadata
 		want string
 	}{
-		{
-			name: "after reading only id3v1 tag",
+		"after reading only id3v1 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -548,8 +525,7 @@ func Test_trackMetadata_canonicalArtist(t *testing.T) {
 			},
 			want: "The Beatles",
 		},
-		{
-			name: "after reading only id3v2 tag",
+		"after reading only id3v2 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -571,8 +547,7 @@ func Test_trackMetadata_canonicalArtist(t *testing.T) {
 			},
 			want: "unknown artist",
 		},
-		{
-			name: "after reading both tags",
+		"after reading both tags": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -595,8 +570,8 @@ func Test_trackMetadata_canonicalArtist(t *testing.T) {
 			want: "unknown artist",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := tt.tM.canonicalArtist(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -605,14 +580,12 @@ func Test_trackMetadata_canonicalArtist(t *testing.T) {
 }
 
 func Test_trackMetadata_canonicalAlbum(t *testing.T) {
-	fnName := "trackMetadata.canonicalAlbum()"
-	tests := []struct {
-		name string
+	const fnName = "trackMetadata.canonicalAlbum()"
+	tests := map[string]struct {
 		tM   *trackMetadata
 		want string
 	}{
-		{
-			name: "after reading only id3v1 tag",
+		"after reading only id3v1 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -634,8 +607,7 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 			},
 			want: "On Air: Live At The BBC, Volum",
 		},
-		{
-			name: "after reading only id3v2 tag",
+		"after reading only id3v2 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -657,8 +629,7 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 			},
 			want: "unknown album",
 		},
-		{
-			name: "after reading both tags",
+		"after reading both tags": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -681,8 +652,8 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 			want: "unknown album",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := tt.tM.canonicalAlbum(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -691,14 +662,12 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 }
 
 func Test_trackMetadata_canonicalGenre(t *testing.T) {
-	fnName := "trackMetadata.canonicalGenre()"
-	tests := []struct {
-		name string
+	const fnName = "trackMetadata.canonicalGenre()"
+	tests := map[string]struct {
 		tM   *trackMetadata
 		want string
 	}{
-		{
-			name: "after reading only id3v1 tag",
+		"after reading only id3v1 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -720,8 +689,7 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 			},
 			want: "Other",
 		},
-		{
-			name: "after reading only id3v2 tag",
+		"after reading only id3v2 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -743,8 +711,7 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 			},
 			want: "dance music",
 		},
-		{
-			name: "after reading both tags",
+		"after reading both tags": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -767,8 +734,8 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 			want: "dance music",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := tt.tM.canonicalGenre(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -777,14 +744,12 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 }
 
 func Test_trackMetadata_canonicalYear(t *testing.T) {
-	fnName := "trackMetadata.canonicalYear()"
-	tests := []struct {
-		name string
+	const fnName = "trackMetadata.canonicalYear()"
+	tests := map[string]struct {
 		tM   *trackMetadata
 		want string
 	}{
-		{
-			name: "after reading only id3v1 tag",
+		"after reading only id3v1 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -806,8 +771,7 @@ func Test_trackMetadata_canonicalYear(t *testing.T) {
 			},
 			want: "2013",
 		},
-		{
-			name: "after reading only id3v2 tag",
+		"after reading only id3v2 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -829,8 +793,7 @@ func Test_trackMetadata_canonicalYear(t *testing.T) {
 			},
 			want: "2022",
 		},
-		{
-			name: "after reading both tags",
+		"after reading both tags": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -853,8 +816,8 @@ func Test_trackMetadata_canonicalYear(t *testing.T) {
 			want: "2022",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := tt.tM.canonicalYear(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -863,14 +826,12 @@ func Test_trackMetadata_canonicalYear(t *testing.T) {
 }
 
 func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
-	fnName := "trackMetadata.canonicalMusicCDIdentifier()"
-	tests := []struct {
-		name string
+	const fnName = "trackMetadata.canonicalMusicCDIdentifier()"
+	tests := map[string]struct {
 		tM   *trackMetadata
 		want id3v2.UnknownFrame
 	}{
-		{
-			name: "after reading only id3v1 tag",
+		"after reading only id3v1 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -892,8 +853,7 @@ func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
 			},
 			want: id3v2.UnknownFrame{},
 		},
-		{
-			name: "after reading only id3v2 tag",
+		"after reading only id3v2 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -915,8 +875,7 @@ func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
 			},
 			want: id3v2.UnknownFrame{Body: []byte{0}},
 		},
-		{
-			name: "after reading both tags",
+		"after reading both tags": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -939,8 +898,8 @@ func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
 			want: id3v2.UnknownFrame{Body: []byte{0}},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := tt.tM.canonicalMusicCDIdentifier(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -949,19 +908,13 @@ func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
 }
 
 func Test_trackMetadata_errors(t *testing.T) {
-	fnName := "trackMetadata.errors()"
-	tests := []struct {
-		name string
+	const fnName = "trackMetadata.errors()"
+	tests := map[string]struct {
 		tM   *trackMetadata
 		want []error
 	}{
-		{
-			name: "uninitialized data",
-			tM:   newTrackMetadata(),
-			want: []error{},
-		},
-		{
-			name: "after read failure",
+		"uninitialized data": {tM: newTrackMetadata(), want: []error{}},
+		"after read failure": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -990,8 +943,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 				fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
 			},
 		},
-		{
-			name: "after reading no tags",
+		"after reading no tags": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -1020,8 +972,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 				fmt.Errorf("zero length"),
 			},
 		},
-		{
-			name: "after reading only id3v1 tag",
+		"after reading only id3v1 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -1043,8 +994,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 			},
 			want: []error{fmt.Errorf("zero length")},
 		},
-		{
-			name: "after reading only id3v2 tag",
+		"after reading only id3v2 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -1066,8 +1016,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 			},
 			want: []error{fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"")},
 		},
-		{
-			name: "after reading both tags",
+		"after reading both tags": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -1090,8 +1039,8 @@ func Test_trackMetadata_errors(t *testing.T) {
 			want: []error{},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := tt.tM.errors(); !errorSliceEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -1100,19 +1049,17 @@ func Test_trackMetadata_errors(t *testing.T) {
 }
 
 func Test_trackMetadata_trackDiffers(t *testing.T) {
-	fnName := "trackMetadata.trackDiffers()"
+	const fnName = "trackMetadata.trackDiffers()"
 	type args struct {
 		track int
 	}
-	tests := []struct {
-		name string
-		tM   *trackMetadata
+	tests := map[string]struct {
+		tM *trackMetadata
 		args
 		want   bool
 		wantTM *trackMetadata
 	}{
-		{
-			name: "after read failure",
+		"after read failure": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -1162,8 +1109,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		{
-			name: "after reading no tags",
+		"after reading no tags": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -1213,8 +1159,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		{
-			name: "after reading only id3v1 tag",
+		"after reading only id3v1 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -1256,8 +1201,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, true, false},
 			},
 		},
-		{
-			name: "after reading only id3v2 tag",
+		"after reading only id3v2 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -1299,8 +1243,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, true},
 			},
 		},
-		{
-			name: "after reading both tags",
+		"after reading both tags": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -1343,8 +1286,8 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := tt.tM.trackDiffers(tt.args.track); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -1356,19 +1299,17 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 }
 
 func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
-	fnName := "trackMetadata.trackTitleDiffers()"
+	const fnName = "trackMetadata.trackTitleDiffers()"
 	type args struct {
 		title string
 	}
-	tests := []struct {
-		name string
-		tM   *trackMetadata
+	tests := map[string]struct {
+		tM *trackMetadata
 		args
 		wantDiffers bool
 		wantTM      *trackMetadata
 	}{
-		{
-			name: "after read failure",
+		"after read failure": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -1418,8 +1359,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		{
-			name: "after reading no tags",
+		"after reading no tags": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -1469,8 +1409,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		{
-			name: "after reading only id3v1 tag",
+		"after reading only id3v1 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -1512,8 +1451,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, true, false},
 			},
 		},
-		{
-			name: "after reading only id3v2 tag",
+		"after reading only id3v2 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -1555,8 +1493,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, true},
 			},
 		},
-		{
-			name: "after reading both tags",
+		"after reading both tags": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -1598,8 +1535,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, true, true},
 			},
 		},
-		{
-			name: "valid name",
+		"valid name": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -1642,8 +1578,8 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if gotDiffers := tt.tM.trackTitleDiffers(tt.args.title); gotDiffers != tt.wantDiffers {
 				t.Errorf("%s = %v, want %v", fnName, gotDiffers, tt.wantDiffers)
 			}
@@ -1655,19 +1591,17 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 }
 
 func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
-	fnName := "trackMetadata.albumTitleDiffers()"
+	const fnName = "trackMetadata.albumTitleDiffers()"
 	type args struct {
 		albumTitle string
 	}
-	tests := []struct {
-		name string
-		tM   *trackMetadata
+	tests := map[string]struct {
+		tM *trackMetadata
 		args
 		wantDiffers bool
 		wantTM      *trackMetadata
 	}{
-		{
-			name: "after read failure",
+		"after read failure": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -1717,8 +1651,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		{
-			name: "after reading no tags",
+		"after reading no tags": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -1768,8 +1701,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		{
-			name: "after reading only id3v1 tag",
+		"after reading only id3v1 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -1811,8 +1743,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, true, false},
 			},
 		},
-		{
-			name: "after reading only id3v2 tag",
+		"after reading only id3v2 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -1854,8 +1785,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, true},
 			},
 		},
-		{
-			name: "after reading both tags",
+		"after reading both tags": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -1898,8 +1828,8 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if gotDiffers := tt.tM.albumTitleDiffers(tt.args.albumTitle); gotDiffers != tt.wantDiffers {
 				t.Errorf("%s = %v, want %v", fnName, gotDiffers, tt.wantDiffers)
 			}
@@ -1911,19 +1841,17 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 }
 
 func Test_trackMetadata_artistNameDiffers(t *testing.T) {
-	fnName := "trackMetadata.artistNameDiffers()"
+	const fnName = "trackMetadata.artistNameDiffers()"
 	type args struct {
 		artistName string
 	}
-	tests := []struct {
-		name string
-		tM   *trackMetadata
+	tests := map[string]struct {
+		tM *trackMetadata
 		args
 		wantDiffers bool
 		wantTM      *trackMetadata
 	}{
-		{
-			name: "after read failure",
+		"after read failure": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -1973,8 +1901,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		{
-			name: "after reading no tags",
+		"after reading no tags": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -2024,8 +1951,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		{
-			name: "after reading only id3v1 tag",
+		"after reading only id3v1 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -2067,8 +1993,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, true, false},
 			},
 		},
-		{
-			name: "after reading only id3v2 tag",
+		"after reading only id3v2 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -2110,8 +2035,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, true},
 			},
 		},
-		{
-			name: "after reading both tags",
+		"after reading both tags": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -2154,8 +2078,8 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if gotDiffers := tt.tM.artistNameDiffers(tt.args.artistName); gotDiffers != tt.wantDiffers {
 				t.Errorf("%s = %v, want %v", fnName, gotDiffers, tt.wantDiffers)
 			}
@@ -2167,19 +2091,17 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 }
 
 func Test_trackMetadata_genreDiffers(t *testing.T) {
-	fnName := "trackMetadata.genreDiffers()"
+	const fnName = "trackMetadata.genreDiffers()"
 	type args struct {
 		genre string
 	}
-	tests := []struct {
-		name string
-		tM   *trackMetadata
+	tests := map[string]struct {
+		tM *trackMetadata
 		args
 		wantDiffers bool
 		wantTM      *trackMetadata
 	}{
-		{
-			name: "after read failure",
+		"after read failure": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -2229,8 +2151,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		{
-			name: "after reading no tags",
+		"after reading no tags": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -2280,8 +2201,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		{
-			name: "after reading only id3v1 tag",
+		"after reading only id3v1 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -2323,8 +2243,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		{
-			name: "after reading only id3v2 tag",
+		"after reading only id3v2 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -2366,8 +2285,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, true},
 			},
 		},
-		{
-			name: "after reading both tags",
+		"after reading both tags": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -2410,8 +2328,8 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if gotDiffers := tt.tM.genreDiffers(tt.args.genre); gotDiffers != tt.wantDiffers {
 				t.Errorf("%s = %v, want %v", fnName, gotDiffers, tt.wantDiffers)
 			}
@@ -2423,19 +2341,17 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 }
 
 func Test_trackMetadata_yearDiffers(t *testing.T) {
-	fnName := "trackMetadata.yearDiffers()"
+	const fnName = "trackMetadata.yearDiffers()"
 	type args struct {
 		year string
 	}
-	tests := []struct {
-		name string
-		tM   *trackMetadata
+	tests := map[string]struct {
+		tM *trackMetadata
 		args
 		wantDiffers bool
 		wantTM      *trackMetadata
 	}{
-		{
-			name: "after read failure",
+		"after read failure": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -2485,8 +2401,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		{
-			name: "after reading no tags",
+		"after reading no tags": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -2536,8 +2451,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		{
-			name: "after reading only id3v1 tag",
+		"after reading only id3v1 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -2579,8 +2493,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, true, false},
 			},
 		},
-		{
-			name: "after reading only id3v2 tag",
+		"after reading only id3v2 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -2622,8 +2535,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, true},
 			},
 		},
-		{
-			name: "after reading both tags",
+		"after reading both tags": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -2666,8 +2578,8 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if gotDiffers := tt.tM.yearDiffers(tt.args.year); gotDiffers != tt.wantDiffers {
 				t.Errorf("%s = %v, want %v", fnName, gotDiffers, tt.wantDiffers)
 			}
@@ -2679,19 +2591,17 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 }
 
 func Test_trackMetadata_mcdiDiffers(t *testing.T) {
-	fnName := "trackMetadata.mcdiDiffers()"
+	const fnName = "trackMetadata.mcdiDiffers()"
 	type args struct {
 		f id3v2.UnknownFrame
 	}
-	tests := []struct {
-		name string
-		tM   *trackMetadata
+	tests := map[string]struct {
+		tM *trackMetadata
 		args
 		wantDiffers bool
 		wantTM      *trackMetadata
 	}{
-		{
-			name: "after read failure",
+		"after read failure": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -2741,8 +2651,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		{
-			name: "after reading no tags",
+		"after reading no tags": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -2792,8 +2701,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		{
-			name: "after reading only id3v1 tag",
+		"after reading only id3v1 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -2835,8 +2743,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		{
-			name: "after reading only id3v2 tag",
+		"after reading only id3v2 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -2878,8 +2785,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, true},
 			},
 		},
-		{
-			name: "after reading both tags",
+		"after reading both tags": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -2922,8 +2828,8 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if gotDiffers := tt.tM.mcdiDiffers(tt.args.f); gotDiffers != tt.wantDiffers {
 				t.Errorf("%s = %v, want %v", fnName, gotDiffers, tt.wantDiffers)
 			}
@@ -2935,18 +2841,16 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 }
 
 func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
-	fnName := "trackMetadata.canonicalAlbumTitleMatches()"
+	const fnName = "trackMetadata.canonicalAlbumTitleMatches()"
 	type args struct {
 		albumTitle string
 	}
-	tests := []struct {
-		name string
-		tM   *trackMetadata
+	tests := map[string]struct {
+		tM *trackMetadata
 		args
 		want bool
 	}{
-		{
-			name: "mismatch after reading only id3v1 tag",
+		"mismatch after reading only id3v1 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -2969,8 +2873,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 			args: args{albumTitle: "album name"},
 			want: false,
 		},
-		{
-			name: "mismatch after reading only id3v2 tag",
+		"mismatch after reading only id3v2 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -2993,8 +2896,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 			args: args{albumTitle: "album name"},
 			want: false,
 		},
-		{
-			name: "mismatch after reading both tags",
+		"mismatch after reading both tags": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -3017,8 +2919,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 			args: args{albumTitle: "album name"},
 			want: false,
 		},
-		{
-			name: "match after reading only id3v1 tag",
+		"match after reading only id3v1 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -3041,8 +2942,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 			args: args{albumTitle: "On Air: Live At The BBC, Volume 1"},
 			want: true,
 		},
-		{
-			name: "match after reading only id3v2 tag",
+		"match after reading only id3v2 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -3065,8 +2965,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 			args: args{albumTitle: "unknown album"},
 			want: true,
 		},
-		{
-			name: "match after reading both tags",
+		"match after reading both tags": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -3090,8 +2989,8 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 			want: true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := tt.tM.canonicalAlbumTitleMatches(tt.args.albumTitle); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -3100,18 +2999,16 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 }
 
 func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
-	fnName := "trackMetadata.canonicalArtistNameMatches()"
+	const fnName = "trackMetadata.canonicalArtistNameMatches()"
 	type args struct {
 		artistName string
 	}
-	tests := []struct {
-		name string
-		tM   *trackMetadata
+	tests := map[string]struct {
+		tM *trackMetadata
 		args
 		want bool
 	}{
-		{
-			name: "mismatch after reading only id3v1 tag",
+		"mismatch after reading only id3v1 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -3134,8 +3031,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 			args: args{artistName: "artist name"},
 			want: false,
 		},
-		{
-			name: "mismatch after reading only id3v2 tag",
+		"mismatch after reading only id3v2 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -3158,8 +3054,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 			args: args{artistName: "artist name"},
 			want: false,
 		},
-		{
-			name: "mismatch after reading both tags",
+		"mismatch after reading both tags": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -3182,8 +3077,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 			args: args{artistName: "artist name"},
 			want: false,
 		},
-		{
-			name: "match after reading only id3v1 tag",
+		"match after reading only id3v1 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -3206,8 +3100,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 			args: args{artistName: "The Beatles"},
 			want: true,
 		},
-		{
-			name: "match after reading only id3v2 tag",
+		"match after reading only id3v2 tag": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -3230,8 +3123,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 			args: args{artistName: "unknown artist"},
 			want: true,
 		},
-		{
-			name: "match after reading both tags",
+		"match after reading both tags": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -3255,8 +3147,8 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 			want: true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := tt.tM.canonicalArtistNameMatches(tt.args.artistName); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}

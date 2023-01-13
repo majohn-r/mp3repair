@@ -15,6 +15,22 @@ const (
 	totalSources
 )
 
+var (
+	nameComparators = map[sourceType]func(comparableStrings) bool{
+		id3v1Source: id3v1NameDiffers,
+		id3v2Source: id3v2NameDiffers,
+	}
+	genreComparators = map[sourceType]func(comparableStrings) bool{
+		id3v1Source: id3v1GenreDiffers,
+		id3v2Source: id3v2GenreDiffers,
+	}
+	tagEditors = map[sourceType]func(tM *trackMetadata, path string, src sourceType) error{
+		id3v1Source: updateID3V1Tag,
+		id3v2Source: updateID3V2Tag,
+	}
+	sourceTypes = []sourceType{id3v1Source, id3v2Source}
+)
+
 // outside of unit tests
 type trackMetadata struct {
 	album             []string
@@ -81,13 +97,13 @@ func readMetadata(path string) *trackMetadata {
 }
 
 func (tM *trackMetadata) setID3v2Values(d *id3v2TaggedTrackData) {
-	index := id3v2Source
-	tM.album[index] = d.album
-	tM.artist[index] = d.artist
-	tM.title[index] = d.title
-	tM.genre[index] = d.genre
-	tM.year[index] = d.year
-	tM.track[index] = d.track
+	i := id3v2Source
+	tM.album[i] = d.album
+	tM.artist[i] = d.artist
+	tM.title[i] = d.title
+	tM.genre[i] = d.genre
+	tM.year[i] = d.year
+	tM.track[i] = d.track
 	tM.musicCDIdentifier = d.musicCDIdentifier
 }
 
@@ -143,82 +159,71 @@ type comparableStrings struct {
 	metadataName string
 }
 
-var (
-	nameComparators = map[sourceType]func(comparableStrings) bool{
-		id3v1Source: id3v1NameDiffers,
-		id3v2Source: id3v2NameDiffers,
-	}
-	genreComparators = map[sourceType]func(comparableStrings) bool{
-		id3v1Source: id3v1GenreDiffers,
-		id3v2Source: id3v2GenreDiffers,
-	}
-)
-
 func (tM *trackMetadata) trackDiffers(track int) (differs bool) {
-	for _, source := range []sourceType{id3v1Source, id3v2Source} {
-		if tM.err[source] == nil && tM.track[source] != track {
+	for _, sT := range sourceTypes {
+		if tM.err[sT] == nil && tM.track[sT] != track {
 			differs = true
-			tM.requiresEdit[source] = true
-			tM.correctedTrack[source] = track
+			tM.requiresEdit[sT] = true
+			tM.correctedTrack[sT] = track
 		}
 	}
 	return
 }
 
 func (tM *trackMetadata) trackTitleDiffers(title string) (differs bool) {
-	for _, source := range []sourceType{id3v1Source, id3v2Source} {
-		comparison := comparableStrings{externalName: title, metadataName: tM.title[source]}
-		if tM.err[source] == nil && nameComparators[source](comparison) {
+	for _, sT := range sourceTypes {
+		comparison := comparableStrings{externalName: title, metadataName: tM.title[sT]}
+		if tM.err[sT] == nil && nameComparators[sT](comparison) {
 			differs = true
-			tM.requiresEdit[source] = true
-			tM.correctedTitle[source] = title
+			tM.requiresEdit[sT] = true
+			tM.correctedTitle[sT] = title
 		}
 	}
 	return
 }
 
 func (tM *trackMetadata) albumTitleDiffers(albumTitle string) (differs bool) {
-	for _, source := range []sourceType{id3v1Source, id3v2Source} {
-		comparison := comparableStrings{externalName: albumTitle, metadataName: tM.album[source]}
-		if tM.err[source] == nil && nameComparators[source](comparison) {
+	for _, sT := range sourceTypes {
+		comparison := comparableStrings{externalName: albumTitle, metadataName: tM.album[sT]}
+		if tM.err[sT] == nil && nameComparators[sT](comparison) {
 			differs = true
-			tM.requiresEdit[source] = true
-			tM.correctedAlbum[source] = albumTitle
+			tM.requiresEdit[sT] = true
+			tM.correctedAlbum[sT] = albumTitle
 		}
 	}
 	return
 }
 
 func (tM *trackMetadata) artistNameDiffers(artistName string) (differs bool) {
-	for _, source := range []sourceType{id3v1Source, id3v2Source} {
-		comparison := comparableStrings{externalName: artistName, metadataName: tM.artist[source]}
-		if tM.err[source] == nil && nameComparators[source](comparison) {
+	for _, sT := range sourceTypes {
+		comparison := comparableStrings{externalName: artistName, metadataName: tM.artist[sT]}
+		if tM.err[sT] == nil && nameComparators[sT](comparison) {
 			differs = true
-			tM.requiresEdit[source] = true
-			tM.correctedArtist[source] = artistName
+			tM.requiresEdit[sT] = true
+			tM.correctedArtist[sT] = artistName
 		}
 	}
 	return
 }
 
 func (tM *trackMetadata) genreDiffers(genre string) (differs bool) {
-	for _, source := range []sourceType{id3v1Source, id3v2Source} {
-		comparison := comparableStrings{externalName: genre, metadataName: tM.genre[source]}
-		if tM.err[source] == nil && genreComparators[source](comparison) {
+	for _, sT := range sourceTypes {
+		comparison := comparableStrings{externalName: genre, metadataName: tM.genre[sT]}
+		if tM.err[sT] == nil && genreComparators[sT](comparison) {
 			differs = true
-			tM.requiresEdit[source] = true
-			tM.correctedGenre[source] = genre
+			tM.requiresEdit[sT] = true
+			tM.correctedGenre[sT] = genre
 		}
 	}
 	return
 }
 
 func (tM *trackMetadata) yearDiffers(year string) (differs bool) {
-	for _, source := range []sourceType{id3v1Source, id3v2Source} {
-		if tM.err[source] == nil && tM.year[source] != year {
+	for _, sT := range sourceTypes {
+		if tM.err[sT] == nil && tM.year[sT] != year {
 			differs = true
-			tM.requiresEdit[source] = true
-			tM.correctedYear[source] = year
+			tM.requiresEdit[sT] = true
+			tM.correctedYear[sT] = year
 		}
 	}
 	return
@@ -243,15 +248,8 @@ func (tM *trackMetadata) canonicalArtistNameMatches(artistName string) bool {
 	return !nameComparators[tM.canonicalType](comparison)
 }
 
-var (
-	tagEditors = map[sourceType]func(tM *trackMetadata, path string, src sourceType) error{
-		id3v1Source: updateID3V1Tag,
-		id3v2Source: updateID3V2Tag,
-	}
-)
-
 func editTags(tM *trackMetadata, path string) (e []error) {
-	for _, source := range []sourceType{id3v1Source, id3v2Source} {
+	for _, source := range sourceTypes {
 		if err := tagEditors[source](tM, path, source); err != nil {
 			e = append(e, err)
 		}
