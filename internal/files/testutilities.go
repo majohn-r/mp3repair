@@ -10,30 +10,6 @@ import (
 // NOTE: the functions in this file are strictly for testing purposes. Do not
 // call them from production code.
 
-// CreateAllOddArtistsWithEvenAlbumsForTesting generates a slice of artists with
-// odd-valued names and albums with even-valued names.
-func CreateAllOddArtistsWithEvenAlbumsForTesting(topDir string) []*Artist {
-	var artists []*Artist
-	for k := 1; k < 10; k += 2 {
-		artistName := internal.CreateArtistNameForTesting(k)
-		artistDir := filepath.Join(topDir, artistName)
-		artist := NewArtist(artistName, artistDir)
-		for n := 0; n < 10; n += 2 {
-			albumName := internal.CreateAlbumNameForTesting(n)
-			albumDir := filepath.Join(artistDir, albumName)
-			album := NewAlbum(albumName, artist, albumDir)
-			for p := 0; p < 10; p++ {
-				trackName := internal.CreateTrackNameForTesting(p)
-				name, _, _ := parseTrackName(nil, trackName, album, defaultFileExtension)
-				album.AddTrack(NewTrack(album, trackName, name, p))
-			}
-			artist.AddAlbum(album)
-		}
-		artists = append(artists, artist)
-	}
-	return artists
-}
-
 // CreateAllArtistsForTesting creates a well-defined slice of artists, with
 // albums and tracks.
 func CreateAllArtistsForTesting(topDir string, addExtras bool) []*Artist {
@@ -68,19 +44,22 @@ func CreateAllArtistsForTesting(topDir string, addExtras bool) []*Artist {
 	return artists
 }
 
-var nameToID3V2Tag = map[string]string{
-	"artist": "TPE1",
-	"album":  "TALB",
-	"title":  "TIT2",
-	"genre":  "TCON",
-	"year":   "TYER",
-	"track":  "TRCK",
-}
+var (
+	nameToID3V2Tag = map[string]string{
+		"artist": "TPE1",
+		"album":  "TALB",
+		"title":  "TIT2",
+		"genre":  "TCON",
+		"year":   "TYER",
+		"track":  "TRCK",
+	}
+	recognizedTags = []string{"artist", "album", "title", "genre", "year", "track"}
+)
 
 // CreateID3V2TaggedDataForTesting creates ID3V2-tagged content. This code is
 // based on reading https://id3.org/id3v2.3.0 and on looking at a hex dump of a
 // real mp3 file.
-func CreateID3V2TaggedDataForTesting(payload []byte, frames map[string]string) []byte {
+func CreateID3V2TaggedDataForTesting(audio []byte, frames map[string]string) []byte {
 	content := make([]byte, 0)
 	// block off tag header
 	content = append(content, []byte("ID3")...)
@@ -102,7 +81,7 @@ func CreateID3V2TaggedDataForTesting(payload []byte, frames map[string]string) [
 		factor /= 128
 	}
 	// add payload
-	content = append(content, payload...)
+	content = append(content, audio...)
 	return content
 }
 
@@ -121,11 +100,9 @@ func makeTextFrame(id, content string) []byte {
 	return frame
 }
 
-var recognizedTags = []string{"artist", "album", "title", "genre", "year", "track"}
-
 // CreateConsistentlyTaggedDataForTesting creates a file with a consistent set
 // of ID3V2 and ID3V1 tags
-func CreateConsistentlyTaggedDataForTesting(payload []byte, m map[string]any) []byte {
+func CreateConsistentlyTaggedDataForTesting(audio []byte, m map[string]any) []byte {
 	var frames = map[string]string{}
 	for _, tagName := range recognizedTags {
 		if value, ok := m[tagName]; ok {
@@ -137,7 +114,7 @@ func CreateConsistentlyTaggedDataForTesting(payload []byte, m map[string]any) []
 			}
 		}
 	}
-	data := CreateID3V2TaggedDataForTesting(payload, frames)
+	data := CreateID3V2TaggedDataForTesting(audio, frames)
 	data = append(data, createID3V1TaggedDataForTesting(m)...)
 	return data
 }

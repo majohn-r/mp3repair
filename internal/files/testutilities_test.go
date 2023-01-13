@@ -6,17 +6,15 @@ import (
 )
 
 func TestCreateID3V1TaggedDataForTesting(t *testing.T) {
-	fnName := "CreateID3V1TaggedDataForTesting()"
+	const fnName = "CreateID3V1TaggedDataForTesting()"
 	type args struct {
 		m map[string]any
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want []byte
 	}{
-		{
-			name: "full exercise",
+		"full exercise": {
 			args: args{
 				m: map[string]any{
 					"artist": "Artist Name",
@@ -40,8 +38,8 @@ func TestCreateID3V1TaggedDataForTesting(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := createID3V1TaggedDataForTesting(tt.args.m); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -50,22 +48,18 @@ func TestCreateID3V1TaggedDataForTesting(t *testing.T) {
 }
 
 func TestCreateConsistentlyTaggedDataForTesting(t *testing.T) {
-	fnName := "CreateConsistentlyTaggedDataForTesting()"
+	const fnName = "CreateConsistentlyTaggedDataForTesting()"
 	type args struct {
 		payload []byte
 		m       map[string]any
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want []byte
 	}{
-		{
-			name: "thorough test",
+		"thorough test": {
 			args: args{
-				payload: []byte{
-					0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-				},
+				payload: []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15},
 				m: map[string]any{
 					"artist": "Artist Name",
 					"album":  "Album Name",
@@ -96,8 +90,8 @@ func TestCreateConsistentlyTaggedDataForTesting(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := CreateConsistentlyTaggedDataForTesting(tt.args.payload, tt.args.m); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}

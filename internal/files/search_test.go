@@ -3,6 +3,7 @@ package files
 import (
 	"flag"
 	"mp3/internal"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -107,7 +108,7 @@ func TestSearch_Load(t *testing.T) {
 		},
 		"read with filtering": {
 			s:           CreateFilteredSearchForTesting(topDir, "^.*[13579]$", "^.*[02468]$"),
-			wantArtists: CreateAllOddArtistsWithEvenAlbumsForTesting(topDir),
+			wantArtists: createAllOddArtistsWithEvenAlbums(topDir),
 			wantOk:      true,
 			WantedRecording: output.WantedRecording{
 				Log: "level='info' -albumFilter='^.*[02468]$' -artistFilter='^.*[13579]$' -ext='.mp3' -topDir='loadTest' msg='reading filtered music files'\n",
@@ -205,4 +206,26 @@ func TestSearch_LoadUnfiltered(t *testing.T) {
 			}
 		})
 	}
+}
+
+func createAllOddArtistsWithEvenAlbums(topDir string) []*Artist {
+	var artists []*Artist
+	for k := 1; k < 10; k += 2 {
+		artistName := internal.CreateArtistNameForTesting(k)
+		artistDir := filepath.Join(topDir, artistName)
+		artist := NewArtist(artistName, artistDir)
+		for n := 0; n < 10; n += 2 {
+			albumName := internal.CreateAlbumNameForTesting(n)
+			albumDir := filepath.Join(artistDir, albumName)
+			album := NewAlbum(albumName, artist, albumDir)
+			for p := 0; p < 10; p++ {
+				trackName := internal.CreateTrackNameForTesting(p)
+				name, _, _ := parseTrackName(nil, trackName, album, defaultFileExtension)
+				album.AddTrack(NewTrack(album, trackName, name, p))
+			}
+			artist.AddAlbum(album)
+		}
+		artists = append(artists, artist)
+	}
+	return artists
 }
