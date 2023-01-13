@@ -42,24 +42,24 @@ func NewSearchFlags(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet)
 	return makeSearchFlags(o, c.SubConfiguration(defaultSectionName), fSet)
 }
 
-func makeSearchFlags(o output.Bus, configuration *internal.Configuration, fSet *flag.FlagSet) (*SearchFlags, bool) {
+func makeSearchFlags(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (*SearchFlags, bool) {
 	var ok = true
-	defTopDirectory, err := configuration.StringDefault(topDirectoryFlag, filepath.Join("%HOMEPATH%", "Music"))
+	defTopDirectory, err := c.StringDefault(topDirectoryFlag, defaultDirectory())
 	if err != nil {
 		reportBadDefault(o, err)
 		ok = false
 	}
-	defFileExtension, err := configuration.StringDefault(fileExtensionFlag, defaultFileExtension)
+	defFileExtension, err := c.StringDefault(fileExtensionFlag, defaultFileExtension)
 	if err != nil {
 		reportBadDefault(o, err)
 		ok = false
 	}
-	defAlbumRegex, err := configuration.StringDefault(albumRegexFlag, defaultRegex)
+	defAlbumRegex, err := c.StringDefault(albumRegexFlag, defaultRegex)
 	if err != nil {
 		reportBadDefault(o, err)
 		ok = false
 	}
-	defArtistRegex, err := configuration.StringDefault(artistRegexFlag, defaultRegex)
+	defArtistRegex, err := c.StringDefault(artistRegexFlag, defaultRegex)
 	if err != nil {
 		reportBadDefault(o, err)
 		ok = false
@@ -91,8 +91,7 @@ func (sf *SearchFlags) ProcessArgs(o output.Bus, args []string) (s *Search, ok b
 // NewSearch validates the common search parameters and creates a Search
 // instance based on them.
 func (sf *SearchFlags) NewSearch(o output.Bus) (s *Search, ok bool) {
-	albumsFilter, artistsFilter, validated := sf.validate(o)
-	if validated {
+	if albumsFilter, artistsFilter, validated := sf.validate(o); validated {
 		s = &Search{
 			topDirectory:    *sf.topDirectory,
 			targetExtension: *sf.fileExtension,
@@ -125,7 +124,7 @@ func (sf *SearchFlags) validateExtension(o output.Bus) (ok bool) {
 	ok = true
 	if !strings.HasPrefix(*sf.fileExtension, ".") || strings.Contains(strings.TrimPrefix(*sf.fileExtension, "."), ".") {
 		ok = false
-		o.WriteCanonicalError("The -ext value you specified, %q, must contain exactly one '.' and '.' must be the first character", *sf.fileExtension)
+		o.WriteCanonicalError("The -%s value you specified, %q, must contain exactly one '.' and '.' must be the first character", fileExtensionFlag, *sf.fileExtension)
 		o.Log(output.Error, "the file extension must begin with '.' and contain no other '.' characters", map[string]any{
 			"-" + fileExtensionFlag: *sf.fileExtension,
 		})
@@ -134,7 +133,7 @@ func (sf *SearchFlags) validateExtension(o output.Bus) (ok bool) {
 	trackNameRegex, e = regexp.Compile("^\\d+[\\s-].+\\." + strings.TrimPrefix(*sf.fileExtension, ".") + "$")
 	if e != nil {
 		ok = false
-		o.WriteCanonicalError("The -ext value you specified, %q, cannot be used for file matching: %v", *sf.fileExtension, e)
+		o.WriteCanonicalError("The -%s value you specified, %q, cannot be used for file matching: %v", fileExtensionFlag, *sf.fileExtension, e)
 		o.Log(output.Error, "the file extension cannot be parsed as a regular expression", map[string]any{
 			"-" + fileExtensionFlag: *sf.fileExtension,
 			"error":                 e,
@@ -143,12 +142,12 @@ func (sf *SearchFlags) validateExtension(o output.Bus) (ok bool) {
 	return
 }
 
-func validateRegexp(o output.Bus, pattern, name string) (filter *regexp.Regexp, ok bool) {
-	if f, err := regexp.Compile(pattern); err != nil {
-		o.WriteCanonicalError("The %s filter value you specified, %q, cannot be used: %v", name, pattern, err)
+func validateRegexp(o output.Bus, filterValue, filterName string) (filter *regexp.Regexp, ok bool) {
+	if f, err := regexp.Compile(filterValue); err != nil {
+		o.WriteCanonicalError("The %s filter value you specified, %q, cannot be used: %v", filterName, filterValue, err)
 		o.Log(output.Error, "the filter cannot be parsed as a regular expression", map[string]any{
-			name:    pattern,
-			"error": err,
+			filterName: filterValue,
+			"error":    err,
 		})
 	} else {
 		filter = f
@@ -185,7 +184,11 @@ func SearchDefaults() (sectionName string, defaults map[string]any) {
 		albumRegexFlag:    defaultRegex,
 		artistRegexFlag:   defaultRegex,
 		fileExtensionFlag: defaultFileExtension,
-		topDirectoryFlag:  filepath.Join("%HOMEPATH%", "Music"),
+		topDirectoryFlag:  defaultDirectory(),
 	}
 	return
+}
+
+func defaultDirectory() string {
+	return filepath.Join("%HOMEPATH%", "Music")
 }
