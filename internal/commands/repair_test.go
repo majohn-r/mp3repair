@@ -314,7 +314,7 @@ func Test_albumPaths(t *testing.T) {
 		t.Errorf("%s error populating %q: %v", fnName, topDir, err)
 	}
 	s := files.CreateFilteredSearchForTesting(topDir, "^.*$", "^.*$")
-	a, _ := s.LoadData(output.NewNilBus())
+	a, _ := s.Load(output.NewNilBus())
 	var ts []*files.Track
 	for _, artist := range a {
 		for _, album := range artist.Albums() {

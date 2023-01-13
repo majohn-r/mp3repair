@@ -171,7 +171,7 @@ func (l *list) runCommand(o output.Bus, s *files.Search) (ok bool) {
 			o.Log(output.Info, "one or more flags were overridden", l.logFields())
 		}
 	}
-	if artists, artistsLoaded := s.LoadData(o); artistsLoaded {
+	if artists, artistsLoaded := s.Load(o); artistsLoaded {
 		l.outputArtists(o, artists)
 		ok = true
 	}

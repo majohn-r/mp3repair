@@ -59,7 +59,7 @@ func (r *repair) logFields() map[string]any {
 
 func (r *repair) runCommand(o output.Bus, s *files.Search) (ok bool) {
 	logStart(o, repairCommandName, r.logFields())
-	if artists, loaded := s.LoadData(o); loaded {
+	if artists, loaded := s.Load(o); loaded {
 		ok = true
 		files.ReadMetadata(o, artists)
 		if tracks := findConflictedTracks(artists); len(tracks) == 0 {

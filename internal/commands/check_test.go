@@ -208,8 +208,8 @@ func Test_filterArtists(t *testing.T) {
 		t.Errorf("%s error populating %q: %v", fnName, topDir, err)
 	}
 	searchStruct := files.CreateSearchForTesting(topDir)
-	fullArtists, _ := searchStruct.LoadUnfilteredData(output.NewNilBus())
-	filteredArtists, _ := searchStruct.LoadData(output.NewNilBus())
+	fullArtists, _ := searchStruct.LoadUnfiltered(output.NewNilBus())
+	filteredArtists, _ := searchStruct.Load(output.NewNilBus())
 	type args struct {
 		s       *files.Search
 		artists []*files.Artist
@@ -405,7 +405,7 @@ func Test_check_analyzeIntegrity(t *testing.T) {
 	backingTrack := files.NewTrack(backingAlbum, "01 track.mp3", "track", 1)
 	backingAlbum.AddTrack(backingTrack)
 	s := files.CreateSearchForTesting(topDir)
-	a, _ := s.LoadUnfilteredData(output.NewNilBus())
+	a, _ := s.LoadUnfiltered(output.NewNilBus())
 	type args struct {
 		artists []*files.Artist
 	}

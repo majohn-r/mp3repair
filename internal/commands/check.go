@@ -242,7 +242,7 @@ func merge(sets [][]*checkedArtist) []*checkedArtist {
 func (c *check) filterArtists(o output.Bus, s *files.Search, artists []*files.Artist) (filtered []*files.Artist, ok bool) {
 	if *c.trackNumberingGaps || *c.integrity {
 		if len(artists) == 0 {
-			filtered, ok = s.LoadData(o)
+			filtered, ok = s.Load(o)
 		} else {
 			filtered, ok = s.FilterArtists(o, artists)
 		}
@@ -349,7 +349,7 @@ func (c *check) analyzeEmptyFolders(o output.Bus, s *files.Search) (artists []*f
 		return
 	}
 	var loadedOk bool
-	artists, loadedOk = s.LoadUnfilteredData(o)
+	artists, loadedOk = s.LoadUnfiltered(o)
 	if !loadedOk {
 		return
 	}
