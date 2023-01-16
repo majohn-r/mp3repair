@@ -11,22 +11,21 @@ import (
 )
 
 func TestCreateAlbumNameForTesting(t *testing.T) {
-	fnName := "CreateAlbumNameForTesting()"
+	const fnName = "CreateAlbumNameForTesting()"
 	type args struct {
-		k int
+		albumNumber int
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want string
 	}{
-		{name: "negative value", args: args{k: -1}, want: "Test Album -1"},
-		{name: "zero", args: args{k: 0}, want: "Test Album 0"},
-		{name: "positive value", args: args{k: 1}, want: "Test Album 1"},
+		"negative value": {args: args{albumNumber: -1}, want: "Test Album -1"},
+		"zero":           {args: args{albumNumber: 0}, want: "Test Album 0"},
+		"positive value": {args: args{albumNumber: 1}, want: "Test Album 1"},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := CreateAlbumNameForTesting(tt.args.k); got != tt.want {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := CreateAlbumNameForTesting(tt.args.albumNumber); got != tt.want {
 				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})
@@ -34,22 +33,21 @@ func TestCreateAlbumNameForTesting(t *testing.T) {
 }
 
 func TestCreateArtistNameForTesting(t *testing.T) {
-	fnName := "CreateArtistNameForTesting()"
+	const fnName = "CreateArtistNameForTesting()"
 	type args struct {
-		k int
+		artistNumber int
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want string
 	}{
-		{name: "negative value", args: args{k: -1}, want: "Test Artist -1"},
-		{name: "zero", args: args{k: 0}, want: "Test Artist 0"},
-		{name: "positive value", args: args{k: 1}, want: "Test Artist 1"},
+		"negative value": {args: args{artistNumber: -1}, want: "Test Artist -1"},
+		"zero":           {args: args{artistNumber: 0}, want: "Test Artist 0"},
+		"positive value": {args: args{artistNumber: 1}, want: "Test Artist 1"},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := CreateArtistNameForTesting(tt.args.k); got != tt.want {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := CreateArtistNameForTesting(tt.args.artistNumber); got != tt.want {
 				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})
@@ -57,22 +55,21 @@ func TestCreateArtistNameForTesting(t *testing.T) {
 }
 
 func TestCreateTrackNameForTesting(t *testing.T) {
-	fnName := "CreateTrackNameForTesting()"
+	const fnName = "CreateTrackNameForTesting()"
 	type args struct {
-		k int
+		trackNumber int
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want string
 	}{
-		{name: "zero", args: args{k: 0}, want: "00-Test Track[00].mp3"},
-		{name: "odd positive value", args: args{k: 1}, want: "01 Test Track[01].mp3"},
-		{name: "even positive value", args: args{k: 2}, want: "02-Test Track[02].mp3"},
+		"zero":                {args: args{trackNumber: 0}, want: "00-Test Track[00].mp3"},
+		"odd positive value":  {args: args{trackNumber: 1}, want: "01 Test Track[01].mp3"},
+		"even positive value": {args: args{trackNumber: 2}, want: "02-Test Track[02].mp3"},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := CreateTrackNameForTesting(tt.args.k); got != tt.want {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := CreateTrackNameForTesting(tt.args.trackNumber); got != tt.want {
 				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})
@@ -80,57 +77,34 @@ func TestCreateTrackNameForTesting(t *testing.T) {
 }
 
 func TestDestroyDirectoryForTesting(t *testing.T) {
-	fnName := "DestroyDirectoryForTesting()"
-	type args struct {
-		fnName  string
-		dirName string
-	}
+	const fnName = "DestroyDirectoryForTesting()"
 	testDirName := "testDir"
 	if err := Mkdir(testDirName); err != nil {
 		t.Errorf("%s: error creating %q: %v", fnName, testDirName, err)
 	}
-	tests := []struct {
-		name string
+	type args struct {
+		fnName  string
+		dirName string
+	}
+	tests := map[string]struct {
 		args
 	}{
-		{name: "no error", args: args{fnName: fnName, dirName: testDirName}},
-		{name: "error", args: args{fnName: fnName, dirName: "."}},
+		"no error": {args: args{fnName: fnName, dirName: testDirName}},
+		"error":    {args: args{fnName: fnName, dirName: "."}},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			DestroyDirectoryForTesting(tt.args.fnName, tt.args.dirName)
 		})
 	}
 }
 
 func TestPopulateTopDirForTesting(t *testing.T) {
-	fnName := "PopulateTopDirForTesting()"
+	const fnName = "PopulateTopDirForTesting()"
 	cleanDirName := "testDir0"
 	forceEarlyErrorDirName := "testDir1"
 	albumDirErrName := "testDir2"
 	badTrackFileName := "testDir3"
-	defer func() {
-		type results struct {
-			dirName string
-			e       error
-		}
-		listing := []results{}
-		if err := os.RemoveAll(cleanDirName); err != nil {
-			listing = append(listing, results{dirName: cleanDirName, e: err})
-		}
-		if err := os.RemoveAll(forceEarlyErrorDirName); err != nil {
-			listing = append(listing, results{dirName: forceEarlyErrorDirName, e: err})
-		}
-		if err := os.RemoveAll(albumDirErrName); err != nil {
-			listing = append(listing, results{dirName: albumDirErrName, e: err})
-		}
-		if err := os.RemoveAll(badTrackFileName); err != nil {
-			listing = append(listing, results{dirName: badTrackFileName, e: err})
-		}
-		if len(listing) != 0 {
-			t.Errorf("%s errors deleting test directories %v", fnName, listing)
-		}
-	}()
 	if err := Mkdir(cleanDirName); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, cleanDirName, err)
 	}
@@ -172,21 +146,42 @@ func TestPopulateTopDirForTesting(t *testing.T) {
 		t.Errorf("%s error creating track %q: %v", fnName, trackName, err)
 	}
 
+	defer func() {
+		type results struct {
+			dirName string
+			e       error
+		}
+		listing := []results{}
+		if err := os.RemoveAll(cleanDirName); err != nil {
+			listing = append(listing, results{dirName: cleanDirName, e: err})
+		}
+		if err := os.RemoveAll(forceEarlyErrorDirName); err != nil {
+			listing = append(listing, results{dirName: forceEarlyErrorDirName, e: err})
+		}
+		if err := os.RemoveAll(albumDirErrName); err != nil {
+			listing = append(listing, results{dirName: albumDirErrName, e: err})
+		}
+		if err := os.RemoveAll(badTrackFileName); err != nil {
+			listing = append(listing, results{dirName: badTrackFileName, e: err})
+		}
+		if len(listing) != 0 {
+			t.Errorf("%s errors deleting test directories %v", fnName, listing)
+		}
+	}()
 	type args struct {
 		topDir string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		wantErr bool
 	}{
-		{name: "success", args: args{topDir: cleanDirName}, wantErr: false},
-		{name: "force early failure", args: args{topDir: forceEarlyErrorDirName}, wantErr: true},
-		{name: "bad album name", args: args{topDir: albumDirErrName}, wantErr: true},
-		{name: "bad track name", args: args{topDir: badTrackFileName}, wantErr: true},
+		"success":             {args: args{topDir: cleanDirName}, wantErr: false},
+		"force early failure": {args: args{topDir: forceEarlyErrorDirName}, wantErr: true},
+		"bad album name":      {args: args{topDir: albumDirErrName}, wantErr: true},
+		"bad track name":      {args: args{topDir: badTrackFileName}, wantErr: true},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if err := PopulateTopDirForTesting(tt.args.topDir); (err != nil) != tt.wantErr {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
 			}
@@ -195,15 +190,13 @@ func TestPopulateTopDirForTesting(t *testing.T) {
 }
 
 func TestCreateDefaultYamlFileForTesting(t *testing.T) {
-	fnName := "CreateDefaultYamlFileForTesting()"
-	tests := []struct {
-		name     string
+	const fnName = "CreateDefaultYamlFileForTesting()"
+	tests := map[string]struct {
 		preTest  func(t *testing.T)
 		postTest func(t *testing.T)
 		wantErr  bool
 	}{
-		{
-			name: "dir blocked",
+		"dir blocked": {
 			preTest: func(t *testing.T) {
 				if err := CreateFileForTestingWithContent(".", "mp3", []byte("oops")); err != nil {
 					t.Errorf("%s 'dir blocked': failed to create file ./mp3: %v", fnName, err)
@@ -216,8 +209,7 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		{
-			name: "file exists",
+		"file exists": {
 			preTest: func(t *testing.T) {
 				if err := Mkdir("./mp3"); err != nil {
 					t.Errorf("%s 'file exists': failed to create directory ./mp3: %v", fnName, err)
@@ -233,8 +225,7 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 			},
 			wantErr: true,
 		},
-		{
-			name: "good test",
+		"good test": {
 			preTest: func(t *testing.T) {
 				// nothing to do
 			},
@@ -307,8 +298,8 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			tt.preTest(t)
 			if err := CreateDefaultYamlFileForTesting(); (err != nil) != tt.wantErr {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
@@ -319,7 +310,7 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 }
 
 func TestSaveEnvVarForTesting(t *testing.T) {
-	fnName := "SaveEnvVarForTesting()"
+	const fnName = "SaveEnvVarForTesting()"
 	vars := os.Environ()
 	firstVar := vars[0]
 	i := strings.Index(firstVar, "=")
@@ -350,6 +341,8 @@ func TestSaveEnvVarForTesting(t *testing.T) {
 	} else {
 		saveState2 = &SavedEnvVar{Name: name2}
 	}
+	os.Setenv(name1, "value1")
+	os.Unsetenv(name2)
 	defer func() {
 		firstSaveState.RestoreForTesting()
 		saveState1.RestoreForTesting()
@@ -358,21 +351,18 @@ func TestSaveEnvVarForTesting(t *testing.T) {
 			t.Errorf("%s environment was not safely restored", fnName)
 		}
 	}()
-	os.Setenv(name1, "value1")
-	os.Unsetenv(name2)
 	type args struct {
 		name string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want *SavedEnvVar
 	}{
-		{name: "set", args: args{name1}, want: &SavedEnvVar{Name: name1, Value: "value1", Set: true}},
-		{name: "unset", args: args{name2}, want: &SavedEnvVar{Name: name2}},
+		"set":   {args: args{name1}, want: &SavedEnvVar{Name: name1, Value: "value1", Set: true}},
+		"unset": {args: args{name2}, want: &SavedEnvVar{Name: name2}},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := SaveEnvVarForTesting(tt.args.name); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -381,19 +371,16 @@ func TestSaveEnvVarForTesting(t *testing.T) {
 }
 
 func TestSecureAbsolutePathForTesting(t *testing.T) {
-	fnName := "SecureAbsolutePathForTesting()"
+	const fnName = "SecureAbsolutePathForTesting()"
 	type args struct {
 		path string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want bool
-	}{
-		{name: "simple", args: args{path: "."}, want: true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	}{"simple": {args: args{path: "."}, want: true}}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			got := SecureAbsolutePathForTesting(tt.args.path)
 			if tt.want && got == "" {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)

@@ -91,8 +91,8 @@ func PopulateTopDirForTesting(topDir string) error {
 	return nil
 }
 
-func createAlbumDirForTesting(artistDir string, n, tracks int) error {
-	albumDir := filepath.Join(artistDir, CreateAlbumNameForTesting(n))
+func createAlbumDirForTesting(artistDir string, albumNumber, tracks int) error {
+	albumDir := filepath.Join(artistDir, CreateAlbumNameForTesting(albumNumber))
 	dummyDir := filepath.Join(albumDir, "ignore this folder")
 	directories := []string{albumDir, dummyDir}
 	for _, directory := range directories {
@@ -113,8 +113,8 @@ func createAlbumDirForTesting(artistDir string, n, tracks int) error {
 	return nil
 }
 
-func createArtistDirForTesting(topDir string, k int, withContent bool) error {
-	artistDir := filepath.Join(topDir, CreateArtistNameForTesting(k))
+func createArtistDirForTesting(topDir string, artistNumber int, withContent bool) error {
+	artistDir := filepath.Join(topDir, CreateArtistNameForTesting(artistNumber))
 	if err := Mkdir(artistDir); err != nil {
 		return err
 	}
