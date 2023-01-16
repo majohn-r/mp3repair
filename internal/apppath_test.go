@@ -33,34 +33,29 @@ func TestInitApplicationPath(t *testing.T) {
 		DestroyDirectoryForTesting(fnName, unfortunatePath)
 		savedAppData.RestoreForTesting()
 	}()
-	tests := []struct {
-		name            string
+	tests := map[string]struct {
 		appData         *SavedEnvVar
 		wantInitialized bool
 		wantPath        string
 		output.WantedRecording
 	}{
-		{
-			name:            "happy path",
+		"happy path": {
 			appData:         &SavedEnvVar{Name: "APPDATA", Value: here, Set: true},
 			wantInitialized: true,
 			wantPath:        filepath.Join(here, "mp3"),
 		},
-		{
-			name:    "missing appdata setting",
+		"missing appdata setting": {
 			appData: &SavedEnvVar{Name: "APPDATA"},
 			WantedRecording: output.WantedRecording{
 				Log: "level='info' environmentVariable='APPDATA' msg='not set'\n",
 			},
 		},
-		{
-			name:            "path exists",
+		"path exists": {
 			appData:         &SavedEnvVar{Name: "APPDATA", Value: preExistingPath, Set: true},
 			wantInitialized: true,
 			wantPath:        preExistingMp3,
 		},
-		{
-			name:    "file blocks path creation",
+		"file blocks path creation": {
 			appData: &SavedEnvVar{Name: "APPDATA", Value: unfortunatePath, Set: true},
 			WantedRecording: output.WantedRecording{
 				Error: "The directory \"test2\\\\mp3\" cannot be created: file exists and is not a directory.\n",
@@ -68,8 +63,8 @@ func TestInitApplicationPath(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			tt.appData.RestoreForTesting()
 			o := output.NewRecorder()
 			if gotInitialized := InitApplicationPath(o); gotInitialized != tt.wantInitialized {
@@ -90,62 +85,50 @@ func TestInitApplicationPath(t *testing.T) {
 }
 
 func TestSetApplicationPathForTesting(t *testing.T) {
+	const fnName = "SetApplicationPathForTesting()"
 	old := ApplicationPath()
 	defer SetApplicationPathForTesting(old)
 	type args struct {
 		s string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		wantPrevious string
-	}{
-		{
-			name:         "trivial test",
-			args:         args{s: old + "1"},
-			wantPrevious: old,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	}{"trivial test": {args: args{s: old + "1"}, wantPrevious: old}}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if gotPrevious := SetApplicationPathForTesting(tt.args.s); gotPrevious != tt.wantPrevious {
-				t.Errorf("SetApplicationPathForTesting() = %v, want %v", gotPrevious, tt.wantPrevious)
+				t.Errorf("%s = %v, want %v", fnName, gotPrevious, tt.wantPrevious)
 			}
 		})
 	}
 }
 
 func Test_lookupAppData(t *testing.T) {
-	fnName := "lookupAppData()"
+	const fnName = "lookupAppData()"
 	savedState := SaveEnvVarForTesting(appDataVar)
 	os.Setenv(appDataVar, SecureAbsolutePathForTesting("."))
 	defer func() {
 		savedState.RestoreForTesting()
 	}()
-	tests := []struct {
-		name  string
+	tests := map[string]struct {
 		state *SavedEnvVar
 		want  string
 		want1 bool
 		output.WantedRecording
 	}{
-		{
-			name:            "value is set",
-			state:           &SavedEnvVar{Name: appDataVar, Value: "appData!", Set: true},
-			want:            "appData!",
-			want1:           true,
-			WantedRecording: output.WantedRecording{},
+		"value is set": {
+			state: &SavedEnvVar{Name: appDataVar, Value: "appData!", Set: true},
+			want:  "appData!",
+			want1: true,
 		},
-		{
-			name:  "value is not set",
-			state: &SavedEnvVar{Name: appDataVar},
-			WantedRecording: output.WantedRecording{
-				Log: "level='info' environmentVariable='APPDATA' msg='not set'\n",
-			},
+		"value is not set": {
+			state:           &SavedEnvVar{Name: appDataVar},
+			WantedRecording: output.WantedRecording{Log: "level='info' environmentVariable='APPDATA' msg='not set'\n"},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			tt.state.RestoreForTesting()
 			o := output.NewRecorder()
 			got, got1 := lookupAppData(o)
