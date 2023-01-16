@@ -11,7 +11,7 @@ import (
 )
 
 func Test_Configuration_SubConfiguration(t *testing.T) {
-	fnName := "Configuration.SubConfiguration()"
+	const fnName = "Configuration.SubConfiguration()"
 	savedState := SaveEnvVarForTesting(appDataVar)
 	os.Setenv(appDataVar, SecureAbsolutePathForTesting("."))
 	oldAppPath := ApplicationPath()
@@ -19,30 +19,29 @@ func Test_Configuration_SubConfiguration(t *testing.T) {
 	if err := CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
+	testConfiguration, _ := ReadConfigurationFile(output.NewNilBus())
 	defer func() {
 		savedState.RestoreForTesting()
 		SetApplicationPathForTesting(oldAppPath)
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	testConfiguration, _ := ReadConfigurationFile(output.NewNilBus())
 	type args struct {
 		key string
 	}
-	tests := []struct {
-		name string
-		c    *Configuration
+	tests := map[string]struct {
+		c *Configuration
 		args
 		want *Configuration
 	}{
-		{name: "no configuration", c: &Configuration{}, args: args{}, want: EmptyConfiguration()},
-		{name: "commons", c: testConfiguration, args: args{key: "common"}, want: testConfiguration.cMap["common"]},
-		{name: "list", c: testConfiguration, args: args{key: "list"}, want: testConfiguration.cMap["list"]},
-		{name: "check", c: testConfiguration, args: args{key: "check"}, want: testConfiguration.cMap["check"]},
-		{name: "repair", c: testConfiguration, args: args{key: "repair"}, want: testConfiguration.cMap["repair"]},
-		{name: "unknown key", c: testConfiguration, args: args{key: "unknown key"}, want: EmptyConfiguration()},
+		"no configuration": {c: &Configuration{}, args: args{}, want: EmptyConfiguration()},
+		"commons":          {c: testConfiguration, args: args{key: "common"}, want: testConfiguration.cMap["common"]},
+		"list":             {c: testConfiguration, args: args{key: "list"}, want: testConfiguration.cMap["list"]},
+		"check":            {c: testConfiguration, args: args{key: "check"}, want: testConfiguration.cMap["check"]},
+		"repair":           {c: testConfiguration, args: args{key: "repair"}, want: testConfiguration.cMap["repair"]},
+		"unknown key":      {c: testConfiguration, args: args{key: "unknown key"}, want: EmptyConfiguration()},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := tt.c.SubConfiguration(tt.args.key); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -51,7 +50,7 @@ func Test_Configuration_SubConfiguration(t *testing.T) {
 }
 
 func Test_Configuration_BoolDefault(t *testing.T) {
-	fnName := "Configuration.BoolDefault()"
+	const fnName = "Configuration.BoolDefault()"
 	savedState := SaveEnvVarForTesting(appDataVar)
 	os.Setenv(appDataVar, SecureAbsolutePathForTesting("."))
 	oldAppPath := ApplicationPath()
@@ -60,178 +59,52 @@ func Test_Configuration_BoolDefault(t *testing.T) {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
 	saved := SaveEnvVarForTesting("FOO")
+	os.Unsetenv("FOO")
+	testConfiguration, _ := ReadConfigurationFile(output.NewNilBus())
 	defer func() {
 		savedState.RestoreForTesting()
 		SetApplicationPathForTesting(oldAppPath)
 		DestroyDirectoryForTesting(fnName, "./mp3")
 		saved.RestoreForTesting()
 	}()
-	os.Unsetenv("FOO")
-	testConfiguration, _ := ReadConfigurationFile(output.NewNilBus())
 	type args struct {
 		key          string
 		defaultValue bool
 	}
-	tests := []struct {
-		name string
-		c    *Configuration
+	tests := map[string]struct {
+		c *Configuration
 		args
 		wantB bool
 		wantE bool
 	}{
-		{
-			name:  "string '1' to bool",
-			c:     &Configuration{sMap: map[string]string{"foo": "1"}},
-			args:  args{key: "foo", defaultValue: false},
-			wantB: true,
-		},
-		{
-			name:  "string '0' to bool",
-			c:     &Configuration{sMap: map[string]string{"foo": "0"}},
-			args:  args{key: "foo", defaultValue: true},
-			wantB: false,
-		},
-		{
-			name:  "empty configuration default false",
-			c:     EmptyConfiguration(),
-			args:  args{defaultValue: false},
-			wantB: false,
-		},
-		{
-			name:  "empty configuration default true",
-			c:     EmptyConfiguration(),
-			args:  args{defaultValue: true},
-			wantB: true,
-		},
-		{
-			name:  "undefined key default false",
-			c:     testConfiguration,
-			args:  args{key: "no key", defaultValue: false},
-			wantB: false,
-		},
-		{
-			name:  "undefined key default true",
-			c:     testConfiguration,
-			args:  args{key: "no key", defaultValue: true},
-			wantB: true,
-		},
-		{
-			name:  "non-boolean value default false",
-			c:     testConfiguration.cMap["common"],
-			args:  args{key: "albums", defaultValue: false},
-			wantB: false,
-		},
-		{
-			name:  "non-boolean value default true",
-			c:     testConfiguration.cMap["common"],
-			args:  args{key: "albums", defaultValue: true},
-			wantB: true,
-		},
-		{
-			name:  "boolean value default false",
-			c:     testConfiguration.cMap["list"],
-			args:  args{key: "includeTracks", defaultValue: false},
-			wantB: true,
-		},
-		{
-			name:  "boolean value default true",
-			c:     testConfiguration.cMap["list"],
-			args:  args{key: "includeTracks", defaultValue: true},
-			wantB: true,
-		},
-		{
-			name:  "boolean (string) value not parseable",
-			c:     testConfiguration.cMap["unused"],
-			args:  args{key: "value", defaultValue: true},
-			wantE: true,
-		},
-		{
-			name:  "boolean true from numeric",
-			c:     &Configuration{iMap: map[string]int{"myKey": 1}},
-			args:  args{key: "myKey", defaultValue: false},
-			wantB: true,
-		},
-		{
-			name:  "boolean false from numeric",
-			c:     &Configuration{iMap: map[string]int{"myKey": 0}},
-			args:  args{key: "myKey", defaultValue: true},
-			wantB: false,
-		},
-		{
-			name:  "boolean true from invalid numeric",
-			c:     &Configuration{iMap: map[string]int{"myKey": 10}},
-			args:  args{key: "myKey", defaultValue: false},
-			wantE: true,
-		},
-		{
-			name:  "boolean true from string 't'",
-			c:     &Configuration{sMap: map[string]string{"myKey": "t"}},
-			args:  args{key: "myKey", defaultValue: false},
-			wantB: true,
-		},
-		{
-			name:  "boolean true from string 'T'",
-			c:     &Configuration{sMap: map[string]string{"myKey": "T"}},
-			args:  args{key: "myKey", defaultValue: false},
-			wantB: true,
-		},
-		{
-			name:  "boolean true from string 'true'",
-			c:     &Configuration{sMap: map[string]string{"myKey": "true"}},
-			args:  args{key: "myKey", defaultValue: false},
-			wantB: true,
-		},
-		{
-			name:  "boolean true from string 'TRUE'",
-			c:     &Configuration{sMap: map[string]string{"myKey": "TRUE"}},
-			args:  args{key: "myKey", defaultValue: false},
-			wantB: true,
-		},
-		{
-			name:  "boolean true from string 'True'",
-			c:     &Configuration{sMap: map[string]string{"myKey": "True"}},
-			args:  args{key: "myKey", defaultValue: false},
-			wantB: true,
-		},
-		{
-			name:  "boolean true from string 'f'",
-			c:     &Configuration{sMap: map[string]string{"myKey": "f"}},
-			args:  args{key: "myKey", defaultValue: true},
-			wantB: false,
-		},
-		{
-			name:  "boolean true from string 'F'",
-			c:     &Configuration{sMap: map[string]string{"myKey": "F"}},
-			args:  args{key: "myKey", defaultValue: true},
-			wantB: false,
-		},
-		{
-			name:  "boolean true from string 'false'",
-			c:     &Configuration{sMap: map[string]string{"myKey": "false"}},
-			args:  args{key: "myKey", defaultValue: true},
-			wantB: false,
-		},
-		{
-			name:  "boolean true from string 'FALSE'",
-			c:     &Configuration{sMap: map[string]string{"myKey": "FALSE"}},
-			args:  args{key: "myKey", defaultValue: true},
-			wantB: false,
-		},
-		{
-			name:  "boolean true from string 'False'",
-			c:     &Configuration{sMap: map[string]string{"myKey": "False"}},
-			args:  args{key: "myKey", defaultValue: true},
-			wantB: false,
-		},
-		{
-			name:  "boolean from string with missing reference",
-			c:     &Configuration{sMap: map[string]string{"key": "%FOO%"}},
-			args:  args{key: "key"},
-			wantE: true,
-		},
+		"string '1' to bool":                         {c: &Configuration{sMap: map[string]string{"foo": "1"}}, args: args{key: "foo", defaultValue: false}, wantB: true},
+		"string '0' to bool":                         {c: &Configuration{sMap: map[string]string{"foo": "0"}}, args: args{key: "foo", defaultValue: true}, wantB: false},
+		"empty configuration default false":          {c: EmptyConfiguration(), args: args{defaultValue: false}, wantB: false},
+		"empty configuration default true":           {c: EmptyConfiguration(), args: args{defaultValue: true}, wantB: true},
+		"undefined key default false":                {c: testConfiguration, args: args{key: "no key", defaultValue: false}, wantB: false},
+		"undefined key default true":                 {c: testConfiguration, args: args{key: "no key", defaultValue: true}, wantB: true},
+		"non-boolean value default false":            {c: testConfiguration.cMap["common"], args: args{key: "albums", defaultValue: false}, wantB: false},
+		"non-boolean value default true":             {c: testConfiguration.cMap["common"], args: args{key: "albums", defaultValue: true}, wantB: true},
+		"boolean value default false":                {c: testConfiguration.cMap["list"], args: args{key: "includeTracks", defaultValue: false}, wantB: true},
+		"boolean value default true":                 {c: testConfiguration.cMap["list"], args: args{key: "includeTracks", defaultValue: true}, wantB: true},
+		"boolean (string) value not parseable":       {c: testConfiguration.cMap["unused"], args: args{key: "value", defaultValue: true}, wantE: true},
+		"boolean true from numeric":                  {c: &Configuration{iMap: map[string]int{"myKey": 1}}, args: args{key: "myKey", defaultValue: false}, wantB: true},
+		"boolean false from numeric":                 {c: &Configuration{iMap: map[string]int{"myKey": 0}}, args: args{key: "myKey", defaultValue: true}, wantB: false},
+		"boolean true from invalid numeric":          {c: &Configuration{iMap: map[string]int{"myKey": 10}}, args: args{key: "myKey", defaultValue: false}, wantE: true},
+		"boolean true from string 't'":               {c: &Configuration{sMap: map[string]string{"myKey": "t"}}, args: args{key: "myKey", defaultValue: false}, wantB: true},
+		"boolean true from string 'T'":               {c: &Configuration{sMap: map[string]string{"myKey": "T"}}, args: args{key: "myKey", defaultValue: false}, wantB: true},
+		"boolean true from string 'true'":            {c: &Configuration{sMap: map[string]string{"myKey": "true"}}, args: args{key: "myKey", defaultValue: false}, wantB: true},
+		"boolean true from string 'TRUE'":            {c: &Configuration{sMap: map[string]string{"myKey": "TRUE"}}, args: args{key: "myKey", defaultValue: false}, wantB: true},
+		"boolean true from string 'True'":            {c: &Configuration{sMap: map[string]string{"myKey": "True"}}, args: args{key: "myKey", defaultValue: false}, wantB: true},
+		"boolean true from string 'f'":               {c: &Configuration{sMap: map[string]string{"myKey": "f"}}, args: args{key: "myKey", defaultValue: true}, wantB: false},
+		"boolean true from string 'F'":               {c: &Configuration{sMap: map[string]string{"myKey": "F"}}, args: args{key: "myKey", defaultValue: true}, wantB: false},
+		"boolean true from string 'false'":           {c: &Configuration{sMap: map[string]string{"myKey": "false"}}, args: args{key: "myKey", defaultValue: true}, wantB: false},
+		"boolean true from string 'FALSE'":           {c: &Configuration{sMap: map[string]string{"myKey": "FALSE"}}, args: args{key: "myKey", defaultValue: true}, wantB: false},
+		"boolean true from string 'False'":           {c: &Configuration{sMap: map[string]string{"myKey": "False"}}, args: args{key: "myKey", defaultValue: true}, wantB: false},
+		"boolean from string with missing reference": {c: &Configuration{sMap: map[string]string{"key": "%FOO%"}}, args: args{key: "key"}, wantE: true},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			gotB, e := tt.c.BoolDefault(tt.args.key, tt.args.defaultValue)
 			gotE := e != nil
 			if gotE != tt.wantE {
@@ -245,7 +118,7 @@ func Test_Configuration_BoolDefault(t *testing.T) {
 }
 
 func Test_Configuration_StringDefault(t *testing.T) {
-	fnName := "Configuration.StringDefault()"
+	const fnName = "Configuration.StringDefault()"
 	savedState := SaveEnvVarForTesting(appDataVar)
 	savedFoo := SaveEnvVarForTesting("FOO")
 	savedBar := SaveEnvVarForTesting("BAR")
@@ -257,6 +130,7 @@ func Test_Configuration_StringDefault(t *testing.T) {
 	if err := CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
+	testConfiguration, _ := ReadConfigurationFile(output.NewNilBus())
 	defer func() {
 		savedFoo.RestoreForTesting()
 		savedBar.RestoreForTesting()
@@ -264,50 +138,24 @@ func Test_Configuration_StringDefault(t *testing.T) {
 		SetApplicationPathForTesting(oldAppPath)
 		DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	testConfiguration, _ := ReadConfigurationFile(output.NewNilBus())
 	type args struct {
 		key          string
 		defaultValue string
 	}
-	tests := []struct {
-		name string
-		c    *Configuration
+	tests := map[string]struct {
+		c *Configuration
 		args
 		wantS   string
 		wantErr bool
 	}{
-		{
-			name:  "empty configuration",
-			c:     EmptyConfiguration(),
-			args:  args{defaultValue: "my default value"},
-			wantS: "my default value"},
-		{
-			name:  "undefined key",
-			c:     testConfiguration,
-			args:  args{key: "no key", defaultValue: "my default value"},
-			wantS: "my default value",
-		},
-		{
-			name:  "defined key",
-			c:     testConfiguration.cMap["list"],
-			args:  args{key: "sort", defaultValue: "my default value"},
-			wantS: "alpha",
-		},
-		{
-			name:    "bad default",
-			c:       &Configuration{sMap: map[string]string{"key": "$FOO"}},
-			args:    args{key: "key"},
-			wantErr: true,
-		},
-		{
-			name:    "bad default",
-			c:       EmptyConfiguration(),
-			args:    args{key: "key", defaultValue: "boo%BAR%"},
-			wantErr: true,
-		},
+		"empty configuration": {c: EmptyConfiguration(), args: args{defaultValue: "my default value"}, wantS: "my default value"},
+		"undefined key":       {c: testConfiguration, args: args{key: "no key", defaultValue: "my default value"}, wantS: "my default value"},
+		"defined key":         {c: testConfiguration.cMap["list"], args: args{key: "sort", defaultValue: "my default value"}, wantS: "alpha"},
+		"bad default1":        {c: &Configuration{sMap: map[string]string{"key": "$FOO"}}, args: args{key: "key"}, wantErr: true},
+		"bad default2":        {c: EmptyConfiguration(), args: args{key: "key", defaultValue: "boo%BAR%"}, wantErr: true},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			gotS, gotErr := tt.c.StringDefault(tt.args.key, tt.args.defaultValue)
 			if (gotErr != nil) != tt.wantErr {
 				t.Errorf("%s gotErr %v wantErr %t", fnName, gotErr, tt.wantErr)
@@ -320,25 +168,18 @@ func Test_Configuration_StringDefault(t *testing.T) {
 }
 
 func Test_verifyFileExists(t *testing.T) {
-	fnName := "verifyFileExists()"
+	const fnName = "verifyFileExists()"
 	type args struct {
 		path string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		wantOk  bool
 		wantErr bool
 		output.WantedRecording
 	}{
-		{
-			name:            "ordinary success",
-			args:            args{path: "./configuration_test.go"},
-			wantOk:          true,
-			WantedRecording: output.WantedRecording{},
-		},
-		{
-			name:    "look for dir!",
+		"ordinary success": {args: args{path: "./configuration_test.go"}, wantOk: true},
+		"look for dir!": {
 			args:    args{path: "."},
 			wantErr: true,
 			WantedRecording: output.WantedRecording{
@@ -346,16 +187,13 @@ func Test_verifyFileExists(t *testing.T) {
 				Log:   "level='error' directory='.' fileName='.' msg='file is a directory'\n",
 			},
 		},
-		{
-			name: "non-existent file",
-			args: args{path: "./no-such-file.txt"},
-			WantedRecording: output.WantedRecording{
-				Log: "level='info' directory='.' fileName='no-such-file.txt' msg='file does not exist'\n",
-			},
+		"non-existent file": {
+			args:            args{path: "./no-such-file.txt"},
+			WantedRecording: output.WantedRecording{Log: "level='info' directory='.' fileName='no-such-file.txt' msg='file does not exist'\n"},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			gotOk, err := verifyFileExists(o, tt.args.path)
 			if (err != nil) != tt.wantErr {
@@ -375,7 +213,7 @@ func Test_verifyFileExists(t *testing.T) {
 }
 
 func TestReadConfigurationFile(t *testing.T) {
-	fnName := "ReadConfigurationFile()"
+	const fnName = "ReadConfigurationFile()"
 	savedState := SaveEnvVarForTesting(appDataVar)
 	canonicalPath := SecureAbsolutePathForTesting(".")
 	mp3Path := SecureAbsolutePathForTesting("mp3")
@@ -385,11 +223,6 @@ func TestReadConfigurationFile(t *testing.T) {
 	if err := CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
-	defer func() {
-		savedState.RestoreForTesting()
-		SetApplicationPathForTesting(oldAppPath)
-		DestroyDirectoryForTesting(fnName, "./mp3")
-	}()
 	badDir := filepath.Join(".", "mp3", "fake")
 	if err := Mkdir(badDir); err != nil {
 		t.Errorf("%s error creating fake dir: %v", fnName, err)
@@ -410,15 +243,18 @@ func TestReadConfigurationFile(t *testing.T) {
 	if err := CreateFileForTestingWithContent(gibberishDir, DefaultConfigFileName, []byte("gibberish")); err != nil {
 		t.Errorf("%s error creating gibberish defaults.yaml: %v", fnName, err)
 	}
-	tests := []struct {
-		name   string
+	defer func() {
+		savedState.RestoreForTesting()
+		SetApplicationPathForTesting(oldAppPath)
+		DestroyDirectoryForTesting(fnName, "./mp3")
+	}()
+	tests := map[string]struct {
 		state  *SavedEnvVar
 		wantC  *Configuration
 		wantOk bool
 		output.WantedRecording
 	}{
-		{
-			name:  "good",
+		"good": {
 			state: &SavedEnvVar{Name: appDataVar, Value: canonicalPath, Set: true},
 			wantC: &Configuration{
 				bMap: map[string]bool{},
@@ -473,16 +309,14 @@ func TestReadConfigurationFile(t *testing.T) {
 					"level='info' directory='%s' fileName='defaults.yaml' value='map[check:map[empty:true gaps:true integrity:false] common:map[albumFilter:^.*$ artistFilter:^.*$ ext:.mpeg topDir:.] list:map[annotate:true includeAlbums:false includeArtists:false includeTracks:true], map[sort:alpha] repair:map[dryRun:true] unused:map[value:1.25]]' msg='read configuration file'\n", mp3Path),
 			},
 		},
-		{
-			name:  "defaults.yaml is a directory",
+		"defaults.yaml is a directory": {
 			state: &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(badDir), Set: true},
 			WantedRecording: output.WantedRecording{
 				Error: fmt.Sprintf("The configuration file %q is a directory.\n", yamlAsDir),
 				Log:   fmt.Sprintf("level='error' directory='%s' fileName='defaults.yaml' msg='file is a directory'\n", SecureAbsolutePathForTesting(badDir2)),
 			},
 		},
-		{
-			name:   "missing yaml",
+		"missing yaml": {
 			state:  &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(yamlAsDir), Set: true},
 			wantC:  EmptyConfiguration(),
 			wantOk: true,
@@ -490,8 +324,7 @@ func TestReadConfigurationFile(t *testing.T) {
 				Log: fmt.Sprintf("level='info' directory='%s' fileName='defaults.yaml' msg='file does not exist'\n", SecureAbsolutePathForTesting(filepath.Join(yamlAsDir, AppName))),
 			},
 		},
-		{
-			name:  "malformed yaml",
+		"malformed yaml": {
 			state: &SavedEnvVar{Name: appDataVar, Value: SecureAbsolutePathForTesting(badDir2), Set: true},
 			WantedRecording: output.WantedRecording{
 				Error: fmt.Sprintf(
@@ -501,8 +334,8 @@ func TestReadConfigurationFile(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			tt.state.RestoreForTesting()
 			InitApplicationPath(output.NewNilBus())
 			o := output.NewRecorder()
@@ -523,32 +356,21 @@ func TestReadConfigurationFile(t *testing.T) {
 }
 
 func TestConfiguration_StringValue(t *testing.T) {
-	fnName := "Configuration.StringValue()"
+	const fnName = "Configuration.StringValue()"
 	type args struct {
 		key string
 	}
-	tests := []struct {
-		name string
-		c    *Configuration
+	tests := map[string]struct {
+		c *Configuration
 		args
 		wantValue string
 		wantOk    bool
 	}{
-		{
-			name:      "found",
-			c:         &Configuration{sMap: map[string]string{"key": "value"}},
-			args:      args{key: "key"},
-			wantValue: "value",
-			wantOk:    true,
-		},
-		{
-			name: "not found",
-			c:    EmptyConfiguration(),
-			args: args{key: "key"},
-		},
+		"found":     {c: &Configuration{sMap: map[string]string{"key": "value"}}, args: args{key: "key"}, wantValue: "value", wantOk: true},
+		"not found": {c: EmptyConfiguration(), args: args{key: "key"}},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			gotValue, gotOk := tt.c.StringValue(tt.args.key)
 			if gotValue != tt.wantValue {
 				t.Errorf("%s gotValue = %q, want %q", fnName, gotValue, tt.wantValue)
@@ -561,40 +383,24 @@ func TestConfiguration_StringValue(t *testing.T) {
 }
 
 func TestConfiguration_String(t *testing.T) {
-	fnName := "Configuration.String()"
-	tests := []struct {
-		name string
+	const fnName = "Configuration.String()"
+	tests := map[string]struct {
 		c    *Configuration
 		want string
 	}{
-		{
-			name: "empty case",
-			c:    EmptyConfiguration(),
-		},
-		{
-			name: "busy case",
+		"empty case": {c: EmptyConfiguration()},
+		"busy case": {
 			c: &Configuration{
-				bMap: map[string]bool{
-					"f": false,
-					"t": true,
-				},
-				iMap: map[string]int{
-					"zero": 0,
-					"one":  1,
-				},
-				sMap: map[string]string{
-					"foo": "bar",
-					"bar": "foo",
-				},
-				cMap: map[string]*Configuration{
-					"empty": EmptyConfiguration(),
-				},
+				bMap: map[string]bool{"f": false, "t": true},
+				iMap: map[string]int{"zero": 0, "one": 1},
+				sMap: map[string]string{"foo": "bar", "bar": "foo"},
+				cMap: map[string]*Configuration{"empty": EmptyConfiguration()},
 			},
 			want: "map[f:false t:true], map[one:1 zero:0], map[bar:foo foo:bar], map[empty:]",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := tt.c.String(); got != tt.want {
 				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
@@ -603,50 +409,25 @@ func TestConfiguration_String(t *testing.T) {
 }
 
 func TestNewIntBounds(t *testing.T) {
-	fnName := "NewIntBounds()"
+	const fnName = "NewIntBounds()"
 	type args struct {
 		v1 int
 		v2 int
 		v3 int
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want *IntBounds
 	}{
-		{
-			name: "case 1",
-			args: args{v1: 1, v2: 2, v3: 3},
-			want: &IntBounds{minValue: 1, defaultValue: 2, maxValue: 3},
-		},
-		{
-			name: "case 2",
-			args: args{v1: 1, v2: 3, v3: 2},
-			want: &IntBounds{minValue: 1, defaultValue: 2, maxValue: 3},
-		},
-		{
-			name: "case 3",
-			args: args{v1: 2, v2: 1, v3: 3},
-			want: &IntBounds{minValue: 1, defaultValue: 2, maxValue: 3},
-		},
-		{
-			name: "case 4",
-			args: args{v1: 2, v2: 3, v3: 1},
-			want: &IntBounds{minValue: 1, defaultValue: 2, maxValue: 3},
-		},
-		{
-			name: "case 5",
-			args: args{v1: 3, v2: 1, v3: 2},
-			want: &IntBounds{minValue: 1, defaultValue: 2, maxValue: 3},
-		},
-		{
-			name: "case 6",
-			args: args{v1: 3, v2: 2, v3: 1},
-			want: &IntBounds{minValue: 1, defaultValue: 2, maxValue: 3},
-		},
+		"1,2,3": {args: args{v1: 1, v2: 2, v3: 3}, want: &IntBounds{minValue: 1, defaultValue: 2, maxValue: 3}},
+		"1,3,2": {args: args{v1: 1, v2: 3, v3: 2}, want: &IntBounds{minValue: 1, defaultValue: 2, maxValue: 3}},
+		"2,1,3": {args: args{v1: 2, v2: 1, v3: 3}, want: &IntBounds{minValue: 1, defaultValue: 2, maxValue: 3}},
+		"2,3,1": {args: args{v1: 2, v2: 3, v3: 1}, want: &IntBounds{minValue: 1, defaultValue: 2, maxValue: 3}},
+		"3,1,2": {args: args{v1: 3, v2: 1, v3: 2}, want: &IntBounds{minValue: 1, defaultValue: 2, maxValue: 3}},
+		"3,2,1": {args: args{v1: 3, v2: 2, v3: 1}, want: &IntBounds{minValue: 1, defaultValue: 2, maxValue: 3}},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := NewIntBounds(tt.args.v1, tt.args.v2, tt.args.v3); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -655,9 +436,11 @@ func TestNewIntBounds(t *testing.T) {
 }
 
 func TestConfiguration_IntDefault(t *testing.T) {
-	fnName := "Configuration.IntDefault()"
+	const fnName = "Configuration.IntDefault()"
 	saved := SaveEnvVarForTesting("FOO")
 	os.Unsetenv("FOO")
+	narrowBounds := NewIntBounds(1, 2, 3)
+	wideBounds := NewIntBounds(10, 20, 30)
 	defer func() {
 		saved.RestoreForTesting()
 	}()
@@ -665,70 +448,24 @@ func TestConfiguration_IntDefault(t *testing.T) {
 		key          string
 		sortedBounds *IntBounds
 	}
-	tests := []struct {
-		name string
-		c    *Configuration
+	tests := map[string]struct {
+		c *Configuration
 		args
 		wantI   int
 		wantErr bool
 	}{
-		{
-			name:  "miss",
-			c:     EmptyConfiguration(),
-			args:  args{key: "k", sortedBounds: NewIntBounds(1, 2, 3)},
-			wantI: 2,
-		},
-		{
-			name:  "hit int value too low",
-			c:     &Configuration{iMap: map[string]int{"k": -1}},
-			args:  args{key: "k", sortedBounds: NewIntBounds(1, 2, 3)},
-			wantI: 1,
-		},
-		{
-			name:  "hit int value too high",
-			c:     &Configuration{iMap: map[string]int{"k": 10}},
-			args:  args{key: "k", sortedBounds: NewIntBounds(1, 2, 3)},
-			wantI: 3,
-		},
-		{
-			name:  "hit int value in the middle",
-			c:     &Configuration{iMap: map[string]int{"k": 15}},
-			args:  args{key: "k", sortedBounds: NewIntBounds(10, 20, 30)},
-			wantI: 15,
-		},
-		{
-			name:  "hit string value too low",
-			c:     &Configuration{iMap: map[string]int{}, sMap: map[string]string{"k": "-1"}},
-			args:  args{key: "k", sortedBounds: NewIntBounds(1, 2, 3)},
-			wantI: 1,
-		},
-		{
-			name:  "hit string value too high",
-			c:     &Configuration{iMap: map[string]int{}, sMap: map[string]string{"k": "10"}},
-			args:  args{key: "k", sortedBounds: NewIntBounds(1, 2, 3)},
-			wantI: 3,
-		},
-		{
-			name:  "hit string value in the middle",
-			c:     &Configuration{iMap: map[string]int{}, sMap: map[string]string{"k": "15"}},
-			args:  args{key: "k", sortedBounds: NewIntBounds(10, 20, 30)},
-			wantI: 15,
-		},
-		{
-			name:    "hit invalid string value",
-			c:       &Configuration{iMap: map[string]int{}, sMap: map[string]string{"k": "foo"}},
-			args:    args{key: "k", sortedBounds: NewIntBounds(10, 20, 30)},
-			wantErr: true,
-		},
-		{
-			name:    "hit bad references",
-			c:       &Configuration{iMap: map[string]int{}, sMap: map[string]string{"k": "$FOO"}},
-			args:    args{key: "k", sortedBounds: NewIntBounds(10, 20, 30)},
-			wantErr: true,
-		},
+		"miss":                       {c: EmptyConfiguration(), args: args{key: "k", sortedBounds: NewIntBounds(1, 2, 3)}, wantI: 2},
+		"int value too low":          {c: &Configuration{iMap: map[string]int{"k": -1}}, args: args{key: "k", sortedBounds: narrowBounds}, wantI: 1},
+		"int value too high":         {c: &Configuration{iMap: map[string]int{"k": 10}}, args: args{key: "k", sortedBounds: narrowBounds}, wantI: 3},
+		"int value in the middle":    {c: &Configuration{iMap: map[string]int{"k": 15}}, args: args{key: "k", sortedBounds: wideBounds}, wantI: 15},
+		"string value too low":       {c: &Configuration{iMap: map[string]int{}, sMap: map[string]string{"k": "-1"}}, args: args{key: "k", sortedBounds: narrowBounds}, wantI: 1},
+		"string value too high":      {c: &Configuration{iMap: map[string]int{}, sMap: map[string]string{"k": "10"}}, args: args{key: "k", sortedBounds: narrowBounds}, wantI: 3},
+		"string value in the middle": {c: &Configuration{iMap: map[string]int{}, sMap: map[string]string{"k": "15"}}, args: args{key: "k", sortedBounds: wideBounds}, wantI: 15},
+		"invalid string value":       {c: &Configuration{iMap: map[string]int{}, sMap: map[string]string{"k": "foo"}}, args: args{key: "k", sortedBounds: wideBounds}, wantErr: true},
+		"bad references":             {c: &Configuration{iMap: map[string]int{}, sMap: map[string]string{"k": "$FOO"}}, args: args{key: "k", sortedBounds: wideBounds}, wantErr: true},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			gotI, err := tt.c.IntDefault(tt.args.key, tt.args.sortedBounds)
 			gotErr := err != nil
 			if gotErr != tt.wantErr {
@@ -742,18 +479,16 @@ func TestConfiguration_IntDefault(t *testing.T) {
 }
 
 func Test_createConfiguration(t *testing.T) {
-	fnName := "createConfiguration()"
+	const fnName = "createConfiguration()"
 	type args struct {
 		data map[string]any
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want *Configuration
 		output.WantedRecording
 	}{
-		{
-			name: "busy!",
+		"busy!": {
 			args: args{
 				data: map[string]any{
 					"boolValue":   true,
@@ -775,8 +510,8 @@ func Test_createConfiguration(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			if got := CreateConfiguration(o, tt.args.data); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
@@ -791,27 +526,18 @@ func Test_createConfiguration(t *testing.T) {
 }
 
 func Test_readYaml(t *testing.T) {
-	fnName := "readYaml()"
+	const fnName = "readYaml()"
 	type args struct {
 		yfile []byte
 	}
-	tests := []struct {
+	tests := map[string]struct {
 		name string
 		args
 		wantData map[string]any
 		wantErr  bool
 	}{
-		{
-			name: "boolean truth",
-			args: args{
-				yfile: []byte("---\n" +
-					"block:\n" +
-					" b1: 1\n" +
-					" b2: t\n" +
-					" b3: true\n" +
-					" b4: True\n" +
-					" b5: TRUE\n"),
-			},
+		"boolean truth": {
+			args: args{yfile: []byte("---\nblock:\n b1: 1\n b2: t\n b3: true\n b4: True\n b5: TRUE\n")},
 			wantData: map[string]any{
 				"block": map[string]any{
 					"b1": 1,
@@ -822,17 +548,8 @@ func Test_readYaml(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "boolean falsehood",
-			args: args{
-				yfile: []byte("---\n" +
-					"block:\n" +
-					" b1: 0\n" +
-					" b2: f\n" +
-					" b3: false\n" +
-					" b4: False\n" +
-					" b5: FALSE\n"),
-			},
+		"boolean falsehood": {
+			args: args{yfile: []byte("---\nblock:\n b1: 0\n b2: f\n b3: false\n b4: False\n b5: FALSE\n")},
 			wantData: map[string]any{
 				"block": map[string]any{
 					"b1": 0,
@@ -843,15 +560,8 @@ func Test_readYaml(t *testing.T) {
 				},
 			},
 		},
-		{
-			name: "numerics",
-			args: args{
-				yfile: []byte("---\n" +
-					"block:\n" +
-					" b1: 100\n" +
-					" b2: 0x64\n" +
-					" b3: 0144\n"),
-			},
+		"numerics": {
+			args: args{yfile: []byte("---\nblock:\n b1: 100\n b2: 0x64\n b3: 0144\n")},
 			wantData: map[string]any{
 				"block": map[string]any{
 					"b1": 100,
@@ -861,8 +571,8 @@ func Test_readYaml(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			gotData, err := readYaml(tt.args.yfile)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)

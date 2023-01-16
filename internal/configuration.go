@@ -29,34 +29,30 @@ type Configuration struct {
 func ReadConfigurationFile(o output.Bus) (c *Configuration, ok bool) {
 	path := ApplicationPath()
 	configFile := filepath.Join(path, DefaultConfigFileName)
-	var err error
-	var exists bool
-	if exists, err = verifyFileExists(o, configFile); err != nil {
+	if exists, err := verifyFileExists(o, configFile); err != nil {
 		return
-	}
-	if !exists {
+	} else if !exists {
 		c = EmptyConfiguration()
 		ok = true
 		return
 	}
 	yfile, _ := os.ReadFile(configFile) // only probable error circumvented by verifyFileExists failure
-	data, err := readYaml(yfile)
-	if err != nil {
+	if data, err := readYaml(yfile); err != nil {
 		o.Log(output.Error, "cannot unmarshal yaml content", map[string]any{
 			"directory": path,
 			"fileName":  DefaultConfigFileName,
 			"error":     err,
 		})
 		o.WriteCanonicalError("The configuration file %q is not well-formed YAML: %v", configFile, err)
-		return
+	} else {
+		c = CreateConfiguration(o, data)
+		ok = true
+		o.Log(output.Info, "read configuration file", map[string]any{
+			"directory": path,
+			"fileName":  DefaultConfigFileName,
+			"value":     c,
+		})
 	}
-	c = CreateConfiguration(o, data)
-	ok = true
-	o.Log(output.Info, "read configuration file", map[string]any{
-		"directory": path,
-		"fileName":  DefaultConfigFileName,
-		"value":     c,
-	})
 	return
 }
 
@@ -68,7 +64,8 @@ func readYaml(yfile []byte) (data map[string]any, err error) {
 
 func verifyFileExists(o output.Bus, path string) (ok bool, err error) {
 	f, err := os.Stat(path)
-	if err == nil {
+	switch {
+	case err == nil:
 		if f.IsDir() {
 			o.Log(output.Error, "file is a directory", map[string]any{
 				"directory": filepath.Dir(path),
@@ -76,12 +73,10 @@ func verifyFileExists(o output.Bus, path string) (ok bool, err error) {
 			})
 			o.WriteCanonicalError("The configuration file %q is a directory", path)
 			err = fmt.Errorf("file exists but is a directory")
-			return
+		} else {
+			ok = true
 		}
-		ok = true
-		return
-	}
-	if errors.Is(err, os.ErrNotExist) {
+	case errors.Is(err, os.ErrNotExist):
 		o.Log(output.Info, "file does not exist", map[string]any{
 			"directory": filepath.Dir(path),
 			"fileName":  filepath.Base(path),
@@ -176,27 +171,27 @@ type IntBounds struct {
 // NewIntBounds creates a instance of IntBounds, sorting the provided value into
 // reasonable fields
 func NewIntBounds(v1, v2, v3 int) *IntBounds {
-	is := []int{v1, v2, v3}
-	sort.Ints(is)
+	v := []int{v1, v2, v3}
+	sort.Ints(v)
 	return &IntBounds{
-		minValue:     is[0],
-		defaultValue: is[1],
-		maxValue:     is[2],
+		minValue:     v[0],
+		defaultValue: v[1],
+		maxValue:     v[2],
 	}
 }
 
 // IntDefault returns a default value for a specified key, which may or may not
 // be defined in the Configuration instance
-func (c *Configuration) IntDefault(key string, sortedBounds *IntBounds) (i int, err error) {
-	i = sortedBounds.defaultValue
+func (c *Configuration) IntDefault(key string, bounds *IntBounds) (i int, err error) {
+	i = bounds.defaultValue
 	if value, ok := c.iMap[key]; ok {
-		i = constrainedValue(value, sortedBounds)
+		i = constrainedValue(value, bounds)
 	} else {
 		if value, ok := c.sMap[key]; ok {
 			rawValue, dereferenceErr := InterpretEnvVarReferences(value)
 			if dereferenceErr == nil {
 				if cookedValue, e := strconv.Atoi(rawValue); e == nil {
-					i = constrainedValue(cookedValue, sortedBounds)
+					i = constrainedValue(cookedValue, bounds)
 				} else {
 					// note: deliberately imitating flags behavior when parsing an
 					// invalid int
