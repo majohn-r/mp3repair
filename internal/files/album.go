@@ -27,10 +27,10 @@ func newAlbumFromFile(file fs.DirEntry, ar *Artist) *Album {
 	return NewAlbum(dirName, ar, ar.subDirectory(dirName))
 }
 
-func copyAlbum(a *Album, ar *Artist) *Album {
+func (a *Album) copy(ar *Artist) *Album {
 	a2 := NewAlbum(a.name, ar, a.path)
 	for _, t := range a.tracks {
-		a2.AddTrack(copyTrack(t, a2))
+		a2.AddTrack(t.copy(a2))
 	}
 	a2.canonicalGenre = a.canonicalGenre
 	a2.canonicalYear = a.canonicalYear

@@ -132,7 +132,7 @@ func selectUnknownFrame(mcdiFramers []id3v2.Framer) id3v2.UnknownFrame {
 	return id3v2.UnknownFrame{Body: []byte{0}}
 }
 
-func updateID3V2Tag(tM *trackMetadata, path string, sT sourceType) (e error) {
+func updateID3V2Tag(tM *trackMetadata, path string, sT SourceType) (e error) {
 	if tM.requiresEdit[sT] {
 		if tag, err := readID3V2Tag(path); err != nil {
 			e = err

@@ -6,30 +6,44 @@ import (
 	"github.com/bogem/id3v2/v2"
 )
 
-type sourceType int
+// SourceType identifies the source of a particular form of metadata
+type SourceType int
 
 const (
-	undefinedSource sourceType = iota
-	id3v1Source
-	id3v2Source
-	totalSources
+	UndefinedSource SourceType = iota
+	ID3V1
+	ID3V2
+	TotalSources
 )
 
 var (
-	nameComparators = map[sourceType]func(comparableStrings) bool{
-		id3v1Source: id3v1NameDiffers,
-		id3v2Source: id3v2NameDiffers,
+	nameComparators = map[SourceType]func(comparableStrings) bool{
+		ID3V1: id3v1NameDiffers,
+		ID3V2: id3v2NameDiffers,
 	}
-	genreComparators = map[sourceType]func(comparableStrings) bool{
-		id3v1Source: id3v1GenreDiffers,
-		id3v2Source: id3v2GenreDiffers,
+	genreComparators = map[SourceType]func(comparableStrings) bool{
+		ID3V1: id3v1GenreDiffers,
+		ID3V2: id3v2GenreDiffers,
 	}
-	tagEditors = map[sourceType]func(tM *trackMetadata, path string, src sourceType) error{
-		id3v1Source: updateID3V1Tag,
-		id3v2Source: updateID3V2Tag,
+	tagEditors = map[SourceType]func(tM *trackMetadata, path string, src SourceType) error{
+		ID3V1: updateID3V1Tag,
+		ID3V2: updateID3V2Tag,
 	}
-	sourceTypes = []sourceType{id3v1Source, id3v2Source}
+	sourceTypes = []SourceType{ID3V1, ID3V2}
 )
+
+func (sT SourceType) name() string {
+	switch sT {
+	case ID3V1:
+		return "ID3V1"
+	case ID3V2:
+		return "ID3V2"
+	case TotalSources:
+		return "total"
+	default:
+		return "undefined"
+	}
+}
 
 // outside of unit tests
 type trackMetadata struct {
@@ -40,7 +54,7 @@ type trackMetadata struct {
 	year              []string
 	track             []int
 	musicCDIdentifier id3v2.UnknownFrame
-	canonicalType     sourceType
+	canonicalType     SourceType
 	err               []error
 	// these fields are set by the various xDiffers methods
 	correctedAlbum             []string
@@ -55,20 +69,20 @@ type trackMetadata struct {
 
 func newTrackMetadata() *trackMetadata {
 	return &trackMetadata{
-		album:           make([]string, totalSources),
-		artist:          make([]string, totalSources),
-		title:           make([]string, totalSources),
-		genre:           make([]string, totalSources),
-		year:            make([]string, totalSources),
-		track:           make([]int, totalSources),
-		err:             make([]error, totalSources),
-		correctedAlbum:  make([]string, totalSources),
-		correctedArtist: make([]string, totalSources),
-		correctedTitle:  make([]string, totalSources),
-		correctedGenre:  make([]string, totalSources),
-		correctedYear:   make([]string, totalSources),
-		correctedTrack:  make([]int, totalSources),
-		requiresEdit:    make([]bool, totalSources),
+		album:           make([]string, TotalSources),
+		artist:          make([]string, TotalSources),
+		title:           make([]string, TotalSources),
+		genre:           make([]string, TotalSources),
+		year:            make([]string, TotalSources),
+		track:           make([]int, TotalSources),
+		err:             make([]error, TotalSources),
+		correctedAlbum:  make([]string, TotalSources),
+		correctedArtist: make([]string, TotalSources),
+		correctedTitle:  make([]string, TotalSources),
+		correctedGenre:  make([]string, TotalSources),
+		correctedYear:   make([]string, TotalSources),
+		correctedTrack:  make([]int, TotalSources),
+		requiresEdit:    make([]bool, TotalSources),
 	}
 }
 
@@ -78,26 +92,26 @@ func readMetadata(path string) *trackMetadata {
 	tM := newTrackMetadata()
 	switch {
 	case id3v1Err != nil && d.err != nil:
-		tM.err[id3v1Source] = id3v1Err
-		tM.err[id3v2Source] = d.err
+		tM.err[ID3V1] = id3v1Err
+		tM.err[ID3V2] = d.err
 	case id3v1Err != nil:
-		tM.err[id3v1Source] = id3v1Err
+		tM.err[ID3V1] = id3v1Err
 		tM.setID3v2Values(d)
-		tM.canonicalType = id3v2Source
+		tM.canonicalType = ID3V2
 	case d.err != nil:
-		tM.err[id3v2Source] = d.err
+		tM.err[ID3V2] = d.err
 		tM.setID3v1Values(v1)
-		tM.canonicalType = id3v1Source
+		tM.canonicalType = ID3V1
 	default:
 		tM.setID3v2Values(d)
 		tM.setID3v1Values(v1)
-		tM.canonicalType = id3v2Source
+		tM.canonicalType = ID3V2
 	}
 	return tM
 }
 
 func (tM *trackMetadata) setID3v2Values(d *id3v2TaggedTrackData) {
-	i := id3v2Source
+	i := ID3V2
 	tM.album[i] = d.album
 	tM.artist[i] = d.artist
 	tM.title[i] = d.title
@@ -108,7 +122,7 @@ func (tM *trackMetadata) setID3v2Values(d *id3v2TaggedTrackData) {
 }
 
 func (tM *trackMetadata) setID3v1Values(v1 *id3v1Metadata) {
-	index := id3v1Source
+	index := ID3V1
 	tM.album[index] = v1.album()
 	tM.artist[index] = v1.artist()
 	tM.title[index] = v1.title()
@@ -122,7 +136,7 @@ func (tM *trackMetadata) setID3v1Values(v1 *id3v1Metadata) {
 }
 
 func (tM *trackMetadata) isValid() bool {
-	return tM.canonicalType == id3v1Source || tM.canonicalType == id3v2Source
+	return tM.canonicalType == ID3V1 || tM.canonicalType == ID3V2
 }
 
 func (tM *trackMetadata) canonicalArtist() string {
@@ -230,9 +244,9 @@ func (tM *trackMetadata) yearDiffers(year string) (differs bool) {
 }
 
 func (tM *trackMetadata) mcdiDiffers(f id3v2.UnknownFrame) (differs bool) {
-	if tM.err[id3v2Source] == nil && !bytes.Equal(tM.musicCDIdentifier.Body, f.Body) {
+	if tM.err[ID3V2] == nil && !bytes.Equal(tM.musicCDIdentifier.Body, f.Body) {
 		differs = true
-		tM.requiresEdit[id3v2Source] = true
+		tM.requiresEdit[ID3V2] = true
 		tM.correctedMusicCDIdentifier = f
 	}
 	return

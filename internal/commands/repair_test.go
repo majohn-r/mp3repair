@@ -230,10 +230,10 @@ func Test_repair_Exec(t *testing.T) {
 					"         1 \"new track\" need to repair track numbering; track name; album name; artist name;\n",
 				}, "\n"),
 				Error: "Reading track metadata.\n" +
-					"An error occurred when trying to read ID3V1 tag information for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
+					"An error occurred when trying to read ID3V1 metadata for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
 				Log: "level='info' -dryRun='true' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n" +
-					"level='error' error='no id3v1 tag found in file \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\"' track='realContent\\new artist\\new album\\01 new track.mp3' msg='id3v1 tag error'\n",
+					"level='error' error='no id3v1 tag found in file \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\"' metadata='ID3V1' track='realContent\\new artist\\new album\\01 new track.mp3' msg='metadata read error'\n",
 			},
 		},
 		"real repair, usable content": {
@@ -243,10 +243,10 @@ func Test_repair_Exec(t *testing.T) {
 				Console: "The track \"realContent2\\\\new artist\\\\new album\\\\01 new track.mp3\" has been backed up to \"realContent2\\\\new artist\\\\new album\\\\pre-repair-backup\\\\1.mp3\".\n" +
 					"\"realContent2\\\\new artist\\\\new album\\\\01 new track.mp3\" repaired.\n",
 				Error: "Reading track metadata.\n" +
-					"An error occurred when trying to read ID3V1 tag information for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent2\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
+					"An error occurred when trying to read ID3V1 metadata for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent2\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
 				Log: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent2' msg='reading filtered music files'\n" +
-					"level='error' error='no id3v1 tag found in file \"realContent2\\\\new artist\\\\new album\\\\01 new track.mp3\"' track='realContent2\\new artist\\new album\\01 new track.mp3' msg='id3v1 tag error'\n" +
+					"level='error' error='no id3v1 tag found in file \"realContent2\\\\new artist\\\\new album\\\\01 new track.mp3\"' metadata='ID3V1' track='realContent2\\new artist\\new album\\01 new track.mp3' msg='metadata read error'\n" +
 					"level='info' fileName='appPath\\metadata.dirty' msg='metadata dirty file written'\n",
 			},
 		},
@@ -276,8 +276,8 @@ func generateStandardTrackErrorReport() string {
 					sep = " "
 				}
 				result = append(result,
-					fmt.Sprintf("An error occurred when trying to read ID3V1 tag information for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"seek repairExec\\\\Test Artist %d\\\\Test Album %d\\\\%02d%sTest Track[%02d].mp3: An attempt was made to move the file pointer before the beginning of the file.\".\n", t, aL, aR, aR, aL, t, sep, t),
-					fmt.Sprintf("An error occurred when trying to read ID3V2 tag information for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"track number is zero length\".\n", t, aL, aR))
+					fmt.Sprintf("An error occurred when trying to read ID3V1 metadata for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"seek repairExec\\\\Test Artist %d\\\\Test Album %d\\\\%02d%sTest Track[%02d].mp3: An attempt was made to move the file pointer before the beginning of the file.\".\n", t, aL, aR, aR, aL, t, sep, t),
+					fmt.Sprintf("An error occurred when trying to read ID3V2 metadata for track \"Test Track[%02d]\" on album \"Test Album %d\" by artist \"Test Artist %d\": \"track number is zero length\".\n", t, aL, aR))
 			}
 		}
 	}
@@ -296,8 +296,8 @@ func generateStandardTrackLogReport() string {
 					sep = " "
 				}
 				result = append(result,
-					fmt.Sprintf("level='error' error='seek repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3: An attempt was made to move the file pointer before the beginning of the file.' track='repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3' msg='id3v1 tag error'\n", aR, aL, t, sep, t, aR, aL, t, sep, t),
-					fmt.Sprintf("level='error' error='track number is zero length' track='repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3' msg='id3v2 tag error'\n", aR, aL, t, sep, t))
+					fmt.Sprintf("level='error' error='seek repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3: An attempt was made to move the file pointer before the beginning of the file.' metadata='ID3V1' track='repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3' msg='metadata read error'\n", aR, aL, t, sep, t, aR, aL, t, sep, t),
+					fmt.Sprintf("level='error' error='track number is zero length' metadata='ID3V2' track='repairExec\\Test Artist %d\\Test Album %d\\%02d%sTest Track[%02d].mp3' msg='metadata read error'\n", aR, aL, t, sep, t))
 			}
 		}
 	}

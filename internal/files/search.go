@@ -84,10 +84,10 @@ func (s *Search) FilterArtists(o output.Bus, unfiltered []*Artist) (filtered []*
 	o.Log(output.Info, "filtering music files", s.logFields(true))
 	for _, originalArtist := range unfiltered {
 		if s.artistFilter.MatchString(originalArtist.Name()) {
-			artist := copyArtist(originalArtist)
+			artist := originalArtist.copy()
 			for _, originalAlbum := range originalArtist.Albums() {
 				if s.albumFilter.MatchString(originalAlbum.Name()) && originalAlbum.HasTracks() {
-					artist.AddAlbum(copyAlbum(originalAlbum, artist))
+					artist.AddAlbum(originalAlbum.copy(artist))
 				}
 			}
 			if artist.HasAlbums() {

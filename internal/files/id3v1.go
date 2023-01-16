@@ -299,7 +299,7 @@ func writeToFile(f *os.File, b []byte) (int, error) {
 	return f.Write(b)
 }
 
-func updateID3V1Tag(tM *trackMetadata, path string, sT sourceType) (err error) {
+func updateID3V1Tag(tM *trackMetadata, path string, sT SourceType) (err error) {
 	if tM.requiresEdit[sT] {
 		var v1 *id3v1Metadata
 		if v1, err = internalReadID3V1Metadata(path, fileReader); err == nil {

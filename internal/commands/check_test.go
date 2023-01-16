@@ -429,10 +429,10 @@ func Test_check_analyzeIntegrity(t *testing.T) {
 			args: args{artists: a},
 			WantedRecording: output.WantedRecording{
 				Error: "Reading track metadata.\n" +
-					"An error occurred when trying to read ID3V1 tag information for track \"track\" on album \"album\" by artist \"artist\": \"seek integrity\\\\artist\\\\album\\\\01 track.mp3: An attempt was made to move the file pointer before the beginning of the file.\".\n" +
-					"An error occurred when trying to read ID3V2 tag information for track \"track\" on album \"album\" by artist \"artist\": \"track number is zero length\".\n",
-				Log: "level='error' error='seek integrity\\artist\\album\\01 track.mp3: An attempt was made to move the file pointer before the beginning of the file.' track='integrity\\artist\\album\\01 track.mp3' msg='id3v1 tag error'\n" +
-					"level='error' error='track number is zero length' track='integrity\\artist\\album\\01 track.mp3' msg='id3v2 tag error'\n",
+					"An error occurred when trying to read ID3V1 metadata for track \"track\" on album \"album\" by artist \"artist\": \"seek integrity\\\\artist\\\\album\\\\01 track.mp3: An attempt was made to move the file pointer before the beginning of the file.\".\n" +
+					"An error occurred when trying to read ID3V2 metadata for track \"track\" on album \"album\" by artist \"artist\": \"track number is zero length\".\n",
+				Log: "level='error' error='seek integrity\\artist\\album\\01 track.mp3: An attempt was made to move the file pointer before the beginning of the file.' metadata='ID3V1' track='integrity\\artist\\album\\01 track.mp3' msg='metadata read error'\n" +
+					"level='error' error='track number is zero length' metadata='ID3V2' track='integrity\\artist\\album\\01 track.mp3' msg='metadata read error'\n",
 			},
 			wantConflictedArtists: []*checkedArtist{
 				{
@@ -528,7 +528,7 @@ func equalCheckedTrack(got, want *checkedTrack) bool {
 	if !reflect.DeepEqual(got.issues, want.issues) {
 		return false
 	}
-	if got.backing.Name() != want.backing.Name() {
+	if got.backing.CommonName() != want.backing.CommonName() {
 		return false
 	}
 	return got.backing.Number() == want.backing.Number()
@@ -950,8 +950,8 @@ func Test_merge(t *testing.T) {
 									if gotTrack.backing.Number() != wantTrack.backing.Number() {
 										t.Errorf("%s artist[%d] album[%d] track[%d] number %d, want %d", fnName, i, j, k, gotTrack.backing.Number(), wantTrack.backing.Number())
 									}
-									if gotTrack.backing.Name() != wantTrack.backing.Name() {
-										t.Errorf("%s artist[%d] album[%d] track[%d] name %q, want %q", fnName, i, j, k, gotTrack.backing.Name(), wantTrack.backing.Name())
+									if gotTrack.backing.CommonName() != wantTrack.backing.CommonName() {
+										t.Errorf("%s artist[%d] album[%d] track[%d] name %q, want %q", fnName, i, j, k, gotTrack.backing.CommonName(), wantTrack.backing.CommonName())
 									}
 									if !reflect.DeepEqual(gotTrack.issues, wantTrack.issues) {
 										t.Errorf("%s artist[%d] album[%d] track[%d] issues %v, want %v", fnName, i, j, k, gotTrack.issues, wantTrack.issues)

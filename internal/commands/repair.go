@@ -81,7 +81,7 @@ func findConflictedTracks(artists []*files.Artist) []*files.Track {
 	for _, aR := range artists {
 		for _, aL := range aR.Albums() {
 			for _, t := range aL.Tracks() {
-				if state := t.ReconcileMetadata(); state.HasTaggingConflicts() {
+				if state := t.ReconcileMetadata(); state.HasConflicts() {
 					tracks = append(tracks, t)
 				}
 			}
@@ -107,7 +107,7 @@ func reportTracks(o output.Bus, tracks []*files.Track) {
 			lastAlbum = album
 		}
 		s := t.ReconcileMetadata()
-		o.WriteConsole("        %2d %q need to repair%s%s%s%s\n", t.Number(), t.Name(),
+		o.WriteConsole("        %2d %q need to repair%s%s%s%s\n", t.Number(), t.CommonName(),
 			reportProblem(s.HasNumberingConflict(), " track numbering;"),
 			reportProblem(s.HasTrackNameConflict(), " track name;"),
 			reportProblem(s.HasAlbumNameConflict(), " album name;"),
@@ -154,7 +154,7 @@ func backupTrack(o output.Bus, t *files.Track) {
 	dir := t.BackupDirectory()
 	backupFile := filepath.Join(dir, fmt.Sprintf("%d.mp3", t.Number()))
 	if internal.DirExists(dir) && !internal.PlainFileExists(backupFile) {
-		if err := t.Copy(backupFile); err != nil {
+		if err := t.CopyFile(backupFile); err != nil {
 			o.WriteCanonicalError("The track %q cannot be backed up", t)
 			o.Log(output.Error, "error copying file", map[string]any{
 				"command":     repairCommandName,

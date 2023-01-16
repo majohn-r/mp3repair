@@ -181,7 +181,7 @@ func reportResults(o output.Bus, checkedArtists ...[]*checkedArtist) {
 					o.WriteConsole("      %s\n", issue)
 				}
 				for _, cT := range cAl.tracks {
-					o.WriteConsole("        %2d %s\n", cT.backing.Number(), cT.backing.Name())
+					o.WriteConsole("        %2d %s\n", cT.backing.Number(), cT.backing.CommonName())
 					for _, issue := range cT.issues {
 						o.WriteConsole("          %s\n", issue)
 					}
@@ -424,7 +424,7 @@ func (c *check) analyzeGaps(o output.Bus, artists []*files.Artist) []*checkedArt
 				m := make(map[int]*checkedTrack)
 				for _, cT := range cAl.tracks {
 					if priorCT, ok := m[cT.backing.Number()]; ok {
-						cAl.issues = append(cAl.issues, fmt.Sprintf("track %d used by %q and %q", cT.backing.Number(), priorCT.backing.Name(), cT.backing.Name()))
+						cAl.issues = append(cAl.issues, fmt.Sprintf("track %d used by %q and %q", cT.backing.Number(), priorCT.backing.CommonName(), cT.backing.CommonName()))
 						gapsFound = true
 					} else {
 						m[cT.backing.Number()] = cT
@@ -443,10 +443,10 @@ func (c *check) analyzeGaps(o output.Bus, artists []*files.Artist) []*checkedArt
 				for n, t := range m {
 					switch {
 					case n < 1:
-						cAl.issues = append(cAl.issues, fmt.Sprintf("track %d (%q) is not a valid track number; %s", n, t.backing.Name(), validTracks))
+						cAl.issues = append(cAl.issues, fmt.Sprintf("track %d (%q) is not a valid track number; %s", n, t.backing.CommonName(), validTracks))
 						gapsFound = true
 					case n > maxNumber:
-						cAl.issues = append(cAl.issues, fmt.Sprintf("track %d (%q) is not a valid track number; %s", n, t.backing.Name(), validTracks))
+						cAl.issues = append(cAl.issues, fmt.Sprintf("track %d (%q) is not a valid track number; %s", n, t.backing.CommonName(), validTracks))
 						gapsFound = true
 					}
 				}

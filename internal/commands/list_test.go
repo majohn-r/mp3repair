@@ -955,10 +955,10 @@ func Test_list_outputTrackDiagnostics(t *testing.T) {
 			l:    makeList(),
 			args: args{t: badTrack},
 			WantedRecording: output.WantedRecording{
-				Error: "An error occurred when trying to read ID3V2 tag information for track \"bad track\" on album \"bad album\" by artist \"bad artist\": \"open BadAlbum\\\\01 bad track.mp3: The system cannot find the path specified.\".\n" +
-					"An error occurred when trying to read ID3V1 tag information for track \"bad track\" on album \"bad album\" by artist \"bad artist\": \"open BadAlbum\\\\01 bad track.mp3: The system cannot find the path specified.\".\n",
-				Log: "level='error' error='open BadAlbum\\01 bad track.mp3: The system cannot find the path specified.' track='BadAlbum\\01 bad track.mp3' msg='id3v2 tag error'\n" +
-					"level='error' error='open BadAlbum\\01 bad track.mp3: The system cannot find the path specified.' track='BadAlbum\\01 bad track.mp3' msg='id3v1 tag error'\n",
+				Error: "An error occurred when trying to read ID3V2 metadata for track \"bad track\" on album \"bad album\" by artist \"bad artist\": \"open BadAlbum\\\\01 bad track.mp3: The system cannot find the path specified.\".\n" +
+					"An error occurred when trying to read ID3V1 metadata for track \"bad track\" on album \"bad album\" by artist \"bad artist\": \"open BadAlbum\\\\01 bad track.mp3: The system cannot find the path specified.\".\n",
+				Log: "level='error' error='open BadAlbum\\01 bad track.mp3: The system cannot find the path specified.' metadata='ID3V2' track='BadAlbum\\01 bad track.mp3' msg='metadata read error'\n" +
+					"level='error' error='open BadAlbum\\01 bad track.mp3: The system cannot find the path specified.' metadata='ID3V1' track='BadAlbum\\01 bad track.mp3' msg='metadata read error'\n",
 			},
 		},
 		"success case": {

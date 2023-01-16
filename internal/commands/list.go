@@ -277,7 +277,7 @@ func (l *list) outputTracks(o output.Bus, tracks []*files.Track, prefix string) 
 		}
 		sort.Ints(numbers)
 		for _, n := range numbers {
-			o.WriteConsole("%s%2d. %s\n", prefix, n, m[n].Name())
+			o.WriteConsole("%s%2d. %s\n", prefix, n, m[n].CommonName())
 			l.outputTrackDetails(o, m[n], prefix+"  ")
 			l.outputTrackDiagnostics(o, m[n], prefix+"  ")
 		}
@@ -286,7 +286,7 @@ func (l *list) outputTracks(o output.Bus, tracks []*files.Track, prefix string) 
 		m := make(map[string]*files.Track)
 		for _, t := range tracks {
 			var s []string
-			s = append(s, t.Name())
+			s = append(s, t.CommonName())
 			if *l.annotateListings && !(*l.includeAlbums && *l.includeArtists) {
 				if !*l.includeAlbums {
 					s = append(s, []string{"on", t.AlbumName()}...)
@@ -326,7 +326,7 @@ func (l *list) outputTrackDetails(o output.Bus, t *files.Track, prefix string) {
 				"error": err,
 				"track": t.String(),
 			})
-			o.WriteCanonicalError("The details are not available for track %q on album %q by artist %q: %q", t.Name(), t.AlbumName(), t.RecordingArtist(), err.Error())
+			o.WriteCanonicalError("The details are not available for track %q on album %q by artist %q: %q", t.CommonName(), t.AlbumName(), t.RecordingArtist(), err.Error())
 		} else if len(m) != 0 {
 			var keys []string
 			for k := range m {
@@ -344,7 +344,7 @@ func (l *list) outputTrackDetails(o output.Bus, t *files.Track, prefix string) {
 func (l *list) outputTrackDiagnostics(o output.Bus, t *files.Track, prefix string) {
 	if *l.diagnostics {
 		if version, enc, frames, err := t.ID3V2Diagnostics(); err != nil {
-			files.ReportID3V2TagError(o, t, err)
+			t.ReportMetadataReadError(o, files.ID3V2, err)
 		} else {
 			o.WriteConsole("%sID3V2 Version: %v\n", prefix, version)
 			o.WriteConsole("%sID3V2 Encoding: %q\n", prefix, enc)
@@ -353,7 +353,7 @@ func (l *list) outputTrackDiagnostics(o output.Bus, t *files.Track, prefix strin
 			}
 		}
 		if v1, err := t.ID3V1Diagnostics(); err != nil {
-			files.ReportID3V1TagError(o, t, err)
+			t.ReportMetadataReadError(o, files.ID3V1, err)
 		} else {
 			for _, s := range v1 {
 				o.WriteConsole("%sID3V1 %s\n", prefix, s)

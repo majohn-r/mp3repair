@@ -23,7 +23,7 @@ func newArtistFromFile(f fs.DirEntry, dir string) *Artist {
 	return NewArtist(artistName, filepath.Join(dir, artistName))
 }
 
-func copyArtist(a *Artist) *Artist {
+func (a *Artist) copy() *Artist {
 	a2 := NewArtist(a.name, a.path)
 	a2.canonicalName = a.canonicalName
 	return a2
