@@ -11,7 +11,7 @@ import (
 )
 
 func TestMkdir(t *testing.T) {
-	fnName := "Mkdir()"
+	const fnName = "Mkdir()"
 	topDir := "artificalDir"
 	defer func() {
 		if err := os.RemoveAll(topDir); err != nil {
@@ -21,18 +21,16 @@ func TestMkdir(t *testing.T) {
 	type args struct {
 		dirName string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		wantErr bool
 	}{
-		{name: "failure", args: args{dirName: "testutilities_test.go"}, wantErr: true},
-		{name: "success", args: args{dirName: topDir}, wantErr: false},
-		// previous test will have created 'topDir' ... subsequent attempt should not fail
-		{name: "directory exists", args: args{dirName: topDir}, wantErr: false},
+		"failure":          {args: args{dirName: "testutilities_test.go"}, wantErr: true},
+		"success":          {args: args{dirName: topDir}, wantErr: false},
+		"directory exists": {args: args{dirName: "."}, wantErr: false},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if err := Mkdir(tt.args.dirName); (err != nil) != tt.wantErr {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
 			}
@@ -41,21 +39,20 @@ func TestMkdir(t *testing.T) {
 }
 
 func TestPlainFileExists(t *testing.T) {
-	fnName := "PlainFileExists()"
+	const fnName = "PlainFileExists()"
 	type args struct {
 		path string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want bool
 	}{
-		{name: "plain file", args: args{path: "fileio_test.go"}, want: true},
-		{name: "non-existent file", args: args{path: "no such file"}, want: false},
-		{name: "directory", args: args{path: "."}, want: false},
+		"plain file":        {args: args{path: "fileio_test.go"}, want: true},
+		"non-existent file": {args: args{path: "no such file"}, want: false},
+		"directory":         {args: args{path: "."}, want: false},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := PlainFileExists(tt.args.path); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -64,21 +61,20 @@ func TestPlainFileExists(t *testing.T) {
 }
 
 func TestDirExists(t *testing.T) {
-	fnName := "DirExists()"
+	const fnName = "DirExists()"
 	type args struct {
 		path string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		want bool
 	}{
-		{name: "no such directory", args: args{path: "no such dir"}, want: false},
-		{name: "file exists, is not a directory", args: args{path: "fileio_test.go"}, want: false},
-		{name: "file exists, is a directory", args: args{path: ".."}, want: true},
+		"no such directory":               {args: args{path: "no such dir"}, want: false},
+		"file exists, is not a directory": {args: args{path: "fileio_test.go"}, want: false},
+		"file exists, is a directory":     {args: args{path: ".."}, want: true},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if got := DirExists(tt.args.path); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
@@ -87,38 +83,33 @@ func TestDirExists(t *testing.T) {
 }
 
 func TestCopyFile(t *testing.T) {
-	fnName := "CopyFile()"
+	const fnName = "CopyFile()"
 	topDir := "copies"
 	if err := Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
-	defer func() {
-		DestroyDirectoryForTesting(fnName, topDir)
-	}()
 	srcName := "source.txt"
 	srcPath := filepath.Join(topDir, srcName)
 	if err := CreateFileForTesting(topDir, srcName); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, srcPath, err)
 	}
+	defer func() {
+		DestroyDirectoryForTesting(fnName, topDir)
+	}()
 	type args struct {
 		src  string
 		dest string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		wantErr bool
 	}{
-		{name: "copy non-existent file", args: args{src: "foo.txt2", dest: "f.txt"}, wantErr: true},
-		{
-			name:    "copy to non-existent dir",
-			args:    args{src: srcPath, dest: filepath.Join(topDir, "non-existent-dir", "foo.txt")},
-			wantErr: true,
-		},
-		{name: "good copy", args: args{src: srcPath, dest: filepath.Join(topDir, "new.txt")}, wantErr: false},
+		"copy non-existent file":   {args: args{src: "foo.txt2", dest: "f.txt"}, wantErr: true},
+		"copy to non-existent dir": {args: args{src: srcPath, dest: filepath.Join(topDir, "non-existent-dir", "foo.txt")}, wantErr: true},
+		"good copy":                {args: args{src: srcPath, dest: filepath.Join(topDir, "new.txt")}, wantErr: false},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if err := CopyFile(tt.args.src, tt.args.dest); (err != nil) != tt.wantErr {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
 			}
@@ -127,7 +118,7 @@ func TestCopyFile(t *testing.T) {
 }
 
 func TestReadDirectory(t *testing.T) {
-	fnName := "ReadDirectory()"
+	const fnName = "ReadDirectory()"
 	// generate test data
 	topDir := "loadTest"
 	if err := Mkdir(topDir); err != nil {
@@ -139,16 +130,14 @@ func TestReadDirectory(t *testing.T) {
 	type args struct {
 		dir string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		wantFiles []fs.DirEntry
 		wantOk    bool
 		output.WantedRecording
 	}{
-		{name: "default", args: args{topDir}, wantFiles: []fs.DirEntry{}, wantOk: true},
-		{
-			name: "non-existent dir",
+		"default": {args: args{topDir}, wantFiles: []fs.DirEntry{}, wantOk: true},
+		"non-existent dir": {
 			args: args{"non-existent directory"},
 			WantedRecording: output.WantedRecording{
 				Error: "The directory \"non-existent directory\" cannot be read: open non-existent directory: The system cannot find the file specified.\n",
@@ -156,8 +145,8 @@ func TestReadDirectory(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			gotFiles, gotOk := ReadDirectory(o, tt.args.dir)
 			if !reflect.DeepEqual(gotFiles, tt.wantFiles) {

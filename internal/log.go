@@ -82,7 +82,7 @@ func InitLogging(o output.Bus) bool {
 		}
 	}
 	path := filepath.Join(CreateAppSpecificPath(tmpFolder), logDirName)
-	if err := os.MkdirAll(path, 0o755); err != nil {
+	if err := os.MkdirAll(path, stdDirPermissions); err != nil {
 		WriteDirectoryCreationError(o, path, err)
 		return false
 	}

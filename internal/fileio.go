@@ -12,6 +12,7 @@ import (
 
 const (
 	StdFilePermissions = 0o644 // -rw-r--r--
+	stdDirPermissions  = 0o755 // -rwxr-xr-x
 )
 
 // PlainFileExists returns whether the specified file exists as a plain file
@@ -52,11 +53,11 @@ func CopyFile(src, dest string) (err error) {
 
 // Mkdir makes the specified directory; succeeds if the directory already
 // exists. Fails if a plain file exists with the specified path.
-func Mkdir(dirName string) (err error) {
-	status, err := os.Stat(dirName)
+func Mkdir(dir string) (err error) {
+	status, err := os.Stat(dir)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			err = os.Mkdir(dirName, 0o755)
+			err = os.Mkdir(dir, stdDirPermissions)
 		}
 		return
 	}

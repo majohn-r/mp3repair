@@ -116,7 +116,7 @@ func TestCleanupLogFiles(t *testing.T) {
 	for _, tt := range tests {
 		var filesToClose []*os.File
 		if tt.createFolder {
-			if err := os.MkdirAll(tt.args.path, 0o755); err != nil {
+			if err := os.MkdirAll(tt.args.path, stdDirPermissions); err != nil {
 				t.Errorf("%s cannot create %q: %v", fnName, tt.args.path, err)
 			}
 			// create required files
