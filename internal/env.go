@@ -21,12 +21,12 @@ func CreateAppSpecificPath(topDir string) string {
 // provided string and substitutes the specified environment variable value into
 // the string
 func InterpretEnvVarReferences(s string) (string, error) {
-	references := findReferences(s)
-	if len(references) == 0 {
+	refs := findReferences(s)
+	if len(refs) == 0 {
 		return s, nil
 	}
 	var missingVars []string
-	for _, r := range references {
+	for _, r := range refs {
 		envVar := ""
 		if strings.HasPrefix(r, "$") {
 			envVar = r[1:]
