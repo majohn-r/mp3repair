@@ -22,9 +22,10 @@ const (
 )
 
 func configureLogging(path string) *cronowriter.CronoWriter {
-	logFileTemplate := filepath.Join(path, logFilePrefix+"%Y%m%d"+logFileExtension)
-	symlink := filepath.Join(path, symlinkName)
-	return cronowriter.MustNew(logFileTemplate, cronowriter.WithSymlink(symlink), cronowriter.WithInit())
+	return cronowriter.MustNew(
+		filepath.Join(path, logFilePrefix+"%Y%m%d"+logFileExtension),
+		cronowriter.WithSymlink(filepath.Join(path, symlinkName)),
+		cronowriter.WithInit())
 }
 
 func cleanupLogFiles(o output.Bus, path string) {

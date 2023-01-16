@@ -13,18 +13,15 @@ import (
 )
 
 func Test_configureLogging(t *testing.T) {
-	fnName := "configureLogging()"
+	const fnName = "configureLogging()"
 	type args struct {
 		path string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
-	}{
-		{name: "standard test case", args: args{path: "testlogs"}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	}{"standard test case": {args: args{path: "testlogs"}}}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			defer func() {
 				DestroyDirectoryForTesting(fnName, tt.args.path)
 			}()
@@ -59,12 +56,11 @@ func Test_configureLogging(t *testing.T) {
 }
 
 func TestCleanupLogFiles(t *testing.T) {
-	fnName := "CleanupLogFiles()"
+	const fnName = "CleanupLogFiles()"
 	type args struct {
 		path string
 	}
-	tests := []struct {
-		name         string
+	tests := map[string]struct {
 		fileCount    int
 		createFolder bool
 		lockFiles    bool
@@ -72,15 +68,8 @@ func TestCleanupLogFiles(t *testing.T) {
 		wantFileCount int
 		output.WantedRecording
 	}{
-		{
-			name:          "no work to do",
-			fileCount:     maxLogFiles,
-			createFolder:  true,
-			args:          args{path: "testlogs"},
-			wantFileCount: maxLogFiles,
-		},
-		{
-			name:          "files to delete",
+		"no work to do": {fileCount: maxLogFiles, createFolder: true, args: args{path: "testlogs"}, wantFileCount: maxLogFiles},
+		"files to delete": {
 			fileCount:     maxLogFiles + 2,
 			createFolder:  true,
 			args:          args{path: "testlogs"},
@@ -90,8 +79,7 @@ func TestCleanupLogFiles(t *testing.T) {
 					"level='info' directory='testlogs' fileName='mp3.01.log' msg='successfully deleted file'\n",
 			},
 		},
-		{
-			name:          "locked",
+		"locked": {
 			fileCount:     maxLogFiles + 2,
 			createFolder:  true,
 			lockFiles:     true,
@@ -104,8 +92,7 @@ func TestCleanupLogFiles(t *testing.T) {
 					"level='error' error='remove testlogs\\mp3.01.log: The process cannot access the file because it is being used by another process.' fileName='testlogs\\mp3.01.log' msg='cannot delete file'\n",
 			},
 		},
-		{
-			name: "missing path",
+		"missing path": {
 			args: args{path: "testlogs"},
 			WantedRecording: output.WantedRecording{
 				Error: "The log file directory \"testlogs\" cannot be read: open testlogs: The system cannot find the file specified.\n",
@@ -113,7 +100,7 @@ func TestCleanupLogFiles(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
+	for name, tt := range tests {
 		var filesToClose []*os.File
 		if tt.createFolder {
 			if err := os.MkdirAll(tt.args.path, stdDirPermissions); err != nil {
@@ -144,7 +131,7 @@ func TestCleanupLogFiles(t *testing.T) {
 				t.Errorf("%s error destroying test directory %q: %v", fnName, tt.args.path, err)
 			}
 		}
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			cleanupLogFiles(o, tt.args.path)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -185,13 +172,14 @@ func TestCleanupLogFiles(t *testing.T) {
 }
 
 func TestInitLogging(t *testing.T) {
-	fnName := "InitLogging()"
+	const fnName = "InitLogging()"
 	savedStates := []*SavedEnvVar{SaveEnvVarForTesting("TMP"), SaveEnvVarForTesting("TEMP")}
 	dirName := filepath.Join(".", "InitLogging")
 	workDir := SecureAbsolutePathForTesting(dirName)
 	if err := Mkdir(workDir); err != nil {
 		t.Errorf("%s failed to create test directory: %v", fnName, err)
 	}
+	thisFile := SecureAbsolutePathForTesting("log_test.go")
 	defer func() {
 		for _, state := range savedStates {
 			state.RestoreForTesting()
@@ -201,34 +189,20 @@ func TestInitLogging(t *testing.T) {
 			t.Errorf("%s error destroying test directory %q: %v", fnName, workDir, err)
 		}
 	}()
-	thisFile := SecureAbsolutePathForTesting("log_test.go")
-	tests := []struct {
-		name  string
+	tests := map[string]struct {
 		state []*SavedEnvVar
 		want  bool
 		output.WantedRecording
 	}{
-		{
-			name:            "useTmp",
-			state:           []*SavedEnvVar{{Name: "TMP", Value: workDir, Set: true}, {Name: "TEMP"}},
-			want:            true,
-			WantedRecording: output.WantedRecording{},
-		},
-		{
-			name:            "useTemp",
-			state:           []*SavedEnvVar{{Name: "TEMP", Value: workDir, Set: true}, {Name: "TEMP"}},
-			want:            true,
-			WantedRecording: output.WantedRecording{},
-		},
-		{
-			name:  "no temps",
+		"useTmp":  {state: []*SavedEnvVar{{Name: "TMP", Value: workDir, Set: true}, {Name: "TEMP"}}, want: true},
+		"useTemp": {state: []*SavedEnvVar{{Name: "TEMP", Value: workDir, Set: true}, {Name: "TEMP"}}, want: true},
+		"no temps": {
 			state: []*SavedEnvVar{{Name: "TMP"}, {Name: "TEMP"}},
 			WantedRecording: output.WantedRecording{
 				Error: "Neither the TMP nor TEMP environment variables are defined.\n",
 			},
 		},
-		{
-			name:  "cannot create dir",
+		"cannot create dir": {
 			state: []*SavedEnvVar{{Name: "TMP", Value: thisFile, Set: true}, {Name: "TEMP"}},
 			WantedRecording: output.WantedRecording{
 				Error: fmt.Sprintf(
@@ -237,8 +211,8 @@ func TestInitLogging(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			if logger != nil {
 				logger.Close()
 			}
@@ -262,27 +236,17 @@ func TestInitLogging(t *testing.T) {
 }
 
 func TestProductionLogger(t *testing.T) {
-	fnName := "TestProductionLogger"
+	const fnName = "TestProductionLogger"
 	type args struct {
 		msg    string
 		fields map[string]any
 	}
-	tests := []struct {
-		name string
-		p    ProductionLogger
+	tests := map[string]struct {
+		p ProductionLogger
 		args
-	}{
-		{
-			name: "normal",
-			p:    ProductionLogger{},
-			args: args{
-				msg:    "test message",
-				fields: map[string]any{"field": "value"},
-			},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	}{"normal": {p: ProductionLogger{}, args: args{msg: "test message", fields: map[string]any{"field": "value"}}}}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			tt.p.Trace(tt.args.msg, tt.args.fields)
 			tt.p.Debug(tt.args.msg, tt.args.fields)
 			tt.p.Info(tt.args.msg, tt.args.fields)
