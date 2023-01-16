@@ -9,7 +9,7 @@ import (
 )
 
 func TestProcessArgs(t *testing.T) {
-	fnName := "ProcessArgs()"
+	const fnName = "ProcessArgs()"
 	goodFlags := flag.NewFlagSet("cmd", flag.ContinueOnError)
 	goodFlags.String("foo", "bar", "some silly flag")
 	goodFlags2 := flag.NewFlagSet("cmd2", flag.ContinueOnError)
@@ -17,27 +17,21 @@ func TestProcessArgs(t *testing.T) {
 	goodFlags3 := flag.NewFlagSet("cmd3", flag.ContinueOnError)
 	goodFlags3.String("foo3", "bar3", "some even sillier flag")
 	saved := SaveEnvVarForTesting("NOSUCHVAR")
+	os.Unsetenv("NOSUCHVAR")
 	defer func() {
 		saved.RestoreForTesting()
 	}()
-	os.Unsetenv("NOSUCHVAR")
 	type args struct {
 		f    *flag.FlagSet
 		args []string
 	}
-	tests := []struct {
-		name string
+	tests := map[string]struct {
 		args
 		wantOk bool
 		output.WantedRecording
 	}{
-		{
-			name:   "no errors",
-			args:   args{f: goodFlags, args: []string{}},
-			wantOk: true,
-		},
-		{
-			name: "errors",
+		"no errors": {args: args{f: goodFlags, args: []string{}}, wantOk: true},
+		"errors": {
 			args: args{f: goodFlags2, args: []string{"-foo=bar"}},
 			WantedRecording: output.WantedRecording{
 				Error: "flag provided but not defined: -foo\n" +
@@ -47,16 +41,14 @@ func TestProcessArgs(t *testing.T) {
 				Log: "level='error' arguments='[-foo=bar]' msg='flag provided but not defined: -foo'\n",
 			},
 		},
-		{
-			name: "bad references",
+		"bad references": {
 			args: args{f: goodFlags3, args: []string{"-foo3=$NOSUCHVAR"}},
 			WantedRecording: output.WantedRecording{
 				Error: "The value for argument \"-foo3=$NOSUCHVAR\" cannot be used: missing environment variables: [NOSUCHVAR].\n",
 				Log:   "level='error' error='missing environment variables: [NOSUCHVAR]' value='-foo3=$NOSUCHVAR' msg='argument cannot be used'\n",
 			},
 		},
-		{
-			name: "bad references2",
+		"bad references2": {
 			args: args{f: goodFlags3, args: []string{"-foo3=%NOSUCHVAR%"}},
 			WantedRecording: output.WantedRecording{
 				Error: "The value for argument \"-foo3=%NOSUCHVAR%\" cannot be used: missing environment variables: [NOSUCHVAR].\n",
@@ -64,8 +56,8 @@ func TestProcessArgs(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			if gotOk := ProcessArgs(o, tt.args.f, tt.args.args); gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)

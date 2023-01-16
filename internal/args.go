@@ -23,16 +23,13 @@ func ProcessArgs(o output.Bus, f *flag.FlagSet, args []string) (ok bool) {
 			ok = false
 		}
 	}
-	if !ok {
-		return
-	}
-	f.SetOutput(o.ErrorWriter())
-	// note: Parse outputs errors to o.ErrorWriter*()
-	if err := f.Parse(dereferencedArgs); err != nil {
-		o.Log(output.Error, err.Error(), map[string]any{"arguments": dereferencedArgs})
-		ok = false
-	} else {
-		ok = true
+	if ok {
+		f.SetOutput(o.ErrorWriter())
+		// note: Parse outputs errors to o.ErrorWriter*()
+		if err := f.Parse(dereferencedArgs); err != nil {
+			o.Log(output.Error, err.Error(), map[string]any{"arguments": dereferencedArgs})
+			ok = false
+		}
 	}
 	return
 }
