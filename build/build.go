@@ -64,7 +64,7 @@ var (
 		Name:  "doc",
 		Usage: "generate documentation",
 		Action: func(a *goyek.A) {
-			if folders, err := codeFolders(); err == nil {
+			if folders, err := codeDirs(); err == nil {
 				o := &bytes.Buffer{}
 				for _, f := range folders {
 					f = f[3:]
@@ -126,38 +126,38 @@ func versionArgument() (vArg, v string) {
 	return
 }
 
-func allFolders(top string) (folders []string, err error) {
-	var dirs []fs.DirEntry
-	if dirs, err = os.ReadDir(top); err != nil {
+func allDirs(top string) (dirs []string, err error) {
+	var entries []fs.DirEntry
+	if entries, err = os.ReadDir(top); err != nil {
 		return
 	}
-	for _, d := range dirs {
-		if !d.IsDir() {
+	for _, entry := range entries {
+		if !entry.IsDir() {
 			continue
 		}
-		f := filepath.Join(top, d.Name())
-		folders = append(folders, f)
-		var subfolders []string
-		if subfolders, err = allFolders(f); err != nil {
+		f := filepath.Join(top, entry.Name())
+		dirs = append(dirs, f)
+		var subDirs []string
+		if subDirs, err = allDirs(f); err != nil {
 			return
 		}
-		folders = append(folders, subfolders...)
+		dirs = append(dirs, subDirs...)
 	}
 	return
 }
 
-func codeFolders() (folders []string, err error) {
-	var candidates []string
-	if candidates, err = allFolders(".."); err != nil {
+func codeDirs() (codeDirectories []string, err error) {
+	var dirs []string
+	if dirs, err = allDirs(".."); err != nil {
 		return
 	}
-	for _, f := range candidates {
+	for _, f := range dirs {
 		var e []fs.DirEntry
 		if e, err = os.ReadDir(f); err != nil {
 			return
 		}
 		if includesCode(e) {
-			folders = append(folders, f)
+			codeDirectories = append(codeDirectories, f)
 		}
 	}
 	return

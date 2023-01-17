@@ -25,7 +25,7 @@ const (
 )
 
 var (
-	fileOpens         = make(chan empty, 20) // 20 is a typical limit for open files
+	openFiles         = make(chan empty, 20) // 20 is a typical limit for open files
 	frameDescriptions = map[string]string{
 		"TCOM": "Composer",
 		"TEXT": "Lyricist",
@@ -260,37 +260,37 @@ func (t *Track) ReportMetadataProblems() []string {
 	if !s.HasConflicts() {
 		return nil
 	}
-	var differences []string
+	var diffs []string
 	if s.HasNumberingConflict() {
-		differences = append(differences,
+		diffs = append(diffs,
 			fmt.Sprintf("metadata does not agree with track number %d", t.number))
 	}
 	if s.HasTrackNameConflict() {
-		differences = append(differences,
+		diffs = append(diffs,
 			fmt.Sprintf("metadata does not agree with track name %q", t.commonName))
 	}
 	if s.HasAlbumNameConflict() {
-		differences = append(differences,
+		diffs = append(diffs,
 			fmt.Sprintf("metadata does not agree with album name %q", t.containingAlbum.canonicalTitle))
 	}
 	if s.HasArtistNameConflict() {
-		differences = append(differences,
+		diffs = append(diffs,
 			fmt.Sprintf("metadata does not agree with artist name %q", t.containingAlbum.recordingArtist.canonicalName))
 	}
 	if s.HasGenreConflict() {
-		differences = append(differences,
+		diffs = append(diffs,
 			fmt.Sprintf("metadata does not agree with album genre %q", t.containingAlbum.canonicalGenre))
 	}
 	if s.HasYearConflict() {
-		differences = append(differences,
+		diffs = append(diffs,
 			fmt.Sprintf("metadata does not agree with album year %q", t.containingAlbum.canonicalYear))
 	}
 	if s.HasMCDIConflict() {
-		differences = append(differences,
+		diffs = append(diffs,
 			fmt.Sprintf("metadata does not agree with the MCDI frame %q", string(t.containingAlbum.musicCDIdentifier.Body)))
 	}
-	sort.Strings(differences)
-	return differences
+	sort.Strings(diffs)
+	return diffs
 }
 
 // UpdateMetadata verifies that a track's metadata needs to be edited and then
@@ -311,11 +311,11 @@ type empty struct{}
 
 func (t *Track) loadMetadata(bar *pb.ProgressBar) {
 	if t.needsMetadata() {
-		fileOpens <- empty{} // block while full
+		openFiles <- empty{} // block while full
 		go func() {
 			defer func() {
 				bar.Increment()
-				<-fileOpens // read to release a slot
+				<-openFiles // read to release a slot
 			}()
 			t.setMetadata(readMetadata(t.path))
 		}()
@@ -529,7 +529,7 @@ func (t *Track) reportMetadataErrors(o output.Bus) {
 }
 
 func waitForFilesClosed() {
-	for len(fileOpens) != 0 {
+	for len(openFiles) != 0 {
 		time.Sleep(1 * time.Microsecond)
 	}
 }

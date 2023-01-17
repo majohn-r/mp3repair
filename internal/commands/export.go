@@ -19,10 +19,10 @@ func init() {
 	})
 }
 
-var defaultMapping = map[string]map[string]any{}
+var defaults = map[string]map[string]any{}
 
 func addDefaultMapping(name string, mapping map[string]any) {
-	defaultMapping[name] = mapping
+	defaults[name] = mapping
 }
 
 type export struct {
@@ -112,10 +112,10 @@ func defaultsContent() []byte {
 	// get the search content - it could not be registered the same way that
 	// commands pre-register their content, due to circular dependency issues
 	s, m := files.SearchDefaults()
-	defaultMapping[s] = m
+	defaults[s] = m
 	// ignoring error return, as we're not marshalling structs, where mischief
 	// can occur
-	b, _ := yaml.Marshal(defaultMapping)
+	b, _ := yaml.Marshal(defaults)
 	return b
 }
 

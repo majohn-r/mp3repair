@@ -45,7 +45,7 @@ func CreateAllArtistsForTesting(topDir string, addExtras bool) []*Artist {
 }
 
 var (
-	nameToID3V2Tag = map[string]string{
+	nameToID3V2TagName = map[string]string{
 		"artist": "TPE1",
 		"album":  "TALB",
 		"title":  "TIT2",
@@ -108,9 +108,9 @@ func CreateConsistentlyTaggedDataForTesting(audio []byte, m map[string]any) []by
 		if value, ok := m[tagName]; ok {
 			switch tagName {
 			case "track":
-				frames[nameToID3V2Tag[tagName]] = fmt.Sprintf("%d", value.(int))
+				frames[nameToID3V2TagName[tagName]] = fmt.Sprintf("%d", value.(int))
 			default:
-				frames[nameToID3V2Tag[tagName]] = value.(string)
+				frames[nameToID3V2TagName[tagName]] = value.(string)
 			}
 		}
 	}
@@ -121,7 +121,7 @@ func CreateConsistentlyTaggedDataForTesting(audio []byte, m map[string]any) []by
 
 func createID3V1TaggedDataForTesting(m map[string]any) []byte {
 	v1 := newID3v1Metadata()
-	v1.writeString("TAG", id3v1Tag)
+	v1.writeString("TAG", tagField)
 	for _, tagName := range recognizedTagNames {
 		if value, ok := m[tagName]; ok {
 			switch tagName {

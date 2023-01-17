@@ -18,10 +18,10 @@ import (
 
 func init() {
 	addCommandData(resetDatabaseCommandName, commandData{isDefault: false, init: newResetDatabase})
-	defaultMetadata = filepath.Join("%USERPROFILE%", "AppData", "Local", "Microsoft", "Media Player")
+	defaultMetadataPath = filepath.Join("%USERPROFILE%", "AppData", "Local", "Microsoft", "Media Player")
 	addDefaultMapping(resetDatabaseCommandName, map[string]any{
 		extensionFlag: defaultExtension,
-		metadataFlag:  defaultMetadata,
+		metadataFlag:  defaultMetadataPath,
 		serviceFlag:   defaultService,
 		timeoutFlag:   defaultTimeout,
 	})
@@ -44,9 +44,9 @@ const (
 )
 
 var (
-	defaultMetadata string
-	timeoutError    = fmt.Errorf("operation timed out")
-	stateToStatus   = map[svc.State]string{
+	defaultMetadataPath string
+	timeoutError        = fmt.Errorf("operation timed out")
+	stateToStatus       = map[svc.State]string{
 		svc.Stopped:         "stopped",
 		svc.StartPending:    "start pending",
 		svc.StopPending:     "stop pending",
@@ -100,7 +100,7 @@ func evaluateResetDatabaseDefaults(o output.Bus, c *internal.Configuration) (def
 		reportBadDefault(o, resetDatabaseCommandName, err)
 		ok = false
 	}
-	if defaults.metadata, err = c.StringDefault(metadataFlag, defaultMetadata); err != nil {
+	if defaults.metadata, err = c.StringDefault(metadataFlag, defaultMetadataPath); err != nil {
 		reportBadDefault(o, resetDatabaseCommandName, err)
 		ok = false
 	}

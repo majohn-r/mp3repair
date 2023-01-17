@@ -14,10 +14,10 @@ type commandData struct {
 	init      func(output.Bus, *internal.Configuration, *flag.FlagSet) (CommandProcessor, bool)
 }
 
-var commandMap = map[string]commandData{}
+var commands = map[string]commandData{}
 
 func addCommandData(name string, d commandData) {
-	commandMap[name] = d
+	commands[name] = d
 }
 
 // CommandProcessor defines the functions needed to run a command
@@ -36,7 +36,7 @@ func ProcessCommand(o output.Bus, args []string) (cmd CommandProcessor, cmdArgs 
 	if m, ok = defaultSettings(o, c.SubConfiguration("command")); !ok {
 		return
 	}
-	for name, d := range commandMap {
+	for name, d := range commands {
 		d.isDefault = m[name]
 	}
 	cmd, cmdArgs, ok = selectCommand(o, c, args)
@@ -47,21 +47,21 @@ func defaultSettings(o output.Bus, c *internal.Configuration) (m map[string]bool
 	m = map[string]bool{}
 	defaultCommand, ok := c.StringValue("default")
 	if !ok { // no definition
-		for name, d := range commandMap {
+		for name, d := range commands {
 			m[name] = d.isDefault
 		}
 	} else {
-		for name := range commandMap {
+		for name := range commands {
 			m[name] = defaultCommand == name
 		}
 	}
-	var defaultCommands []string
+	var defaultCmds []string
 	for k, value := range m {
 		if value {
-			defaultCommands = append(defaultCommands, k)
+			defaultCmds = append(defaultCmds, k)
 		}
 	}
-	switch len(defaultCommands) {
+	switch len(defaultCmds) {
 	case 0:
 		o.Log(output.Error, "invalid default command", map[string]any{"command": defaultCommand})
 		o.WriteCanonicalError("The configuration file specifies %q as the default command. There is no such command", defaultCommand)
@@ -70,8 +70,8 @@ func defaultSettings(o output.Bus, c *internal.Configuration) (m map[string]bool
 	case 1:
 		ok = true
 	default:
-		sort.Strings(defaultCommands)
-		o.WriteCanonicalError("Internal error: %d commands self-selected as default: %v; pick one!", len(defaultCommands), defaultCommands)
+		sort.Strings(defaultCmds)
+		o.WriteCanonicalError("Internal error: %d commands self-selected as default: %v; pick one!", len(defaultCmds), defaultCmds)
 		m = nil
 		ok = false
 	}
@@ -79,14 +79,14 @@ func defaultSettings(o output.Bus, c *internal.Configuration) (m map[string]bool
 }
 
 func selectCommand(o output.Bus, c *internal.Configuration, args []string) (cmd CommandProcessor, cmdArgs []string, ok bool) {
-	if len(commandMap) == 0 {
+	if len(commands) == 0 {
 		o.Log(output.Error, "incorrect number of commands", map[string]any{"count": 0})
 		o.WriteCanonicalError("An internal error has occurred: no commands are defined!")
 		return
 	}
 	var n int
 	var defaultCmd string
-	for name, cD := range commandMap {
+	for name, cD := range commands {
 		if cD.isDefault {
 			n++
 			defaultCmd = name
@@ -99,7 +99,7 @@ func selectCommand(o output.Bus, c *internal.Configuration, args []string) (cmd 
 	}
 	m := make(map[string]CommandProcessor)
 	allCmdsOk := true
-	for name, cD := range commandMap {
+	for name, cD := range commands {
 		fSet := flag.NewFlagSet(name, flag.ContinueOnError)
 		cmd, cOk := cD.init(o, c, fSet)
 		if cOk {
@@ -131,12 +131,12 @@ func selectCommand(o output.Bus, c *internal.Configuration, args []string) (cmd 
 		cmd = nil
 		cmdArgs = nil
 		o.Log(output.Error, "unrecognized command", map[string]any{"command": firstArg})
-		var commandNames []string
-		for name := range commandMap {
-			commandNames = append(commandNames, name)
+		var names []string
+		for name := range commands {
+			names = append(names, name)
 		}
-		sort.Strings(commandNames)
-		o.WriteCanonicalError("There is no command named %q; valid commands include %v", firstArg, commandNames)
+		sort.Strings(names)
+		o.WriteCanonicalError("There is no command named %q; valid commands include %v", firstArg, names)
 		return
 	}
 	cmdArgs = args[2:]

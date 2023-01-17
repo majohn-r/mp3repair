@@ -22,7 +22,7 @@ func dereferenceEnvVar(s string) (string, error) {
 	if len(refs) == 0 {
 		return s, nil
 	}
-	var missingVars []string
+	var missing []string
 	for _, r := range refs {
 		envVar := ""
 		if strings.HasPrefix(r, "$") {
@@ -31,14 +31,14 @@ func dereferenceEnvVar(s string) (string, error) {
 			envVar = r[1 : len(r)-1]
 		}
 		if value, ok := os.LookupEnv(envVar); !ok {
-			missingVars = append(missingVars, envVar)
+			missing = append(missing, envVar)
 		} else {
 			s = strings.ReplaceAll(s, r, value)
 		}
 	}
-	if len(missingVars) > 0 {
-		sort.Strings(missingVars)
-		return "", fmt.Errorf("missing environment variables: %v", missingVars)
+	if len(missing) > 0 {
+		sort.Strings(missing)
+		return "", fmt.Errorf("missing environment variables: %v", missing)
 	}
 	return s, nil
 }

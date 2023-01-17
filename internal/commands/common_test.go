@@ -205,9 +205,9 @@ func TestProcessCommand(t *testing.T) {
 
 func Test_selectCommand(t *testing.T) {
 	const fnName = "selectCommand()"
-	savedMap := commandMap
+	savedMap := commands
 	defer func() {
-		commandMap = savedMap
+		commands = savedMap
 	}()
 	type args struct {
 		c    *internal.Configuration
@@ -248,7 +248,7 @@ func Test_selectCommand(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			commandMap = tt.m
+			commands = tt.m
 			gotCmd, gotCmdArgs, gotOk := selectCommand(o, tt.args.c, tt.args.args)
 			if !reflect.DeepEqual(gotCmd, tt.wantCmd) {
 				t.Errorf("%s gotCmd = %v, want %v", fnName, gotCmd, tt.wantCmd)
@@ -287,14 +287,14 @@ func Test_defaultSettings(t *testing.T) {
 	if err := internal.Mkdir(configDir); err != nil {
 		t.Errorf("%s error creating mp3 directory: %v", fnName, err)
 	}
-	savedCmdMap := commandMap
+	savedCmdMap := commands
 	savedAppData := internal.SaveEnvVarForTesting("APPDATA")
 	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting(topDir))
 	oldAppPath := internal.ApplicationPath()
 	internal.InitApplicationPath(output.NewNilBus())
 	defer func() {
 		savedAppData.RestoreForTesting()
-		commandMap = savedCmdMap
+		commands = savedCmdMap
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.SetApplicationPathForTesting(oldAppPath)
 	}()
@@ -364,9 +364,9 @@ func Test_defaultSettings(t *testing.T) {
 				content = "command:\n    nodefault: true\n"
 			}
 			if tt.cmds == nil {
-				commandMap = savedCmdMap
+				commands = savedCmdMap
 			} else {
-				commandMap = tt.cmds
+				commands = tt.cmds
 			}
 			os.Remove(filepath.Join(configDir, "defaults.yaml"))
 			if err := internal.CreateFileForTestingWithContent(configDir, "defaults.yaml", []byte(content)); err != nil {

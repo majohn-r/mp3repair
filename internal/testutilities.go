@@ -100,13 +100,13 @@ func createAlbumDirForTesting(artistDir string, albumNumber, tracks int) error {
 			return err
 		}
 	}
-	var fileNames []string
+	var names []string
 	for k := 0; k < tracks; k++ {
-		fileNames = append(fileNames, CreateTrackNameForTesting(k))
+		names = append(names, CreateTrackNameForTesting(k))
 	}
-	fileNames = append(fileNames, "album cover.jpeg")
-	for _, fileName := range fileNames {
-		if err := CreateFileForTesting(albumDir, fileName); err != nil {
+	names = append(names, "album cover.jpeg")
+	for _, name := range names {
+		if err := CreateFileForTesting(albumDir, name); err != nil {
 			return err
 		}
 	}

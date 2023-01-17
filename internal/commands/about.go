@@ -90,7 +90,7 @@ func reportAbout(o output.Bus, lines []string) {
 			max = len([]rune(s))
 		}
 	}
-	var formattedLines []string
+	var formatted []string
 	for _, s := range lines {
 		b := make([]rune, max)
 		i := 0
@@ -101,7 +101,7 @@ func reportAbout(o output.Bus, lines []string) {
 		for ; i < max; i++ {
 			b[i] = ' '
 		}
-		formattedLines = append(formattedLines, string(b))
+		formatted = append(formatted, string(b))
 	}
 	verticalLine := make([]rune, max)
 	for i := 0; i < max; i++ {
@@ -109,7 +109,7 @@ func reportAbout(o output.Bus, lines []string) {
 	}
 	header := string(verticalLine)
 	o.WriteConsole("+-%s-+\n", header)
-	for _, s := range formattedLines {
+	for _, s := range formatted {
 		o.WriteConsole("| %s |\n", s)
 	}
 	o.WriteConsole("+-%s-+\n", header)

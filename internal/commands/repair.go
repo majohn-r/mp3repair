@@ -184,10 +184,10 @@ func albumPaths(tracks []*files.Track) []string {
 	for _, t := range tracks {
 		m[t.AlbumPath()] = true
 	}
-	var result []string
+	var paths []string
 	for path := range m {
-		result = append(result, path)
+		paths = append(paths, path)
 	}
-	sort.Strings(result)
-	return result
+	sort.Strings(paths)
+	return paths
 }

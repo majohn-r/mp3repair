@@ -74,23 +74,29 @@ var logger *cronowriter.CronoWriter
 
 // InitLogging sets up logging
 func InitLogging(o output.Bus) bool {
-	var tmpFolder string
-	var found bool
-	if tmpFolder, found = os.LookupEnv("TMP"); !found {
-		if tmpFolder, found = os.LookupEnv("TEMP"); !found {
-			o.WriteCanonicalError("Neither the TMP nor TEMP environment variables are defined")
+	if tmpFolder, found := findTemp(o); !found {
+		return false
+	} else {
+		path := filepath.Join(CreateAppSpecificPath(tmpFolder), logDirName)
+		if err := os.MkdirAll(path, stdDirPermissions); err != nil {
+			WriteDirectoryCreationError(o, path, err)
 			return false
 		}
+		logger = configure(path)
+		logrus.SetOutput(logger)
+		cleanup(o, path)
 	}
-	path := filepath.Join(CreateAppSpecificPath(tmpFolder), logDirName)
-	if err := os.MkdirAll(path, stdDirPermissions); err != nil {
-		WriteDirectoryCreationError(o, path, err)
-		return false
-	}
-	logger = configure(path)
-	logrus.SetOutput(logger)
-	cleanup(o, path)
 	return true
+}
+
+func findTemp(o output.Bus) (string, bool) {
+	for _, v := range []string{"TMP", "TEMP"} {
+		if tmpFolder, found := os.LookupEnv(v); found {
+			return tmpFolder, found
+		}
+	}
+	o.WriteCanonicalError("Neither the TMP nor TEMP environment variables are defined")
+	return "", false
 }
 
 // ProductionLogger is the production implementation of the Logger interface
