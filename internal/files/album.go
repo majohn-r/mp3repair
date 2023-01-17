@@ -23,8 +23,8 @@ type Album struct {
 }
 
 func newAlbumFromFile(file fs.DirEntry, ar *Artist) *Album {
-	dirName := file.Name()
-	return NewAlbum(dirName, ar, ar.subDirectory(dirName))
+	albumName := file.Name()
+	return NewAlbum(albumName, ar, ar.subDirectory(albumName))
 }
 
 func (a *Album) copy(ar *Artist) *Album {

@@ -64,9 +64,9 @@ var (
 		Name:  "doc",
 		Usage: "generate documentation",
 		Action: func(a *goyek.A) {
-			if folders, err := codeDirs(); err == nil {
+			if dirs, err := codeDirs(); err == nil {
 				o := &bytes.Buffer{}
-				for _, f := range folders {
+				for _, f := range dirs {
 					f = f[3:]
 					if f == "build" {
 						continue

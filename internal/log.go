@@ -54,10 +54,10 @@ func cleanup(o output.Bus, path string) {
 			limit := len(times) - maxLogFiles
 			for k := 0; k < limit; k++ {
 				fileName := fileMap[times[k]].Name()
-				logFilePath := filepath.Join(path, fileName)
-				if err := os.Remove(logFilePath); err != nil {
-					LogFileDeletionFailure(o, logFilePath, err)
-					o.WriteCanonicalError("The log file %q cannot be deleted: %v", logFilePath, err)
+				logFile := filepath.Join(path, fileName)
+				if err := os.Remove(logFile); err != nil {
+					LogFileDeletionFailure(o, logFile, err)
+					o.WriteCanonicalError("The log file %q cannot be deleted: %v", logFile, err)
 				} else {
 					o.Log(output.Info, "successfully deleted file", map[string]any{
 						"directory": path,

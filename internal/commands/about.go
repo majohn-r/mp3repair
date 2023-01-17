@@ -103,11 +103,11 @@ func reportAbout(o output.Bus, lines []string) {
 		}
 		formatted = append(formatted, string(b))
 	}
-	verticalLine := make([]rune, max)
+	headerRunes := make([]rune, max)
 	for i := 0; i < max; i++ {
-		verticalLine[i] = '-'
+		headerRunes[i] = '-'
 	}
-	header := string(verticalLine)
+	header := string(headerRunes)
 	o.WriteConsole("+-%s-+\n", header)
 	for _, s := range formatted {
 		o.WriteConsole("| %s |\n", s)

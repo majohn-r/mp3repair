@@ -44,7 +44,7 @@ func logFields() map[string]any {
 
 func runCommand(o output.Bus, s *files.Search) (ok bool) {
 	logStart(o, postRepairCommandName, logFields())
-	if artists, artistsLoaded := s.Load(o); artistsLoaded {
+	if artists, loaded := s.Load(o); loaded {
 		ok = true
 		m := make(map[string]*files.Album)
 		var dirs []string

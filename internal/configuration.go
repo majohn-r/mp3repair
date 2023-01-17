@@ -28,22 +28,22 @@ type Configuration struct {
 // a pointer to a cooked Configuration instance
 func ReadConfigurationFile(o output.Bus) (c *Configuration, ok bool) {
 	path := ApplicationPath()
-	configFile := filepath.Join(path, DefaultConfigFileName)
-	if exists, err := verifyFileExists(o, configFile); err != nil {
+	file := filepath.Join(path, DefaultConfigFileName)
+	if exists, err := verifyFileExists(o, file); err != nil {
 		return
 	} else if !exists {
 		c = EmptyConfiguration()
 		ok = true
 		return
 	}
-	yfile, _ := os.ReadFile(configFile) // only probable error circumvented by verifyFileExists failure
-	if data, err := readYaml(yfile); err != nil {
+	rawYaml, _ := os.ReadFile(file) // only probable error circumvented by verifyFileExists failure
+	if data, err := readYaml(rawYaml); err != nil {
 		o.Log(output.Error, "cannot unmarshal yaml content", map[string]any{
 			"directory": path,
 			"fileName":  DefaultConfigFileName,
 			"error":     err,
 		})
-		o.WriteCanonicalError("The configuration file %q is not well-formed YAML: %v", configFile, err)
+		o.WriteCanonicalError("The configuration file %q is not well-formed YAML: %v", file, err)
 	} else {
 		c = NewConfiguration(o, data)
 		ok = true
