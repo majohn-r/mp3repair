@@ -378,7 +378,7 @@ func Test_newExportCommand(t *testing.T) {
 		},
 		"abnormal": {
 			args: args{
-				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
+				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
 					exportCommandName: map[string]any{
 						defaultsFlag:  "Beats me",
 						overwriteFlag: 12,

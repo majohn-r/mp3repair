@@ -12,8 +12,8 @@ import (
 	"github.com/majohn-r/output"
 )
 
-func Test_configureLogging(t *testing.T) {
-	const fnName = "configureLogging()"
+func Test_configure(t *testing.T) {
+	const fnName = "configure()"
 	type args struct {
 		path string
 	}
@@ -25,7 +25,7 @@ func Test_configureLogging(t *testing.T) {
 			defer func() {
 				DestroyDirectoryForTesting(fnName, tt.args.path)
 			}()
-			got := configureLogging(tt.args.path)
+			got := configure(tt.args.path)
 			if got == nil {
 				t.Errorf("%s returned nil cronoWriter.CronoWriter", fnName)
 			}
@@ -55,8 +55,8 @@ func Test_configureLogging(t *testing.T) {
 	}
 }
 
-func TestCleanupLogFiles(t *testing.T) {
-	const fnName = "CleanupLogFiles()"
+func Test_cleanup(t *testing.T) {
+	const fnName = "cleanup()"
 	type args struct {
 		path string
 	}
@@ -133,7 +133,7 @@ func TestCleanupLogFiles(t *testing.T) {
 		}
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			cleanupLogFiles(o, tt.args.path)
+			cleanup(o, tt.args.path)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)

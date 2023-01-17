@@ -50,28 +50,28 @@ func Test_NewSearchFlags(t *testing.T) {
 		"default":   {args: args{c: internal.EmptyConfiguration()}, wantTopDir: ".\\Music", wantExtension: ".mp3", wantAlbumRegex: ".*", wantArtistRegex: ".*", wantOk: true},
 		"overrides": {args: args{c: defaultConfig}, wantTopDir: ".", wantExtension: ".mpeg", wantAlbumRegex: "^.*$", wantArtistRegex: "^.*$", wantOk: true},
 		"bad default topDir": {
-			args: args{c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{"common": map[string]any{"topDir": "$FOO"}})},
+			args: args{c: internal.NewConfiguration(output.NewNilBus(), map[string]any{"common": map[string]any{"topDir": "$FOO"}})},
 			WantedRecording: output.WantedRecording{
 				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -topDir: missing environment variables: [FOO].\n",
 				Log:   "level='error' error='invalid value \"$FOO\" for flag -topDir: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
 			},
 		},
 		"bad default extension": {
-			args: args{c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{"common": map[string]any{"ext": "$FOO"}})},
+			args: args{c: internal.NewConfiguration(output.NewNilBus(), map[string]any{"common": map[string]any{"ext": "$FOO"}})},
 			WantedRecording: output.WantedRecording{
 				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -ext: missing environment variables: [FOO].\n",
 				Log:   "level='error' error='invalid value \"$FOO\" for flag -ext: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
 			},
 		},
 		"bad default album filter": {
-			args: args{c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{"common": map[string]any{"albumFilter": "$FOO"}})},
+			args: args{c: internal.NewConfiguration(output.NewNilBus(), map[string]any{"common": map[string]any{"albumFilter": "$FOO"}})},
 			WantedRecording: output.WantedRecording{
 				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -albumFilter: missing environment variables: [FOO].\n",
 				Log:   "level='error' error='invalid value \"$FOO\" for flag -albumFilter: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
 			},
 		},
 		"bad default artist filter": {
-			args: args{c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{"common": map[string]any{"artistFilter": "$FOO"}})},
+			args: args{c: internal.NewConfiguration(output.NewNilBus(), map[string]any{"common": map[string]any{"artistFilter": "$FOO"}})},
 			WantedRecording: output.WantedRecording{
 				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -artistFilter: missing environment variables: [FOO].\n",
 				Log:   "level='error' error='invalid value \"$FOO\" for flag -artistFilter: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",

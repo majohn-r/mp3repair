@@ -84,7 +84,7 @@ var (
 	}
 	// lazily initialized when needed; keys are all lowercase
 	genreIndicesMap = map[string]int{}
-	// ID3V1 tags
+	// ID3V1 fields
 	id3v1Tag      = initID3v1Field(tagOffset, tagLength)
 	id3v1Title    = initID3v1Field(titleOffset, titleLength)
 	id3v1Artist   = initID3v1Field(artistOffset, artistLength)
@@ -123,19 +123,19 @@ func newID3v1Metadata() *id3v1Metadata {
 	return &id3v1Metadata{data: make([]byte, id3v1Length)}
 }
 
-func (im *id3v1Metadata) readStringField(f id3v1Field) string {
+func (im *id3v1Metadata) readString(f id3v1Field) string {
 	return trim(string(im.data[f.startOffset:f.endOffset]))
 }
 
 func (im *id3v1Metadata) isValid() bool {
-	return im.readStringField(id3v1Tag) == "TAG"
+	return im.readString(id3v1Tag) == "TAG"
 }
 
 func (im *id3v1Metadata) title() string {
-	return im.readStringField(id3v1Title)
+	return im.readString(id3v1Title)
 }
 
-func (im *id3v1Metadata) writeStringField(s string, f id3v1Field) {
+func (im *id3v1Metadata) writeString(s string, f id3v1Field) {
 	copy(im.data[f.startOffset:f.endOffset], bytes.Repeat([]byte{0}, f.length))
 	// truncate long strings ...
 	if len(s) > f.length {
@@ -157,68 +157,68 @@ func repairName(s string) string {
 }
 
 func (im *id3v1Metadata) setTitle(s string) {
-	im.writeStringField(repairName(s), id3v1Title)
+	im.writeString(repairName(s), id3v1Title)
 }
 
 func (im *id3v1Metadata) artist() string {
-	return im.readStringField(id3v1Artist)
+	return im.readString(id3v1Artist)
 }
 
 func (im *id3v1Metadata) setArtist(s string) {
-	im.writeStringField(repairName(s), id3v1Artist)
+	im.writeString(repairName(s), id3v1Artist)
 }
 
 func (im *id3v1Metadata) album() string {
-	return im.readStringField(id3v1Album)
+	return im.readString(id3v1Album)
 }
 
 func (im *id3v1Metadata) setAlbum(s string) {
-	im.writeStringField(repairName(s), id3v1Album)
+	im.writeString(repairName(s), id3v1Album)
 }
 
 func (im *id3v1Metadata) year() string {
-	return im.readStringField(id3v1Year)
+	return im.readString(id3v1Year)
 }
 
 func (im *id3v1Metadata) setYear(s string) {
-	im.writeStringField(s, id3v1Year)
+	im.writeString(s, id3v1Year)
 }
 
 func (im *id3v1Metadata) comment() string {
-	return im.readStringField(id3v1Comment)
+	return im.readString(id3v1Comment)
 }
 
 func (im *id3v1Metadata) setComment(s string) {
-	im.writeStringField(s, id3v1Comment)
+	im.writeString(s, id3v1Comment)
 }
 
-func (im *id3v1Metadata) readByteField(f id3v1Field) int {
+func (im *id3v1Metadata) readInt(f id3v1Field) int {
 	return int(im.data[f.startOffset])
 }
 
 func (im *id3v1Metadata) track() (i int, ok bool) {
-	if im.readByteField(id3v1ZeroByte) == 0 {
-		i = im.readByteField(id3v1Track)
+	if im.readInt(id3v1ZeroByte) == 0 {
+		i = im.readInt(id3v1Track)
 		ok = true
 	}
 	return
 }
 
-func (im *id3v1Metadata) setByteField(v int, f id3v1Field) {
+func (im *id3v1Metadata) writeInt(v int, f id3v1Field) {
 	im.data[f.startOffset] = byte(v)
 }
 
 func (im *id3v1Metadata) setTrack(t int) (b bool) {
 	if t >= 1 && t <= 255 {
-		im.setByteField(0, id3v1ZeroByte)
-		im.setByteField(t, id3v1Track)
+		im.writeInt(0, id3v1ZeroByte)
+		im.writeInt(t, id3v1Track)
 		b = true
 	}
 	return
 }
 
 func (im *id3v1Metadata) genre() (string, bool) {
-	s, ok := genreMap[im.readByteField(id3v1Genre)]
+	s, ok := genreMap[im.readInt(id3v1Genre)]
 	return s, ok
 }
 
@@ -233,9 +233,9 @@ func initGenreIndices() {
 func (im *id3v1Metadata) setGenre(s string) {
 	initGenreIndices()
 	if index, ok := genreIndicesMap[strings.ToLower(s)]; !ok {
-		im.setByteField(genreIndicesMap["other"], id3v1Genre)
+		im.writeInt(genreIndicesMap["other"], id3v1Genre)
 	} else {
-		im.setByteField(index, id3v1Genre)
+		im.writeInt(index, id3v1Genre)
 	}
 }
 
@@ -283,12 +283,12 @@ func internalReadID3V1Metadata(path string, readFunc func(f *os.File, b []byte) 
 	if r, err := readFunc(file, v1.data); err != nil {
 		return nil, err
 	} else if r < id3v1Length {
-		return nil, fmt.Errorf("cannot read id3v1 tag from file %q; only %d bytes read", path, r)
+		return nil, fmt.Errorf("cannot read id3v1 metadata from file %q; only %d bytes read", path, r)
 	}
 	if v1.isValid() {
 		return v1, nil
 	}
-	return nil, fmt.Errorf("no id3v1 tag found in file %q", path)
+	return nil, fmt.Errorf("no id3v1 metadata found in file %q", path)
 }
 
 func (im *id3v1Metadata) write(path string) error {
@@ -299,7 +299,7 @@ func writeToFile(f *os.File, b []byte) (int, error) {
 	return f.Write(b)
 }
 
-func updateID3V1Tag(tM *trackMetadata, path string, sT SourceType) (err error) {
+func updateID3V1Metadata(tM *trackMetadata, path string, sT SourceType) (err error) {
 	if tM.requiresEdit[sT] {
 		var v1 *id3v1Metadata
 		if v1, err = internalReadID3V1Metadata(path, fileReader); err == nil {

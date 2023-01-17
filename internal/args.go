@@ -13,7 +13,7 @@ func ProcessArgs(o output.Bus, f *flag.FlagSet, args []string) (ok bool) {
 	ok = true
 	for i, arg := range args {
 		var err error
-		dereferencedArgs[i], err = InterpretEnvVarReferences(arg)
+		dereferencedArgs[i], err = dereferenceEnvVar(arg)
 		if err != nil {
 			o.WriteCanonicalError("The value for argument %q cannot be used: %v", arg, err)
 			o.Log(output.Error, "argument cannot be used", map[string]any{

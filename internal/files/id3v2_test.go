@@ -11,8 +11,8 @@ import (
 	"github.com/bogem/id3v2/v2"
 )
 
-func TestRawReadID3V2Tag(t *testing.T) {
-	const fnName = "RawReadID3V2Tag()"
+func Test_rawReadID3V2Metadata(t *testing.T) {
+	const fnName = "rawReadID3V2Metadata()"
 	payload := make([]byte, 0)
 	for k := 0; k < 256; k++ {
 		payload = append(payload, byte(k))
@@ -48,12 +48,12 @@ func TestRawReadID3V2Tag(t *testing.T) {
 	}
 	tests := map[string]struct {
 		args
-		wantD *id3v2TaggedTrackData
+		wantD *id3v2Metadata
 	}{
-		"bad test": {args: args{path: "./noSuchFile!.mp3"}, wantD: &id3v2TaggedTrackData{err: fmt.Errorf("foo")}},
+		"bad test": {args: args{path: "./noSuchFile!.mp3"}, wantD: &id3v2Metadata{err: fmt.Errorf("foo")}},
 		"good test": {
 			args: args{path: "./goodFile.mp3"},
-			wantD: &id3v2TaggedTrackData{
+			wantD: &id3v2Metadata{
 				album:  "unknown album",
 				artist: "unknown artist",
 				title:  "unknown track",
@@ -62,12 +62,12 @@ func TestRawReadID3V2Tag(t *testing.T) {
 		},
 		"bad data test": {
 			args:  args{path: "./badFile.mp3"},
-			wantD: &id3v2TaggedTrackData{err: malformedTrackNumberError},
+			wantD: &id3v2Metadata{err: malformedTrackNumberError},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			gotD := rawReadID3V2Tag(tt.args.path)
+			gotD := rawReadID3V2Metadata(tt.args.path)
 			if gotD.err != nil {
 				if tt.wantD.err == nil {
 					t.Errorf("%s = %v, want %v", fnName, gotD, tt.wantD)
@@ -258,8 +258,8 @@ func Test_readID3V2Metadata(t *testing.T) {
 	}
 }
 
-func Test_stringifyFramerArray(t *testing.T) {
-	const fnName = "stringifyFramerArray()"
+func Test_framerSliceAsString(t *testing.T) {
+	const fnName = "framerSliceAsString()"
 	type args struct {
 		f []id3v2.Framer
 	}
@@ -276,7 +276,7 @@ func Test_stringifyFramerArray(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := stringifyFramerArray(tt.args.f); got != tt.want {
+			if got := framerSliceAsString(tt.args.f); got != tt.want {
 				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
 			}
 		})

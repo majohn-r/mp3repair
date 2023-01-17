@@ -237,7 +237,7 @@ func Test_selectCommand(t *testing.T) {
 			},
 		},
 		"unfortunate defaults": {
-			args: args{c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{"list": map[string]any{"includeTracks": "no!!"}})},
+			args: args{c: internal.NewConfiguration(output.NewNilBus(), map[string]any{"list": map[string]any{"includeTracks": "no!!"}})},
 			m:    map[string]commandData{"list": {isDefault: true, init: newList}},
 			WantedRecording: output.WantedRecording{
 				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"list\": invalid boolean value \"no!!\" for -includeTracks: parse error.\n",

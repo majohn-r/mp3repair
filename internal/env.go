@@ -17,10 +17,7 @@ func CreateAppSpecificPath(topDir string) string {
 	return filepath.Join(topDir, AppName)
 }
 
-// InterpretEnvVarReferences looks up environment variable references in the
-// provided string and substitutes the specified environment variable value into
-// the string
-func InterpretEnvVarReferences(s string) (string, error) {
+func dereferenceEnvVar(s string) (string, error) {
 	refs := findReferences(s)
 	if len(refs) == 0 {
 		return s, nil

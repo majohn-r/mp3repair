@@ -12,7 +12,7 @@ const appDataVar = "APPDATA"
 
 // InitApplicationPath ensures that the application path exists
 func InitApplicationPath(o output.Bus) (initialized bool) {
-	if dir, ok := lookupAppData(o); ok {
+	if dir, ok := appDataValue(o); ok {
 		applicationPath = CreateAppSpecificPath(dir)
 		if DirExists(applicationPath) {
 			initialized = true
@@ -43,7 +43,7 @@ func SetApplicationPathForTesting(s string) (previous string) {
 	return
 }
 
-func lookupAppData(o output.Bus) (string, bool) {
+func appDataValue(o output.Bus) (string, bool) {
 	if value, ok := os.LookupEnv(appDataVar); ok {
 		return value, ok
 	}

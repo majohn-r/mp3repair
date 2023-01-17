@@ -217,7 +217,7 @@ func Test_newPostRepairCommand(t *testing.T) {
 		},
 		"failure": {
 			args: args{
-				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
+				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
 					"common": map[string]any{
 						"topDir": "%FOO%",
 					},

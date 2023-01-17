@@ -45,7 +45,7 @@ func ReadConfigurationFile(o output.Bus) (c *Configuration, ok bool) {
 		})
 		o.WriteCanonicalError("The configuration file %q is not well-formed YAML: %v", configFile, err)
 	} else {
-		c = CreateConfiguration(o, data)
+		c = NewConfiguration(o, data)
 		ok = true
 		o.Log(output.Info, "read configuration file", map[string]any{
 			"directory": path,
@@ -142,7 +142,7 @@ func (c *Configuration) BoolDefault(key string, defaultValue bool) (b bool, err 
 			// True values may be specified as "t", "T", "true", "TRUE", or "True"
 			// False values may be specified as "f", "F", "false", "FALSE", or "False"_."
 			if value, ok := c.sMap[key]; ok {
-				rawValue, dereferenceErr := InterpretEnvVarReferences(value)
+				rawValue, dereferenceErr := dereferenceEnvVar(value)
 				if dereferenceErr == nil {
 					if cookedValue, e := strconv.ParseBool(rawValue); e == nil {
 						b = cookedValue
@@ -182,16 +182,16 @@ func NewIntBounds(v1, v2, v3 int) *IntBounds {
 
 // IntDefault returns a default value for a specified key, which may or may not
 // be defined in the Configuration instance
-func (c *Configuration) IntDefault(key string, bounds *IntBounds) (i int, err error) {
-	i = bounds.defaultValue
+func (c *Configuration) IntDefault(key string, b *IntBounds) (i int, err error) {
+	i = b.defaultValue
 	if value, ok := c.iMap[key]; ok {
-		i = constrainedValue(value, bounds)
+		i = b.constrainedValue(value)
 	} else {
 		if value, ok := c.sMap[key]; ok {
-			rawValue, dereferenceErr := InterpretEnvVarReferences(value)
+			rawValue, dereferenceErr := dereferenceEnvVar(value)
 			if dereferenceErr == nil {
 				if cookedValue, e := strconv.Atoi(rawValue); e == nil {
-					i = constrainedValue(cookedValue, bounds)
+					i = b.constrainedValue(cookedValue)
 				} else {
 					// note: deliberately imitating flags behavior when parsing an
 					// invalid int
@@ -205,12 +205,12 @@ func (c *Configuration) IntDefault(key string, bounds *IntBounds) (i int, err er
 	return
 }
 
-func constrainedValue(value int, sortedBounds *IntBounds) (i int) {
+func (b *IntBounds) constrainedValue(value int) (i int) {
 	switch {
-	case value < sortedBounds.minValue:
-		i = sortedBounds.minValue
-	case value > sortedBounds.maxValue:
-		i = sortedBounds.maxValue
+	case value < b.minValue:
+		i = b.minValue
+	case value > b.maxValue:
+		i = b.maxValue
 	default:
 		i = value
 	}
@@ -220,10 +220,10 @@ func constrainedValue(value int, sortedBounds *IntBounds) (i int) {
 // StringDefault returns a string value for a specified key
 func (c *Configuration) StringDefault(key, defaultValue string) (s string, err error) {
 	var dereferenceErr error
-	s, dereferenceErr = InterpretEnvVarReferences(defaultValue)
+	s, dereferenceErr = dereferenceEnvVar(defaultValue)
 	if dereferenceErr == nil {
 		if value, ok := c.sMap[key]; ok {
-			s, dereferenceErr = InterpretEnvVarReferences(value)
+			s, dereferenceErr = dereferenceEnvVar(value)
 			if dereferenceErr != nil {
 				err = fmt.Errorf("invalid value %q for flag -%s: %v", value, key, dereferenceErr)
 				s = ""
@@ -243,9 +243,9 @@ func (c *Configuration) StringValue(key string) (value string, ok bool) {
 	return
 }
 
-// CreateConfiguration returns a Configuration instance populated as specified
-// by the data parameter
-func CreateConfiguration(o output.Bus, data map[string]any) *Configuration {
+// NewConfiguration returns a Configuration instance populated as specified by
+// the data parameter
+func NewConfiguration(o output.Bus, data map[string]any) *Configuration {
 	c := EmptyConfiguration()
 	for key, v := range data {
 		switch t := v.(type) {
@@ -256,7 +256,7 @@ func CreateConfiguration(o output.Bus, data map[string]any) *Configuration {
 		case int:
 			c.iMap[key] = t
 		case map[string]any:
-			c.cMap[key] = CreateConfiguration(o, t)
+			c.cMap[key] = NewConfiguration(o, t)
 		default:
 			o.Log(output.Error, "unexpected value type", map[string]any{
 				"key":   key,

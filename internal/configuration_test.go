@@ -478,8 +478,8 @@ func TestConfiguration_IntDefault(t *testing.T) {
 	}
 }
 
-func Test_createConfiguration(t *testing.T) {
-	const fnName = "createConfiguration()"
+func TestNewConfiguration(t *testing.T) {
+	const fnName = "NewConfiguration()"
 	type args struct {
 		data map[string]any
 	}
@@ -513,7 +513,7 @@ func Test_createConfiguration(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			if got := CreateConfiguration(o, tt.args.data); !reflect.DeepEqual(got, tt.want) {
+			if got := NewConfiguration(o, tt.args.data); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {

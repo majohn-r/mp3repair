@@ -146,7 +146,7 @@ func (r *resetDatabase) runCommand(o output.Bus, connect func() (serviceGateway,
 		"-" + metadataFlag:  *r.metadata,
 		"-" + extensionFlag: *r.extension,
 	})
-	if !r.stopService(o, connect) {
+	if !r.stop(o, connect) {
 		return
 	}
 	return r.deleteMetadata(o)
@@ -194,9 +194,9 @@ func (r *resetDatabase) filterMetadataFiles(files []fs.DirEntry) []string {
 
 // returns true unless the service was detected in a running state and could not
 // be stopped within the specified timeout
-func (r *resetDatabase) stopService(o output.Bus, connect func() (serviceGateway, error)) bool {
+func (r *resetDatabase) stop(o output.Bus, connect func() (serviceGateway, error)) bool {
 	// this is a privileged operation and fails if the user is not an administrator
-	if sM, s := r.openService(o, connect); s == nil {
+	if sM, s := r.open(o, connect); s == nil {
 		// something unhappy happened, but, fine, we're done and we're not preventing progress
 		return true
 	} else {
@@ -209,7 +209,7 @@ func (r *resetDatabase) stopService(o output.Bus, connect func() (serviceGateway
 			return true
 		} else {
 			if status.State == svc.Stopped {
-				r.logServiceStopped(o)
+				r.reportServiceStopped(o)
 				return true
 			}
 			ok := status.State != svc.Running
@@ -244,27 +244,27 @@ func (r *resetDatabase) makeServiceErrorFields(s string, e error) map[string]any
 	}
 }
 
-func (r *resetDatabase) logServiceStopped(o output.Bus) {
+func (r *resetDatabase) reportServiceStopped(o output.Bus) {
 	o.Log(output.Info, "service status", map[string]any{
 		"service": *r.service,
 		"status":  "stopped",
 	})
 }
 
-func (r *resetDatabase) openService(o output.Bus, connect func() (serviceGateway, error)) (sM serviceGateway, s service) {
+func (r *resetDatabase) open(o output.Bus, connect func() (serviceGateway, error)) (sM serviceGateway, s service) {
 	var err error
 	if sM, err = connect(); err != nil {
 		o.WriteCanonicalError("The service manager cannot be accessed. Try running the program again as an administrator. Error: %v", err)
 		logServiceManagerIssue(o, "connect to service manager", err)
 	} else {
-		if s, err = sM.openService(*r.service); err != nil {
+		if s, err = sM.open(*r.service); err != nil {
 			o.WriteCanonicalError("The service %q cannot be opened: %v", *r.service, err)
 			logServiceIssue(o, r.makeServiceErrorFields("open service", err))
 			if services, err := sM.manager().ListServices(); err != nil {
 				o.WriteCanonicalError("The list of available services cannot be obtained: %v", err)
 				logServiceManagerIssue(o, "list services", err)
 			} else {
-				listAvailableServices(o, sM, services)
+				listServices(o, sM, services)
 			}
 			_ = sM.manager().Disconnect()
 			sM = nil
@@ -283,7 +283,7 @@ func logServiceManagerIssue(o output.Bus, operation string, e error) {
 
 func (r *resetDatabase) waitForStop(o output.Bus, s service, status svc.Status, timeout time.Time, checkFreq time.Duration) (ok bool) {
 	if status.State == svc.Stopped {
-		r.logServiceStopped(o)
+		r.reportServiceStopped(o)
 		ok = true
 		return
 	}
@@ -300,14 +300,14 @@ func (r *resetDatabase) waitForStop(o output.Bus, s service, status svc.Status, 
 			r.reportServiceQueryIssue(o, err)
 			break
 		} else if status.State == svc.Stopped {
-			r.logServiceStopped(o)
+			r.reportServiceStopped(o)
 			ok = true
 		}
 	}
 	return
 }
 
-func listAvailableServices(o output.Bus, sM serviceGateway, services []string) {
+func listServices(o output.Bus, sM serviceGateway, services []string) {
 	o.WriteConsole("The following services are available:\n")
 	if len(services) == 0 {
 		o.WriteConsole("  - none -\n")
@@ -316,7 +316,7 @@ func listAvailableServices(o output.Bus, sM serviceGateway, services []string) {
 	sort.Strings(services)
 	m := map[string][]string{}
 	for _, svc := range services {
-		if s, err := sM.openService(svc); err == nil {
+		if s, err := sM.open(svc); err == nil {
 			if status, err := s.Query(); err == nil {
 				key := stateToStatus[status.State]
 				m[key] = append(m[key], svc)
@@ -362,7 +362,7 @@ type manager interface {
 // a specific struct and its OpenService call cannot be easily forced into a
 // generic call
 type serviceGateway interface {
-	openService(string) (service, error)
+	open(string) (service, error)
 	manager() manager
 }
 
@@ -370,7 +370,7 @@ type sysMgr struct {
 	m *mgr.Mgr
 }
 
-func (s *sysMgr) openService(name string) (service, error) {
+func (s *sysMgr) open(name string) (service, error) {
 	return s.m.OpenService(name)
 }
 

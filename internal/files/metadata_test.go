@@ -56,7 +56,7 @@ func Test_trackMetadata_setId3v1Values(t *testing.T) {
 func Test_trackMetadata_setId3v2Values(t *testing.T) {
 	const fnName = "trackMetadata.setId3v1Values()"
 	type args struct {
-		d *id3v2TaggedTrackData
+		d *id3v2Metadata
 	}
 	tests := map[string]struct {
 		tM *trackMetadata
@@ -66,7 +66,7 @@ func Test_trackMetadata_setId3v2Values(t *testing.T) {
 		"complete test": {
 			tM: newTrackMetadata(),
 			args: args{
-				d: &id3v2TaggedTrackData{
+				d: &id3v2Metadata{
 					album:             "Great album",
 					artist:            "Great artist",
 					title:             "Great track",
@@ -180,7 +180,7 @@ func Test_readMetadata(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		"no tags": {
+		"no metadata": {
 			args: args{path: filepath.Join(testDir, taglessFile)},
 			want: &trackMetadata{
 				album:             []string{"", "", ""},
@@ -206,7 +206,7 @@ func Test_readMetadata(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		"only id3v1 tag": {
+		"only id3v1 metadata": {
 			args: args{path: filepath.Join(testDir, id3v1OnlyFile)},
 			want: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
@@ -228,7 +228,7 @@ func Test_readMetadata(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		"only id3v2 tag": {
+		"only id3v2 metadata": {
 			args: args{path: filepath.Join(testDir, id3v2OnlyFile)},
 			want: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
@@ -239,7 +239,7 @@ func Test_readMetadata(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -250,7 +250,7 @@ func Test_readMetadata(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		"both tags": {
+		"all metadata": {
 			args: args{path: filepath.Join(testDir, completeFile)},
 			want: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
@@ -395,7 +395,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 			},
 			want: false,
 		},
-		"after reading no tags": {
+		"after reading no metadata": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -421,7 +421,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 			},
 			want: false,
 		},
-		"after reading only id3v1 tag": {
+		"after reading only id3v1 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -443,7 +443,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 			},
 			want: true,
 		},
-		"after reading only id3v2 tag": {
+		"after reading only id3v2 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -453,7 +453,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -465,7 +465,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 			},
 			want: true,
 		},
-		"after reading both tags": {
+		"after reading all metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -503,7 +503,7 @@ func Test_trackMetadata_canonicalArtist(t *testing.T) {
 		tM   *trackMetadata
 		want string
 	}{
-		"after reading only id3v1 tag": {
+		"after reading only id3v1 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -525,7 +525,7 @@ func Test_trackMetadata_canonicalArtist(t *testing.T) {
 			},
 			want: "The Beatles",
 		},
-		"after reading only id3v2 tag": {
+		"after reading only id3v2 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -535,7 +535,7 @@ func Test_trackMetadata_canonicalArtist(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -547,7 +547,7 @@ func Test_trackMetadata_canonicalArtist(t *testing.T) {
 			},
 			want: "unknown artist",
 		},
-		"after reading both tags": {
+		"after reading all metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -585,7 +585,7 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 		tM   *trackMetadata
 		want string
 	}{
-		"after reading only id3v1 tag": {
+		"after reading only id3v1 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -607,7 +607,7 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 			},
 			want: "On Air: Live At The BBC, Volum",
 		},
-		"after reading only id3v2 tag": {
+		"after reading only id3v2 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -617,7 +617,7 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -629,7 +629,7 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 			},
 			want: "unknown album",
 		},
-		"after reading both tags": {
+		"after reading all metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -667,7 +667,7 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 		tM   *trackMetadata
 		want string
 	}{
-		"after reading only id3v1 tag": {
+		"after reading only id3v1 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -689,7 +689,7 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 			},
 			want: "Other",
 		},
-		"after reading only id3v2 tag": {
+		"after reading only id3v2 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -699,7 +699,7 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -711,7 +711,7 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 			},
 			want: "dance music",
 		},
-		"after reading both tags": {
+		"after reading all metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -749,7 +749,7 @@ func Test_trackMetadata_canonicalYear(t *testing.T) {
 		tM   *trackMetadata
 		want string
 	}{
-		"after reading only id3v1 tag": {
+		"after reading only id3v1 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -771,7 +771,7 @@ func Test_trackMetadata_canonicalYear(t *testing.T) {
 			},
 			want: "2013",
 		},
-		"after reading only id3v2 tag": {
+		"after reading only id3v2 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -781,7 +781,7 @@ func Test_trackMetadata_canonicalYear(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -793,7 +793,7 @@ func Test_trackMetadata_canonicalYear(t *testing.T) {
 			},
 			want: "2022",
 		},
-		"after reading both tags": {
+		"after reading all metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -831,7 +831,7 @@ func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
 		tM   *trackMetadata
 		want id3v2.UnknownFrame
 	}{
-		"after reading only id3v1 tag": {
+		"after reading only id3v1 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -853,7 +853,7 @@ func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
 			},
 			want: id3v2.UnknownFrame{},
 		},
-		"after reading only id3v2 tag": {
+		"after reading only id3v2 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -863,7 +863,7 @@ func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -875,7 +875,7 @@ func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
 			},
 			want: id3v2.UnknownFrame{Body: []byte{0}},
 		},
-		"after reading both tags": {
+		"after reading all metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -943,7 +943,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 				fmt.Errorf("open readMetadata\\no such file.mp3: The system cannot find the file specified."),
 			},
 		},
-		"after reading no tags": {
+		"after reading no metadata": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -972,7 +972,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 				fmt.Errorf("zero length"),
 			},
 		},
-		"after reading only id3v1 tag": {
+		"after reading only id3v1 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -994,7 +994,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 			},
 			want: []error{fmt.Errorf("zero length")},
 		},
-		"after reading only id3v2 tag": {
+		"after reading only id3v2 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -1004,7 +1004,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1014,9 +1014,9 @@ func Test_trackMetadata_errors(t *testing.T) {
 				correctedMusicCDIdentifier: id3v2.UnknownFrame{},
 				requiresEdit:               []bool{false, false, false},
 			},
-			want: []error{fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\"")},
+			want: []error{fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\"")},
 		},
-		"after reading both tags": {
+		"after reading all metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -1109,7 +1109,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		"after reading no tags": {
+		"after reading no metadata": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -1159,7 +1159,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		"after reading only id3v1 tag": {
+		"after reading only id3v1 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -1201,7 +1201,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, true, false},
 			},
 		},
-		"after reading only id3v2 tag": {
+		"after reading only id3v2 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -1211,7 +1211,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1232,7 +1232,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1243,7 +1243,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, true},
 			},
 		},
-		"after reading both tags": {
+		"after reading all metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -1359,7 +1359,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		"after reading no tags": {
+		"after reading no metadata": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -1409,7 +1409,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		"after reading only id3v1 tag": {
+		"after reading only id3v1 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -1451,7 +1451,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, true, false},
 			},
 		},
-		"after reading only id3v2 tag": {
+		"after reading only id3v2 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -1461,7 +1461,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1482,7 +1482,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", "track name"},
@@ -1493,7 +1493,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, true},
 			},
 		},
-		"after reading both tags": {
+		"after reading all metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -1651,7 +1651,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		"after reading no tags": {
+		"after reading no metadata": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -1701,7 +1701,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		"after reading only id3v1 tag": {
+		"after reading only id3v1 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -1743,7 +1743,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, true, false},
 			},
 		},
-		"after reading only id3v2 tag": {
+		"after reading only id3v2 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -1753,7 +1753,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1774,7 +1774,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", "album name"},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -1785,7 +1785,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, true},
 			},
 		},
-		"after reading both tags": {
+		"after reading all metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -1901,7 +1901,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		"after reading no tags": {
+		"after reading no metadata": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -1951,7 +1951,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		"after reading only id3v1 tag": {
+		"after reading only id3v1 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -1993,7 +1993,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, true, false},
 			},
 		},
-		"after reading only id3v2 tag": {
+		"after reading only id3v2 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -2003,7 +2003,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2024,7 +2024,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", "artist name"},
 				correctedTitle:             []string{"", "", ""},
@@ -2035,7 +2035,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, true},
 			},
 		},
-		"after reading both tags": {
+		"after reading all metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -2151,7 +2151,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		"after reading no tags": {
+		"after reading no metadata": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -2201,7 +2201,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		"after reading only id3v1 tag": {
+		"after reading only id3v1 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -2243,7 +2243,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		"after reading only id3v2 tag": {
+		"after reading only id3v2 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -2253,7 +2253,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2274,7 +2274,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2285,7 +2285,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, true},
 			},
 		},
-		"after reading both tags": {
+		"after reading all metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -2401,7 +2401,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		"after reading no tags": {
+		"after reading no metadata": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -2451,7 +2451,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		"after reading only id3v1 tag": {
+		"after reading only id3v1 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -2493,7 +2493,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, true, false},
 			},
 		},
-		"after reading only id3v2 tag": {
+		"after reading only id3v2 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -2503,7 +2503,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2524,7 +2524,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2535,7 +2535,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, true},
 			},
 		},
-		"after reading both tags": {
+		"after reading all metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -2651,7 +2651,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		"after reading no tags": {
+		"after reading no metadata": {
 			tM: &trackMetadata{
 				album:             []string{"", "", ""},
 				artist:            []string{"", "", ""},
@@ -2701,7 +2701,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		"after reading only id3v1 tag": {
+		"after reading only id3v1 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -2743,7 +2743,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, false},
 			},
 		},
-		"after reading only id3v2 tag": {
+		"after reading only id3v2 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -2753,7 +2753,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2774,7 +2774,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2785,7 +2785,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				requiresEdit:               []bool{false, false, true},
 			},
 		},
-		"after reading both tags": {
+		"after reading all metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -2850,7 +2850,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 		args
 		want bool
 	}{
-		"mismatch after reading only id3v1 tag": {
+		"mismatch after reading only id3v1 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -2873,7 +2873,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 			args: args{albumTitle: "album name"},
 			want: false,
 		},
-		"mismatch after reading only id3v2 tag": {
+		"mismatch after reading only id3v2 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -2883,7 +2883,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2896,7 +2896,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 			args: args{albumTitle: "album name"},
 			want: false,
 		},
-		"mismatch after reading both tags": {
+		"mismatch after reading all metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -2919,7 +2919,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 			args: args{albumTitle: "album name"},
 			want: false,
 		},
-		"match after reading only id3v1 tag": {
+		"match after reading only id3v1 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -2942,7 +2942,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 			args: args{albumTitle: "On Air: Live At The BBC, Volume 1"},
 			want: true,
 		},
-		"match after reading only id3v2 tag": {
+		"match after reading only id3v2 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -2952,7 +2952,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -2965,7 +2965,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 			args: args{albumTitle: "unknown album"},
 			want: true,
 		},
-		"match after reading both tags": {
+		"match after reading all metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -3008,7 +3008,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 		args
 		want bool
 	}{
-		"mismatch after reading only id3v1 tag": {
+		"mismatch after reading only id3v1 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -3031,7 +3031,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 			args: args{artistName: "artist name"},
 			want: false,
 		},
-		"mismatch after reading only id3v2 tag": {
+		"mismatch after reading only id3v2 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -3041,7 +3041,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -3054,7 +3054,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 			args: args{artistName: "artist name"},
 			want: false,
 		},
-		"mismatch after reading both tags": {
+		"mismatch after reading all metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},
@@ -3077,7 +3077,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 			args: args{artistName: "artist name"},
 			want: false,
 		},
-		"match after reading only id3v1 tag": {
+		"match after reading only id3v1 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				artist:                     []string{"", "The Beatles", ""},
@@ -3100,7 +3100,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 			args: args{artistName: "The Beatles"},
 			want: true,
 		},
-		"match after reading only id3v2 tag": {
+		"match after reading only id3v2 metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "", "unknown album"},
 				artist:                     []string{"", "", "unknown artist"},
@@ -3110,7 +3110,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 				track:                      []int{0, 0, 2},
 				musicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:              ID3V2,
-				err:                        []error{nil, fmt.Errorf("no id3v1 tag found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
+				err:                        []error{nil, fmt.Errorf("no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""), nil},
 				correctedAlbum:             []string{"", "", ""},
 				correctedArtist:            []string{"", "", ""},
 				correctedTitle:             []string{"", "", ""},
@@ -3123,7 +3123,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 			args: args{artistName: "unknown artist"},
 			want: true,
 		},
-		"match after reading both tags": {
+		"match after reading all metadata": {
 			tM: &trackMetadata{
 				album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				artist:                     []string{"", "The Beatles", "unknown artist"},

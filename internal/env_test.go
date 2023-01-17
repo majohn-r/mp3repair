@@ -28,8 +28,8 @@ func Test_findReferences(t *testing.T) {
 	}
 }
 
-func TestInterpretEnvVarReferences(t *testing.T) {
-	const fnName = "InterpretEnvVarReferences()"
+func Test_dereferenceEnvVar(t *testing.T) {
+	const fnName = "dereferenceEnvVar()"
 	originalExtension := os.Getenv("EXTENSION")
 	originalFileName := os.Getenv("FILENAME")
 	originalPath := os.Getenv("PATH")
@@ -68,7 +68,7 @@ func TestInterpretEnvVarReferences(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, gotErr := InterpretEnvVarReferences(tt.args.s)
+			got, gotErr := dereferenceEnvVar(tt.args.s)
 			if (gotErr != nil) != tt.wantErr {
 				t.Errorf("%s gotErr %v wantErr %t", fnName, gotErr, tt.wantErr)
 			}

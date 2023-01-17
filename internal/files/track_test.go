@@ -557,9 +557,9 @@ func TestTrack_ID3V1Diagnostics(t *testing.T) {
 	}
 }
 
-func TestTrack_readTags(t *testing.T) {
-	const fnName = "track.readTags()"
-	testDir := "readTags"
+func TestTrack_loadMetadata(t *testing.T) {
+	const fnName = "track.loadMetadata()"
+	testDir := "loadMetadata"
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
@@ -616,7 +616,7 @@ func TestTrack_readTags(t *testing.T) {
 			bar := pb.New(1)
 			bar.SetWriter(output.NewNilBus().ErrorWriter())
 			bar.Start()
-			tt.t.readTags(bar)
+			tt.t.loadMetadata(bar)
 			waitForFilesClosed()
 			bar.Finish()
 			if !reflect.DeepEqual(tt.t.tM, tt.want) {
@@ -752,7 +752,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 		t    *Track
 		want []string
 	}{
-		"unread tags": {t: &Track{tM: nil}, want: []string{"differences cannot be determined: metadata has not been read"}},
+		"unread metadata": {t: &Track{tM: nil}, want: []string{"differences cannot be determined: metadata has not been read"}},
 		"track with error": {
 			t:    &Track{tM: &trackMetadata{err: []error{nil, fmt.Errorf("oops"), fmt.Errorf("oops")}}},
 			want: []string{"differences cannot be determined: there was an error reading metadata"},
@@ -780,9 +780,9 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	}
 }
 
-func TestTrack_EditTags(t *testing.T) {
-	const fnName = "Track.EditTags()"
-	testDir := "editTags"
+func TestTrack_UpdateMetadata(t *testing.T) {
+	const fnName = "Track.UpdateMetadata()"
+	testDir := "updateMetadata"
 	if err := internal.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
@@ -893,8 +893,8 @@ func TestTrack_EditTags(t *testing.T) {
 		"error checking": {
 			t: deletedTrack,
 			wantE: []string{
-				"open editTags\\no such file: The system cannot find the file specified.",
-				"open editTags\\no such file: The system cannot find the file specified.",
+				"open updateMetadata\\no such file: The system cannot find the file specified.",
+				"open updateMetadata\\no such file: The system cannot find the file specified.",
 			},
 		},
 		"no edit required": {t: &Track{tM: nil}, wantE: []string{noEditNeededError.Error()}},
@@ -902,7 +902,7 @@ func TestTrack_EditTags(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			gotE := tt.t.EditTags()
+			gotE := tt.t.UpdateMetadata()
 			var eStrings []string
 			for _, e := range gotE {
 				eStrings = append(eStrings, e.Error())

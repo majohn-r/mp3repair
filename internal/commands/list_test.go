@@ -764,7 +764,7 @@ func Test_newListCommand(t *testing.T) {
 		},
 		"bad default for includeAlbums": {
 			args: args{
-				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
+				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
 						"includeAlbums": "nope",
 					},
@@ -777,7 +777,7 @@ func Test_newListCommand(t *testing.T) {
 		},
 		"bad default for includeArtists": {
 			args: args{
-				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
+				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
 						"includeArtists": "yes",
 					},
@@ -790,7 +790,7 @@ func Test_newListCommand(t *testing.T) {
 		},
 		"bad default for includeTracks": {
 			args: args{
-				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
+				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
 						"includeTracks": "sure",
 					},
@@ -803,7 +803,7 @@ func Test_newListCommand(t *testing.T) {
 		},
 		"bad default for annotate": {
 			args: args{
-				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
+				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
 						"annotate": "+2",
 					},
@@ -816,7 +816,7 @@ func Test_newListCommand(t *testing.T) {
 		},
 		"bad default for details": {
 			args: args{
-				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
+				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
 						"details": "no!",
 					},
@@ -829,7 +829,7 @@ func Test_newListCommand(t *testing.T) {
 		},
 		"bad default for diagnostics": {
 			args: args{
-				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
+				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
 						"diagnostic": "no!",
 					},
@@ -842,7 +842,7 @@ func Test_newListCommand(t *testing.T) {
 		},
 		"bad default for sorting": {
 			args: args{
-				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
+				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
 						"sort": "$FOO",
 					},

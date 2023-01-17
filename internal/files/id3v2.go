@@ -8,7 +8,7 @@ import (
 	"github.com/bogem/id3v2/v2"
 )
 
-type id3v2TaggedTrackData struct {
+type id3v2Metadata struct {
 	album             string
 	artist            string
 	title             string
@@ -23,8 +23,8 @@ func readID3V2Tag(path string) (*id3v2.Tag, error) {
 	return id3v2.Open(path, id3v2.Options{Parse: true, ParseFrames: nil})
 }
 
-func rawReadID3V2Tag(path string) (d *id3v2TaggedTrackData) {
-	d = &id3v2TaggedTrackData{}
+func rawReadID3V2Metadata(path string) (d *id3v2Metadata) {
+	d = &id3v2Metadata{}
 	if tag, err := readID3V2Tag(path); err != nil {
 		d.err = err
 	} else {
@@ -132,7 +132,7 @@ func selectUnknownFrame(mcdiFramers []id3v2.Framer) id3v2.UnknownFrame {
 	return id3v2.UnknownFrame{Body: []byte{0}}
 }
 
-func updateID3V2Tag(tM *trackMetadata, path string, sT SourceType) (e error) {
+func updateID3V2Metadata(tM *trackMetadata, path string, sT SourceType) (e error) {
 	if tM.requiresEdit[sT] {
 		if tag, err := readID3V2Tag(path); err != nil {
 			e = err
@@ -203,7 +203,7 @@ func readID3V2Metadata(path string) (version byte, encoding string, frameStrings
 			if strings.HasPrefix(n, "T") {
 				value = removeLeadingBOMs(tag.GetTextFrame(n).Text)
 			} else {
-				value = stringifyFramerArray(frameMap[n])
+				value = framerSliceAsString(frameMap[n])
 			}
 			frame := &id3v2TrackFrame{name: n, value: value}
 			frameStrings = append(frameStrings, frame.String())
@@ -213,7 +213,7 @@ func readID3V2Metadata(path string) (version byte, encoding string, frameStrings
 	return
 }
 
-func stringifyFramerArray(f []id3v2.Framer) string {
+func framerSliceAsString(f []id3v2.Framer) string {
 	var substrings []string
 	if len(f) == 1 {
 		if data, ok := f[0].(id3v2.UnknownFrame); ok {
@@ -236,7 +236,7 @@ func stringifyFramerArray(f []id3v2.Framer) string {
 func id3v2NameDiffers(cS comparableStrings) bool {
 	externalName := strings.ToLower(cS.externalName)
 	metadataName := strings.ToLower(cS.metadataName)
-	// strip off illegal end characters from the tag
+	// strip off trailing space from the metadata value
 	for strings.HasSuffix(metadataName, " ") {
 		metadataName = metadataName[:len(metadataName)-1]
 	}

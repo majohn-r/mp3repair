@@ -58,7 +58,7 @@ func Test_newRepairCommand(t *testing.T) {
 		},
 		"bad dryRun default": {
 			args: args{
-				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
+				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
 					"repair": map[string]any{
 						"dryRun": 42,
 					},
@@ -230,10 +230,10 @@ func Test_repair_Exec(t *testing.T) {
 					"         1 \"new track\" need to repair track numbering; track name; album name; artist name;\n",
 				}, "\n"),
 				Error: "Reading track metadata.\n" +
-					"An error occurred when trying to read ID3V1 metadata for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
+					"An error occurred when trying to read ID3V1 metadata for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 metadata found in file \\\"realContent\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
 				Log: "level='info' -dryRun='true' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent' msg='reading filtered music files'\n" +
-					"level='error' error='no id3v1 tag found in file \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\"' metadata='ID3V1' track='realContent\\new artist\\new album\\01 new track.mp3' msg='metadata read error'\n",
+					"level='error' error='no id3v1 metadata found in file \"realContent\\\\new artist\\\\new album\\\\01 new track.mp3\"' metadata='ID3V1' track='realContent\\new artist\\new album\\01 new track.mp3' msg='metadata read error'\n",
 			},
 		},
 		"real repair, usable content": {
@@ -243,10 +243,10 @@ func Test_repair_Exec(t *testing.T) {
 				Console: "The track \"realContent2\\\\new artist\\\\new album\\\\01 new track.mp3\" has been backed up to \"realContent2\\\\new artist\\\\new album\\\\pre-repair-backup\\\\1.mp3\".\n" +
 					"\"realContent2\\\\new artist\\\\new album\\\\01 new track.mp3\" repaired.\n",
 				Error: "Reading track metadata.\n" +
-					"An error occurred when trying to read ID3V1 metadata for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 tag found in file \\\"realContent2\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
+					"An error occurred when trying to read ID3V1 metadata for track \"new track\" on album \"new album\" by artist \"new artist\": \"no id3v1 metadata found in file \\\"realContent2\\\\\\\\new artist\\\\\\\\new album\\\\\\\\01 new track.mp3\\\"\".\n",
 				Log: "level='info' -dryRun='false' command='repair' msg='executing command'\n" +
 					"level='info' -albumFilter='.*' -artistFilter='.*' -ext='.mp3' -topDir='realContent2' msg='reading filtered music files'\n" +
-					"level='error' error='no id3v1 tag found in file \"realContent2\\\\new artist\\\\new album\\\\01 new track.mp3\"' metadata='ID3V1' track='realContent2\\new artist\\new album\\01 new track.mp3' msg='metadata read error'\n" +
+					"level='error' error='no id3v1 metadata found in file \"realContent2\\\\new artist\\\\new album\\\\01 new track.mp3\"' metadata='ID3V1' track='realContent2\\new artist\\new album\\01 new track.mp3' msg='metadata read error'\n" +
 					"level='info' fileName='appPath\\metadata.dirty' msg='metadata dirty file written'\n",
 			},
 		},

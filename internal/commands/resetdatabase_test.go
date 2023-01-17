@@ -61,15 +61,15 @@ func (tM *testManager) manager() manager {
 	return tM
 }
 
-func (tM *testManager) openService(name string) (service, error) {
+func (tM *testManager) open(name string) (service, error) {
 	if s, ok := tM.m[name]; ok {
 		return s, nil
 	}
 	return nil, fmt.Errorf("access denied")
 }
 
-func Test_listAvailableServices(t *testing.T) {
-	const fnName = "listAvailableServices()"
+func Test_listServices(t *testing.T) {
+	const fnName = "listServices()"
 	type args struct {
 		sM       serviceGateway
 		services []string
@@ -108,7 +108,7 @@ func Test_listAvailableServices(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			listAvailableServices(o, tt.args.sM, tt.args.services)
+			listServices(o, tt.args.sM, tt.args.services)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
@@ -197,8 +197,8 @@ func Test_resetDatabase_waitForStop(t *testing.T) {
 	}
 }
 
-func Test_resetDatabase_stopService(t *testing.T) {
-	const fnName = "resetDatabase.stopService()"
+func Test_resetDatabase_stop(t *testing.T) {
+	const fnName = "resetDatabase.stop()"
 	serviceName := "mp3 management service"
 	fastTimeout := -1
 	type args struct {
@@ -440,7 +440,7 @@ func Test_resetDatabase_stopService(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			if got := tt.r.stopService(o, tt.args.connect); got != tt.want {
+			if got := tt.r.stop(o, tt.args.connect); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -954,8 +954,8 @@ func Test_resetDatabase_Exec(t *testing.T) {
 	}
 }
 
-func Test_resetDatabase_openService(t *testing.T) {
-	const fnName = "resetDatabase.openService()"
+func Test_resetDatabase_open(t *testing.T) {
+	const fnName = "resetDatabase.open()"
 	serviceName := "mp3 management service"
 	fastTimeout := -1
 	type args struct {
@@ -1042,7 +1042,7 @@ func Test_resetDatabase_openService(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			returnedM, returnedS := tt.r.openService(o, tt.args.connect)
+			returnedM, returnedS := tt.r.open(o, tt.args.connect)
 			gotM := returnedM != nil
 			gotS := returnedS != nil
 			if gotM != tt.wantM {
@@ -1081,7 +1081,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		},
 		"bad default timeout": {
 			args: args{
-				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
+				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
 					"resetDatabase": map[string]any{
 						"timeout": "forever",
 					},
@@ -1094,7 +1094,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		},
 		"bad default service": {
 			args: args{
-				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
+				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
 					"resetDatabase": map[string]any{
 						"service": "Win$FOO",
 					},
@@ -1107,7 +1107,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		},
 		"bad default metadata": {
 			args: args{
-				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
+				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
 					"resetDatabase": map[string]any{
 						"metadata": "%FOO%/data",
 					},
@@ -1120,7 +1120,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		},
 		"bad default extension": {
 			args: args{
-				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
+				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
 					"resetDatabase": map[string]any{
 						"extension": ".%FOO%",
 					},

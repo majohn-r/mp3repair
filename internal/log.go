@@ -21,14 +21,14 @@ const (
 	maxLogFiles      = 10
 )
 
-func configureLogging(path string) *cronowriter.CronoWriter {
+func configure(path string) *cronowriter.CronoWriter {
 	return cronowriter.MustNew(
 		filepath.Join(path, logFilePrefix+"%Y%m%d"+logFileExtension),
 		cronowriter.WithSymlink(filepath.Join(path, symlinkName)),
 		cronowriter.WithInit())
 }
 
-func cleanupLogFiles(o output.Bus, path string) {
+func cleanup(o output.Bus, path string) {
 	if files, err := os.ReadDir(path); err != nil {
 		LogUnreadableDirectory(o, path, err)
 		o.WriteCanonicalError("The log file directory %q cannot be read: %v", path, err)
@@ -87,9 +87,9 @@ func InitLogging(o output.Bus) bool {
 		WriteDirectoryCreationError(o, path, err)
 		return false
 	}
-	logger = configureLogging(path)
+	logger = configure(path)
 	logrus.SetOutput(logger)
-	cleanupLogFiles(o, path)
+	cleanup(o, path)
 	return true
 }
 

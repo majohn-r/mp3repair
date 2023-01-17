@@ -708,7 +708,7 @@ func Test_newCheckCommand(t *testing.T) {
 		},
 		"bad default empty folder": {
 			args: args{
-				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
+				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
 					"check": map[string]any{
 						emptyFolders: "Empty!!",
 					},
@@ -722,7 +722,7 @@ func Test_newCheckCommand(t *testing.T) {
 		},
 		"bad default gaps": {
 			args: args{
-				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
+				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
 					"check": map[string]any{
 						trackNumberingGaps: "No",
 					},
@@ -736,7 +736,7 @@ func Test_newCheckCommand(t *testing.T) {
 		},
 		"bad default integrity": {
 			args: args{
-				c: internal.CreateConfiguration(output.NewNilBus(), map[string]any{
+				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
 					"check": map[string]any{
 						integrity: "Off",
 					},

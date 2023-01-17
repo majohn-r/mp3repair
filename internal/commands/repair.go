@@ -124,7 +124,7 @@ func reportProblem(b bool, problem string) (s string) {
 
 func fixTracks(o output.Bus, tracks []*files.Track) {
 	for _, t := range tracks {
-		if err := t.EditTags(); len(err) != 0 {
+		if err := t.UpdateMetadata(); len(err) != 0 {
 			o.WriteCanonicalError("An error occurred repairing track %q", t)
 			o.Log(output.Error, "cannot edit track", map[string]any{
 				"command":   repairCommandName,

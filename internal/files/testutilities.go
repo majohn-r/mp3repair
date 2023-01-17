@@ -53,7 +53,7 @@ var (
 		"year":   "TYER",
 		"track":  "TRCK",
 	}
-	recognizedTags = []string{"artist", "album", "title", "genre", "year", "track"}
+	recognizedTagNames = []string{"artist", "album", "title", "genre", "year", "track"}
 )
 
 // CreateID3V2TaggedDataForTesting creates ID3V2-tagged content. This code is
@@ -104,7 +104,7 @@ func makeTextFrame(id, content string) []byte {
 // of ID3V2 and ID3V1 tags
 func CreateConsistentlyTaggedDataForTesting(audio []byte, m map[string]any) []byte {
 	var frames = map[string]string{}
-	for _, tagName := range recognizedTags {
+	for _, tagName := range recognizedTagNames {
 		if value, ok := m[tagName]; ok {
 			switch tagName {
 			case "track":
@@ -121,8 +121,8 @@ func CreateConsistentlyTaggedDataForTesting(audio []byte, m map[string]any) []by
 
 func createID3V1TaggedDataForTesting(m map[string]any) []byte {
 	v1 := newID3v1Metadata()
-	v1.writeStringField("TAG", id3v1Tag)
-	for _, tagName := range recognizedTags {
+	v1.writeString("TAG", id3v1Tag)
+	for _, tagName := range recognizedTagNames {
 		if value, ok := m[tagName]; ok {
 			switch tagName {
 			case "artist":

@@ -104,8 +104,8 @@ func TestSetApplicationPathForTesting(t *testing.T) {
 	}
 }
 
-func Test_lookupAppData(t *testing.T) {
-	const fnName = "lookupAppData()"
+func Test_appDataValue(t *testing.T) {
+	const fnName = "appDataValue()"
 	savedState := SaveEnvVarForTesting(appDataVar)
 	os.Setenv(appDataVar, SecureAbsolutePathForTesting("."))
 	defer func() {
@@ -131,7 +131,7 @@ func Test_lookupAppData(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			tt.state.RestoreForTesting()
 			o := output.NewRecorder()
-			got, got1 := lookupAppData(o)
+			got, got1 := appDataValue(o)
 			if got != tt.want {
 				t.Errorf("%s got = %q, want %q", fnName, got, tt.want)
 			}

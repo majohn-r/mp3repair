@@ -93,7 +93,7 @@ func newTrackFromFile(a *Album, f fs.DirEntry, simpleName string, trackNumber in
 	return NewTrack(a, f.Name(), simpleName, trackNumber)
 }
 
-// NewTrack creates a new instance of Track without (expensive) tag data.
+// NewTrack creates a new instance of Track without (expensive) metadata.
 func NewTrack(a *Album, fullName, simpleName string, trackNumber int) *Track {
 	return &Track{
 		path:            a.subDirectory(fullName),
@@ -293,13 +293,13 @@ func (t *Track) ReportMetadataProblems() []string {
 	return differences
 }
 
-// EditTags verifies that a track's tags need to be edited and then performs
-// that work
-func (t *Track) EditTags() (e []error) {
+// UpdateMetadata verifies that a track's metadata needs to be edited and then
+// performs that work
+func (t *Track) UpdateMetadata() (e []error) {
 	if !t.ReconcileMetadata().HasConflicts() {
 		e = append(e, noEditNeededError)
 	} else {
-		e = append(e, editTags(t.tM, t.path)...)
+		e = append(e, updateMetadata(t.tM, t.path)...)
 	}
 	return
 }
@@ -309,7 +309,7 @@ func (t *Track) EditTags() (e []error) {
 
 type empty struct{}
 
-func (t *Track) readTags(bar *pb.ProgressBar) {
+func (t *Track) loadMetadata(bar *pb.ProgressBar) {
 	if t.needsMetadata() {
 		fileOpens <- empty{} // block while full
 		go func() {
@@ -340,7 +340,7 @@ func ReadMetadata(o output.Bus, artists []*Artist) {
 	for _, artist := range artists {
 		for _, album := range artist.Albums() {
 			for _, track := range album.Tracks() {
-				track.readTags(bar)
+				track.loadMetadata(bar)
 			}
 		}
 	}
@@ -621,7 +621,7 @@ func (t *Track) Details() (map[string]string, error) {
 		return nil, err
 	} else {
 		m := map[string]string{}
-		// only include known tags
+		// only include known frames
 		for _, frame := range frames {
 			if value, ok := frameDescriptions[frame.name]; ok {
 				m[value] = frame.value
