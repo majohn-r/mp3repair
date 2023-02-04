@@ -1,6 +1,6 @@
 module mp3/build
 
-go 1.19
+go 1.20
 
 require (
 	github.com/goyek/goyek/v2 v2.0.0-rc.12
@@ -8,7 +8,7 @@ require (
 )
 
 require (
-	github.com/fatih/color v1.14.0 // indirect
+	github.com/fatih/color v1.14.1 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.17 // indirect
 	github.com/mattn/go-shellwords v1.0.12 // indirect

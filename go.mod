@@ -1,10 +1,10 @@
 module mp3
 
-go 1.19
+go 1.20
 
 require (
 	github.com/VividCortex/ewma v1.2.0 // indirect
-	github.com/fatih/color v1.14.0 // indirect
+	github.com/fatih/color v1.14.1 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/lestrrat-go/strftime v1.0.6 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
