@@ -22,8 +22,8 @@ require (
 require (
 	github.com/bogem/id3v2/v2 v2.1.3
 	github.com/cheggaaa/pb/v3 v3.1.0
-	github.com/majohn-r/cmd-toolkit v0.0.2
-	github.com/majohn-r/output v0.1.1
+	github.com/majohn-r/cmd-toolkit v0.0.3
+	github.com/majohn-r/output v0.1.2
 	golang.org/x/sys v0.4.0
 	gopkg.in/yaml.v3 v3.0.1
 )
