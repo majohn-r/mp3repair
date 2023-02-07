@@ -8,11 +8,12 @@ import (
 	"path/filepath"
 	"testing"
 
+	tools "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
 func makePostRepairCommandForTesting() *postrepair {
-	pr, _ := newPostRepairCommand(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError))
+	pr, _ := newPostRepairCommand(output.NewNilBus(), tools.EmptyConfiguration(), flag.NewFlagSet("postRepair", flag.ContinueOnError))
 	return pr
 }
 
@@ -20,31 +21,26 @@ func Test_postrepair_Exec(t *testing.T) {
 	const fnName = "postrepair.Exec()"
 	topDirName := "postRepairExec"
 	topDir2Name := "postRepairExec2"
-	if err := internal.Mkdir(topDirName); err != nil {
+	if err := tools.Mkdir(topDirName); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, topDirName, err)
 	}
-	if err := internal.Mkdir(topDir2Name); err != nil {
+	if err := tools.Mkdir(topDir2Name); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, topDir2Name, err)
 	}
-	savedHome := internal.SaveEnvVarForTesting("HOMEPATH")
-	home := internal.SavedEnvVar{
-		Name:  "HOMEPATH",
-		Value: "C:\\Users\\The User",
-		Set:   true,
-	}
-	home.RestoreForTesting()
+	savedHome := tools.NewEnvVarMemento("HOMEPATH")
+	os.Setenv("HOMEPATH", "C:\\Users\\The User")
 	if err := internal.PopulateTopDirForTesting(topDirName); err != nil {
 		t.Errorf("%s error populating directory %q: %v", fnName, topDirName, err)
 	}
 	artistDir := "the artist"
 	artistPath := filepath.Join(topDir2Name, artistDir)
-	if err := internal.Mkdir(artistPath); err != nil {
+	if err := tools.Mkdir(artistPath); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, artistPath, err)
 	}
 	artist := files.NewArtist(artistDir, artistPath)
 	albumDir := "the album"
 	albumPath := filepath.Join(artistPath, albumDir)
-	if err := internal.Mkdir(albumPath); err != nil {
+	if err := tools.Mkdir(albumPath); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, albumPath, err)
 	}
 	album := files.NewAlbum(albumDir, artist, albumPath)
@@ -52,14 +48,14 @@ func Test_postrepair_Exec(t *testing.T) {
 		t.Errorf("%s error creating file in album directory %q: %v", fnName, "01 the track.mp3", err)
 	}
 	backupDirectory := album.BackupDirectory()
-	if err := internal.Mkdir(backupDirectory); err != nil {
+	if err := tools.Mkdir(backupDirectory); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, backupDirectory, err)
 	}
 	if err := internal.CreateFileForTesting(backupDirectory, "1.mp3"); err != nil {
 		t.Errorf("%s error creating file in backup directory %q: %v", fnName, "1.mp3", err)
 	}
 	defer func() {
-		savedHome.RestoreForTesting()
+		savedHome.Restore()
 		internal.DestroyDirectoryForTesting(fnName, topDirName)
 		internal.DestroyDirectoryForTesting(fnName, topDir2Name)
 	}()
@@ -130,23 +126,23 @@ func Test_postrepair_Exec(t *testing.T) {
 func Test_removeBackupDirectory(t *testing.T) {
 	const fnName = "removeBackupDirectory()"
 	topDirName := "removeBackup"
-	if err := internal.Mkdir(topDirName); err != nil {
+	if err := tools.Mkdir(topDirName); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, topDirName, err)
 	}
 	artistDir := "the artist"
 	artistPath := filepath.Join(topDirName, artistDir)
-	if err := internal.Mkdir(artistPath); err != nil {
+	if err := tools.Mkdir(artistPath); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, artistPath, err)
 	}
 	artist := files.NewArtist(artistDir, artistPath)
 	albumDir := "the album"
 	albumPath := filepath.Join(artistPath, albumDir)
-	if err := internal.Mkdir(albumPath); err != nil {
+	if err := tools.Mkdir(albumPath); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, albumPath, err)
 	}
 	album := files.NewAlbum(albumDir, artist, albumPath)
 	backupDirectory := album.BackupDirectory()
-	if err := internal.Mkdir(backupDirectory); err != nil {
+	if err := tools.Mkdir(backupDirectory); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, backupDirectory, err)
 	}
 	if err := internal.CreateFileForTesting(backupDirectory, "1.mp3"); err != nil {
@@ -192,13 +188,13 @@ func Test_removeBackupDirectory(t *testing.T) {
 
 func Test_newPostRepairCommand(t *testing.T) {
 	const fnName = "newPostRepairCommand()"
-	savedFoo := internal.SaveEnvVarForTesting("FOO")
+	savedFoo := tools.NewEnvVarMemento("FOO")
 	os.Unsetenv("FOO")
 	defer func() {
-		savedFoo.RestoreForTesting()
+		savedFoo.Restore()
 	}()
 	type args struct {
-		c    *internal.Configuration
+		c    *tools.Configuration
 		fSet *flag.FlagSet
 	}
 	tests := map[string]struct {
@@ -209,7 +205,7 @@ func Test_newPostRepairCommand(t *testing.T) {
 	}{
 		"success": {
 			args: args{
-				c:    internal.EmptyConfiguration(),
+				c:    tools.EmptyConfiguration(),
 				fSet: flag.NewFlagSet("postRepair", flag.ContinueOnError),
 			},
 			wantPostRepair: true,
@@ -217,7 +213,7 @@ func Test_newPostRepairCommand(t *testing.T) {
 		},
 		"failure": {
 			args: args{
-				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
+				c: tools.NewConfiguration(output.NewNilBus(), map[string]any{
 					"common": map[string]any{
 						"topDir": "%FOO%",
 					},
@@ -243,6 +239,42 @@ func Test_newPostRepairCommand(t *testing.T) {
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
+				}
+			}
+		})
+	}
+}
+
+func Test_newPostRepair(t *testing.T) {
+	type args struct {
+		c    *tools.Configuration
+		fSet *flag.FlagSet
+	}
+	tests := map[string]struct {
+		args
+		want  tools.CommandProcessor
+		want1 bool
+		output.WantedRecording
+	}{
+		"basic": {
+			args:  args{c: tools.EmptyConfiguration(), fSet: flag.NewFlagSet(postRepairCommandName, flag.ContinueOnError)},
+			want:  makePostRepairCommandForTesting(),
+			want1: true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			o := output.NewRecorder()
+			got, got1 := newPostRepair(o, tt.args.c, tt.args.fSet)
+			if _, ok := got.(*postrepair); !ok {
+				t.Errorf("newPostRepair() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("newPostRepair() got1 = %v, want %v", got1, tt.want1)
+			}
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, issue := range issues {
+					t.Errorf("newPostRepair() %s", issue)
 				}
 			}
 		})

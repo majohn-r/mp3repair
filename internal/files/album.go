@@ -2,10 +2,10 @@ package files
 
 import (
 	"io/fs"
-	"mp3/internal"
 	"path/filepath"
 
 	"github.com/bogem/id3v2/v2"
+	cmd "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
@@ -50,7 +50,7 @@ func (a *Album) BackupDirectory() string {
 }
 
 func (a *Album) contents(o output.Bus) ([]fs.DirEntry, bool) {
-	return internal.ReadDirectory(o, a.path)
+	return cmd.ReadDirectory(o, a.path)
 }
 
 // Name returns the album's name

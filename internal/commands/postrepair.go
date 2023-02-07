@@ -2,16 +2,16 @@ package commands
 
 import (
 	"flag"
-	"mp3/internal"
 	"mp3/internal/files"
 	"os"
 	"sort"
 
+	tools "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
 func init() {
-	addCommandData(postRepairCommandName, commandData{isDefault: false, init: newPostRepair})
+	tools.AddCommandData(postRepairCommandName, &tools.CommandDescription{IsDefault: IsDefault(postRepairCommandName), Initializer: newPostRepair})
 }
 
 const postRepairCommandName = "postRepair"
@@ -20,14 +20,14 @@ type postrepair struct {
 	sf *files.SearchFlags
 }
 
-func newPostRepairCommand(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (*postrepair, bool) {
+func newPostRepairCommand(o output.Bus, c *tools.Configuration, fSet *flag.FlagSet) (*postrepair, bool) {
 	if sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet); sFlagsOk {
 		return &postrepair{sf: sFlags}, true
 	}
 	return nil, false
 }
 
-func newPostRepair(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
+func newPostRepair(o output.Bus, c *tools.Configuration, fSet *flag.FlagSet) (tools.CommandProcessor, bool) {
 	return newPostRepairCommand(o, c, fSet)
 }
 
@@ -43,7 +43,7 @@ func logFields() map[string]any {
 }
 
 func runCommand(o output.Bus, s *files.Search) (ok bool) {
-	logStart(o, postRepairCommandName, logFields())
+	tools.LogCommandStart(o, postRepairCommandName, logFields())
 	if artists, loaded := s.Load(o); loaded {
 		ok = true
 		m := make(map[string]*files.Album)
@@ -51,7 +51,7 @@ func runCommand(o output.Bus, s *files.Search) (ok bool) {
 		for _, aR := range artists {
 			for _, aL := range aR.Albums() {
 				dir := aL.BackupDirectory()
-				if internal.DirExists(dir) {
+				if tools.DirExists(dir) {
 					dirs = append(dirs, dir)
 					m[dir] = aL
 				}

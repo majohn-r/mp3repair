@@ -3,10 +3,9 @@ package internal
 import (
 	"os"
 	"path/filepath"
-	"reflect"
-	"strings"
 	"testing"
 
+	tools "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
@@ -79,7 +78,7 @@ func TestCreateTrackNameForTesting(t *testing.T) {
 func TestDestroyDirectoryForTesting(t *testing.T) {
 	const fnName = "DestroyDirectoryForTesting()"
 	testDirName := "testDir"
-	if err := Mkdir(testDirName); err != nil {
+	if err := tools.Mkdir(testDirName); err != nil {
 		t.Errorf("%s: error creating %q: %v", fnName, testDirName, err)
 	}
 	type args struct {
@@ -105,10 +104,10 @@ func TestPopulateTopDirForTesting(t *testing.T) {
 	forceEarlyErrorDirName := "testDir1"
 	albumDirErrName := "testDir2"
 	badTrackFileName := "testDir3"
-	if err := Mkdir(cleanDirName); err != nil {
+	if err := tools.Mkdir(cleanDirName); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, cleanDirName, err)
 	}
-	if err := Mkdir(forceEarlyErrorDirName); err != nil {
+	if err := tools.Mkdir(forceEarlyErrorDirName); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, forceEarlyErrorDirName, err)
 	}
 	artistDirName := CreateArtistNameForTesting(0)
@@ -117,11 +116,11 @@ func TestPopulateTopDirForTesting(t *testing.T) {
 	}
 
 	// create an artist with a file that is named the same as an expected album name
-	if err := Mkdir(albumDirErrName); err != nil {
+	if err := tools.Mkdir(albumDirErrName); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, albumDirErrName, err)
 	}
 	artistFileName := filepath.Join(albumDirErrName, CreateArtistNameForTesting(0))
-	if err := Mkdir(artistFileName); err != nil {
+	if err := tools.Mkdir(artistFileName); err != nil {
 		t.Errorf("%s error creating test directory %q: %v", fnName, artistFileName, err)
 	}
 	albumFileName := CreateAlbumNameForTesting(0)
@@ -130,15 +129,15 @@ func TestPopulateTopDirForTesting(t *testing.T) {
 	}
 
 	// create an album with a pre-existing track name
-	if err := Mkdir(badTrackFileName); err != nil {
+	if err := tools.Mkdir(badTrackFileName); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, badTrackFileName, err)
 	}
 	artistFileName = filepath.Join(badTrackFileName, CreateArtistNameForTesting(0))
-	if err := Mkdir(artistFileName); err != nil {
+	if err := tools.Mkdir(artistFileName); err != nil {
 		t.Errorf("%s error creating test directory %q: %v", fnName, artistFileName, err)
 	}
 	albumFileName = filepath.Join(artistFileName, CreateAlbumNameForTesting(0))
-	if err := Mkdir(albumFileName); err != nil {
+	if err := tools.Mkdir(albumFileName); err != nil {
 		t.Errorf("%s error creating test directory %q: %v", fnName, albumFileName, err)
 	}
 	trackName := CreateTrackNameForTesting(0)
@@ -211,11 +210,11 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 		},
 		"file exists": {
 			preTest: func(t *testing.T) {
-				if err := Mkdir("./mp3"); err != nil {
+				if err := tools.Mkdir("./mp3"); err != nil {
 					t.Errorf("%s 'file exists': failed to create directory ./mp3: %v", fnName, err)
 				}
-				if err := CreateFileForTestingWithContent("./mp3", DefaultConfigFileName, []byte("who cares?")); err != nil {
-					t.Errorf("%s 'file exists': failed to create %q: %v", fnName, DefaultConfigFileName, err)
+				if err := CreateFileForTestingWithContent("./mp3", tools.DefaultConfigFileName(), []byte("who cares?")); err != nil {
+					t.Errorf("%s 'file exists': failed to create %q: %v", fnName, tools.DefaultConfigFileName(), err)
 				}
 			},
 			postTest: func(t *testing.T) {
@@ -230,67 +229,68 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 				// nothing to do
 			},
 			postTest: func(t *testing.T) {
-				savedState := SaveEnvVarForTesting(appDataVar)
-				os.Setenv(appDataVar, SecureAbsolutePathForTesting("."))
-				oldAppPath := ApplicationPath()
-				InitApplicationPath(output.NewNilBus())
+				oldAppPath := tools.SetApplicationPath("mp3")
+				tools.InitApplicationPath(output.NewNilBus())
 				defer func() {
-					savedState.RestoreForTesting()
-					SetApplicationPathForTesting(oldAppPath)
+					tools.SetApplicationPath(oldAppPath)
 				}()
-				c, _ := ReadConfigurationFile(output.NewNilBus())
-				if common := c.cMap["common"]; common == nil {
+				c, _ := tools.ReadConfigurationFile(output.NewNilBus())
+				if !c.HasSubConfiguration("common") {
 					t.Errorf("%s 'good test': configuration does not contain common subtree", fnName)
 				} else {
-					if got := common.sMap["topDir"]; got != "." {
+					common := c.SubConfiguration("common")
+					if got, ok := common.StringValue("topDir"); !ok || got != "." {
 						t.Errorf("%s 'good test': common.topDir got %q want %q", fnName, got, ".")
 					}
-					if got := common.sMap["ext"]; got != ".mpeg" {
+					if got, ok := common.StringValue("ext"); !ok || got != ".mpeg" {
 						t.Errorf("%s 'good test': common.ext got %q want %q", fnName, got, ".mpeg")
 					}
-					if got := common.sMap["albumFilter"]; got != "^.*$" {
+					if got, ok := common.StringValue("albumFilter"); !ok || got != "^.*$" {
 						t.Errorf("%s 'good test': common.albums got %q want %q", fnName, got, "^.*$")
 					}
-					if got := common.sMap["artistFilter"]; got != "^.*$" {
+					if got, ok := common.StringValue("artistFilter"); !ok || got != "^.*$" {
 						t.Errorf("%s 'good test': common.artists got %q want %q", fnName, got, "^.*$")
 					}
 				}
-				if list := c.cMap["list"]; list == nil {
+				if !c.HasSubConfiguration("list") {
 					t.Errorf("%s 'good test': configuration does not contain list subtree", fnName)
 				} else {
-					if got := list.bMap["includeAlbums"]; got != false {
+					list := c.SubConfiguration("list")
+					if got, ok := list.BooleanValue("includeAlbums"); !ok || got != false {
 						t.Errorf("%s 'good test': list.album got %t want %t", fnName, got, false)
 					}
-					if got := list.bMap["includeArtists"]; got != false {
+					if got, ok := list.BooleanValue("includeArtists"); !ok || got != false {
 						t.Errorf("%s 'good test': list.artist got %t want %t", fnName, got, false)
 					}
-					if got := list.bMap["includeTracks"]; got != true {
+					if got, ok := list.BooleanValue("includeTracks"); !ok || got != true {
 						t.Errorf("%s 'good test': list.track got %t want %t", fnName, got, true)
 					}
-					if got := list.bMap["annotate"]; got != true {
+					if got, ok := list.BooleanValue("annotate"); !ok || got != true {
 						t.Errorf("%s 'good test': list.annotate got %t want %t", fnName, got, true)
 					}
-					if got := list.sMap["sort"]; got != "alpha" {
+					if got, ok := list.StringValue("sort"); !ok || got != "alpha" {
 						t.Errorf("%s 'good test': list.sort got %s want %s", fnName, got, "alpha")
 					}
 				}
-				if check := c.cMap["check"]; check == nil {
+				if !c.HasSubConfiguration("check") {
 					t.Errorf("%s 'good test': configuration does not contain check subtree", fnName)
 				} else {
-					if got := check.bMap["empty"]; got != true {
+					check := c.SubConfiguration("check")
+					if got, ok := check.BooleanValue("empty"); !ok || got != true {
 						t.Errorf("%s 'good test': check.empty got %t want %t", fnName, got, true)
 					}
-					if got := check.bMap["gaps"]; got != true {
+					if got, ok := check.BooleanValue("gaps"); !ok || got != true {
 						t.Errorf("%s 'good test': check.gaps got %t want %t", fnName, got, true)
 					}
-					if got := check.bMap["integrity"]; got != false {
+					if got, ok := check.BooleanValue("integrity"); !ok || got != false {
 						t.Errorf("%s 'good test': check.integrity got %t want %t", fnName, got, false)
 					}
 				}
-				if repair := c.cMap["repair"]; repair == nil {
+				if !c.HasSubConfiguration("repair") {
 					t.Errorf("%s 'good test': configuration does not contain repair subtree", fnName)
 				} else {
-					if got := repair.bMap["dryRun"]; got != true {
+					repair := c.SubConfiguration("repair")
+					if got, ok := repair.BooleanValue("dryRun"); !ok || got != true {
 						t.Errorf("%s 'good test': repair.DryRun got %t want %t", fnName, got, true)
 					}
 				}
@@ -305,86 +305,6 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
 			}
 			tt.postTest(t)
-		})
-	}
-}
-
-func TestSaveEnvVarForTesting(t *testing.T) {
-	const fnName = "SaveEnvVarForTesting()"
-	vars := os.Environ()
-	firstVar := vars[0]
-	i := strings.Index(firstVar, "=")
-	firstVar = firstVar[0:i]
-	testVar1Exists := false
-	name1 := "MP3TEST1"
-	testVar2Exists := false
-	name2 := "MP3TEST2"
-	for _, v := range vars {
-		if strings.HasPrefix(v, name1+"=") {
-			testVar1Exists = true
-		}
-		if strings.HasPrefix(v, name2+"=") {
-			testVar2Exists = true
-		}
-	}
-	firstSaveState := &SavedEnvVar{Name: firstVar, Value: os.Getenv(firstVar), Set: true}
-	os.Unsetenv(firstVar)
-	var saveState1 *SavedEnvVar
-	if testVar1Exists {
-		saveState1 = &SavedEnvVar{Name: name1, Value: os.Getenv(name1), Set: true}
-	} else {
-		saveState1 = &SavedEnvVar{Name: name1}
-	}
-	var saveState2 *SavedEnvVar
-	if testVar2Exists {
-		saveState2 = &SavedEnvVar{Name: name2, Value: os.Getenv(name2), Set: true}
-	} else {
-		saveState2 = &SavedEnvVar{Name: name2}
-	}
-	os.Setenv(name1, "value1")
-	os.Unsetenv(name2)
-	defer func() {
-		firstSaveState.RestoreForTesting()
-		saveState1.RestoreForTesting()
-		saveState2.RestoreForTesting()
-		if !reflect.DeepEqual(vars, os.Environ()) {
-			t.Errorf("%s environment was not safely restored", fnName)
-		}
-	}()
-	type args struct {
-		name string
-	}
-	tests := map[string]struct {
-		args
-		want *SavedEnvVar
-	}{
-		"set":   {args: args{name1}, want: &SavedEnvVar{Name: name1, Value: "value1", Set: true}},
-		"unset": {args: args{name2}, want: &SavedEnvVar{Name: name2}},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			if got := SaveEnvVarForTesting(tt.args.name); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
-			}
-		})
-	}
-}
-
-func TestSecureAbsolutePathForTesting(t *testing.T) {
-	const fnName = "SecureAbsolutePathForTesting()"
-	type args struct {
-		path string
-	}
-	tests := map[string]struct {
-		args
-		want bool
-	}{"simple": {args: args{path: "."}, want: true}}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := SecureAbsolutePathForTesting(tt.args.path)
-			if tt.want && got == "" {
-				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
-			}
 		})
 	}
 }

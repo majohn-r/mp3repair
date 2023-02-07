@@ -3,15 +3,15 @@ package commands
 import (
 	"flag"
 	"fmt"
-	"mp3/internal"
 	"mp3/internal/files"
 	"sort"
 
+	tools "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
 func init() {
-	addCommandData(checkCommandName, commandData{isDefault: false, init: newCheck})
+	tools.AddCommandData(checkCommandName, &tools.CommandDescription{IsDefault: IsDefault(checkCommandName), Initializer: newCheck})
 	addDefaultMapping(checkCommandName, map[string]any{
 		emptyFolders:       defaultEmptyFolders,
 		trackNumberingGaps: defaultTrackNumberingGaps,
@@ -26,7 +26,7 @@ type check struct {
 	sf                 *files.SearchFlags
 }
 
-func newCheck(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
+func newCheck(o output.Bus, c *tools.Configuration, fSet *flag.FlagSet) (tools.CommandProcessor, bool) {
 	return newCheckCommand(o, c, fSet)
 }
 
@@ -48,37 +48,37 @@ type checkDefaults struct {
 	integrity bool
 }
 
-func newCheckCommand(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (*check, bool) {
+func newCheckCommand(o output.Bus, c *tools.Configuration, fSet *flag.FlagSet) (*check, bool) {
 	defaults, defaultsOk := evaluateCheckDefaults(o, c.SubConfiguration(checkCommandName))
 	sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet)
 	if defaultsOk && sFlagsOk {
 		return &check{
-			emptyFolders:       fSet.Bool(emptyFolders, defaults.empty, internal.DecorateBoolFlagUsage("check for empty artist and album folders", defaults.empty)),
-			trackNumberingGaps: fSet.Bool(trackNumberingGaps, defaults.gaps, internal.DecorateBoolFlagUsage("check for gaps in track numbers", defaults.gaps)),
-			integrity:          fSet.Bool(integrity, defaults.integrity, internal.DecorateBoolFlagUsage("check for disagreement between the file system and audio file metadata", defaults.integrity)),
+			emptyFolders:       fSet.Bool(emptyFolders, defaults.empty, tools.DecorateBoolFlagUsage("check for empty artist and album folders", defaults.empty)),
+			trackNumberingGaps: fSet.Bool(trackNumberingGaps, defaults.gaps, tools.DecorateBoolFlagUsage("check for gaps in track numbers", defaults.gaps)),
+			integrity:          fSet.Bool(integrity, defaults.integrity, tools.DecorateBoolFlagUsage("check for disagreement between the file system and audio file metadata", defaults.integrity)),
 			sf:                 sFlags,
 		}, true
 	}
 	return nil, false
 }
 
-func evaluateCheckDefaults(o output.Bus, c *internal.Configuration) (defaults checkDefaults, ok bool) {
+func evaluateCheckDefaults(o output.Bus, c *tools.Configuration) (defaults checkDefaults, ok bool) {
 	ok = true
 	var err error
 	defaults = checkDefaults{}
 	defaults.empty, err = c.BoolDefault(emptyFolders, defaultEmptyFolders)
 	if err != nil {
-		reportBadDefault(o, checkCommandName, err)
+		tools.ReportInvalidConfigurationData(o, checkCommandName, err)
 		ok = false
 	}
 	defaults.gaps, err = c.BoolDefault(trackNumberingGaps, defaultTrackNumberingGaps)
 	if err != nil {
-		reportBadDefault(o, checkCommandName, err)
+		tools.ReportInvalidConfigurationData(o, checkCommandName, err)
 		ok = false
 	}
 	defaults.integrity, err = c.BoolDefault(integrity, defaultIntegrity)
 	if err != nil {
-		reportBadDefault(o, checkCommandName, err)
+		tools.ReportInvalidConfigurationData(o, checkCommandName, err)
 		ok = false
 	}
 	return
@@ -147,9 +147,9 @@ func (cAr *checkedArtist) hasIssues() bool {
 
 func (c *check) runCommand(o output.Bus, s *files.Search) (ok bool) {
 	if !*c.emptyFolders && !*c.trackNumberingGaps && !*c.integrity {
-		reportNothingToDo(o, checkCommandName, c.logFields())
+		tools.ReportNothingToDo(o, checkCommandName, c.logFields())
 	} else {
-		logStart(o, checkCommandName, c.logFields())
+		tools.LogCommandStart(o, checkCommandName, c.logFields())
 		artists, artistsWithEmptyFolders, analysisOk := c.analyzeEmptyFolders(o, s)
 		if analysisOk {
 			artists, ok = c.filterArtists(o, s, artists)

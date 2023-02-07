@@ -11,17 +11,16 @@ import (
 	"strings"
 	"testing"
 
+	tools "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
 func Test_newRepairCommand(t *testing.T) {
 	const fnName = "newRepairCommand()"
-	savedAppData := internal.SaveEnvVarForTesting("APPDATA")
-	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
-	oldAppPath := internal.ApplicationPath()
-	internal.InitApplicationPath(output.NewNilBus())
+	oldAppPath := tools.SetApplicationPath("./mp3")
+	tools.InitApplicationPath(output.NewNilBus())
 	topDir := "loadTest"
-	if err := internal.Mkdir(topDir); err != nil {
+	if err := tools.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
@@ -30,15 +29,14 @@ func Test_newRepairCommand(t *testing.T) {
 	if err := internal.CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
-	defaultConfig, _ := internal.ReadConfigurationFile(output.NewNilBus())
+	defaultConfig, _ := tools.ReadConfigurationFile(output.NewNilBus())
 	defer func() {
-		savedAppData.RestoreForTesting()
-		internal.SetApplicationPathForTesting(oldAppPath)
+		tools.SetApplicationPath(oldAppPath)
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
 	type args struct {
-		c *internal.Configuration
+		c *tools.Configuration
 	}
 	tests := map[string]struct {
 		args
@@ -47,7 +45,7 @@ func Test_newRepairCommand(t *testing.T) {
 		output.WantedRecording
 	}{
 		"ordinary defaults": {
-			args:       args{c: internal.EmptyConfiguration()},
+			args:       args{c: tools.EmptyConfiguration()},
 			wantDryRun: false,
 			wantOk:     true,
 		},
@@ -58,7 +56,7 @@ func Test_newRepairCommand(t *testing.T) {
 		},
 		"bad dryRun default": {
 			args: args{
-				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
+				c: tools.NewConfiguration(output.NewNilBus(), map[string]any{
 					"repair": map[string]any{
 						"dryRun": 42,
 					},
@@ -99,51 +97,46 @@ func Test_newRepairCommand(t *testing.T) {
 }
 
 func newRepairForTesting() *repair {
-	r, _ := newRepairCommand(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError))
+	r, _ := newRepairCommand(output.NewNilBus(), tools.EmptyConfiguration(), flag.NewFlagSet("repair", flag.ContinueOnError))
 	return r
 }
 
 func Test_repair_Exec(t *testing.T) {
 	const fnName = "repair.Exec()"
 	newAppPath := "appPath"
-	if err := internal.Mkdir(newAppPath); err != nil {
+	if err := tools.Mkdir(newAppPath); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, newAppPath, err)
 	}
-	oldAppPath := internal.SetApplicationPathForTesting(newAppPath)
+	oldAppPath := tools.SetApplicationPath(newAppPath)
 	topDirName := "repairExec"
 	topDirWithContent := "realContent"
 	topDirWithContent2 := "realContent2"
-	if err := internal.Mkdir(topDirName); err != nil {
+	if err := tools.Mkdir(topDirName); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, topDirName, err)
 	}
-	if err := internal.Mkdir(topDirWithContent); err != nil {
+	if err := tools.Mkdir(topDirWithContent); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, topDirWithContent, err)
 	}
-	if err := internal.Mkdir(topDirWithContent2); err != nil {
+	if err := tools.Mkdir(topDirWithContent2); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, topDirWithContent2, err)
 	}
-	savedHome := internal.SaveEnvVarForTesting("HOMEPATH")
-	home := internal.SavedEnvVar{
-		Name:  "HOMEPATH",
-		Value: "C:\\Users\\The User",
-		Set:   true,
-	}
-	home.RestoreForTesting()
+	savedHome := tools.NewEnvVarMemento("HOMEPATH")
+	os.Setenv("HOMEPATH", "C:\\Users\\The User")
 	if err := internal.PopulateTopDirForTesting(topDirName); err != nil {
 		t.Errorf("%s error populating directory %q: %v", fnName, topDirName, err)
 	}
 	artist := "new artist"
-	if err := internal.Mkdir(filepath.Join(topDirWithContent, artist)); err != nil {
+	if err := tools.Mkdir(filepath.Join(topDirWithContent, artist)); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, filepath.Join(topDirWithContent, artist), err)
 	}
-	if err := internal.Mkdir(filepath.Join(topDirWithContent2, artist)); err != nil {
+	if err := tools.Mkdir(filepath.Join(topDirWithContent2, artist)); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, filepath.Join(topDirWithContent2, artist), err)
 	}
 	album := "new album"
-	if err := internal.Mkdir(filepath.Join(topDirWithContent, artist, album)); err != nil {
+	if err := tools.Mkdir(filepath.Join(topDirWithContent, artist, album)); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, filepath.Join(topDirWithContent, artist, album), err)
 	}
-	if err := internal.Mkdir(filepath.Join(topDirWithContent2, artist, album)); err != nil {
+	if err := tools.Mkdir(filepath.Join(topDirWithContent2, artist, album)); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, filepath.Join(topDirWithContent2, artist, album), err)
 	}
 	frames := map[string]string{
@@ -165,9 +158,9 @@ func Test_repair_Exec(t *testing.T) {
 		t.Errorf("%s error creating file %q: %v", fnName, filepath.Join(topDirWithContent2, artist, album, trackName), err)
 	}
 	defer func() {
-		internal.SetApplicationPathForTesting(oldAppPath)
+		tools.SetApplicationPath(oldAppPath)
 		internal.DestroyDirectoryForTesting(fnName, newAppPath)
-		savedHome.RestoreForTesting()
+		savedHome.Restore()
 		internal.DestroyDirectoryForTesting(fnName, topDirName)
 		internal.DestroyDirectoryForTesting(fnName, topDirWithContent)
 		internal.DestroyDirectoryForTesting(fnName, topDirWithContent2)
@@ -307,7 +300,7 @@ func generateStandardTrackLogReport() string {
 func Test_albumPaths(t *testing.T) {
 	const fnName = "albumPaths()"
 	topDir := "albumPaths"
-	if err := internal.Mkdir(topDir); err != nil {
+	if err := tools.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
@@ -447,22 +440,22 @@ func Test_albumPaths(t *testing.T) {
 func Test_repair_makeBackupDirectories(t *testing.T) {
 	const fnName = "repair.makeBackupDirectories()"
 	topDir := "makeBackupDirectories"
-	if err := internal.Mkdir(topDir); err != nil {
+	if err := tools.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	backupDir := files.CreateBackupPath(topDir)
-	if err := internal.Mkdir(backupDir); err != nil {
+	if err := tools.Mkdir(backupDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, backupDir, err)
 	}
 	albumDir := filepath.Join(topDir, "album")
-	if err := internal.Mkdir(albumDir); err != nil {
+	if err := tools.Mkdir(albumDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, albumDir, err)
 	}
 	if err := internal.CreateNamedFileForTesting(files.CreateBackupPath(albumDir), []byte("nonsense content")); err != nil {
 		t.Errorf("%s error creating file %q in %q: %v", fnName, files.CreateBackupPath(albumDir), albumDir, err)
 	}
 	albumDir2 := filepath.Join(topDir, "album2")
-	if err := internal.Mkdir(albumDir2); err != nil {
+	if err := tools.Mkdir(albumDir2); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, albumDir2, err)
 	}
 	fFlag := false
@@ -503,17 +496,17 @@ func Test_repair_makeBackupDirectories(t *testing.T) {
 func Test_repair_backupTracks(t *testing.T) {
 	const fnName = "repair.backupTracks()"
 	topDir := "backupTracks"
-	if err := internal.Mkdir(topDir); err != nil {
+	if err := tools.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	goodTrackName := "1 good track.mp3"
 	if err := internal.CreateFileForTesting(topDir, goodTrackName); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, goodTrackName, err)
 	}
-	if err := internal.Mkdir(files.CreateBackupPath(topDir)); err != nil {
+	if err := tools.Mkdir(files.CreateBackupPath(topDir)); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, files.CreateBackupPath(topDir), err)
 	}
-	if err := internal.Mkdir(filepath.Join(files.CreateBackupPath(topDir), "2.mp3")); err != nil {
+	if err := tools.Mkdir(filepath.Join(files.CreateBackupPath(topDir), "2.mp3")); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, "2.mp3", err)
 	}
 	fFlag := false
@@ -540,7 +533,7 @@ func Test_repair_backupTracks(t *testing.T) {
 			},
 			WantedRecording: output.WantedRecording{
 				Console: fmt.Sprintf("The track %q has been backed up to %q.\n", filepath.Join(topDir, goodTrackName), filepath.Join(files.CreateBackupPath(topDir), "1.mp3")),
-				Log:     "level='error' command='repair' destination='backupTracks\\pre-repair-backup\\2.mp3' error='open backupTracks\\pre-repair-backup\\2.mp3: is a directory' source='backupTracks\\1 good track.mp3' msg='error copying file'\n",
+				Log:     "level='error' command='repair' destination='backupTracks\\pre-repair-backup\\2.mp3' error='open " + tools.SecureAbsolutePath("backupTracks\\pre-repair-backup\\2.mp3") + ": is a directory' source='backupTracks\\1 good track.mp3' msg='error copying file'\n",
 				Error:   fmt.Sprintf("The track %q cannot be backed up.\n", filepath.Join(topDir, goodTrackName)),
 			},
 		},
@@ -570,13 +563,13 @@ func createTaggedContent(frames map[string]string) []byte {
 func Test_repair_fixTracks(t *testing.T) {
 	const fnName = "repair.fixTracks()"
 	testAppPath := "appPath"
-	if err := internal.Mkdir(testAppPath); err != nil {
+	if err := tools.Mkdir(testAppPath); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testAppPath, err)
 	}
-	oldAppPath := internal.SetApplicationPathForTesting(testAppPath)
+	oldAppPath := tools.SetApplicationPath(testAppPath)
 	fFlag := false
 	topDir := "fixTracks"
-	if err := internal.Mkdir(topDir); err != nil {
+	if err := tools.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	frames := map[string]string{
@@ -599,7 +592,7 @@ func Test_repair_fixTracks(t *testing.T) {
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, testAppPath)
-		internal.SetApplicationPathForTesting(oldAppPath)
+		tools.SetApplicationPath(oldAppPath)
 	}()
 	type args struct {
 		tracks []*files.Track
@@ -633,6 +626,43 @@ func Test_repair_fixTracks(t *testing.T) {
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
+				}
+			}
+		})
+	}
+}
+
+func Test_newRepair(t *testing.T) {
+	type args struct {
+		o    output.Bus
+		c    *tools.Configuration
+		fSet *flag.FlagSet
+	}
+	tests := map[string]struct {
+		args
+		want  tools.CommandProcessor
+		want1 bool
+		output.WantedRecording
+	}{
+		"basic": {
+			args:  args{c: tools.EmptyConfiguration(), fSet: flag.NewFlagSet(repairCommandName, flag.ContinueOnError)},
+			want:  &repair{},
+			want1: true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			o := output.NewRecorder()
+			got, got1 := newRepair(o, tt.args.c, tt.args.fSet)
+			if _, ok := got.(*repair); !ok {
+				t.Errorf("newRepair() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("newRepair() got1 = %v, want %v", got1, tt.want1)
+			}
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, issue := range issues {
+					t.Errorf("newRepair() %s", issue)
 				}
 			}
 		})

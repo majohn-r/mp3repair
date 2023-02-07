@@ -4,20 +4,20 @@ import (
 	"flag"
 	"fmt"
 	"io/fs"
-	"mp3/internal"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
+	tools "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/mgr"
 )
 
 func init() {
-	addCommandData(resetDatabaseCommandName, commandData{isDefault: false, init: newResetDatabase})
+	tools.AddCommandData(resetDatabaseCommandName, &tools.CommandDescription{IsDefault: IsDefault(resetDatabaseCommandName), Initializer: newResetDatabase})
 	defaultMetadataPath = filepath.Join("%USERPROFILE%", "AppData", "Local", "Microsoft", "Media Player")
 	addDefaultMapping(resetDatabaseCommandName, map[string]any{
 		extensionFlag: defaultExtension,
@@ -57,7 +57,7 @@ var (
 	}
 )
 
-func newResetDatabase(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
+func newResetDatabase(o output.Bus, c *tools.Configuration, fSet *flag.FlagSet) (tools.CommandProcessor, bool) {
 	return newResetDatabaseCommand(o, c, fSet)
 }
 
@@ -68,15 +68,15 @@ type resetDatabaseDefaults struct {
 	extension string
 }
 
-func newResetDatabaseCommand(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (*resetDatabase, bool) {
+func newResetDatabaseCommand(o output.Bus, c *tools.Configuration, fSet *flag.FlagSet) (*resetDatabase, bool) {
 	defaults, defaultsOk := evaluateResetDatabaseDefaults(o, c.SubConfiguration(resetDatabaseCommandName))
 	if defaultsOk {
 		timeoutDescription := fmt.Sprintf(
 			"timeout in seconds (minimum %d, maximum %d) for stopping the media player service", minTimeout, maxTimeout)
-		timeoutUsage := internal.DecorateIntFlagUsage(timeoutDescription, defaults.timeout)
-		serviceUsage := internal.DecorateStringFlagUsage("name of the media player `service`", defaults.service)
-		metadataUsage := internal.DecorateStringFlagUsage("`directory` where the media player service metadata files are stored", defaults.metadata)
-		extensionUsage := internal.DecorateStringFlagUsage("`extension` for metadata files", defaults.extension)
+		timeoutUsage := tools.DecorateIntFlagUsage(timeoutDescription, defaults.timeout)
+		serviceUsage := tools.DecorateStringFlagUsage("name of the media player `service`", defaults.service)
+		metadataUsage := tools.DecorateStringFlagUsage("`directory` where the media player service metadata files are stored", defaults.metadata)
+		extensionUsage := tools.DecorateStringFlagUsage("`extension` for metadata files", defaults.extension)
 		return &resetDatabase{
 			timeout:   fSet.Int(timeoutFlag, defaults.timeout, timeoutUsage),
 			service:   fSet.String(serviceFlag, defaults.service, serviceUsage),
@@ -88,24 +88,24 @@ func newResetDatabaseCommand(o output.Bus, c *internal.Configuration, fSet *flag
 	return nil, false
 }
 
-func evaluateResetDatabaseDefaults(o output.Bus, c *internal.Configuration) (defaults resetDatabaseDefaults, ok bool) {
+func evaluateResetDatabaseDefaults(o output.Bus, c *tools.Configuration) (defaults resetDatabaseDefaults, ok bool) {
 	defaults = resetDatabaseDefaults{}
 	ok = true
 	var err error
-	if defaults.timeout, err = c.IntDefault(timeoutFlag, internal.NewIntBounds(minTimeout, defaultTimeout, maxTimeout)); err != nil {
-		reportBadDefault(o, resetDatabaseCommandName, err)
+	if defaults.timeout, err = c.IntDefault(timeoutFlag, tools.NewIntBounds(minTimeout, defaultTimeout, maxTimeout)); err != nil {
+		tools.ReportInvalidConfigurationData(o, resetDatabaseCommandName, err)
 		ok = false
 	}
 	if defaults.service, err = c.StringDefault(serviceFlag, defaultService); err != nil {
-		reportBadDefault(o, resetDatabaseCommandName, err)
+		tools.ReportInvalidConfigurationData(o, resetDatabaseCommandName, err)
 		ok = false
 	}
 	if defaults.metadata, err = c.StringDefault(metadataFlag, defaultMetadataPath); err != nil {
-		reportBadDefault(o, resetDatabaseCommandName, err)
+		tools.ReportInvalidConfigurationData(o, resetDatabaseCommandName, err)
 		ok = false
 	}
 	if defaults.extension, err = c.StringDefault(extensionFlag, defaultExtension); err != nil {
-		reportBadDefault(o, resetDatabaseCommandName, err)
+		tools.ReportInvalidConfigurationData(o, resetDatabaseCommandName, err)
 		ok = false
 	}
 	return
@@ -120,7 +120,7 @@ type resetDatabase struct {
 }
 
 func (r *resetDatabase) Exec(o output.Bus, args []string) (ok bool) {
-	if internal.ProcessArgs(o, r.f, args) {
+	if tools.ProcessArgs(o, r.f, args) {
 		if dirty() {
 			if ok = r.runCommand(o, func() (serviceGateway, error) {
 				m, err := mgr.Connect()
@@ -140,7 +140,7 @@ func (r *resetDatabase) Exec(o output.Bus, args []string) (ok bool) {
 }
 
 func (r *resetDatabase) runCommand(o output.Bus, connect func() (serviceGateway, error)) (ok bool) {
-	logStart(o, resetDatabaseCommandName, map[string]any{
+	tools.LogCommandStart(o, resetDatabaseCommandName, map[string]any{
 		"-" + serviceFlag:   *r.service,
 		"-" + timeoutFlag:   *r.timeout,
 		"-" + metadataFlag:  *r.metadata,
@@ -153,7 +153,7 @@ func (r *resetDatabase) runCommand(o output.Bus, connect func() (serviceGateway,
 }
 
 func (r *resetDatabase) deleteMetadata(o output.Bus) bool {
-	if files, ok := internal.ReadDirectory(o, *r.metadata); !ok {
+	if files, ok := tools.ReadDirectory(o, *r.metadata); !ok {
 		return false
 	} else {
 		pathsToDelete := r.filterMetadataFiles(files)
@@ -170,7 +170,7 @@ func (r *resetDatabase) deleteMetadataFiles(o output.Bus, paths []string) bool {
 	var count int
 	for _, path := range paths {
 		if err := os.Remove(path); err != nil {
-			reportFileDeletionFailure(o, path, err)
+			tools.ReportFileDeletionFailure(o, path, err)
 		} else {
 			count++
 		}
@@ -184,7 +184,7 @@ func (r *resetDatabase) filterMetadataFiles(files []fs.DirEntry) []string {
 	for _, file := range files {
 		if strings.HasSuffix(file.Name(), *r.extension) {
 			path := filepath.Join(*r.metadata, file.Name())
-			if internal.PlainFileExists(path) {
+			if tools.PlainFileExists(path) {
 				paths = append(paths, path)
 			}
 		}

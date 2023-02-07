@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	tools "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
@@ -24,7 +25,7 @@ func Test_analyzeEmptyFolders(t *testing.T) {
 	emptyDir := "empty"
 	dirtyDir := "dirty"
 	goodDir := "good"
-	if err := internal.Mkdir(emptyDir); err != nil {
+	if err := tools.Mkdir(emptyDir); err != nil {
 		t.Errorf("%s error creating %s: %v", fnName, emptyDir, err)
 	}
 	defer func() {
@@ -32,19 +33,19 @@ func Test_analyzeEmptyFolders(t *testing.T) {
 		internal.DestroyDirectoryForTesting(fnName, dirtyDir)
 		internal.DestroyDirectoryForTesting(fnName, goodDir)
 	}()
-	if err := internal.Mkdir(dirtyDir); err != nil {
+	if err := tools.Mkdir(dirtyDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, dirtyDir, err)
 	}
 	if err := internal.PopulateTopDirForTesting(dirtyDir); err != nil {
 		t.Errorf("%s error populating %q: %v", fnName, dirtyDir, err)
 	}
-	if err := internal.Mkdir(goodDir); err != nil {
+	if err := tools.Mkdir(goodDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, goodDir, err)
 	}
-	if err := internal.Mkdir(filepath.Join(goodDir, "goodArtist")); err != nil {
+	if err := tools.Mkdir(filepath.Join(goodDir, "goodArtist")); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, "goodArtist", err)
 	}
-	if err := internal.Mkdir(filepath.Join(goodDir, "goodArtist", "goodAlbum")); err != nil {
+	if err := tools.Mkdir(filepath.Join(goodDir, "goodArtist", "goodAlbum")); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, "good album", err)
 	}
 	if err := internal.CreateFileForTestingWithContent(filepath.Join(goodDir, "goodArtist", "goodAlbum"), "01 goodTrack.mp3", []byte("good content")); err != nil {
@@ -198,7 +199,7 @@ func Test_analyzeEmptyFolders(t *testing.T) {
 func Test_filterArtists(t *testing.T) {
 	const fnName = "filterArtists()"
 	topDir := "filterArtists"
-	if err := internal.Mkdir(topDir); err != nil {
+	if err := tools.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	defer func() {
@@ -381,7 +382,7 @@ func Test_check_analyzeIntegrity(t *testing.T) {
 	const fnName = "check.analyzeIntegrity()"
 	// create some data to work with
 	topDir := "integrity"
-	if err := internal.Mkdir(topDir); err != nil {
+	if err := tools.Mkdir(topDir); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, topDir, err)
 	}
 	defer func() {
@@ -389,12 +390,12 @@ func Test_check_analyzeIntegrity(t *testing.T) {
 	}()
 	// keep it simple: one artist, one album, one track
 	artistPath := filepath.Join(topDir, "artist")
-	if err := internal.Mkdir(artistPath); err != nil {
+	if err := tools.Mkdir(artistPath); err != nil {
 		t.Errorf("%s error creating artist folder", fnName)
 	}
 	backingArtist := files.NewArtist("artist", artistPath)
 	albumPath := filepath.Join(artistPath, "album")
-	if err := internal.Mkdir(albumPath); err != nil {
+	if err := tools.Mkdir(albumPath); err != nil {
 		t.Errorf("%s error creating album folder", fnName)
 	}
 	backingAlbum := files.NewAlbum("album", backingArtist, albumPath)
@@ -535,25 +536,20 @@ func equalCheckedTrack(got, want *checkedTrack) bool {
 }
 
 func makeCheckCommand() *check {
-	c, _ := newCheckCommand(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError))
+	c, _ := newCheckCommand(output.NewNilBus(), tools.EmptyConfiguration(), flag.NewFlagSet("check", flag.ContinueOnError))
 	return c
 }
 
 func Test_check_Exec(t *testing.T) {
 	const fnName = "check.Exec()"
 	topDir := "checkExec"
-	if err := internal.Mkdir(topDir); err != nil {
+	if err := tools.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, topDir, err)
 	}
-	savedHomePath := internal.SaveEnvVarForTesting("HOMEPATH")
-	homePath := internal.SavedEnvVar{
-		Name:  "HOMEPATH",
-		Value: "C:\\Users\\The User",
-		Set:   true,
-	}
-	homePath.RestoreForTesting()
+	savedHomePath := tools.NewEnvVarMemento("HOMEPATH")
+	os.Setenv("HOMEPATH", "C:\\Users\\The User")
 	defer func() {
-		savedHomePath.RestoreForTesting()
+		savedHomePath.Restore()
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
@@ -660,12 +656,9 @@ func Test_check_Exec(t *testing.T) {
 
 func Test_newCheckCommand(t *testing.T) {
 	const fnName = "newCheckCommand()"
-	savedAppData := internal.SaveEnvVarForTesting("APPDATA")
-	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
-	oldAppPath := internal.ApplicationPath()
-	internal.InitApplicationPath(output.NewNilBus())
+	oldAppPath := tools.SetApplicationPath("./mp3")
 	topDir := "loadTest"
-	if err := internal.Mkdir(topDir); err != nil {
+	if err := tools.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
@@ -675,14 +668,13 @@ func Test_newCheckCommand(t *testing.T) {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
 	defer func() {
-		savedAppData.RestoreForTesting()
-		internal.SetApplicationPathForTesting(oldAppPath)
+		tools.SetApplicationPath(oldAppPath)
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
-	config, _ := internal.ReadConfigurationFile(output.NewNilBus())
+	config, _ := tools.ReadConfigurationFile(output.NewNilBus())
 	type args struct {
-		c *internal.Configuration
+		c *tools.Configuration
 	}
 	tests := map[string]struct {
 		args
@@ -693,7 +685,7 @@ func Test_newCheckCommand(t *testing.T) {
 		output.WantedRecording
 	}{
 		"ordinary defaults": {
-			args:                     args{c: internal.EmptyConfiguration()},
+			args:                     args{c: tools.EmptyConfiguration()},
 			wantEmptyFolders:         false,
 			wantGapsInTrackNumbering: false,
 			wantIntegrity:            true,
@@ -708,7 +700,7 @@ func Test_newCheckCommand(t *testing.T) {
 		},
 		"bad default empty folder": {
 			args: args{
-				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
+				c: tools.NewConfiguration(output.NewNilBus(), map[string]any{
 					"check": map[string]any{
 						emptyFolders: "Empty!!",
 					},
@@ -722,7 +714,7 @@ func Test_newCheckCommand(t *testing.T) {
 		},
 		"bad default gaps": {
 			args: args{
-				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
+				c: tools.NewConfiguration(output.NewNilBus(), map[string]any{
 					"check": map[string]any{
 						trackNumberingGaps: "No",
 					},
@@ -736,7 +728,7 @@ func Test_newCheckCommand(t *testing.T) {
 		},
 		"bad default integrity": {
 			args: args{
-				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
+				c: tools.NewConfiguration(output.NewNilBus(), map[string]any{
 					"check": map[string]any{
 						integrity: "Off",
 					},
@@ -1169,6 +1161,42 @@ func Test_reportResults(t *testing.T) {
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
+				}
+			}
+		})
+	}
+}
+
+func Test_newCheck(t *testing.T) {
+	type args struct {
+		c    *tools.Configuration
+		fSet *flag.FlagSet
+	}
+	tests := map[string]struct {
+		args
+		want  tools.CommandProcessor
+		want1 bool
+		output.WantedRecording
+	}{
+		"basic": {
+			args:  args{c: tools.EmptyConfiguration(), fSet: flag.NewFlagSet(checkCommandName, flag.ContinueOnError)},
+			want:  makeCheckCommand(),
+			want1: true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			o := output.NewRecorder()
+			got, got1 := newCheck(o, tt.args.c, tt.args.fSet)
+			if _, ok := got.(*check); !ok {
+				t.Errorf("newCheck() did not create *check, created %#v", got)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("newCheck() got1 = %v, want %v", got1, tt.want1)
+			}
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, issue := range issues {
+					t.Errorf("newCheck() %s", issue)
 				}
 			}
 		})

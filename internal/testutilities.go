@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	tools "github.com/majohn-r/cmd-toolkit"
 )
 
 // NOTE: the functions in this file are strictly for testing purposes. Do not
@@ -96,7 +98,7 @@ func createAlbumDirForTesting(artistDir string, albumNumber, tracks int) error {
 	dummyDir := filepath.Join(albumDir, "ignore this folder")
 	directories := []string{albumDir, dummyDir}
 	for _, directory := range directories {
-		if err := Mkdir(directory); err != nil {
+		if err := tools.Mkdir(directory); err != nil {
 			return err
 		}
 	}
@@ -115,7 +117,7 @@ func createAlbumDirForTesting(artistDir string, albumNumber, tracks int) error {
 
 func createArtistDirForTesting(topDir string, artistNumber int, withContent bool) error {
 	artistDir := filepath.Join(topDir, CreateArtistNameForTesting(artistNumber))
-	if err := Mkdir(artistDir); err != nil {
+	if err := tools.Mkdir(artistDir); err != nil {
 		return err
 	}
 	if withContent {
@@ -151,7 +153,7 @@ func CreateNamedFileForTesting(fileName string, content []byte) (err error) {
 	if err == nil {
 		err = fmt.Errorf("file %q already exists", fileName)
 	} else if errors.Is(err, os.ErrNotExist) {
-		err = os.WriteFile(fileName, content, StdFilePermissions)
+		err = os.WriteFile(fileName, content, tools.StdFilePermissions)
 	}
 	return
 }
@@ -172,7 +174,7 @@ func CreateFileForTesting(dir, name string) (err error) {
 // than the prescribed values
 func CreateDefaultYamlFileForTesting() error {
 	path := "./mp3"
-	if err := Mkdir(path); err != nil {
+	if err := tools.Mkdir(path); err != nil {
 		return err
 	}
 	yamlInput := `---
@@ -195,38 +197,5 @@ unused:
     value: 1.25
 repair:
     dryRun: true # false`
-	return CreateFileForTestingWithContent(path, DefaultConfigFileName, []byte(yamlInput))
-}
-
-// SavedEnvVar preserves a memento of an environment variable's state
-type SavedEnvVar struct {
-	Name  string
-	Value string
-	Set   bool
-}
-
-// SaveEnvVarForTesting reads a specified environment variable and returns a
-// memento of its state
-func SaveEnvVarForTesting(name string) *SavedEnvVar {
-	s := &SavedEnvVar{Name: name}
-	if value, ok := os.LookupEnv(name); ok {
-		s.Value = value
-		s.Set = true
-	}
-	return s
-}
-
-// RestoreForTesting resets a saved environment variable to its original state
-func (s *SavedEnvVar) RestoreForTesting() {
-	if s.Set {
-		os.Setenv(s.Name, s.Value)
-	} else {
-		os.Unsetenv(s.Name)
-	}
-}
-
-// SecureAbsolutePathForTesting returns a path's absolute value
-func SecureAbsolutePathForTesting(path string) string {
-	absPath, _ := filepath.Abs(path)
-	return absPath
+	return CreateFileForTestingWithContent(path, tools.DefaultConfigFileName(), []byte(yamlInput))
 }

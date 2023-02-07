@@ -3,7 +3,6 @@ package files
 import (
 	"fmt"
 	"io/fs"
-	"mp3/internal"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -12,6 +11,7 @@ import (
 
 	"github.com/bogem/id3v2/v2"
 	"github.com/cheggaaa/pb/v3"
+	cmd "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
@@ -598,7 +598,7 @@ func (t *Track) RecordingArtist() string {
 
 // CopyFile copies the track file to a specified destination path.
 func (t *Track) CopyFile(destination string) error {
-	return internal.CopyFile(t.path, destination)
+	return cmd.CopyFile(t.path, destination)
 }
 
 // ID3V1Diagnostics returns the ID3V1 tag contents, if any; a missing ID3V1 tag

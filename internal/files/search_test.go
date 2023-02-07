@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"testing"
 
+	tools "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
@@ -14,14 +15,14 @@ func TestSearch_FilterArtists(t *testing.T) {
 	const fnName = "Search.FilterArtists()"
 	// generate test data
 	topDir := "loadTest"
-	if err := internal.Mkdir(topDir); err != nil {
+	if err := tools.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
 		t.Errorf("%s error populating %q: %v", fnName, topDir, err)
 	}
 	o := output.NewNilBus()
-	c := internal.EmptyConfiguration()
+	c := tools.EmptyConfiguration()
 	realSF, _ := NewSearchFlags(o, c, flag.NewFlagSet("real", flag.ContinueOnError))
 	realS, _ := realSF.ProcessArgs(o, []string{"-topDir", topDir})
 	realArtists, _ := realS.Load(o)
@@ -83,7 +84,7 @@ func TestSearch_Load(t *testing.T) {
 	const fnName = "Search.Load()"
 	// generate test data
 	topDir := "loadTest"
-	if err := internal.Mkdir(topDir); err != nil {
+	if err := tools.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
@@ -155,13 +156,13 @@ func TestSearch_LoadUnfiltered(t *testing.T) {
 	// generate test data
 	topDir := "loadTest"
 	emptyDir := "empty directory"
-	if err := internal.Mkdir(topDir); err != nil {
+	if err := tools.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
 		t.Errorf("%s error populating %q: %v", fnName, topDir, err)
 	}
-	if err := internal.Mkdir(emptyDir); err != nil {
+	if err := tools.Mkdir(emptyDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, emptyDir, err)
 	}
 	defer func() {

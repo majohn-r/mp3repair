@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	tools "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
@@ -57,7 +58,7 @@ func Test_list_validateTrackSorting(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			fs := flag.NewFlagSet("list", flag.ContinueOnError)
 			o := output.NewRecorder()
-			l, _ := newListCommand(o, internal.EmptyConfiguration(), fs)
+			l, _ := newListCommand(o, tools.EmptyConfiguration(), fs)
 			l.trackSorting = &tt.sortingInput
 			l.includeAlbums = &tt.includeAlbums
 			l.validateTrackSorting(o)
@@ -199,7 +200,7 @@ func generateTrackListings(testTracks []*testTrack, spacer string, artists, albu
 }
 
 func newListForTesting() *list {
-	l, _ := newListCommand(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("list", flag.ContinueOnError))
+	l, _ := newListCommand(output.NewNilBus(), tools.EmptyConfiguration(), flag.NewFlagSet("list", flag.ContinueOnError))
 	return l
 }
 
@@ -207,21 +208,16 @@ func Test_list_Exec(t *testing.T) {
 	const fnName = "list.Exec()"
 	// generate test data
 	topDir := "loadTest"
-	if err := internal.Mkdir(topDir); err != nil {
+	if err := tools.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
-	savedHome := internal.SaveEnvVarForTesting("HOMEPATH")
-	home := internal.SavedEnvVar{
-		Name:  "HOMEPATH",
-		Value: "C:\\Users\\The User",
-		Set:   true,
-	}
-	home.RestoreForTesting()
+	savedHome := tools.NewEnvVarMemento("HOMEPATH")
+	os.Setenv("HOMEPATH", "C:\\Users\\The User")
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
 		t.Errorf("%s error populating %q: %v", fnName, topDir, err)
 	}
 	defer func() {
-		savedHome.RestoreForTesting()
+		savedHome.Restore()
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 	}()
 	type args struct {
@@ -707,14 +703,12 @@ func Test_list_Exec(t *testing.T) {
 
 func Test_newListCommand(t *testing.T) {
 	const fnName = "newListCommand()"
-	savedAppData := internal.SaveEnvVarForTesting("APPDATA")
-	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
-	oldAppPath := internal.ApplicationPath()
-	internal.InitApplicationPath(output.NewNilBus())
-	savedFoo := internal.SaveEnvVarForTesting("FOO")
+	oldAppPath := tools.SetApplicationPath("./mp3")
+	tools.InitApplicationPath(output.NewNilBus())
+	savedFoo := tools.NewEnvVarMemento("FOO")
 	os.Unsetenv("FOO")
 	topDir := "loadTest"
-	if err := internal.Mkdir(topDir); err != nil {
+	if err := tools.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	if err := internal.PopulateTopDirForTesting(topDir); err != nil {
@@ -723,16 +717,15 @@ func Test_newListCommand(t *testing.T) {
 	if err := internal.CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
-	defaultConfig, _ := internal.ReadConfigurationFile(output.NewNilBus())
+	defaultConfig, _ := tools.ReadConfigurationFile(output.NewNilBus())
 	defer func() {
-		savedAppData.RestoreForTesting()
-		internal.SetApplicationPathForTesting(oldAppPath)
-		savedFoo.RestoreForTesting()
+		tools.SetApplicationPath(oldAppPath)
+		savedFoo.Restore()
 		internal.DestroyDirectoryForTesting(fnName, topDir)
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
 	}()
 	type args struct {
-		c *internal.Configuration
+		c *tools.Configuration
 	}
 	tests := map[string]struct {
 		args
@@ -745,7 +738,7 @@ func Test_newListCommand(t *testing.T) {
 		output.WantedRecording
 	}{
 		"ordinary defaults": {
-			args:                 args{c: internal.EmptyConfiguration()},
+			args:                 args{c: tools.EmptyConfiguration()},
 			wantIncludeAlbums:    true,
 			wantIncludeArtists:   true,
 			wantIncludeTracks:    false,
@@ -764,7 +757,7 @@ func Test_newListCommand(t *testing.T) {
 		},
 		"bad default for includeAlbums": {
 			args: args{
-				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
+				c: tools.NewConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
 						"includeAlbums": "nope",
 					},
@@ -777,7 +770,7 @@ func Test_newListCommand(t *testing.T) {
 		},
 		"bad default for includeArtists": {
 			args: args{
-				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
+				c: tools.NewConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
 						"includeArtists": "yes",
 					},
@@ -790,7 +783,7 @@ func Test_newListCommand(t *testing.T) {
 		},
 		"bad default for includeTracks": {
 			args: args{
-				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
+				c: tools.NewConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
 						"includeTracks": "sure",
 					},
@@ -803,7 +796,7 @@ func Test_newListCommand(t *testing.T) {
 		},
 		"bad default for annotate": {
 			args: args{
-				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
+				c: tools.NewConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
 						"annotate": "+2",
 					},
@@ -816,7 +809,7 @@ func Test_newListCommand(t *testing.T) {
 		},
 		"bad default for details": {
 			args: args{
-				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
+				c: tools.NewConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
 						"details": "no!",
 					},
@@ -829,7 +822,7 @@ func Test_newListCommand(t *testing.T) {
 		},
 		"bad default for diagnostics": {
 			args: args{
-				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
+				c: tools.NewConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
 						"diagnostic": "no!",
 					},
@@ -842,7 +835,7 @@ func Test_newListCommand(t *testing.T) {
 		},
 		"bad default for sorting": {
 			args: args{
-				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
+				c: tools.NewConfiguration(output.NewNilBus(), map[string]any{
 					"list": map[string]any{
 						"sort": "$FOO",
 					},
@@ -900,7 +893,7 @@ func Test_list_outputTrackDiagnostics(t *testing.T) {
 	badAlbum := files.NewAlbum("bad album", badArtist, "BadAlbum")
 	badTrack := files.NewTrack(badAlbum, "01 bad track.mp3", "bad track", 1)
 	makeList := func() *list {
-		l, _ := newListCommand(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("list", flag.ContinueOnError))
+		l, _ := newListCommand(output.NewNilBus(), tools.EmptyConfiguration(), flag.NewFlagSet("list", flag.ContinueOnError))
 		t := true
 		l.diagnostics = &t
 		return l
@@ -916,15 +909,15 @@ func Test_list_outputTrackDiagnostics(t *testing.T) {
 		"TLEN": "1000",
 	}
 	topDir := "runDiagnostics"
-	if err := internal.Mkdir(topDir); err != nil {
+	if err := tools.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	goodArtistDir := filepath.Join(topDir, "good artist")
-	if err := internal.Mkdir(goodArtistDir); err != nil {
+	if err := tools.Mkdir(goodArtistDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, goodArtistDir, err)
 	}
 	goodAlbumDir := filepath.Join(goodArtistDir, "good album")
-	if err := internal.Mkdir(goodAlbumDir); err != nil {
+	if err := tools.Mkdir(goodAlbumDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, goodAlbumDir, err)
 	}
 	content := createTaggedContent(frames)
@@ -1003,7 +996,7 @@ func Test_list_outputTrackDetails(t *testing.T) {
 	badAlbum := files.NewAlbum("bad album", badArtist, "BadAlbum")
 	badTrack := files.NewTrack(badAlbum, "01 bad track.mp3", "bad track", 1)
 	makeList := func() *list {
-		l, _ := newListCommand(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("list", flag.ContinueOnError))
+		l, _ := newListCommand(output.NewNilBus(), tools.EmptyConfiguration(), flag.NewFlagSet("list", flag.ContinueOnError))
 		t := true
 		l.details = &t
 		return l
@@ -1025,15 +1018,15 @@ func Test_list_outputTrackDetails(t *testing.T) {
 		"TPE3": "Someone with a stick",
 	}
 	topDir := "details"
-	if err := internal.Mkdir(topDir); err != nil {
+	if err := tools.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	goodArtistDir := filepath.Join(topDir, "good artist")
-	if err := internal.Mkdir(goodArtistDir); err != nil {
+	if err := tools.Mkdir(goodArtistDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, goodArtistDir, err)
 	}
 	goodAlbumDir := filepath.Join(goodArtistDir, "good album")
-	if err := internal.Mkdir(goodAlbumDir); err != nil {
+	if err := tools.Mkdir(goodAlbumDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, goodAlbumDir, err)
 	}
 	content := createTaggedContent(frames)
@@ -1088,6 +1081,45 @@ func Test_list_outputTrackDetails(t *testing.T) {
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
+				}
+			}
+		})
+	}
+}
+
+func Test_newList(t *testing.T) {
+	makeListCommand := func() *list {
+		return &list{}
+	}
+	type args struct {
+		c    *tools.Configuration
+		fSet *flag.FlagSet
+	}
+	tests := map[string]struct {
+		args
+		want  tools.CommandProcessor
+		want1 bool
+		output.WantedRecording
+	}{
+		"basic": {
+			args:  args{c: tools.EmptyConfiguration(), fSet: flag.NewFlagSet(checkCommandName, flag.ContinueOnError)},
+			want:  makeListCommand(),
+			want1: true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			o := output.NewRecorder()
+			got, got1 := newList(o, tt.args.c, tt.args.fSet)
+			if _, ok := got.(*list); !ok {
+				t.Errorf("newList() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("newList() got1 = %v, want %v", got1, tt.want1)
+			}
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, issue := range issues {
+					t.Errorf("newList() %s", issue)
 				}
 			}
 		})

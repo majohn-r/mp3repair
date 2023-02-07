@@ -2,17 +2,17 @@ package commands
 
 import (
 	"flag"
-	"mp3/internal"
 	"mp3/internal/files"
 	"os"
 	"path/filepath"
 
+	tools "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"gopkg.in/yaml.v3"
 )
 
 func init() {
-	addCommandData(exportCommandName, commandData{isDefault: false, init: newExport})
+	tools.AddCommandData(exportCommandName, &tools.CommandDescription{IsDefault: IsDefault(exportCommandName), Initializer: newExport})
 	addDefaultMapping(exportCommandName, map[string]any{
 		defaultsFlag:  defaultDefaults,
 		overwriteFlag: defaultOverwrite,
@@ -31,7 +31,7 @@ type export struct {
 	f         *flag.FlagSet
 }
 
-func newExport(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
+func newExport(o output.Bus, c *tools.Configuration, fSet *flag.FlagSet) (tools.CommandProcessor, bool) {
 	return newExportCommand(o, c, fSet)
 }
 
@@ -50,10 +50,10 @@ type exportDefaultValues struct {
 	overwrite bool
 }
 
-func newExportCommand(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (*export, bool) {
+func newExportCommand(o output.Bus, c *tools.Configuration, fSet *flag.FlagSet) (*export, bool) {
 	if defaults, ok := evaluateExportDefaults(o, c.SubConfiguration(exportCommandName)); ok {
-		defaultsUsage := internal.DecorateBoolFlagUsage("write defaults.yaml", defaults.defaults)
-		overwriteUsage := internal.DecorateBoolFlagUsage("overwrite file if it exists", defaults.overwrite)
+		defaultsUsage := tools.DecorateBoolFlagUsage("write defaults.yaml", defaults.defaults)
+		overwriteUsage := tools.DecorateBoolFlagUsage("overwrite file if it exists", defaults.overwrite)
 		return &export{
 			defaults:  fSet.Bool(defaultsFlag, defaults.defaults, defaultsUsage),
 			overwrite: fSet.Bool(overwriteFlag, defaults.overwrite, overwriteUsage),
@@ -63,23 +63,23 @@ func newExportCommand(o output.Bus, c *internal.Configuration, fSet *flag.FlagSe
 	return nil, false
 }
 
-func evaluateExportDefaults(o output.Bus, c *internal.Configuration) (v exportDefaultValues, ok bool) {
+func evaluateExportDefaults(o output.Bus, c *tools.Configuration) (v exportDefaultValues, ok bool) {
 	ok = true
 	v = exportDefaultValues{}
 	var err error
 	if v.defaults, err = c.BoolDefault(defaultsFlag, defaultDefaults); err != nil {
-		reportBadDefault(o, exportCommandName, err)
+		tools.ReportInvalidConfigurationData(o, exportCommandName, err)
 		ok = false
 	}
 	if v.overwrite, err = c.BoolDefault(overwriteFlag, defaultOverwrite); err != nil {
-		reportBadDefault(o, exportCommandName, err)
+		tools.ReportInvalidConfigurationData(o, exportCommandName, err)
 		ok = false
 	}
 	return
 }
 
 func (e *export) Exec(o output.Bus, args []string) (ok bool) {
-	if internal.ProcessArgs(o, e.f, args) {
+	if tools.ProcessArgs(o, e.f, args) {
 		ok = e.runCommand(o)
 	}
 	return
@@ -95,7 +95,7 @@ func (e *export) logFields() map[string]any {
 
 func (e *export) runCommand(o output.Bus) bool {
 	if !*e.defaults {
-		reportNothingToDo(o, exportCommandName, e.logFields())
+		tools.ReportNothingToDo(o, exportCommandName, e.logFields())
 		return false
 	}
 	return e.exportDefaults(o)
@@ -120,9 +120,9 @@ func defaultsContent() []byte {
 }
 
 func (e *export) writeDefaults(o output.Bus, b []byte) bool {
-	path := internal.ApplicationPath()
-	f := filepath.Join(path, internal.DefaultConfigFileName)
-	if internal.PlainFileExists(f) {
+	path := tools.ApplicationPath()
+	f := filepath.Join(path, tools.DefaultConfigFileName())
+	if tools.PlainFileExists(f) {
 		return e.overwriteFile(o, f, b)
 	}
 	return createFile(o, f, b)
@@ -153,8 +153,8 @@ func (e *export) overwriteFile(o output.Bus, f string, b []byte) (ok bool) {
 }
 
 func createFile(o output.Bus, f string, content []byte) bool {
-	if err := os.WriteFile(f, content, internal.StdFilePermissions); err != nil {
-		reportFileCreationFailure(o, exportCommandName, f, err)
+	if err := os.WriteFile(f, content, tools.StdFilePermissions); err != nil {
+		tools.ReportFileCreationFailure(o, exportCommandName, f, err)
 		return false
 	}
 	return true

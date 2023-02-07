@@ -3,16 +3,16 @@ package commands
 import (
 	"flag"
 	"fmt"
-	"mp3/internal"
 	"mp3/internal/files"
 	"sort"
 	"strings"
 
+	tools "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
 func init() {
-	addCommandData(listCommandName, commandData{isDefault: true, init: newList})
+	tools.AddCommandData(listCommandName, &tools.CommandDescription{IsDefault: IsDefault(listCommandName), Initializer: newList})
 	addDefaultMapping(listCommandName, map[string]any{
 		annotateListingsFlag:  defaultAnnotateListings,
 		detailsListingFlag:    defaultDetailsListing,
@@ -36,7 +36,7 @@ type list struct {
 	sf               *files.SearchFlags
 }
 
-func newList(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
+func newList(o output.Bus, c *tools.Configuration, fSet *flag.FlagSet) (tools.CommandProcessor, bool) {
 	return newListCommand(o, c, fSet)
 }
 
@@ -73,17 +73,17 @@ type listDefaults struct {
 	sorting        string
 }
 
-func newListCommand(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (*list, bool) {
+func newListCommand(o output.Bus, c *tools.Configuration, fSet *flag.FlagSet) (*list, bool) {
 	defaults, ok := evaluateListDefaults(o, c.SubConfiguration(listCommandName))
 	sFlags, sFlagsOk := files.NewSearchFlags(o, c, fSet)
 	if ok && sFlagsOk {
-		albumUsage := internal.DecorateBoolFlagUsage("include album names in listing", defaults.includeAlbums)
-		artistUsage := internal.DecorateBoolFlagUsage("include artist names in listing", defaults.includeArtists)
-		trackUsage := internal.DecorateBoolFlagUsage("include track names in listing", defaults.includeTracks)
-		sortingUsage := internal.DecorateStringFlagUsage("track `sorting`, 'numeric' in track number order, or 'alpha' in track name order", defaults.sorting)
-		annotateUsage := internal.DecorateBoolFlagUsage("annotate listings with album and artist data", defaults.annotateTracks)
-		diagnosticUsage := internal.DecorateBoolFlagUsage("include diagnostic information with tracks", defaults.diagnostics)
-		detailsUsage := internal.DecorateBoolFlagUsage("include details with tracks", defaults.details)
+		albumUsage := tools.DecorateBoolFlagUsage("include album names in listing", defaults.includeAlbums)
+		artistUsage := tools.DecorateBoolFlagUsage("include artist names in listing", defaults.includeArtists)
+		trackUsage := tools.DecorateBoolFlagUsage("include track names in listing", defaults.includeTracks)
+		sortingUsage := tools.DecorateStringFlagUsage("track `sorting`, 'numeric' in track number order, or 'alpha' in track name order", defaults.sorting)
+		annotateUsage := tools.DecorateBoolFlagUsage("annotate listings with album and artist data", defaults.annotateTracks)
+		diagnosticUsage := tools.DecorateBoolFlagUsage("include diagnostic information with tracks", defaults.diagnostics)
+		detailsUsage := tools.DecorateBoolFlagUsage("include details with tracks", defaults.details)
 		return &list{
 			includeAlbums:    fSet.Bool(includeAlbumsFlag, defaults.includeAlbums, albumUsage),
 			includeArtists:   fSet.Bool(includeArtistsFlag, defaults.includeArtists, artistUsage),
@@ -98,43 +98,43 @@ func newListCommand(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet)
 	return nil, false
 }
 
-func evaluateListDefaults(o output.Bus, c *internal.Configuration) (defaults listDefaults, ok bool) {
+func evaluateListDefaults(o output.Bus, c *tools.Configuration) (defaults listDefaults, ok bool) {
 	ok = true
 	defaults = listDefaults{}
 	var err error
 	defaults.includeAlbums, err = c.BoolDefault(includeAlbumsFlag, defaultIncludeAlbums)
 	if err != nil {
-		reportBadDefault(o, listCommandName, err)
+		tools.ReportInvalidConfigurationData(o, listCommandName, err)
 		ok = false
 	}
 	defaults.includeArtists, err = c.BoolDefault(includeArtistsFlag, defaultIncludeArtists)
 	if err != nil {
-		reportBadDefault(o, listCommandName, err)
+		tools.ReportInvalidConfigurationData(o, listCommandName, err)
 		ok = false
 	}
 	defaults.includeTracks, err = c.BoolDefault(includeTracksFlag, defaultIncludeTracks)
 	if err != nil {
-		reportBadDefault(o, listCommandName, err)
+		tools.ReportInvalidConfigurationData(o, listCommandName, err)
 		ok = false
 	}
 	defaults.annotateTracks, err = c.BoolDefault(annotateListingsFlag, defaultAnnotateListings)
 	if err != nil {
-		reportBadDefault(o, listCommandName, err)
+		tools.ReportInvalidConfigurationData(o, listCommandName, err)
 		ok = false
 	}
 	defaults.diagnostics, err = c.BoolDefault(diagnosticListingFlag, defaultDiagnosticListing)
 	if err != nil {
-		reportBadDefault(o, listCommandName, err)
+		tools.ReportInvalidConfigurationData(o, listCommandName, err)
 		ok = false
 	}
 	defaults.details, err = c.BoolDefault(detailsListingFlag, defaultDetailsListing)
 	if err != nil {
-		reportBadDefault(o, listCommandName, err)
+		tools.ReportInvalidConfigurationData(o, listCommandName, err)
 		ok = false
 	}
 	defaults.sorting, err = c.StringDefault(trackSortingFlag, defaultTrackSorting)
 	if err != nil {
-		reportBadDefault(o, listCommandName, err)
+		tools.ReportInvalidConfigurationData(o, listCommandName, err)
 		ok = false
 	}
 	return
@@ -162,10 +162,10 @@ func (l *list) logFields() map[string]any {
 
 func (l *list) runCommand(o output.Bus, s *files.Search) (ok bool) {
 	if !*l.includeArtists && !*l.includeAlbums && !*l.includeTracks {
-		reportNothingToDo(o, listCommandName, l.logFields())
+		tools.ReportNothingToDo(o, listCommandName, l.logFields())
 		return
 	}
-	logStart(o, listCommandName, l.logFields())
+	tools.LogCommandStart(o, listCommandName, l.logFields())
 	if *l.includeTracks {
 		if l.validateTrackSorting(o) {
 			o.Log(output.Info, "one or more flags were overridden", l.logFields())

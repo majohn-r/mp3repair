@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/bogem/id3v2/v2"
+	tools "github.com/majohn-r/cmd-toolkit"
 )
 
 func Test_trackMetadata_setId3v1Values(t *testing.T) {
@@ -110,7 +111,7 @@ func Test_trackMetadata_setId3v2Values(t *testing.T) {
 func Test_readMetadata(t *testing.T) {
 	const fnName = "readMetadata()"
 	testDir := "readMetadata"
-	if err := internal.Mkdir(testDir); err != nil {
+	if err := tools.Mkdir(testDir); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, testDir, err)
 	}
 	taglessFile := "01 tagless.mp3"
@@ -151,7 +152,7 @@ func Test_readMetadata(t *testing.T) {
 		path string
 	}
 	tests := map[string]struct {
-		args args
+		args
 		want *trackMetadata
 	}{
 		"missing file": {

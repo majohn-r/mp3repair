@@ -10,33 +10,30 @@ import (
 	"regexp"
 	"testing"
 
+	tools "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
 func Test_NewSearchFlags(t *testing.T) {
 	const fnName = "NewSearchFlags()"
-	savedAppData := internal.SaveEnvVarForTesting("APPDATA")
-	os.Setenv("APPDATA", internal.SecureAbsolutePathForTesting("."))
-	oldAppPath := internal.ApplicationPath()
+	oldAppPath := tools.SetApplicationPath("./mp3")
 	o := output.NewNilBus()
-	internal.InitApplicationPath(o)
-	savedFoo := internal.SaveEnvVarForTesting("FOO")
+	savedFoo := tools.NewEnvVarMemento("FOO")
 	os.Unsetenv("FOO")
-	savedHomePath := internal.SaveEnvVarForTesting("HOMEPATH")
+	savedHomePath := tools.NewEnvVarMemento("HOMEPATH")
 	os.Setenv("HOMEPATH", ".")
 	if err := internal.CreateDefaultYamlFileForTesting(); err != nil {
 		t.Errorf("%s error creating defaults.yaml: %v", fnName, err)
 	}
-	defaultConfig, _ := internal.ReadConfigurationFile(o)
+	defaultConfig, _ := tools.ReadConfigurationFile(o)
 	defer func() {
-		savedAppData.RestoreForTesting()
-		internal.SetApplicationPathForTesting(oldAppPath)
-		savedFoo.RestoreForTesting()
+		tools.SetApplicationPath(oldAppPath)
+		savedFoo.Restore()
 		internal.DestroyDirectoryForTesting(fnName, "./mp3")
-		savedHomePath.RestoreForTesting()
+		savedHomePath.Restore()
 	}()
 	type args struct {
-		c *internal.Configuration
+		c *tools.Configuration
 	}
 	tests := map[string]struct {
 		args
@@ -47,31 +44,31 @@ func Test_NewSearchFlags(t *testing.T) {
 		wantArtistRegex string
 		output.WantedRecording
 	}{
-		"default":   {args: args{c: internal.EmptyConfiguration()}, wantTopDir: ".\\Music", wantExtension: ".mp3", wantAlbumRegex: ".*", wantArtistRegex: ".*", wantOk: true},
+		"default":   {args: args{c: tools.EmptyConfiguration()}, wantTopDir: ".\\Music", wantExtension: ".mp3", wantAlbumRegex: ".*", wantArtistRegex: ".*", wantOk: true},
 		"overrides": {args: args{c: defaultConfig}, wantTopDir: ".", wantExtension: ".mpeg", wantAlbumRegex: "^.*$", wantArtistRegex: "^.*$", wantOk: true},
 		"bad default topDir": {
-			args: args{c: internal.NewConfiguration(output.NewNilBus(), map[string]any{"common": map[string]any{"topDir": "$FOO"}})},
+			args: args{c: tools.NewConfiguration(output.NewNilBus(), map[string]any{"common": map[string]any{"topDir": "$FOO"}})},
 			WantedRecording: output.WantedRecording{
 				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -topDir: missing environment variables: [FOO].\n",
 				Log:   "level='error' error='invalid value \"$FOO\" for flag -topDir: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
 			},
 		},
 		"bad default extension": {
-			args: args{c: internal.NewConfiguration(output.NewNilBus(), map[string]any{"common": map[string]any{"ext": "$FOO"}})},
+			args: args{c: tools.NewConfiguration(output.NewNilBus(), map[string]any{"common": map[string]any{"ext": "$FOO"}})},
 			WantedRecording: output.WantedRecording{
 				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -ext: missing environment variables: [FOO].\n",
 				Log:   "level='error' error='invalid value \"$FOO\" for flag -ext: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
 			},
 		},
 		"bad default album filter": {
-			args: args{c: internal.NewConfiguration(output.NewNilBus(), map[string]any{"common": map[string]any{"albumFilter": "$FOO"}})},
+			args: args{c: tools.NewConfiguration(output.NewNilBus(), map[string]any{"common": map[string]any{"albumFilter": "$FOO"}})},
 			WantedRecording: output.WantedRecording{
 				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -albumFilter: missing environment variables: [FOO].\n",
 				Log:   "level='error' error='invalid value \"$FOO\" for flag -albumFilter: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",
 			},
 		},
 		"bad default artist filter": {
-			args: args{c: internal.NewConfiguration(output.NewNilBus(), map[string]any{"common": map[string]any{"artistFilter": "$FOO"}})},
+			args: args{c: tools.NewConfiguration(output.NewNilBus(), map[string]any{"common": map[string]any{"artistFilter": "$FOO"}})},
 			WantedRecording: output.WantedRecording{
 				Error: "The configuration file \"defaults.yaml\" contains an invalid value for \"common\": invalid value \"$FOO\" for flag -artistFilter: missing environment variables: [FOO].\n",
 				Log:   "level='error' error='invalid value \"$FOO\" for flag -artistFilter: missing environment variables: [FOO]' section='common' msg='invalid content in configuration file'\n",

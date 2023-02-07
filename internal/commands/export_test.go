@@ -6,17 +6,18 @@ import (
 	"path/filepath"
 	"testing"
 
+	tools "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
 func Test_createFile(t *testing.T) {
 	const fnName = "createFile()"
 	testDir := "createFile"
-	if err := internal.Mkdir(testDir); err != nil {
+	if err := tools.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
 	unwritable := filepath.Join(testDir, "unwritable.txt")
-	if err := internal.Mkdir(unwritable); err != nil {
+	if err := tools.Mkdir(unwritable); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, unwritable, err)
 	}
 	defer func() {
@@ -69,7 +70,7 @@ func Test_export_overwriteFile(t *testing.T) {
 	fFlag := false
 	tFlag := true
 	testDir := "overwriteFile"
-	if err := internal.Mkdir(testDir); err != nil {
+	if err := tools.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
 	existingFile1 := filepath.Join(testDir, "existing1")
@@ -77,7 +78,7 @@ func Test_export_overwriteFile(t *testing.T) {
 		t.Errorf("%s error creating %q: %v", fnName, existingFile1, err)
 	}
 	existingFile1Backup := filepath.Join(testDir, "existing1-backup")
-	if err := internal.Mkdir(existingFile1Backup); err != nil {
+	if err := tools.Mkdir(existingFile1Backup); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, existingFile1Backup, err)
 	}
 	existingFile2 := filepath.Join(testDir, "existing2")
@@ -144,26 +145,26 @@ func Test_export_overwriteFile(t *testing.T) {
 
 func Test_export_writeDefaults(t *testing.T) {
 	const fnName = "export.writeDefaults()"
-	oldAppPath := internal.ApplicationPath()
+	oldAppPath := tools.ApplicationPath()
 	testDir := "writeDefaults"
-	if err := internal.Mkdir(testDir); err != nil {
+	if err := tools.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
 	testDir2 := filepath.Join(testDir, "2")
-	if err := internal.Mkdir(testDir2); err != nil {
+	if err := tools.Mkdir(testDir2); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir2, err)
 	}
 	occupiedMp3Path := filepath.Join(testDir2, "mp3")
-	if err := internal.Mkdir(occupiedMp3Path); err != nil {
+	if err := tools.Mkdir(occupiedMp3Path); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, occupiedMp3Path, err)
 	}
-	if err := internal.CreateFileForTesting(occupiedMp3Path, internal.DefaultConfigFileName); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, filepath.Join(occupiedMp3Path, internal.DefaultConfigFileName), err)
+	if err := internal.CreateFileForTesting(occupiedMp3Path, tools.DefaultConfigFileName()); err != nil {
+		t.Errorf("%s error creating %q: %v", fnName, filepath.Join(occupiedMp3Path, tools.DefaultConfigFileName()), err)
 	}
 	tFlag := true
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, testDir)
-		internal.SetApplicationPathForTesting(oldAppPath)
+		tools.SetApplicationPath(oldAppPath)
 	}()
 	type args struct {
 		b []byte
@@ -189,7 +190,7 @@ func Test_export_writeDefaults(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			internal.SetApplicationPathForTesting(tt.appPath)
+			tools.SetApplicationPath(tt.appPath)
 			o := output.NewRecorder()
 			if gotOk := tt.ex.writeDefaults(o, tt.args.b); gotOk != tt.wantOk {
 				t.Errorf("%s = %v, want %v", fnName, gotOk, tt.wantOk)
@@ -208,13 +209,13 @@ func Test_export_exportDefaults(t *testing.T) {
 	fFlag := false
 	tFlag := true
 	testDir := "exportDefaults"
-	if err := internal.Mkdir(testDir); err != nil {
+	if err := tools.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
-	oldAppPath := internal.SetApplicationPathForTesting(testDir)
+	oldAppPath := tools.SetApplicationPath(testDir)
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, testDir)
-		internal.SetApplicationPathForTesting(oldAppPath)
+		tools.SetApplicationPath(oldAppPath)
 	}()
 	tests := map[string]struct {
 		ex   *export
@@ -292,19 +293,19 @@ func Test_defaultsContent(t *testing.T) {
 }
 
 func makeExportForTesting() *export {
-	e, _ := newExportCommand(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet(exportCommandName, flag.ContinueOnError))
+	e, _ := newExportCommand(output.NewNilBus(), tools.EmptyConfiguration(), flag.NewFlagSet(exportCommandName, flag.ContinueOnError))
 	return e
 }
 
 func Test_export_Exec(t *testing.T) {
 	const fnName = "export.Exec()"
 	testAppPath := "appPath"
-	if err := internal.Mkdir(testAppPath); err != nil {
+	if err := tools.Mkdir(testAppPath); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testAppPath, err)
 	}
-	oldAppPath := internal.SetApplicationPathForTesting(testAppPath)
+	oldAppPath := tools.SetApplicationPath(testAppPath)
 	defer func() {
-		internal.SetApplicationPathForTesting(oldAppPath)
+		tools.SetApplicationPath(oldAppPath)
 		internal.DestroyDirectoryForTesting(fnName, testAppPath)
 	}()
 	type args struct {
@@ -362,7 +363,7 @@ func Test_export_Exec(t *testing.T) {
 func Test_newExportCommand(t *testing.T) {
 	const fnName = "newExportCommand()"
 	type args struct {
-		c    *internal.Configuration
+		c    *tools.Configuration
 		fSet *flag.FlagSet
 	}
 	tests := map[string]struct {
@@ -372,13 +373,13 @@ func Test_newExportCommand(t *testing.T) {
 		output.WantedRecording
 	}{
 		"normal": {
-			args:   args{c: internal.EmptyConfiguration(), fSet: flag.NewFlagSet(exportCommandName, flag.ContinueOnError)},
+			args:   args{c: tools.EmptyConfiguration(), fSet: flag.NewFlagSet(exportCommandName, flag.ContinueOnError)},
 			want:   &export{},
 			wantOk: true,
 		},
 		"abnormal": {
 			args: args{
-				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
+				c: tools.NewConfiguration(output.NewNilBus(), map[string]any{
 					exportCommandName: map[string]any{
 						defaultsFlag:  "Beats me",
 						overwriteFlag: 12,
@@ -411,6 +412,42 @@ func Test_newExportCommand(t *testing.T) {
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
+				}
+			}
+		})
+	}
+}
+
+func Test_newExport(t *testing.T) {
+	type args struct {
+		c    *tools.Configuration
+		fSet *flag.FlagSet
+	}
+	tests := map[string]struct {
+		args
+		want  tools.CommandProcessor
+		want1 bool
+		output.WantedRecording
+	}{
+		"basic": {
+			args:  args{c: tools.EmptyConfiguration(), fSet: flag.NewFlagSet(exportCommandName, flag.ContinueOnError)},
+			want:  makeExportForTesting(),
+			want1: true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			o := output.NewRecorder()
+			got, got1 := newExport(o, tt.args.c, tt.args.fSet)
+			if _, ok := got.(*export); !ok {
+				t.Errorf("newExport() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("newExport() got1 = %v, want %v", got1, tt.want1)
+			}
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, issue := range issues {
+					t.Errorf("newExport() %s", issue)
 				}
 			}
 		})

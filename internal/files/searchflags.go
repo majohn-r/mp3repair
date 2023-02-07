@@ -2,12 +2,12 @@ package files
 
 import (
 	"flag"
-	"mp3/internal"
 	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
+	cmd "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
@@ -33,16 +33,16 @@ const (
 )
 
 func reportBadDefault(o output.Bus, err error) {
-	internal.ReportInvalidConfigurationData(o, defaultSectionName, err)
+	cmd.ReportInvalidConfigurationData(o, defaultSectionName, err)
 }
 
 // NewSearchFlags are used by commands that use the common top directory, target
 // extension, and album and artist filter regular expressions.
-func NewSearchFlags(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (*SearchFlags, bool) {
+func NewSearchFlags(o output.Bus, c *cmd.Configuration, fSet *flag.FlagSet) (*SearchFlags, bool) {
 	return makeSearchFlags(o, c.SubConfiguration(defaultSectionName), fSet)
 }
 
-func makeSearchFlags(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (*SearchFlags, bool) {
+func makeSearchFlags(o output.Bus, c *cmd.Configuration, fSet *flag.FlagSet) (*SearchFlags, bool) {
 	var ok = true
 	defTopDirectory, err := c.StringDefault(topDirectoryFlag, defaultDirectory())
 	if err != nil {
@@ -65,10 +65,10 @@ func makeSearchFlags(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet
 		ok = false
 	}
 	if ok {
-		topDirUsage := internal.DecorateStringFlagUsage("top `directory` specifying where to find music files", defTopDirectory)
-		extUsage := internal.DecorateStringFlagUsage("`extension` identifying music files", defFileExtension)
-		albumUsage := internal.DecorateStringFlagUsage("`regular expression` specifying which albums to select", defAlbumRegex)
-		artistUsage := internal.DecorateStringFlagUsage("`regular expression` specifying which artists to select", defArtistRegex)
+		topDirUsage := cmd.DecorateStringFlagUsage("top `directory` specifying where to find music files", defTopDirectory)
+		extUsage := cmd.DecorateStringFlagUsage("`extension` identifying music files", defFileExtension)
+		albumUsage := cmd.DecorateStringFlagUsage("`regular expression` specifying which albums to select", defAlbumRegex)
+		artistUsage := cmd.DecorateStringFlagUsage("`regular expression` specifying which artists to select", defArtistRegex)
 		return &SearchFlags{
 			f:             fSet,
 			topDirectory:  fSet.String(topDirectoryFlag, defTopDirectory, topDirUsage),
@@ -82,7 +82,7 @@ func makeSearchFlags(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet
 
 // ProcessArgs consumes the command line arguments.
 func (sf *SearchFlags) ProcessArgs(o output.Bus, args []string) (s *Search, ok bool) {
-	if ok = internal.ProcessArgs(o, sf.f, args); ok {
+	if ok = cmd.ProcessArgs(o, sf.f, args); ok {
 		s, ok = sf.NewSearch(o)
 	}
 	return
@@ -107,7 +107,7 @@ func (sf *SearchFlags) validateTopLevelDirectory(o output.Bus) bool {
 	file, err := os.Stat(*sf.topDirectory)
 	if err != nil {
 		o.WriteCanonicalError("The -topDir value you specified, %q, cannot be read: %v", *sf.topDirectory, err)
-		internal.LogUnreadableDirectory(o, *sf.topDirectory, err)
+		cmd.LogUnreadableDirectory(o, *sf.topDirectory, err)
 		return false
 	}
 	if file.IsDir() {

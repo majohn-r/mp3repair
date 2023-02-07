@@ -2,9 +2,9 @@ package files
 
 import (
 	"io/fs"
-	"mp3/internal"
 	"path/filepath"
 
+	cmd "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
@@ -35,7 +35,7 @@ func NewArtist(n, p string) *Artist {
 }
 
 func (a *Artist) contents(o output.Bus) ([]fs.DirEntry, bool) {
-	return internal.ReadDirectory(o, a.path)
+	return cmd.ReadDirectory(o, a.path)
 }
 
 // Name returns the artist's name

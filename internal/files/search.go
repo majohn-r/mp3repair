@@ -3,9 +3,9 @@ package files
 import (
 	"flag"
 	"io/fs"
-	"mp3/internal"
 	"regexp"
 
+	cmd "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
@@ -19,7 +19,7 @@ type Search struct {
 }
 
 func (s *Search) contents(o output.Bus) ([]fs.DirEntry, bool) {
-	return internal.ReadDirectory(o, s.topDirectory)
+	return cmd.ReadDirectory(o, s.topDirectory)
 }
 
 // LoadUnfiltered loads artists, albums, and tracks from the specified top
@@ -149,7 +149,7 @@ func (s *Search) Load(o output.Bus) (artists []*Artist, ok bool) {
 // only!
 func CreateSearchForTesting(topDir string) *Search {
 	o := output.NewNilBus()
-	sf, _ := NewSearchFlags(o, internal.EmptyConfiguration(), flag.NewFlagSet("testing", flag.ContinueOnError))
+	sf, _ := NewSearchFlags(o, cmd.EmptyConfiguration(), flag.NewFlagSet("testing", flag.ContinueOnError))
 	s, _ := sf.ProcessArgs(o, []string{"-topDir", topDir})
 	return s
 }
@@ -158,7 +158,7 @@ func CreateSearchForTesting(topDir string) *Search {
 // specified search parameters
 func CreateFilteredSearchForTesting(topDir, artistFilter, albumFilter string) *Search {
 	o := output.NewNilBus()
-	sf, _ := NewSearchFlags(o, internal.EmptyConfiguration(), flag.NewFlagSet("testing", flag.ContinueOnError))
+	sf, _ := NewSearchFlags(o, cmd.EmptyConfiguration(), flag.NewFlagSet("testing", flag.ContinueOnError))
 	s, _ := sf.ProcessArgs(o, []string{"-topDir", topDir, "-artistFilter", artistFilter, "-albumFilter", albumFilter})
 	return s
 }

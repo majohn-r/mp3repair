@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	tools "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/mgr"
@@ -456,7 +457,7 @@ func Test_resetDatabase_filterMetadataFiles(t *testing.T) {
 	const fnName = "resetDatabase.filterMetadataFiles()"
 	testDir := "filterMetadataFiles"
 	extension := ".wmdb"
-	if err := internal.Mkdir(testDir); err != nil {
+	if err := tools.Mkdir(testDir); err != nil {
 		t.Errorf("%s could not create directory %q: %v", fnName, testDir, err)
 	}
 	for k := 0; k < 8; k++ {
@@ -471,10 +472,10 @@ func Test_resetDatabase_filterMetadataFiles(t *testing.T) {
 		}
 	}
 	subDir := "file8" + extension
-	if err := internal.Mkdir(filepath.Join(testDir, subDir)); err != nil {
+	if err := tools.Mkdir(filepath.Join(testDir, subDir)); err != nil {
 		t.Errorf("%s could not create directory %q: %v", fnName, subDir, err)
 	}
-	files, _ := internal.ReadDirectory(output.NewNilBus(), testDir)
+	files, _ := tools.ReadDirectory(output.NewNilBus(), testDir)
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, testDir)
 	}()
@@ -520,7 +521,7 @@ func Test_resetDatabase_deleteMetadataFiles(t *testing.T) {
 	const fnName = "resetDatabase.deleteMetadataFiles()"
 	testDir := "deleteMetadataFiles"
 	extension := ".wmdb"
-	if err := internal.Mkdir(testDir); err != nil {
+	if err := tools.Mkdir(testDir); err != nil {
 		t.Errorf("%s could not create directory %q: %v", fnName, testDir, err)
 	}
 	for k := 0; k < 8; k++ {
@@ -530,7 +531,7 @@ func Test_resetDatabase_deleteMetadataFiles(t *testing.T) {
 		}
 	}
 	subDir := filepath.Join(testDir, "file8"+extension)
-	if err := internal.Mkdir(subDir); err != nil {
+	if err := tools.Mkdir(subDir); err != nil {
 		t.Errorf("%s could not create directory %q: %v", fnName, subDir, err)
 	}
 	// make file8 impossible to trivially remove
@@ -597,15 +598,15 @@ func Test_resetDatabase_deleteMetadata(t *testing.T) {
 	const fnName = "resetDatabase.deleteMetadata()"
 	testDir := "deleteMetadata"
 	extension := ".wmbd"
-	if err := internal.Mkdir(testDir); err != nil {
+	if err := tools.Mkdir(testDir); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, testDir, err)
 	}
 	emptyDir := filepath.Join(testDir, "empty")
-	if err := internal.Mkdir(emptyDir); err != nil {
+	if err := tools.Mkdir(emptyDir); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, emptyDir, err)
 	}
 	fullDir := filepath.Join(testDir, "full")
-	if err := internal.Mkdir(fullDir); err != nil {
+	if err := tools.Mkdir(fullDir); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, fullDir, err)
 	}
 	for k := 0; k < 10; k++ {
@@ -668,7 +669,7 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 	testDir := "runCommand"
 	nonexistentDir := "resetdatabase_test.go"
 	ext := ".wmdb"
-	if err := internal.Mkdir(testDir); err != nil {
+	if err := tools.Mkdir(testDir); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, testDir, err)
 	}
 	for k := 0; k < 10; k++ {
@@ -773,28 +774,23 @@ func Test_resetDatabase_runCommand(t *testing.T) {
 }
 
 func newResetDatabaseCommandForTesting() *resetDatabase {
-	r, _ := newResetDatabaseCommand(output.NewNilBus(), internal.EmptyConfiguration(), flag.NewFlagSet("resetDatabase", flag.ContinueOnError))
+	r, _ := newResetDatabaseCommand(output.NewNilBus(), tools.EmptyConfiguration(), flag.NewFlagSet("resetDatabase", flag.ContinueOnError))
 	return r
 }
 
 func Test_resetDatabase_Exec(t *testing.T) {
 	const fnName = "resetDatabase.Exec()"
 	testDir := "Exec"
-	if err := internal.Mkdir(testDir); err != nil {
+	if err := tools.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %s: %v", fnName, testDir, err)
 	}
-	savedUserProfile := internal.SaveEnvVarForTesting("USERPROFILE")
+	savedUserProfile := tools.NewEnvVarMemento("USERPROFILE")
 	testAppPath := "appPath"
-	if err := internal.Mkdir(testAppPath); err != nil {
+	if err := tools.Mkdir(testAppPath); err != nil {
 		t.Errorf("%s error creating %s: %v", fnName, testAppPath, err)
 	}
-	oldAppPath := internal.SetApplicationPathForTesting(testAppPath)
-	userProfile := internal.SavedEnvVar{
-		Name:  "USERPROFILE",
-		Value: "C:\\Users\\The User",
-		Set:   true,
-	}
-	userProfile.RestoreForTesting()
+	oldAppPath := tools.SetApplicationPath(testAppPath)
+	os.Setenv("USERPROFILE", "C:\\Users\\The User")
 	// depending on the environment, a connection to the service manager may or
 	// may not be possible. Therefore, check whether a connection is possible,
 	// and tailor the wanted recordings accordingly.
@@ -806,10 +802,10 @@ func Test_resetDatabase_Exec(t *testing.T) {
 		connectionsPossible = true
 	}
 	defer func() {
-		savedUserProfile.RestoreForTesting()
+		savedUserProfile.Restore()
 		internal.DestroyDirectoryForTesting(fnName, testDir)
 		internal.DestroyDirectoryForTesting(fnName, testAppPath)
-		internal.SetApplicationPathForTesting(oldAppPath)
+		tools.SetApplicationPath(oldAppPath)
 	}()
 	type args struct {
 		args []string
@@ -1062,13 +1058,13 @@ func Test_resetDatabase_open(t *testing.T) {
 
 func Test_newResetDatabaseCommand(t *testing.T) {
 	const fnName = "newResetDatabaseCommand()"
-	savedFoo := internal.SaveEnvVarForTesting("FOO")
+	savedFoo := tools.NewEnvVarMemento("FOO")
 	os.Unsetenv("FOO")
 	defer func() {
-		savedFoo.RestoreForTesting()
+		savedFoo.Restore()
 	}()
 	type args struct {
-		c *internal.Configuration
+		c *tools.Configuration
 	}
 	tests := map[string]struct {
 		args
@@ -1076,12 +1072,12 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		output.WantedRecording
 	}{
 		"normal case": {
-			args:   args{c: internal.EmptyConfiguration()},
+			args:   args{c: tools.EmptyConfiguration()},
 			wantOk: true,
 		},
 		"bad default timeout": {
 			args: args{
-				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
+				c: tools.NewConfiguration(output.NewNilBus(), map[string]any{
 					"resetDatabase": map[string]any{
 						"timeout": "forever",
 					},
@@ -1094,7 +1090,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		},
 		"bad default service": {
 			args: args{
-				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
+				c: tools.NewConfiguration(output.NewNilBus(), map[string]any{
 					"resetDatabase": map[string]any{
 						"service": "Win$FOO",
 					},
@@ -1107,7 +1103,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		},
 		"bad default metadata": {
 			args: args{
-				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
+				c: tools.NewConfiguration(output.NewNilBus(), map[string]any{
 					"resetDatabase": map[string]any{
 						"metadata": "%FOO%/data",
 					},
@@ -1120,7 +1116,7 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 		},
 		"bad default extension": {
 			args: args{
-				c: internal.NewConfiguration(output.NewNilBus(), map[string]any{
+				c: tools.NewConfiguration(output.NewNilBus(), map[string]any{
 					"resetDatabase": map[string]any{
 						"extension": ".%FOO%",
 					},
@@ -1145,6 +1141,42 @@ func Test_newResetDatabaseCommand(t *testing.T) {
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
+				}
+			}
+		})
+	}
+}
+
+func Test_newResetDatabase(t *testing.T) {
+	type args struct {
+		c    *tools.Configuration
+		fSet *flag.FlagSet
+	}
+	tests := map[string]struct {
+		args
+		want  tools.CommandProcessor
+		want1 bool
+		output.WantedRecording
+	}{
+		"basic": {
+			args:  args{c: tools.EmptyConfiguration(), fSet: flag.NewFlagSet(resetDatabaseCommandName, flag.ContinueOnError)},
+			want:  &resetDatabase{},
+			want1: true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			o := output.NewRecorder()
+			got, got1 := newResetDatabase(o, tt.args.c, tt.args.fSet)
+			if _, ok := got.(*resetDatabase); !ok {
+				t.Errorf("newResetDatabase() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("newResetDatabase() got1 = %v, want %v", got1, tt.want1)
+			}
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, issue := range issues {
+					t.Errorf("newResetDatabase() %s", issue)
 				}
 			}
 		})

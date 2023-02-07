@@ -3,16 +3,16 @@ package commands
 import (
 	"flag"
 	"fmt"
-	"mp3/internal"
 	"mp3/internal/files"
 	"path/filepath"
 	"sort"
 
+	tools "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
 func init() {
-	addCommandData(repairCommandName, commandData{isDefault: false, init: newRepair})
+	tools.AddCommandData(repairCommandName, &tools.CommandDescription{IsDefault: IsDefault(repairCommandName), Initializer: newRepair})
 	addDefaultMapping(repairCommandName, map[string]any{
 		dryRunFlag: defaultDryRun,
 	})
@@ -23,7 +23,7 @@ type repair struct {
 	sf     *files.SearchFlags
 }
 
-func newRepair(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (CommandProcessor, bool) {
+func newRepair(o output.Bus, c *tools.Configuration, fSet *flag.FlagSet) (tools.CommandProcessor, bool) {
 	return newRepairCommand(o, c, fSet)
 }
 
@@ -34,12 +34,12 @@ const (
 	defaultDryRun = false
 )
 
-func newRepairCommand(o output.Bus, c *internal.Configuration, fSet *flag.FlagSet) (*repair, bool) {
+func newRepairCommand(o output.Bus, c *tools.Configuration, fSet *flag.FlagSet) (*repair, bool) {
 	if defDryRun, err := c.SubConfiguration(repairCommandName).BoolDefault(dryRunFlag, defaultDryRun); err != nil {
-		reportBadDefault(o, repairCommandName, err)
+		tools.ReportInvalidConfigurationData(o, repairCommandName, err)
 	} else {
 		if sFlags, ok := files.NewSearchFlags(o, c, fSet); ok {
-			dryRunUsage := internal.DecorateBoolFlagUsage("output what would have been repaired, but make no repairs", defDryRun)
+			dryRunUsage := tools.DecorateBoolFlagUsage("output what would have been repaired, but make no repairs", defDryRun)
 			return &repair{dryRun: fSet.Bool(dryRunFlag, defDryRun, dryRunUsage), sf: sFlags}, true
 		}
 	}
@@ -58,7 +58,7 @@ func (r *repair) logFields() map[string]any {
 }
 
 func (r *repair) runCommand(o output.Bus, s *files.Search) (ok bool) {
-	logStart(o, repairCommandName, r.logFields())
+	tools.LogCommandStart(o, repairCommandName, r.logFields())
 	if artists, loaded := s.Load(o); loaded {
 		ok = true
 		files.ReadMetadata(o, artists)
@@ -153,7 +153,7 @@ func backupTracks(o output.Bus, tracks []*files.Track) {
 func backupTrack(o output.Bus, t *files.Track) {
 	dir := t.BackupDirectory()
 	backupFile := filepath.Join(dir, fmt.Sprintf("%d.mp3", t.Number()))
-	if internal.DirExists(dir) && !internal.PlainFileExists(backupFile) {
+	if tools.DirExists(dir) && !tools.PlainFileExists(backupFile) {
 		if err := t.CopyFile(backupFile); err != nil {
 			o.WriteCanonicalError("The track %q cannot be backed up", t)
 			o.Log(output.Error, "error copying file", map[string]any{
@@ -171,9 +171,9 @@ func backupTrack(o output.Bus, t *files.Track) {
 func makeBackupDirectories(o output.Bus, paths []string) {
 	for _, path := range paths {
 		newPath := files.CreateBackupPath(path)
-		if !internal.DirExists(newPath) {
-			if err := internal.Mkdir(newPath); err != nil {
-				reportDirectoryCreationFailure(o, repairCommandName, newPath, err)
+		if !tools.DirExists(newPath) {
+			if err := tools.Mkdir(newPath); err != nil {
+				tools.ReportDirectoryCreationFailure(o, repairCommandName, newPath, err)
 			}
 		}
 	}

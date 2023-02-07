@@ -13,6 +13,7 @@ import (
 
 	"github.com/bogem/id3v2/v2"
 	"github.com/cheggaaa/pb/v3"
+	tools "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
@@ -175,7 +176,7 @@ func TestTrack_AlbumPath(t *testing.T) {
 func TestTrack_CopyFile(t *testing.T) {
 	const fnName = "Track.CopyFile()"
 	topDir := "copies"
-	if err := internal.Mkdir(topDir); err != nil {
+	if err := tools.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	srcName := "source.mp3"
@@ -484,7 +485,7 @@ func (u unspecifiedFrame) WriteTo(w io.Writer) (n int64, err error) {
 func TestTrack_ID3V1Diagnostics(t *testing.T) {
 	const fnName = "Track.ID3V1Diagnostics()"
 	testDir := "id3v1Diagnostics"
-	if err := internal.Mkdir(testDir); err != nil {
+	if err := tools.Mkdir(testDir); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, testDir, err)
 	}
 	// three files: one good, one too small, one with an invalid tag
@@ -560,7 +561,7 @@ func TestTrack_ID3V1Diagnostics(t *testing.T) {
 func TestTrack_loadMetadata(t *testing.T) {
 	const fnName = "track.loadMetadata()"
 	testDir := "loadMetadata"
-	if err := internal.Mkdir(testDir); err != nil {
+	if err := tools.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
 	artistName := "A great artist"
@@ -630,14 +631,14 @@ func TestReadMetadata(t *testing.T) {
 	const fnName = "ReadMetadata()"
 	// 5 artists, 20 albums each, 50 tracks apiece ... total: 5,000 tracks
 	testDir := "ReadMetadata"
-	if err := internal.Mkdir(testDir); err != nil {
+	if err := tools.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
 	var artists []*Artist
 	for k := 0; k < 5; k++ {
 		artistName := fmt.Sprintf("artist %d", k)
 		artistPath := filepath.Join(testDir, artistName)
-		if err := internal.Mkdir(artistPath); err != nil {
+		if err := tools.Mkdir(artistPath); err != nil {
 			t.Errorf("%s error creating %q: %v", fnName, artistPath, err)
 		}
 		artist := NewArtist(artistName, artistPath)
@@ -645,7 +646,7 @@ func TestReadMetadata(t *testing.T) {
 		for m := 0; m < 20; m++ {
 			albumName := fmt.Sprintf("album %d-%d", k, m)
 			albumPath := filepath.Join(artistPath, albumName)
-			if err := internal.Mkdir(albumPath); err != nil {
+			if err := tools.Mkdir(albumPath); err != nil {
 				t.Errorf("%s error creating %q: %v", fnName, albumPath, err)
 			}
 			album := NewAlbum(albumName, artist, albumName)
@@ -783,7 +784,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 func TestTrack_UpdateMetadata(t *testing.T) {
 	const fnName = "Track.UpdateMetadata()"
 	testDir := "updateMetadata"
-	if err := internal.Mkdir(testDir); err != nil {
+	if err := tools.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
 	trackName := "edit this track.mp3"
