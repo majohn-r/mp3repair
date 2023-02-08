@@ -2,7 +2,6 @@ package main
 
 import (
 	"mp3/internal/commands"
-	"runtime/debug"
 	"testing"
 
 	"github.com/majohn-r/output"
@@ -16,19 +15,19 @@ func Test_main(t *testing.T) {
 		exitFunc = savedExitFunc
 	}()
 	tests := map[string]struct {
-		execFunc     func(output.Bus, func(output.Bus) bool, func() (*debug.BuildInfo, bool), string, string, string, []string) int
+		execFunc     func(output.Bus, int, string, string, string, []string) int
 		wantDefault  bool
 		wantExitCode int
 	}{
 		"failure": {
-			execFunc: func(_ output.Bus, _ func(output.Bus) bool, _ func() (*debug.BuildInfo, bool), _ string, _ string, _ string, _ []string) int {
+			execFunc: func(_ output.Bus, _ int, _ string, _ string, _ string, _ []string) int {
 				return 1
 			},
 			wantDefault:  true,
 			wantExitCode: 1,
 		},
 		"success": {
-			execFunc: func(_ output.Bus, _ func(output.Bus) bool, _ func() (*debug.BuildInfo, bool), _ string, _ string, _ string, _ []string) int {
+			execFunc: func(_ output.Bus, _ int, _ string, _ string, _ string, _ []string) int {
 				return 0
 			},
 			wantDefault:  true,
