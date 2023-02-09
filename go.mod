@@ -20,7 +20,7 @@ require (
 )
 
 require (
-	github.com/bogem/id3v2/v2 v2.1.3
+	github.com/bogem/id3v2/v2 v2.1.4
 	github.com/cheggaaa/pb/v3 v3.1.0
 	github.com/majohn-r/cmd-toolkit v0.1.0
 	github.com/majohn-r/output v0.1.2

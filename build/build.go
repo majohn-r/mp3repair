@@ -1,22 +1,23 @@
 package main
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
 	"io/fs"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/goyek/goyek/v2"
 	"github.com/goyek/x/cmd"
+	"gopkg.in/yaml.v3"
 )
 
 const (
-	coverageFile = "coverage.out"
-	executable   = "mp3.exe"
+	coverageFile  = "coverage.out"
+	buildDataFile = "buildData.yaml"
 )
 
 var (
@@ -24,14 +25,14 @@ var (
 		Name:  "build",
 		Usage: "build the executable",
 		Action: func(a *goyek.A) {
-			vArg, v := versionArgument()
-			fmt.Printf("Creating %s version %s\n", executable, v)
-			var args []string
-			if vArg != "" {
-				args = append(args, vArg)
+			exec, path, flags := readConfig()
+			// logged output shows up when running verbose (-v) or on error
+			a.Logf("executable: %s\n", exec)
+			a.Logf("path: %s\n", path)
+			for _, flag := range flags {
+				a.Logf("\t%q\n", flag)
 			}
-			args = append(args, creationArgument())
-			l := fmt.Sprintf("go build -ldflags %q -o %s ./cmd/mp3/", strings.Join(args, " "), executable)
+			l := fmt.Sprintf("go build -ldflags %q -o %s %s", strings.Join(flags, " "), exec, path)
 			o := &bytes.Buffer{}
 			cmd.Exec(a, l, options(o)...)
 			print(o)
@@ -42,8 +43,9 @@ var (
 		Name:  "clean",
 		Usage: "delete build products",
 		Action: func(a *goyek.A) {
+			exec, _, _ := readConfig()
 			os.Remove(filepath.Join("..", coverageFile))
-			os.Remove(filepath.Join("..", executable))
+			os.Remove(filepath.Join("..", exec))
 		},
 	})
 
@@ -112,17 +114,36 @@ var (
 	})
 )
 
-func creationArgument() string {
-	return fmt.Sprintf("-X main.creation=%s", time.Now().Format(time.RFC3339))
+type Config struct {
+	// special functions:
+	//   application: the application name
+	//   path:        the relative path to the main package
+	//   timestamp:   flag gets a timestamp value
+	Function string
+	// flag name
+	Flag string
+	// value to use
+	Value string
 }
 
-func versionArgument() (vArg, v string) {
-	v = firstLine("version.txt")
-	if v != "" {
-		vArg = fmt.Sprintf("-X main.version=%s", v)
-	} else {
-		v = "unknown"
+func readConfig() (exec, path string, flags []string) {
+	rawYaml, _ := os.ReadFile(buildDataFile)
+	// data := map[string]any{}
+	var data []Config
+	_ = yaml.Unmarshal(rawYaml, &data)
+	for _, value := range data {
+		switch value.Function {
+		case "application":
+			exec = value.Value
+		case "path":
+			path = value.Value
+		case "timestamp":
+			flags = append(flags, fmt.Sprintf("-X %s=%s", value.Flag, time.Now().Format(time.RFC3339)))
+		default:
+			flags = append(flags, fmt.Sprintf("-X %s=%s", value.Flag, value.Value))
+		}
 	}
+	sort.Strings(flags)
 	return
 }
 
@@ -193,19 +214,4 @@ func print(b *bytes.Buffer) {
 	if s != "" {
 		fmt.Println(s)
 	}
-}
-
-func firstLine(file string) (line string) {
-	if f, err := os.Open(file); err != nil {
-		fmt.Fprintf(os.Stderr, "error opening %s: %v", file, err)
-	} else {
-		defer f.Close()
-		s := bufio.NewScanner(f)
-		if !s.Scan() {
-			fmt.Fprintf(os.Stderr, "%s is empty!\n", file)
-		} else {
-			line = s.Text()
-		}
-	}
-	return
 }

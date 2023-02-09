@@ -1,0 +1,15 @@
+---
+  - function: application
+    value: mp3.exe
+  - function: path
+    value: ./cmd/mp3
+  - function: timestamp
+    flag: main.creation
+  - flag: main.appName
+    value: mp3
+  - flag: main.defaultCommand
+    value: list
+  - flag: main.firstYear
+    value: 2021
+  - flag: main.version
+    value: 0.33.7
