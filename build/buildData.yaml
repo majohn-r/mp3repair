@@ -7,8 +7,6 @@
     flag: main.creation
   - flag: main.appName
     value: mp3
-  - flag: main.defaultCommand
-    value: list
   - flag: main.firstYear
     value: 2021
   - flag: main.version

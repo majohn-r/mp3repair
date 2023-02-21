@@ -1,7 +1,6 @@
 package main
 
 import (
-	"mp3/internal/commands"
 	"testing"
 
 	"github.com/majohn-r/output"
@@ -59,9 +58,6 @@ func Test_main(t *testing.T) {
 			o := output.NewRecorder()
 			bus = o
 			main()
-			if got := commands.IsDefault(defaultCommand); got != tt.wantDefault {
-				t.Errorf("main() got default command %t want %t", got, tt.wantDefault)
-			}
 			if capturedExitCode != tt.wantExitCode {
 				t.Errorf("main() got exit code %d want %d", capturedExitCode, tt.wantExitCode)
 			}

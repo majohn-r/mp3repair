@@ -29,7 +29,7 @@ func main() {
 	if beginningYear, err := strconv.Atoi(firstYear); err != nil {
 		bus.WriteCanonicalError("The value of firstYear %q is not valid: %v\n", firstYear, err)
 	} else {
-		commands.DeclareDefault(defaultCommand)
+		commands.Load()
 		exitCode = execFunc(bus, beginningYear, appName, version, creation, os.Args)
 	}
 	exitFunc(exitCode)
