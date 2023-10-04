@@ -10,4 +10,4 @@
   - flag: main.firstYear
     value: 2021
   - flag: main.version
-    value: 0.33.7
+    value: 0.33.8
