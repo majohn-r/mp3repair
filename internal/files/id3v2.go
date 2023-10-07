@@ -68,14 +68,14 @@ func normalizeGenre(s string) string {
 }
 
 var (
-	malformedTrackNumberError = fmt.Errorf("track number first character is not a digit")
-	missingTrackNumber        = fmt.Errorf("track number is zero length")
+	errMalformedTrackNumber = fmt.Errorf("track number first character is not a digit")
+	errMissingTrackNumber   = fmt.Errorf("track number is zero length")
 )
 
 func toTrackNumber(s string) (i int, err error) {
 	s = removeLeadingBOMs(s)
 	if s == "" {
-		err = missingTrackNumber
+		err = errMissingTrackNumber
 		return
 	}
 	// this is more complicated than I wanted, because some mp3 rippers produce
@@ -91,7 +91,7 @@ func toTrackNumber(s string) (i int, err error) {
 			// found something other than a digit
 			switch j {
 			case 0: // never saw a digit
-				err = malformedTrackNumberError
+				err = errMalformedTrackNumber
 				return
 			default: // did read at least one digit
 				i = n

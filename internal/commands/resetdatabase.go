@@ -45,7 +45,7 @@ const (
 
 var (
 	defaultMetadataPath string
-	timeoutError        = fmt.Errorf("operation timed out")
+	errTimeout          = fmt.Errorf("operation timed out")
 	stateToStatus       = map[svc.State]string{
 		svc.Stopped:         "stopped",
 		svc.StartPending:    "start pending",
@@ -290,7 +290,7 @@ func (r *resetDatabase) waitForStop(o output.Bus, s service, status svc.Status, 
 	for !ok {
 		if timeout.Before(time.Now()) {
 			o.WriteCanonicalError("The service %q could not be stopped within the %d second timeout", *r.service, *r.timeout)
-			m := r.makeServiceErrorFields("stop service", timeoutError)
+			m := r.makeServiceErrorFields("stop service", errTimeout)
 			m["timeout in seconds"] = *r.timeout
 			logServiceIssue(o, m)
 			break

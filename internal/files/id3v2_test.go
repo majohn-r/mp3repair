@@ -62,7 +62,7 @@ func Test_rawReadID3V2Metadata(t *testing.T) {
 		},
 		"bad data test": {
 			args:  args{path: "./badFile.mp3"},
-			wantD: &id3v2Metadata{err: malformedTrackNumberError},
+			wantD: &id3v2Metadata{err: errMalformedTrackNumber},
 		},
 	}
 	for name, tt := range tests {

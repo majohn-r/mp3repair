@@ -34,8 +34,8 @@ var (
 		"TPE2": "Orchestra/Band",
 		"TPE3": "Conductor",
 	}
-	noEditNeededError = fmt.Errorf("no edit required")
-	trackNameRegex    = regexp.MustCompile(defaultTrackNamePattern)
+	errNoEditNeeded = fmt.Errorf("no edit required")
+	trackNameRegex  = regexp.MustCompile(defaultTrackNamePattern)
 )
 
 // Track encapsulates data about a track in an album.
@@ -150,7 +150,7 @@ func (t *Track) needsMetadata() bool {
 }
 
 func (t *Track) hasMetadataError() bool {
-	return t.tM != nil && len(t.tM.errors()) != 0
+	return t.tM != nil && len(t.tM.errorCauses()) != 0
 }
 
 func (t *Track) setMetadata(tM *trackMetadata) {
@@ -297,7 +297,7 @@ func (t *Track) ReportMetadataProblems() []string {
 // performs that work
 func (t *Track) UpdateMetadata() (e []error) {
 	if !t.ReconcileMetadata().HasConflicts() {
-		e = append(e, noEditNeededError)
+		e = append(e, errNoEditNeeded)
 	} else {
 		e = append(e, updateMetadata(t.tM, t.path)...)
 	}
@@ -498,9 +498,9 @@ func canonicalChoice(m map[string]int) (s string, ok bool) {
 
 // ReportMetadataReadError outputs a problem reading the metadata as an error
 // and as a log record
-func (t *Track) ReportMetadataReadError(o output.Bus, sT SourceType, e error) {
+func (t *Track) ReportMetadataReadError(o output.Bus, sT SourceType, e string) {
 	name := sT.name()
-	o.WriteCanonicalError("An error occurred when trying to read %s metadata for track %q on album %q by artist %q: %q", name, t.CommonName(), t.AlbumName(), t.RecordingArtist(), e.Error())
+	o.WriteCanonicalError("An error occurred when trying to read %s metadata for track %q on album %q by artist %q: %q", name, t.CommonName(), t.AlbumName(), t.RecordingArtist(), e)
 	o.Log(output.Error, "metadata read error", map[string]any{
 		"metadata": name,
 		"track":    t.String(),
@@ -520,8 +520,8 @@ func reportAllTrackErrors(o output.Bus, artists []*Artist) {
 func (t *Track) reportMetadataErrors(o output.Bus) {
 	if t.hasMetadataError() {
 		for _, sT := range []SourceType{ID3V1, ID3V2} {
-			e := t.tM.err[sT]
-			if e != nil {
+			e := t.tM.errCause[sT]
+			if e != "" {
 				t.ReportMetadataReadError(o, sT, e)
 			}
 		}

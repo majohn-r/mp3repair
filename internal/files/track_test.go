@@ -601,7 +601,7 @@ func TestTrack_loadMetadata(t *testing.T) {
 				track:             []int{0, track, track},
 				musicCDIdentifier: id3v2.UnknownFrame{Body: []byte{0}},
 				canonicalType:     ID3V2,
-				err:               []error{nil, nil, nil},
+				errCause:          []string{"", "", ""},
 				correctedAlbum:    []string{"", "", ""},
 				correctedArtist:   []string{"", "", ""},
 				correctedTitle:    []string{"", "", ""},
@@ -702,7 +702,7 @@ func TestReadMetadata(t *testing.T) {
 						if track.needsMetadata() {
 							t.Errorf("%s track %q has no metadata", fnName, track.path)
 						} else if track.hasMetadataError() {
-							t.Errorf("%s track %q is defective: %v", fnName, track.path, track.tM.errors())
+							t.Errorf("%s track %q is defective: %v", fnName, track.path, track.tM.errorCauses())
 						}
 					}
 				}
@@ -746,7 +746,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	metadata2.album[src2] = "good album"
 	metadata2.artist[src2] = "good artist"
 	metadata2.title[src2] = "good track"
-	metadata2.err[ID3V2] = fmt.Errorf("no id3v2 metadata, how odd")
+	metadata2.errCause[ID3V2] = "no id3v2 metadata, how odd"
 	goodAlbum.AddTrack(goodTrack)
 	goodArtist.AddAlbum(goodAlbum)
 	tests := map[string]struct {
@@ -755,7 +755,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	}{
 		"unread metadata": {t: &Track{tM: nil}, want: []string{"differences cannot be determined: metadata has not been read"}},
 		"track with error": {
-			t:    &Track{tM: &trackMetadata{err: []error{nil, fmt.Errorf("oops"), fmt.Errorf("oops")}}},
+			t:    &Track{tM: &trackMetadata{errCause: []string{"", "oops", "oops"}}},
 			want: []string{"differences cannot be determined: there was an error reading metadata"},
 		},
 		"track with metadata differences": {
@@ -822,7 +822,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 			year:            []string{"", "1900", "1900"},
 			track:           []int{0, 1, 1},
 			canonicalType:   ID3V2,
-			err:             []error{nil, nil, nil},
+			errCause:        make([]string, 3),
 			correctedAlbum:  make([]string, 3),
 			correctedArtist: make([]string, 3),
 			correctedTitle:  make([]string, 3),
@@ -855,7 +855,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 			year:            []string{"", "1900", "1900"},
 			track:           []int{0, 1, 1},
 			canonicalType:   ID3V2,
-			err:             []error{nil, nil, nil},
+			errCause:        make([]string, 3),
 			correctedAlbum:  make([]string, 3),
 			correctedArtist: make([]string, 3),
 			correctedTitle:  make([]string, 3),
@@ -874,7 +874,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 		track:             []int{0, 2, 2},
 		musicCDIdentifier: id3v2.UnknownFrame{Body: []byte("fine album")},
 		canonicalType:     ID3V2,
-		err:               []error{nil, nil, nil},
+		errCause:          make([]string, 3),
 		correctedAlbum:    make([]string, 3),
 		correctedArtist:   make([]string, 3),
 		correctedTitle:    make([]string, 3),
@@ -898,7 +898,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 				"open updateMetadata\\no such file: The system cannot find the file specified.",
 			},
 		},
-		"no edit required": {t: &Track{tM: nil}, wantE: []string{noEditNeededError.Error()}},
+		"no edit required": {t: &Track{tM: nil}, wantE: []string{errNoEditNeeded.Error()}},
 		"edit required":    {t: track, wantTm: editedTm},
 	}
 	for name, tt := range tests {
@@ -1119,7 +1119,7 @@ func TestTrack_reportMetadataErrors(t *testing.T) {
 				t: &Track{
 					commonName:      "silly track",
 					path:            "Music\\silly artist\\silly album\\01 silly track.mp3",
-					tM:              &trackMetadata{err: []error{nil, fmt.Errorf("id3v1 error!"), fmt.Errorf("id3v2 error!")}},
+					tM:              &trackMetadata{errCause: []string{"", "id3v1 error!", "id3v2 error!"}},
 					containingAlbum: &Album{name: "silly album", recordingArtist: &Artist{name: "silly artist"}},
 				},
 			},

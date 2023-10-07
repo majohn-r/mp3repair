@@ -634,7 +634,6 @@ func Test_repair_fixTracks(t *testing.T) {
 
 func Test_newRepair(t *testing.T) {
 	type args struct {
-		o    output.Bus
 		c    *tools.Configuration
 		fSet *flag.FlagSet
 	}

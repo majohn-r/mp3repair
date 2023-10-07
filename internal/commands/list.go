@@ -344,7 +344,7 @@ func (l *list) outputTrackDetails(o output.Bus, t *files.Track, prefix string) {
 func (l *list) outputTrackDiagnostics(o output.Bus, t *files.Track, prefix string) {
 	if *l.diagnostics {
 		if version, enc, frames, err := t.ID3V2Diagnostics(); err != nil {
-			t.ReportMetadataReadError(o, files.ID3V2, err)
+			t.ReportMetadataReadError(o, files.ID3V2, err.Error())
 		} else {
 			o.WriteConsole("%sID3V2 Version: %v\n", prefix, version)
 			o.WriteConsole("%sID3V2 Encoding: %q\n", prefix, enc)
@@ -353,7 +353,7 @@ func (l *list) outputTrackDiagnostics(o output.Bus, t *files.Track, prefix strin
 			}
 		}
 		if v1, err := t.ID3V1Diagnostics(); err != nil {
-			t.ReportMetadataReadError(o, files.ID3V1, err)
+			t.ReportMetadataReadError(o, files.ID3V1, err.Error())
 		} else {
 			for _, s := range v1 {
 				o.WriteConsole("%sID3V1 %s\n", prefix, s)
