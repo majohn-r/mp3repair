@@ -41,6 +41,6 @@ Embedding the icons is a simple matter of making sure the **.syso** files are in
 
 automatically incorporates the **.syso** files into the executable file.
 
-** Credit Where Credit is Due
+## Credit Where Credit is Due
 
 I learned all this [here](https://hjr265.me/blog/adding-icons-for-go-built-windows-executable/).
