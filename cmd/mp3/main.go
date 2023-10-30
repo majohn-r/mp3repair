@@ -1,3 +1,5 @@
+//go:generate goversioninfo -icon=mp3.ico
+
 package main
 
 import (
