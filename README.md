@@ -457,12 +457,12 @@ _F_, _false_, _FALSE_, or _False_.
 
 **mp3** uses the following third party libraries:
 
+- Basic command structure and logging implementation:
+  [https://github.com/majohn-r/cmd-toolkit](https://github.com/majohn-r/cmd-toolkit).
 - Console/Error/Log output control:
   [https://github.com/majohn-r/output](https://github.com/majohn-r/output).
 - Log rotation:
   [https://github.com/utahta/go-cronowriter](https://github.com/utahta/go-cronowriter).
-- Logging:
-  [https://github.com/sirupsen/logrus](https://github.com/sirupsen/logrus).
 - Progress bar:
   [https://github.com/cheggaaa/pb](https://github.com/cheggaaa/pb).
 - Reading and writing the mp3 file ID3V2 metadata:
