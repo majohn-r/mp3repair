@@ -22,7 +22,7 @@ var (
 	// test-friendly functions
 	execFunc func(output.Bus, int, string, string, string, []string) int = tools.Execute
 	exitFunc func(int)                                                   = os.Exit
-	bus      output.Bus                                                  = output.NewDefaultBus(tools.ProductionLogger{})
+	bus      output.Bus                                                  = output.NewDefaultBus(tools.ProductionLogger)
 )
 
 func main() {
