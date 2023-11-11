@@ -20,9 +20,6 @@
 # but do not ignore build/version.txt
 !build/version.txt
 
-# IDE specific folders
-.vscode/
-
 # files created during the build process
 cmd/mp3/resource.syso
 cmd/mp3/versionInfo.json
