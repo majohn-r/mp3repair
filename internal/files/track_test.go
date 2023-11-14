@@ -1206,3 +1206,64 @@ func TestTrack_Details(t *testing.T) {
 		})
 	}
 }
+
+type sampleWriter struct {
+	name string
+}
+
+func (sw *sampleWriter) Write(p []byte) (n int, err error) {
+	n = len(p)
+	return
+}
+
+type sampleBus struct {
+	consoleTTY    bool
+	errorTTY      bool
+	consoleWriter io.Writer
+	errorWriter   io.Writer
+}
+
+func (sB *sampleBus) Log(_ output.Level, _ string, _ map[string]any) {}
+func (sb *sampleBus) WriteCanonicalConsole(_ string, _ ...any)       {}
+func (sb *sampleBus) WriteConsole(_ string, _ ...any)                {}
+func (sb *sampleBus) WriteCanonicalError(_ string, _ ...any)         {}
+func (sb *sampleBus) WriteError(_ string, _ ...any)                  {}
+func (sb *sampleBus) ConsoleWriter() io.Writer                       { return sb.consoleWriter }
+func (sb *sampleBus) ErrorWriter() io.Writer                         { return sb.errorWriter }
+func (sb *sampleBus) IsConsoleTTY() bool                             { return sb.consoleTTY }
+func (sb *sampleBus) IsErrorTTY() bool                               { return sb.errorTTY }
+
+func Test_getBestWriter(t *testing.T) {
+	errorWriter := &sampleWriter{name: "error"}
+	consoleWriter := &sampleWriter{name: "console"}
+	tests := map[string]struct {
+		o    output.Bus
+		want io.Writer
+	}{
+		"error is TTY": {
+			o: &sampleBus{
+				errorWriter: errorWriter,
+				errorTTY:    true,
+			},
+			want: errorWriter,
+		},
+		"console is TTY": {
+			o: &sampleBus{
+				consoleWriter: consoleWriter,
+				consoleTTY:    true,
+			},
+			want: consoleWriter,
+		},
+		"no TTY": {
+			o:    &sampleBus{},
+			want: output.NilWriter{},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := getBestWriter(tt.o); got != tt.want {
+				t.Errorf("getBestWriter() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

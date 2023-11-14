@@ -2,6 +2,7 @@ package files
 
 import (
 	"fmt"
+	"io"
 	"io/fs"
 	"path/filepath"
 	"regexp"
@@ -336,7 +337,7 @@ func ReadMetadata(o output.Bus, artists []*Artist) {
 	// following guidance in the ElementSpeed definition to change the output to
 	// display the speed in tracks per second
 	t := `{{with string . "prefix"}}{{.}} {{end}}{{counters . }} {{bar . }} {{percent . }} {{speed . "%s tracks per second"}}{{with string . "suffix"}} {{.}}{{end}}`
-	bar := pb.New(count).SetTemplateString(t).Start()
+	bar := pb.New(count).SetWriter(getBestWriter(o)).SetTemplateString(t).Start()
 	for _, artist := range artists {
 		for _, album := range artist.Albums() {
 			for _, track := range album.Tracks() {
@@ -349,6 +350,18 @@ func ReadMetadata(o output.Bus, artists []*Artist) {
 	processAlbumMetadata(o, artists)
 	processArtistMetadata(o, artists)
 	reportAllTrackErrors(o, artists)
+}
+
+func getBestWriter(o output.Bus) io.Writer {
+	// preferred: error output, then console output, then no output at all
+	switch {
+	case o.IsErrorTTY():
+		return o.ErrorWriter()
+	case o.IsConsoleTTY():
+		return o.ConsoleWriter()
+	default:
+		return output.NilWriter{}
+	}
 }
 
 func processArtistMetadata(o output.Bus, artists []*Artist) {

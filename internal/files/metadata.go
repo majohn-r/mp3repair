@@ -159,7 +159,7 @@ func (tM *trackMetadata) canonicalMusicCDIdentifier() id3v2.UnknownFrame {
 	return tM.musicCDIdentifier
 }
 
-func (tM *trackMetadata) errorCauses() ([]string) {
+func (tM *trackMetadata) errorCauses() []string {
 	errCauses := []string{}
 	for _, e := range tM.errCause {
 		if e != "" {
