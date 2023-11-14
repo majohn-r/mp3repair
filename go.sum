@@ -25,10 +25,10 @@ github.com/lestrrat-go/strftime v0.0.0-20180220091553-9948d03c6207/go.mod h1:RMl
 github.com/lestrrat-go/strftime v1.0.6 h1:CFGsDEt1pOpFNU+TJB0nhz9jl+K0hZSLE205AhTIGQQ=
 github.com/lestrrat-go/strftime v1.0.6/go.mod h1:f7jQKgV5nnJpYgdEasS+/y7EsTb8ykN2z68n3TtcTaw=
 github.com/lestrrat/go-envload v0.0.0-20180220120943-6ed08b54a570/go.mod h1:BLt8L9ld7wVsvEWQbuLrUZnCMnUmLZ+CGDzKtclrTlE=
-github.com/majohn-r/cmd-toolkit v0.2.3 h1:gkgFmQ6iy+tGkAS468RzjYvjSeppnPZOWZ4AtZZ4K5k=
-github.com/majohn-r/cmd-toolkit v0.2.3/go.mod h1:mCbsmBs994BprasinnH8iSkVB8rw6G3fLixP+NmSLHY=
-github.com/majohn-r/output v0.2.0 h1:3iJEzyaU0EpCqifJe8daXImFpKRHShSY1QD6P7/DMNg=
-github.com/majohn-r/output v0.2.0/go.mod h1:fxy4ldQtiT4ioypmhziuYwwHvJTRg1hoa97sUA70br8=
+github.com/majohn-r/cmd-toolkit v0.3.0 h1:0Jf/GLGIrKXp8z+snURuAcm/ZeKqAlWU2cNkXuv2ZgM=
+github.com/majohn-r/cmd-toolkit v0.3.0/go.mod h1:tBYoilh0Dqqjt+BYaYSQ6QLMXSYzGU/zVFfwCHz6DX0=
+github.com/majohn-r/output v0.3.0 h1:NDmq2n5+IeCoNnHLOaBmz5HBdWkqQfavcNTitZje7PE=
+github.com/majohn-r/output v0.3.0/go.mod h1:0RtH3hspxHy+brJE4ae63MLNxNSJtMAfC6fal2r9Nhw=
 github.com/mattn/go-colorable v0.1.13 h1:fFA4WZxdEF4tXPZVKMLwD8oUnCTTo08duU7wxecdEvA=
 github.com/mattn/go-colorable v0.1.13/go.mod h1:7S9/ev0klgBDR4GtXTXX8a3vIGJpMovkB8vQcUbaXHg=
 github.com/mattn/go-isatty v0.0.16/go.mod h1:kYGgaQfpe5nmfYZH+SKPsOc2e4SrIfOl2e/yFXSvRLM=
