@@ -1,4 +1,4 @@
-package commands
+package files
 
 import (
 	"mp3/internal"
@@ -6,18 +6,18 @@ import (
 	"path/filepath"
 	"testing"
 
-	tools "github.com/majohn-r/cmd-toolkit"
+	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
-func Test_markDirty(t *testing.T) {
-	const fnName = "markDirty()"
+func TestMarkDirty(t *testing.T) {
+	const fnName = "MarkDirty()"
 	emptyDir := "empty"
-	if err := tools.Mkdir(emptyDir); err != nil {
+	if err := cmd_toolkit.Mkdir(emptyDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, emptyDir, err)
 	}
 	filledDir := "filled"
-	if err := tools.Mkdir(filledDir); err != nil {
+	if err := cmd_toolkit.Mkdir(filledDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, filledDir, err)
 	}
 	if err := internal.CreateFileForTesting(filledDir, dirtyFileName); err != nil {
@@ -50,8 +50,8 @@ func Test_markDirty(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			tools.SetApplicationPath(tt.appPath)
-			markDirty(o, tt.args.cmd)
+			cmd_toolkit.SetApplicationPath(tt.appPath)
+			MarkDirty(o)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)
@@ -61,16 +61,16 @@ func Test_markDirty(t *testing.T) {
 	}
 }
 
-func Test_dirty(t *testing.T) {
-	const fnName = "dirty()"
+func TestDirty(t *testing.T) {
+	const fnName = "Dirty()"
 	testDir := "dirty"
-	if err := tools.Mkdir(testDir); err != nil {
+	if err := cmd_toolkit.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
-	oldAppPath := tools.SetApplicationPath(testDir)
+	oldAppPath := cmd_toolkit.SetApplicationPath(testDir)
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, testDir)
-		tools.SetApplicationPath(oldAppPath)
+		cmd_toolkit.SetApplicationPath(oldAppPath)
 	}()
 	tests := map[string]struct {
 		want bool
@@ -87,26 +87,26 @@ func Test_dirty(t *testing.T) {
 			} else {
 				os.Remove(filepath.Join(testDir, dirtyFileName))
 			}
-			if gotDirty := dirty(); gotDirty != tt.want {
+			if gotDirty := Dirty(); gotDirty != tt.want {
 				t.Errorf("%s = %t, want %t", fnName, gotDirty, tt.want)
 			}
 		})
 	}
 }
 
-func Test_clearDirty(t *testing.T) {
-	const fnName = "clearDirty()"
+func TestClearDirty(t *testing.T) {
+	const fnName = "ClearDirty()"
 	testDir := "clearDirty"
-	if err := tools.Mkdir(testDir); err != nil {
+	if err := cmd_toolkit.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
-	oldAppPath := tools.ApplicationPath()
+	oldAppPath := cmd_toolkit.ApplicationPath()
 	if err := internal.CreateFileForTestingWithContent(testDir, dirtyFileName, []byte("dirty")); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, dirtyFileName, err)
 	}
 	// create another file structure with a dirty file that is open for reading
 	uncleanable := "clearDirty2"
-	if err := tools.Mkdir(uncleanable); err != nil {
+	if err := cmd_toolkit.Mkdir(uncleanable); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, uncleanable, err)
 	}
 	if err := internal.CreateFileForTestingWithContent(uncleanable, dirtyFileName, []byte("dirty")); err != nil {
@@ -117,7 +117,7 @@ func Test_clearDirty(t *testing.T) {
 		t.Errorf("%s error opening second %q: %v", fnName, dirtyFileName, err)
 	}
 	defer func() {
-		tools.SetApplicationPath(oldAppPath)
+		cmd_toolkit.SetApplicationPath(oldAppPath)
 		internal.DestroyDirectoryForTesting(fnName, testDir)
 		f.Close()
 		internal.DestroyDirectoryForTesting(fnName, uncleanable)
@@ -145,9 +145,9 @@ func Test_clearDirty(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			tools.SetApplicationPath(tt.initialDirtyFolder)
+			cmd_toolkit.SetApplicationPath(tt.initialDirtyFolder)
 			o := output.NewRecorder()
-			clearDirty(o)
+			ClearDirty(o)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("%s %s", fnName, issue)

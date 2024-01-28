@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	tools "github.com/majohn-r/cmd-toolkit"
+	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
@@ -78,7 +78,7 @@ func TestCreateTrackNameForTesting(t *testing.T) {
 func TestDestroyDirectoryForTesting(t *testing.T) {
 	const fnName = "DestroyDirectoryForTesting()"
 	testDirName := "testDir"
-	if err := tools.Mkdir(testDirName); err != nil {
+	if err := cmd_toolkit.Mkdir(testDirName); err != nil {
 		t.Errorf("%s: error creating %q: %v", fnName, testDirName, err)
 	}
 	type args struct {
@@ -104,10 +104,10 @@ func TestPopulateTopDirForTesting(t *testing.T) {
 	forceEarlyErrorDirName := "testDir1"
 	albumDirErrName := "testDir2"
 	badTrackFileName := "testDir3"
-	if err := tools.Mkdir(cleanDirName); err != nil {
+	if err := cmd_toolkit.Mkdir(cleanDirName); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, cleanDirName, err)
 	}
-	if err := tools.Mkdir(forceEarlyErrorDirName); err != nil {
+	if err := cmd_toolkit.Mkdir(forceEarlyErrorDirName); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, forceEarlyErrorDirName, err)
 	}
 	artistDirName := CreateArtistNameForTesting(0)
@@ -116,11 +116,11 @@ func TestPopulateTopDirForTesting(t *testing.T) {
 	}
 
 	// create an artist with a file that is named the same as an expected album name
-	if err := tools.Mkdir(albumDirErrName); err != nil {
+	if err := cmd_toolkit.Mkdir(albumDirErrName); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, albumDirErrName, err)
 	}
 	artistFileName := filepath.Join(albumDirErrName, CreateArtistNameForTesting(0))
-	if err := tools.Mkdir(artistFileName); err != nil {
+	if err := cmd_toolkit.Mkdir(artistFileName); err != nil {
 		t.Errorf("%s error creating test directory %q: %v", fnName, artistFileName, err)
 	}
 	albumFileName := CreateAlbumNameForTesting(0)
@@ -129,15 +129,15 @@ func TestPopulateTopDirForTesting(t *testing.T) {
 	}
 
 	// create an album with a pre-existing track name
-	if err := tools.Mkdir(badTrackFileName); err != nil {
+	if err := cmd_toolkit.Mkdir(badTrackFileName); err != nil {
 		t.Errorf("%s error creating directory %q: %v", fnName, badTrackFileName, err)
 	}
 	artistFileName = filepath.Join(badTrackFileName, CreateArtistNameForTesting(0))
-	if err := tools.Mkdir(artistFileName); err != nil {
+	if err := cmd_toolkit.Mkdir(artistFileName); err != nil {
 		t.Errorf("%s error creating test directory %q: %v", fnName, artistFileName, err)
 	}
 	albumFileName = filepath.Join(artistFileName, CreateAlbumNameForTesting(0))
-	if err := tools.Mkdir(albumFileName); err != nil {
+	if err := cmd_toolkit.Mkdir(albumFileName); err != nil {
 		t.Errorf("%s error creating test directory %q: %v", fnName, albumFileName, err)
 	}
 	trackName := CreateTrackNameForTesting(0)
@@ -210,11 +210,11 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 		},
 		"file exists": {
 			preTest: func(t *testing.T) {
-				if err := tools.Mkdir("./mp3"); err != nil {
+				if err := cmd_toolkit.Mkdir("./mp3"); err != nil {
 					t.Errorf("%s 'file exists': failed to create directory ./mp3: %v", fnName, err)
 				}
-				if err := CreateFileForTestingWithContent("./mp3", tools.DefaultConfigFileName(), []byte("who cares?")); err != nil {
-					t.Errorf("%s 'file exists': failed to create %q: %v", fnName, tools.DefaultConfigFileName(), err)
+				if err := CreateFileForTestingWithContent("./mp3", cmd_toolkit.DefaultConfigFileName(), []byte("who cares?")); err != nil {
+					t.Errorf("%s 'file exists': failed to create %q: %v", fnName, cmd_toolkit.DefaultConfigFileName(), err)
 				}
 			},
 			postTest: func(t *testing.T) {
@@ -229,12 +229,12 @@ func TestCreateDefaultYamlFileForTesting(t *testing.T) {
 				// nothing to do
 			},
 			postTest: func(t *testing.T) {
-				oldAppPath := tools.SetApplicationPath("mp3")
-				tools.InitApplicationPath(output.NewNilBus())
+				oldAppPath := cmd_toolkit.SetApplicationPath("mp3")
+				cmd_toolkit.InitApplicationPath(output.NewNilBus())
 				defer func() {
-					tools.SetApplicationPath(oldAppPath)
+					cmd_toolkit.SetApplicationPath(oldAppPath)
 				}()
-				c, _ := tools.ReadConfigurationFile(output.NewNilBus())
+				c, _ := cmd_toolkit.ReadConfigurationFile(output.NewNilBus())
 				if !c.HasSubConfiguration("common") {
 					t.Errorf("%s 'good test': configuration does not contain common subtree", fnName)
 				} else {

@@ -3,7 +3,6 @@ package files
 import (
 	"fmt"
 	"io"
-	"io/fs"
 	"path/filepath"
 	"regexp"
 	"sort"
@@ -12,7 +11,7 @@ import (
 
 	"github.com/bogem/id3v2/v2"
 	"github.com/cheggaaa/pb/v3"
-	cmd "github.com/majohn-r/cmd-toolkit"
+	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
@@ -45,7 +44,7 @@ type Track struct {
 	commonName      string // name of the track, without the track number or file extension, e.g., "First Track"
 	number          int    // number of the track
 	containingAlbum *Album
-	tM              *trackMetadata // read from the file only when needed; file i/o is expensive
+	tM              *TrackMetadata // read from the file only when needed; file i/o is expensive
 }
 
 // String returns the track's full path (implementation of Stringer interface).
@@ -80,7 +79,7 @@ func (t *Track) Number() int {
 	return t.number
 }
 
-func (t *Track) copy(a *Album) *Track {
+func (t *Track) Copy(a *Album) *Track {
 	return &Track{
 		path:            t.path,
 		commonName:      t.commonName,
@@ -88,10 +87,6 @@ func (t *Track) copy(a *Album) *Track {
 		tM:              t.tM,
 		containingAlbum: a, // do not use source track's album!
 	}
-}
-
-func newTrackFromFile(a *Album, f fs.DirEntry, simpleName string, trackNumber int) *Track {
-	return NewTrack(a, f.Name(), simpleName, trackNumber)
 }
 
 // NewTrack creates a new instance of Track without (expensive) metadata.
@@ -141,11 +136,6 @@ func (ts Tracks) Swap(i, j int) {
 	ts[i], ts[j] = ts[j], ts[i]
 }
 
-// BackupDirectory returns the path of the backup directory for this track.
-func (t *Track) BackupDirectory() string {
-	return t.containingAlbum.BackupDirectory()
-}
-
 func (t *Track) needsMetadata() bool {
 	return t.tM == nil
 }
@@ -154,7 +144,7 @@ func (t *Track) hasMetadataError() bool {
 	return t.tM != nil && len(t.tM.errorCauses()) != 0
 }
 
-func (t *Track) setMetadata(tM *trackMetadata) {
+func (t *Track) SetMetadata(tM *TrackMetadata) {
 	t.tM = tM
 }
 
@@ -318,7 +308,7 @@ func (t *Track) loadMetadata(bar *pb.ProgressBar) {
 				bar.Increment()
 				<-openFiles // read to release a slot
 			}()
-			t.setMetadata(readMetadata(t.path))
+			t.SetMetadata(readMetadata(t.path))
 		}()
 	}
 }
@@ -381,7 +371,7 @@ func processArtistMetadata(o output.Bus, artists []*Artist) {
 				"settings":   recordedArtistNames,
 				"artistName": artist.Name(),
 			})
-		} else if len(canonicalName) > 0 {
+		} else if canonicalName != "" {
 			artist.canonicalName = canonicalName
 		}
 	}
@@ -408,7 +398,7 @@ func processAlbumMetadata(o output.Bus, artists []*Artist) {
 					continue
 				}
 				genre := strings.ToLower(t.tM.canonicalGenre())
-				if len(genre) > 0 && !strings.HasPrefix(genre, "unknown") {
+				if genre != "" && !strings.HasPrefix(genre, "unknown") {
 					recordedGenres[t.tM.canonicalGenre()]++
 				}
 				if t.tM.canonicalYear() != "" {
@@ -513,13 +503,13 @@ func canonicalChoice(m map[string]int) (s string, ok bool) {
 // and as a log record
 func (t *Track) ReportMetadataReadError(o output.Bus, sT SourceType, e string) {
 	name := sT.name()
-	o.WriteCanonicalError("An error occurred when trying to read %s metadata for track %q on album %q by artist %q: %q", name, t.CommonName(), t.AlbumName(), t.RecordingArtist(), e)
 	o.Log(output.Error, "metadata read error", map[string]any{
 		"metadata": name,
 		"track":    t.String(),
 		"error":    e,
 	})
 }
+
 func reportAllTrackErrors(o output.Bus, artists []*Artist) {
 	for _, ar := range artists {
 		for _, al := range ar.Albums() {
@@ -533,7 +523,7 @@ func reportAllTrackErrors(o output.Bus, artists []*Artist) {
 func (t *Track) reportMetadataErrors(o output.Bus) {
 	if t.hasMetadataError() {
 		for _, sT := range []SourceType{ID3V1, ID3V2} {
-			e := t.tM.errCause[sT]
+			e := t.tM.ErrCause[sT]
 			if e != "" {
 				t.ReportMetadataReadError(o, sT, e)
 			}
@@ -551,11 +541,11 @@ func waitForFilesClosed() {
 // number, no file extension); it is for testing only and assumes that the input
 // name is well-formed.
 func ParseTrackNameForTesting(name string) (commonName string, trackNumber int) {
-	commonName, trackNumber, _ = parseTrackName(nil, name, nil, defaultFileExtension)
+	commonName, trackNumber, _ = ParseTrackName(output.NewNilBus(), name, NewAlbum("", NewArtist("", ""), ""), defaultFileExtension)
 	return
 }
 
-func parseTrackName(o output.Bus, name string, album *Album, ext string) (commonName string, trackNumber int, valid bool) {
+func ParseTrackName(o output.Bus, name string, album *Album, ext string) (commonName string, trackNumber int, valid bool) {
 	if !trackNameRegex.MatchString(name) {
 		o.Log(output.Error, "the track name cannot be parsed", map[string]any{
 			"trackName":  name,
@@ -589,7 +579,7 @@ func (t *Track) AlbumPath() string {
 	if t.containingAlbum == nil {
 		return ""
 	}
-	return t.containingAlbum.path
+	return t.containingAlbum.Path()
 }
 
 // AlbumName returns the name of the track's album.
@@ -611,7 +601,7 @@ func (t *Track) RecordingArtist() string {
 
 // CopyFile copies the track file to a specified destination path.
 func (t *Track) CopyFile(destination string) error {
-	return cmd.CopyFile(t.path, destination)
+	return cmd_toolkit.CopyFile(t.path, destination)
 }
 
 // ID3V1Diagnostics returns the ID3V1 tag contents, if any; a missing ID3V1 tag

@@ -13,7 +13,7 @@ import (
 
 	"github.com/bogem/id3v2/v2"
 	"github.com/cheggaaa/pb/v3"
-	tools "github.com/majohn-r/cmd-toolkit"
+	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
@@ -71,7 +71,7 @@ func Test_parseTrackName(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			gotCommonName, gotTrackNumber, gotValid := parseTrackName(o, tt.args.name, tt.args.album, tt.args.ext)
+			gotCommonName, gotTrackNumber, gotValid := ParseTrackName(o, tt.args.name, tt.args.album, tt.args.ext)
 			if tt.wantValid {
 				if gotCommonName != tt.wantCommonName {
 					t.Errorf("%s gotCommonName = %q, want %q", fnName, gotCommonName, tt.wantCommonName)
@@ -138,23 +138,6 @@ func Test_sortTracks(t *testing.T) {
 	}
 }
 
-func TestTrack_BackupDirectory(t *testing.T) {
-	const fnName = "Track.BackupDirectory()"
-	tests := map[string]struct {
-		t    *Track
-		want string
-	}{
-		"simple case": {t: &Track{containingAlbum: NewAlbum("", nil, "albumPath")}, want: "albumPath\\pre-repair-backup"},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			if got := tt.t.BackupDirectory(); got != tt.want {
-				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
-			}
-		})
-	}
-}
-
 func TestTrack_AlbumPath(t *testing.T) {
 	const fnName = "Track.AlbumPath()"
 	tests := map[string]struct {
@@ -176,7 +159,7 @@ func TestTrack_AlbumPath(t *testing.T) {
 func TestTrack_CopyFile(t *testing.T) {
 	const fnName = "Track.CopyFile()"
 	topDir := "copies"
-	if err := tools.Mkdir(topDir); err != nil {
+	if err := cmd_toolkit.Mkdir(topDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
 	}
 	srcName := "source.mp3"
@@ -207,7 +190,7 @@ func TestTrack_CopyFile(t *testing.T) {
 	}
 }
 
-func TestTrack_String(t *testing.T) {
+func TestTrackStringType(t *testing.T) {
 	const fnName = "Track.String()"
 	tests := map[string]struct {
 		t    *Track
@@ -485,7 +468,7 @@ func (u unspecifiedFrame) WriteTo(w io.Writer) (n int64, err error) {
 func TestTrack_ID3V1Diagnostics(t *testing.T) {
 	const fnName = "Track.ID3V1Diagnostics()"
 	testDir := "id3v1Diagnostics"
-	if err := tools.Mkdir(testDir); err != nil {
+	if err := cmd_toolkit.Mkdir(testDir); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, testDir, err)
 	}
 	// three files: one good, one too small, one with an invalid tag
@@ -561,7 +544,7 @@ func TestTrack_ID3V1Diagnostics(t *testing.T) {
 func TestTrack_loadMetadata(t *testing.T) {
 	const fnName = "track.loadMetadata()"
 	testDir := "loadMetadata"
-	if err := tools.Mkdir(testDir); err != nil {
+	if err := cmd_toolkit.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
 	artistName := "A great artist"
@@ -587,28 +570,28 @@ func TestTrack_loadMetadata(t *testing.T) {
 	}()
 	tests := map[string]struct {
 		t    *Track
-		want *trackMetadata
+		want *TrackMetadata
 	}{
-		"no read needed": {t: &Track{tM: &trackMetadata{}}, want: &trackMetadata{}},
+		"no read needed": {t: &Track{tM: &TrackMetadata{}}, want: &TrackMetadata{}},
 		"read file": {
 			t: &Track{path: filepath.Join(testDir, fileName)},
-			want: &trackMetadata{
-				album:             []string{"", albumName, albumName},
-				artist:            []string{"", artistName, artistName},
-				title:             []string{"", trackName, trackName},
-				genre:             []string{"", genre, genre},
-				year:              []string{"", year, year},
-				track:             []int{0, track, track},
-				musicCDIdentifier: id3v2.UnknownFrame{Body: []byte{0}},
-				canonicalType:     ID3V2,
-				errCause:          []string{"", "", ""},
-				correctedAlbum:    []string{"", "", ""},
-				correctedArtist:   []string{"", "", ""},
-				correctedTitle:    []string{"", "", ""},
-				correctedGenre:    []string{"", "", ""},
-				correctedYear:     []string{"", "", ""},
-				correctedTrack:    []int{0, 0, 0},
-				requiresEdit:      []bool{false, false, false},
+			want: &TrackMetadata{
+				Album:             []string{"", albumName, albumName},
+				Artist:            []string{"", artistName, artistName},
+				Title:             []string{"", trackName, trackName},
+				Genre:             []string{"", genre, genre},
+				Year:              []string{"", year, year},
+				Track:             []int{0, track, track},
+				MusicCDIdentifier: id3v2.UnknownFrame{Body: []byte{0}},
+				CanonicalType:     ID3V2,
+				ErrCause:          []string{"", "", ""},
+				CorrectedAlbum:    []string{"", "", ""},
+				CorrectedArtist:   []string{"", "", ""},
+				CorrectedTitle:    []string{"", "", ""},
+				CorrectedGenre:    []string{"", "", ""},
+				CorrectedYear:     []string{"", "", ""},
+				CorrectedTrack:    []int{0, 0, 0},
+				RequiresEdit:      []bool{false, false, false},
 			},
 		},
 	}
@@ -631,14 +614,14 @@ func TestReadMetadata(t *testing.T) {
 	const fnName = "ReadMetadata()"
 	// 5 artists, 20 albums each, 50 tracks apiece ... total: 5,000 tracks
 	testDir := "ReadMetadata"
-	if err := tools.Mkdir(testDir); err != nil {
+	if err := cmd_toolkit.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
 	var artists []*Artist
 	for k := 0; k < 5; k++ {
 		artistName := fmt.Sprintf("artist %d", k)
 		artistPath := filepath.Join(testDir, artistName)
-		if err := tools.Mkdir(artistPath); err != nil {
+		if err := cmd_toolkit.Mkdir(artistPath); err != nil {
 			t.Errorf("%s error creating %q: %v", fnName, artistPath, err)
 		}
 		artist := NewArtist(artistName, artistPath)
@@ -646,7 +629,7 @@ func TestReadMetadata(t *testing.T) {
 		for m := 0; m < 20; m++ {
 			albumName := fmt.Sprintf("album %d-%d", k, m)
 			albumPath := filepath.Join(artistPath, albumName)
-			if err := tools.Mkdir(albumPath); err != nil {
+			if err := cmd_toolkit.Mkdir(albumPath); err != nil {
 				t.Errorf("%s error creating %q: %v", fnName, albumPath, err)
 			}
 			album := NewAlbum(albumName, artist, albumName)
@@ -721,14 +704,14 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	metadata := newTrackMetadata()
 	problematicTrack.tM = metadata
 	src := ID3V2
-	metadata.canonicalType = src
-	metadata.genre[src] = "unknown"
-	metadata.year[src] = "2001"
-	metadata.track[src] = 2
-	metadata.album[src] = "unknown album"
-	metadata.artist[src] = "unknown artist"
-	metadata.title[src] = "unknown title"
-	metadata.musicCDIdentifier = id3v2.UnknownFrame{Body: []byte{1, 3, 5}}
+	metadata.CanonicalType = src
+	metadata.Genre[src] = "unknown"
+	metadata.Year[src] = "2001"
+	metadata.Track[src] = 2
+	metadata.Album[src] = "unknown album"
+	metadata.Artist[src] = "unknown artist"
+	metadata.Title[src] = "unknown title"
+	metadata.MusicCDIdentifier = id3v2.UnknownFrame{Body: []byte{1, 3, 5}}
 	problematicAlbum.AddTrack(problematicTrack)
 	problematicArtist.AddAlbum(problematicAlbum)
 	goodArtist := NewArtist("good artist", "")
@@ -739,14 +722,14 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	metadata2 := newTrackMetadata()
 	goodTrack.tM = metadata2
 	src2 := ID3V1
-	metadata2.canonicalType = src2
-	metadata2.genre[src2] = "Classic Rock"
-	metadata2.year[src2] = "1999"
-	metadata2.track[src2] = 3
-	metadata2.album[src2] = "good album"
-	metadata2.artist[src2] = "good artist"
-	metadata2.title[src2] = "good track"
-	metadata2.errCause[ID3V2] = "no id3v2 metadata, how odd"
+	metadata2.CanonicalType = src2
+	metadata2.Genre[src2] = "Classic Rock"
+	metadata2.Year[src2] = "1999"
+	metadata2.Track[src2] = 3
+	metadata2.Album[src2] = "good album"
+	metadata2.Artist[src2] = "good artist"
+	metadata2.Title[src2] = "good track"
+	metadata2.ErrCause[ID3V2] = "no id3v2 metadata, how odd"
 	goodAlbum.AddTrack(goodTrack)
 	goodArtist.AddAlbum(goodAlbum)
 	tests := map[string]struct {
@@ -755,7 +738,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	}{
 		"unread metadata": {t: &Track{tM: nil}, want: []string{"differences cannot be determined: metadata has not been read"}},
 		"track with error": {
-			t:    &Track{tM: &trackMetadata{errCause: []string{"", "oops", "oops"}}},
+			t:    &Track{tM: &TrackMetadata{ErrCause: []string{"", "oops", "oops"}}},
 			want: []string{"differences cannot be determined: there was an error reading metadata"},
 		},
 		"track with metadata differences": {
@@ -784,7 +767,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 func TestTrack_UpdateMetadata(t *testing.T) {
 	const fnName = "Track.UpdateMetadata()"
 	testDir := "updateMetadata"
-	if err := tools.Mkdir(testDir); err != nil {
+	if err := cmd_toolkit.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
 	trackName := "edit this track.mp3"
@@ -814,22 +797,22 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 				canonicalName: "fine artist",
 			},
 		},
-		tM: &trackMetadata{
-			album:           []string{"", "unknown album", "unknown album"},
-			artist:          []string{"", "unknown artist", "unknown artist"},
-			title:           []string{"", "unknown title", "unknown title"},
-			genre:           []string{"", "unknown", "unknown"},
-			year:            []string{"", "1900", "1900"},
-			track:           []int{0, 1, 1},
-			canonicalType:   ID3V2,
-			errCause:        make([]string, 3),
-			correctedAlbum:  make([]string, 3),
-			correctedArtist: make([]string, 3),
-			correctedTitle:  make([]string, 3),
-			correctedGenre:  make([]string, 3),
-			correctedYear:   make([]string, 3),
-			correctedTrack:  make([]int, 3),
-			requiresEdit:    make([]bool, 3),
+		tM: &TrackMetadata{
+			Album:           []string{"", "unknown album", "unknown album"},
+			Artist:          []string{"", "unknown artist", "unknown artist"},
+			Title:           []string{"", "unknown title", "unknown title"},
+			Genre:           []string{"", "unknown", "unknown"},
+			Year:            []string{"", "1900", "1900"},
+			Track:           []int{0, 1, 1},
+			CanonicalType:   ID3V2,
+			ErrCause:        make([]string, 3),
+			CorrectedAlbum:  make([]string, 3),
+			CorrectedArtist: make([]string, 3),
+			CorrectedTitle:  make([]string, 3),
+			CorrectedGenre:  make([]string, 3),
+			CorrectedYear:   make([]string, 3),
+			CorrectedTrack:  make([]int, 3),
+			RequiresEdit:    make([]bool, 3),
 		},
 	}
 	deletedTrack := &Track{
@@ -847,41 +830,41 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 				canonicalName: "fine artist",
 			},
 		},
-		tM: &trackMetadata{
-			album:           []string{"", "unknown album", "unknown album"},
-			artist:          []string{"", "unknown artist", "unknown artist"},
-			title:           []string{"", "unknown title", "unknown title"},
-			genre:           []string{"", "unknown", "unknown"},
-			year:            []string{"", "1900", "1900"},
-			track:           []int{0, 1, 1},
-			canonicalType:   ID3V2,
-			errCause:        make([]string, 3),
-			correctedAlbum:  make([]string, 3),
-			correctedArtist: make([]string, 3),
-			correctedTitle:  make([]string, 3),
-			correctedGenre:  make([]string, 3),
-			correctedYear:   make([]string, 3),
-			correctedTrack:  make([]int, 3),
-			requiresEdit:    make([]bool, 3),
+		tM: &TrackMetadata{
+			Album:           []string{"", "unknown album", "unknown album"},
+			Artist:          []string{"", "unknown artist", "unknown artist"},
+			Title:           []string{"", "unknown title", "unknown title"},
+			Genre:           []string{"", "unknown", "unknown"},
+			Year:            []string{"", "1900", "1900"},
+			Track:           []int{0, 1, 1},
+			CanonicalType:   ID3V2,
+			ErrCause:        make([]string, 3),
+			CorrectedAlbum:  make([]string, 3),
+			CorrectedArtist: make([]string, 3),
+			CorrectedTitle:  make([]string, 3),
+			CorrectedGenre:  make([]string, 3),
+			CorrectedYear:   make([]string, 3),
+			CorrectedTrack:  make([]int, 3),
+			RequiresEdit:    make([]bool, 3),
 		},
 	}
-	editedTm := &trackMetadata{
-		album:             []string{"", "fine album", "fine album"},
-		artist:            []string{"", "fine artist", "fine artist"},
-		title:             []string{"", "edit this track", "edit this track"},
-		genre:             []string{"", "Classic Rock", "Classic Rock"},
-		year:              []string{"", "2022", "2022"},
-		track:             []int{0, 2, 2},
-		musicCDIdentifier: id3v2.UnknownFrame{Body: []byte("fine album")},
-		canonicalType:     ID3V2,
-		errCause:          make([]string, 3),
-		correctedAlbum:    make([]string, 3),
-		correctedArtist:   make([]string, 3),
-		correctedTitle:    make([]string, 3),
-		correctedGenre:    make([]string, 3),
-		correctedYear:     make([]string, 3),
-		correctedTrack:    make([]int, 3),
-		requiresEdit:      make([]bool, 3),
+	editedTm := &TrackMetadata{
+		Album:             []string{"", "fine album", "fine album"},
+		Artist:            []string{"", "fine artist", "fine artist"},
+		Title:             []string{"", "edit this track", "edit this track"},
+		Genre:             []string{"", "Classic Rock", "Classic Rock"},
+		Year:              []string{"", "2022", "2022"},
+		Track:             []int{0, 2, 2},
+		MusicCDIdentifier: id3v2.UnknownFrame{Body: []byte("fine album")},
+		CanonicalType:     ID3V2,
+		ErrCause:          make([]string, 3),
+		CorrectedAlbum:    make([]string, 3),
+		CorrectedArtist:   make([]string, 3),
+		CorrectedTitle:    make([]string, 3),
+		CorrectedGenre:    make([]string, 3),
+		CorrectedYear:     make([]string, 3),
+		CorrectedTrack:    make([]int, 3),
+		RequiresEdit:      make([]bool, 3),
 	}
 	defer func() {
 		internal.DestroyDirectoryForTesting(fnName, testDir)
@@ -889,7 +872,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 	tests := map[string]struct {
 		t      *Track
 		wantE  []string
-		wantTm *trackMetadata
+		wantTm *TrackMetadata
 	}{
 		"error checking": {
 			t: deletedTrack,
@@ -930,8 +913,8 @@ func Test_processArtistMetadata(t *testing.T) {
 		track := NewTrack(album1, fmt.Sprintf("%02d track%d.mp3", k, k), fmt.Sprintf("track%d", k), k)
 		tM := newTrackMetadata()
 		src := ID3V2
-		tM.canonicalType = src
-		tM.artist[src] = "artist:name"
+		tM.CanonicalType = src
+		tM.Artist[src] = "artist:name"
 		track.tM = tM
 		album1.AddTrack(track)
 	}
@@ -942,8 +925,8 @@ func Test_processArtistMetadata(t *testing.T) {
 		track := NewTrack(album2, fmt.Sprintf("%02d track%d.mp3", k, k), fmt.Sprintf("track%d", k), k)
 		tM := newTrackMetadata()
 		src := ID3V2
-		tM.canonicalType = src
-		tM.artist[src] = "unknown artist"
+		tM.CanonicalType = src
+		tM.Artist[src] = "unknown artist"
 		track.tM = tM
 		album2.AddTrack(track)
 	}
@@ -954,12 +937,12 @@ func Test_processArtistMetadata(t *testing.T) {
 		track := NewTrack(album3, fmt.Sprintf("%02d track%d.mp3", k, k), fmt.Sprintf("track%d", k), k)
 		tM := newTrackMetadata()
 		src := ID3V2
-		tM.canonicalType = src
+		tM.CanonicalType = src
 		track.tM = tM
 		if k%2 == 0 {
-			tM.artist[src] = "artist:name"
+			tM.Artist[src] = "artist:name"
 		} else {
-			tM.artist[src] = "artist_name"
+			tM.Artist[src] = "artist_name"
 		}
 		album3.AddTrack(track)
 	}
@@ -1004,10 +987,10 @@ func Test_processAlbumMetadata(t *testing.T) {
 	artist1.AddAlbum(album1)
 	track1 := NewTrack(album1, "01 track1.mp3", "track1", 1)
 	track1.tM = newTrackMetadata()
-	track1.tM.canonicalType = src
-	track1.tM.genre[src] = "pop"
-	track1.tM.year[src] = "2022"
-	track1.tM.album[src] = "good:album"
+	track1.tM.CanonicalType = src
+	track1.tM.Genre[src] = "pop"
+	track1.tM.Year[src] = "2022"
+	track1.tM.Album[src] = "good:album"
 	album1.AddTrack(track1)
 	// more interesting test data
 	var artists2 []*Artist
@@ -1017,24 +1000,24 @@ func Test_processAlbumMetadata(t *testing.T) {
 	artist2.AddAlbum(album2)
 	track2a := NewTrack(album2, "01 track1.mp3", "track1", 1)
 	track2a.tM = newTrackMetadata()
-	track2a.tM.canonicalType = src
-	track2a.tM.genre[src] = "unknown"
-	track2a.tM.year[src] = ""
-	track2a.tM.album[src] = "unknown album"
+	track2a.tM.CanonicalType = src
+	track2a.tM.Genre[src] = "unknown"
+	track2a.tM.Year[src] = ""
+	track2a.tM.Album[src] = "unknown album"
 	album2.AddTrack(track2a)
 	track2b := NewTrack(album1, "02 track2.mp3", "track2", 2)
 	track2b.tM = newTrackMetadata()
-	track2b.tM.canonicalType = src
-	track2b.tM.genre[src] = "pop"
-	track2b.tM.year[src] = "2022"
-	track2b.tM.album[src] = "another good:album"
+	track2b.tM.CanonicalType = src
+	track2b.tM.Genre[src] = "pop"
+	track2b.tM.Year[src] = "2022"
+	track2b.tM.Album[src] = "another good:album"
 	album2.AddTrack(track2b)
 	track2c := NewTrack(album1, "03 track3.mp3", "track3", 3)
 	track2c.tM = newTrackMetadata()
-	track2c.tM.canonicalType = src
-	track2c.tM.genre[src] = "pop"
-	track2c.tM.year[src] = "2022"
-	track2c.tM.album[src] = "another good:album"
+	track2c.tM.CanonicalType = src
+	track2c.tM.Genre[src] = "pop"
+	track2c.tM.Year[src] = "2022"
+	track2c.tM.Album[src] = "another good:album"
 	album2.AddTrack(track2c)
 	// error case data
 	var artists3 []*Artist
@@ -1044,27 +1027,27 @@ func Test_processAlbumMetadata(t *testing.T) {
 	artist3.AddAlbum(album3)
 	track3a := NewTrack(album2, "01 track1.mp3", "track1", 1)
 	track3a.tM = newTrackMetadata()
-	track3a.tM.canonicalType = src
-	track3a.tM.genre[src] = "rock"
-	track3a.tM.year[src] = "2023"
-	track3a.tM.album[src] = "problematic:album"
-	track3a.tM.musicCDIdentifier = id3v2.UnknownFrame{Body: []byte{1, 2, 3}}
+	track3a.tM.CanonicalType = src
+	track3a.tM.Genre[src] = "rock"
+	track3a.tM.Year[src] = "2023"
+	track3a.tM.Album[src] = "problematic:album"
+	track3a.tM.MusicCDIdentifier = id3v2.UnknownFrame{Body: []byte{1, 2, 3}}
 	album3.AddTrack(track3a)
 	track3b := NewTrack(album1, "02 track2.mp3", "track2", 2)
 	track3b.tM = newTrackMetadata()
-	track3b.tM.canonicalType = src
-	track3b.tM.genre[src] = "pop"
-	track3b.tM.year[src] = "2022"
-	track3b.tM.album[src] = "problematic:Album"
-	track3b.tM.musicCDIdentifier = id3v2.UnknownFrame{Body: []byte{1, 2, 3, 4}}
+	track3b.tM.CanonicalType = src
+	track3b.tM.Genre[src] = "pop"
+	track3b.tM.Year[src] = "2022"
+	track3b.tM.Album[src] = "problematic:Album"
+	track3b.tM.MusicCDIdentifier = id3v2.UnknownFrame{Body: []byte{1, 2, 3, 4}}
 	album3.AddTrack(track3b)
 	track3c := NewTrack(album1, "03 track3.mp3", "track3", 3)
 	track3c.tM = newTrackMetadata()
-	track3c.tM.canonicalType = src
-	track3c.tM.genre[src] = "folk"
-	track3c.tM.year[src] = "2021"
-	track3c.tM.album[src] = "Problematic:album"
-	track3c.tM.musicCDIdentifier = id3v2.UnknownFrame{Body: []byte{1, 2, 3, 4, 5}}
+	track3c.tM.CanonicalType = src
+	track3c.tM.Genre[src] = "folk"
+	track3c.tM.Year[src] = "2021"
+	track3c.tM.Album[src] = "Problematic:album"
+	track3c.tM.MusicCDIdentifier = id3v2.UnknownFrame{Body: []byte{1, 2, 3, 4, 5}}
 	album3.AddTrack(track3c)
 	// verify code can handle missing metadata
 	track4 := NewTrack(album1, "04 track4.mp3", "track4", 4)
@@ -1119,13 +1102,11 @@ func TestTrack_reportMetadataErrors(t *testing.T) {
 				t: &Track{
 					commonName:      "silly track",
 					path:            "Music\\silly artist\\silly album\\01 silly track.mp3",
-					tM:              &trackMetadata{errCause: []string{"", "id3v1 error!", "id3v2 error!"}},
+					tM:              &TrackMetadata{ErrCause: []string{"", "id3v1 error!", "id3v2 error!"}},
 					containingAlbum: &Album{name: "silly album", recordingArtist: &Artist{name: "silly artist"}},
 				},
 			},
 			WantedRecording: output.WantedRecording{
-				Error: "An error occurred when trying to read ID3V1 metadata for track \"silly track\" on album \"silly album\" by artist \"silly artist\": \"id3v1 error!\".\n" +
-					"An error occurred when trying to read ID3V2 metadata for track \"silly track\" on album \"silly album\" by artist \"silly artist\": \"id3v2 error!\".\n",
 				Log: "level='error' error='id3v1 error!' metadata='ID3V1' track='Music\\silly artist\\silly album\\01 silly track.mp3' msg='metadata read error'\n" +
 					"level='error' error='id3v2 error!' metadata='ID3V2' track='Music\\silly artist\\silly album\\01 silly track.mp3' msg='metadata read error'\n",
 			},

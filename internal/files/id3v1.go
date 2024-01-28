@@ -383,7 +383,7 @@ func (im *id3v1Metadata) setGenre(s string) {
 }
 
 func trim(s string) string {
-	for len(s) > 0 && (s[len(s)-1:] == " " || s[len(s)-1:] == "\u0000") {
+	for s != "" && (s[len(s)-1:] == " " || s[len(s)-1:] == "\u0000") {
 		s = s[:len(s)-1]
 	}
 	return s
@@ -403,7 +403,7 @@ func readID3v1Metadata(path string) ([]string, error) {
 	if genre, ok := v1.genre(); ok {
 		output = append(output, fmt.Sprintf("Genre: %q", genre))
 	}
-	if comment := v1.comment(); len(comment) > 0 {
+	if comment := v1.comment(); comment != "" {
 		output = append(output, fmt.Sprintf("Comment: %q", comment))
 	}
 	return output, nil
@@ -442,31 +442,31 @@ func writeToFile(f *os.File, b []byte) (int, error) {
 	return f.Write(b)
 }
 
-func updateID3V1Metadata(tM *trackMetadata, path string, sT SourceType) (err error) {
-	if tM.requiresEdit[sT] {
+func updateID3V1Metadata(tM *TrackMetadata, path string, sT SourceType) (err error) {
+	if tM.RequiresEdit[sT] {
 		var v1 *id3v1Metadata
 		if v1, err = internalReadID3V1Metadata(path, fileReader); err == nil {
-			albumTitle := tM.correctedAlbum[sT]
+			albumTitle := tM.CorrectedAlbum[sT]
 			if albumTitle != "" {
 				v1.setAlbum(albumTitle)
 			}
-			artistName := tM.correctedArtist[sT]
+			artistName := tM.CorrectedArtist[sT]
 			if artistName != "" {
 				v1.setArtist(artistName)
 			}
-			trackTitle := tM.correctedTitle[sT]
+			trackTitle := tM.CorrectedTitle[sT]
 			if trackTitle != "" {
 				v1.setTitle(trackTitle)
 			}
-			trackNumber := tM.correctedTrack[sT]
+			trackNumber := tM.CorrectedTrack[sT]
 			if trackNumber != 0 {
 				_ = v1.setTrack(trackNumber)
 			}
-			genre := tM.correctedGenre[sT]
+			genre := tM.CorrectedGenre[sT]
 			if genre != "" {
 				v1.setGenre(genre)
 			}
-			year := tM.correctedYear[sT]
+			year := tM.CorrectedYear[sT]
 			if year != "" {
 				v1.setYear(year)
 			}
@@ -516,7 +516,7 @@ func (im *id3v1Metadata) internalWrite(path string, writeFunc func(f *os.File, b
 }
 
 func id3v1NameDiffers(cS comparableStrings) bool {
-	var bs []byte
+	bs := []byte{}
 	for _, r := range strings.ToLower(cS.externalName) {
 		if b, ok := runeByteMapping[r]; ok {
 			bs = append(bs, b...)

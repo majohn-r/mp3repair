@@ -166,7 +166,7 @@ func Test_selectUnknownFrame(t *testing.T) {
 	}
 }
 
-func TestID3V2TrackFrame_String(t *testing.T) {
+func TestID3V2TrackFrameStringType(t *testing.T) {
 	const fnName = "ID3V2TrackFrame.String()"
 	tests := map[string]struct {
 		f    *id3v2TrackFrame

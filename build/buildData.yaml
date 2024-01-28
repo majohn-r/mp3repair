@@ -3,12 +3,10 @@
     value: mp3.exe
     description: mp3 repair utility
   - function: path
-    value: ./cmd/mp3
+    value: .
   - function: timestamp
     flag: main.creation
-  - flag: main.appName
-    value: mp3
-  - flag: main.firstYear
+  - function: firstYear
     value: 2021
   - flag: main.version
     value: 0.33.8

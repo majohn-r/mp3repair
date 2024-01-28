@@ -3,9 +3,6 @@ package files
 import (
 	"io/fs"
 	"path/filepath"
-
-	cmd "github.com/majohn-r/cmd-toolkit"
-	"github.com/majohn-r/output"
 )
 
 // Artist encapsulates information about a recording artist (a solo performer, a
@@ -18,13 +15,13 @@ type Artist struct {
 	canonicalName string
 }
 
-func newArtistFromFile(f fs.DirEntry, dir string) *Artist {
+func NewArtistFromFile(f fs.DirEntry, dir string) *Artist {
 	artistName := f.Name()
 	return NewArtist(artistName, filepath.Join(dir, artistName))
 }
 
-func (a *Artist) copy() *Artist {
-	a2 := NewArtist(a.name, a.path)
+func (a *Artist) Copy() *Artist {
+	a2 := NewArtist(a.name, a.Path())
 	a2.canonicalName = a.canonicalName
 	return a2
 }
@@ -34,8 +31,8 @@ func NewArtist(n, p string) *Artist {
 	return &Artist{name: n, path: p, canonicalName: n}
 }
 
-func (a *Artist) contents(o output.Bus) ([]fs.DirEntry, bool) {
-	return cmd.ReadDirectory(o, a.path)
+func (a *Artist) Path() string {
+	return a.path
 }
 
 // Name returns the artist's name

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	tools "github.com/majohn-r/cmd-toolkit"
+	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
 )
 
 func Test_trim(t *testing.T) {
@@ -671,10 +671,10 @@ func Test_initGenreIndices(t *testing.T) {
 	}
 }
 
-func Test_internalReadId3V1Metadata(t *testing.T) {
+func TestIntTypeernalReadId3V1Metadata(t *testing.T) {
 	const fnName = "internalReadId3V1Metadata()"
 	testDir := "id3v1read"
-	if err := tools.Mkdir(testDir); err != nil {
+	if err := cmd_toolkit.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
 	defer func() {
@@ -770,7 +770,7 @@ func Test_internalReadId3V1Metadata(t *testing.T) {
 func Test_readId3v1Metadata(t *testing.T) {
 	const fnName = "readId3v1Metadata()"
 	testDir := "id3v1read"
-	if err := tools.Mkdir(testDir); err != nil {
+	if err := cmd_toolkit.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
 	defer func() {
@@ -831,10 +831,10 @@ func Test_readId3v1Metadata(t *testing.T) {
 	}
 }
 
-func Test_id3v1Metadata_internalWrite(t *testing.T) {
+func Test_id3v1MetadataIntTypeernalWrite(t *testing.T) {
 	const fnName = "id3v1Metadata.internalWrite()"
 	testDir := "id3v1write"
-	if err := tools.Mkdir(testDir); err != nil {
+	if err := cmd_toolkit.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
 	defer func() {
@@ -944,7 +944,7 @@ func Test_id3v1Metadata_internalWrite(t *testing.T) {
 func Test_id3v1Metadata_write(t *testing.T) {
 	const fnName = "id3v1Metadata.write()"
 	testDir := "id3v1write"
-	if err := tools.Mkdir(testDir); err != nil {
+	if err := cmd_toolkit.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
 	defer func() {

@@ -5,8 +5,6 @@ import (
 	"path/filepath"
 
 	"github.com/bogem/id3v2/v2"
-	cmd "github.com/majohn-r/cmd-toolkit"
-	"github.com/majohn-r/output"
 )
 
 // Album encapsulates information about a music album
@@ -22,15 +20,17 @@ type Album struct {
 	musicCDIdentifier id3v2.UnknownFrame
 }
 
-func newAlbumFromFile(file fs.DirEntry, ar *Artist) *Album {
+func NewAlbumFromFile(file fs.DirEntry, ar *Artist) *Album {
 	albumName := file.Name()
 	return NewAlbum(albumName, ar, ar.subDirectory(albumName))
 }
 
-func (a *Album) copy(ar *Artist) *Album {
+func (a *Album) Copy(ar *Artist, includeTracks bool) *Album {
 	a2 := NewAlbum(a.name, ar, a.path)
-	for _, t := range a.tracks {
-		a2.AddTrack(t.copy(a2))
+	if includeTracks {
+		for _, t := range a.tracks {
+			a2.AddTrack(t.Copy(a2))
+		}
 	}
 	a2.canonicalGenre = a.canonicalGenre
 	a2.canonicalYear = a.canonicalYear
@@ -49,8 +49,8 @@ func (a *Album) BackupDirectory() string {
 	return a.subDirectory(backupDirName)
 }
 
-func (a *Album) contents(o output.Bus) ([]fs.DirEntry, bool) {
-	return cmd.ReadDirectory(o, a.path)
+func (a *Album) Path() string {
+	return a.path
 }
 
 // Name returns the album's name

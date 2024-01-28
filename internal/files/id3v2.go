@@ -58,10 +58,12 @@ func normalizeGenre(s string) string {
 	var value string
 	if n, err := fmt.Sscanf(s, "(%d)%s", &i, &value); n == 2 && err == nil {
 		// discard value
-		value = strings.SplitAfter(s, ")")[1]
-		mappedValue := genreMap[i]
-		if value == mappedValue || (value == "R&B" && mappedValue == "Rhythm and Blues") {
-			return mappedValue
+		if splits := strings.SplitAfter(s, ")"); len(splits) >= 2 {
+			value = splits[1]
+			mappedValue := genreMap[i]
+			if value == mappedValue || (value == "R&B" && mappedValue == "Rhythm and Blues") {
+				return mappedValue
+			}
 		}
 	}
 	return s
@@ -132,38 +134,38 @@ func selectUnknownFrame(mcdiFramers []id3v2.Framer) id3v2.UnknownFrame {
 	return id3v2.UnknownFrame{Body: []byte{0}}
 }
 
-func updateID3V2Metadata(tM *trackMetadata, path string, sT SourceType) (e error) {
-	if tM.requiresEdit[sT] {
+func updateID3V2Metadata(tM *TrackMetadata, path string, sT SourceType) (e error) {
+	if tM.RequiresEdit[sT] {
 		if tag, err := readID3V2Tag(path); err != nil {
 			e = err
 		} else {
 			defer tag.Close()
 			tag.SetDefaultEncoding(id3v2.EncodingUTF8)
-			album := tM.correctedAlbum[sT]
+			album := tM.CorrectedAlbum[sT]
 			if album != "" {
 				tag.SetAlbum(album)
 			}
-			artist := tM.correctedArtist[sT]
+			artist := tM.CorrectedArtist[sT]
 			if artist != "" {
 				tag.SetArtist(artist)
 			}
-			title := tM.correctedTitle[sT]
+			title := tM.CorrectedTitle[sT]
 			if title != "" {
 				tag.SetTitle(title)
 			}
-			track := tM.correctedTrack[sT]
+			track := tM.CorrectedTrack[sT]
 			if track != 0 {
 				tag.AddTextFrame("TRCK", tag.DefaultEncoding(), fmt.Sprintf("%d", track))
 			}
-			genre := tM.correctedGenre[sT]
+			genre := tM.CorrectedGenre[sT]
 			if genre != "" {
 				tag.SetGenre(genre)
 			}
-			year := tM.correctedYear[sT]
+			year := tM.CorrectedYear[sT]
 			if year != "" {
 				tag.SetYear(year)
 			}
-			mcdi := tM.correctedMusicCDIdentifier
+			mcdi := tM.CorrectedMusicCDIdentifier
 			if len(mcdi.Body) != 0 {
 				tag.DeleteFrames(mcdiFrame)
 				tag.AddFrame(mcdiFrame, mcdi)

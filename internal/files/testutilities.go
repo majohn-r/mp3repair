@@ -2,47 +2,11 @@ package files
 
 import (
 	"fmt"
-	"mp3/internal"
-	"path/filepath"
 	"sort"
 )
 
 // NOTE: the functions in this file are strictly for testing purposes. Do not
 // call them from production code.
-
-// CreateAllArtistsForTesting creates a well-defined slice of artists, with
-// albums and tracks.
-func CreateAllArtistsForTesting(topDir string, addExtras bool) []*Artist {
-	var artists []*Artist
-	for k := 0; k < 10; k++ {
-		artistName := internal.CreateArtistNameForTesting(k)
-		artistDir := filepath.Join(topDir, artistName)
-		artist := NewArtist(artistName, artistDir)
-		for n := 0; n < 10; n++ {
-			albumName := internal.CreateAlbumNameForTesting(n)
-			albumDir := filepath.Join(artistDir, albumName)
-			album := NewAlbum(albumName, artist, albumDir)
-			for p := 0; p < 10; p++ {
-				trackName := internal.CreateTrackNameForTesting(p)
-				name, trackNo, _ := parseTrackName(nil, trackName, album, defaultFileExtension)
-				album.AddTrack(NewTrack(album, trackName, name, trackNo))
-			}
-			artist.AddAlbum(album)
-		}
-		if addExtras {
-			albumName := internal.CreateAlbumNameForTesting(999)
-			album := NewAlbum(albumName, artist, artist.subDirectory(albumName))
-			artist.AddAlbum(album)
-		}
-		artists = append(artists, artist)
-	}
-	if addExtras {
-		artistName := internal.CreateArtistNameForTesting(999)
-		artist := NewArtist(artistName, filepath.Join(topDir, artistName))
-		artists = append(artists, artist)
-	}
-	return artists
-}
 
 var (
 	nameToID3V2TagName = map[string]string{

@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	tools "github.com/majohn-r/cmd-toolkit"
+	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
 )
 
 // NOTE: the functions in this file are strictly for testing purposes. Do not
@@ -98,7 +98,7 @@ func createAlbumDirForTesting(artistDir string, albumNumber, tracks int) error {
 	dummyDir := filepath.Join(albumDir, "ignore this folder")
 	directories := []string{albumDir, dummyDir}
 	for _, directory := range directories {
-		if err := tools.Mkdir(directory); err != nil {
+		if err := cmd_toolkit.Mkdir(directory); err != nil {
 			return err
 		}
 	}
@@ -117,7 +117,7 @@ func createAlbumDirForTesting(artistDir string, albumNumber, tracks int) error {
 
 func createArtistDirForTesting(topDir string, artistNumber int, withContent bool) error {
 	artistDir := filepath.Join(topDir, CreateArtistNameForTesting(artistNumber))
-	if err := tools.Mkdir(artistDir); err != nil {
+	if err := cmd_toolkit.Mkdir(artistDir); err != nil {
 		return err
 	}
 	if withContent {
@@ -153,7 +153,7 @@ func CreateNamedFileForTesting(fileName string, content []byte) (err error) {
 	if err == nil {
 		err = fmt.Errorf("file %q already exists", fileName)
 	} else if errors.Is(err, os.ErrNotExist) {
-		err = os.WriteFile(fileName, content, tools.StdFilePermissions)
+		err = os.WriteFile(fileName, content, cmd_toolkit.StdFilePermissions)
 	}
 	return
 }
@@ -174,7 +174,7 @@ func CreateFileForTesting(dir, name string) (err error) {
 // than the prescribed values
 func CreateDefaultYamlFileForTesting() error {
 	path := "./mp3"
-	if err := tools.Mkdir(path); err != nil {
+	if err := cmd_toolkit.Mkdir(path); err != nil {
 		return err
 	}
 	yamlInput := `---
@@ -197,5 +197,5 @@ unused:
     value: 1.25
 repair:
     dryRun: true # false`
-	return CreateFileForTestingWithContent(path, tools.DefaultConfigFileName(), []byte(yamlInput))
+	return CreateFileForTestingWithContent(path, cmd_toolkit.DefaultConfigFileName(), []byte(yamlInput))
 }
