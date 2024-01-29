@@ -14,8 +14,8 @@ import (
 )
 
 var (
-	// rootCmd represents the base command when called without any subcommands
-	rootCmd = &cobra.Command{
+	// RootCmd represents the base command when called without any subcommands
+	RootCmd = &cobra.Command{
 		Use:   "mp3",
 		Short: "A repair program for mp3 files",
 		Long: `A repair program for mp3 files.
@@ -32,7 +32,7 @@ The mp3 program exists to find such problems and repair the mp3 files' metadata.
 
 First, get a listing of the available mp3 files:
 
-mp3 ` + ListCommand + `
+mp3 ` + ListCommand + ` -lrt
 
 Then check for problems in the track metadata:
 
@@ -120,7 +120,7 @@ type CommandExecutor interface {
 func Execute() {
 	start := time.Now()
 	o := getBus()
-	RunMain(o, rootCmd, start)
+	RunMain(o, RootCmd, start)
 }
 
 func RunMain(o output.Bus, cmd CommandExecutor, start time.Time) {
@@ -150,6 +150,7 @@ func RunMain(o output.Bus, cmd CommandExecutor, start time.Time) {
 
 func init() {
 	o := getBus()
-	rootCmd.SetErr(o.ErrorWriter())
-	rootCmd.SetOut(o.ConsoleWriter())
+	RootCmd.SetErr(o.ErrorWriter())
+	RootCmd.SetOut(o.ConsoleWriter())
+	RootCmd.CompletionOptions.HiddenDefaultCmd = true
 }

@@ -478,3 +478,42 @@ func TestExportRun(t *testing.T) {
 		})
 	}
 }
+
+func TestExportHelp(t *testing.T) {
+	tests := map[string]struct {
+		output.WantedRecording
+	}{
+		"good": {
+			WantedRecording: output.WantedRecording{
+				Console: "" +
+					"\"export\" exports default program configuration data to %APPDATA%\\mp3\\defaults.yaml\n" +
+					"\n" +
+					"Usage:\n" +
+					"  mp3 export [--defaults] [--overwrite]\n" +
+					"\n" +
+					"Examples:\n" +
+					"export --defaults\n" +
+					"  Write default program configuration data\n" +
+					"export --overwrite\n" +
+					"  Overwrite a pre-existing defaults.yaml file\n" +
+					"\n" +
+					"Flags:\n" +
+					"  -d, --defaults    write default program configuration data (default false)\n" +
+					"  -o, --overwrite   overwrite existing file (default false)\n",
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			o := output.NewRecorder()
+			command := cmd.ExportCmd
+			enableCommandRecording(o, command)
+			command.Help()
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, issue := range issues {
+					t.Errorf("export Help() %s", issue)
+				}
+			}
+		})
+	}
+}

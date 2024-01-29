@@ -4,6 +4,7 @@ Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
 package cmd
 
 import (
+	"fmt"
 	"path/filepath"
 
 	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
@@ -28,7 +29,7 @@ var (
 		Use:                   ExportCommand + " [" + exportDefaultsAsFlag + "] [" + exportOverwriteAsFlag + "]",
 		DisableFlagsInUseLine: true,
 		Short:                 "Exports default program configuration data",
-		Long:                  `Exports default program configuration data to %APPDATA%\mp3\defaults.yaml`,
+		Long:                  fmt.Sprintf("%q", ExportCommand) + ` exports default program configuration data to %APPDATA%\mp3\defaults.yaml`,
 		Example: ExportCommand + " " + exportDefaultsAsFlag + "\n" +
 			"  Write default program configuration data\n" +
 			ExportCommand + " " + exportOverwriteAsFlag + "\n" +
@@ -40,7 +41,7 @@ var (
 		Flags: map[string]*FlagDetails{
 			ExportFlagDefaults: {
 				AbbreviatedName: "d",
-				Usage:           "write program default configuration",
+				Usage:           "write default program configuration data",
 				ExpectedType:    BoolType,
 				DefaultValue:    false,
 			},
@@ -191,7 +192,7 @@ func (efs *ExportFlagSettings) CanWriteDefaults(o output.Bus) (canWrite bool) {
 }
 
 func init() {
-	rootCmd.AddCommand(ExportCmd)
+	RootCmd.AddCommand(ExportCmd)
 	addDefaults(ExportFlags)
 	o := getBus()
 	c := getConfiguration()

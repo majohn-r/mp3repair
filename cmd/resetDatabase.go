@@ -42,18 +42,18 @@ const (
 )
 
 var (
-	// resetDatabaseCmd represents the resetDatabase command
-	resetDatabaseCmd = &cobra.Command{
+	// ResetDatabaseCmd represents the resetDatabase command
+	ResetDatabaseCmd = &cobra.Command{
 		Use: "" + resetDBCommandName +
 			" [" + resetDBTimeoutFlag + " seconds]" +
 			" [" + resetDBServiceFlag + " name]" +
 			" [" + resetDBMetadataDirFlag + " dir]" +
 			" [" + resetDBExtensionFlag + " string]" +
 			" [" + resetDBForceFlag + "]" +
-			" [" + resetDBIgnoreServiceErrors + "]",
+			" [" + resetDBIgnoreServiceErrorsFlag + "]",
 		DisableFlagsInUseLine: true,
-		Short:                 "Reset the Windows music database",
-		Long: `Reset the Windows music database
+		Short:                 "Resets the Windows music database",
+		Long: fmt.Sprintf("%q", resetDBCommandName) + ` resets the Windows music database
 
 The changes made by the '` + repairCommandName + `' command make the music files inconsistent with the
 database Windows uses to organize the files into albums and artists. This command
@@ -68,7 +68,7 @@ This command does nothing if it determines that the repair command has not made 
 changes, unless the ` + resetDBForceFlag + ` flag is set.`,
 		Run: ResetDBExec,
 	}
-	resetDatabaseFlags = SectionFlags{
+	ResetDatabaseFlags = SectionFlags{
 		SectionName: resetDBCommandName,
 		Flags: map[string]*FlagDetails{
 			resetDBTimeout: {
@@ -119,7 +119,7 @@ changes, unless the ` + resetDBForceFlag + ` flag is set.`,
 
 func ResetDBExec(cmd *cobra.Command, _ []string) {
 	o := getBus()
-	values, eSlice := ReadFlags(cmd.Flags(), resetDatabaseFlags)
+	values, eSlice := ReadFlags(cmd.Flags(), ResetDatabaseFlags)
 	if ProcessFlagErrors(o, eSlice) {
 		rdbs, ok := ProcessResetDBFlags(o, values)
 		if ok {
@@ -436,9 +436,9 @@ func ProcessResetDBFlags(o output.Bus, values map[string]*FlagValue) (*ResetDBSe
 }
 
 func init() {
-	rootCmd.AddCommand(resetDatabaseCmd)
-	addDefaults(resetDatabaseFlags)
+	RootCmd.AddCommand(ResetDatabaseCmd)
+	addDefaults(ResetDatabaseFlags)
 	o := getBus()
 	c := getConfiguration()
-	AddFlags(o, c, resetDatabaseCmd.Flags(), resetDatabaseFlags, false)
+	AddFlags(o, c, ResetDatabaseCmd.Flags(), ResetDatabaseFlags, false)
 }

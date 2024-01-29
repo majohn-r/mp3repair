@@ -21,13 +21,13 @@ const (
 )
 
 var (
-	// repairCmd represents the repair command
-	repairCmd = &cobra.Command{
+	// RepairCmd represents the repair command
+	RepairCmd = &cobra.Command{
 		Use:                   repairCommandName + " [" + repairDryRunFlag + "] " + searchUsage,
 		DisableFlagsInUseLine: true,
 		Short:                 "Repairs problems found by running '" + CheckCommand + " " + CheckFilesFlag + "'",
 		Long: "" +
-			"Repairs problems found by running '" + CheckCommand + " " + CheckFilesFlag + "'\n" +
+			fmt.Sprintf("%q repairs the problems found by running '%s %s'\n", repairCommandName, CheckCommand, CheckFilesFlag) +
 			"\n" +
 			"This command rewrites the mp3 files that the " + CheckCommand + " command noted as having metadata\n" +
 			"inconsistent with the file structure. Prior to rewriting an mp3 file, the " + repairCommandName + "\n" +
@@ -36,7 +36,7 @@ var (
 			"the backup folders.",
 		Run: RepairRun,
 	}
-	repairFlags = SectionFlags{
+	RepairFlags = SectionFlags{
 		SectionName: "repair",
 		Flags: map[string]*FlagDetails{
 			"dryRun": {
@@ -51,7 +51,7 @@ var (
 func RepairRun(cmd *cobra.Command, _ []string) {
 	o := getBus()
 	producer := cmd.Flags()
-	values, eSlice := ReadFlags(producer, repairFlags)
+	values, eSlice := ReadFlags(producer, RepairFlags)
 	searchSettings, searchFlagsOk := EvaluateSearchFlags(o, producer)
 	if ProcessFlagErrors(o, eSlice) && searchFlagsOk {
 		if rs, ok := ProcessRepairFlags(o, values); ok {
@@ -259,9 +259,9 @@ func ProcessRepairFlags(o output.Bus, values map[string]*FlagValue) (*RepairSett
 }
 
 func init() {
-	rootCmd.AddCommand(repairCmd)
-	addDefaults(repairFlags)
+	RootCmd.AddCommand(RepairCmd)
+	addDefaults(RepairFlags)
 	o := getBus()
 	c := getConfiguration()
-	AddFlags(o, c, repairCmd.Flags(), repairFlags, true)
+	AddFlags(o, c, RepairCmd.Flags(), RepairFlags, true)
 }

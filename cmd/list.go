@@ -34,11 +34,12 @@ const (
 )
 
 var (
-	// listCmd represents the list command
-	listCmd = &cobra.Command{
+	// ListCmd represents the list command
+	ListCmd = &cobra.Command{
 		Use:                   ListCommand + " [" + ListAlbumsFlag + "] [" + ListArtistsFlag + "] [" + ListTracksFlag + "] [" + ListAnnotateFlag + "] [" + ListDetailsFlag + "] [" + ListDiagnosticFlag + "] [" + ListSortByNumberFlag + " | " + ListSortByTitleFlag + "] " + searchUsage,
 		DisableFlagsInUseLine: true,
 		Short:                 "Lists mp3 files and containing album and artist directories",
+		Long:                  fmt.Sprintf("%q lists mp3 files and containing album and artist directories", ListCommand),
 		Example: ListCommand + " " + ListAnnotateFlag + "\n" +
 			"  Annotate tracks with album and artist data and albums with artist data\n" +
 			ListCommand + " " + ListDetailsFlag + "\n" +
@@ -56,7 +57,7 @@ var (
 			"  Sort tracks by track number",
 		Run: ListRun,
 	}
-	listFlags = SectionFlags{
+	ListFlags = SectionFlags{
 		SectionName: ListCommand,
 		Flags: map[string]*FlagDetails{
 			ListAlbums: {
@@ -109,7 +110,7 @@ var (
 func ListRun(cmd *cobra.Command, _ []string) {
 	o := getBus()
 	producer := cmd.Flags()
-	values, eSlice := ReadFlags(producer, listFlags)
+	values, eSlice := ReadFlags(producer, ListFlags)
 	searchSettings, searchFlagsOk := EvaluateSearchFlags(o, producer)
 	if ProcessFlagErrors(o, eSlice) && searchFlagsOk {
 		if ls, ok := ProcessListFlags(o, values); ok {
@@ -503,9 +504,9 @@ func ProcessListFlags(o output.Bus, values map[string]*FlagValue) (*ListSettings
 }
 
 func init() {
-	rootCmd.AddCommand(listCmd)
-	addDefaults(listFlags)
+	RootCmd.AddCommand(ListCmd)
+	addDefaults(ListFlags)
 	c := getConfiguration()
 	o := getBus()
-	AddFlags(o, c, listCmd.Flags(), listFlags, true)
+	AddFlags(o, c, ListCmd.Flags(), ListFlags, true)
 }

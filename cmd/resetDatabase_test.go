@@ -904,3 +904,72 @@ func TestResetDBExec(t *testing.T) {
 		})
 	}
 }
+
+func TestResetDatabaseHelp(t *testing.T) {
+	commandUnderTest := cloneCommand(cmd.ResetDatabaseCmd)
+	flagCopy := cmd.SectionFlags{
+		SectionName: cmd.ResetDatabaseFlags.SectionName,
+		Flags:       map[string]*cmd.FlagDetails{},
+	}
+	for k, v := range cmd.ResetDatabaseFlags.Flags {
+		switch k {
+		case "metadataDir":
+			details := &cmd.FlagDetails{
+				Usage:           v.Usage,
+				ExpectedType:    v.ExpectedType,
+				AbbreviatedName: v.AbbreviatedName,
+				DefaultValue:    "[USERPROFILE]/AppData/Local/Microsoft/Media Player",
+			}
+			flagCopy.Flags[k] = details
+		default:
+			flagCopy.Flags[k] = v
+		}
+	}
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), commandUnderTest.Flags(), flagCopy, false)
+	tests := map[string]struct {
+		output.WantedRecording
+	}{
+		"good": {
+			WantedRecording: output.WantedRecording{
+				Console: "" +
+					"\"resetDatabase\" resets the Windows music database\n" +
+					"\n" +
+					"The changes made by the 'repair' command make the music files inconsistent with the\n" +
+					"database Windows uses to organize the files into albums and artists. This command\n" +
+					"resets that database, which it accomplishes by deleting the database files.\n" +
+					"\n" +
+					"Prior to deleting the files, the resetDatabase command attempts to stop the Windows\n" +
+					"media player service. If there is such an active service, this command will need to be\n" +
+					"run as administrator. If, for whatever reasons, the service cannot be stopped, using the\n" +
+					"--ignoreServiceErrors flag allows the database files to be deleted, if possible.\n" +
+					"\n" +
+					"This command does nothing if it determines that the repair command has not made any\n" +
+					"changes, unless the --force flag is set.\n" +
+					"\n" +
+					"Usage:\n" +
+					"  resetDatabase [--timeout seconds] [--service name] [--metadataDir dir] [--extension string] [--force] [--ignoreServiceErrors]\n" +
+					"\n" +
+					"Flags:\n" +
+					"      --extension string      extension for metadata files (default \".wmdb\")\n" +
+					"  -f, --force                 if set, force a database reset (default false)\n" +
+					"  -i, --ignoreServiceErrors   if set, ignore service errors and delete the media player service metadata files (default false)\n" +
+					"      --metadataDir string    directory where the media player service metadata files are stored (default \"[USERPROFILE]/AppData/Local/Microsoft/Media Player\")\n" +
+					"      --service string        name of the media player service (default \"WMPNetworkSVC\")\n" +
+					"  -t, --timeout int           timeout in seconds (minimum 1, maximum 60) for stopping the media player service (default 10)\n",
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			o := output.NewRecorder()
+			command := commandUnderTest
+			enableCommandRecording(o, command)
+			command.Help()
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, issue := range issues {
+					t.Errorf("resetDatabase Help() %s", issue)
+				}
+			}
+		})
+	}
+}

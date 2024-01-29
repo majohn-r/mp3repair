@@ -973,3 +973,53 @@ func TestRepairRun(t *testing.T) {
 		})
 	}
 }
+
+func TestRepairHelp(t *testing.T) {
+	originalSearchFlags := cmd.SearchFlags
+	defer func() {
+		cmd.SearchFlags = originalSearchFlags
+	}()
+	cmd.SearchFlags = safeSearchFlags
+	commandUnderTest := cloneCommand(cmd.RepairCmd)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), commandUnderTest.Flags(), cmd.RepairFlags, true)
+	tests := map[string]struct {
+		output.WantedRecording
+	}{
+		"good": {
+			WantedRecording: output.WantedRecording{
+				Console: "" +
+					"\"repair\" repairs the problems found by running 'check --files'\n" +
+					"\n" +
+					"This command rewrites the mp3 files that the check command noted as having metadata\n" +
+					"inconsistent with the file structure. Prior to rewriting an mp3 file, the repair\n" +
+					"command creates a backup directory for the parent album and copies the original mp3\n" +
+					"file into that backup directory. Use the postRepair command to automatically delete\n" +
+					"the backup folders.\n" +
+					"\n" +
+					"Usage:\n" +
+					"  repair [--dryRun] [--albumFilter regex] [--artistFilter regex] [--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +
+					"\n" +
+					"Flags:\n" +
+					"      --albumFilter string    regular expression specifying which albums to select (default \".*\")\n" +
+					"      --artistFilter string   regular expression specifying which artists to select (default \".*\")\n" +
+					"      --dryRun                output what would have been repaired, but make no repairs (default false)\n" +
+					"      --extensions string     comma-delimited list of file extensions used by mp3 files (default \".mp3\")\n" +
+					"      --topDir string         top directory specifying where to find mp3 files (default \".\")\n" +
+					"      --trackFilter string    regular expression specifying which tracks to select (default \".*\")\n",
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			o := output.NewRecorder()
+			command := commandUnderTest
+			enableCommandRecording(o, command)
+			command.Help()
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, issue := range issues {
+					t.Errorf("repair Help() %s", issue)
+				}
+			}
+		})
+	}
+}

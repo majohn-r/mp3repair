@@ -221,3 +221,41 @@ func TestPostRepairRun(t *testing.T) {
 		})
 	}
 }
+
+func TestPostRepairHelp(t *testing.T) {
+	commandUnderTest := cloneCommand(cmd.PostRepairCmd)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), commandUnderTest.Flags(), safeSearchFlags, false)
+	tests := map[string]struct {
+		output.WantedRecording
+	}{
+		"good": {
+			WantedRecording: output.WantedRecording{
+				Console: "" +
+					"\"postRepair\" deletes the backup directories (and their contents) created by the \"repair\" command\n" +
+					"\n" +
+					"Usage:\n" +
+					"  postRepair [--albumFilter regex] [--artistFilter regex] [--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +
+					"\n" +
+					"Flags:\n" +
+					"      --albumFilter string    regular expression specifying which albums to select (default \".*\")\n" +
+					"      --artistFilter string   regular expression specifying which artists to select (default \".*\")\n" +
+					"      --extensions string     comma-delimited list of file extensions used by mp3 files (default \".mp3\")\n" +
+					"      --topDir string         top directory specifying where to find mp3 files (default \".\")\n" +
+					"      --trackFilter string    regular expression specifying which tracks to select (default \".*\")\n",
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			o := output.NewRecorder()
+			command := commandUnderTest
+			enableCommandRecording(o, command)
+			command.Help()
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, issue := range issues {
+					t.Errorf("postRepair Help() %s", issue)
+				}
+			}
+		})
+	}
+}

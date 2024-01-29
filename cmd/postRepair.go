@@ -4,6 +4,7 @@ Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
 package cmd
 
 import (
+	"fmt"
 	"mp3/internal/files"
 	"sort"
 
@@ -14,11 +15,12 @@ import (
 const postRepairCommandName = "postRepair"
 
 var (
-	// postRepairCmd represents the postRepair command
-	postRepairCmd = &cobra.Command{
+	// PostRepairCmd represents the postRepair command
+	PostRepairCmd = &cobra.Command{
 		Use:                   postRepairCommandName + " " + searchUsage,
 		DisableFlagsInUseLine: true,
-		Short:                 "Delete the backup directories, and their contents, created by the " + repairCommandName + " command",
+		Short:                 "Deletes the backup directories, and their contents, created by the " + repairCommandName + " command",
+		Long:                  fmt.Sprintf("%q deletes the backup directories (and their contents) created by the %q command", postRepairCommandName, repairCommandName),
 		Run:                   PostRepairRun,
 	}
 )
@@ -80,8 +82,8 @@ func RemoveBackupDirectory(o output.Bus, dir string) bool {
 }
 
 func init() {
-	rootCmd.AddCommand(postRepairCmd)
+	RootCmd.AddCommand(PostRepairCmd)
 	bus := getBus()
 	c := getConfiguration()
-	AddFlags(bus, c, postRepairCmd.Flags(), SearchFlags, false)
+	AddFlags(bus, c, PostRepairCmd.Flags(), SearchFlags, false)
 }

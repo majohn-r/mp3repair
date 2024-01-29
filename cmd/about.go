@@ -4,6 +4,8 @@ Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/spf13/cobra"
 )
 
@@ -26,19 +28,18 @@ const (
 var (
 	Version  = "unknown version!" // semantic version
 	Creation string               // build timestamp in RFC3339 format (2006-01-02T15:04:05Z07:00)
-	// aboutCmd represents the about command
-	aboutCmd = &cobra.Command{
-		Use:                   aboutCommand,
-		DisableFlagsInUseLine: true,
-		Short:                 "Provides information about the program",
-		Long: `Provides the following information about the program:
-	
-	* The program version
-	* Copyright information
-	* Build information:
-	  * The build timestamp
-	  * The version of go used to compile the code
-	  * A list of dependencies and their versions`,
+	// AboutCmd represents the about command
+	AboutCmd = &cobra.Command{
+		Use:   aboutCommand,
+		Short: "Provides information about the mp3 program",
+		Long: fmt.Sprintf("%q", aboutCommand) + ` provides the following information about the mp3 program:
+
+* The program version
+* Copyright information
+* Build information:
+  * The build timestamp
+  * The version of go used to compile the code
+  * A list of dependencies and their versions`,
 		Run: AboutRun,
 	}
 )
@@ -57,5 +58,5 @@ func InitializeAbout(version, creation string) {
 }
 
 func init() {
-	rootCmd.AddCommand(aboutCmd)
+	RootCmd.AddCommand(AboutCmd)
 }

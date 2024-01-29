@@ -1662,3 +1662,71 @@ func TestListSettingsProcessArtists(t *testing.T) {
 		})
 	}
 }
+
+func TestListHelp(t *testing.T) {
+	originalSearchFlags := cmd.SearchFlags
+	defer func() {
+		cmd.SearchFlags = originalSearchFlags
+	}()
+	cmd.SearchFlags = safeSearchFlags
+	commandUnderTest := cloneCommand(cmd.ListCmd)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), commandUnderTest.Flags(), cmd.ListFlags, true)
+	tests := map[string]struct {
+		output.WantedRecording
+	}{
+		"good": {
+			WantedRecording: output.WantedRecording{
+				Console: "" +
+					"\"list\" lists mp3 files and containing album and artist directories\n" +
+					"\n" +
+					"Usage:\n" +
+					"  list [--albums] [--artists] [--tracks] [--annotate] [--details] [--diagnostic] [--byNumber | --byTitle] [--albumFilter regex] [--artistFilter regex] [--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +
+					"\n" +
+					"Examples:\n" +
+					"list --annotate\n" +
+					"  Annotate tracks with album and artist data and albums with artist data\n" +
+					"list --details\n" +
+					"  Include detailed information, if available, for each track. This includes composer,\n" +
+					"  conductor, key, lyricist, orchestra/band, and subtitle\n" +
+					"list --albums\n" +
+					"  Include the album names in the output\n" +
+					"list --artists\n" +
+					"  Include the artist names in the output\n" +
+					"list --tracks\n" +
+					"  Include the track names in the output\n" +
+					"list --byTitle\n" +
+					"  Sort tracks by name, ignoring track numbers\n" +
+					"list --byNumber\n" +
+					"  Sort tracks by track number\n" +
+					"\n" +
+					"Flags:\n" +
+					"      --albumFilter string    regular expression specifying which albums to select (default \".*\")\n" +
+					"  -l, --albums                include album names in listing (default false)\n" +
+					"      --annotate              annotate listings with album and artist names (default false)\n" +
+					"      --artistFilter string   regular expression specifying which artists to select (default \".*\")\n" +
+					"  -r, --artists               include artist names in listing (default false)\n" +
+					"      --byNumber              sort tracks by track number (default false)\n" +
+					"      --byTitle               sort tracks by track title (default false)\n" +
+					"      --details               include details with tracks (default false)\n" +
+					"      --diagnostic            include diagnostic information with tracks (default false)\n" +
+					"      --extensions string     comma-delimited list of file extensions used by mp3 files (default \".mp3\")\n" +
+					"      --topDir string         top directory specifying where to find mp3 files (default \".\")\n" +
+					"      --trackFilter string    regular expression specifying which tracks to select (default \".*\")\n" +
+					"  -t, --tracks                include track names in listing (default false)\n",
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			o := output.NewRecorder()
+			command := commandUnderTest
+			enableCommandRecording(o, command)
+			command.Help()
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, issue := range issues {
+					t.Errorf("list Help() %s", issue)
+				}
+			}
+		})
+	}
+}

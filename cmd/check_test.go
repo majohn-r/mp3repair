@@ -1382,3 +1382,69 @@ func TestCheckRun(t *testing.T) {
 		})
 	}
 }
+
+func cloneCommand(original *cobra.Command) *cobra.Command {
+	clone := &cobra.Command{
+		Use:                   original.Use,
+		DisableFlagsInUseLine: original.DisableFlagsInUseLine,
+		Short:                 original.Short,
+		Long:                  original.Long,
+		Example:               original.Example,
+		Run:                   original.Run,
+	}
+	return clone
+}
+
+func TestCheckHelp(t *testing.T) {
+	originalSearchFlags := cmd.SearchFlags
+	defer func() {
+		cmd.SearchFlags = originalSearchFlags
+	}()
+	cmd.SearchFlags = safeSearchFlags
+	commandUnderTest := cloneCommand(cmd.CheckCmd)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), commandUnderTest.Flags(), cmd.CheckFlags, true)
+	tests := map[string]struct {
+		output.WantedRecording
+	}{
+		"good": {
+			WantedRecording: output.WantedRecording{
+				Console: "" +
+					"\"check\" runs checks on mp3 files and their containing directories and reports any problems detected\n" +
+					"\n" +
+					"Usage:\n" +
+					"  check [--empty] [--files] [--numbering] [--albumFilter regex] [--artistFilter regex] [--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +
+					"\n" +
+					"Examples:\n" +
+					"check --empty\n" +
+					"  reports empty artist and album directories\n" +
+					"check --files\n" +
+					"  reads each mp3 file's metadata and reports any inconsistencies found\n" +
+					"check --numbering\n" +
+					"  reports errors in the track numbers of mp3 files\n" +
+					"\n" +
+					"Flags:\n" +
+					"      --albumFilter string    regular expression specifying which albums to select (default \".*\")\n" +
+					"      --artistFilter string   regular expression specifying which artists to select (default \".*\")\n" +
+					"  -e, --empty                 report empty album and artist directories (default false)\n" +
+					"      --extensions string     comma-delimited list of file extensions used by mp3 files (default \".mp3\")\n" +
+					"  -f, --files                 report metadata/file inconsistencies (default false)\n" +
+					"  -n, --numbering             report missing track numbers and duplicated track numbering (default false)\n" +
+					"      --topDir string         top directory specifying where to find mp3 files (default \".\")\n" +
+					"      --trackFilter string    regular expression specifying which tracks to select (default \".*\")\n",
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			o := output.NewRecorder()
+			command := commandUnderTest
+			enableCommandRecording(o, command)
+			command.Help()
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, issue := range issues {
+					t.Errorf("check Help() %s", issue)
+				}
+			}
+		})
+	}
+}

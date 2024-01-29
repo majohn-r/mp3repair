@@ -73,11 +73,12 @@ const (
 )
 
 var (
-	// checkCmd represents the check command
-	checkCmd = &cobra.Command{
+	// CheckCmd represents the check command
+	CheckCmd = &cobra.Command{
 		Use:                   CheckCommand + " [" + CheckEmptyFlag + "] [" + CheckFilesFlag + "] [" + CheckNumberingFlag + "] " + searchUsage,
 		DisableFlagsInUseLine: true,
-		Short:                 "Run checks on mp3 files and their directories and report problems",
+		Short:                 "Runs checks on mp3 files and their directories and reports problems",
+		Long:                  fmt.Sprintf("%q runs checks on mp3 files and their containing directories and reports any problems detected", CheckCommand),
 		Example: "" +
 			CheckCommand + " " + CheckEmptyFlag + "\n" +
 			"  reports empty artist and album directories\n" +
@@ -648,9 +649,9 @@ func ProcessCheckFlags(o output.Bus, values map[string]*FlagValue) (*CheckSettin
 }
 
 func init() {
-	rootCmd.AddCommand(checkCmd)
+	RootCmd.AddCommand(CheckCmd)
 	addDefaults(CheckFlags)
 	o := getBus()
 	c := getConfiguration()
-	AddFlags(o, c, checkCmd.Flags(), CheckFlags, true)
+	AddFlags(o, c, CheckCmd.Flags(), CheckFlags, true)
 }
