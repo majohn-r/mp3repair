@@ -113,7 +113,7 @@ func ListRun(cmd *cobra.Command, _ []string) {
 	searchSettings, searchFlagsOk := EvaluateSearchFlags(o, producer)
 	if ProcessFlagErrors(o, eSlice) && searchFlagsOk {
 		if ls, ok := ProcessListFlags(o, values); ok {
-			CommandStartLogger(o, ListCommand, map[string]any{
+			LogCommandStart(o, ListCommand, map[string]any{
 				ListAlbumsFlag:         ls.Albums,
 				"albums-user-set":      ls.AlbumsUserSet,
 				ListAnnotateFlag:       ls.Annotate,

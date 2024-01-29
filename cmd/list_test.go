@@ -1486,11 +1486,11 @@ func TestListSettingsListArtists(t *testing.T) {
 
 func Test_ListRun(t *testing.T) {
 	cmd.InitGlobals()
-	oldBus := cmd.Bus
-	oldSearchFlags := cmd.SearchFlags
+	originalBus := cmd.Bus
+	originalSearchFlags := cmd.SearchFlags
 	defer func() {
-		cmd.Bus = oldBus
-		cmd.SearchFlags = oldSearchFlags
+		cmd.Bus = originalBus
+		cmd.SearchFlags = originalSearchFlags
 	}()
 	cmd.SearchFlags = safeSearchFlags
 	testListFlags := cmd.SectionFlags{

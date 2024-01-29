@@ -474,9 +474,9 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 }
 
 func TestAddFlags(t *testing.T) {
-	oldSearchFlags := cmd.SearchFlags
+	originalSearchFlags := cmd.SearchFlags
 	defer func() {
-		cmd.SearchFlags = oldSearchFlags
+		cmd.SearchFlags = originalSearchFlags
 	}()
 	type args struct {
 		flags           *testFlagConsumer
@@ -703,7 +703,7 @@ func TestAddFlags(t *testing.T) {
 			if tt.doReplacement {
 				cmd.SearchFlags = tt.replaceSearchFlags
 			} else {
-				cmd.SearchFlags = oldSearchFlags
+				cmd.SearchFlags = originalSearchFlags
 			}
 			cmd.AddFlags(o, c, tt.args.flags, tt.args.defs, tt.args.includeSearches)
 			for _, name := range tt.wantNames {

@@ -12,13 +12,13 @@ import (
 )
 
 func TestAboutRun(t *testing.T) {
-	oldBusGetter := cmd.BusGetter
-	oldCommandStartLogger := cmd.CommandStartLogger
-	oldContentGenerator := cmd.AboutContentGenerator
+	originalBusGetter := cmd.BusGetter
+	originalLogCommandStart := cmd.LogCommandStart
+	originalGenerateAboutContent := cmd.GenerateAboutContent
 	defer func() {
-		cmd.BusGetter = oldBusGetter
-		cmd.CommandStartLogger = oldCommandStartLogger
-		cmd.AboutContentGenerator = oldContentGenerator
+		cmd.BusGetter = originalBusGetter
+		cmd.LogCommandStart = originalLogCommandStart
+		cmd.GenerateAboutContent = originalGenerateAboutContent
 	}()
 	type args struct {
 		in0 *cobra.Command
@@ -39,10 +39,10 @@ func TestAboutRun(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.BusGetter = func() output.Bus { return o }
-			cmd.CommandStartLogger = func(bus output.Bus, cmdName string, args map[string]any) {
+			cmd.LogCommandStart = func(bus output.Bus, cmdName string, args map[string]any) {
 				bus.Log(output.Info, "executing command", map[string]any{"command": "about"})
 			}
-			cmd.AboutContentGenerator = func(bus output.Bus) {
+			cmd.GenerateAboutContent = func(bus output.Bus) {
 				bus.WriteCanonicalConsole("about content here")
 			}
 			cmd.AboutRun(tt.args.in0, tt.args.in1)

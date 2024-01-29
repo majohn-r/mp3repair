@@ -123,7 +123,7 @@ func ResetDBExec(cmd *cobra.Command, _ []string) {
 	if ProcessFlagErrors(o, eSlice) {
 		rdbs, ok := ProcessResetDBFlags(o, values)
 		if ok {
-			CommandStartLogger(o, resetDBCommandName, map[string]any{
+			LogCommandStart(o, resetDBCommandName, map[string]any{
 				resetDBTimeoutFlag:     rdbs.Timeout,
 				resetDBServiceFlag:     rdbs.Service,
 				resetDBMetadataDirFlag: rdbs.MetadataDir,
@@ -152,7 +152,7 @@ func (rdbs *ResetDBSettings) ResetService(o output.Bus) {
 	} else {
 		o.WriteCanonicalError("The %q command has no work to perform.", resetDBCommandName)
 		o.WriteCanonicalError("Why?")
-		o.WriteCanonicalError("The %q program has not made any changes to any mp3 files\nsince the last successful database reset.", AppName)
+		o.WriteCanonicalError("The %q program has not made any changes to any mp3 files\nsince the last successful database reset.", appName)
 		o.WriteError("What to do:\n")
 		o.WriteCanonicalError("If you believe the Windows database needs to be reset, run this command\nagain and use the %q flag.", resetDBForceFlag)
 	}
@@ -182,7 +182,7 @@ func openService(manager ServiceManager, serviceName string) (rep ServiceRep, er
 func (rdbs *ResetDBSettings) StopService(o output.Bus) (ok bool) {
 	var manager ServiceManager
 	var err error
-	if manager, err = ConnectToServiceManager(); err != nil {
+	if manager, err = Connect(); err != nil {
 		o.WriteCanonicalError("An attempt to connect with the service manager failed; error is %v", err)
 		o.WriteCanonicalError("Why?\nThis often fails due to lack of permissions")
 		o.WriteCanonicalError("What to do:\nIf you can, try running this command as an administrator.")
@@ -363,7 +363,7 @@ func (rdbs *ResetDBSettings) DeleteMetadataFiles(o output.Bus, stopped bool) {
 		}
 	}
 	// either stopped or service errors are ignored
-	if metadataFiles, ok := ReadDir(o, rdbs.MetadataDir); ok {
+	if metadataFiles, ok := ReadDirectory(o, rdbs.MetadataDir); ok {
 		pathsToDelete := rdbs.FilterMetadataFiles(metadataFiles)
 		if len(pathsToDelete) > 0 {
 			rdbs.DeleteFiles(o, pathsToDelete)
@@ -394,7 +394,7 @@ func (rdbs *ResetDBSettings) DeleteFiles(o output.Bus, paths []string) {
 	if len(paths) != 0 {
 		var count int
 		for _, path := range paths {
-			if err := FileRemove(path); err != nil {
+			if err := Remove(path); err != nil {
 				cmd_toolkit.LogFileDeletionFailure(o, path, err)
 			} else {
 				count++

@@ -19,8 +19,8 @@ The **about** command provides information about the **mp3** program, including:
 
 const (
 	aboutCommand = "about"
-	AppName      = "mp3" // the name of the application
-	FirstYear    = 2021  // the year when development of this application began
+	appName      = "mp3" // the name of the application
+	firstYear    = 2021  // the year when development of this application began
 )
 
 var (
@@ -45,15 +45,15 @@ var (
 
 func AboutRun(_ *cobra.Command, _ []string) {
 	o := BusGetter()
-	CommandStartLogger(o, aboutCommand, map[string]any{})
-	AboutContentGenerator(o)
+	LogCommandStart(o, aboutCommand, map[string]any{})
+	GenerateAboutContent(o)
 }
 
 func InitializeAbout(version, creation string) {
 	Version = version
 	Creation = creation
-	InitBuildDataFunc(Version, Creation)
-	FirstYearSetFunc(FirstYear)
+	InitBuildData(Version, Creation)
+	SetFirstYear(firstYear)
 }
 
 func init() {

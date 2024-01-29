@@ -77,15 +77,15 @@ func InitGlobals() {
 	defer initLock.Unlock()
 	if !Initialized {
 		ok := false
-		Bus = NewBusFunc(cmd_toolkit.ProductionLogger)
-		if _, err := AppNameGetFunc(); err != nil {
-			AppNameSetFunc("mp3")
+		Bus = NewDefaultBus(cmd_toolkit.ProductionLogger)
+		if _, err := AppName(); err != nil {
+			SetAppName("mp3")
 		}
-		if LogInitFunc(Bus) && AppPathInitFunc(Bus) {
-			InternalConfig, ok = ReadConfigFileFunc(Bus)
+		if InitLogging(Bus) && InitApplicationPath(Bus) {
+			InternalConfig, ok = ReadConfigurationFile(Bus)
 		}
 		if !ok {
-			ExitFunction(1)
+			Exit(1)
 		}
 		Initialized = true
 	}
@@ -95,7 +95,7 @@ func CookCommandLineArguments(o output.Bus, inputArgs []string) []string {
 	args := []string{}
 	if len(inputArgs) > 1 {
 		for _, arg := range inputArgs[1:] {
-			if cookedArg, err := DereferenceEnvVarFunc(arg); err != nil {
+			if cookedArg, err := DereferenceEnvVar(arg); err != nil {
 				o.WriteCanonicalError("An error was found in processng argument %q: %v", arg, err)
 				o.Log(output.Error, "Invalid argument value", map[string]any{
 					"argument": arg,
@@ -128,8 +128,8 @@ func RunMain(o output.Bus, cmd CommandExecutor, start time.Time) {
 	o.Log(output.Info, "execution starts", map[string]any{
 		"version":      Version,
 		"timeStamp":    Creation,
-		"goVersion":    GoVersionFunc(),
-		"dependencies": BuildDependenciesFunc(),
+		"goVersion":    GoVersion(),
+		"dependencies": BuildDependencies(),
 		"args":         cookedArgs,
 	})
 	cmd.SetArgs(cookedArgs)
@@ -139,13 +139,13 @@ func RunMain(o output.Bus, cmd CommandExecutor, start time.Time) {
 		exitCode = 1
 	}
 	o.Log(output.Info, "execution ends", map[string]any{
-		"duration": DurationCalc(start),
+		"duration": Since(start),
 		"exitCode": exitCode,
 	})
 	if exitCode != 0 {
-		o.WriteCanonicalError("%q version %s, created at %s, failed", AppName, Version, Creation)
+		o.WriteCanonicalError("%q version %s, created at %s, failed", appName, Version, Creation)
 	}
-	ExitFunction(exitCode)
+	Exit(exitCode)
 }
 
 func init() {

@@ -119,7 +119,7 @@ func CheckRun(cmd *cobra.Command, _ []string) {
 	searchSettings, searchFlagsOk := EvaluateSearchFlags(o, producer)
 	if ProcessFlagErrors(o, eSlice) && searchFlagsOk {
 		if cs, ok := ProcessCheckFlags(o, values); ok {
-			CommandStartLogger(o, CheckCommand, map[string]any{
+			LogCommandStart(o, CheckCommand, map[string]any{
 				CheckEmptyFlag:         cs.Empty,
 				"empty-user-set":       cs.EmptyUserSet,
 				CheckFilesFlag:         cs.Files,
@@ -465,7 +465,7 @@ func (cs *CheckSettings) PerformFileAnalysis(o output.Bus, checkedArtists []*Che
 			artists = append(artists, cAr.Artist())
 		}
 		if filteredArtists, filtered := ss.Filter(o, artists); filtered {
-			MetadataReader(o, filteredArtists)
+			ReadMetadata(o, filteredArtists)
 			for _, artist := range filteredArtists {
 				for _, album := range artist.Albums() {
 					for _, track := range album.Tracks() {

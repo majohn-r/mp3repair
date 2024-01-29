@@ -481,18 +481,18 @@ func TestResetDBSettings_HandleService(t *testing.T) {
 }
 
 func TestResetDBSettings_StopService(t *testing.T) {
-	oldConnectToServiceManager := cmd.ConnectToServiceManager
+	originalConnect := cmd.Connect
 	defer func() {
-		cmd.ConnectToServiceManager = oldConnectToServiceManager
+		cmd.Connect = originalConnect
 	}()
 	tests := map[string]struct {
-		connectFunction func() (*mgr.Mgr, error)
-		rdbs            *cmd.ResetDBSettings
-		wantOk          bool
+		connect func() (*mgr.Mgr, error)
+		rdbs    *cmd.ResetDBSettings
+		wantOk  bool
 		output.WantedRecording
 	}{
 		"connect fails": {
-			connectFunction: func() (*mgr.Mgr, error) {
+			connect: func() (*mgr.Mgr, error) {
 				return nil, fmt.Errorf("no manager available")
 			},
 			rdbs: &cmd.ResetDBSettings{Service: "my service", Timeout: 1},
@@ -510,7 +510,7 @@ func TestResetDBSettings_StopService(t *testing.T) {
 			},
 		},
 		"connect sort of works": {
-			connectFunction: func() (*mgr.Mgr, error) {
+			connect: func() (*mgr.Mgr, error) {
 				return nil, nil
 			},
 			rdbs: &cmd.ResetDBSettings{Service: "my service", Timeout: 1},
@@ -531,7 +531,7 @@ func TestResetDBSettings_StopService(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			cmd.ConnectToServiceManager = tt.connectFunction
+			cmd.Connect = tt.connect
 			o := output.NewRecorder()
 			if gotOk := tt.rdbs.StopService(o); gotOk != tt.wantOk {
 				t.Errorf("ResetDBSettings.StopService() = %v, want %v", gotOk, tt.wantOk)
@@ -546,14 +546,14 @@ func TestResetDBSettings_StopService(t *testing.T) {
 }
 
 func TestResetDBSettings_DeleteFiles(t *testing.T) {
-	oldFileRemove := cmd.FileRemove
+	originalRemove := cmd.Remove
 	defer func() {
-		cmd.FileRemove = oldFileRemove
+		cmd.Remove = originalRemove
 	}()
 	tests := map[string]struct {
-		fileRemove func(string) error
-		rdbs       *cmd.ResetDBSettings
-		paths      []string
+		remove func(string) error
+		rdbs   *cmd.ResetDBSettings
+		paths  []string
 		output.WantedRecording
 	}{
 		"no files": {
@@ -561,9 +561,9 @@ func TestResetDBSettings_DeleteFiles(t *testing.T) {
 			paths: nil,
 		},
 		"undeletable files": {
-			fileRemove: func(_ string) error { return fmt.Errorf("cannot remove file") },
-			rdbs:       &cmd.ResetDBSettings{MetadataDir: "metadata/dir"},
-			paths:      []string{"file1", "file2"},
+			remove: func(_ string) error { return fmt.Errorf("cannot remove file") },
+			rdbs:   &cmd.ResetDBSettings{MetadataDir: "metadata/dir"},
+			paths:  []string{"file1", "file2"},
 			WantedRecording: output.WantedRecording{
 				Console: "0 out of 2 metadata files have been deleted from \"metadata/dir\".\n",
 				Log: "" +
@@ -578,9 +578,9 @@ func TestResetDBSettings_DeleteFiles(t *testing.T) {
 			},
 		},
 		"deletable files": {
-			fileRemove: func(_ string) error { return nil },
-			rdbs:       &cmd.ResetDBSettings{MetadataDir: "metadata/dir"},
-			paths:      []string{"file1", "file2"},
+			remove: func(_ string) error { return nil },
+			rdbs:   &cmd.ResetDBSettings{MetadataDir: "metadata/dir"},
+			paths:  []string{"file1", "file2"},
 			WantedRecording: output.WantedRecording{
 				Console: "2 out of 2 metadata files have been deleted from \"metadata/dir\".\n",
 			},
@@ -588,7 +588,7 @@ func TestResetDBSettings_DeleteFiles(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			cmd.FileRemove = tt.fileRemove
+			cmd.Remove = tt.remove
 			o := output.NewRecorder()
 			tt.rdbs.DeleteFiles(o, tt.paths)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -601,9 +601,9 @@ func TestResetDBSettings_DeleteFiles(t *testing.T) {
 }
 
 func TestResetDBSettings_FilterMetadataFiles(t *testing.T) {
-	oldPlainFileExists := cmd.PlainFileExists
+	originalPlainFileExists := cmd.PlainFileExists
 	defer func() {
-		cmd.PlainFileExists = oldPlainFileExists
+		cmd.PlainFileExists = originalPlainFileExists
 	}()
 	tests := map[string]struct {
 		plainFileExists func(string) bool
@@ -634,18 +634,18 @@ func TestResetDBSettings_FilterMetadataFiles(t *testing.T) {
 }
 
 func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
-	oldReadDir := cmd.ReadDir
-	oldPlainFileExists := cmd.PlainFileExists
-	oldFileRemove := cmd.FileRemove
+	originalReadDirectory := cmd.ReadDirectory
+	originalPlainFileExists := cmd.PlainFileExists
+	originalRemove := cmd.Remove
 	defer func() {
-		cmd.ReadDir = oldReadDir
-		cmd.PlainFileExists = oldPlainFileExists
-		cmd.FileRemove = oldFileRemove
+		cmd.ReadDirectory = originalReadDirectory
+		cmd.PlainFileExists = originalPlainFileExists
+		cmd.Remove = originalRemove
 	}()
 	tests := map[string]struct {
-		readDir         func(output.Bus, string) ([]fs.DirEntry, bool)
+		readDirectory   func(output.Bus, string) ([]fs.DirEntry, bool)
 		plainFileExists func(string) bool
-		fileRemove      func(string) error
+		remove          func(string) error
 		rdbs            *cmd.ResetDBSettings
 		stopped         bool
 		output.WantedRecording
@@ -663,7 +663,7 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 			},
 		},
 		"stopped, no metadata": {
-			readDir: func(_ output.Bus, _ string) ([]fs.DirEntry, bool) {
+			readDirectory: func(_ output.Bus, _ string) ([]fs.DirEntry, bool) {
 				return nil, true
 			},
 			rdbs:    &cmd.ResetDBSettings{MetadataDir: "metadata"},
@@ -678,7 +678,7 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 			},
 		},
 		"not stopped but ignored, no metadata": {
-			readDir: func(_ output.Bus, _ string) ([]fs.DirEntry, bool) {
+			readDirectory: func(_ output.Bus, _ string) ([]fs.DirEntry, bool) {
 				return nil, true
 			},
 			rdbs: &cmd.ResetDBSettings{
@@ -696,11 +696,11 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 			},
 		},
 		"work to do": {
-			readDir: func(_ output.Bus, _ string) ([]fs.DirEntry, bool) {
+			readDirectory: func(_ output.Bus, _ string) ([]fs.DirEntry, bool) {
 				return []fs.DirEntry{newTestFile("foo.db", nil)}, true
 			},
 			plainFileExists: func(_ string) bool { return true },
-			fileRemove:      func(_ string) error { return nil },
+			remove:          func(_ string) error { return nil },
 			rdbs: &cmd.ResetDBSettings{
 				MetadataDir: "metadata",
 				Extension:   ".db",
@@ -713,9 +713,9 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			cmd.ReadDir = tt.readDir
+			cmd.ReadDirectory = tt.readDirectory
 			cmd.PlainFileExists = tt.plainFileExists
-			cmd.FileRemove = tt.fileRemove
+			cmd.Remove = tt.remove
 			o := output.NewRecorder()
 			tt.rdbs.DeleteMetadataFiles(o, tt.stopped)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -730,14 +730,14 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 func TestResetDBSettings_ResetService(t *testing.T) {
 	originalDirty := cmd.Dirty
 	originalClearDirty := cmd.ClearDirty
-	originalConnectToServiceManager := cmd.ConnectToServiceManager
+	originalConnect := cmd.Connect
 	defer func() {
 		cmd.Dirty = originalDirty
 		cmd.ClearDirty = originalClearDirty
-		cmd.ConnectToServiceManager = originalConnectToServiceManager
+		cmd.Connect = originalConnect
 	}()
 	cmd.ClearDirty = func(_ output.Bus) {}
-	cmd.ConnectToServiceManager = func() (*mgr.Mgr, error) { return nil, fmt.Errorf("access denied") }
+	cmd.Connect = func() (*mgr.Mgr, error) { return nil, fmt.Errorf("access denied") }
 	tests := map[string]struct {
 		dirty func() bool
 		rdbs  *cmd.ResetDBSettings

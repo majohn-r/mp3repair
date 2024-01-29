@@ -1059,11 +1059,11 @@ func TestRecordFileIssues(t *testing.T) {
 }
 
 func TestCheckSettings_PerformFileAnalysis(t *testing.T) {
-	oldMetadataReader := cmd.MetadataReader
+	originalReadMetadata := cmd.ReadMetadata
 	defer func() {
-		cmd.MetadataReader = oldMetadataReader
+		cmd.ReadMetadata = originalReadMetadata
 	}()
-	cmd.MetadataReader = func(_ output.Bus, _ []*files.Artist) {}
+	cmd.ReadMetadata = func(_ output.Bus, _ []*files.Artist) {}
 	type args struct {
 		checkedArtists []*cmd.CheckedArtist
 		ss             *cmd.SearchSettings
@@ -1172,11 +1172,11 @@ func TestCheckSettings_MaybeReportCleanResults(t *testing.T) {
 }
 
 func TestCheckSettings_PerformChecks(t *testing.T) {
-	oldMetadataReader := cmd.MetadataReader
+	originalReadMetadata := cmd.ReadMetadata
 	defer func() {
-		cmd.MetadataReader = oldMetadataReader
+		cmd.ReadMetadata = originalReadMetadata
 	}()
-	cmd.MetadataReader = func(_ output.Bus, _ []*files.Artist) {}
+	cmd.ReadMetadata = func(_ output.Bus, _ []*files.Artist) {}
 	type args struct {
 		artists       []*files.Artist
 		artistsLoaded bool
@@ -1301,11 +1301,11 @@ func TestCheckSettings_MaybeDoWork(t *testing.T) {
 
 func TestCheckRun(t *testing.T) {
 	cmd.InitGlobals()
-	oldBus := cmd.Bus
-	oldSearchFlags := cmd.SearchFlags
+	originalBus := cmd.Bus
+	originalSearchFlags := cmd.SearchFlags
 	defer func() {
-		cmd.Bus = oldBus
-		cmd.SearchFlags = oldSearchFlags
+		cmd.Bus = originalBus
+		cmd.SearchFlags = originalSearchFlags
 	}()
 	cmd.SearchFlags = safeSearchFlags
 	checkFlags := cmd.SectionFlags{

@@ -131,9 +131,9 @@ func TestExportFlagSettingsCanOverwriteFile(t *testing.T) {
 }
 
 func TestCreateFile(t *testing.T) {
-	oldExportFileCreate := cmd.FileWrite
+	originalWriteFile := cmd.WriteFile
 	defer func() {
-		cmd.FileWrite = oldExportFileCreate
+		cmd.WriteFile = originalWriteFile
 	}()
 	type args struct {
 		f       string
@@ -141,13 +141,13 @@ func TestCreateFile(t *testing.T) {
 	}
 	tests := map[string]struct {
 		args
-		createFunc func(string, []byte, fs.FileMode) error
-		want       bool
+		writeFile func(string, []byte, fs.FileMode) error
+		want      bool
 		output.WantedRecording
 	}{
 		"good write": {
 			args: args{f: "filename", content: []byte{}},
-			createFunc: func(_ string, _ []byte, _ fs.FileMode) error {
+			writeFile: func(_ string, _ []byte, _ fs.FileMode) error {
 				return nil
 			},
 			want: true,
@@ -157,7 +157,7 @@ func TestCreateFile(t *testing.T) {
 		},
 		"bad write": {
 			args: args{f: "filename", content: []byte{}},
-			createFunc: func(_ string, _ []byte, _ fs.FileMode) error {
+			writeFile: func(_ string, _ []byte, _ fs.FileMode) error {
 				return fmt.Errorf("disc jammed")
 			},
 			want: false,
@@ -170,7 +170,7 @@ func TestCreateFile(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			cmd.FileWrite = tt.createFunc
+			cmd.WriteFile = tt.writeFile
 			if got := cmd.CreateFile(o, tt.args.f, tt.args.content); got != tt.want {
 				t.Errorf("CreateFile() = %v, want %v", got, tt.want)
 			}
@@ -184,13 +184,13 @@ func TestCreateFile(t *testing.T) {
 }
 
 func TestExportFlagSettingsOverwriteFile(t *testing.T) {
-	oldExportFileCreate := cmd.FileWrite
-	oldExportFileRename := cmd.FileRename
-	oldExportFileRemove := cmd.FileRemove
+	originalWriteFile := cmd.WriteFile
+	originalRename := cmd.Rename
+	originalRemove := cmd.Remove
 	defer func() {
-		cmd.FileWrite = oldExportFileCreate
-		cmd.FileRename = oldExportFileRename
-		cmd.FileRemove = oldExportFileRemove
+		cmd.WriteFile = originalWriteFile
+		cmd.Rename = originalRename
+		cmd.Remove = originalRemove
 	}()
 	type args struct {
 		f       string
@@ -199,9 +199,9 @@ func TestExportFlagSettingsOverwriteFile(t *testing.T) {
 	tests := map[string]struct {
 		efs *cmd.ExportFlagSettings
 		args
-		createFunc func(string, []byte, fs.FileMode) error
-		renameFunc func(string, string) error
-		removeFunc func(string) error
+		writeFile func(string, []byte, fs.FileMode) error
+		rename    func(string, string) error
+		remove    func(string) error
 		output.WantedRecording
 	}{
 		"nothing to do": {
@@ -217,30 +217,30 @@ func TestExportFlagSettingsOverwriteFile(t *testing.T) {
 			},
 		},
 		"rename fails": {
-			efs:        &cmd.ExportFlagSettings{OverwriteEnabled: true},
-			args:       args{f: "[filename]"},
-			renameFunc: func(_, _ string) error { return fmt.Errorf("sorry, cannot rename that file") },
+			efs:    &cmd.ExportFlagSettings{OverwriteEnabled: true},
+			args:   args{f: "[filename]"},
+			rename: func(_, _ string) error { return fmt.Errorf("sorry, cannot rename that file") },
 			WantedRecording: output.WantedRecording{
 				Error: "The file \"[filename]\" cannot be renamed to \"[filename]-backup\": sorry, cannot rename that file.\n",
 				Log:   "level='error' error='sorry, cannot rename that file' new='[filename]-backup' old='[filename]' msg='rename failed'\n",
 			},
 		},
 		"rename succeeds, create fails": {
-			efs:        &cmd.ExportFlagSettings{OverwriteEnabled: true},
-			args:       args{f: "[filename]", payload: []byte{}},
-			renameFunc: func(_, _ string) error { return nil },
-			createFunc: func(_ string, _ []byte, _ fs.FileMode) error { return fmt.Errorf("disk is full") },
+			efs:       &cmd.ExportFlagSettings{OverwriteEnabled: true},
+			args:      args{f: "[filename]", payload: []byte{}},
+			rename:    func(_, _ string) error { return nil },
+			writeFile: func(_ string, _ []byte, _ fs.FileMode) error { return fmt.Errorf("disk is full") },
 			WantedRecording: output.WantedRecording{
 				Error: "The file \"[filename]\" cannot be created: disk is full.\n",
 				Log:   "level='error' command='export' error='disk is full' fileName='[filename]' msg='cannot create file'\n",
 			},
 		},
 		"everything succeeds": {
-			efs:        &cmd.ExportFlagSettings{OverwriteEnabled: true},
-			args:       args{f: "[filename]", payload: []byte{}},
-			renameFunc: func(_, _ string) error { return nil },
-			createFunc: func(_ string, _ []byte, _ fs.FileMode) error { return nil },
-			removeFunc: func(_ string) error { return nil },
+			efs:       &cmd.ExportFlagSettings{OverwriteEnabled: true},
+			args:      args{f: "[filename]", payload: []byte{}},
+			rename:    func(_, _ string) error { return nil },
+			writeFile: func(_ string, _ []byte, _ fs.FileMode) error { return nil },
+			remove:    func(_ string) error { return nil },
 			WantedRecording: output.WantedRecording{
 				Console: "File \"[filename]\" has been written.\n",
 			},
@@ -249,9 +249,9 @@ func TestExportFlagSettingsOverwriteFile(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			cmd.FileWrite = tt.createFunc
-			cmd.FileRename = tt.renameFunc
-			cmd.FileRemove = tt.removeFunc
+			cmd.WriteFile = tt.writeFile
+			cmd.Rename = tt.rename
+			cmd.Remove = tt.remove
 			tt.efs.OverwriteFile(o, tt.args.f, tt.args.payload)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
@@ -263,45 +263,45 @@ func TestExportFlagSettingsOverwriteFile(t *testing.T) {
 }
 
 func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
-	oldFileWrite := cmd.FileWrite
-	oldFileRename := cmd.FileRename
-	oldFileRemove := cmd.FileRemove
-	oldPlainFileExists := cmd.PlainFileExists
-	oldApplicationPath := cmd.ApplicationPath
+	originalWriteFile := cmd.WriteFile
+	originalRename := cmd.Rename
+	originalRemove := cmd.Remove
+	originalPlainFileExists := cmd.PlainFileExists
+	originalApplicationPath := cmd.ApplicationPath
 	defer func() {
-		cmd.FileWrite = oldFileWrite
-		cmd.FileRename = oldFileRename
-		cmd.FileRemove = oldFileRemove
-		cmd.PlainFileExists = oldPlainFileExists
-		cmd.ApplicationPath = oldApplicationPath
+		cmd.WriteFile = originalWriteFile
+		cmd.Rename = originalRename
+		cmd.Remove = originalRemove
+		cmd.PlainFileExists = originalPlainFileExists
+		cmd.ApplicationPath = originalApplicationPath
 	}()
 	tests := map[string]struct {
-		efs         *cmd.ExportFlagSettings
-		createFunc  func(string, []byte, fs.FileMode) error
-		existsFunc  func(string) bool
-		renameFunc  func(string, string) error
-		removeFunc  func(string) error
-		appPathFunc func() string
+		efs             *cmd.ExportFlagSettings
+		writeFile       func(string, []byte, fs.FileMode) error
+		plainFileExists func(string) bool
+		rename          func(string, string) error
+		remove          func(string) error
+		applicationPath func() string
 		output.WantedRecording
 	}{
 		// only going to test happy flows - other tests will catch unhappy
 		// flows, e.g., cannot create the file
 		"file does not exist": {
-			efs:         &cmd.ExportFlagSettings{OverwriteEnabled: true, DefaultsEnabled: true},
-			createFunc:  func(_ string, _ []byte, _ fs.FileMode) error { return nil },
-			existsFunc:  func(_ string) bool { return false },
-			appPathFunc: func() string { return "appPath" },
+			efs:             &cmd.ExportFlagSettings{OverwriteEnabled: true, DefaultsEnabled: true},
+			writeFile:       func(_ string, _ []byte, _ fs.FileMode) error { return nil },
+			plainFileExists: func(_ string) bool { return false },
+			applicationPath: func() string { return "appPath" },
 			WantedRecording: output.WantedRecording{
 				Console: "File \"appPath\\\\defaults.yaml\" has been written.\n",
 			},
 		},
 		"file exists": {
-			efs:         &cmd.ExportFlagSettings{OverwriteEnabled: true, DefaultsEnabled: true},
-			createFunc:  func(_ string, _ []byte, _ fs.FileMode) error { return nil },
-			existsFunc:  func(_ string) bool { return true },
-			renameFunc:  func(_, _ string) error { return nil },
-			removeFunc:  func(_ string) error { return nil },
-			appPathFunc: func() string { return "appPath" },
+			efs:             &cmd.ExportFlagSettings{OverwriteEnabled: true, DefaultsEnabled: true},
+			writeFile:       func(_ string, _ []byte, _ fs.FileMode) error { return nil },
+			plainFileExists: func(_ string) bool { return true },
+			rename:          func(_, _ string) error { return nil },
+			remove:          func(_ string) error { return nil },
+			applicationPath: func() string { return "appPath" },
 			WantedRecording: output.WantedRecording{
 				Console: "File \"appPath\\\\defaults.yaml\" has been written.\n",
 			},
@@ -310,11 +310,11 @@ func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			cmd.FileWrite = tt.createFunc
-			cmd.PlainFileExists = tt.existsFunc
-			cmd.FileRemove = tt.removeFunc
-			cmd.FileRename = tt.renameFunc
-			cmd.ApplicationPath = tt.appPathFunc
+			cmd.WriteFile = tt.writeFile
+			cmd.PlainFileExists = tt.plainFileExists
+			cmd.Remove = tt.remove
+			cmd.Rename = tt.rename
+			cmd.ApplicationPath = tt.applicationPath
 			tt.efs.ExportDefaultConfiguration(o)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
@@ -403,15 +403,15 @@ func TestProcessExportFlags(t *testing.T) {
 
 func TestExportRun(t *testing.T) {
 	cmd.InitGlobals()
-	oldExitFunction := cmd.ExitFunction
-	oldExportFlags := cmd.ExportFlags
-	oldBus := cmd.Bus
+	originalExit := cmd.Exit
+	originalExportFlags := cmd.ExportFlags
+	originalBus := cmd.Bus
 	defer func() {
-		cmd.ExitFunction = oldExitFunction
-		cmd.ExportFlags = oldExportFlags
-		cmd.Bus = oldBus
+		cmd.Exit = originalExit
+		cmd.ExportFlags = originalExportFlags
+		cmd.Bus = originalBus
 	}()
-	cmd.ExitFunction = func(int) {}
+	cmd.Exit = func(int) {}
 	tests := map[string]struct {
 		cmd   *cobra.Command
 		flags cmd.SectionFlags

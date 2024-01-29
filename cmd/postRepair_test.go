@@ -16,9 +16,9 @@ import (
 )
 
 func TestRemoveBackupDirectory(t *testing.T) {
-	oldRemoveAll := cmd.RemoveAll
+	originalRemoveAll := cmd.RemoveAll
 	defer func() {
-		cmd.RemoveAll = oldRemoveAll
+		cmd.RemoveAll = originalRemoveAll
 	}()
 	tests := map[string]struct {
 		removeAll func(dir string) error
@@ -63,11 +63,11 @@ func TestRemoveBackupDirectory(t *testing.T) {
 }
 
 func TestPostRepairWork(t *testing.T) {
-	oldRemoveAll := cmd.RemoveAll
-	oldDirExists := cmd.DirExists
+	originalRemoveAll := cmd.RemoveAll
+	originalDirExists := cmd.DirExists
 	defer func() {
-		cmd.RemoveAll = oldRemoveAll
-		cmd.DirExists = oldDirExists
+		cmd.RemoveAll = originalRemoveAll
+		cmd.DirExists = originalDirExists
 	}()
 	type args struct {
 		ss         *cmd.SearchSettings
@@ -171,9 +171,9 @@ func TestPostRepairWork(t *testing.T) {
 
 func TestPostRepairRun(t *testing.T) {
 	cmd.InitGlobals()
-	oldBus := cmd.Bus
+	originalBus := cmd.Bus
 	defer func() {
-		cmd.Bus = oldBus
+		cmd.Bus = originalBus
 	}()
 	command := &cobra.Command{}
 	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), command.Flags(), safeSearchFlags, false)

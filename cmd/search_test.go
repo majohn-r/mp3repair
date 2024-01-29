@@ -507,9 +507,9 @@ func newTestFile(name string, content []*testFile) *testFile {
 }
 
 func TestSearchSettingsLoad(t *testing.T) {
-	oldReadDir := cmd.ReadDir
+	originalReadDirectory := cmd.ReadDirectory
 	defer func() {
-		cmd.ReadDir = oldReadDir
+		cmd.ReadDirectory = originalReadDirectory
 	}()
 	album1Content1 := newTestFile("subfolder", []*testFile{newTestFile("foo", nil)})
 	album1Content2 := newTestFile("cover.jpg", nil)
@@ -534,7 +534,7 @@ func TestSearchSettingsLoad(t *testing.T) {
 	testArtist.AddAlbum(testAlbum)
 	testTrack := files.NewTrack(testAlbum, album1Content3.name, "lovely music", 1)
 	testAlbum.AddTrack(testTrack)
-	cmd.ReadDir = func(_ output.Bus, dir string) ([]fs.DirEntry, bool) {
+	cmd.ReadDirectory = func(_ output.Bus, dir string) ([]fs.DirEntry, bool) {
 		if tf, ok := testFiles[dir]; ok {
 			entries := []fs.DirEntry{}
 			for _, f := range tf.files {

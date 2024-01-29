@@ -63,11 +63,11 @@ func TestProcessRepairFlags(t *testing.T) {
 }
 
 func TestEnsureBackupDirectoryExists(t *testing.T) {
-	oldDirExists := cmd.DirExists
-	oldMkDir := cmd.MkDir
+	originalDirExists := cmd.DirExists
+	originalMkdir := cmd.Mkdir
 	defer func() {
-		cmd.DirExists = oldDirExists
-		cmd.MkDir = oldMkDir
+		cmd.DirExists = originalDirExists
+		cmd.Mkdir = originalMkdir
 	}()
 	album := &files.Album{}
 	if albums := generateAlbums(1, 5); len(albums) > 0 {
@@ -76,7 +76,7 @@ func TestEnsureBackupDirectoryExists(t *testing.T) {
 	tests := map[string]struct {
 		cAl        *cmd.CheckedAlbum
 		dirExists  func(s string) bool
-		mkDir      func(s string) error
+		mkdir      func(s string) error
 		wantPath   string
 		wantExists bool
 		output.WantedRecording
@@ -90,14 +90,14 @@ func TestEnsureBackupDirectoryExists(t *testing.T) {
 		"dir does not exist but can be created": {
 			cAl:        cmd.NewCheckedAlbum(album),
 			dirExists:  func(_ string) bool { return false },
-			mkDir:      func(_ string) error { return nil },
+			mkdir:      func(_ string) error { return nil },
 			wantPath:   album.BackupDirectory(),
 			wantExists: true,
 		},
 		"dir does not exist and cannot be created": {
 			cAl:        cmd.NewCheckedAlbum(album),
 			dirExists:  func(_ string) bool { return false },
-			mkDir:      func(_ string) error { return fmt.Errorf("plain file exists") },
+			mkdir:      func(_ string) error { return fmt.Errorf("plain file exists") },
 			wantPath:   album.BackupDirectory(),
 			wantExists: false,
 			WantedRecording: output.WantedRecording{
@@ -116,7 +116,7 @@ func TestEnsureBackupDirectoryExists(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			cmd.DirExists = tt.dirExists
-			cmd.MkDir = tt.mkDir
+			cmd.Mkdir = tt.mkdir
 			o := output.NewRecorder()
 			gotPath, gotExists := cmd.EnsureBackupDirectoryExists(o, tt.cAl)
 			if gotPath != tt.wantPath {
@@ -135,11 +135,11 @@ func TestEnsureBackupDirectoryExists(t *testing.T) {
 }
 
 func TestAttemptCopy(t *testing.T) {
-	oldPlainFileExists := cmd.PlainFileExists
-	oldCopyFile := cmd.CopyFile
+	originalPlainFileExists := cmd.PlainFileExists
+	originalCopyFile := cmd.CopyFile
 	defer func() {
-		cmd.PlainFileExists = oldPlainFileExists
-		cmd.CopyFile = oldCopyFile
+		cmd.PlainFileExists = originalPlainFileExists
+		cmd.CopyFile = originalCopyFile
 	}()
 	track := &files.Track{}
 	if tracks := generateTracks(1); len(tracks) > 0 {
@@ -216,9 +216,9 @@ func TestAttemptCopy(t *testing.T) {
 }
 
 func TestProcessUpdateResult(t *testing.T) {
-	oldMarkDirty := cmd.MarkDirty
+	originalMarkDirty := cmd.MarkDirty
 	defer func() {
-		cmd.MarkDirty = oldMarkDirty
+		cmd.MarkDirty = originalMarkDirty
 	}()
 	var markedDirty bool
 	cmd.MarkDirty = func(o output.Bus) {
@@ -302,13 +302,13 @@ func TestBackupAndFix(t *testing.T) {
 			}
 		}
 	}
-	oldDirExists := cmd.DirExists
-	oldPlainFileExists := cmd.PlainFileExists
-	oldCopyFile := cmd.CopyFile
+	originalDirExists := cmd.DirExists
+	originalPlainFileExists := cmd.PlainFileExists
+	originalCopyFile := cmd.CopyFile
 	defer func() {
-		cmd.DirExists = oldDirExists
-		cmd.PlainFileExists = oldPlainFileExists
-		cmd.CopyFile = oldCopyFile
+		cmd.DirExists = originalDirExists
+		cmd.PlainFileExists = originalPlainFileExists
+		cmd.CopyFile = originalCopyFile
 	}()
 	cmd.DirExists = func(_ string) bool { return true }
 	cmd.PlainFileExists = func(_ string) bool { return false }
@@ -554,19 +554,19 @@ func TestFindConflictedTracks(t *testing.T) {
 }
 
 func TestRepairSettings_RepairArtists(t *testing.T) {
-	oldMetadataReader := cmd.MetadataReader
-	oldDirExists := cmd.DirExists
-	oldPlainFileExists := cmd.PlainFileExists
-	oldCopyFile := cmd.CopyFile
-	oldMarkDirty := cmd.MarkDirty
+	originalReadMetadata := cmd.ReadMetadata
+	originalDirExists := cmd.DirExists
+	originalPlainFileExists := cmd.PlainFileExists
+	originalCopyFile := cmd.CopyFile
+	originalMarkDirty := cmd.MarkDirty
 	defer func() {
-		cmd.MetadataReader = oldMetadataReader
-		cmd.DirExists = oldDirExists
-		cmd.PlainFileExists = oldPlainFileExists
-		cmd.CopyFile = oldCopyFile
-		cmd.MarkDirty = oldMarkDirty
+		cmd.ReadMetadata = originalReadMetadata
+		cmd.DirExists = originalDirExists
+		cmd.PlainFileExists = originalPlainFileExists
+		cmd.CopyFile = originalCopyFile
+		cmd.MarkDirty = originalMarkDirty
 	}()
-	cmd.MetadataReader = func(_ output.Bus, _ []*files.Artist) {}
+	cmd.ReadMetadata = func(_ output.Bus, _ []*files.Artist) {}
 	cmd.DirExists = func(_ string) bool { return true }
 	cmd.PlainFileExists = func(_ string) bool { return false }
 	cmd.CopyFile = func(_, _ string) error { return nil }
@@ -871,11 +871,11 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 }
 
 func TestRepairSettings_ProcessArtists(t *testing.T) {
-	oldMetadataReader := cmd.MetadataReader
+	originalReadMetadata := cmd.ReadMetadata
 	defer func() {
-		cmd.MetadataReader = oldMetadataReader
+		cmd.ReadMetadata = originalReadMetadata
 	}()
-	cmd.MetadataReader = func(_ output.Bus, _ []*files.Artist) {}
+	cmd.ReadMetadata = func(_ output.Bus, _ []*files.Artist) {}
 	type args struct {
 		allArtists []*files.Artist
 		loaded     bool
@@ -921,11 +921,11 @@ func TestRepairSettings_ProcessArtists(t *testing.T) {
 
 func TestRepairRun(t *testing.T) {
 	cmd.InitGlobals()
-	oldBus := cmd.Bus
-	oldSearchFlags := cmd.SearchFlags
+	originalBus := cmd.Bus
+	originalSearchFlags := cmd.SearchFlags
 	defer func() {
-		cmd.Bus = oldBus
-		cmd.SearchFlags = oldSearchFlags
+		cmd.Bus = originalBus
+		cmd.SearchFlags = originalSearchFlags
 	}()
 	cmd.SearchFlags = safeSearchFlags
 	repairFlags := cmd.SectionFlags{

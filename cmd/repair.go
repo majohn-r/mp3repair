@@ -55,7 +55,7 @@ func RepairRun(cmd *cobra.Command, _ []string) {
 	searchSettings, searchFlagsOk := EvaluateSearchFlags(o, producer)
 	if ProcessFlagErrors(o, eSlice) && searchFlagsOk {
 		if rs, ok := ProcessRepairFlags(o, values); ok {
-			CommandStartLogger(o, repairCommandName, map[string]any{
+			LogCommandStart(o, repairCommandName, map[string]any{
 				repairDryRunFlag:       rs.DryRun,
 				SearchAlbumFilterFlag:  searchSettings.AlbumFilter,
 				SearchArtistFilterFlag: searchSettings.ArtistFilter,
@@ -81,7 +81,7 @@ func (rs *RepairSettings) ProcessArtists(o output.Bus, allArtists []*files.Artis
 }
 
 func (rs *RepairSettings) RepairArtists(o output.Bus, artists []*files.Artist) {
-	MetadataReader(o, artists) // read all track metadata
+	ReadMetadata(o, artists) // read all track metadata
 	checkedArtists := PrepareCheckedArtists(artists)
 	count := FindConflictedTracks(checkedArtists)
 	if rs.DryRun {
@@ -234,7 +234,7 @@ func EnsureBackupDirectoryExists(o output.Bus, cAl *CheckedAlbum) (path string, 
 	path = cAl.backing.BackupDirectory()
 	exists = true
 	if !DirExists(path) {
-		if err := MkDir(path); err != nil {
+		if err := Mkdir(path); err != nil {
 			exists = false
 			o.WriteCanonicalError("The directory %q cannot be created: %v", path, err)
 			o.WriteCanonicalError("The track files in the directory %q will not be repaired", cAl.backing.Path())

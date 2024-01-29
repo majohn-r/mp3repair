@@ -81,7 +81,7 @@ func ExportRun(cmd *cobra.Command, _ []string) {
 	if ProcessFlagErrors(o, eSlice) {
 		settings, ok := ProcessExportFlags(o, values)
 		if ok {
-			CommandStartLogger(o, ExportCommand, map[string]any{
+			LogCommandStart(o, ExportCommand, map[string]any{
 				exportDefaultsAsFlag:  settings.DefaultsEnabled,
 				"defaults-user-set":   settings.DefaultsSet,
 				exportOverwriteAsFlag: settings.OverwriteEnabled,
@@ -92,7 +92,7 @@ func ExportRun(cmd *cobra.Command, _ []string) {
 		}
 	}
 	if fatalError {
-		ExitFunction(1)
+		Exit(1)
 	}
 }
 
@@ -112,7 +112,7 @@ func ProcessExportFlags(o output.Bus, values map[string]*FlagValue) (*ExportFlag
 }
 
 func CreateFile(o output.Bus, f string, content []byte) bool {
-	if err := FileWrite(f, content, cmd_toolkit.StdFilePermissions); err != nil {
+	if err := WriteFile(f, content, cmd_toolkit.StdFilePermissions); err != nil {
 		cmd_toolkit.ReportFileCreationFailure(o, ExportCommand, f, err)
 		return false
 	}
@@ -138,7 +138,7 @@ func (efs *ExportFlagSettings) ExportDefaultConfiguration(o output.Bus) {
 func (efs *ExportFlagSettings) OverwriteFile(o output.Bus, f string, payload []byte) {
 	if efs.CanOverwriteFile(o, f) {
 		backup := f + "-backup"
-		if err := FileRename(f, backup); err != nil {
+		if err := Rename(f, backup); err != nil {
 			o.WriteCanonicalError("The file %q cannot be renamed to %q: %v", f, backup, err)
 			o.Log(output.Error, "rename failed", map[string]any{
 				"error": err,
@@ -146,7 +146,7 @@ func (efs *ExportFlagSettings) OverwriteFile(o output.Bus, f string, payload []b
 				"new":   backup,
 			})
 		} else if CreateFile(o, f, payload) {
-			FileRemove(backup)
+			Remove(backup)
 		}
 	}
 }

@@ -18,11 +18,11 @@ import (
 func TestExecute(t *testing.T) {
 	cmd.InitGlobals()
 	originalArgs := os.Args
-	originalExitFunction := cmd.ExitFunction
+	originalExit := cmd.Exit
 	originalBus := cmd.Bus
 	defer func() {
 		os.Args = originalArgs
-		cmd.ExitFunction = originalExitFunction
+		cmd.Exit = originalExit
 		cmd.Bus = originalBus
 	}()
 	tests := map[string]struct {
@@ -34,7 +34,7 @@ func TestExecute(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			os.Args = tt.args
 			got := -1
-			cmd.ExitFunction = func(code int) {
+			cmd.Exit = func(code int) {
 				got = code
 			}
 			cmd.Execute()
@@ -56,17 +56,17 @@ func (s sadCommand) SetArgs(a []string) {}
 func (s sadCommand) Execute() error     { return fmt.Errorf("sad") }
 
 func TestRunMain(t *testing.T) {
-	oldArgs := os.Args
-	oldDurationCalc := cmd.DurationCalc
-	oldExitFunction := cmd.ExitFunction
-	oldVersion := cmd.Version
-	oldCreation := cmd.Creation
+	originalArgs := os.Args
+	originalSince := cmd.Since
+	originalExit := cmd.Exit
+	originalVersion := cmd.Version
+	originalCreation := cmd.Creation
 	defer func() {
-		cmd.DurationCalc = oldDurationCalc
-		cmd.ExitFunction = oldExitFunction
-		os.Args = oldArgs
-		cmd.Version = oldVersion
-		cmd.Creation = oldCreation
+		cmd.Since = originalSince
+		cmd.Exit = originalExit
+		os.Args = originalArgs
+		cmd.Version = originalVersion
+		cmd.Creation = originalCreation
 	}()
 	type args struct {
 		cmd   cmd.CommandExecutor
@@ -111,11 +111,11 @@ func TestRunMain(t *testing.T) {
 		},
 	}
 	for name, tt := range tests {
-		cmd.DurationCalc = func(_ time.Time) time.Duration {
+		cmd.Since = func(_ time.Time) time.Duration {
 			return 0
 		}
 		var capturedExitCode int
-		cmd.ExitFunction = func(code int) {
+		cmd.Exit = func(code int) {
 			capturedExitCode = code
 		}
 		t.Run(name, func(t *testing.T) {
@@ -123,10 +123,10 @@ func TestRunMain(t *testing.T) {
 			os.Args = tt.cmdline
 			cmd.Version = tt.appVersion
 			cmd.Creation = tt.timestamp
-			cmd.GoVersionFunc = func() string {
+			cmd.GoVersion = func() string {
 				return tt.goVersion
 			}
-			cmd.BuildDependenciesFunc = func() []string {
+			cmd.BuildDependencies = func() []string {
 				return tt.dependencies
 			}
 			o := output.NewRecorder()
@@ -144,14 +144,14 @@ func TestRunMain(t *testing.T) {
 }
 
 func TestCookCommandLineArguments(t *testing.T) {
-	oldDereferenceEnvVarFunc := cmd.DereferenceEnvVarFunc
+	originalDereferenceEnvVar := cmd.DereferenceEnvVar
 	defer func() {
-		cmd.DereferenceEnvVarFunc = oldDereferenceEnvVarFunc
+		cmd.DereferenceEnvVar = originalDereferenceEnvVar
 	}()
 	tests := map[string]struct {
-		inputArgs []string
-		derefFunc func(string) (string, error)
-		want      []string
+		inputArgs         []string
+		dereferenceEnvVar func(string) (string, error)
+		want              []string
 		output.WantedRecording
 	}{
 		"nil args": {
@@ -168,7 +168,7 @@ func TestCookCommandLineArguments(t *testing.T) {
 		},
 		"multiple args with problems": {
 			inputArgs: []string{"app_Name", "%arg%", "foo", "bar"},
-			derefFunc: func(s string) (string, error) {
+			dereferenceEnvVar: func(s string) (string, error) {
 				if s == "%arg%" {
 					return "", fmt.Errorf("dereference service dead")
 				} else {
@@ -185,7 +185,7 @@ func TestCookCommandLineArguments(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			cmd.DereferenceEnvVarFunc = tt.derefFunc
+			cmd.DereferenceEnvVar = tt.dereferenceEnvVar
 			if got := cmd.CookCommandLineArguments(o, tt.inputArgs); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("CookCommandLineArguments() = %v, want %v", got, tt.want)
 			}
@@ -199,33 +199,33 @@ func TestCookCommandLineArguments(t *testing.T) {
 }
 
 func Test_InitGlobals(t *testing.T) {
-	oldExitFunction := cmd.ExitFunction
-	oldNewBusFunc := cmd.NewBusFunc
-	oldAppNameSetFunc := cmd.AppNameSetFunc
-	oldLogInitFunc := cmd.LogInitFunc
-	oldAppPathInitFunc := cmd.AppPathInitFunc
-	oldReadConfigFileFunc := cmd.ReadConfigFileFunc
-	oldInitBuildDataFunc := cmd.InitBuildDataFunc
-	oldFlagIndicatorSetFunc := cmd.FlagIndicatorSetFunc
-	oldVersion := cmd.Version
-	oldCreation := cmd.Creation
-	oldInitialized := cmd.Initialized
-	oldBus := cmd.Bus
-	oldConfig := cmd.InternalConfig
+	originalExit := cmd.Exit
+	originalNewDefaultBus := cmd.NewDefaultBus
+	originalSetAppName := cmd.SetAppName
+	originalInitLogging := cmd.InitLogging
+	originalInitApplicationPath := cmd.InitApplicationPath
+	originalReadConfigurationFile := cmd.ReadConfigurationFile
+	originalInitBuildData := cmd.InitBuildData
+	originalSetFlagIndicator := cmd.SetFlagIndicator
+	originalVersion := cmd.Version
+	originalCreation := cmd.Creation
+	originalInitialized := cmd.Initialized
+	originalBus := cmd.Bus
+	originalInternalConfig := cmd.InternalConfig
 	defer func() {
-		cmd.ExitFunction = oldExitFunction
-		cmd.NewBusFunc = oldNewBusFunc
-		cmd.AppNameSetFunc = oldAppNameSetFunc
-		cmd.LogInitFunc = oldLogInitFunc
-		cmd.AppPathInitFunc = oldAppPathInitFunc
-		cmd.ReadConfigFileFunc = oldReadConfigFileFunc
-		cmd.InitBuildDataFunc = oldInitBuildDataFunc
-		cmd.FlagIndicatorSetFunc = oldFlagIndicatorSetFunc
-		cmd.Version = oldVersion
-		cmd.Creation = oldCreation
-		cmd.Initialized = oldInitialized
-		cmd.Bus = oldBus
-		cmd.InternalConfig = oldConfig
+		cmd.Exit = originalExit
+		cmd.NewDefaultBus = originalNewDefaultBus
+		cmd.SetAppName = originalSetAppName
+		cmd.InitLogging = originalInitLogging
+		cmd.InitApplicationPath = originalInitApplicationPath
+		cmd.ReadConfigurationFile = originalReadConfigurationFile
+		cmd.InitBuildData = originalInitBuildData
+		cmd.SetFlagIndicator = originalSetFlagIndicator
+		cmd.Version = originalVersion
+		cmd.Creation = originalCreation
+		cmd.Initialized = originalInitialized
+		cmd.Bus = originalBus
+		cmd.InternalConfig = originalInternalConfig
 	}()
 	o := output.NewRecorder()
 	defaultExitFunctionCalled := false
@@ -241,24 +241,24 @@ func Test_InitGlobals(t *testing.T) {
 	versionRecorded := defaultVersion
 	flagIndicatorRecorded := defaultFlagIndicator
 	tests := map[string]struct {
-		initialize           bool
-		exitFunc             func(int)
-		wantExitFuncCalled   bool
-		wantExitValue        int
-		busGetter            func(output.Logger) output.Bus
-		appNameSetter        func(string) error
-		logInitializer       func(output.Bus) bool
-		appPathInitializer   func(output.Bus) bool
-		configFileReader     func(output.Bus) (*cmd_toolkit.Configuration, bool)
-		wantConfig           *cmd_toolkit.Configuration
-		buildDataInitializer func(string, string)
-		wantCreation         string
-		wantVersion          string
-		flagIndicatorSetter  func(string)
-		wantFlagIndicator    string
-		versionVal           string
-		creationVal          string
-		wantAppName          string
+		initialize            bool
+		exitFunc              func(int)
+		wantExitFuncCalled    bool
+		wantExitValue         int
+		newDefaultBus         func(output.Logger) output.Bus
+		setAppName            func(string) error
+		initLogging           func(output.Bus) bool
+		initApplicationPath   func(output.Bus) bool
+		readConfigurationFile func(output.Bus) (*cmd_toolkit.Configuration, bool)
+		wantConfig            *cmd_toolkit.Configuration
+		initBuildData         func(string, string)
+		wantCreation          string
+		wantVersion           string
+		setFlagIndicator      func(string)
+		wantFlagIndicator     string
+		versionVal            string
+		creationVal           string
+		wantAppName           string
 		output.WantedRecording
 	}{
 		"already initialized": {
@@ -268,13 +268,13 @@ func Test_InitGlobals(t *testing.T) {
 		},
 		"app name set error": {
 			initialize: false,
-			busGetter: func(output.Logger) output.Bus {
+			newDefaultBus: func(output.Logger) output.Bus {
 				return o
 			},
-			appNameSetter: func(string) error {
+			setAppName: func(string) error {
 				return fmt.Errorf("app name could not be set")
 			},
-			logInitializer: func(_ output.Bus) bool { return false },
+			initLogging: func(_ output.Bus) bool { return false },
 			exitFunc: func(c int) {
 				exitCodeRecorded = c
 				ExitFunctionCalled = true
@@ -285,14 +285,14 @@ func Test_InitGlobals(t *testing.T) {
 		},
 		"log initialization failure": {
 			initialize: false,
-			busGetter: func(output.Logger) output.Bus {
+			newDefaultBus: func(output.Logger) output.Bus {
 				return o
 			},
-			appNameSetter: func(s string) error {
+			setAppName: func(s string) error {
 				appNameRecorded = s
 				return nil
 			},
-			logInitializer: func(output.Bus) bool {
+			initLogging: func(output.Bus) bool {
 				return false
 			},
 			exitFunc: func(c int) {
@@ -305,17 +305,17 @@ func Test_InitGlobals(t *testing.T) {
 		},
 		"app path initialization failure": {
 			initialize: false,
-			busGetter: func(output.Logger) output.Bus {
+			newDefaultBus: func(output.Logger) output.Bus {
 				return o
 			},
-			appNameSetter: func(s string) error {
+			setAppName: func(s string) error {
 				appNameRecorded = s
 				return nil
 			},
-			logInitializer: func(output.Bus) bool {
+			initLogging: func(output.Bus) bool {
 				return true
 			},
-			appPathInitializer: func(output.Bus) bool {
+			initApplicationPath: func(output.Bus) bool {
 				return false
 			},
 			exitFunc: func(c int) {
@@ -328,20 +328,20 @@ func Test_InitGlobals(t *testing.T) {
 		},
 		"config file read failed": {
 			initialize: false,
-			busGetter: func(output.Logger) output.Bus {
+			newDefaultBus: func(output.Logger) output.Bus {
 				return o
 			},
-			appNameSetter: func(s string) error {
+			setAppName: func(s string) error {
 				appNameRecorded = s
 				return nil
 			},
-			logInitializer: func(output.Bus) bool {
+			initLogging: func(output.Bus) bool {
 				return true
 			},
-			appPathInitializer: func(output.Bus) bool {
+			initApplicationPath: func(output.Bus) bool {
 				return true
 			},
-			configFileReader: func(output.Bus) (*cmd_toolkit.Configuration, bool) {
+			readConfigurationFile: func(output.Bus) (*cmd_toolkit.Configuration, bool) {
 				return nil, false
 			},
 			exitFunc: func(c int) {
@@ -354,35 +354,35 @@ func Test_InitGlobals(t *testing.T) {
 		},
 		"all is well": {
 			initialize: false,
-			busGetter: func(output.Logger) output.Bus {
+			newDefaultBus: func(output.Logger) output.Bus {
 				return o
 			},
-			appNameSetter: func(s string) error {
+			setAppName: func(s string) error {
 				appNameRecorded = s
 				return nil
 			},
-			logInitializer: func(output.Bus) bool {
+			initLogging: func(output.Bus) bool {
 				return true
 			},
-			appPathInitializer: func(output.Bus) bool {
+			initApplicationPath: func(output.Bus) bool {
 				return true
 			},
-			configFileReader: func(output.Bus) (*cmd_toolkit.Configuration, bool) {
+			readConfigurationFile: func(output.Bus) (*cmd_toolkit.Configuration, bool) {
 				return cmd_toolkit.EmptyConfiguration(), true
 			},
 			creationVal:  "created today",
 			wantCreation: "",
 			versionVal:   "v0.1.1",
 			wantVersion:  "",
-			buildDataInitializer: func(v string, c string) {
+			initBuildData: func(v string, c string) {
 				versionRecorded = v
 				creationRecorded = c
 			},
-			flagIndicatorSetter: func(s string) { flagIndicatorRecorded = s },
-			wantFlagIndicator:   "",
-			wantConfig:          cmd_toolkit.EmptyConfiguration(),
-			wantExitFuncCalled:  false,
-			wantExitValue:       defaultExitCode,
+			setFlagIndicator:   func(s string) { flagIndicatorRecorded = s },
+			wantFlagIndicator:  "",
+			wantConfig:         cmd_toolkit.EmptyConfiguration(),
+			wantExitFuncCalled: false,
+			wantExitValue:      defaultExitCode,
 		},
 	}
 	for name, tt := range tests {
@@ -396,14 +396,14 @@ func Test_InitGlobals(t *testing.T) {
 			versionRecorded = defaultVersion
 			flagIndicatorRecorded = defaultFlagIndicator
 			cmd.Initialized = tt.initialize
-			cmd.ExitFunction = tt.exitFunc
-			cmd.NewBusFunc = tt.busGetter
-			cmd.AppNameSetFunc = tt.appNameSetter
-			cmd.LogInitFunc = tt.logInitializer
-			cmd.AppPathInitFunc = tt.appPathInitializer
-			cmd.ReadConfigFileFunc = tt.configFileReader
-			cmd.InitBuildDataFunc = tt.buildDataInitializer
-			cmd.FlagIndicatorSetFunc = tt.flagIndicatorSetter
+			cmd.Exit = tt.exitFunc
+			cmd.NewDefaultBus = tt.newDefaultBus
+			cmd.SetAppName = tt.setAppName
+			cmd.InitLogging = tt.initLogging
+			cmd.InitApplicationPath = tt.initApplicationPath
+			cmd.ReadConfigurationFile = tt.readConfigurationFile
+			cmd.InitBuildData = tt.initBuildData
+			cmd.SetFlagIndicator = tt.setFlagIndicator
 			cmd.Creation = tt.creationVal
 			cmd.Version = tt.versionVal
 			cmd.InitGlobals()
