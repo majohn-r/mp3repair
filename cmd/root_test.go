@@ -437,16 +437,14 @@ func Test_InitGlobals(t *testing.T) {
 	}
 }
 
-func TestRootHelp(t *testing.T) {
+func TestRootUsage(t *testing.T) {
 	tests := map[string]struct {
 		output.WantedRecording
-		optional output.WantedRecording
 	}{
 		"good": {
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"Usage:\n" +
-					"  mp3 [command]\n" +
 					"\n" +
 					"Examples:\n" +
 					"The mp3 program might be used like this:\n" +
@@ -472,80 +470,19 @@ func TestRootHelp(t *testing.T) {
 					"sync with the changes. While the system will eventually catch up, accelerate\n" +
 					"the process:\n" +
 					"\n" +
-					"mp3 resetDatabase\n" +
-					"\n" +
-					"Available Commands:\n" +
-					"  about         Provides information about the mp3 program\n" +
-					"  check         Runs checks on mp3 files and their directories and reports problems\n" +
-					"  export        Exports default program configuration data\n" +
-					"  list          Lists mp3 files and containing album and artist directories\n" +
-					"  postRepair    Deletes the backup directories, and their contents, created by the repair command\n" +
-					"  repair        Repairs problems found by running 'check --files'\n" +
-					"  resetDatabase Resets the Windows music database\n" +
-					"\n" +
-					"Use \"mp3 [command] --help\" for more information about a command.\n",
-			},
-			optional: output.WantedRecording{
-				Console: "" +
-					"Usage:\n" +
-					"  mp3 [command]\n" +
-					"\n" +
-					"Examples:\n" +
-					"The mp3 program might be used like this:\n" +
-					"\n" +
-					"First, get a listing of the available mp3 files:\n" +
-					"\n" +
-					"mp3 list -lrt\n" +
-					"\n" +
-					"Then check for problems in the track metadata:\n" +
-					"\n" +
-					"mp3 check --files\n" +
-					"\n" +
-					"If problems were found, repair the mp3 files:\n" +
-					"\n" +
-					"mp3 repair\n" +
-					"\n" +
-					"The repair command creates backup files for each track it rewrites. After\n" +
-					"spot-checking files that have been repaired, clean up those backups:\n" +
-					"\n" +
-					"mp3 postRepair\n" +
-					"\n" +
-					"After repairing the mp3 files, the Windows media player system may be out of\n" +
-					"sync with the changes. While the system will eventually catch up, accelerate\n" +
-					"the process:\n" +
-					"\n" +
-					"mp3 resetDatabase\n" +
-					"\n" +
-					"Available Commands:\n" +
-					"  about         Provides information about the mp3 program\n" +
-					"  check         Runs checks on mp3 files and their directories and reports problems\n" +
-					"  export        Exports default program configuration data\n" +
-					"  help          Help about any command\n" +
-					"  list          Lists mp3 files and containing album and artist directories\n" +
-					"  postRepair    Deletes the backup directories, and their contents, created by the repair command\n" +
-					"  repair        Repairs problems found by running 'check --files'\n" +
-					"  resetDatabase Resets the Windows music database\n" +
-					"\n" +
-					"Flags:\n  -h, --help   help for mp3\n" +
-					"\n" +
-					"Use \"mp3 [command] --help\" for more information about a command.\n",
+					"mp3 resetDatabase\n",
 			},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			command := cmd.RootCmd
+			command := cloneCommand(cmd.RootCmd)
 			enableCommandRecording(o, command)
 			command.Usage()
-			issues, ok := o.Verify(tt.WantedRecording)
-			optionalIssues, optionalOk := o.Verify(tt.optional)
-			if !ok && !optionalOk {
+			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
-					t.Errorf("root Help() %s", issue)
-				}
-				for _, issue := range optionalIssues {
-					t.Errorf("root Help() optional %s", issue)
+					t.Errorf("root Usage() %s", issue)
 				}
 			}
 		})
