@@ -48,6 +48,7 @@ func AboutRun(_ *cobra.Command, _ []string) {
 	o := BusGetter()
 	LogCommandStart(o, aboutCommand, map[string]any{})
 	GenerateAboutContent(o)
+	Exit(Success)
 }
 
 func InitializeAbout(version, creation string) {

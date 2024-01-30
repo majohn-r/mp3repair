@@ -78,7 +78,7 @@ type ExportFlagSettings struct {
 func ExportRun(cmd *cobra.Command, _ []string) {
 	o := getBus()
 	values, eSlice := ReadFlags(cmd.Flags(), ExportFlags)
-	fatalError := true // pessimist!
+	status := ProgramError
 	if ProcessFlagErrors(o, eSlice) {
 		settings, ok := ProcessExportFlags(o, values)
 		if ok {
@@ -88,13 +88,10 @@ func ExportRun(cmd *cobra.Command, _ []string) {
 				exportOverwriteAsFlag: settings.OverwriteEnabled,
 				"overwrite-user-set":  settings.OverwriteSet,
 			})
-			settings.ExportDefaultConfiguration(o)
-			fatalError = false
+			status = settings.ExportDefaultConfiguration(o)
 		}
 	}
-	if fatalError {
-		Exit(1)
-	}
+	Exit(status)
 }
 
 func ProcessExportFlags(o output.Bus, values map[string]*FlagValue) (*ExportFlagSettings, bool) {
@@ -121,7 +118,8 @@ func CreateFile(o output.Bus, f string, content []byte) bool {
 	return true
 }
 
-func (efs *ExportFlagSettings) ExportDefaultConfiguration(o output.Bus) {
+func (efs *ExportFlagSettings) ExportDefaultConfiguration(o output.Bus) int {
+	status := UserError
 	if efs.CanWriteDefaults(o) {
 		// ignoring error return, as we're not marshalling structs, where mischief
 		// can occur
@@ -129,15 +127,22 @@ func (efs *ExportFlagSettings) ExportDefaultConfiguration(o output.Bus) {
 		path := ApplicationPath()
 		f := filepath.Join(path, cmd_toolkit.DefaultConfigFileName())
 		if PlainFileExists(f) {
-			efs.OverwriteFile(o, f, payload)
+			status = efs.OverwriteFile(o, f, payload)
 		} else {
-			CreateFile(o, f, payload)
+			if CreateFile(o, f, payload) {
+				status = Success
+			} else {
+				status = SystemError
+			}
 		}
 	}
+	return status
 }
 
-func (efs *ExportFlagSettings) OverwriteFile(o output.Bus, f string, payload []byte) {
+func (efs *ExportFlagSettings) OverwriteFile(o output.Bus, f string, payload []byte) int {
+	status := UserError
 	if efs.CanOverwriteFile(o, f) {
+		status = SystemError
 		backup := f + "-backup"
 		if err := Rename(f, backup); err != nil {
 			o.WriteCanonicalError("The file %q cannot be renamed to %q: %v", f, backup, err)
@@ -148,8 +153,10 @@ func (efs *ExportFlagSettings) OverwriteFile(o output.Bus, f string, payload []b
 			})
 		} else if CreateFile(o, f, payload) {
 			Remove(backup)
+			status = Success
 		}
 	}
+	return status
 }
 
 func (efs *ExportFlagSettings) CanOverwriteFile(o output.Bus, f string) (canOverwrite bool) {

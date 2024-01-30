@@ -15,17 +15,27 @@ func TestAboutRun(t *testing.T) {
 	originalBusGetter := cmd.BusGetter
 	originalLogCommandStart := cmd.LogCommandStart
 	originalGenerateAboutContent := cmd.GenerateAboutContent
+	originalExit := cmd.Exit
 	defer func() {
 		cmd.BusGetter = originalBusGetter
 		cmd.LogCommandStart = originalLogCommandStart
 		cmd.GenerateAboutContent = originalGenerateAboutContent
+		cmd.Exit = originalExit
 	}()
+	var exitCalled bool
+	var exitCode int
+	cmd.Exit = func(code int) {
+		exitCalled = true
+		exitCode = code
+	}
 	type args struct {
 		in0 *cobra.Command
 		in1 []string
 	}
 	tests := map[string]struct {
 		args
+		wantExitCode   int
+		wantExitCalled bool
 		output.WantedRecording
 	}{
 		"simple": {
@@ -33,10 +43,14 @@ func TestAboutRun(t *testing.T) {
 				Console: "About content here.\n",
 				Log:     "level='info' command='about' msg='executing command'\n",
 			},
+			wantExitCode:   0,
+			wantExitCalled: true,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			exitCalled = false
+			exitCode = -1
 			o := output.NewRecorder()
 			cmd.BusGetter = func() output.Bus { return o }
 			cmd.LogCommandStart = func(bus output.Bus, cmdName string, args map[string]any) {
@@ -46,6 +60,12 @@ func TestAboutRun(t *testing.T) {
 				bus.WriteCanonicalConsole("about content here")
 			}
 			cmd.AboutRun(tt.args.in0, tt.args.in1)
+			if got := exitCode; got != tt.wantExitCode {
+				t.Errorf("AboutRun() got exit code %d want %d", got, tt.wantExitCode)
+			}
+			if got := exitCalled; got != tt.wantExitCalled {
+				t.Errorf("AboutRun() got exit called %t want %t", got, tt.wantExitCalled)
+			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("AboutRun() %s", issue)

@@ -49,6 +49,7 @@ var (
 )
 
 func RepairRun(cmd *cobra.Command, _ []string) {
+	status := ProgramError
 	o := getBus()
 	producer := cmd.Flags()
 	values, eSlice := ReadFlags(producer, RepairFlags)
@@ -63,24 +64,28 @@ func RepairRun(cmd *cobra.Command, _ []string) {
 				SearchTopDirFlag:       searchSettings.TopDirectory,
 			})
 			allArtists, loaded := searchSettings.Load(o)
-			rs.ProcessArtists(o, allArtists, loaded, searchSettings)
+			status = rs.ProcessArtists(o, allArtists, loaded, searchSettings)
 		}
 	}
+	Exit(status)
 }
 
 type RepairSettings struct {
 	DryRun bool
 }
 
-func (rs *RepairSettings) ProcessArtists(o output.Bus, allArtists []*files.Artist, loaded bool, ss *SearchSettings) {
+func (rs *RepairSettings) ProcessArtists(o output.Bus, allArtists []*files.Artist, loaded bool, ss *SearchSettings) int {
+	status := UserError
 	if loaded {
 		if filteredArtists, filtered := ss.Filter(o, allArtists); filtered {
-			rs.RepairArtists(o, filteredArtists)
+			status = rs.RepairArtists(o, filteredArtists)
 		}
 	}
+	return status
 }
 
-func (rs *RepairSettings) RepairArtists(o output.Bus, artists []*files.Artist) {
+func (rs *RepairSettings) RepairArtists(o output.Bus, artists []*files.Artist) int {
+	status := Success
 	ReadMetadata(o, artists) // read all track metadata
 	checkedArtists := PrepareCheckedArtists(artists)
 	count := FindConflictedTracks(checkedArtists)
@@ -90,9 +95,10 @@ func (rs *RepairSettings) RepairArtists(o output.Bus, artists []*files.Artist) {
 		if count == 0 {
 			nothingToDo(o)
 		} else {
-			BackupAndFix(o, checkedArtists)
+			status = BackupAndFix(o, checkedArtists)
 		}
 	}
+	return status
 }
 
 func FindConflictedTracks(checkedArtists []*CheckedArtist) int {
@@ -161,7 +167,8 @@ func nothingToDo(o output.Bus) {
 	o.WriteCanonicalConsole("No repairable track defects were found.")
 }
 
-func BackupAndFix(o output.Bus, checkedArtists []*CheckedArtist) {
+func BackupAndFix(o output.Bus, checkedArtists []*CheckedArtist) int {
+	status := Success
 	for _, cAr := range checkedArtists {
 		if cAr.HasIssues() {
 			for _, cAl := range cAr.albums {
@@ -172,18 +179,26 @@ func BackupAndFix(o output.Bus, checkedArtists []*CheckedArtist) {
 								t := cT.backing
 								if AttemptCopy(o, t, path) {
 									err := t.UpdateMetadata()
-									ProcessUpdateResult(o, t, err)
+									if state := ProcessUpdateResult(o, t, err); state == SystemError {
+										status = SystemError
+									}
+								} else {
+									status = SystemError
 								}
 							}
 						}
+					} else {
+						status = SystemError
 					}
 				}
 			}
 		}
 	}
+	return status
 }
 
-func ProcessUpdateResult(o output.Bus, t *files.Track, err []error) {
+func ProcessUpdateResult(o output.Bus, t *files.Track, err []error) int {
+	status := Success
 	if len(err) == 0 {
 		o.WriteConsole("%q repaired.\n", t)
 		MarkDirty(o)
@@ -199,7 +214,9 @@ func ProcessUpdateResult(o output.Bus, t *files.Track, err []error) {
 			"fileName":  t.FileName(),
 			"error":     fmt.Sprintf("[%s]", strings.Join(errorStrings, ", ")),
 		})
+		status = SystemError
 	}
+	return status
 }
 
 func AttemptCopy(o output.Bus, t *files.Track, path string) (backedUp bool) {

@@ -1185,16 +1185,19 @@ func TestCheckSettings_PerformChecks(t *testing.T) {
 	tests := map[string]struct {
 		cs *cmd.CheckSettings
 		args
+		wantStatus int
 		output.WantedRecording
 	}{
 		"no artists loaded": {
 			cs:              nil,
 			args:            args{artists: generateArtists(1, 1, 1), artistsLoaded: false, ss: nil},
+			wantStatus:      cmd.UserError,
 			WantedRecording: output.WantedRecording{},
 		},
 		"no artists": {
 			cs:              nil,
 			args:            args{artists: nil, artistsLoaded: true, ss: nil},
+			wantStatus:      cmd.UserError,
 			WantedRecording: output.WantedRecording{},
 		},
 		"artists to check, check everything": {
@@ -1208,6 +1211,7 @@ func TestCheckSettings_PerformChecks(t *testing.T) {
 					TrackFilter:  regexp.MustCompile(".*"),
 				},
 			},
+			wantStatus: cmd.Success,
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"Artist \"my artist 0\"\n" +
@@ -1233,7 +1237,9 @@ func TestCheckSettings_PerformChecks(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			tt.cs.PerformChecks(o, tt.args.artists, tt.args.artistsLoaded, tt.args.ss)
+			if got := tt.cs.PerformChecks(o, tt.args.artists, tt.args.artistsLoaded, tt.args.ss); got != tt.wantStatus {
+				t.Errorf("CheckSettings.PerformChecks() got %d want %d", got, tt.wantStatus)
+			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("CheckSettings.PerformChecks() %s", issue)
@@ -1245,13 +1251,15 @@ func TestCheckSettings_PerformChecks(t *testing.T) {
 
 func TestCheckSettings_MaybeDoWork(t *testing.T) {
 	tests := map[string]struct {
-		cs *cmd.CheckSettings
-		ss *cmd.SearchSettings
+		cs         *cmd.CheckSettings
+		ss         *cmd.SearchSettings
+		wantStatus int
 		output.WantedRecording
 	}{
 		"nothing to do": {
-			cs: &cmd.CheckSettings{},
-			ss: nil,
+			cs:         &cmd.CheckSettings{},
+			ss:         nil,
+			wantStatus: cmd.UserError,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"No checks will be executed.\n" +
@@ -1272,6 +1280,7 @@ func TestCheckSettings_MaybeDoWork(t *testing.T) {
 				ArtistFilter:   regexp.MustCompile(".*"),
 				TrackFilter:    regexp.MustCompile(".*"),
 			},
+			wantStatus: cmd.UserError,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"The directory \"no dir\" cannot be read: open no dir: The system cannot find the file specified.\n" +
@@ -1289,7 +1298,9 @@ func TestCheckSettings_MaybeDoWork(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			tt.cs.MaybeDoWork(o, tt.ss)
+			if got := tt.cs.MaybeDoWork(o, tt.ss); got != tt.wantStatus {
+				t.Errorf("CheckSettings.MaybeDoWork() got %d want %d", got, tt.wantStatus)
+			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("CheckSettings.MaybeDoWork() %s", issue)
@@ -1303,10 +1314,18 @@ func TestCheckRun(t *testing.T) {
 	cmd.InitGlobals()
 	originalBus := cmd.Bus
 	originalSearchFlags := cmd.SearchFlags
+	originalExit := cmd.Exit
 	defer func() {
 		cmd.Bus = originalBus
 		cmd.SearchFlags = originalSearchFlags
+		cmd.Exit = originalExit
 	}()
+	var exitCode int
+	var exitCalled bool
+	cmd.Exit = func(code int) {
+		exitCalled = true
+		exitCode = code
+	}
 	cmd.SearchFlags = safeSearchFlags
 	checkFlags := cmd.SectionFlags{
 		SectionName: cmd.CheckCommand,
@@ -1339,10 +1358,14 @@ func TestCheckRun(t *testing.T) {
 	}
 	tests := map[string]struct {
 		args
+		wantExitCode   int
+		wantExitCalled bool
 		output.WantedRecording
 	}{
 		"default case": {
-			args: args{cmd: command},
+			args:           args{cmd: command},
+			wantExitCode:   cmd.UserError,
+			wantExitCalled: true,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"No checks will be executed.\n" +
@@ -1371,12 +1394,20 @@ func TestCheckRun(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			exitCode = -1
+			exitCalled = false
 			o := output.NewRecorder()
 			cmd.Bus = o // cook getBus()
 			cmd.CheckRun(tt.args.cmd, tt.args.in1)
+			if got := exitCode; got != tt.wantExitCode {
+				t.Errorf("CheckRun() got %d want %d", got, tt.wantExitCode)
+			}
+			if got := exitCalled; got != tt.wantExitCalled {
+				t.Errorf("CheckRun() got %t want %t", got, tt.wantExitCalled)
+			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
-					t.Errorf("ListRun() %s", issue)
+					t.Errorf("CheckRun() %s", issue)
 				}
 			}
 		})

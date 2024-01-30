@@ -78,14 +78,17 @@ func TestPostRepairWork(t *testing.T) {
 		removeAll func(dir string) error
 		dirExists func(dir string) bool
 		args
+		wantStatus int
 		output.WantedRecording
 	}{
-		"no load": {args: args{}},
-		"no artists": {args: args{
-			ss:         &cmd.SearchSettings{},
-			allArtists: []*files.Artist{},
-			loaded:     true,
-		},
+		"no load": {args: args{}, wantStatus: cmd.UserError},
+		"no artists": {
+			args: args{
+				ss:         &cmd.SearchSettings{},
+				allArtists: []*files.Artist{},
+				loaded:     true,
+			},
+			wantStatus: cmd.UserError,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"No music files remain after filtering.\n" +
@@ -112,6 +115,7 @@ func TestPostRepairWork(t *testing.T) {
 				allArtists: generateArtists(2, 3, 4),
 				loaded:     true,
 			},
+			wantStatus: cmd.Success,
 			WantedRecording: output.WantedRecording{
 				Console: "Backup directories to delete: 0.\n",
 			},
@@ -153,6 +157,49 @@ func TestPostRepairWork(t *testing.T) {
 					" msg='directory deleted'\n",
 			},
 		},
+		"backups to remove, not all successfully": {
+			dirExists: func(dir string) bool { return true },
+			removeAll: func(dir string) error { return fmt.Errorf("nope") },
+			args: args{
+				ss: &cmd.SearchSettings{
+					ArtistFilter: regexp.MustCompile(".*"),
+					AlbumFilter:  regexp.MustCompile(".*"),
+					TrackFilter:  regexp.MustCompile(".*"),
+				},
+				allArtists: generateArtists(2, 3, 4),
+				loaded:     true,
+			},
+			WantedRecording: output.WantedRecording{
+				Console: "" +
+					"Backup directories to delete: 6.\n" +
+					"Backup directories deleted: 0.\n",
+				Log: "" +
+					"level='error'" +
+					" directory='Music\\my artist\\my album 00\\pre-repair-backup'" +
+					" error='nope'" +
+					" msg='cannot delete directory'\n" +
+					"level='error'" +
+					" directory='Music\\my artist\\my album 01\\pre-repair-backup'" +
+					" error='nope'" +
+					" msg='cannot delete directory'\n" +
+					"level='error'" +
+					" directory='Music\\my artist\\my album 02\\pre-repair-backup'" +
+					" error='nope'" +
+					" msg='cannot delete directory'\n" +
+					"level='error'" +
+					" directory='Music\\my artist\\my album 10\\pre-repair-backup'" +
+					" error='nope'" +
+					" msg='cannot delete directory'\n" +
+					"level='error'" +
+					" directory='Music\\my artist\\my album 11\\pre-repair-backup'" +
+					" error='nope'" +
+					" msg='cannot delete directory'\n" +
+					"level='error'" +
+					" directory='Music\\my artist\\my album 12\\pre-repair-backup'" +
+					" error='nope'" +
+					" msg='cannot delete directory'\n",
+			},
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -172,9 +219,17 @@ func TestPostRepairWork(t *testing.T) {
 func TestPostRepairRun(t *testing.T) {
 	cmd.InitGlobals()
 	originalBus := cmd.Bus
+	originalExit := cmd.Exit
 	defer func() {
 		cmd.Bus = originalBus
+		cmd.Exit = originalExit
 	}()
+	var exitCode int
+	var exitCalled bool
+	cmd.Exit = func(code int) {
+		exitCode = code
+		exitCalled = true
+	}
 	command := &cobra.Command{}
 	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), command.Flags(), safeSearchFlags, false)
 	type args struct {
@@ -183,10 +238,14 @@ func TestPostRepairRun(t *testing.T) {
 	}
 	tests := map[string]struct {
 		args
+		wantExitCode   int
+		wantExitCalled bool
 		output.WantedRecording
 	}{
 		"typical": {
-			args: args{cmd: command},
+			args:           args{cmd: command},
+			wantExitCode:   cmd.UserError,
+			wantExitCalled: true,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"No music files could be found using the specified parameters.\n" +
@@ -210,9 +269,17 @@ func TestPostRepairRun(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			exitCode = -1
+			exitCalled = false
 			o := output.NewRecorder()
 			cmd.Bus = o // cook getBus()
 			cmd.PostRepairRun(tt.args.cmd, tt.args.in1)
+			if got := exitCode; got != tt.wantExitCode {
+				t.Errorf("PostRepairRun() got %d want %d", got, tt.wantExitCode)
+			}
+			if got := exitCalled; got != tt.wantExitCalled {
+				t.Errorf("PostRepairRun() got %t want %t", got, tt.wantExitCalled)
+			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("PostRepairRun() %s", issue)

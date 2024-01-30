@@ -26,6 +26,7 @@ var (
 )
 
 func PostRepairRun(cmd *cobra.Command, _ []string) {
+	status := ProgramError
 	o := getBus()
 	producer := cmd.Flags()
 	ss, searchFlagsOk := EvaluateSearchFlags(o, producer)
@@ -38,13 +39,16 @@ func PostRepairRun(cmd *cobra.Command, _ []string) {
 			SearchTopDirFlag:       ss.TopDirectory,
 		})
 		allArtists, loaded := ss.Load(o)
-		PostRepairWork(o, ss, allArtists, loaded)
+		status = PostRepairWork(o, ss, allArtists, loaded)
 	}
+	Exit(status)
 }
 
-func PostRepairWork(o output.Bus, ss *SearchSettings, allArtists []*files.Artist, loaded bool) {
+func PostRepairWork(o output.Bus, ss *SearchSettings, allArtists []*files.Artist, loaded bool) int {
+	status := UserError
 	if loaded {
 		if filteredArtists, filtered := ss.Filter(o, allArtists); filtered {
+			status = Success
 			dirs := []string{}
 			for _, artist := range filteredArtists {
 				for _, album := range artist.Albums() {
@@ -61,12 +65,15 @@ func PostRepairWork(o output.Bus, ss *SearchSettings, allArtists []*files.Artist
 				for _, dir := range dirs {
 					if RemoveBackupDirectory(o, dir) {
 						dirsDeleted++
+					} else {
+						status = SystemError
 					}
 				}
 				o.WriteCanonicalConsole("Backup directories deleted: %d", dirsDeleted)
 			}
 		}
 	}
+	return status
 }
 
 func RemoveBackupDirectory(o output.Bus, dir string) bool {

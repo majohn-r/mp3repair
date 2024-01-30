@@ -108,6 +108,7 @@ var (
 )
 
 func ListRun(cmd *cobra.Command, _ []string) {
+	status := ProgramError
 	o := getBus()
 	producer := cmd.Flags()
 	values, eSlice := ReadFlags(producer, ListFlags)
@@ -136,11 +137,16 @@ func ListRun(cmd *cobra.Command, _ []string) {
 			if ls.HasWorkToDo(o) {
 				if ls.TracksSortable(o) {
 					allArtists, loaded := searchSettings.Load(o)
-					ls.ProcessArtists(o, allArtists, loaded, searchSettings)
+					status = ls.ProcessArtists(o, allArtists, loaded, searchSettings)
+				} else {
+					status = UserError
 				}
+			} else {
+				status = UserError
 			}
 		}
 	}
+	Exit(status)
 }
 
 type ListSettings struct {
@@ -159,12 +165,15 @@ type ListSettings struct {
 	TracksUserSet       bool
 }
 
-func (ls *ListSettings) ProcessArtists(o output.Bus, allArtists []*files.Artist, loaded bool, searchSettings *SearchSettings) {
+func (ls *ListSettings) ProcessArtists(o output.Bus, allArtists []*files.Artist, loaded bool, searchSettings *SearchSettings) int {
+	status := UserError
 	if loaded {
 		if filteredArtists, filtered := searchSettings.Filter(o, allArtists); filtered {
 			ls.ListArtists(o, filteredArtists)
+			status = Success
 		}
 	}
+	return status
 }
 
 func (ls *ListSettings) ListArtists(o output.Bus, artists []*files.Artist) {

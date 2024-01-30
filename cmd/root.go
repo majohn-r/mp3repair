@@ -13,6 +13,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// exit codes
+const (
+	Success      int = iota
+	UserError        // user did something silly
+	ProgramError     // program code error
+	SystemError      // unexpected errors, like file not found
+)
+
 var (
 	// RootCmd represents the base command when called without any subcommands
 	RootCmd = &cobra.Command{

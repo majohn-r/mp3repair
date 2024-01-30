@@ -234,19 +234,22 @@ func TestProcessUpdateResult(t *testing.T) {
 	}
 	tests := map[string]struct {
 		args
-		wantDirty bool
+		wantDirty  bool
+		wantStatus int
 		output.WantedRecording
 	}{
 		"success": {
-			args:      args{t: track, err: nil},
-			wantDirty: true,
+			args:       args{t: track, err: nil},
+			wantDirty:  true,
+			wantStatus: cmd.Success,
 			WantedRecording: output.WantedRecording{
 				Console: "\"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\" repaired.\n",
 			},
 		},
 		"single failure": {
-			args:      args{t: track, err: []error{fmt.Errorf("file locked")}},
-			wantDirty: false,
+			args:       args{t: track, err: []error{fmt.Errorf("file locked")}},
+			wantDirty:  false,
+			wantStatus: cmd.SystemError,
 			WantedRecording: output.WantedRecording{
 				Error: "An error occurred repairing track \"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\".\n",
 				Log: "" +
@@ -263,7 +266,8 @@ func TestProcessUpdateResult(t *testing.T) {
 				t:   track,
 				err: []error{fmt.Errorf("file locked"), fmt.Errorf("syntax error")},
 			},
-			wantDirty: false,
+			wantDirty:  false,
+			wantStatus: cmd.SystemError,
 			WantedRecording: output.WantedRecording{
 				Error: "An error occurred repairing track \"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\".\n",
 				Log: "" +
@@ -280,7 +284,9 @@ func TestProcessUpdateResult(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			markedDirty = false
-			cmd.ProcessUpdateResult(o, tt.args.t, tt.args.err)
+			if got := cmd.ProcessUpdateResult(o, tt.args.t, tt.args.err); got != tt.wantStatus {
+				t.Errorf("ProcessUpdateResult() got %d want %d", got, tt.wantStatus)
+			}
 			if got := markedDirty; got != tt.wantDirty {
 				t.Errorf("ProcessUpdateResult() got %t want %t", got, tt.wantDirty)
 			}
@@ -310,15 +316,20 @@ func TestBackupAndFix(t *testing.T) {
 		cmd.PlainFileExists = originalPlainFileExists
 		cmd.CopyFile = originalCopyFile
 	}()
-	cmd.DirExists = func(_ string) bool { return true }
-	cmd.PlainFileExists = func(_ string) bool { return false }
-	cmd.CopyFile = func(_, _ string) error { return nil }
 	tests := map[string]struct {
-		checkedArtists []*cmd.CheckedArtist
+		dirExists       func(string) bool
+		plainFileExists func(string) bool
+		copyFile        func(string, string) error
+		checkedArtists  []*cmd.CheckedArtist
+		wantStatus      int
 		output.WantedRecording
 	}{
 		"basic test": {
-			checkedArtists: checkedArtists,
+			dirExists:       func(_ string) bool { return true },
+			plainFileExists: func(_ string) bool { return false },
+			copyFile:        func(_, _ string) error { return nil },
+			checkedArtists:  checkedArtists,
+			wantStatus:      cmd.SystemError,
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"The track file \"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\" has been backed up to \"Music\\\\my artist\\\\my album 00\\\\pre-repair-backup\\\\1.mp3\".\n" +
@@ -397,11 +408,128 @@ func TestBackupAndFix(t *testing.T) {
 					"level='error' command='repair' directory='Music\\my artist\\my album 12' error='[\"no edit required\"]' fileName='4 my track 124.mp3' msg='cannot edit track'\n",
 			},
 		},
+		"basic test2": {
+			dirExists:       func(_ string) bool { return false },
+			plainFileExists: func(_ string) bool { return false },
+			copyFile:        func(_, _ string) error { return nil },
+			checkedArtists:  checkedArtists,
+			wantStatus:      cmd.SystemError,
+			WantedRecording: output.WantedRecording{
+				Error: "" +
+					"The directory \"Music\\\\my artist\\\\my album 00\\\\pre-repair-backup\" cannot be created: mkdir Music\\my artist\\my album 00\\pre-repair-backup: The system cannot find the path specified.\n" +
+					"The track files in the directory \"Music\\\\my artist\\\\my album 00\" will not be repaired.\n" +
+					"The directory \"Music\\\\my artist\\\\my album 01\\\\pre-repair-backup\" cannot be created: mkdir Music\\my artist\\my album 01\\pre-repair-backup: The system cannot find the path specified.\n" +
+					"The track files in the directory \"Music\\\\my artist\\\\my album 01\" will not be repaired.\n" +
+					"The directory \"Music\\\\my artist\\\\my album 02\\\\pre-repair-backup\" cannot be created: mkdir Music\\my artist\\my album 02\\pre-repair-backup: The system cannot find the path specified.\n" +
+					"The track files in the directory \"Music\\\\my artist\\\\my album 02\" will not be repaired.\n" +
+					"The directory \"Music\\\\my artist\\\\my album 10\\\\pre-repair-backup\" cannot be created: mkdir Music\\my artist\\my album 10\\pre-repair-backup: The system cannot find the path specified.\n" +
+					"The track files in the directory \"Music\\\\my artist\\\\my album 10\" will not be repaired.\n" +
+					"The directory \"Music\\\\my artist\\\\my album 11\\\\pre-repair-backup\" cannot be created: mkdir Music\\my artist\\my album 11\\pre-repair-backup: The system cannot find the path specified.\n" +
+					"The track files in the directory \"Music\\\\my artist\\\\my album 11\" will not be repaired.\n" +
+					"The directory \"Music\\\\my artist\\\\my album 12\\\\pre-repair-backup\" cannot be created: mkdir Music\\my artist\\my album 12\\pre-repair-backup: The system cannot find the path specified.\n" +
+					"The track files in the directory \"Music\\\\my artist\\\\my album 12\" will not be repaired.\n",
+				Log: "" +
+					"level='error' command='repair' directory='Music\\my artist\\my album 00\\pre-repair-backup' error='mkdir Music\\my artist\\my album 00\\pre-repair-backup: The system cannot find the path specified.' msg='cannot create directory'\n" +
+					"level='error' command='repair' directory='Music\\my artist\\my album 01\\pre-repair-backup' error='mkdir Music\\my artist\\my album 01\\pre-repair-backup: The system cannot find the path specified.' msg='cannot create directory'\n" +
+					"level='error' command='repair' directory='Music\\my artist\\my album 02\\pre-repair-backup' error='mkdir Music\\my artist\\my album 02\\pre-repair-backup: The system cannot find the path specified.' msg='cannot create directory'\n" +
+					"level='error' command='repair' directory='Music\\my artist\\my album 10\\pre-repair-backup' error='mkdir Music\\my artist\\my album 10\\pre-repair-backup: The system cannot find the path specified.' msg='cannot create directory'\n" +
+					"level='error' command='repair' directory='Music\\my artist\\my album 11\\pre-repair-backup' error='mkdir Music\\my artist\\my album 11\\pre-repair-backup: The system cannot find the path specified.' msg='cannot create directory'\n" +
+					"level='error' command='repair' directory='Music\\my artist\\my album 12\\pre-repair-backup' error='mkdir Music\\my artist\\my album 12\\pre-repair-backup: The system cannot find the path specified.' msg='cannot create directory'\n",
+			},
+		},
+		"basic test3": {
+			dirExists:       func(_ string) bool { return true },
+			plainFileExists: func(_ string) bool { return false },
+			copyFile:        func(_, _ string) error { return fmt.Errorf("oops") },
+			checkedArtists:  checkedArtists,
+			wantStatus:      cmd.SystemError,
+			WantedRecording: output.WantedRecording{
+				Error: "" +
+					"The track file \"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 00\\\\2 my track 002.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 00\\\\2 my track 002.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 00\\\\3 my track 003.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 00\\\\3 my track 003.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 00\\\\4 my track 004.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 00\\\\4 my track 004.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 01\\\\1 my track 011.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 01\\\\1 my track 011.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 01\\\\2 my track 012.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 01\\\\2 my track 012.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 01\\\\3 my track 013.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 01\\\\3 my track 013.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 01\\\\4 my track 014.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 01\\\\4 my track 014.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 02\\\\1 my track 021.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 02\\\\1 my track 021.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 02\\\\2 my track 022.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 02\\\\2 my track 022.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 02\\\\3 my track 023.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 02\\\\3 my track 023.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 02\\\\4 my track 024.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 02\\\\4 my track 024.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 10\\\\1 my track 101.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 10\\\\1 my track 101.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 10\\\\2 my track 102.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 10\\\\2 my track 102.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 10\\\\3 my track 103.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 10\\\\3 my track 103.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 10\\\\4 my track 104.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 10\\\\4 my track 104.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 11\\\\1 my track 111.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 11\\\\1 my track 111.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 11\\\\2 my track 112.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 11\\\\2 my track 112.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 11\\\\3 my track 113.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 11\\\\3 my track 113.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 11\\\\4 my track 114.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 11\\\\4 my track 114.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 12\\\\1 my track 121.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 12\\\\1 my track 121.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 12\\\\2 my track 122.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 12\\\\2 my track 122.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 12\\\\3 my track 123.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 12\\\\3 my track 123.mp3\" will not be repaired.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 12\\\\4 my track 124.mp3\" could not be backed up due to error oops.\n" +
+					"The track file \"Music\\\\my artist\\\\my album 12\\\\4 my track 124.mp3\" will not be repaired.\n",
+				Log: "" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 00\\pre-repair-backup\\1.mp3' error='oops' source='Music\\my artist\\my album 00\\1 my track 001.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 00\\pre-repair-backup\\2.mp3' error='oops' source='Music\\my artist\\my album 00\\2 my track 002.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 00\\pre-repair-backup\\3.mp3' error='oops' source='Music\\my artist\\my album 00\\3 my track 003.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 00\\pre-repair-backup\\4.mp3' error='oops' source='Music\\my artist\\my album 00\\4 my track 004.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 01\\pre-repair-backup\\1.mp3' error='oops' source='Music\\my artist\\my album 01\\1 my track 011.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 01\\pre-repair-backup\\2.mp3' error='oops' source='Music\\my artist\\my album 01\\2 my track 012.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 01\\pre-repair-backup\\3.mp3' error='oops' source='Music\\my artist\\my album 01\\3 my track 013.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 01\\pre-repair-backup\\4.mp3' error='oops' source='Music\\my artist\\my album 01\\4 my track 014.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 02\\pre-repair-backup\\1.mp3' error='oops' source='Music\\my artist\\my album 02\\1 my track 021.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 02\\pre-repair-backup\\2.mp3' error='oops' source='Music\\my artist\\my album 02\\2 my track 022.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 02\\pre-repair-backup\\3.mp3' error='oops' source='Music\\my artist\\my album 02\\3 my track 023.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 02\\pre-repair-backup\\4.mp3' error='oops' source='Music\\my artist\\my album 02\\4 my track 024.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 10\\pre-repair-backup\\1.mp3' error='oops' source='Music\\my artist\\my album 10\\1 my track 101.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 10\\pre-repair-backup\\2.mp3' error='oops' source='Music\\my artist\\my album 10\\2 my track 102.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 10\\pre-repair-backup\\3.mp3' error='oops' source='Music\\my artist\\my album 10\\3 my track 103.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 10\\pre-repair-backup\\4.mp3' error='oops' source='Music\\my artist\\my album 10\\4 my track 104.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 11\\pre-repair-backup\\1.mp3' error='oops' source='Music\\my artist\\my album 11\\1 my track 111.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 11\\pre-repair-backup\\2.mp3' error='oops' source='Music\\my artist\\my album 11\\2 my track 112.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 11\\pre-repair-backup\\3.mp3' error='oops' source='Music\\my artist\\my album 11\\3 my track 113.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 11\\pre-repair-backup\\4.mp3' error='oops' source='Music\\my artist\\my album 11\\4 my track 114.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 12\\pre-repair-backup\\1.mp3' error='oops' source='Music\\my artist\\my album 12\\1 my track 121.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 12\\pre-repair-backup\\2.mp3' error='oops' source='Music\\my artist\\my album 12\\2 my track 122.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 12\\pre-repair-backup\\3.mp3' error='oops' source='Music\\my artist\\my album 12\\3 my track 123.mp3' msg='error copying file'\n" +
+					"level='error' command='repair' destination='Music\\my artist\\my album 12\\pre-repair-backup\\4.mp3' error='oops' source='Music\\my artist\\my album 12\\4 my track 124.mp3' msg='error copying file'\n",
+			},
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			cmd.DirExists = tt.dirExists
+			cmd.PlainFileExists = tt.plainFileExists
+			cmd.CopyFile = tt.copyFile
 			o := output.NewRecorder()
-			cmd.BackupAndFix(o, tt.checkedArtists)
+			if got := cmd.BackupAndFix(o, tt.checkedArtists); got != tt.wantStatus {
+				t.Errorf("BackupAndFix() got %d want %d", got, tt.wantStatus)
+			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("BackupAndFix() %s", issue)
@@ -598,20 +726,23 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 		}
 	}
 	tests := map[string]struct {
-		rs      *cmd.RepairSettings
-		artists []*files.Artist
+		rs         *cmd.RepairSettings
+		artists    []*files.Artist
+		wantStatus int
 		output.WantedRecording
 	}{
 		"clean dry run": {
-			rs:      &cmd.RepairSettings{DryRun: true},
-			artists: generateArtists(2, 3, 4),
+			rs:         &cmd.RepairSettings{DryRun: true},
+			artists:    generateArtists(2, 3, 4),
+			wantStatus: cmd.Success,
 			WantedRecording: output.WantedRecording{
 				Console: "No repairable track defects were found.\n",
 			},
 		},
 		"dirty dry run": {
-			rs:      &cmd.RepairSettings{DryRun: true},
-			artists: dirty,
+			rs:         &cmd.RepairSettings{DryRun: true},
+			artists:    dirty,
+			wantStatus: cmd.Success,
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"The following issues can be repaired:\n" +
@@ -770,15 +901,17 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 			},
 		},
 		"clean repair": {
-			rs:      &cmd.RepairSettings{DryRun: false},
-			artists: generateArtists(2, 3, 4),
+			rs:         &cmd.RepairSettings{DryRun: false},
+			artists:    generateArtists(2, 3, 4),
+			wantStatus: cmd.Success,
 			WantedRecording: output.WantedRecording{
 				Console: "No repairable track defects were found.\n",
 			},
 		},
 		"dirty repair": {
-			rs:      &cmd.RepairSettings{DryRun: false},
-			artists: dirty,
+			rs:         &cmd.RepairSettings{DryRun: false},
+			artists:    dirty,
+			wantStatus: cmd.SystemError,
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"The track file \"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\" has been backed up to \"Music\\\\my artist\\\\my album 00\\\\pre-repair-backup\\\\1.mp3\".\n" +
@@ -860,7 +993,9 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			tt.rs.RepairArtists(o, tt.artists)
+			if got := tt.rs.RepairArtists(o, tt.artists); got != tt.wantStatus {
+				t.Errorf("RepairSettings.RepairArtists() got %d want %d", got, tt.wantStatus)
+			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("RepairSettings.RepairArtists() %s", issue)
@@ -884,11 +1019,13 @@ func TestRepairSettings_ProcessArtists(t *testing.T) {
 	tests := map[string]struct {
 		rs *cmd.RepairSettings
 		args
+		wantStatus int
 		output.WantedRecording
 	}{
 		"nothing to do": {
-			rs:   &cmd.RepairSettings{DryRun: true},
-			args: args{},
+			rs:         &cmd.RepairSettings{DryRun: true},
+			args:       args{},
+			wantStatus: cmd.UserError,
 		},
 		"clean artists": {
 			rs: &cmd.RepairSettings{DryRun: true},
@@ -901,6 +1038,7 @@ func TestRepairSettings_ProcessArtists(t *testing.T) {
 					TrackFilter:  regexp.MustCompile(".*"),
 				},
 			},
+			wantStatus: cmd.Success,
 			WantedRecording: output.WantedRecording{
 				Console: "No repairable track defects were found.\n",
 			},
@@ -909,7 +1047,9 @@ func TestRepairSettings_ProcessArtists(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			tt.rs.ProcessArtists(o, tt.args.allArtists, tt.args.loaded, tt.args.ss)
+			if got := tt.rs.ProcessArtists(o, tt.args.allArtists, tt.args.loaded, tt.args.ss); got != tt.wantStatus {
+				t.Errorf("RepairSettings.ProcessArtists() got %d want %d", got, tt.wantStatus)
+			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("RepairSettings.ProcessArtists() %s", issue)
@@ -923,10 +1063,18 @@ func TestRepairRun(t *testing.T) {
 	cmd.InitGlobals()
 	originalBus := cmd.Bus
 	originalSearchFlags := cmd.SearchFlags
+	originalExit := cmd.Exit
 	defer func() {
 		cmd.Bus = originalBus
 		cmd.SearchFlags = originalSearchFlags
+		cmd.Exit = originalExit
 	}()
+	var exitCode int
+	var exitCalled bool
+	cmd.Exit = func(code int) {
+		exitCode = code
+		exitCalled = true
+	}
 	cmd.SearchFlags = safeSearchFlags
 	repairFlags := cmd.SectionFlags{
 		SectionName: "repair",
@@ -941,12 +1089,16 @@ func TestRepairRun(t *testing.T) {
 	command := &cobra.Command{}
 	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), command.Flags(), repairFlags, true)
 	tests := map[string]struct {
-		cmd *cobra.Command
-		in1 []string
+		cmd            *cobra.Command
+		in1            []string
+		wantExitCode   int
+		wantExitCalled bool
 		output.WantedRecording
 	}{
 		"basic": {
-			cmd: command,
+			cmd:            command,
+			wantExitCode:   cmd.UserError,
+			wantExitCalled: true,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"No music files could be found using the specified parameters.\n" +
@@ -962,9 +1114,17 @@ func TestRepairRun(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			exitCode = -1
+			exitCalled = false
 			o := output.NewRecorder()
 			cmd.Bus = o // cook getBus()
 			cmd.RepairRun(tt.cmd, tt.in1)
+			if got := exitCode; got != tt.wantExitCode {
+				t.Errorf("RepairRun() got %d want %d", got, tt.wantExitCode)
+			}
+			if got := exitCalled; got != tt.wantExitCalled {
+				t.Errorf("RepairRun() got %t want %t", got, tt.wantExitCalled)
+			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("RepairRun() %s", issue)

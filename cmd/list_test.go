@@ -1488,11 +1488,20 @@ func Test_ListRun(t *testing.T) {
 	cmd.InitGlobals()
 	originalBus := cmd.Bus
 	originalSearchFlags := cmd.SearchFlags
+	originalExit := cmd.Exit
 	defer func() {
 		cmd.Bus = originalBus
 		cmd.SearchFlags = originalSearchFlags
+		cmd.Exit = originalExit
 	}()
+	var exitCode int
+	var exitCalled bool
+	cmd.Exit = func(code int) {
+		exitCode = code
+		exitCalled = true
+	}
 	cmd.SearchFlags = safeSearchFlags
+
 	testListFlags := cmd.SectionFlags{
 		SectionName: cmd.ListCommand,
 		Flags: map[string]*cmd.FlagDetails{
@@ -1543,14 +1552,121 @@ func Test_ListRun(t *testing.T) {
 	}
 	testCmd := &cobra.Command{}
 	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), testCmd.Flags(), testListFlags, true)
+
+	testListFlags2 := cmd.SectionFlags{
+		SectionName: cmd.ListCommand,
+		Flags: map[string]*cmd.FlagDetails{
+			cmd.ListAlbums: {
+				AbbreviatedName: "l",
+				Usage:           "include album names in listing",
+				ExpectedType:    cmd.BoolType,
+				DefaultValue:    false,
+			},
+			cmd.ListArtists: {
+				AbbreviatedName: "r",
+				Usage:           "include artist names in listing",
+				ExpectedType:    cmd.BoolType,
+				DefaultValue:    true,
+			},
+			cmd.ListTracks: {
+				AbbreviatedName: "t",
+				Usage:           "include track names in listing",
+				ExpectedType:    cmd.BoolType,
+				DefaultValue:    true,
+			},
+			cmd.ListSortByNumber: {
+				Usage:        "sort tracks by track number",
+				ExpectedType: cmd.BoolType,
+				DefaultValue: true,
+			},
+			cmd.ListSortByTitle: {
+				Usage:        "sort tracks by track title",
+				ExpectedType: cmd.BoolType,
+				DefaultValue: true,
+			},
+			cmd.ListAnnotate: {
+				Usage:        "annotate listings with album and artist names",
+				ExpectedType: cmd.BoolType,
+				DefaultValue: false,
+			},
+			cmd.ListDetails: {
+				Usage:        "include details with tracks",
+				ExpectedType: cmd.BoolType,
+				DefaultValue: false,
+			},
+			cmd.ListDiagnostic: {
+				Usage:        "include diagnostic information with tracks",
+				ExpectedType: cmd.BoolType,
+				DefaultValue: false,
+			},
+		},
+	}
+	testCmd2 := &cobra.Command{}
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), testCmd2.Flags(), testListFlags2, true)
+
+	testListFlags3 := cmd.SectionFlags{
+		SectionName: cmd.ListCommand,
+		Flags: map[string]*cmd.FlagDetails{
+			cmd.ListAlbums: {
+				AbbreviatedName: "l",
+				Usage:           "include album names in listing",
+				ExpectedType:    cmd.BoolType,
+				DefaultValue:    false,
+			},
+			cmd.ListArtists: {
+				AbbreviatedName: "r",
+				Usage:           "include artist names in listing",
+				ExpectedType:    cmd.BoolType,
+				DefaultValue:    false,
+			},
+			cmd.ListTracks: {
+				AbbreviatedName: "t",
+				Usage:           "include track names in listing",
+				ExpectedType:    cmd.BoolType,
+				DefaultValue:    false,
+			},
+			cmd.ListSortByNumber: {
+				Usage:        "sort tracks by track number",
+				ExpectedType: cmd.BoolType,
+				DefaultValue: false,
+			},
+			cmd.ListSortByTitle: {
+				Usage:        "sort tracks by track title",
+				ExpectedType: cmd.BoolType,
+				DefaultValue: false,
+			},
+			cmd.ListAnnotate: {
+				Usage:        "annotate listings with album and artist names",
+				ExpectedType: cmd.BoolType,
+				DefaultValue: false,
+			},
+			cmd.ListDetails: {
+				Usage:        "include details with tracks",
+				ExpectedType: cmd.BoolType,
+				DefaultValue: false,
+			},
+			cmd.ListDiagnostic: {
+				Usage:        "include diagnostic information with tracks",
+				ExpectedType: cmd.BoolType,
+				DefaultValue: false,
+			},
+		},
+	}
+	testCmd3 := &cobra.Command{}
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), testCmd3.Flags(), testListFlags3, true)
+
 	tests := map[string]struct {
-		cmd *cobra.Command
-		in1 []string
+		cmd            *cobra.Command
+		in1            []string
+		wantExitCode   int
+		wantExitCalled bool
 		output.WantedRecording
 	}{
 		"typical": {
-			cmd: testCmd,
-			in1: nil,
+			cmd:            testCmd,
+			in1:            nil,
+			wantExitCode:   cmd.UserError,
+			wantExitCalled: true,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"No music files could be found using the specified parameters.\n" +
@@ -1584,12 +1700,92 @@ func Test_ListRun(t *testing.T) {
 					" msg='cannot find any artist directories'\n",
 			},
 		},
+		"typical but sorting is screwy": {
+			cmd:            testCmd2,
+			in1:            nil,
+			wantExitCode:   cmd.UserError,
+			wantExitCalled: true,
+			WantedRecording: output.WantedRecording{
+				Error: "" +
+					"Track sorting cannot be done.\n" +
+					"Why?\n" +
+					"The --byNumber and --byTitle flags are both configured true.\n" +
+					"What to do:\n" +
+					"Either edit the configuration file and use those default values, or use appropriate command line values.\n",
+				Log: "" +
+					"level='info'" +
+					" --albumFilter='.*'" +
+					" --albums='false'" +
+					" --annotate='false'" +
+					" --artistFilter='.*'" +
+					" --artists='true'" +
+					" --byNumber='true'" +
+					" --byTitle='true'" +
+					" --details='false'" +
+					" --diagnostic='false'" +
+					" --topDir='.'" +
+					" --trackFilter='.*'" +
+					" --tracks='true'" +
+					" albums-user-set='false'" +
+					" artists-user-set='false'" +
+					" byNumber-user-set='false'" +
+					" byTitle-user-set='false'" +
+					" command='list'" +
+					" tracks-user-set='false'" +
+					" msg='executing command'\n",
+			},
+		},
+		"no work to do": {
+			cmd:            testCmd3,
+			in1:            nil,
+			wantExitCode:   cmd.UserError,
+			wantExitCalled: true,
+			WantedRecording: output.WantedRecording{
+				Error: "" +
+					"No listing will be output.\n" +
+					"Why?\n" +
+					"The flags --albums, --artists, and --tracks are all configured false.\n" +
+					"What to do:\n" +
+					"Either:\n" +
+					"[1] Edit the configuration file so that at least one of these flags is true, or\n" +
+					"[2] explicitly set at least one of these flags true on the command line.\n",
+				Log: "" +
+					"level='info'" +
+					" --albumFilter='.*'" +
+					" --albums='false'" +
+					" --annotate='false'" +
+					" --artistFilter='.*'" +
+					" --artists='false'" +
+					" --byNumber='false'" +
+					" --byTitle='false'" +
+					" --details='false'" +
+					" --diagnostic='false'" +
+					" --topDir='.'" +
+					" --trackFilter='.*'" +
+					" --tracks='false'" +
+					" albums-user-set='false'" +
+					" artists-user-set='false'" +
+					" byNumber-user-set='false'" +
+					" byTitle-user-set='false'" +
+					" command='list'" +
+					" tracks-user-set='false'" +
+					" msg='executing command'\n",
+			},
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
+			exitCode = -1
+			exitCalled = false
 			o := output.NewRecorder()
 			cmd.Bus = o // cook getBus()
 			cmd.ListRun(tt.cmd, tt.in1)
+			if got := exitCode; got != tt.wantExitCode {
+				t.Errorf("ListRun() got %d want %d", got, tt.wantExitCode)
+			}
+			if got := exitCalled; got != tt.wantExitCalled {
+				t.Errorf("ListRun() got %t want %t", got, tt.wantExitCalled)
+			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("ListRun() %s", issue)
@@ -1608,6 +1804,7 @@ func TestListSettingsProcessArtists(t *testing.T) {
 	tests := map[string]struct {
 		ls *cmd.ListSettings
 		args
+		wantStatus int
 		output.WantedRecording
 	}{
 		"no data": {
@@ -1621,6 +1818,7 @@ func TestListSettingsProcessArtists(t *testing.T) {
 					TrackFilter:  regexp.MustCompile(".*"),
 				},
 			},
+			wantStatus: cmd.UserError,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"No music files remain after filtering.\n" +
@@ -1642,6 +1840,7 @@ func TestListSettingsProcessArtists(t *testing.T) {
 					TrackFilter:  regexp.MustCompile(".*"),
 				},
 			},
+			wantStatus: cmd.Success,
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"Artist: my artist 0\n" +
@@ -1653,7 +1852,9 @@ func TestListSettingsProcessArtists(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			tt.ls.ProcessArtists(o, tt.args.allArtists, tt.args.loaded, tt.args.searchSettings)
+			if got := tt.ls.ProcessArtists(o, tt.args.allArtists, tt.args.loaded, tt.args.searchSettings); got != tt.wantStatus {
+				t.Errorf("ListSettings.ProcessArtists() got %d want %d", got, tt.wantStatus)
+			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("ListSettings.ProcessArtists() %s", issue)

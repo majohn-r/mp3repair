@@ -114,6 +114,7 @@ var (
 )
 
 func CheckRun(cmd *cobra.Command, _ []string) {
+	commandStatus := ProgramError
 	o := getBus()
 	producer := cmd.Flags()
 	values, eSlice := ReadFlags(producer, CheckFlags)
@@ -132,9 +133,10 @@ func CheckRun(cmd *cobra.Command, _ []string) {
 				SearchTrackFilterFlag:  searchSettings.TrackFilter,
 				SearchTopDirFlag:       searchSettings.TopDirectory,
 			})
-			cs.MaybeDoWork(o, searchSettings)
+			commandStatus = cs.MaybeDoWork(o, searchSettings)
 		}
 	}
+	Exit(commandStatus)
 }
 
 type CheckSettings struct {
@@ -146,11 +148,13 @@ type CheckSettings struct {
 	NumberingUserSet bool
 }
 
-func (cs *CheckSettings) MaybeDoWork(o output.Bus, ss *SearchSettings) {
+func (cs *CheckSettings) MaybeDoWork(o output.Bus, ss *SearchSettings) int {
+	status := UserError
 	if cs.HasWorkToDo(o) {
 		allArtists, loaded := ss.Load(o)
-		cs.PerformChecks(o, allArtists, loaded, ss)
+		status = cs.PerformChecks(o, allArtists, loaded, ss)
 	}
+	return status
 }
 
 type CheckIssueType int32
@@ -433,8 +437,10 @@ func PrepareCheckedArtists(artists []*files.Artist) []*CheckedArtist {
 	return checkedArtists
 }
 
-func (cs *CheckSettings) PerformChecks(o output.Bus, artists []*files.Artist, artistsLoaded bool, ss *SearchSettings) {
+func (cs *CheckSettings) PerformChecks(o output.Bus, artists []*files.Artist, artistsLoaded bool, ss *SearchSettings) int {
+	status := UserError
 	if artistsLoaded && len(artists) > 0 {
+		status = Success
 		checkedArtists := PrepareCheckedArtists(artists)
 		emptyFoldersFound := cs.PerformEmptyAnalysis(checkedArtists)
 		numberingIssuesFound := cs.PerformNumberingAnalysis(checkedArtists)
@@ -444,6 +450,7 @@ func (cs *CheckSettings) PerformChecks(o output.Bus, artists []*files.Artist, ar
 		}
 		cs.MaybeReportCleanResults(o, emptyFoldersFound, numberingIssuesFound, fileIssuesFound)
 	}
+	return status
 }
 
 func (cs *CheckSettings) MaybeReportCleanResults(o output.Bus, emptyIssues, numberingIssues, fileIssues bool) {
