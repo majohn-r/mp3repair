@@ -8,38 +8,38 @@ import (
 	"github.com/bogem/id3v2/v2"
 )
 
-type id3v2Metadata struct {
-	album             string
-	artist            string
-	title             string
-	genre             string
-	year              string
-	track             int
-	musicCDIdentifier id3v2.UnknownFrame
-	err               error
+type Id3v2Metadata struct {
+	Album             string
+	Artist            string
+	Title             string
+	Genre             string
+	Year              string
+	Track             int
+	MusicCDIdentifier id3v2.UnknownFrame
+	Err               error
 }
 
 func readID3V2Tag(path string) (*id3v2.Tag, error) {
 	return id3v2.Open(path, id3v2.Options{Parse: true, ParseFrames: nil})
 }
 
-func rawReadID3V2Metadata(path string) (d *id3v2Metadata) {
-	d = &id3v2Metadata{}
+func RawReadID3V2Metadata(path string) (d *Id3v2Metadata) {
+	d = &Id3v2Metadata{}
 	if tag, err := readID3V2Tag(path); err != nil {
-		d.err = err
+		d.Err = err
 	} else {
 		defer tag.Close()
-		if trackNumber, err := toTrackNumber(tag.GetTextFrame(trackFrame).Text); err != nil {
-			d.err = err
+		if trackNumber, err := ToTrackNumber(tag.GetTextFrame(trackFrame).Text); err != nil {
+			d.Err = err
 		} else {
-			d.album = removeLeadingBOMs(tag.Album())
-			d.artist = removeLeadingBOMs(tag.Artist())
-			d.genre = normalizeGenre(removeLeadingBOMs(tag.Genre()))
-			d.title = removeLeadingBOMs(tag.Title())
-			d.track = trackNumber
-			d.year = removeLeadingBOMs(tag.Year())
+			d.Album = RemoveLeadingBOMs(tag.Album())
+			d.Artist = RemoveLeadingBOMs(tag.Artist())
+			d.Genre = NormalizeGenre(RemoveLeadingBOMs(tag.Genre()))
+			d.Title = RemoveLeadingBOMs(tag.Title())
+			d.Track = trackNumber
+			d.Year = RemoveLeadingBOMs(tag.Year())
 			mcdiFramers := tag.AllFrames()[mcdiFrame]
-			d.musicCDIdentifier = selectUnknownFrame(mcdiFramers)
+			d.MusicCDIdentifier = SelectUnknownFrame(mcdiFramers)
 		}
 	}
 	return
@@ -53,14 +53,14 @@ func rawReadID3V2Metadata(path string) (d *id3v2Metadata) {
 // detects these "(key)value" strings, verifies that the value is correct for
 // the specified key, and, if so, returns the plain value without the
 // parenthetical key. Everything else passes through 'as is'.
-func normalizeGenre(s string) string {
+func NormalizeGenre(s string) string {
 	var i int
 	var value string
 	if n, err := fmt.Sscanf(s, "(%d)%s", &i, &value); n == 2 && err == nil {
 		// discard value
 		if splits := strings.SplitAfter(s, ")"); len(splits) >= 2 {
 			value = splits[1]
-			mappedValue := genreMap[i]
+			mappedValue := GenreMap[i]
 			if value == mappedValue || (value == "R&B" && mappedValue == "Rhythm and Blues") {
 				return mappedValue
 			}
@@ -70,14 +70,14 @@ func normalizeGenre(s string) string {
 }
 
 var (
-	errMalformedTrackNumber = fmt.Errorf("track number first character is not a digit")
-	errMissingTrackNumber   = fmt.Errorf("track number is zero length")
+	ErrMalformedTrackNumber = fmt.Errorf("track number first character is not a digit")
+	ErrMissingTrackNumber   = fmt.Errorf("track number is zero length")
 )
 
-func toTrackNumber(s string) (i int, err error) {
-	s = removeLeadingBOMs(s)
+func ToTrackNumber(s string) (i int, err error) {
+	s = RemoveLeadingBOMs(s)
 	if s == "" {
-		err = errMissingTrackNumber
+		err = ErrMissingTrackNumber
 		return
 	}
 	// this is more complicated than I wanted, because some mp3 rippers produce
@@ -93,7 +93,7 @@ func toTrackNumber(s string) (i int, err error) {
 			// found something other than a digit
 			switch j {
 			case 0: // never saw a digit
-				err = errMalformedTrackNumber
+				err = ErrMalformedTrackNumber
 				return
 			default: // did read at least one digit
 				i = n
@@ -107,7 +107,7 @@ func toTrackNumber(s string) (i int, err error) {
 }
 
 // depending on encoding, frame values may begin with a BOM (byte order mark)
-func removeLeadingBOMs(s string) string {
+func RemoveLeadingBOMs(s string) string {
 	if s == "" {
 		return s
 	}
@@ -124,7 +124,7 @@ func removeLeadingBOMs(s string) string {
 	return string(r)
 }
 
-func selectUnknownFrame(mcdiFramers []id3v2.Framer) id3v2.UnknownFrame {
+func SelectUnknownFrame(mcdiFramers []id3v2.Framer) id3v2.UnknownFrame {
 	if len(mcdiFramers) == 1 {
 		frame := mcdiFramers[0]
 		if f, ok := frame.(id3v2.UnknownFrame); ok {
@@ -176,18 +176,18 @@ func updateID3V2Metadata(tM *TrackMetadata, path string, sT SourceType) (e error
 	return
 }
 
-type id3v2TrackFrame struct {
-	name  string
-	value string
+type Id3v2TrackFrame struct {
+	Name  string
+	Value string
 }
 
 // String returns the contents of an ID3V2TrackFrame formatted in the form
 // "name = \"value\"".
-func (itf *id3v2TrackFrame) String() string {
-	return fmt.Sprintf("%s = %q", itf.name, itf.value)
+func (itf *Id3v2TrackFrame) String() string {
+	return fmt.Sprintf("%s = %q", itf.Name, itf.Value)
 }
 
-func readID3V2Metadata(path string) (version byte, encoding string, frameStrings []string, rawFrames []*id3v2TrackFrame, e error) {
+func ReadID3V2Metadata(path string) (version byte, encoding string, frameStrings []string, rawFrames []*Id3v2TrackFrame, e error) {
 	if tag, err := readID3V2Tag(path); err != nil {
 		e = err
 	} else {
@@ -203,11 +203,11 @@ func readID3V2Metadata(path string) (version byte, encoding string, frameStrings
 		for _, n := range frameNames {
 			var value string
 			if strings.HasPrefix(n, "T") {
-				value = removeLeadingBOMs(tag.GetTextFrame(n).Text)
+				value = RemoveLeadingBOMs(tag.GetTextFrame(n).Text)
 			} else {
-				value = framerSliceAsString(frameMap[n])
+				value = FramerSliceAsString(frameMap[n])
 			}
-			frame := &id3v2TrackFrame{name: n, value: value}
+			frame := &Id3v2TrackFrame{Name: n, Value: value}
 			frameStrings = append(frameStrings, frame.String())
 			rawFrames = append(rawFrames, frame)
 		}
@@ -215,7 +215,7 @@ func readID3V2Metadata(path string) (version byte, encoding string, frameStrings
 	return
 }
 
-func framerSliceAsString(f []id3v2.Framer) string {
+func FramerSliceAsString(f []id3v2.Framer) string {
 	var substrings []string
 	if len(f) == 1 {
 		if data, ok := f[0].(id3v2.UnknownFrame); ok {
@@ -235,9 +235,9 @@ func framerSliceAsString(f []id3v2.Framer) string {
 	return fmt.Sprintf("<<%s>>", strings.Join(substrings, ", "))
 }
 
-func id3v2NameDiffers(cS comparableStrings) bool {
-	externalName := strings.ToLower(cS.externalName)
-	metadataName := strings.ToLower(cS.metadataName)
+func Id3v2NameDiffers(cS ComparableStrings) bool {
+	externalName := strings.ToLower(cS.ExternalName)
+	metadataName := strings.ToLower(cS.MetadataName)
 	// strip off trailing space from the metadata value
 	for strings.HasSuffix(metadataName, " ") {
 		metadataName = metadataName[:len(metadataName)-1]
@@ -256,14 +256,14 @@ func id3v2NameDiffers(cS comparableStrings) bool {
 		}
 		// allow for the metadata rune to be one that is illegal for file names:
 		// the external name is likely to be a file name
-		if !isIllegalRuneForFileNames(c) {
+		if !IsIllegalRuneForFileNames(c) {
 			return true
 		}
 	}
 	return false // rune by rune comparison was successful
 }
 
-func id3v2GenreDiffers(cS comparableStrings) bool {
+func Id3v2GenreDiffers(cS ComparableStrings) bool {
 	// differs unless exact match. Period.
-	return cS.externalName != cS.metadataName
+	return cS.ExternalName != cS.MetadataName
 }

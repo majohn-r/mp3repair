@@ -9,15 +9,15 @@ import (
 
 // Album encapsulates information about a music album
 type Album struct {
-	name            string
-	tracks          []*Track
-	recordingArtist *Artist
+	Title           string
+	Contents        []*Track
+	RecordingArtist *Artist
 	path            string
 	// the following fields are recorded in each track's metadata
-	canonicalGenre    string
-	canonicalYear     string
-	canonicalTitle    string
-	musicCDIdentifier id3v2.UnknownFrame
+	CanonicalGenre    string
+	CanonicalYear     string
+	CanonicalTitle    string
+	MusicCDIdentifier id3v2.UnknownFrame
 }
 
 func NewAlbumFromFile(file fs.DirEntry, ar *Artist) *Album {
@@ -26,22 +26,22 @@ func NewAlbumFromFile(file fs.DirEntry, ar *Artist) *Album {
 }
 
 func (a *Album) Copy(ar *Artist, includeTracks bool) *Album {
-	a2 := NewAlbum(a.name, ar, a.path)
+	a2 := NewAlbum(a.Title, ar, a.path)
 	if includeTracks {
-		for _, t := range a.tracks {
+		for _, t := range a.Contents {
 			a2.AddTrack(t.Copy(a2))
 		}
 	}
-	a2.canonicalGenre = a.canonicalGenre
-	a2.canonicalYear = a.canonicalYear
-	a2.canonicalTitle = a.canonicalTitle
-	a2.musicCDIdentifier = a.musicCDIdentifier
+	a2.CanonicalGenre = a.CanonicalGenre
+	a2.CanonicalYear = a.CanonicalYear
+	a2.CanonicalTitle = a.CanonicalTitle
+	a2.MusicCDIdentifier = a.MusicCDIdentifier
 	return a2
 }
 
 // NewAlbum creates a new Album instance
 func NewAlbum(s string, ar *Artist, p string) *Album {
-	return &Album{name: s, recordingArtist: ar, path: p, canonicalTitle: s}
+	return &Album{Title: s, RecordingArtist: ar, path: p, CanonicalTitle: s}
 }
 
 // BackupDirectory gets the path for the album's backup directory
@@ -55,30 +55,30 @@ func (a *Album) Path() string {
 
 // Name returns the album's name
 func (a *Album) Name() string {
-	return a.name
+	return a.Title
 }
 
 // RecordingArtistName returns the name of the album's recording artist
 func (a *Album) RecordingArtistName() (s string) {
-	if a.recordingArtist != nil {
-		s = a.recordingArtist.Name()
+	if a.RecordingArtist != nil {
+		s = a.RecordingArtist.Name()
 	}
 	return
 }
 
 // AddTrack adds a new track to the album
 func (a *Album) AddTrack(t *Track) {
-	a.tracks = append(a.tracks, t)
+	a.Contents = append(a.Contents, t)
 }
 
 // HasTracks returns true if the album has tracks
 func (a *Album) HasTracks() bool {
-	return len(a.tracks) != 0
+	return len(a.Contents) != 0
 }
 
 // Tracks returns the slice of Tracks
 func (a *Album) Tracks() []*Track {
-	return a.tracks
+	return a.Contents
 }
 
 func (a *Album) subDirectory(s string) string {

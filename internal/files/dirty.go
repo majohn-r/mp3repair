@@ -10,11 +10,11 @@ import (
 )
 
 const (
-	dirtyFileName = "metadata.dirty"
+	DirtyFileName = "metadata.dirty"
 )
 
 func MarkDirty(o output.Bus) {
-	f := filepath.Join(cmd_toolkit.ApplicationPath(), dirtyFileName)
+	f := filepath.Join(cmd_toolkit.ApplicationPath(), DirtyFileName)
 	if _, err := os.Stat(f); err != nil && errors.Is(err, os.ErrNotExist) {
 		// ignore error - if the file didn't exist a moment ago, there is no
 		// reason to assume that the file cannot be written to
@@ -24,7 +24,7 @@ func MarkDirty(o output.Bus) {
 }
 
 func ClearDirty(o output.Bus) {
-	f := filepath.Join(cmd_toolkit.ApplicationPath(), dirtyFileName)
+	f := filepath.Join(cmd_toolkit.ApplicationPath(), DirtyFileName)
 	if cmd_toolkit.PlainFileExists(f) {
 		if err := os.Remove(f); err != nil {
 			cmd_toolkit.ReportFileDeletionFailure(o, f, err)
@@ -35,5 +35,5 @@ func ClearDirty(o output.Bus) {
 }
 
 func Dirty() bool {
-	return cmd_toolkit.PlainFileExists(filepath.Join(cmd_toolkit.ApplicationPath(), dirtyFileName))
+	return cmd_toolkit.PlainFileExists(filepath.Join(cmd_toolkit.ApplicationPath(), DirtyFileName))
 }

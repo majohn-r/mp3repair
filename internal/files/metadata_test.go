@@ -1,7 +1,7 @@
-package files
+package files_test
 
 import (
-	"mp3/internal"
+	"mp3/internal/files"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -20,16 +20,16 @@ const (
 func Test_trackMetadata_setId3v1Values(t *testing.T) {
 	const fnName = "trackMetadata.setId3v1Values()"
 	type args struct {
-		v1 *id3v1Metadata
+		v1 *files.Id3v1Metadata
 	}
 	tests := map[string]struct {
-		tM *TrackMetadata
+		tM *files.TrackMetadata
 		args
-		wantTM *TrackMetadata
+		wantTM *files.TrackMetadata
 	}{
 		"complete test": {
-			tM: newTrackMetadata(), args: args{v1: newID3v1MetadataWithData(internal.ID3V1DataSet1)},
-			wantTM: &TrackMetadata{
+			tM: files.NewTrackMetadata(), args: args{v1: NewID3v1MetadataWithData(id3v1DataSet1)},
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -37,7 +37,7 @@ func Test_trackMetadata_setId3v1Values(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -52,7 +52,7 @@ func Test_trackMetadata_setId3v1Values(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			tt.tM.setID3v1Values(tt.args.v1)
+			tt.tM.SetID3v1Values(tt.args.v1)
 			if !reflect.DeepEqual(tt.tM, tt.wantTM) {
 				t.Errorf("%s got %v want %v", fnName, tt.tM, tt.wantTM)
 			}
@@ -63,27 +63,27 @@ func Test_trackMetadata_setId3v1Values(t *testing.T) {
 func Test_trackMetadata_setId3v2Values(t *testing.T) {
 	const fnName = "trackMetadata.setId3v1Values()"
 	type args struct {
-		d *id3v2Metadata
+		d *files.Id3v2Metadata
 	}
 	tests := map[string]struct {
-		tM *TrackMetadata
+		tM *files.TrackMetadata
 		args
-		wantTM *TrackMetadata
+		wantTM *files.TrackMetadata
 	}{
 		"complete test": {
-			tM: newTrackMetadata(),
+			tM: files.NewTrackMetadata(),
 			args: args{
-				d: &id3v2Metadata{
-					album:             "Great album",
-					artist:            "Great artist",
-					title:             "Great track",
-					genre:             "Pop",
-					year:              "2022",
-					track:             1,
-					musicCDIdentifier: id3v2.UnknownFrame{Body: []byte{0, 2, 4}},
+				d: &files.Id3v2Metadata{
+					Album:             "Great album",
+					Artist:            "Great artist",
+					Title:             "Great track",
+					Genre:             "Pop",
+					Year:              "2022",
+					Track:             1,
+					MusicCDIdentifier: id3v2.UnknownFrame{Body: []byte{0, 2, 4}},
 				},
 			},
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", "Great album"},
 				Artist:                     []string{"", "", "Great artist"},
 				Title:                      []string{"", "", "Great track"},
@@ -91,7 +91,7 @@ func Test_trackMetadata_setId3v2Values(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 1},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0, 2, 4}},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -106,7 +106,7 @@ func Test_trackMetadata_setId3v2Values(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			tt.tM.setID3v2Values(tt.args.d)
+			tt.tM.SetID3v2Values(tt.args.d)
 			if !reflect.DeepEqual(tt.tM, tt.wantTM) {
 				t.Errorf("%s got %v want %v", fnName, tt.tM, tt.wantTM)
 			}
@@ -121,13 +121,13 @@ func Test_readMetadata(t *testing.T) {
 		t.Errorf("%s cannot create %q: %v", fnName, testDir, err)
 	}
 	taglessFile := "01 tagless.mp3"
-	if err := internal.CreateFileForTesting(testDir, taglessFile); err != nil {
+	if err := createFile(testDir, taglessFile); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, taglessFile, err)
 	}
 	id3v1OnlyFile := "02 id3v1.mp3"
 	payloadID3v1Only := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
-	payloadID3v1Only = append(payloadID3v1Only, internal.ID3V1DataSet1...)
-	if err := internal.CreateFileForTestingWithContent(testDir, id3v1OnlyFile, payloadID3v1Only); err != nil {
+	payloadID3v1Only = append(payloadID3v1Only, id3v1DataSet1...)
+	if err := createFileWithContent(testDir, id3v1OnlyFile, payloadID3v1Only); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, id3v1OnlyFile, err)
 	}
 	id3v2OnlyFile := "03 id3v2.mp3"
@@ -141,29 +141,29 @@ func Test_readMetadata(t *testing.T) {
 		"TPE1": "unknown artist",
 		"TLEN": "1000",
 	}
-	payloadID3v2Only := CreateID3V2TaggedDataForTesting([]byte{}, frames)
-	if err := internal.CreateFileForTestingWithContent(testDir, id3v2OnlyFile, payloadID3v2Only); err != nil {
+	payloadID3v2Only := createID3v2TaggedData([]byte{}, frames)
+	if err := createFileWithContent(testDir, id3v2OnlyFile, payloadID3v2Only); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, id3v2OnlyFile, err)
 	}
 	completeFile := "04 complete.mp3"
 	payloadComplete := payloadID3v2Only
 	payloadComplete = append(payloadComplete, payloadID3v1Only...)
-	if err := internal.CreateFileForTestingWithContent(testDir, completeFile, payloadComplete); err != nil {
+	if err := createFileWithContent(testDir, completeFile, payloadComplete); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, completeFile, err)
 	}
 	defer func() {
-		internal.DestroyDirectoryForTesting(fnName, testDir)
+		destroyDirectory(fnName, testDir)
 	}()
 	type args struct {
 		path string
 	}
 	tests := map[string]struct {
 		args
-		want *TrackMetadata
+		want *files.TrackMetadata
 	}{
 		"missing file": {
 			args: args{path: filepath.Join(testDir, "no such file.mp3")},
-			want: &TrackMetadata{
+			want: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -171,7 +171,7 @@ func Test_readMetadata(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", cannotOpenFile, cannotOpenFile},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -185,7 +185,7 @@ func Test_readMetadata(t *testing.T) {
 		},
 		"no metadata": {
 			args: args{path: filepath.Join(testDir, taglessFile)},
-			want: &TrackMetadata{
+			want: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -193,8 +193,8 @@ func Test_readMetadata(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
-				ErrCause:                   []string{"", negativeSeek, errMissingTrackNumber.Error()},
+				CanonicalType:              files.UndefinedSource,
+				ErrCause:                   []string{"", negativeSeek, files.ErrMissingTrackNumber.Error()},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
 				CorrectedTitle:             []string{"", "", ""},
@@ -207,7 +207,7 @@ func Test_readMetadata(t *testing.T) {
 		},
 		"only id3v1 metadata": {
 			args: args{path: filepath.Join(testDir, id3v1OnlyFile)},
-			want: &TrackMetadata{
+			want: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -215,8 +215,8 @@ func Test_readMetadata(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
-				ErrCause:                   []string{"", "", errMissingTrackNumber.Error()},
+				CanonicalType:              files.ID3V1,
+				ErrCause:                   []string{"", "", files.ErrMissingTrackNumber.Error()},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
 				CorrectedTitle:             []string{"", "", ""},
@@ -229,7 +229,7 @@ func Test_readMetadata(t *testing.T) {
 		},
 		"only id3v2 metadata": {
 			args: args{path: filepath.Join(testDir, id3v2OnlyFile)},
-			want: &TrackMetadata{
+			want: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -237,7 +237,7 @@ func Test_readMetadata(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -251,7 +251,7 @@ func Test_readMetadata(t *testing.T) {
 		},
 		"all metadata": {
 			args: args{path: filepath.Join(testDir, completeFile)},
-			want: &TrackMetadata{
+			want: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -259,7 +259,7 @@ func Test_readMetadata(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -274,7 +274,7 @@ func Test_readMetadata(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := readMetadata(tt.args.path); !reflect.DeepEqual(got, tt.want) {
+			if got := files.ReadRawMetadata(tt.args.path); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
@@ -284,12 +284,12 @@ func Test_readMetadata(t *testing.T) {
 func Test_trackMetadata_isValid(t *testing.T) {
 	const fnName = "trackMetadata.isValid()"
 	tests := map[string]struct {
-		tM   *TrackMetadata
+		tM   *files.TrackMetadata
 		want bool
 	}{
-		"uninitialized data": {tM: newTrackMetadata(), want: false},
+		"uninitialized data": {tM: files.NewTrackMetadata(), want: false},
 		"after read failure": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -297,7 +297,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", cannotOpenFile, cannotOpenFile},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -311,7 +311,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 			want: false,
 		},
 		"after reading no metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -319,7 +319,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", negativeSeek, zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -333,7 +333,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 			want: false,
 		},
 		"after reading only id3v1 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -341,7 +341,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -355,7 +355,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 			want: true,
 		},
 		"after reading only id3v2 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -363,7 +363,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -377,7 +377,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 			want: true,
 		},
 		"after reading all metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -385,7 +385,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -401,7 +401,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tM.isValid(); got != tt.want {
+			if got := tt.tM.IsValid(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
@@ -409,13 +409,13 @@ func Test_trackMetadata_isValid(t *testing.T) {
 }
 
 func Test_trackMetadata_canonicalArtist(t *testing.T) {
-	const fnName = "trackMetadata.canonicalArtist()"
+	const fnName = "trackMetadata.CanonicalArtist()"
 	tests := map[string]struct {
-		tM   *TrackMetadata
+		tM   *files.TrackMetadata
 		want string
 	}{
 		"after reading only id3v1 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -423,7 +423,7 @@ func Test_trackMetadata_canonicalArtist(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -437,7 +437,7 @@ func Test_trackMetadata_canonicalArtist(t *testing.T) {
 			want: "The Beatles",
 		},
 		"after reading only id3v2 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -445,7 +445,7 @@ func Test_trackMetadata_canonicalArtist(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -459,7 +459,7 @@ func Test_trackMetadata_canonicalArtist(t *testing.T) {
 			want: "unknown artist",
 		},
 		"after reading all metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -467,7 +467,7 @@ func Test_trackMetadata_canonicalArtist(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -483,7 +483,7 @@ func Test_trackMetadata_canonicalArtist(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tM.canonicalArtist(); got != tt.want {
+			if got := tt.tM.CanonicalArtist(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
@@ -491,13 +491,13 @@ func Test_trackMetadata_canonicalArtist(t *testing.T) {
 }
 
 func Test_trackMetadata_canonicalAlbum(t *testing.T) {
-	const fnName = "trackMetadata.canonicalAlbum()"
+	const fnName = "trackMetadata.CanonicalAlbum()"
 	tests := map[string]struct {
-		tM   *TrackMetadata
+		tM   *files.TrackMetadata
 		want string
 	}{
 		"after reading only id3v1 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -505,7 +505,7 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -519,7 +519,7 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 			want: "On Air: Live At The BBC, Volum",
 		},
 		"after reading only id3v2 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -527,7 +527,7 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -541,7 +541,7 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 			want: "unknown album",
 		},
 		"after reading all metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -549,7 +549,7 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -565,7 +565,7 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tM.canonicalAlbum(); got != tt.want {
+			if got := tt.tM.CanonicalAlbum(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
@@ -573,13 +573,13 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 }
 
 func Test_trackMetadata_canonicalGenre(t *testing.T) {
-	const fnName = "trackMetadata.canonicalGenre()"
+	const fnName = "trackMetadata.CanonicalGenre()"
 	tests := map[string]struct {
-		tM   *TrackMetadata
+		tM   *files.TrackMetadata
 		want string
 	}{
 		"after reading only id3v1 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -587,7 +587,7 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -601,7 +601,7 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 			want: "Other",
 		},
 		"after reading only id3v2 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -609,7 +609,7 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -623,7 +623,7 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 			want: "dance music",
 		},
 		"after reading all metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -631,7 +631,7 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -647,7 +647,7 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tM.canonicalGenre(); got != tt.want {
+			if got := tt.tM.CanonicalGenre(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
@@ -655,13 +655,13 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 }
 
 func Test_trackMetadata_canonicalYear(t *testing.T) {
-	const fnName = "trackMetadata.canonicalYear()"
+	const fnName = "trackMetadata.CanonicalYear()"
 	tests := map[string]struct {
-		tM   *TrackMetadata
+		tM   *files.TrackMetadata
 		want string
 	}{
 		"after reading only id3v1 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -669,7 +669,7 @@ func Test_trackMetadata_canonicalYear(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -683,7 +683,7 @@ func Test_trackMetadata_canonicalYear(t *testing.T) {
 			want: "2013",
 		},
 		"after reading only id3v2 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -691,7 +691,7 @@ func Test_trackMetadata_canonicalYear(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -705,7 +705,7 @@ func Test_trackMetadata_canonicalYear(t *testing.T) {
 			want: "2022",
 		},
 		"after reading all metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -713,7 +713,7 @@ func Test_trackMetadata_canonicalYear(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -729,7 +729,7 @@ func Test_trackMetadata_canonicalYear(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tM.canonicalYear(); got != tt.want {
+			if got := tt.tM.CanonicalYear(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
@@ -737,13 +737,13 @@ func Test_trackMetadata_canonicalYear(t *testing.T) {
 }
 
 func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
-	const fnName = "trackMetadata.canonicalMusicCDIdentifier()"
+	const fnName = "trackMetadata.CanonicalMusicCDIdentifier()"
 	tests := map[string]struct {
-		tM   *TrackMetadata
+		tM   *files.TrackMetadata
 		want id3v2.UnknownFrame
 	}{
 		"after reading only id3v1 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -751,7 +751,7 @@ func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -765,7 +765,7 @@ func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
 			want: id3v2.UnknownFrame{},
 		},
 		"after reading only id3v2 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -773,7 +773,7 @@ func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -787,7 +787,7 @@ func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
 			want: id3v2.UnknownFrame{Body: []byte{0}},
 		},
 		"after reading all metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -795,7 +795,7 @@ func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -811,7 +811,7 @@ func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tM.canonicalMusicCDIdentifier(); !reflect.DeepEqual(got, tt.want) {
+			if got := tt.tM.CanonicalMusicCDIdentifier(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
@@ -821,12 +821,12 @@ func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
 func Test_trackMetadata_errors(t *testing.T) {
 	const fnName = "trackMetadata.errors()"
 	tests := map[string]struct {
-		tM   *TrackMetadata
+		tM   *files.TrackMetadata
 		want []string
 	}{
-		"uninitialized data": {tM: newTrackMetadata(), want: []string{}},
+		"uninitialized data": {tM: files.NewTrackMetadata(), want: []string{}},
 		"after read failure": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -834,7 +834,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", cannotOpenFile, cannotOpenFile},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -848,7 +848,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 			want: []string{cannotOpenFile, cannotOpenFile},
 		},
 		"after reading no metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -856,7 +856,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", negativeSeek, zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -870,7 +870,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 			want: []string{negativeSeek, zeroBytes},
 		},
 		"after reading only id3v1 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -878,7 +878,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -892,7 +892,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 			want: []string{zeroBytes},
 		},
 		"after reading only id3v2 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -900,7 +900,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -914,7 +914,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 			want: []string{noID3V1Metadata},
 		},
 		"after reading all metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -922,7 +922,7 @@ func Test_trackMetadata_errors(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -938,26 +938,26 @@ func Test_trackMetadata_errors(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tM.errorCauses(); !reflect.DeepEqual(got, tt.want) {
+			if got := tt.tM.ErrorCauses(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_trackMetadata_trackDiffers(t *testing.T) {
-	const fnName = "trackMetadata.trackDiffers()"
+func Test_trackMetadata_TrackDiffers(t *testing.T) {
+	const fnName = "trackMetadata.TrackDiffers()"
 	type args struct {
 		track int
 	}
 	tests := map[string]struct {
-		tM *TrackMetadata
+		tM *files.TrackMetadata
 		args
 		want   bool
-		wantTM *TrackMetadata
+		wantTM *files.TrackMetadata
 	}{
 		"after read failure": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -965,7 +965,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", cannotOpenFile, cannotOpenFile},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -978,7 +978,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 			},
 			args: args{track: 20},
 			want: false,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -986,7 +986,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", cannotOpenFile, cannotOpenFile},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -999,7 +999,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 			},
 		},
 		"after reading no metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -1007,7 +1007,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", negativeSeek, zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1020,7 +1020,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 			},
 			args: args{track: 20},
 			want: false,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -1028,7 +1028,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", negativeSeek, zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1041,7 +1041,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 			},
 		},
 		"after reading only id3v1 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -1049,7 +1049,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1062,7 +1062,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 			},
 			args: args{track: 20},
 			want: true,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -1070,7 +1070,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1083,7 +1083,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 			},
 		},
 		"after reading only id3v2 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -1091,7 +1091,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1104,7 +1104,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 			},
 			args: args{track: 20},
 			want: true,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -1112,7 +1112,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1125,7 +1125,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 			},
 		},
 		"after reading all metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -1133,7 +1133,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1146,7 +1146,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 			},
 			args: args{track: 20},
 			want: true,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -1154,7 +1154,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1169,7 +1169,7 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tM.trackDiffers(tt.args.track); got != tt.want {
+			if got := tt.tM.TrackDiffers(tt.args.track); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 			if !reflect.DeepEqual(tt.tM, tt.wantTM) {
@@ -1179,19 +1179,19 @@ func Test_trackMetadata_trackDiffers(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
-	const fnName = "trackMetadata.trackTitleDiffers()"
+func Test_trackMetadata_TrackTitleDiffers(t *testing.T) {
+	const fnName = "trackMetadata.TrackTitleDiffers()"
 	type args struct {
 		title string
 	}
 	tests := map[string]struct {
-		tM *TrackMetadata
+		tM *files.TrackMetadata
 		args
 		wantDiffers bool
-		wantTM      *TrackMetadata
+		wantTM      *files.TrackMetadata
 	}{
 		"after read failure": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -1199,7 +1199,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", cannotOpenFile, cannotOpenFile},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1212,7 +1212,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 			},
 			args:        args{title: "track name"},
 			wantDiffers: false,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -1220,7 +1220,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", cannotOpenFile, cannotOpenFile},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1233,7 +1233,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 			},
 		},
 		"after reading no metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -1241,7 +1241,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", negativeSeek, zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1254,7 +1254,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 			},
 			args:        args{title: "track name"},
 			wantDiffers: false,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -1262,7 +1262,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", negativeSeek, zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1275,7 +1275,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 			},
 		},
 		"after reading only id3v1 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -1283,7 +1283,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1296,7 +1296,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 			},
 			args:        args{title: "track name"},
 			wantDiffers: true,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -1304,7 +1304,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1317,7 +1317,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 			},
 		},
 		"after reading only id3v2 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -1325,7 +1325,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1338,7 +1338,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 			},
 			args:        args{title: "track name"},
 			wantDiffers: true,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -1346,7 +1346,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1359,7 +1359,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 			},
 		},
 		"after reading all metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -1367,7 +1367,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1380,7 +1380,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 			},
 			args:        args{title: "track name"},
 			wantDiffers: true,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -1388,7 +1388,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1401,7 +1401,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 			},
 		},
 		"valid name": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Theme from M*A*S*H", "Theme from M*A*S*H"},
@@ -1409,7 +1409,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1422,7 +1422,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 			},
 			args:        args{title: "Theme From M-A-S-H"},
 			wantDiffers: false,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Theme from M*A*S*H", "Theme from M*A*S*H"},
@@ -1430,7 +1430,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1445,7 +1445,7 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if gotDiffers := tt.tM.trackTitleDiffers(tt.args.title); gotDiffers != tt.wantDiffers {
+			if gotDiffers := tt.tM.TrackTitleDiffers(tt.args.title); gotDiffers != tt.wantDiffers {
 				t.Errorf("%s = %v, want %v", fnName, gotDiffers, tt.wantDiffers)
 			}
 			if !reflect.DeepEqual(tt.tM, tt.wantTM) {
@@ -1455,19 +1455,19 @@ func Test_trackMetadata_trackTitleDiffers(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
-	const fnName = "trackMetadata.albumTitleDiffers()"
+func Test_trackMetadata_AlbumTitleDiffers(t *testing.T) {
+	const fnName = "trackMetadata.AlbumTitleDiffers()"
 	type args struct {
 		albumTitle string
 	}
 	tests := map[string]struct {
-		tM *TrackMetadata
+		tM *files.TrackMetadata
 		args
 		wantDiffers bool
-		wantTM      *TrackMetadata
+		wantTM      *files.TrackMetadata
 	}{
 		"after read failure": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -1475,7 +1475,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", cannotOpenFile, cannotOpenFile},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1488,7 +1488,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 			},
 			args:        args{albumTitle: "album name"},
 			wantDiffers: false,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -1496,7 +1496,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", cannotOpenFile, cannotOpenFile},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1509,7 +1509,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 			},
 		},
 		"after reading no metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -1517,7 +1517,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", negativeSeek, zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1530,7 +1530,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 			},
 			args:        args{albumTitle: "album name"},
 			wantDiffers: false,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -1538,7 +1538,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", negativeSeek, zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1551,7 +1551,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 			},
 		},
 		"after reading only id3v1 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -1559,7 +1559,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1572,7 +1572,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 			},
 			args:        args{albumTitle: "album name"},
 			wantDiffers: true,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -1580,7 +1580,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "album name", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1593,7 +1593,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 			},
 		},
 		"after reading only id3v2 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -1601,7 +1601,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1614,7 +1614,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 			},
 			args:        args{albumTitle: "album name"},
 			wantDiffers: true,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -1622,7 +1622,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", "album name"},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1635,7 +1635,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 			},
 		},
 		"after reading all metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -1643,7 +1643,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1656,7 +1656,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 			},
 			args:        args{albumTitle: "album name"},
 			wantDiffers: true,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -1664,7 +1664,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "album name", "album name"},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1679,7 +1679,7 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if gotDiffers := tt.tM.albumTitleDiffers(tt.args.albumTitle); gotDiffers != tt.wantDiffers {
+			if gotDiffers := tt.tM.AlbumTitleDiffers(tt.args.albumTitle); gotDiffers != tt.wantDiffers {
 				t.Errorf("%s = %v, want %v", fnName, gotDiffers, tt.wantDiffers)
 			}
 			if !reflect.DeepEqual(tt.tM, tt.wantTM) {
@@ -1689,19 +1689,19 @@ func Test_trackMetadata_albumTitleDiffers(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_artistNameDiffers(t *testing.T) {
-	const fnName = "trackMetadata.artistNameDiffers()"
+func Test_trackMetadata_ArtistNameDiffers(t *testing.T) {
+	const fnName = "trackMetadata.ArtistNameDiffers()"
 	type args struct {
 		artistName string
 	}
 	tests := map[string]struct {
-		tM *TrackMetadata
+		tM *files.TrackMetadata
 		args
 		wantDiffers bool
-		wantTM      *TrackMetadata
+		wantTM      *files.TrackMetadata
 	}{
 		"after read failure": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -1709,7 +1709,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", cannotOpenFile, cannotOpenFile},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1722,7 +1722,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 			},
 			args:        args{artistName: "artist name"},
 			wantDiffers: false,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -1730,7 +1730,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", cannotOpenFile, cannotOpenFile},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1743,7 +1743,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 			},
 		},
 		"after reading no metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -1751,7 +1751,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", negativeSeek, zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1764,7 +1764,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 			},
 			args:        args{artistName: "artist name"},
 			wantDiffers: false,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -1772,7 +1772,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", negativeSeek, zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1785,7 +1785,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 			},
 		},
 		"after reading only id3v1 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -1793,7 +1793,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1806,7 +1806,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 			},
 			args:        args{artistName: "artist name"},
 			wantDiffers: true,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -1814,7 +1814,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "artist name", ""},
@@ -1827,7 +1827,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 			},
 		},
 		"after reading only id3v2 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -1835,7 +1835,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1848,7 +1848,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 			},
 			args:        args{artistName: "artist name"},
 			wantDiffers: true,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -1856,7 +1856,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", "artist name"},
@@ -1869,7 +1869,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 			},
 		},
 		"after reading all metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -1877,7 +1877,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1890,7 +1890,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 			},
 			args:        args{artistName: "artist name"},
 			wantDiffers: true,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -1898,7 +1898,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "artist name", "artist name"},
@@ -1913,7 +1913,7 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if gotDiffers := tt.tM.artistNameDiffers(tt.args.artistName); gotDiffers != tt.wantDiffers {
+			if gotDiffers := tt.tM.ArtistNameDiffers(tt.args.artistName); gotDiffers != tt.wantDiffers {
 				t.Errorf("%s = %v, want %v", fnName, gotDiffers, tt.wantDiffers)
 			}
 			if !reflect.DeepEqual(tt.tM, tt.wantTM) {
@@ -1923,19 +1923,19 @@ func Test_trackMetadata_artistNameDiffers(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_genreDiffers(t *testing.T) {
-	const fnName = "trackMetadata.genreDiffers()"
+func Test_trackMetadata_GenreDiffers(t *testing.T) {
+	const fnName = "trackMetadata.GenreDiffers()"
 	type args struct {
 		genre string
 	}
 	tests := map[string]struct {
-		tM *TrackMetadata
+		tM *files.TrackMetadata
 		args
 		wantDiffers bool
-		wantTM      *TrackMetadata
+		wantTM      *files.TrackMetadata
 	}{
 		"after read failure": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -1943,7 +1943,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", cannotOpenFile, cannotOpenFile},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1956,7 +1956,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 			},
 			args:        args{genre: "Indie Pop"},
 			wantDiffers: false,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -1964,7 +1964,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", cannotOpenFile, cannotOpenFile},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1977,7 +1977,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 			},
 		},
 		"after reading no metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -1985,7 +1985,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", negativeSeek, zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -1998,7 +1998,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 			},
 			args:        args{genre: "Indie Pop"},
 			wantDiffers: false,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -2006,7 +2006,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", negativeSeek, zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2019,7 +2019,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 			},
 		},
 		"after reading only id3v1 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -2027,7 +2027,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2040,7 +2040,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 			},
 			args:        args{genre: "Indie Pop"},
 			wantDiffers: false,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -2048,7 +2048,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2061,7 +2061,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 			},
 		},
 		"after reading only id3v2 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -2069,7 +2069,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2082,7 +2082,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 			},
 			args:        args{genre: "Indie Pop"},
 			wantDiffers: true,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -2090,7 +2090,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2103,7 +2103,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 			},
 		},
 		"after reading all metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -2111,7 +2111,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2124,7 +2124,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 			},
 			args:        args{genre: "Indie Pop"},
 			wantDiffers: true,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -2132,7 +2132,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2147,7 +2147,7 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if gotDiffers := tt.tM.genreDiffers(tt.args.genre); gotDiffers != tt.wantDiffers {
+			if gotDiffers := tt.tM.GenreDiffers(tt.args.genre); gotDiffers != tt.wantDiffers {
 				t.Errorf("%s = %v, want %v", fnName, gotDiffers, tt.wantDiffers)
 			}
 			if !reflect.DeepEqual(tt.tM, tt.wantTM) {
@@ -2157,19 +2157,19 @@ func Test_trackMetadata_genreDiffers(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_yearDiffers(t *testing.T) {
-	const fnName = "trackMetadata.yearDiffers()"
+func Test_trackMetadata_YearDiffers(t *testing.T) {
+	const fnName = "trackMetadata.YearDiffers()"
 	type args struct {
 		year string
 	}
 	tests := map[string]struct {
-		tM *TrackMetadata
+		tM *files.TrackMetadata
 		args
 		wantDiffers bool
-		wantTM      *TrackMetadata
+		wantTM      *files.TrackMetadata
 	}{
 		"after read failure": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -2177,7 +2177,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", cannotOpenFile, cannotOpenFile},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2190,7 +2190,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 			},
 			args:        args{year: "1999"},
 			wantDiffers: false,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -2198,7 +2198,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", cannotOpenFile, cannotOpenFile},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2211,7 +2211,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 			},
 		},
 		"after reading no metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -2219,7 +2219,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", negativeSeek, zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2232,7 +2232,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 			},
 			args:        args{year: "1999"},
 			wantDiffers: false,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -2240,7 +2240,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", negativeSeek, zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2253,7 +2253,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 			},
 		},
 		"after reading only id3v1 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -2261,7 +2261,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2274,7 +2274,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 			},
 			args:        args{year: "1999"},
 			wantDiffers: true,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -2282,7 +2282,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2295,7 +2295,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 			},
 		},
 		"after reading only id3v2 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -2303,7 +2303,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2316,7 +2316,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 			},
 			args:        args{year: "1999"},
 			wantDiffers: true,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -2324,7 +2324,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2337,7 +2337,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 			},
 		},
 		"after reading all metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -2345,7 +2345,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2358,7 +2358,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 			},
 			args:        args{year: "1999"},
 			wantDiffers: true,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -2366,7 +2366,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2381,7 +2381,7 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if gotDiffers := tt.tM.yearDiffers(tt.args.year); gotDiffers != tt.wantDiffers {
+			if gotDiffers := tt.tM.YearDiffers(tt.args.year); gotDiffers != tt.wantDiffers {
 				t.Errorf("%s = %v, want %v", fnName, gotDiffers, tt.wantDiffers)
 			}
 			if !reflect.DeepEqual(tt.tM, tt.wantTM) {
@@ -2391,19 +2391,19 @@ func Test_trackMetadata_yearDiffers(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_mcdiDiffers(t *testing.T) {
-	const fnName = "trackMetadata.mcdiDiffers()"
+func Test_trackMetadata_MCDIDiffers(t *testing.T) {
+	const fnName = "trackMetadata.MCDIDiffers()"
 	type args struct {
 		f id3v2.UnknownFrame
 	}
 	tests := map[string]struct {
-		tM *TrackMetadata
+		tM *files.TrackMetadata
 		args
 		wantDiffers bool
-		wantTM      *TrackMetadata
+		wantTM      *files.TrackMetadata
 	}{
 		"after read failure": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -2411,7 +2411,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", cannotOpenFile, cannotOpenFile},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2424,7 +2424,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 			},
 			args:        args{f: id3v2.UnknownFrame{Body: []byte{1, 2, 3}}},
 			wantDiffers: false,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -2432,7 +2432,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", cannotOpenFile, cannotOpenFile},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2445,7 +2445,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 			},
 		},
 		"after reading no metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -2453,7 +2453,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", negativeSeek, zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2466,7 +2466,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 			},
 			args:        args{f: id3v2.UnknownFrame{Body: []byte{1, 2, 3}}},
 			wantDiffers: false,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", ""},
 				Artist:                     []string{"", "", ""},
 				Title:                      []string{"", "", ""},
@@ -2474,7 +2474,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				Year:                       []string{"", "", ""},
 				Track:                      []int{0, 0, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              UndefinedSource,
+				CanonicalType:              files.UndefinedSource,
 				ErrCause:                   []string{"", negativeSeek, zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2487,7 +2487,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 			},
 		},
 		"after reading only id3v1 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -2495,7 +2495,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2508,7 +2508,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 			},
 			args:        args{f: id3v2.UnknownFrame{Body: []byte{1, 2, 3}}},
 			wantDiffers: false,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -2516,7 +2516,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2529,7 +2529,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 			},
 		},
 		"after reading only id3v2 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -2537,7 +2537,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2550,7 +2550,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 			},
 			args:        args{f: id3v2.UnknownFrame{Body: []byte{1, 2, 3}}},
 			wantDiffers: true,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -2558,7 +2558,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2571,7 +2571,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 			},
 		},
 		"after reading all metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -2579,7 +2579,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2592,7 +2592,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 			},
 			args:        args{f: id3v2.UnknownFrame{Body: []byte{1, 2, 3}}},
 			wantDiffers: true,
-			wantTM: &TrackMetadata{
+			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -2600,7 +2600,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2615,7 +2615,7 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if gotDiffers := tt.tM.mcdiDiffers(tt.args.f); gotDiffers != tt.wantDiffers {
+			if gotDiffers := tt.tM.MCDIDiffers(tt.args.f); gotDiffers != tt.wantDiffers {
 				t.Errorf("%s = %v, want %v", fnName, gotDiffers, tt.wantDiffers)
 			}
 			if !reflect.DeepEqual(tt.tM, tt.wantTM) {
@@ -2625,18 +2625,18 @@ func Test_trackMetadata_mcdiDiffers(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
-	const fnName = "trackMetadata.canonicalAlbumTitleMatches()"
+func Test_trackMetadata_CanonicalAlbumTitleMatches(t *testing.T) {
+	const fnName = "trackMetadata.CanonicalAlbumTitleMatches()"
 	type args struct {
 		albumTitle string
 	}
 	tests := map[string]struct {
-		tM *TrackMetadata
+		tM *files.TrackMetadata
 		args
 		want bool
 	}{
 		"mismatch after reading only id3v1 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -2644,7 +2644,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2659,7 +2659,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 			want: false,
 		},
 		"mismatch after reading only id3v2 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -2667,7 +2667,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2682,7 +2682,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 			want: false,
 		},
 		"mismatch after reading all metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -2690,7 +2690,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2705,7 +2705,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 			want: false,
 		},
 		"match after reading only id3v1 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -2713,7 +2713,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2728,7 +2728,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 			want: true,
 		},
 		"match after reading only id3v2 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -2736,7 +2736,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2751,7 +2751,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 			want: true,
 		},
 		"match after reading all metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -2759,7 +2759,7 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2776,25 +2776,25 @@ func Test_trackMetadata_canonicalAlbumTitleMatches(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tM.canonicalAlbumTitleMatches(tt.args.albumTitle); got != tt.want {
+			if got := tt.tM.CanonicalAlbumTitleMatches(tt.args.albumTitle); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
-	const fnName = "trackMetadata.canonicalArtistNameMatches()"
+func Test_trackMetadata_CanonicalArtistNameMatches(t *testing.T) {
+	const fnName = "trackMetadata.CanonicalArtistNameMatches()"
 	type args struct {
 		artistName string
 	}
 	tests := map[string]struct {
-		tM *TrackMetadata
+		tM *files.TrackMetadata
 		args
 		want bool
 	}{
 		"mismatch after reading only id3v1 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -2802,7 +2802,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2817,7 +2817,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 			want: false,
 		},
 		"mismatch after reading only id3v2 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -2825,7 +2825,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2840,7 +2840,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 			want: false,
 		},
 		"mismatch after reading all metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -2848,7 +2848,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2863,7 +2863,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 			want: false,
 		},
 		"match after reading only id3v1 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", ""},
 				Artist:                     []string{"", "The Beatles", ""},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", ""},
@@ -2871,7 +2871,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 				Year:                       []string{"", "2013", ""},
 				Track:                      []int{0, 29, 0},
 				MusicCDIdentifier:          id3v2.UnknownFrame{},
-				CanonicalType:              ID3V1,
+				CanonicalType:              files.ID3V1,
 				ErrCause:                   []string{"", "", zeroBytes},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2886,7 +2886,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 			want: true,
 		},
 		"match after reading only id3v2 metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "", "unknown album"},
 				Artist:                     []string{"", "", "unknown artist"},
 				Title:                      []string{"", "", "unknown track"},
@@ -2894,7 +2894,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 				Year:                       []string{"", "", "2022"},
 				Track:                      []int{0, 0, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", noID3V1Metadata, ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2909,7 +2909,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 			want: true,
 		},
 		"match after reading all metadata": {
-			tM: &TrackMetadata{
+			tM: &files.TrackMetadata{
 				Album:                      []string{"", "On Air: Live At The BBC, Volum", "unknown album"},
 				Artist:                     []string{"", "The Beatles", "unknown artist"},
 				Title:                      []string{"", "Ringo - Pop Profile [Interview", "unknown track"},
@@ -2917,7 +2917,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 				Year:                       []string{"", "2013", "2022"},
 				Track:                      []int{0, 29, 2},
 				MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:              ID3V2,
+				CanonicalType:              files.ID3V2,
 				ErrCause:                   []string{"", "", ""},
 				CorrectedAlbum:             []string{"", "", ""},
 				CorrectedArtist:            []string{"", "", ""},
@@ -2934,7 +2934,7 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tM.canonicalArtistNameMatches(tt.args.artistName); got != tt.want {
+			if got := tt.tM.CanonicalArtistNameMatches(tt.args.artistName); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
@@ -2944,17 +2944,17 @@ func Test_trackMetadata_canonicalArtistNameMatches(t *testing.T) {
 func TestSourceType_name(t *testing.T) {
 	const fnName = "SourceType.name()"
 	tests := map[string]struct {
-		sT   SourceType
+		sT   files.SourceType
 		want string
 	}{
-		"undefined": {sT: UndefinedSource, want: "undefined"},
-		"ID3V1":     {sT: ID3V1, want: "ID3V1"},
-		"ID3V2":     {sT: ID3V2, want: "ID3V2"},
-		"total":     {sT: TotalSources, want: "total"},
+		"undefined": {sT: files.UndefinedSource, want: "undefined"},
+		"ID3V1":     {sT: files.ID3V1, want: "ID3V1"},
+		"ID3V2":     {sT: files.ID3V2, want: "ID3V2"},
+		"total":     {sT: files.TotalSources, want: "total"},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.sT.name(); got != tt.want {
+			if got := tt.sT.Name(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
