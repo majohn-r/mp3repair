@@ -122,12 +122,12 @@ func CheckRun(cmd *cobra.Command, _ []string) {
 	if ProcessFlagErrors(o, eSlice) && searchFlagsOk {
 		if cs, ok := ProcessCheckFlags(o, values); ok {
 			LogCommandStart(o, CheckCommand, map[string]any{
-				CheckEmptyFlag:         cs.Empty,
-				"empty-user-set":       cs.EmptyUserSet,
-				CheckFilesFlag:         cs.Files,
-				"files-user-set":       cs.FilesUserSet,
-				CheckNumberingFlag:     cs.Numbering,
-				"numbering-user-set":   cs.NumberingUserSet,
+				CheckEmptyFlag:         cs.empty,
+				"empty-user-set":       cs.emptyUserSet,
+				CheckFilesFlag:         cs.files,
+				"files-user-set":       cs.filesUserSet,
+				CheckNumberingFlag:     cs.numbering,
+				"numbering-user-set":   cs.numberingUserSet,
 				SearchAlbumFilterFlag:  searchSettings.AlbumFilter,
 				SearchArtistFilterFlag: searchSettings.ArtistFilter,
 				SearchTrackFilterFlag:  searchSettings.TrackFilter,
@@ -140,12 +140,46 @@ func CheckRun(cmd *cobra.Command, _ []string) {
 }
 
 type CheckSettings struct {
-	Empty            bool
-	EmptyUserSet     bool
-	Files            bool
-	FilesUserSet     bool
-	Numbering        bool
-	NumberingUserSet bool
+	empty            bool
+	emptyUserSet     bool
+	files            bool
+	filesUserSet     bool
+	numbering        bool
+	numberingUserSet bool
+}
+
+func NewCheckSettings() *CheckSettings {
+	return &CheckSettings{}
+}
+
+func (cs *CheckSettings) WithEmpty(b bool) *CheckSettings {
+	cs.empty = b
+	return cs
+}
+
+func (cs *CheckSettings) WithEmptyUserSet(b bool) *CheckSettings {
+	cs.emptyUserSet = b
+	return cs
+}
+
+func (cs *CheckSettings) WithFiles(b bool) *CheckSettings {
+	cs.files = b
+	return cs
+}
+
+func (cs *CheckSettings) WithFilesUserSet(b bool) *CheckSettings {
+	cs.filesUserSet = b
+	return cs
+}
+
+func (cs *CheckSettings) WithNumbering(b bool) *CheckSettings {
+	cs.numbering = b
+	return cs
+}
+
+func (cs *CheckSettings) WithNumberingUserSet(b bool) *CheckSettings {
+	cs.numberingUserSet = b
+	return cs
 }
 
 func (cs *CheckSettings) MaybeDoWork(o output.Bus, ss *SearchSettings) int {
@@ -454,20 +488,20 @@ func (cs *CheckSettings) PerformChecks(o output.Bus, artists []*files.Artist, ar
 }
 
 func (cs *CheckSettings) MaybeReportCleanResults(o output.Bus, emptyIssues, numberingIssues, fileIssues bool) {
-	if !emptyIssues && cs.Empty {
+	if !emptyIssues && cs.empty {
 		o.WriteCanonicalConsole("Empty Folder Analysis: no empty folders found")
 	}
-	if !numberingIssues && cs.Numbering {
+	if !numberingIssues && cs.numbering {
 		o.WriteCanonicalConsole("Numbering Analysis: no missing or duplicate tracks found")
 	}
-	if !fileIssues && cs.Files {
+	if !fileIssues && cs.files {
 		o.WriteCanonicalConsole("File Analysis: no inconsistencies found")
 	}
 }
 
 func (cs *CheckSettings) PerformFileAnalysis(o output.Bus, checkedArtists []*CheckedArtist, ss *SearchSettings) bool {
 	foundIssues := false
-	if cs.Files {
+	if cs.files {
 		artists := []*files.Artist{}
 		for _, cAr := range checkedArtists {
 			artists = append(artists, cAr.Artist())
@@ -506,7 +540,7 @@ func RecordFileIssues(checkedArtists []*CheckedArtist, track *files.Track, issue
 
 func (cs *CheckSettings) PerformNumberingAnalysis(checkedArtists []*CheckedArtist) bool {
 	foundIssues := false
-	if cs.Numbering {
+	if cs.numbering {
 		for _, cAr := range checkedArtists {
 			for _, cAl := range cAr.Albums() {
 				trackMap := map[int][]string{}
@@ -584,7 +618,7 @@ func GenerateMissingNumbers(low, high int) string {
 
 func (cs *CheckSettings) PerformEmptyAnalysis(checkedArtists []*CheckedArtist) bool {
 	emptyFoldersFound := false
-	if cs.Empty {
+	if cs.empty {
 		for _, checkedArtist := range checkedArtists {
 			if !checkedArtist.Artist().HasAlbums() {
 				checkedArtist.AddIssue(CheckEmptyIssue, "no albums found")
@@ -603,25 +637,25 @@ func (cs *CheckSettings) PerformEmptyAnalysis(checkedArtists []*CheckedArtist) b
 }
 
 func (cs *CheckSettings) HasWorkToDo(o output.Bus) bool {
-	if cs.Empty || cs.Files || cs.Numbering {
+	if cs.empty || cs.files || cs.numbering {
 		return true
 	}
-	userPartiallyAtFault := cs.EmptyUserSet || cs.FilesUserSet || cs.NumberingUserSet
+	userPartiallyAtFault := cs.emptyUserSet || cs.filesUserSet || cs.numberingUserSet
 	o.WriteCanonicalError("No checks will be executed.\nWhy?\n")
 	if userPartiallyAtFault {
 		flagsUserSet := []string{}
 		flagsFromConfig := []string{}
-		if cs.EmptyUserSet {
+		if cs.emptyUserSet {
 			flagsUserSet = append(flagsUserSet, CheckEmptyFlag)
 		} else {
 			flagsFromConfig = append(flagsFromConfig, CheckEmptyFlag)
 		}
-		if cs.FilesUserSet {
+		if cs.filesUserSet {
 			flagsUserSet = append(flagsUserSet, CheckFilesFlag)
 		} else {
 			flagsFromConfig = append(flagsFromConfig, CheckFilesFlag)
 		}
-		if cs.NumberingUserSet {
+		if cs.numberingUserSet {
 			flagsUserSet = append(flagsUserSet, CheckNumberingFlag)
 		} else {
 			flagsFromConfig = append(flagsFromConfig, CheckNumberingFlag)
@@ -643,13 +677,13 @@ func ProcessCheckFlags(o output.Bus, values map[string]*FlagValue) (*CheckSettin
 	settings := &CheckSettings{}
 	ok := true // optimistic
 	var err error
-	if settings.Empty, settings.EmptyUserSet, err = GetBool(o, values, CheckEmpty); err != nil {
+	if settings.empty, settings.emptyUserSet, err = GetBool(o, values, CheckEmpty); err != nil {
 		ok = false
 	}
-	if settings.Files, settings.FilesUserSet, err = GetBool(o, values, CheckFiles); err != nil {
+	if settings.files, settings.filesUserSet, err = GetBool(o, values, CheckFiles); err != nil {
 		ok = false
 	}
-	if settings.Numbering, settings.NumberingUserSet, err = GetBool(o, values, CheckNumbering); err != nil {
+	if settings.numbering, settings.numberingUserSet, err = GetBool(o, values, CheckNumbering); err != nil {
 		ok = false
 	}
 	return settings, ok

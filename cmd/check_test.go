@@ -26,7 +26,7 @@ func TestProcessCheckFlags(t *testing.T) {
 	}{
 		"no data": {
 			values: map[string]*cmd.FlagValue{},
-			want:   &cmd.CheckSettings{},
+			want:   cmd.NewCheckSettings(),
 			want1:  false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -45,7 +45,7 @@ func TestProcessCheckFlags(t *testing.T) {
 				"files":     {Value: false},
 				"numbering": {Value: false},
 			},
-			want:  &cmd.CheckSettings{},
+			want:  cmd.NewCheckSettings(),
 			want1: true,
 		},
 		"overridden": {
@@ -54,14 +54,7 @@ func TestProcessCheckFlags(t *testing.T) {
 				"files":     {Value: true, ExplicitlySet: true},
 				"numbering": {Value: true, ExplicitlySet: true},
 			},
-			want: &cmd.CheckSettings{
-				Empty:            true,
-				EmptyUserSet:     true,
-				Files:            true,
-				FilesUserSet:     true,
-				Numbering:        true,
-				NumberingUserSet: true,
-			},
+			want:  cmd.NewCheckSettings().WithEmpty(true).WithEmptyUserSet(true).WithFiles(true).WithFilesUserSet(true).WithNumbering(true).WithNumberingUserSet(true),
 			want1: true,
 		},
 	}
@@ -91,7 +84,7 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 		output.WantedRecording
 	}{
 		"no work, as configured": {
-			cs:   &cmd.CheckSettings{},
+			cs:   cmd.NewCheckSettings(),
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -105,7 +98,7 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 			},
 		},
 		"no work, empty configured that way": {
-			cs:   &cmd.CheckSettings{EmptyUserSet: true},
+			cs:   cmd.NewCheckSettings().WithEmptyUserSet(true),
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -119,7 +112,7 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 			},
 		},
 		"no work, files configured that way": {
-			cs:   &cmd.CheckSettings{FilesUserSet: true},
+			cs:   cmd.NewCheckSettings().WithFilesUserSet(true),
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -133,7 +126,7 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 			},
 		},
 		"no work, numbering configured that way": {
-			cs:   &cmd.CheckSettings{NumberingUserSet: true},
+			cs:   cmd.NewCheckSettings().WithNumberingUserSet(true),
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -147,7 +140,7 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 			},
 		},
 		"no work, empty and files configured that way": {
-			cs:   &cmd.CheckSettings{EmptyUserSet: true, FilesUserSet: true},
+			cs:   cmd.NewCheckSettings().WithEmptyUserSet(true).WithFilesUserSet(true),
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -161,7 +154,7 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 			},
 		},
 		"no work, empty and numbering configured that way": {
-			cs:   &cmd.CheckSettings{EmptyUserSet: true, NumberingUserSet: true},
+			cs:   cmd.NewCheckSettings().WithEmptyUserSet(true).WithNumberingUserSet(true),
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -175,7 +168,7 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 			},
 		},
 		"no work, numbering and files configured that way": {
-			cs:   &cmd.CheckSettings{NumberingUserSet: true, FilesUserSet: true},
+			cs:   cmd.NewCheckSettings().WithNumberingUserSet(true).WithFilesUserSet(true),
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -189,7 +182,7 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 			},
 		},
 		"no work, all flags configured that way": {
-			cs:   &cmd.CheckSettings{NumberingUserSet: true, FilesUserSet: true, EmptyUserSet: true},
+			cs:   cmd.NewCheckSettings().WithNumberingUserSet(true).WithFilesUserSet(true).WithEmptyUserSet(true),
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -202,13 +195,13 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 					"[2] explicitly set at least one of these flags true on the command line.\n",
 			},
 		},
-		"check empty":               {cs: &cmd.CheckSettings{Empty: true}, want: true},
-		"check files":               {cs: &cmd.CheckSettings{Files: true}, want: true},
-		"check numbering":           {cs: &cmd.CheckSettings{Numbering: true}, want: true},
-		"check empty and files":     {cs: &cmd.CheckSettings{Empty: true, Files: true}, want: true},
-		"check empty and numbering": {cs: &cmd.CheckSettings{Empty: true, Numbering: true}, want: true},
-		"check numbering and files": {cs: &cmd.CheckSettings{Numbering: true, Files: true}, want: true},
-		"check everything":          {cs: &cmd.CheckSettings{Empty: true, Files: true, Numbering: true}, want: true},
+		"check empty":               {cs: cmd.NewCheckSettings().WithEmpty(true), want: true},
+		"check files":               {cs: cmd.NewCheckSettings().WithFiles(true), want: true},
+		"check numbering":           {cs: cmd.NewCheckSettings().WithNumbering(true), want: true},
+		"check empty and files":     {cs: cmd.NewCheckSettings().WithEmpty(true).WithFiles(true), want: true},
+		"check empty and numbering": {cs: cmd.NewCheckSettings().WithEmpty(true).WithNumbering(true), want: true},
+		"check numbering and files": {cs: cmd.NewCheckSettings().WithNumbering(true).WithFiles(true), want: true},
+		"check everything":          {cs: cmd.NewCheckSettings().WithEmpty(true).WithFiles(true).WithNumbering(true), want: true},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -836,22 +829,22 @@ func TestCheckSettings_PerformEmptyAnalysis(t *testing.T) {
 		checkedArtists []*cmd.CheckedArtist
 		want           bool
 	}{
-		"do nothing": {cs: &cmd.CheckSettings{Empty: false}},
+		"do nothing": {cs: cmd.NewCheckSettings().WithEmpty(false)},
 		"empty slice": {
-			cs:             &cmd.CheckSettings{Empty: true},
+			cs:             cmd.NewCheckSettings().WithEmpty(true),
 			checkedArtists: nil,
 		},
 		"full slice, no issues": {
-			cs:             &cmd.CheckSettings{Empty: true},
+			cs:             cmd.NewCheckSettings().WithEmpty(true),
 			checkedArtists: cmd.PrepareCheckedArtists(generateArtists(5, 6, 7)),
 		},
 		"empty artists": {
-			cs:             &cmd.CheckSettings{Empty: true},
+			cs:             cmd.NewCheckSettings().WithEmpty(true),
 			checkedArtists: cmd.PrepareCheckedArtists(generateArtists(1, 0, 10)),
 			want:           true,
 		},
 		"empty albums": {
-			cs:             &cmd.CheckSettings{Empty: true},
+			cs:             cmd.NewCheckSettings().WithEmpty(true),
 			checkedArtists: cmd.PrepareCheckedArtists(generateArtists(4, 6, 0)),
 			want:           true,
 		},
@@ -972,17 +965,17 @@ func TestCheckSettings_PerformNumberingAnalysis(t *testing.T) {
 		want           bool
 	}{
 		"no analysis": {
-			cs:             &cmd.CheckSettings{Numbering: false},
+			cs:             cmd.NewCheckSettings().WithNumbering(false),
 			checkedArtists: cmd.PrepareCheckedArtists(generateArtists(5, 6, 7)),
 			want:           false,
 		},
 		"ok analysis": {
-			cs:             &cmd.CheckSettings{Numbering: true},
+			cs:             cmd.NewCheckSettings().WithNumbering(true),
 			checkedArtists: cmd.PrepareCheckedArtists(generateArtists(5, 6, 7)),
 			want:           false,
 		},
 		"missing numbers found": {
-			cs:             &cmd.CheckSettings{Numbering: true},
+			cs:             cmd.NewCheckSettings().WithNumbering(true),
 			checkedArtists: cmd.PrepareCheckedArtists(defectiveArtists),
 			want:           true,
 		},
@@ -1075,13 +1068,13 @@ func TestCheckSettings_PerformFileAnalysis(t *testing.T) {
 		output.WantedRecording
 	}{
 		"not permitted to do anything": {
-			cs:              &cmd.CheckSettings{Files: false},
+			cs:              cmd.NewCheckSettings().WithFiles(false),
 			args:            args{},
 			want:            false,
 			WantedRecording: output.WantedRecording{},
 		},
 		"allowed, but nothing to check": {
-			cs: &cmd.CheckSettings{Files: true},
+			cs: cmd.NewCheckSettings().WithFiles(true),
 			args: args{
 				checkedArtists: []*cmd.CheckedArtist{},
 				ss:             &cmd.SearchSettings{},
@@ -1098,7 +1091,7 @@ func TestCheckSettings_PerformFileAnalysis(t *testing.T) {
 			},
 		},
 		"work to do": {
-			cs: &cmd.CheckSettings{Files: true},
+			cs: cmd.NewCheckSettings().WithFiles(true),
 			args: args{
 				checkedArtists: cmd.PrepareCheckedArtists(generateArtists(4, 5, 6)),
 				ss: &cmd.SearchSettings{
@@ -1138,17 +1131,17 @@ func TestCheckSettings_MaybeReportCleanResults(t *testing.T) {
 		output.WantedRecording
 	}{
 		"no issues found because nothing was checked": {
-			cs:              &cmd.CheckSettings{},
+			cs:              cmd.NewCheckSettings(),
 			args:            args{},
 			WantedRecording: output.WantedRecording{},
 		},
 		"all issues found, everything was checked": {
-			cs:              &cmd.CheckSettings{Empty: true, Numbering: true, Files: true},
+			cs:              cmd.NewCheckSettings().WithEmpty(true).WithNumbering(true).WithFiles(true),
 			args:            args{emptyIssues: true, numberingIssues: true, fileIssues: true},
 			WantedRecording: output.WantedRecording{},
 		},
 		"no issues found, everything was checked": {
-			cs:   &cmd.CheckSettings{Empty: true, Numbering: true, Files: true},
+			cs:   cmd.NewCheckSettings().WithEmpty(true).WithNumbering(true).WithFiles(true),
 			args: args{emptyIssues: false, numberingIssues: false, fileIssues: false},
 			WantedRecording: output.WantedRecording{
 				Console: "" +
@@ -1201,7 +1194,7 @@ func TestCheckSettings_PerformChecks(t *testing.T) {
 			WantedRecording: output.WantedRecording{},
 		},
 		"artists to check, check everything": {
-			cs: &cmd.CheckSettings{Empty: true, Numbering: true, Files: true},
+			cs: cmd.NewCheckSettings().WithEmpty(true).WithNumbering(true).WithFiles(true),
 			args: args{
 				artists:       generateArtists(1, 2, 3),
 				artistsLoaded: true,
@@ -1257,7 +1250,7 @@ func TestCheckSettings_MaybeDoWork(t *testing.T) {
 		output.WantedRecording
 	}{
 		"nothing to do": {
-			cs:         &cmd.CheckSettings{},
+			cs:         cmd.NewCheckSettings(),
 			ss:         nil,
 			wantStatus: cmd.UserError,
 			WantedRecording: output.WantedRecording{
@@ -1272,7 +1265,7 @@ func TestCheckSettings_MaybeDoWork(t *testing.T) {
 			},
 		},
 		"try a little work": {
-			cs: &cmd.CheckSettings{Empty: true},
+			cs: cmd.NewCheckSettings().WithEmpty(true),
 			ss: &cmd.SearchSettings{
 				TopDirectory:   filepath.Join(".", "no dir"),
 				FileExtensions: []string{".mp3"},
