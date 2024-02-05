@@ -39,11 +39,7 @@ var (
 	RepairFlags = SectionFlags{
 		SectionName: "repair",
 		Flags: map[string]*FlagDetails{
-			"dryRun": {
-				Usage:        "output what would have been repaired, but make no repairs",
-				ExpectedType: BoolType,
-				DefaultValue: false,
-			},
+			"dryRun": NewFlagDetails().WithUsage("output what would have been repaired, but make no repairs").WithExpectedType(BoolType).WithDefaultValue(false),
 		},
 	}
 )

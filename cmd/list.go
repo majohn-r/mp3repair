@@ -60,49 +60,14 @@ var (
 	ListFlags = SectionFlags{
 		SectionName: ListCommand,
 		Flags: map[string]*FlagDetails{
-			ListAlbums: {
-				AbbreviatedName: "l",
-				Usage:           "include album names in listing",
-				ExpectedType:    BoolType,
-				DefaultValue:    false,
-			},
-			ListArtists: {
-				AbbreviatedName: "r",
-				Usage:           "include artist names in listing",
-				ExpectedType:    BoolType,
-				DefaultValue:    false,
-			},
-			ListTracks: {
-				AbbreviatedName: "t",
-				Usage:           "include track names in listing",
-				ExpectedType:    BoolType,
-				DefaultValue:    false,
-			},
-			ListSortByNumber: {
-				Usage:        "sort tracks by track number",
-				ExpectedType: BoolType,
-				DefaultValue: false,
-			},
-			ListSortByTitle: {
-				Usage:        "sort tracks by track title",
-				ExpectedType: BoolType,
-				DefaultValue: false,
-			},
-			ListAnnotate: {
-				Usage:        "annotate listings with album and artist names",
-				ExpectedType: BoolType,
-				DefaultValue: false,
-			},
-			ListDetails: {
-				Usage:        "include details with tracks",
-				ExpectedType: BoolType,
-				DefaultValue: false,
-			},
-			ListDiagnostic: {
-				Usage:        "include diagnostic information with tracks",
-				ExpectedType: BoolType,
-				DefaultValue: false,
-			},
+			ListAlbums:       NewFlagDetails().WithAbbreviatedName("l").WithUsage("include album names in listing").WithExpectedType(BoolType).WithDefaultValue(false),
+			ListArtists:      NewFlagDetails().WithAbbreviatedName("r").WithUsage("include artist names in listing").WithExpectedType(BoolType).WithDefaultValue(false),
+			ListTracks:       NewFlagDetails().WithAbbreviatedName("t").WithUsage("include track names in listing").WithExpectedType(BoolType).WithDefaultValue(false),
+			ListSortByNumber: NewFlagDetails().WithUsage("sort tracks by track number").WithExpectedType(BoolType).WithDefaultValue(false),
+			ListSortByTitle:  NewFlagDetails().WithUsage("sort tracks by track title").WithExpectedType(BoolType).WithDefaultValue(false),
+			ListAnnotate:     NewFlagDetails().WithUsage("annotate listings with album and artist names").WithExpectedType(BoolType).WithDefaultValue(false),
+			ListDetails:      NewFlagDetails().WithUsage("include details with tracks").WithExpectedType(BoolType).WithDefaultValue(false),
+			ListDiagnostic:   NewFlagDetails().WithUsage("include diagnostic information with tracks").WithExpectedType(BoolType).WithDefaultValue(false),
 		},
 	}
 )

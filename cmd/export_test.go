@@ -472,7 +472,7 @@ func TestExportRun(t *testing.T) {
 			flags: cmd.SectionFlags{
 				SectionName: cmd.ExportCommand,
 				Flags: map[string]*cmd.FlagDetails{
-					cmd.ExportFlagOverwrite: {ExpectedType: cmd.BoolType, DefaultValue: 12},
+					cmd.ExportFlagOverwrite: cmd.NewFlagDetails().WithExpectedType(cmd.BoolType).WithDefaultValue(12),
 					cmd.ExportFlagDefaults:  nil,
 				},
 			},
@@ -488,7 +488,7 @@ func TestExportRun(t *testing.T) {
 			flags: cmd.SectionFlags{
 				SectionName: cmd.ExportCommand,
 				Flags: map[string]*cmd.FlagDetails{
-					cmd.ExportFlagOverwrite: {ExpectedType: cmd.BoolType, DefaultValue: 12},
+					cmd.ExportFlagOverwrite: cmd.NewFlagDetails().WithExpectedType(cmd.BoolType).WithDefaultValue(12),
 				},
 			},
 			wantExitCode:   cmd.ProgramError,
@@ -503,8 +503,8 @@ func TestExportRun(t *testing.T) {
 			flags: cmd.SectionFlags{
 				SectionName: cmd.ExportCommand,
 				Flags: map[string]*cmd.FlagDetails{
-					cmd.ExportFlagOverwrite: {ExpectedType: cmd.BoolType, DefaultValue: false},
-					cmd.ExportFlagDefaults:  {ExpectedType: cmd.BoolType, DefaultValue: false},
+					cmd.ExportFlagOverwrite: cmd.NewFlagDetails().WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+					cmd.ExportFlagDefaults:  cmd.NewFlagDetails().WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 				},
 			},
 			wantExitCode:   cmd.UserError,

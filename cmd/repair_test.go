@@ -1079,11 +1079,7 @@ func TestRepairRun(t *testing.T) {
 	repairFlags := cmd.SectionFlags{
 		SectionName: "repair",
 		Flags: map[string]*cmd.FlagDetails{
-			"dryRun": {
-				Usage:        "output what would have been repaired, but make no repairs",
-				ExpectedType: cmd.BoolType,
-				DefaultValue: false,
-			},
+			"dryRun": cmd.NewFlagDetails().WithUsage("output what would have been repaired, but make no repairs").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 		},
 	}
 	command := &cobra.Command{}

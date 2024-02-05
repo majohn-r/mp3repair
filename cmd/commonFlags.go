@@ -19,10 +19,47 @@ const (
 )
 
 type FlagDetails struct {
-	AbbreviatedName string
-	Usage           string
-	ExpectedType    ValueType
-	DefaultValue    any
+	abbreviatedName string
+	usage           string
+	expectedType    ValueType
+	defaultValue    any
+}
+
+func NewFlagDetails() *FlagDetails {
+	return &FlagDetails{}
+}
+
+func (fD *FlagDetails) Copy() *FlagDetails {
+	fDNew := NewFlagDetails()
+	fDNew.abbreviatedName = fD.abbreviatedName
+	fDNew.usage = fD.usage
+	fDNew.expectedType = fD.expectedType
+	fDNew.defaultValue = fD.defaultValue
+	return fDNew
+}
+
+func (fD *FlagDetails) DefaultValue() any {
+	return fD.defaultValue
+}
+
+func (fD *FlagDetails) WithAbbreviatedName(s string) *FlagDetails {
+	fD.abbreviatedName = s
+	return fD
+}
+
+func (fD *FlagDetails) WithUsage(s string) *FlagDetails {
+	fD.usage = s
+	return fD
+}
+
+func (fD *FlagDetails) WithExpectedType(t ValueType) *FlagDetails {
+	fD.expectedType = t
+	return fD
+}
+
+func (fD *FlagDetails) WithDefaultValue(a any) *FlagDetails {
+	fD.defaultValue = a
+	return fD
 }
 
 type SectionFlags struct {
@@ -83,49 +120,49 @@ func reportDefaultTypeError(o output.Bus, flag, expected string, value any) {
 }
 
 func (f *FlagDetails) AddFlag(o output.Bus, c ConfigSource, flags flagConsumer, sectionName, flagName string) {
-	switch f.ExpectedType {
+	switch f.expectedType {
 	case StringType:
-		if statedDefault, _ok := f.DefaultValue.(string); !_ok {
-			reportDefaultTypeError(o, flagName, "string", f.DefaultValue)
+		if statedDefault, _ok := f.defaultValue.(string); !_ok {
+			reportDefaultTypeError(o, flagName, "string", f.defaultValue)
 		} else {
 			if newDefault, err := c.StringDefault(flagName, statedDefault); err != nil {
 				cmd_toolkit.ReportInvalidConfigurationData(o, sectionName, err)
 			} else {
-				usage := cmd_toolkit.DecorateStringFlagUsage(f.Usage, newDefault)
-				if f.AbbreviatedName == "" {
+				usage := cmd_toolkit.DecorateStringFlagUsage(f.usage, newDefault)
+				if f.abbreviatedName == "" {
 					flags.String(flagName, newDefault, usage)
 				} else {
-					flags.StringP(flagName, f.AbbreviatedName, newDefault, usage)
+					flags.StringP(flagName, f.abbreviatedName, newDefault, usage)
 				}
 			}
 		}
 	case BoolType:
-		if statedDefault, _ok := f.DefaultValue.(bool); !_ok {
-			reportDefaultTypeError(o, flagName, "bool", f.DefaultValue)
+		if statedDefault, _ok := f.defaultValue.(bool); !_ok {
+			reportDefaultTypeError(o, flagName, "bool", f.defaultValue)
 		} else {
 			if newDefault, err := c.BoolDefault(flagName, statedDefault); err != nil {
 				cmd_toolkit.ReportInvalidConfigurationData(o, sectionName, err)
 			} else {
-				usage := cmd_toolkit.DecorateBoolFlagUsage(f.Usage, newDefault)
-				if f.AbbreviatedName == "" {
+				usage := cmd_toolkit.DecorateBoolFlagUsage(f.usage, newDefault)
+				if f.abbreviatedName == "" {
 					flags.Bool(flagName, newDefault, usage)
 				} else {
-					flags.BoolP(flagName, f.AbbreviatedName, newDefault, usage)
+					flags.BoolP(flagName, f.abbreviatedName, newDefault, usage)
 				}
 			}
 		}
 	case IntType:
-		if bounds, _ok := f.DefaultValue.(*cmd_toolkit.IntBounds); !_ok {
-			reportDefaultTypeError(o, flagName, "*cmd_toolkit.IntBounds", f.DefaultValue)
+		if bounds, _ok := f.defaultValue.(*cmd_toolkit.IntBounds); !_ok {
+			reportDefaultTypeError(o, flagName, "*cmd_toolkit.IntBounds", f.defaultValue)
 		} else {
 			if newDefault, err := c.IntDefault(flagName, bounds); err != nil {
 				cmd_toolkit.ReportInvalidConfigurationData(o, sectionName, err)
 			} else {
-				usage := cmd_toolkit.DecorateIntFlagUsage(f.Usage, newDefault)
-				if f.AbbreviatedName == "" {
+				usage := cmd_toolkit.DecorateIntFlagUsage(f.usage, newDefault)
+				if f.abbreviatedName == "" {
 					flags.Int(flagName, newDefault, usage)
 				} else {
-					flags.IntP(flagName, f.AbbreviatedName, newDefault, usage)
+					flags.IntP(flagName, f.abbreviatedName, newDefault, usage)
 				}
 			}
 		}
@@ -135,9 +172,9 @@ func (f *FlagDetails) AddFlag(o output.Bus, c ConfigSource, flags flagConsumer, 
 		o.Log(output.Error, "internal error", map[string]any{
 			"section":        sectionName,
 			"flag":           flagName,
-			"specified-type": f.ExpectedType,
-			"default":        f.DefaultValue,
-			"default-type":   reflect.TypeOf(f.DefaultValue),
+			"specified-type": f.expectedType,
+			"default":        f.defaultValue,
+			"default-type":   reflect.TypeOf(f.defaultValue),
 			"error":          "unspecified flag type",
 		})
 	}
@@ -173,9 +210,9 @@ func ReadFlags(producer FlagProducer, defs SectionFlags) (map[string]*FlagValue,
 		} else {
 			val := &FlagValue{
 				ExplicitlySet: producer.Changed(name),
-				ValueType:     details.ExpectedType,
+				ValueType:     details.expectedType,
 			}
-			switch details.ExpectedType {
+			switch details.expectedType {
 			case BoolType:
 				val.Value, err = producer.GetBool(name)
 			case StringType:

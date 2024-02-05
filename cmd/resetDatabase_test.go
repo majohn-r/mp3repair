@@ -886,39 +886,12 @@ func TestResetDBExec(t *testing.T) {
 	flags := cmd.SectionFlags{
 		SectionName: "resetDatabase",
 		Flags: map[string]*cmd.FlagDetails{
-			"timeout": {
-				AbbreviatedName: "t",
-				Usage:           fmt.Sprintf("timeout in seconds (minimum %d, maximum %d) for stopping the media player service", 1, 60),
-				ExpectedType:    cmd.IntType,
-				DefaultValue:    cmd_toolkit.NewIntBounds(1, 10, 60),
-			},
-			"service": {
-				Usage:        "name of the media player service",
-				ExpectedType: cmd.StringType,
-				DefaultValue: "WMPNetworkSVC",
-			},
-			"metadataDir": {
-				Usage:        "directory where the media player service metadata files are stored",
-				ExpectedType: cmd.StringType,
-				DefaultValue: filepath.Join("AppData", "Local", "Microsoft", "Media Player"),
-			},
-			"extension": {
-				Usage:        "extension for metadata files",
-				ExpectedType: cmd.StringType,
-				DefaultValue: ".wmdb",
-			},
-			"force": {
-				AbbreviatedName: "f",
-				Usage:           "if set, force a database reset",
-				ExpectedType:    cmd.BoolType,
-				DefaultValue:    false,
-			},
-			"ignoreServiceErrors": {
-				AbbreviatedName: "i",
-				Usage:           "if set, ignore service errors and delete the media player service metadata files",
-				ExpectedType:    cmd.BoolType,
-				DefaultValue:    false,
-			},
+			"timeout":             cmd.NewFlagDetails().WithAbbreviatedName("t").WithUsage(fmt.Sprintf("timeout in seconds (minimum %d, maximum %d) for stopping the media player service", 1, 60)).WithExpectedType(cmd.IntType).WithDefaultValue(cmd_toolkit.NewIntBounds(1, 10, 60)),
+			"service":             cmd.NewFlagDetails().WithUsage("name of the media player service").WithExpectedType(cmd.StringType).WithDefaultValue("WMPNetworkSVC"),
+			"metadataDir":         cmd.NewFlagDetails().WithUsage("directory where the media player service metadata files are stored").WithExpectedType(cmd.StringType).WithDefaultValue(filepath.Join("AppData", "Local", "Microsoft", "Media Player")),
+			"extension":           cmd.NewFlagDetails().WithUsage("extension for metadata files").WithExpectedType(cmd.StringType).WithDefaultValue(".wmdb"),
+			"force":               cmd.NewFlagDetails().WithAbbreviatedName("f").WithUsage("if set, force a database reset").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			"ignoreServiceErrors": cmd.NewFlagDetails().WithAbbreviatedName("i").WithUsage("if set, ignore service errors and delete the media player service metadata files").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 		},
 	}
 	myCommand := &cobra.Command{}
@@ -986,13 +959,7 @@ func TestResetDatabaseHelp(t *testing.T) {
 	for k, v := range cmd.ResetDatabaseFlags.Flags {
 		switch k {
 		case "metadataDir":
-			details := &cmd.FlagDetails{
-				Usage:           v.Usage,
-				ExpectedType:    v.ExpectedType,
-				AbbreviatedName: v.AbbreviatedName,
-				DefaultValue:    "[USERPROFILE]/AppData/Local/Microsoft/Media Player",
-			}
-			flagCopy.Flags[k] = details
+			flagCopy.Flags[k] = v.Copy().WithDefaultValue("[USERPROFILE]/AppData/Local/Microsoft/Media Player")
 		default:
 			flagCopy.Flags[k] = v
 		}

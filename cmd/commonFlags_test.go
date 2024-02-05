@@ -107,13 +107,13 @@ func TestReadFlags(t *testing.T) {
 				defs: cmd.SectionFlags{
 					SectionName: "whatever",
 					Flags: map[string]*cmd.FlagDetails{
-						"misidentifiedBool":   {ExpectedType: cmd.BoolType},
-						"misidentifiedInt":    {ExpectedType: cmd.IntType},
-						"misidentifiedString": {ExpectedType: cmd.StringType},
-						"bool":                {ExpectedType: cmd.BoolType},
-						"int":                 {ExpectedType: cmd.IntType},
-						"string":              {ExpectedType: cmd.StringType},
-						"unexpected":          {ExpectedType: cmd.UnspecifiedType},
+						"misidentifiedBool":   cmd.NewFlagDetails().WithExpectedType(cmd.BoolType),
+						"misidentifiedInt":    cmd.NewFlagDetails().WithExpectedType(cmd.IntType),
+						"misidentifiedString": cmd.NewFlagDetails().WithExpectedType(cmd.StringType),
+						"bool":                cmd.NewFlagDetails().WithExpectedType(cmd.BoolType),
+						"int":                 cmd.NewFlagDetails().WithExpectedType(cmd.IntType),
+						"string":              cmd.NewFlagDetails().WithExpectedType(cmd.StringType),
+						"unexpected":          cmd.NewFlagDetails().WithExpectedType(cmd.UnspecifiedType),
 					},
 				},
 			},
@@ -142,12 +142,12 @@ func TestReadFlags(t *testing.T) {
 				defs: cmd.SectionFlags{
 					SectionName: "whatever",
 					Flags: map[string]*cmd.FlagDetails{
-						"specifiedBool":     {ExpectedType: cmd.BoolType},
-						"specifiedInt":      {ExpectedType: cmd.IntType},
-						"specifiedString":   {ExpectedType: cmd.StringType},
-						"unspecifiedBool":   {ExpectedType: cmd.BoolType},
-						"unspecifiedInt":    {ExpectedType: cmd.IntType},
-						"unspecifiedString": {ExpectedType: cmd.StringType},
+						"specifiedBool":     cmd.NewFlagDetails().WithExpectedType(cmd.BoolType),
+						"specifiedInt":      cmd.NewFlagDetails().WithExpectedType(cmd.IntType),
+						"specifiedString":   cmd.NewFlagDetails().WithExpectedType(cmd.StringType),
+						"unspecifiedBool":   cmd.NewFlagDetails().WithExpectedType(cmd.BoolType),
+						"unspecifiedInt":    cmd.NewFlagDetails().WithExpectedType(cmd.IntType),
+						"unspecifiedString": cmd.NewFlagDetails().WithExpectedType(cmd.StringType),
 					},
 				},
 			},
@@ -282,7 +282,7 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 		output.WantedRecording
 	}{
 		"rejected string": {
-			f: &cmd.FlagDetails{Usage: "a useful string", ExpectedType: cmd.StringType, DefaultValue: ""},
+			f: cmd.NewFlagDetails().WithUsage("a useful string").WithExpectedType(cmd.StringType).WithDefaultValue(""),
 			args: args{
 				c:           testConfigSource{accept: false},
 				flags:       &testFlagConsumer{},
@@ -295,7 +295,7 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 			},
 		},
 		"accepted string": {
-			f: &cmd.FlagDetails{Usage: "a useful string", ExpectedType: cmd.StringType, DefaultValue: ""},
+			f: cmd.NewFlagDetails().WithUsage("a useful string").WithExpectedType(cmd.StringType).WithDefaultValue(""),
 			args: args{
 				c:           testConfigSource{accept: true},
 				flags:       &testFlagConsumer{flags: map[string]*testFlagDatum{}},
@@ -307,7 +307,7 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 			wantUsage:    "a useful string (default \"\")",
 		},
 		"accepted string with shorthand": {
-			f: &cmd.FlagDetails{AbbreviatedName: "f", Usage: "a useful string", ExpectedType: cmd.StringType, DefaultValue: ""},
+			f: cmd.NewFlagDetails().WithAbbreviatedName("f").WithUsage("a useful string").WithExpectedType(cmd.StringType).WithDefaultValue(""),
 			args: args{
 				c:           testConfigSource{accept: true},
 				flags:       &testFlagConsumer{flags: map[string]*testFlagDatum{}},
@@ -320,7 +320,7 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 			wantUsage:     "a useful string (default \"\")",
 		},
 		"malformed string": {
-			f: &cmd.FlagDetails{Usage: "a useful string", ExpectedType: cmd.StringType, DefaultValue: true},
+			f: cmd.NewFlagDetails().WithUsage("a useful string").WithExpectedType(cmd.StringType).WithDefaultValue(true),
 			args: args{
 				c:           testConfigSource{accept: true},
 				flags:       &testFlagConsumer{},
@@ -333,7 +333,7 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 			},
 		},
 		"rejected int": {
-			f: &cmd.FlagDetails{Usage: "a useful int", ExpectedType: cmd.IntType, DefaultValue: cmd_toolkit.NewIntBounds(0, 1, 2)},
+			f: cmd.NewFlagDetails().WithUsage("a useful int").WithExpectedType(cmd.IntType).WithDefaultValue(cmd_toolkit.NewIntBounds(0, 1, 2)),
 			args: args{
 				c:           testConfigSource{accept: false},
 				flags:       &testFlagConsumer{},
@@ -346,7 +346,7 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 			},
 		},
 		"accepted int": {
-			f: &cmd.FlagDetails{Usage: "a useful int", ExpectedType: cmd.IntType, DefaultValue: cmd_toolkit.NewIntBounds(0, 1, 2)},
+			f: cmd.NewFlagDetails().WithUsage("a useful int").WithExpectedType(cmd.IntType).WithDefaultValue(cmd_toolkit.NewIntBounds(0, 1, 2)),
 			args: args{
 				c:           testConfigSource{accept: true},
 				flags:       &testFlagConsumer{flags: map[string]*testFlagDatum{}},
@@ -358,7 +358,7 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 			wantUsage:    "a useful int (default 0)",
 		},
 		"accepted int with shorthand": {
-			f: &cmd.FlagDetails{AbbreviatedName: "i", Usage: "a useful int", ExpectedType: cmd.IntType, DefaultValue: cmd_toolkit.NewIntBounds(0, 1, 2)},
+			f: cmd.NewFlagDetails().WithAbbreviatedName("i").WithUsage("a useful int").WithExpectedType(cmd.IntType).WithDefaultValue(cmd_toolkit.NewIntBounds(0, 1, 2)),
 			args: args{
 				c:           testConfigSource{accept: true},
 				flags:       &testFlagConsumer{flags: map[string]*testFlagDatum{}},
@@ -371,7 +371,7 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 			wantUsage:     "a useful int (default 0)",
 		},
 		"malformed int": {
-			f: &cmd.FlagDetails{Usage: "a useful int", ExpectedType: cmd.IntType, DefaultValue: true},
+			f: cmd.NewFlagDetails().WithUsage("a useful int").WithExpectedType(cmd.IntType).WithDefaultValue(true),
 			args: args{
 				c:           testConfigSource{accept: true},
 				flags:       &testFlagConsumer{},
@@ -384,7 +384,7 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 			},
 		},
 		"rejected bool": {
-			f: &cmd.FlagDetails{Usage: "a useful bool", ExpectedType: cmd.BoolType, DefaultValue: false},
+			f: cmd.NewFlagDetails().WithUsage("a useful bool").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 			args: args{
 				c:           testConfigSource{accept: false},
 				flags:       &testFlagConsumer{},
@@ -397,7 +397,7 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 			},
 		},
 		"accepted bool": {
-			f: &cmd.FlagDetails{Usage: "a useful bool", ExpectedType: cmd.BoolType, DefaultValue: false},
+			f: cmd.NewFlagDetails().WithUsage("a useful bool").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 			args: args{
 				c:           testConfigSource{accept: true},
 				flags:       &testFlagConsumer{flags: map[string]*testFlagDatum{}},
@@ -409,7 +409,7 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 			wantUsage:    "a useful bool (default false)",
 		},
 		"accepted bool with shorthand": {
-			f: &cmd.FlagDetails{AbbreviatedName: "b", Usage: "a useful bool", ExpectedType: cmd.BoolType, DefaultValue: false},
+			f: cmd.NewFlagDetails().WithAbbreviatedName("b").WithUsage("a useful bool").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 			args: args{
 				c:           testConfigSource{accept: true},
 				flags:       &testFlagConsumer{flags: map[string]*testFlagDatum{}},
@@ -422,7 +422,7 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 			wantUsage:     "a useful bool (default false)",
 		},
 		"malformed bool": {
-			f: &cmd.FlagDetails{Usage: "a useful bool", ExpectedType: cmd.BoolType, DefaultValue: cmd_toolkit.NewIntBounds(0, 1, 2)},
+			f: cmd.NewFlagDetails().WithUsage("a useful bool").WithExpectedType(cmd.BoolType).WithDefaultValue(cmd_toolkit.NewIntBounds(0, 1, 2)),
 			args: args{
 				c:           testConfigSource{accept: true},
 				flags:       &testFlagConsumer{},
@@ -435,7 +435,7 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 			},
 		},
 		"malformed details": {
-			f: &cmd.FlagDetails{Usage: "useless", ExpectedType: cmd.UnspecifiedType, DefaultValue: true},
+			f: cmd.NewFlagDetails().WithUsage("useless").WithExpectedType(cmd.UnspecifiedType).WithDefaultValue(true),
 			args: args{
 				c:           testConfigSource{accept: true},
 				flags:       &testFlagConsumer{},
@@ -515,21 +515,9 @@ func TestAddFlags(t *testing.T) {
 			replaceSearchFlags: cmd.SectionFlags{
 				SectionName: "common",
 				Flags: map[string]*cmd.FlagDetails{
-					"albumFilter": {
-						Usage:        "regular expression specifying which albums to select",
-						ExpectedType: cmd.StringType,
-						DefaultValue: ".*",
-					},
-					"artistFilter": {
-						Usage:        "regular expression specifying which artists to select",
-						ExpectedType: cmd.StringType,
-						DefaultValue: ".*",
-					},
-					"topDir": {
-						Usage:        "top directory specifying where to find music files",
-						ExpectedType: cmd.BoolType,
-						DefaultValue: filepath.Join("%HOMEPATH%", "Music"),
-					},
+					"albumFilter":  cmd.NewFlagDetails().WithUsage("regular expression specifying which albums to select").WithExpectedType(cmd.StringType).WithDefaultValue(".*"),
+					"artistFilter": cmd.NewFlagDetails().WithUsage("regular expression specifying which artists to select").WithExpectedType(cmd.StringType).WithDefaultValue(".*"),
+					"topDir":       cmd.NewFlagDetails().WithUsage("top directory specifying where to find music files").WithExpectedType(cmd.BoolType).WithDefaultValue(filepath.Join("%HOMEPATH%", "Music")),
 				},
 			},
 			doReplacement: true,
@@ -545,7 +533,7 @@ func TestAddFlags(t *testing.T) {
 				defs: cmd.SectionFlags{
 					SectionName: "mySection",
 					Flags: map[string]*cmd.FlagDetails{
-						"myFlag": {ExpectedType: cmd.BoolType, DefaultValue: false},
+						"myFlag": cmd.NewFlagDetails().WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 					},
 				},
 				includeSearches: true,
@@ -558,7 +546,7 @@ func TestAddFlags(t *testing.T) {
 				defs: cmd.SectionFlags{
 					SectionName: "mySection",
 					Flags: map[string]*cmd.FlagDetails{
-						"myFlag": {ExpectedType: cmd.BoolType, DefaultValue: false},
+						"myFlag": cmd.NewFlagDetails().WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 					},
 				},
 				includeSearches: false,
@@ -571,7 +559,7 @@ func TestAddFlags(t *testing.T) {
 				defs: cmd.SectionFlags{
 					SectionName: "mySection",
 					Flags: map[string]*cmd.FlagDetails{
-						"myFlag": {ExpectedType: cmd.BoolType, DefaultValue: false},
+						"myFlag": cmd.NewFlagDetails().WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 					},
 				},
 				includeSearches: true,
@@ -579,21 +567,9 @@ func TestAddFlags(t *testing.T) {
 			replaceSearchFlags: cmd.SectionFlags{
 				SectionName: "common",
 				Flags: map[string]*cmd.FlagDetails{
-					"albumFilter": {
-						Usage:        "regular expression specifying which albums to select",
-						ExpectedType: cmd.StringType,
-						DefaultValue: ".*",
-					},
-					"artistFilter": {
-						Usage:        "regular expression specifying which artists to select",
-						ExpectedType: cmd.StringType,
-						DefaultValue: ".*",
-					},
-					"topDir": {
-						Usage:        "top directory specifying where to find music files",
-						ExpectedType: cmd.BoolType,
-						DefaultValue: filepath.Join("%HOMEPATH%", "Music"),
-					},
+					"albumFilter":  cmd.NewFlagDetails().WithUsage("regular expression specifying which albums to select").WithExpectedType(cmd.StringType).WithDefaultValue(".*"),
+					"artistFilter": cmd.NewFlagDetails().WithUsage("regular expression specifying which artists to select").WithExpectedType(cmd.StringType).WithDefaultValue(".*"),
+					"topDir":       cmd.NewFlagDetails().WithUsage("top directory specifying where to find music files").WithExpectedType(cmd.BoolType).WithDefaultValue(filepath.Join("%HOMEPATH%", "Music")),
 				},
 			},
 			doReplacement: true,
@@ -609,10 +585,10 @@ func TestAddFlags(t *testing.T) {
 				defs: cmd.SectionFlags{
 					SectionName: "mySection",
 					Flags: map[string]*cmd.FlagDetails{
-						"myFlag":       {ExpectedType: cmd.BoolType, DefaultValue: false},
-						"myBadFlag":    {ExpectedType: cmd.IntType, DefaultValue: false},
-						"myBetterFlag": {ExpectedType: cmd.BoolType, DefaultValue: true},
-						"myWorseFlag":  {ExpectedType: cmd.BoolType, DefaultValue: "nope"},
+						"myFlag":       cmd.NewFlagDetails().WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+						"myBadFlag":    cmd.NewFlagDetails().WithExpectedType(cmd.IntType).WithDefaultValue(false),
+						"myBetterFlag": cmd.NewFlagDetails().WithExpectedType(cmd.BoolType).WithDefaultValue(true),
+						"myWorseFlag":  cmd.NewFlagDetails().WithExpectedType(cmd.BoolType).WithDefaultValue("nope"),
 					},
 				},
 				includeSearches: true,
@@ -631,10 +607,10 @@ func TestAddFlags(t *testing.T) {
 				defs: cmd.SectionFlags{
 					SectionName: "mySection",
 					Flags: map[string]*cmd.FlagDetails{
-						"myFlag":       {ExpectedType: cmd.BoolType, DefaultValue: false},
-						"myBadFlag":    {ExpectedType: cmd.IntType, DefaultValue: false},
-						"myBetterFlag": {ExpectedType: cmd.BoolType, DefaultValue: true},
-						"myWorseFlag":  {ExpectedType: cmd.BoolType, DefaultValue: "nope"},
+						"myFlag":       cmd.NewFlagDetails().WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+						"myBadFlag":    cmd.NewFlagDetails().WithExpectedType(cmd.IntType).WithDefaultValue(false),
+						"myBetterFlag": cmd.NewFlagDetails().WithExpectedType(cmd.BoolType).WithDefaultValue(true),
+						"myWorseFlag":  cmd.NewFlagDetails().WithExpectedType(cmd.BoolType).WithDefaultValue("nope"),
 					},
 				},
 				includeSearches: false,
@@ -653,10 +629,10 @@ func TestAddFlags(t *testing.T) {
 				defs: cmd.SectionFlags{
 					SectionName: "mySection",
 					Flags: map[string]*cmd.FlagDetails{
-						"myFlag":          {ExpectedType: cmd.BoolType, DefaultValue: false},
-						"myBadFlag":       {ExpectedType: cmd.IntType, DefaultValue: false},
-						"myBetterFlag":    {ExpectedType: cmd.BoolType, DefaultValue: true},
-						"myWorseFlag":     {ExpectedType: cmd.BoolType, DefaultValue: "nope"},
+						"myFlag":          cmd.NewFlagDetails().WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+						"myBadFlag":       cmd.NewFlagDetails().WithExpectedType(cmd.IntType).WithDefaultValue(false),
+						"myBetterFlag":    cmd.NewFlagDetails().WithExpectedType(cmd.BoolType).WithDefaultValue(true),
+						"myWorseFlag":     cmd.NewFlagDetails().WithExpectedType(cmd.BoolType).WithDefaultValue("nope"),
 						"myAbsentDetails": nil,
 					},
 				},
@@ -665,21 +641,9 @@ func TestAddFlags(t *testing.T) {
 			replaceSearchFlags: cmd.SectionFlags{
 				SectionName: "common",
 				Flags: map[string]*cmd.FlagDetails{
-					"albumFilter": {
-						Usage:        "regular expression specifying which albums to select",
-						ExpectedType: cmd.StringType,
-						DefaultValue: ".*",
-					},
-					"artistFilter": {
-						Usage:        "regular expression specifying which artists to select",
-						ExpectedType: cmd.StringType,
-						DefaultValue: ".*",
-					},
-					"topDir": {
-						Usage:        "top directory specifying where to find music files",
-						ExpectedType: cmd.BoolType,
-						DefaultValue: filepath.Join("%HOMEPATH%", "Music"),
-					},
+					"albumFilter":  cmd.NewFlagDetails().WithUsage("regular expression specifying which albums to select").WithExpectedType(cmd.StringType).WithDefaultValue(".*"),
+					"artistFilter": cmd.NewFlagDetails().WithUsage("regular expression specifying which artists to select").WithExpectedType(cmd.StringType).WithDefaultValue(".*"),
+					"topDir":       cmd.NewFlagDetails().WithUsage("top directory specifying where to find music files").WithExpectedType(cmd.BoolType).WithDefaultValue(filepath.Join("%HOMEPATH%", "Music")),
 				},
 			},
 			doReplacement: true,

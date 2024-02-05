@@ -91,24 +91,9 @@ var (
 	CheckFlags = SectionFlags{
 		SectionName: CheckCommand,
 		Flags: map[string]*FlagDetails{
-			CheckEmpty: {
-				AbbreviatedName: CheckEmptyAbbr,
-				Usage:           "report empty album and artist directories",
-				ExpectedType:    BoolType,
-				DefaultValue:    false,
-			},
-			CheckFiles: {
-				AbbreviatedName: CheckFilesAbbr,
-				Usage:           "report metadata/file inconsistencies",
-				ExpectedType:    BoolType,
-				DefaultValue:    false,
-			},
-			CheckNumbering: {
-				AbbreviatedName: CheckNumberingAbbr,
-				Usage:           "report missing track numbers and duplicated track numbering",
-				ExpectedType:    BoolType,
-				DefaultValue:    false,
-			},
+			CheckEmpty:     NewFlagDetails().WithAbbreviatedName(CheckEmptyAbbr).WithUsage("report empty album and artist directories").WithExpectedType(BoolType).WithDefaultValue(false),
+			CheckFiles:     NewFlagDetails().WithAbbreviatedName(CheckFilesAbbr).WithUsage("report metadata/file inconsistencies").WithExpectedType(BoolType).WithDefaultValue(false),
+			CheckNumbering: NewFlagDetails().WithAbbreviatedName(CheckNumberingAbbr).WithUsage("report missing track numbers and duplicated track numbering").WithExpectedType(BoolType).WithDefaultValue(false),
 		},
 	}
 )

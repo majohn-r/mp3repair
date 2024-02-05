@@ -589,31 +589,11 @@ var (
 	safeSearchFlags = cmd.SectionFlags{
 		SectionName: "search",
 		Flags: map[string]*cmd.FlagDetails{
-			cmd.SearchAlbumFilter: {
-				Usage:        "regular expression specifying which albums to select",
-				ExpectedType: cmd.StringType,
-				DefaultValue: ".*",
-			},
-			cmd.SearchArtistFilter: {
-				Usage:        "regular expression specifying which artists to select",
-				ExpectedType: cmd.StringType,
-				DefaultValue: ".*",
-			},
-			cmd.SearchTrackFilter: {
-				Usage:        "regular expression specifying which tracks to select",
-				ExpectedType: cmd.StringType,
-				DefaultValue: ".*",
-			},
-			cmd.SearchTopDir: {
-				Usage:        "top directory specifying where to find mp3 files",
-				ExpectedType: cmd.StringType,
-				DefaultValue: ".",
-			},
-			cmd.SearchFileExtensions: {
-				Usage:        "comma-delimited list of file extensions used by mp3 files",
-				ExpectedType: cmd.StringType,
-				DefaultValue: ".mp3",
-			},
+			cmd.SearchAlbumFilter:    cmd.NewFlagDetails().WithUsage("regular expression specifying which albums to select").WithExpectedType(cmd.StringType).WithDefaultValue(".*"),
+			cmd.SearchArtistFilter:   cmd.NewFlagDetails().WithUsage("regular expression specifying which artists to select").WithExpectedType(cmd.StringType).WithDefaultValue(".*"),
+			cmd.SearchTrackFilter:    cmd.NewFlagDetails().WithUsage("regular expression specifying which tracks to select").WithExpectedType(cmd.StringType).WithDefaultValue(".*"),
+			cmd.SearchTopDir:         cmd.NewFlagDetails().WithUsage("top directory specifying where to find mp3 files").WithExpectedType(cmd.StringType).WithDefaultValue("."),
+			cmd.SearchFileExtensions: cmd.NewFlagDetails().WithUsage("comma-delimited list of file extensions used by mp3 files").WithExpectedType(cmd.StringType).WithDefaultValue(".mp3"),
 		},
 	}
 )
@@ -1505,49 +1485,14 @@ func Test_ListRun(t *testing.T) {
 	testListFlags := cmd.SectionFlags{
 		SectionName: cmd.ListCommand,
 		Flags: map[string]*cmd.FlagDetails{
-			cmd.ListAlbums: {
-				AbbreviatedName: "l",
-				Usage:           "include album names in listing",
-				ExpectedType:    cmd.BoolType,
-				DefaultValue:    false,
-			},
-			cmd.ListArtists: {
-				AbbreviatedName: "r",
-				Usage:           "include artist names in listing",
-				ExpectedType:    cmd.BoolType,
-				DefaultValue:    true,
-			},
-			cmd.ListTracks: {
-				AbbreviatedName: "t",
-				Usage:           "include track names in listing",
-				ExpectedType:    cmd.BoolType,
-				DefaultValue:    false,
-			},
-			cmd.ListSortByNumber: {
-				Usage:        "sort tracks by track number",
-				ExpectedType: cmd.BoolType,
-				DefaultValue: false,
-			},
-			cmd.ListSortByTitle: {
-				Usage:        "sort tracks by track title",
-				ExpectedType: cmd.BoolType,
-				DefaultValue: false,
-			},
-			cmd.ListAnnotate: {
-				Usage:        "annotate listings with album and artist names",
-				ExpectedType: cmd.BoolType,
-				DefaultValue: false,
-			},
-			cmd.ListDetails: {
-				Usage:        "include details with tracks",
-				ExpectedType: cmd.BoolType,
-				DefaultValue: false,
-			},
-			cmd.ListDiagnostic: {
-				Usage:        "include diagnostic information with tracks",
-				ExpectedType: cmd.BoolType,
-				DefaultValue: false,
-			},
+			cmd.ListAlbums:       cmd.NewFlagDetails().WithAbbreviatedName("l").WithUsage("include album names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.ListArtists:      cmd.NewFlagDetails().WithAbbreviatedName("r").WithUsage("include artist names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(true),
+			cmd.ListTracks:       cmd.NewFlagDetails().WithAbbreviatedName("t").WithUsage("include track names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.ListSortByNumber: cmd.NewFlagDetails().WithUsage("sort tracks by track number").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.ListSortByTitle:  cmd.NewFlagDetails().WithUsage("sort tracks by track title").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.ListAnnotate:     cmd.NewFlagDetails().WithUsage("annotate listings with album and artist names").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.ListDetails:      cmd.NewFlagDetails().WithUsage("include details with tracks").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.ListDiagnostic:   cmd.NewFlagDetails().WithUsage("include diagnostic information with tracks").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 		},
 	}
 	testCmd := &cobra.Command{}
@@ -1556,49 +1501,14 @@ func Test_ListRun(t *testing.T) {
 	testListFlags2 := cmd.SectionFlags{
 		SectionName: cmd.ListCommand,
 		Flags: map[string]*cmd.FlagDetails{
-			cmd.ListAlbums: {
-				AbbreviatedName: "l",
-				Usage:           "include album names in listing",
-				ExpectedType:    cmd.BoolType,
-				DefaultValue:    false,
-			},
-			cmd.ListArtists: {
-				AbbreviatedName: "r",
-				Usage:           "include artist names in listing",
-				ExpectedType:    cmd.BoolType,
-				DefaultValue:    true,
-			},
-			cmd.ListTracks: {
-				AbbreviatedName: "t",
-				Usage:           "include track names in listing",
-				ExpectedType:    cmd.BoolType,
-				DefaultValue:    true,
-			},
-			cmd.ListSortByNumber: {
-				Usage:        "sort tracks by track number",
-				ExpectedType: cmd.BoolType,
-				DefaultValue: true,
-			},
-			cmd.ListSortByTitle: {
-				Usage:        "sort tracks by track title",
-				ExpectedType: cmd.BoolType,
-				DefaultValue: true,
-			},
-			cmd.ListAnnotate: {
-				Usage:        "annotate listings with album and artist names",
-				ExpectedType: cmd.BoolType,
-				DefaultValue: false,
-			},
-			cmd.ListDetails: {
-				Usage:        "include details with tracks",
-				ExpectedType: cmd.BoolType,
-				DefaultValue: false,
-			},
-			cmd.ListDiagnostic: {
-				Usage:        "include diagnostic information with tracks",
-				ExpectedType: cmd.BoolType,
-				DefaultValue: false,
-			},
+			cmd.ListAlbums:       cmd.NewFlagDetails().WithAbbreviatedName("l").WithUsage("include album names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.ListArtists:      cmd.NewFlagDetails().WithAbbreviatedName("r").WithUsage("include artist names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(true),
+			cmd.ListTracks:       cmd.NewFlagDetails().WithAbbreviatedName("t").WithUsage("include track names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(true),
+			cmd.ListSortByNumber: cmd.NewFlagDetails().WithUsage("sort tracks by track number").WithExpectedType(cmd.BoolType).WithDefaultValue(true),
+			cmd.ListSortByTitle:  cmd.NewFlagDetails().WithUsage("sort tracks by track title").WithExpectedType(cmd.BoolType).WithDefaultValue(true),
+			cmd.ListAnnotate:     cmd.NewFlagDetails().WithUsage("annotate listings with album and artist names").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.ListDetails:      cmd.NewFlagDetails().WithUsage("include details with tracks").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.ListDiagnostic:   cmd.NewFlagDetails().WithUsage("include diagnostic information with tracks").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 		},
 	}
 	testCmd2 := &cobra.Command{}
@@ -1607,49 +1517,14 @@ func Test_ListRun(t *testing.T) {
 	testListFlags3 := cmd.SectionFlags{
 		SectionName: cmd.ListCommand,
 		Flags: map[string]*cmd.FlagDetails{
-			cmd.ListAlbums: {
-				AbbreviatedName: "l",
-				Usage:           "include album names in listing",
-				ExpectedType:    cmd.BoolType,
-				DefaultValue:    false,
-			},
-			cmd.ListArtists: {
-				AbbreviatedName: "r",
-				Usage:           "include artist names in listing",
-				ExpectedType:    cmd.BoolType,
-				DefaultValue:    false,
-			},
-			cmd.ListTracks: {
-				AbbreviatedName: "t",
-				Usage:           "include track names in listing",
-				ExpectedType:    cmd.BoolType,
-				DefaultValue:    false,
-			},
-			cmd.ListSortByNumber: {
-				Usage:        "sort tracks by track number",
-				ExpectedType: cmd.BoolType,
-				DefaultValue: false,
-			},
-			cmd.ListSortByTitle: {
-				Usage:        "sort tracks by track title",
-				ExpectedType: cmd.BoolType,
-				DefaultValue: false,
-			},
-			cmd.ListAnnotate: {
-				Usage:        "annotate listings with album and artist names",
-				ExpectedType: cmd.BoolType,
-				DefaultValue: false,
-			},
-			cmd.ListDetails: {
-				Usage:        "include details with tracks",
-				ExpectedType: cmd.BoolType,
-				DefaultValue: false,
-			},
-			cmd.ListDiagnostic: {
-				Usage:        "include diagnostic information with tracks",
-				ExpectedType: cmd.BoolType,
-				DefaultValue: false,
-			},
+			cmd.ListAlbums:       cmd.NewFlagDetails().WithAbbreviatedName("l").WithUsage("include album names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.ListArtists:      cmd.NewFlagDetails().WithAbbreviatedName("r").WithUsage("include artist names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.ListTracks:       cmd.NewFlagDetails().WithAbbreviatedName("t").WithUsage("include track names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.ListSortByNumber: cmd.NewFlagDetails().WithUsage("sort tracks by track number").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.ListSortByTitle:  cmd.NewFlagDetails().WithUsage("sort tracks by track title").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.ListAnnotate:     cmd.NewFlagDetails().WithUsage("annotate listings with album and artist names").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.ListDetails:      cmd.NewFlagDetails().WithUsage("include details with tracks").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.ListDiagnostic:   cmd.NewFlagDetails().WithUsage("include diagnostic information with tracks").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 		},
 	}
 	testCmd3 := &cobra.Command{}

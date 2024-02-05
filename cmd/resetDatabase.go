@@ -71,39 +71,12 @@ changes, unless the ` + resetDBForceFlag + ` flag is set.`,
 	ResetDatabaseFlags = SectionFlags{
 		SectionName: resetDBCommandName,
 		Flags: map[string]*FlagDetails{
-			resetDBTimeout: {
-				AbbreviatedName: resetDBTimeoutAbbr,
-				Usage:           fmt.Sprintf("timeout in seconds (minimum %d, maximum %d) for stopping the media player service", minTimeout, maxTimeout),
-				ExpectedType:    IntType,
-				DefaultValue:    cmd_toolkit.NewIntBounds(minTimeout, defaultTimeout, maxTimeout),
-			},
-			resetDBService: {
-				Usage:        "name of the media player service",
-				ExpectedType: StringType,
-				DefaultValue: "WMPNetworkSVC",
-			},
-			resetDBMetadataDir: {
-				Usage:        "directory where the media player service metadata files are stored",
-				ExpectedType: StringType,
-				DefaultValue: filepath.Join("%USERPROFILE%", "AppData", "Local", "Microsoft", "Media Player"),
-			},
-			resetDBExtension: {
-				Usage:        "extension for metadata files",
-				ExpectedType: StringType,
-				DefaultValue: ".wmdb",
-			},
-			resetDBForce: {
-				AbbreviatedName: resetDBForceAbbr,
-				Usage:           "if set, force a database reset",
-				ExpectedType:    BoolType,
-				DefaultValue:    false,
-			},
-			resetDBIgnoreServiceErrors: {
-				AbbreviatedName: resetDBIgnoreServiceErrorsAbbr,
-				Usage:           "if set, ignore service errors and delete the media player service metadata files",
-				ExpectedType:    BoolType,
-				DefaultValue:    false,
-			},
+			resetDBTimeout:             NewFlagDetails().WithAbbreviatedName(resetDBTimeoutAbbr).WithUsage(fmt.Sprintf("timeout in seconds (minimum %d, maximum %d) for stopping the media player service", minTimeout, maxTimeout)).WithExpectedType(IntType).WithDefaultValue(cmd_toolkit.NewIntBounds(minTimeout, defaultTimeout, maxTimeout)),
+			resetDBService:             NewFlagDetails().WithUsage("name of the media player service").WithExpectedType(StringType).WithDefaultValue("WMPNetworkSVC"),
+			resetDBMetadataDir:         NewFlagDetails().WithUsage("directory where the media player service metadata files are stored").WithExpectedType(StringType).WithDefaultValue(filepath.Join("%USERPROFILE%", "AppData", "Local", "Microsoft", "Media Player")),
+			resetDBExtension:           NewFlagDetails().WithUsage("extension for metadata files").WithExpectedType(StringType).WithDefaultValue(".wmdb"),
+			resetDBForce:               NewFlagDetails().WithAbbreviatedName(resetDBForceAbbr).WithUsage("if set, force a database reset").WithExpectedType(BoolType).WithDefaultValue(false),
+			resetDBIgnoreServiceErrors: NewFlagDetails().WithAbbreviatedName(resetDBIgnoreServiceErrorsAbbr).WithUsage("if set, ignore service errors and delete the media player service metadata files").WithExpectedType(BoolType).WithDefaultValue(false),
 		},
 	}
 	stateToStatus = map[svc.State]string{

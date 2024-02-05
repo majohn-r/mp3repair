@@ -1323,24 +1323,9 @@ func TestCheckRun(t *testing.T) {
 	checkFlags := cmd.SectionFlags{
 		SectionName: cmd.CheckCommand,
 		Flags: map[string]*cmd.FlagDetails{
-			cmd.CheckEmpty: {
-				AbbreviatedName: cmd.CheckEmptyAbbr,
-				Usage:           "report empty album and artist directories",
-				ExpectedType:    cmd.BoolType,
-				DefaultValue:    false,
-			},
-			cmd.CheckFiles: {
-				AbbreviatedName: cmd.CheckFilesAbbr,
-				Usage:           "report metadata/file inconsistencies",
-				ExpectedType:    cmd.BoolType,
-				DefaultValue:    false,
-			},
-			cmd.CheckNumbering: {
-				AbbreviatedName: cmd.CheckNumberingAbbr,
-				Usage:           "report missing track numbers and duplicated track numbering",
-				ExpectedType:    cmd.BoolType,
-				DefaultValue:    false,
-			},
+			cmd.CheckEmpty:     cmd.NewFlagDetails().WithAbbreviatedName(cmd.CheckEmptyAbbr).WithUsage("report empty album and artist directories").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.CheckFiles:     cmd.NewFlagDetails().WithAbbreviatedName(cmd.CheckFilesAbbr).WithUsage("report metadata/file inconsistencies").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.CheckNumbering: cmd.NewFlagDetails().WithAbbreviatedName(cmd.CheckNumberingAbbr).WithUsage("report missing track numbers and duplicated track numbering").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 		},
 	}
 	command := &cobra.Command{}

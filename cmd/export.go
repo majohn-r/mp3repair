@@ -39,18 +39,8 @@ var (
 	ExportFlags = SectionFlags{
 		SectionName: ExportCommand,
 		Flags: map[string]*FlagDetails{
-			ExportFlagDefaults: {
-				AbbreviatedName: "d",
-				Usage:           "write default program configuration data",
-				ExpectedType:    BoolType,
-				DefaultValue:    false,
-			},
-			ExportFlagOverwrite: {
-				AbbreviatedName: "o",
-				Usage:           "overwrite existing file",
-				ExpectedType:    BoolType,
-				DefaultValue:    false,
-			},
+			ExportFlagDefaults:  NewFlagDetails().WithAbbreviatedName("d").WithUsage("write default program configuration data").WithExpectedType(BoolType).WithDefaultValue(false),
+			ExportFlagOverwrite: NewFlagDetails().WithAbbreviatedName("o").WithUsage("overwrite existing file").WithExpectedType(BoolType).WithDefaultValue(false),
 		},
 	}
 	defaultConfigurationSettings = map[string]map[string]any{}
@@ -59,10 +49,10 @@ var (
 func addDefaults(sf SectionFlags) {
 	payload := map[string]any{}
 	for flag, details := range sf.Flags {
-		if bounded, ok := details.DefaultValue.(*cmd_toolkit.IntBounds); ok {
+		if bounded, ok := details.DefaultValue().(*cmd_toolkit.IntBounds); ok {
 			payload[flag] = bounded.Default()
 		} else {
-			payload[flag] = details.DefaultValue
+			payload[flag] = details.DefaultValue()
 		}
 	}
 	defaultConfigurationSettings[sf.SectionName] = payload
