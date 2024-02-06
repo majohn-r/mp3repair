@@ -202,9 +202,28 @@ func (f *FlagDetails) AddFlag(o output.Bus, c ConfigSource, flags flagConsumer, 
 }
 
 type FlagValue struct {
-	ExplicitlySet bool
-	ValueType     ValueType
-	Value         any
+	explicitlySet bool
+	valueType     ValueType
+	value         any
+}
+
+func NewFlagValue() *FlagValue {
+	return &FlagValue{}
+}
+
+func (fV *FlagValue) WithExplicitlySet(b bool) *FlagValue {
+	fV.explicitlySet = b
+	return fV
+}
+
+func (fV *FlagValue) WithValueType(t ValueType) *FlagValue {
+	fV.valueType = t
+	return fV
+}
+
+func (fV *FlagValue) WithValue(a any) *FlagValue {
+	fV.value = a
+	return fV
 }
 
 type FlagProducer interface {
@@ -230,16 +249,16 @@ func ReadFlags(producer FlagProducer, defs *SectionFlags) (map[string]*FlagValue
 			err = fmt.Errorf("no details for flag %q", name)
 		} else {
 			val := &FlagValue{
-				ExplicitlySet: producer.Changed(name),
-				ValueType:     details.expectedType,
+				explicitlySet: producer.Changed(name),
+				valueType:     details.expectedType,
 			}
 			switch details.expectedType {
 			case BoolType:
-				val.Value, err = producer.GetBool(name)
+				val.value, err = producer.GetBool(name)
 			case StringType:
-				val.Value, err = producer.GetString(name)
+				val.value, err = producer.GetString(name)
 			case IntType:
-				val.Value, err = producer.GetInt(name)
+				val.value, err = producer.GetInt(name)
 			default:
 				err = fmt.Errorf("unknown type for flag --%s", name)
 			}
@@ -263,16 +282,16 @@ func GetBool(o output.Bus, results map[string]*FlagValue, flagName string) (val,
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
 			"error": e})
-	} else if v, ok := fv.Value.(bool); !ok {
+	} else if v, ok := fv.value.(bool); !ok {
 		e = fmt.Errorf("flag value not boolean")
-		o.WriteCanonicalError("an internal error occurred: flag %q is not boolean (%v)", flagName, fv.Value)
+		o.WriteCanonicalError("an internal error occurred: flag %q is not boolean (%v)", flagName, fv.value)
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
-			"value": fv.Value,
+			"value": fv.value,
 			"error": e})
 	} else {
 		val = v
-		userSet = fv.ExplicitlySet
+		userSet = fv.explicitlySet
 	}
 	return
 }
@@ -286,16 +305,16 @@ func GetInt(o output.Bus, results map[string]*FlagValue, flagName string) (val i
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
 			"error": e})
-	} else if v, ok := fv.Value.(int); !ok {
+	} else if v, ok := fv.value.(int); !ok {
 		e = fmt.Errorf("flag value not int")
-		o.WriteCanonicalError("an internal error occurred: flag %q is not an integer (%v)", flagName, fv.Value)
+		o.WriteCanonicalError("an internal error occurred: flag %q is not an integer (%v)", flagName, fv.value)
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
-			"value": fv.Value,
+			"value": fv.value,
 			"error": e})
 	} else {
 		val = v
-		userSet = fv.ExplicitlySet
+		userSet = fv.explicitlySet
 	}
 	return
 }
@@ -309,16 +328,16 @@ func GetString(o output.Bus, results map[string]*FlagValue, flagName string) (va
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
 			"error": e})
-	} else if v, ok := fv.Value.(string); !ok {
+	} else if v, ok := fv.value.(string); !ok {
 		e = fmt.Errorf("flag value not string")
-		o.WriteCanonicalError("an internal error occurred: flag %q is not a string (%v)", flagName, fv.Value)
+		o.WriteCanonicalError("an internal error occurred: flag %q is not a string (%v)", flagName, fv.value)
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
-			"value": fv.Value,
+			"value": fv.value,
 			"error": e})
 	} else {
 		val = v
-		userSet = fv.ExplicitlySet
+		userSet = fv.explicitlySet
 	}
 	return
 }

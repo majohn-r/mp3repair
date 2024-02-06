@@ -380,8 +380,8 @@ func TestProcessExportFlags(t *testing.T) {
 	}{
 		"nothing went right": {
 			args: args{values: map[string]*cmd.FlagValue{
-				cmd.ExportFlagDefaults:  {Value: "foo"},
-				cmd.ExportFlagOverwrite: {Value: "bar"},
+				cmd.ExportFlagDefaults:  cmd.NewFlagValue().WithValue("foo"),
+				cmd.ExportFlagOverwrite: cmd.NewFlagValue().WithValue("bar"),
 			}},
 			want:  &cmd.ExportFlagSettings{},
 			want1: false,
@@ -394,8 +394,8 @@ func TestProcessExportFlags(t *testing.T) {
 		},
 		"bad defaults settings": {
 			args: args{values: map[string]*cmd.FlagValue{
-				cmd.ExportFlagDefaults:  {Value: "foo"},
-				cmd.ExportFlagOverwrite: {Value: true},
+				cmd.ExportFlagDefaults:  cmd.NewFlagValue().WithValue("foo"),
+				cmd.ExportFlagOverwrite: cmd.NewFlagValue().WithValue(true),
 			}},
 			want:  &cmd.ExportFlagSettings{OverwriteEnabled: true},
 			want1: false,
@@ -406,8 +406,8 @@ func TestProcessExportFlags(t *testing.T) {
 		},
 		"bad overwrites settings": {
 			args: args{values: map[string]*cmd.FlagValue{
-				cmd.ExportFlagDefaults:  {Value: true},
-				cmd.ExportFlagOverwrite: {Value: 17},
+				cmd.ExportFlagDefaults:  cmd.NewFlagValue().WithValue(true),
+				cmd.ExportFlagOverwrite: cmd.NewFlagValue().WithValue(17),
 			}},
 			want:  &cmd.ExportFlagSettings{DefaultsEnabled: true},
 			want1: false,
@@ -418,8 +418,8 @@ func TestProcessExportFlags(t *testing.T) {
 		},
 		"everything good": {
 			args: args{values: map[string]*cmd.FlagValue{
-				cmd.ExportFlagDefaults:  {Value: true},
-				cmd.ExportFlagOverwrite: {Value: true},
+				cmd.ExportFlagDefaults:  cmd.NewFlagValue().WithValue(true),
+				cmd.ExportFlagOverwrite: cmd.NewFlagValue().WithValue(true),
 			}},
 			want:  &cmd.ExportFlagSettings{DefaultsEnabled: true, OverwriteEnabled: true},
 			want1: true,

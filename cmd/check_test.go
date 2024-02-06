@@ -41,18 +41,18 @@ func TestProcessCheckFlags(t *testing.T) {
 		},
 		"out of the box": {
 			values: map[string]*cmd.FlagValue{
-				"empty":     {Value: false},
-				"files":     {Value: false},
-				"numbering": {Value: false},
+				"empty":     cmd.NewFlagValue().WithValue(false),
+				"files":     cmd.NewFlagValue().WithValue(false),
+				"numbering": cmd.NewFlagValue().WithValue(false),
 			},
 			want:  cmd.NewCheckSettings(),
 			want1: true,
 		},
 		"overridden": {
 			values: map[string]*cmd.FlagValue{
-				"empty":     {Value: true, ExplicitlySet: true},
-				"files":     {Value: true, ExplicitlySet: true},
-				"numbering": {Value: true, ExplicitlySet: true},
+				"empty":     cmd.NewFlagValue().WithValue(true).WithExplicitlySet(true),
+				"files":     cmd.NewFlagValue().WithValue(true).WithExplicitlySet(true),
+				"numbering": cmd.NewFlagValue().WithValue(true).WithExplicitlySet(true),
 			},
 			want:  cmd.NewCheckSettings().WithEmpty(true).WithEmptyUserSet(true).WithFiles(true).WithFilesUserSet(true).WithNumbering(true).WithNumberingUserSet(true),
 			want1: true,

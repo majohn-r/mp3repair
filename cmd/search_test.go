@@ -40,11 +40,7 @@ func TestEvaluateFilter(t *testing.T) {
 		"bad regex, user-supplied": {
 			args: args{
 				values: map[string]*cmd.FlagValue{
-					"albumFilter": {
-						ExplicitlySet: true,
-						ValueType:     cmd.StringType,
-						Value:         "[9-0]",
-					},
+					"albumFilter": cmd.NewFlagValue().WithExplicitlySet(true).WithValueType(cmd.StringType).WithValue("[9-0]"),
 				},
 				flagName:   "albumFilter",
 				nameAsFlag: "--albumFilter",
@@ -61,11 +57,7 @@ func TestEvaluateFilter(t *testing.T) {
 		"bad regex, as configured": {
 			args: args{
 				values: map[string]*cmd.FlagValue{
-					"albumFilter": {
-						ExplicitlySet: false,
-						ValueType:     cmd.StringType,
-						Value:         "[9-0]",
-					},
+					"albumFilter": cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(cmd.StringType).WithValue("[9-0]"),
 				},
 				flagName:   "albumFilter",
 				nameAsFlag: "--albumFilter",
@@ -82,11 +74,7 @@ func TestEvaluateFilter(t *testing.T) {
 		"good regex": {
 			args: args{
 				values: map[string]*cmd.FlagValue{
-					"albumFilter": {
-						ExplicitlySet: true,
-						ValueType:     cmd.StringType,
-						Value:         `\d`,
-					},
+					"albumFilter": cmd.NewFlagValue().WithExplicitlySet(true).WithValueType(cmd.StringType).WithValue(`\d`),
 				},
 				flagName:   "albumFilter",
 				nameAsFlag: "--albumFilter",
@@ -134,11 +122,7 @@ func TestEvaluateTopDir(t *testing.T) {
 		},
 		"non-existent file, user set": {
 			values: map[string]*cmd.FlagValue{
-				"topDir": {
-					ExplicitlySet: true,
-					ValueType:     cmd.StringType,
-					Value:         "no such directory",
-				},
+				"topDir": cmd.NewFlagValue().WithExplicitlySet(true).WithValueType(cmd.StringType).WithValue("no such directory"),
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "The --topDir value, \"no such directory\", cannot be used.\n" +
@@ -151,11 +135,7 @@ func TestEvaluateTopDir(t *testing.T) {
 		},
 		"non-existent file, as configured": {
 			values: map[string]*cmd.FlagValue{
-				"topDir": {
-					ExplicitlySet: false,
-					ValueType:     cmd.StringType,
-					Value:         "no such directory",
-				},
+				"topDir": cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(cmd.StringType).WithValue("no such directory"),
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "The --topDir value, \"no such directory\", cannot be used.\n" +
@@ -168,11 +148,7 @@ func TestEvaluateTopDir(t *testing.T) {
 		},
 		"non-existent directory, user set": {
 			values: map[string]*cmd.FlagValue{
-				"topDir": {
-					ExplicitlySet: true,
-					ValueType:     cmd.StringType,
-					Value:         "./commonFlags_test.go",
-				},
+				"topDir": cmd.NewFlagValue().WithExplicitlySet(true).WithValueType(cmd.StringType).WithValue("./commonFlags_test.go"),
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "The --topDir value, \"./commonFlags_test.go\", cannot be used.\n" +
@@ -185,11 +161,7 @@ func TestEvaluateTopDir(t *testing.T) {
 		},
 		"non-existent directory, as configured": {
 			values: map[string]*cmd.FlagValue{
-				"topDir": {
-					ExplicitlySet: false,
-					ValueType:     cmd.StringType,
-					Value:         "./commonFlags_test.go",
-				},
+				"topDir": cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(cmd.StringType).WithValue("./commonFlags_test.go"),
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "The --topDir value, \"./commonFlags_test.go\", cannot be used.\n" +
@@ -202,11 +174,7 @@ func TestEvaluateTopDir(t *testing.T) {
 		},
 		"valid directory": {
 			values: map[string]*cmd.FlagValue{
-				"topDir": {
-					ExplicitlySet: false,
-					ValueType:     cmd.StringType,
-					Value:         ".",
-				},
+				"topDir": cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(cmd.StringType).WithValue("."),
 			},
 			wantDir: ".",
 			wantOk:  true,
@@ -256,11 +224,11 @@ func TestProcessSearchFlags(t *testing.T) {
 		},
 		"bad data": {
 			values: map[string]*cmd.FlagValue{
-				"albumFilter":  {ValueType: cmd.StringType, Value: "[2"},
-				"artistFilter": {ValueType: cmd.StringType, Value: "[1-0]"},
-				"trackFilter":  {ValueType: cmd.StringType, Value: "0++"},
-				"topDir":       {ValueType: cmd.StringType, Value: "no such dir"},
-				"extensions":   {ValueType: cmd.StringType, Value: "foo,bar"},
+				"albumFilter":  cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("[2"),
+				"artistFilter": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("[1-0]"),
+				"trackFilter":  cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("0++"),
+				"topDir":       cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("no such dir"),
+				"extensions":   cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("foo,bar"),
 			},
 			wantSettings: &cmd.SearchSettings{},
 			WantedRecording: output.WantedRecording{
@@ -314,11 +282,11 @@ func TestProcessSearchFlags(t *testing.T) {
 		},
 		"good data": {
 			values: map[string]*cmd.FlagValue{
-				"albumFilter":  {ValueType: cmd.StringType, Value: "[23]"},
-				"artistFilter": {ValueType: cmd.StringType, Value: "[0-7]"},
-				"trackFilter":  {ValueType: cmd.StringType, Value: "0+"},
-				"topDir":       {ValueType: cmd.StringType, Value: "."},
-				"extensions":   {ValueType: cmd.StringType, Value: ".mp3"},
+				"albumFilter":  cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("[23]"),
+				"artistFilter": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("[0-7]"),
+				"trackFilter":  cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("0+"),
+				"topDir":       cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("."),
+				"extensions":   cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(".mp3"),
 			},
 			wantSettings: &cmd.SearchSettings{
 				AlbumFilter:    regexp.MustCompile("[23]"),
@@ -429,21 +397,21 @@ func TestEvaluateFileExtensions(t *testing.T) {
 		},
 		"one extension": {
 			values: map[string]*cmd.FlagValue{
-				"extensions": {ValueType: cmd.StringType, Value: ".mp3"},
+				"extensions": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(".mp3"),
 			},
 			want:  []string{".mp3"},
 			want1: true,
 		},
 		"two extensions": {
 			values: map[string]*cmd.FlagValue{
-				"extensions": {ValueType: cmd.StringType, Value: ".mp3,.mpthree"},
+				"extensions": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(".mp3,.mpthree"),
 			},
 			want:  []string{".mp3", ".mpthree"},
 			want1: true,
 		},
 		"bad extensions": {
 			values: map[string]*cmd.FlagValue{
-				"extensions": {ValueType: cmd.StringType, Value: ".mp3,,foo,."},
+				"extensions": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(".mp3,,foo,."),
 			},
 			want:  []string{".mp3"},
 			want1: false,

@@ -50,12 +50,12 @@ func TestProcessResetDBFlags(t *testing.T) {
 		},
 		"good results": {
 			values: map[string]*cmd.FlagValue{
-				"extension":           {ValueType: cmd.StringType, Value: ".foo"},
-				"force":               {ValueType: cmd.BoolType, Value: true},
-				"ignoreServiceErrors": {ValueType: cmd.BoolType, Value: true},
-				"metadataDir":         {ValueType: cmd.StringType, Value: "metadata"},
-				"service":             {ValueType: cmd.StringType, Value: "music service"},
-				"timeout":             {ValueType: cmd.IntType, Value: 5},
+				"extension":           cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(".foo"),
+				"force":               cmd.NewFlagValue().WithValueType(cmd.BoolType).WithValue(true),
+				"ignoreServiceErrors": cmd.NewFlagValue().WithValueType(cmd.BoolType).WithValue(true),
+				"metadataDir":         cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("metadata"),
+				"service":             cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("music service"),
+				"timeout":             cmd.NewFlagValue().WithValueType(cmd.IntType).WithValue(5),
 			},
 			want: &cmd.ResetDBSettings{
 				Extension:           ".foo",

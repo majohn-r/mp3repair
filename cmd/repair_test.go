@@ -38,7 +38,7 @@ func TestProcessRepairFlags(t *testing.T) {
 			},
 		},
 		"good value": {
-			values: map[string]*cmd.FlagValue{"dryRun": {Value: true}},
+			values: map[string]*cmd.FlagValue{"dryRun": cmd.NewFlagValue().WithValue(true)},
 			want:   &cmd.RepairSettings{DryRun: true},
 			want1:  true,
 		},

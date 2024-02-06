@@ -113,9 +113,9 @@ func TestReadFlags(t *testing.T) {
 				),
 			},
 			want: map[string]*cmd.FlagValue{
-				"bool":   {ExplicitlySet: false, ValueType: cmd.BoolType, Value: true},
-				"int":    {ExplicitlySet: false, ValueType: cmd.IntType, Value: 6},
-				"string": {ExplicitlySet: false, ValueType: cmd.StringType, Value: "foo"},
+				"bool":   cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(cmd.BoolType).WithValue(true),
+				"int":    cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(cmd.IntType).WithValue(6),
+				"string": cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(cmd.StringType).WithValue("foo"),
 			},
 			want1: []string{
 				"flag \"misidentifiedBool\" is not marked boolean",
@@ -146,12 +146,12 @@ func TestReadFlags(t *testing.T) {
 				),
 			},
 			want: map[string]*cmd.FlagValue{
-				"specifiedBool":     {ExplicitlySet: true, ValueType: cmd.BoolType, Value: true},
-				"specifiedInt":      {ExplicitlySet: true, ValueType: cmd.IntType, Value: 6},
-				"specifiedString":   {ExplicitlySet: true, ValueType: cmd.StringType, Value: "foo"},
-				"unspecifiedBool":   {ExplicitlySet: false, ValueType: cmd.BoolType, Value: true},
-				"unspecifiedInt":    {ExplicitlySet: false, ValueType: cmd.IntType, Value: 6},
-				"unspecifiedString": {ExplicitlySet: false, ValueType: cmd.StringType, Value: "foo"},
+				"specifiedBool":     cmd.NewFlagValue().WithExplicitlySet(true).WithValueType(cmd.BoolType).WithValue(true),
+				"specifiedInt":      cmd.NewFlagValue().WithExplicitlySet(true).WithValueType(cmd.IntType).WithValue(6),
+				"specifiedString":   cmd.NewFlagValue().WithExplicitlySet(true).WithValueType(cmd.StringType).WithValue("foo"),
+				"unspecifiedBool":   cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(cmd.BoolType).WithValue(true),
+				"unspecifiedInt":    cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(cmd.IntType).WithValue(6),
+				"unspecifiedString": cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(cmd.StringType).WithValue("foo"),
 			},
 		},
 		"code error - missing details": {
@@ -714,7 +714,7 @@ func TestGetBool(t *testing.T) {
 		},
 		"flag not bool": {
 			args: args{
-				results:  map[string]*cmd.FlagValue{"myFlag": {Value: 1}},
+				results:  map[string]*cmd.FlagValue{"myFlag": cmd.NewFlagValue().WithValue(1)},
 				flagName: "myFlag"},
 			wantErr: true,
 			WantedRecording: output.WantedRecording{
@@ -724,7 +724,7 @@ func TestGetBool(t *testing.T) {
 		},
 		"good boolean": {
 			args: args{
-				results:  map[string]*cmd.FlagValue{"myFlag": {Value: true, ExplicitlySet: true}},
+				results:  map[string]*cmd.FlagValue{"myFlag": cmd.NewFlagValue().WithValue(true).WithExplicitlySet(true)},
 				flagName: "myFlag"},
 			wantErr:     false,
 			wantVal:     true,
@@ -794,7 +794,7 @@ func TestGetInt(t *testing.T) {
 		},
 		"flag not int": {
 			args: args{
-				results:  map[string]*cmd.FlagValue{"myFlag": {Value: false}},
+				results:  map[string]*cmd.FlagValue{"myFlag": cmd.NewFlagValue().WithValue(false)},
 				flagName: "myFlag"},
 			wantErr: true,
 			WantedRecording: output.WantedRecording{
@@ -804,7 +804,7 @@ func TestGetInt(t *testing.T) {
 		},
 		"good int": {
 			args: args{
-				results:  map[string]*cmd.FlagValue{"myFlag": {Value: 15, ExplicitlySet: true}},
+				results:  map[string]*cmd.FlagValue{"myFlag": cmd.NewFlagValue().WithValue(15).WithExplicitlySet(true)},
 				flagName: "myFlag"},
 			wantErr:     false,
 			wantVal:     15,
@@ -874,7 +874,7 @@ func TestGetString(t *testing.T) {
 		},
 		"flag not string": {
 			args: args{
-				results:  map[string]*cmd.FlagValue{"myFlag": {Value: false}},
+				results:  map[string]*cmd.FlagValue{"myFlag": cmd.NewFlagValue().WithValue(false)},
 				flagName: "myFlag"},
 			wantErr: true,
 			WantedRecording: output.WantedRecording{
@@ -884,7 +884,7 @@ func TestGetString(t *testing.T) {
 		},
 		"good string": {
 			args: args{
-				results:  map[string]*cmd.FlagValue{"myFlag": {Value: "foo", ExplicitlySet: true}},
+				results:  map[string]*cmd.FlagValue{"myFlag": cmd.NewFlagValue().WithValue("foo").WithExplicitlySet(true)},
 				flagName: "myFlag"},
 			wantErr:     false,
 			wantVal:     "foo",
