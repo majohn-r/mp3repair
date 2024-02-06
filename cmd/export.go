@@ -58,10 +58,34 @@ func addDefaults(sf *SectionFlags) {
 }
 
 type ExportFlagSettings struct {
-	DefaultsEnabled  bool
-	DefaultsSet      bool
-	OverwriteEnabled bool
-	OverwriteSet     bool
+	defaultsEnabled  bool
+	defaultsSet      bool
+	overwriteEnabled bool
+	overwriteSet     bool
+}
+
+func NewExportFlagSettings() *ExportFlagSettings {
+	return &ExportFlagSettings{}
+}
+
+func (efs *ExportFlagSettings) WithDefaultsEnabled(b bool) *ExportFlagSettings {
+	efs.defaultsEnabled = b
+	return efs
+}
+
+func (efs *ExportFlagSettings) WithDefaultsSet(b bool) *ExportFlagSettings {
+	efs.defaultsSet = b
+	return efs
+}
+
+func (efs *ExportFlagSettings) WithOverwriteEnabled(b bool) *ExportFlagSettings {
+	efs.overwriteEnabled = b
+	return efs
+}
+
+func (efs *ExportFlagSettings) WithOverwriteSet(b bool) *ExportFlagSettings {
+	efs.overwriteSet = b
+	return efs
 }
 
 func ExportRun(cmd *cobra.Command, _ []string) {
@@ -72,10 +96,10 @@ func ExportRun(cmd *cobra.Command, _ []string) {
 		settings, ok := ProcessExportFlags(o, values)
 		if ok {
 			LogCommandStart(o, ExportCommand, map[string]any{
-				exportDefaultsAsFlag:  settings.DefaultsEnabled,
-				"defaults-user-set":   settings.DefaultsSet,
-				exportOverwriteAsFlag: settings.OverwriteEnabled,
-				"overwrite-user-set":  settings.OverwriteSet,
+				exportDefaultsAsFlag:  settings.defaultsEnabled,
+				"defaults-user-set":   settings.defaultsSet,
+				exportOverwriteAsFlag: settings.overwriteEnabled,
+				"overwrite-user-set":  settings.overwriteSet,
 			})
 			status = settings.ExportDefaultConfiguration(o)
 		}
@@ -87,11 +111,11 @@ func ProcessExportFlags(o output.Bus, values map[string]*FlagValue) (*ExportFlag
 	var err error
 	result := &ExportFlagSettings{}
 	ok := true // optimistic
-	result.DefaultsEnabled, result.DefaultsSet, err = GetBool(o, values, ExportFlagDefaults)
+	result.defaultsEnabled, result.defaultsSet, err = GetBool(o, values, ExportFlagDefaults)
 	if err != nil {
 		ok = false
 	}
-	result.OverwriteEnabled, result.OverwriteSet, err = GetBool(o, values, ExportFlagOverwrite)
+	result.overwriteEnabled, result.overwriteSet, err = GetBool(o, values, ExportFlagOverwrite)
 	if err != nil {
 		ok = false
 	}
@@ -149,14 +173,14 @@ func (efs *ExportFlagSettings) OverwriteFile(o output.Bus, f string, payload []b
 }
 
 func (efs *ExportFlagSettings) CanOverwriteFile(o output.Bus, f string) (canOverwrite bool) {
-	if !efs.OverwriteEnabled {
+	if !efs.overwriteEnabled {
 		o.WriteCanonicalError("The file %q exists and cannot be overwritten", f)
 		o.Log(output.Error, "overwrite is not permitted", map[string]any{
 			exportOverwriteAsFlag: false,
 			"fileName":            f,
-			"user-set":            efs.OverwriteSet,
+			"user-set":            efs.overwriteSet,
 		})
-		if efs.OverwriteSet {
+		if efs.overwriteSet {
 			o.WriteCanonicalError("Why?\nYou explicitly set %s false", exportOverwriteAsFlag)
 		} else {
 			o.WriteCanonicalError("Why?\nAs currently configured, overwriting the file is disabled")
@@ -169,13 +193,13 @@ func (efs *ExportFlagSettings) CanOverwriteFile(o output.Bus, f string) (canOver
 }
 
 func (efs *ExportFlagSettings) CanWriteDefaults(o output.Bus) (canWrite bool) {
-	if !efs.DefaultsEnabled {
+	if !efs.defaultsEnabled {
 		o.WriteCanonicalError("default configuration settings will not be exported")
 		o.Log(output.Error, "export defaults disabled", map[string]any{
 			exportDefaultsAsFlag: false,
-			"user-set":           efs.DefaultsSet,
+			"user-set":           efs.defaultsSet,
 		})
-		if efs.DefaultsSet {
+		if efs.defaultsSet {
 			o.WriteCanonicalError("Why?\nYou explicitly set %s false", exportDefaultsAsFlag)
 		} else {
 			o.WriteCanonicalError("Why?\nAs currently configured, exporting default configuration settings is disabled")

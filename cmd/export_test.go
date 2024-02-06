@@ -21,7 +21,7 @@ func TestExportFlagSettingsCanWriteDefaults(t *testing.T) {
 		output.WantedRecording
 	}{
 		"disabled by default": {
-			efs:          &cmd.ExportFlagSettings{DefaultsEnabled: false, DefaultsSet: false},
+			efs:          cmd.NewExportFlagSettings().WithDefaultsEnabled(false).WithDefaultsSet(false),
 			wantCanWrite: false,
 			WantedRecording: output.WantedRecording{
 				Error: "Default configuration settings will not be exported.\n" +
@@ -33,7 +33,7 @@ func TestExportFlagSettingsCanWriteDefaults(t *testing.T) {
 			},
 		},
 		"disabled intentionally": {
-			efs:          &cmd.ExportFlagSettings{DefaultsEnabled: false, DefaultsSet: true},
+			efs:          cmd.NewExportFlagSettings().WithDefaultsEnabled(false).WithDefaultsSet(true),
 			wantCanWrite: false,
 			WantedRecording: output.WantedRecording{
 				Error: "Default configuration settings will not be exported.\n" +
@@ -45,11 +45,11 @@ func TestExportFlagSettingsCanWriteDefaults(t *testing.T) {
 			},
 		},
 		"enabled by default": {
-			efs:          &cmd.ExportFlagSettings{DefaultsEnabled: true, DefaultsSet: false},
+			efs:          cmd.NewExportFlagSettings().WithDefaultsEnabled(true).WithDefaultsSet(false),
 			wantCanWrite: true,
 		},
 		"enabled intentionally": {
-			efs:          &cmd.ExportFlagSettings{DefaultsEnabled: true, DefaultsSet: true},
+			efs:          cmd.NewExportFlagSettings().WithDefaultsEnabled(true).WithDefaultsSet(true),
 			wantCanWrite: true,
 		},
 	}
@@ -79,7 +79,7 @@ func TestExportFlagSettingsCanOverwriteFile(t *testing.T) {
 		output.WantedRecording
 	}{
 		"no overwrite by default": {
-			efs:              &cmd.ExportFlagSettings{OverwriteEnabled: false, OverwriteSet: false},
+			efs:              cmd.NewExportFlagSettings().WithOverwriteEnabled(false).WithOverwriteSet(false),
 			args:             args{f: "[file name here]"},
 			wantCanOverwrite: false,
 			WantedRecording: output.WantedRecording{
@@ -92,7 +92,7 @@ func TestExportFlagSettingsCanOverwriteFile(t *testing.T) {
 			},
 		},
 		"no overwrite intentionally": {
-			efs:              &cmd.ExportFlagSettings{OverwriteEnabled: false, OverwriteSet: true},
+			efs:              cmd.NewExportFlagSettings().WithOverwriteEnabled(false).WithOverwriteSet(true),
 			args:             args{f: "[file name here]"},
 			wantCanOverwrite: false,
 			WantedRecording: output.WantedRecording{
@@ -105,12 +105,12 @@ func TestExportFlagSettingsCanOverwriteFile(t *testing.T) {
 			},
 		},
 		"overwrite enabled by default": {
-			efs:              &cmd.ExportFlagSettings{OverwriteEnabled: true, OverwriteSet: false},
+			efs:              cmd.NewExportFlagSettings().WithOverwriteEnabled(true).WithOverwriteSet(false),
 			args:             args{f: "[file name here]"},
 			wantCanOverwrite: true,
 		},
 		"overwrite enabled intentionally": {
-			efs:              &cmd.ExportFlagSettings{OverwriteEnabled: true, OverwriteSet: true},
+			efs:              cmd.NewExportFlagSettings().WithOverwriteEnabled(true).WithOverwriteSet(true),
 			args:             args{f: "[file name here]"},
 			wantCanOverwrite: true,
 		},
@@ -206,7 +206,7 @@ func TestExportFlagSettingsOverwriteFile(t *testing.T) {
 		output.WantedRecording
 	}{
 		"nothing to do": {
-			efs:        &cmd.ExportFlagSettings{OverwriteEnabled: false},
+			efs:        cmd.NewExportFlagSettings().WithOverwriteEnabled(false),
 			args:       args{f: "[filename]"},
 			wantStatus: cmd.UserError,
 			WantedRecording: output.WantedRecording{
@@ -219,7 +219,7 @@ func TestExportFlagSettingsOverwriteFile(t *testing.T) {
 			},
 		},
 		"rename fails": {
-			efs:        &cmd.ExportFlagSettings{OverwriteEnabled: true},
+			efs:        cmd.NewExportFlagSettings().WithOverwriteEnabled(true),
 			args:       args{f: "[filename]"},
 			rename:     func(_, _ string) error { return fmt.Errorf("sorry, cannot rename that file") },
 			wantStatus: cmd.SystemError,
@@ -229,7 +229,7 @@ func TestExportFlagSettingsOverwriteFile(t *testing.T) {
 			},
 		},
 		"rename succeeds, create fails": {
-			efs:        &cmd.ExportFlagSettings{OverwriteEnabled: true},
+			efs:        cmd.NewExportFlagSettings().WithOverwriteEnabled(true),
 			args:       args{f: "[filename]", payload: []byte{}},
 			rename:     func(_, _ string) error { return nil },
 			writeFile:  func(_ string, _ []byte, _ fs.FileMode) error { return fmt.Errorf("disk is full") },
@@ -240,7 +240,7 @@ func TestExportFlagSettingsOverwriteFile(t *testing.T) {
 			},
 		},
 		"everything succeeds": {
-			efs:        &cmd.ExportFlagSettings{OverwriteEnabled: true},
+			efs:        cmd.NewExportFlagSettings().WithOverwriteEnabled(true),
 			args:       args{f: "[filename]", payload: []byte{}},
 			rename:     func(_, _ string) error { return nil },
 			writeFile:  func(_ string, _ []byte, _ fs.FileMode) error { return nil },
@@ -293,7 +293,7 @@ func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
 		output.WantedRecording
 	}{
 		"not asking to write": {
-			efs:        &cmd.ExportFlagSettings{OverwriteEnabled: true, DefaultsEnabled: false},
+			efs:        cmd.NewExportFlagSettings().WithOverwriteEnabled(true).WithDefaultsEnabled(false),
 			wantStatus: cmd.UserError,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -310,7 +310,7 @@ func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
 			},
 		},
 		"file does not exist but cannot be created": {
-			efs:             &cmd.ExportFlagSettings{OverwriteEnabled: true, DefaultsEnabled: true},
+			efs:             cmd.NewExportFlagSettings().WithOverwriteEnabled(true).WithDefaultsEnabled(true),
 			writeFile:       func(_ string, _ []byte, _ fs.FileMode) error { return fmt.Errorf("cannot write file, sorry") },
 			plainFileExists: func(_ string) bool { return false },
 			applicationPath: func() string { return "appPath" },
@@ -326,7 +326,7 @@ func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
 			},
 		},
 		"file does not exist": {
-			efs:             &cmd.ExportFlagSettings{OverwriteEnabled: true, DefaultsEnabled: true},
+			efs:             cmd.NewExportFlagSettings().WithOverwriteEnabled(true).WithDefaultsEnabled(true),
 			writeFile:       func(_ string, _ []byte, _ fs.FileMode) error { return nil },
 			plainFileExists: func(_ string) bool { return false },
 			applicationPath: func() string { return "appPath" },
@@ -336,7 +336,7 @@ func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
 			},
 		},
 		"file exists": {
-			efs:             &cmd.ExportFlagSettings{OverwriteEnabled: true, DefaultsEnabled: true},
+			efs:             cmd.NewExportFlagSettings().WithOverwriteEnabled(true).WithDefaultsEnabled(true),
 			writeFile:       func(_ string, _ []byte, _ fs.FileMode) error { return nil },
 			plainFileExists: func(_ string) bool { return true },
 			rename:          func(_, _ string) error { return nil },
@@ -397,7 +397,7 @@ func TestProcessExportFlags(t *testing.T) {
 				cmd.ExportFlagDefaults:  cmd.NewFlagValue().WithValue("foo"),
 				cmd.ExportFlagOverwrite: cmd.NewFlagValue().WithValue(true),
 			}},
-			want:  &cmd.ExportFlagSettings{OverwriteEnabled: true},
+			want:  cmd.NewExportFlagSettings().WithOverwriteEnabled(true),
 			want1: false,
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"defaults\" is not boolean (foo).\n",
@@ -409,7 +409,7 @@ func TestProcessExportFlags(t *testing.T) {
 				cmd.ExportFlagDefaults:  cmd.NewFlagValue().WithValue(true),
 				cmd.ExportFlagOverwrite: cmd.NewFlagValue().WithValue(17),
 			}},
-			want:  &cmd.ExportFlagSettings{DefaultsEnabled: true},
+			want:  cmd.NewExportFlagSettings().WithDefaultsEnabled(true),
 			want1: false,
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"overwrite\" is not boolean (17).\n",
@@ -421,7 +421,7 @@ func TestProcessExportFlags(t *testing.T) {
 				cmd.ExportFlagDefaults:  cmd.NewFlagValue().WithValue(true),
 				cmd.ExportFlagOverwrite: cmd.NewFlagValue().WithValue(true),
 			}},
-			want:  &cmd.ExportFlagSettings{DefaultsEnabled: true, OverwriteEnabled: true},
+			want:  cmd.NewExportFlagSettings().WithDefaultsEnabled(true).WithOverwriteEnabled(true),
 			want1: true,
 		},
 	}
