@@ -1076,14 +1076,13 @@ func TestRepairRun(t *testing.T) {
 		exitCalled = true
 	}
 	cmd.SearchFlags = safeSearchFlags
-	repairFlags := cmd.SectionFlags{
-		SectionName: "repair",
-		Flags: map[string]*cmd.FlagDetails{
+	repairFlags := cmd.NewSectionFlags().WithSectionName("repair").WithFlags(
+		map[string]*cmd.FlagDetails{
 			"dryRun": cmd.NewFlagDetails().WithUsage("output what would have been repaired, but make no repairs").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 		},
-	}
+	)
 	command := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), command.Flags(), repairFlags, true)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), command.Flags(), repairFlags, cmd.SearchFlags)
 	tests := map[string]struct {
 		cmd            *cobra.Command
 		in1            []string
@@ -1137,7 +1136,7 @@ func TestRepairHelp(t *testing.T) {
 	}()
 	cmd.SearchFlags = safeSearchFlags
 	commandUnderTest := cloneCommand(cmd.RepairCmd)
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), commandUnderTest.Flags(), cmd.RepairFlags, true)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), commandUnderTest.Flags(), cmd.RepairFlags, cmd.SearchFlags)
 	tests := map[string]struct {
 		output.WantedRecording
 	}{

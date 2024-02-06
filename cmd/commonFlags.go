@@ -63,8 +63,30 @@ func (fD *FlagDetails) WithDefaultValue(a any) *FlagDetails {
 }
 
 type SectionFlags struct {
-	SectionName string
-	Flags       map[string]*FlagDetails // keys are flag names
+	sectionName string
+	flags       map[string]*FlagDetails // keys are flag names
+}
+
+func NewSectionFlags() *SectionFlags {
+	return &SectionFlags{}
+}
+
+func (sF *SectionFlags) SectionName() string {
+	return sF.sectionName
+}
+
+func (sF *SectionFlags) Flags() map[string]*FlagDetails {
+	return sF.flags
+}
+
+func (sF *SectionFlags) WithSectionName(s string) *SectionFlags {
+	sF.sectionName = s
+	return sF
+}
+
+func (sF *SectionFlags) WithFlags(m map[string]*FlagDetails) *SectionFlags {
+	sF.flags = m
+	return sF
 }
 
 type flagConsumer interface {
@@ -82,29 +104,28 @@ type ConfigSource interface {
 	StringDefault(string, string) (string, error)
 }
 
-func AddFlags(o output.Bus, c *cmd_toolkit.Configuration, flags flagConsumer, defs SectionFlags, includeSearches bool) {
-	config := c.SubConfiguration(defs.SectionName)
-	// sort names for deterministic test output
-	sortedNames := []string{}
-	for name := range defs.Flags {
-		sortedNames = append(sortedNames, name)
-	}
-	slices.Sort(sortedNames)
-	for _, name := range sortedNames {
-		details := defs.Flags[name]
-		if details != nil {
-			details.AddFlag(o, config, flags, defs.SectionName, name)
-		} else {
-			o.WriteCanonicalError("an internal error occurred: there are no details for flag %q", name)
-			o.Log(output.Error, "internal error", map[string]any{
-				"section": defs.SectionName,
-				"flag":    name,
-				"error":   "no details present",
-			})
+func AddFlags(o output.Bus, c *cmd_toolkit.Configuration, flags flagConsumer, defs ...*SectionFlags) {
+	for _, def := range defs {
+		config := c.SubConfiguration(def.sectionName)
+		// sort names for deterministic test output
+		sortedNames := []string{}
+		for name := range def.flags {
+			sortedNames = append(sortedNames, name)
 		}
-	}
-	if includeSearches {
-		AddFlags(o, c, flags, SearchFlags, false)
+		slices.Sort(sortedNames)
+		for _, name := range sortedNames {
+			details := def.flags[name]
+			if details != nil {
+				details.AddFlag(o, config, flags, def.sectionName, name)
+			} else {
+				o.WriteCanonicalError("an internal error occurred: there are no details for flag %q", name)
+				o.Log(output.Error, "internal error", map[string]any{
+					"section": def.sectionName,
+					"flag":    name,
+					"error":   "no details present",
+				})
+			}
+		}
 	}
 }
 
@@ -193,18 +214,18 @@ type FlagProducer interface {
 	GetString(name string) (string, error)
 }
 
-func ReadFlags(producer FlagProducer, defs SectionFlags) (map[string]*FlagValue, []error) {
+func ReadFlags(producer FlagProducer, defs *SectionFlags) (map[string]*FlagValue, []error) {
 	m := map[string]*FlagValue{}
 	e := []error{}
 	// sort names for deterministic output in unit tests
 	sortedNames := []string{}
-	for name := range defs.Flags {
+	for name := range defs.flags {
 		sortedNames = append(sortedNames, name)
 	}
 	slices.Sort(sortedNames)
 	for _, name := range sortedNames {
 		var err error
-		details := defs.Flags[name]
+		details := defs.flags[name]
 		if details == nil {
 			err = fmt.Errorf("no details for flag %q", name)
 		} else {

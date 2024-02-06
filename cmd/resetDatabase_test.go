@@ -883,9 +883,8 @@ func TestResetDBExec(t *testing.T) {
 		exitCalled = true
 	}
 	cmd.Dirty = func() bool { return false }
-	flags := cmd.SectionFlags{
-		SectionName: "resetDatabase",
-		Flags: map[string]*cmd.FlagDetails{
+	flags := cmd.NewSectionFlags().WithSectionName("resetDatabase").WithFlags(
+		map[string]*cmd.FlagDetails{
 			"timeout":             cmd.NewFlagDetails().WithAbbreviatedName("t").WithUsage(fmt.Sprintf("timeout in seconds (minimum %d, maximum %d) for stopping the media player service", 1, 60)).WithExpectedType(cmd.IntType).WithDefaultValue(cmd_toolkit.NewIntBounds(1, 10, 60)),
 			"service":             cmd.NewFlagDetails().WithUsage("name of the media player service").WithExpectedType(cmd.StringType).WithDefaultValue("WMPNetworkSVC"),
 			"metadataDir":         cmd.NewFlagDetails().WithUsage("directory where the media player service metadata files are stored").WithExpectedType(cmd.StringType).WithDefaultValue(filepath.Join("AppData", "Local", "Microsoft", "Media Player")),
@@ -893,9 +892,9 @@ func TestResetDBExec(t *testing.T) {
 			"force":               cmd.NewFlagDetails().WithAbbreviatedName("f").WithUsage("if set, force a database reset").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 			"ignoreServiceErrors": cmd.NewFlagDetails().WithAbbreviatedName("i").WithUsage("if set, ignore service errors and delete the media player service metadata files").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 		},
-	}
+	)
 	myCommand := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), myCommand.Flags(), flags, false)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), myCommand.Flags(), flags)
 	tests := map[string]struct {
 		cmd            *cobra.Command
 		in1            []string
@@ -952,19 +951,17 @@ func TestResetDBExec(t *testing.T) {
 
 func TestResetDatabaseHelp(t *testing.T) {
 	commandUnderTest := cloneCommand(cmd.ResetDatabaseCmd)
-	flagCopy := cmd.SectionFlags{
-		SectionName: cmd.ResetDatabaseFlags.SectionName,
-		Flags:       map[string]*cmd.FlagDetails{},
-	}
-	for k, v := range cmd.ResetDatabaseFlags.Flags {
+	flagMap := map[string]*cmd.FlagDetails{}
+	for k, v := range cmd.ResetDatabaseFlags.Flags() {
 		switch k {
 		case "metadataDir":
-			flagCopy.Flags[k] = v.Copy().WithDefaultValue("[USERPROFILE]/AppData/Local/Microsoft/Media Player")
+			flagMap[k] = v.Copy().WithDefaultValue("[USERPROFILE]/AppData/Local/Microsoft/Media Player")
 		default:
-			flagCopy.Flags[k] = v
+			flagMap[k] = v
 		}
 	}
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), commandUnderTest.Flags(), flagCopy, false)
+	flagCopy := cmd.NewSectionFlags().WithSectionName("resetDatabase").WithFlags(flagMap)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), commandUnderTest.Flags(), flagCopy)
 	tests := map[string]struct {
 		output.WantedRecording
 	}{

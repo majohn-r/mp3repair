@@ -57,9 +57,8 @@ var (
 			"  Sort tracks by track number",
 		Run: ListRun,
 	}
-	ListFlags = SectionFlags{
-		SectionName: ListCommand,
-		Flags: map[string]*FlagDetails{
+	ListFlags = NewSectionFlags().WithSectionName(ListCommand).WithFlags(
+		map[string]*FlagDetails{
 			ListAlbums:       NewFlagDetails().WithAbbreviatedName("l").WithUsage("include album names in listing").WithExpectedType(BoolType).WithDefaultValue(false),
 			ListArtists:      NewFlagDetails().WithAbbreviatedName("r").WithUsage("include artist names in listing").WithExpectedType(BoolType).WithDefaultValue(false),
 			ListTracks:       NewFlagDetails().WithAbbreviatedName("t").WithUsage("include track names in listing").WithExpectedType(BoolType).WithDefaultValue(false),
@@ -69,7 +68,7 @@ var (
 			ListDetails:      NewFlagDetails().WithUsage("include details with tracks").WithExpectedType(BoolType).WithDefaultValue(false),
 			ListDiagnostic:   NewFlagDetails().WithUsage("include diagnostic information with tracks").WithExpectedType(BoolType).WithDefaultValue(false),
 		},
-	}
+	)
 )
 
 func ListRun(cmd *cobra.Command, _ []string) {
@@ -482,5 +481,5 @@ func init() {
 	addDefaults(ListFlags)
 	c := getConfiguration()
 	o := getBus()
-	AddFlags(o, c, ListCmd.Flags(), ListFlags, true)
+	AddFlags(o, c, ListCmd.Flags(), ListFlags, SearchFlags)
 }

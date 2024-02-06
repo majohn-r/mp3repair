@@ -1320,16 +1320,15 @@ func TestCheckRun(t *testing.T) {
 		exitCode = code
 	}
 	cmd.SearchFlags = safeSearchFlags
-	checkFlags := cmd.SectionFlags{
-		SectionName: cmd.CheckCommand,
-		Flags: map[string]*cmd.FlagDetails{
+	checkFlags := cmd.NewSectionFlags().WithSectionName(cmd.CheckCommand).WithFlags(
+		map[string]*cmd.FlagDetails{
 			cmd.CheckEmpty:     cmd.NewFlagDetails().WithAbbreviatedName(cmd.CheckEmptyAbbr).WithUsage("report empty album and artist directories").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 			cmd.CheckFiles:     cmd.NewFlagDetails().WithAbbreviatedName(cmd.CheckFilesAbbr).WithUsage("report metadata/file inconsistencies").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 			cmd.CheckNumbering: cmd.NewFlagDetails().WithAbbreviatedName(cmd.CheckNumberingAbbr).WithUsage("report missing track numbers and duplicated track numbering").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 		},
-	}
+	)
 	command := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), command.Flags(), checkFlags, true)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), command.Flags(), checkFlags, cmd.SearchFlags)
 	type args struct {
 		cmd *cobra.Command
 		in1 []string
@@ -1411,7 +1410,7 @@ func TestCheckHelp(t *testing.T) {
 	}()
 	cmd.SearchFlags = safeSearchFlags
 	commandUnderTest := cloneCommand(cmd.CheckCmd)
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), commandUnderTest.Flags(), cmd.CheckFlags, true)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), commandUnderTest.Flags(), cmd.CheckFlags, cmd.SearchFlags)
 	tests := map[string]struct {
 		output.WantedRecording
 	}{

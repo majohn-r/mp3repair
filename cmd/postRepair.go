@@ -92,5 +92,5 @@ func init() {
 	RootCmd.AddCommand(PostRepairCmd)
 	bus := getBus()
 	c := getConfiguration()
-	AddFlags(bus, c, PostRepairCmd.Flags(), SearchFlags, false)
+	AddFlags(bus, c, PostRepairCmd.Flags(), SearchFlags)
 }

@@ -231,7 +231,7 @@ func TestPostRepairRun(t *testing.T) {
 		exitCalled = true
 	}
 	command := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), command.Flags(), safeSearchFlags, false)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), command.Flags(), safeSearchFlags)
 	type args struct {
 		cmd *cobra.Command
 		in1 []string
@@ -291,7 +291,7 @@ func TestPostRepairRun(t *testing.T) {
 
 func TestPostRepairHelp(t *testing.T) {
 	commandUnderTest := cloneCommand(cmd.PostRepairCmd)
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), commandUnderTest.Flags(), safeSearchFlags, false)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), commandUnderTest.Flags(), safeSearchFlags)
 	tests := map[string]struct {
 		output.WantedRecording
 	}{

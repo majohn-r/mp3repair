@@ -46,16 +46,15 @@ For more (too much, often, you are warned) information, do a web search for
 
 var (
 	// SearchFlags is a common set of flags that many commands need to use
-	SearchFlags = SectionFlags{
-		SectionName: "search",
-		Flags: map[string]*FlagDetails{
+	SearchFlags = NewSectionFlags().WithSectionName("search").WithFlags(
+		map[string]*FlagDetails{
 			SearchAlbumFilter:    NewFlagDetails().WithUsage("regular expression specifying which albums to select").WithExpectedType(StringType).WithDefaultValue(".*"),
 			SearchArtistFilter:   NewFlagDetails().WithUsage("regular expression specifying which artists to select").WithExpectedType(StringType).WithDefaultValue(".*"),
 			SearchTrackFilter:    NewFlagDetails().WithUsage("regular expression specifying which tracks to select").WithExpectedType(StringType).WithDefaultValue(".*"),
 			SearchTopDir:         NewFlagDetails().WithUsage("top directory specifying where to find mp3 files").WithExpectedType(StringType).WithDefaultValue(filepath.Join("%HOMEPATH%", "Music")),
 			SearchFileExtensions: NewFlagDetails().WithUsage("comma-delimited list of file extensions used by mp3 files").WithExpectedType(StringType).WithDefaultValue(".mp3"),
 		},
-	}
+	)
 )
 
 type SearchSettings struct {

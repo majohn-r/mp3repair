@@ -36,26 +36,25 @@ var (
 			"  Overwrite a pre-existing defaults.yaml file",
 		Run: ExportRun,
 	}
-	ExportFlags = SectionFlags{
-		SectionName: ExportCommand,
-		Flags: map[string]*FlagDetails{
+	ExportFlags = NewSectionFlags().WithSectionName(ExportCommand).WithFlags(
+		map[string]*FlagDetails{
 			ExportFlagDefaults:  NewFlagDetails().WithAbbreviatedName("d").WithUsage("write default program configuration data").WithExpectedType(BoolType).WithDefaultValue(false),
 			ExportFlagOverwrite: NewFlagDetails().WithAbbreviatedName("o").WithUsage("overwrite existing file").WithExpectedType(BoolType).WithDefaultValue(false),
 		},
-	}
+	)
 	defaultConfigurationSettings = map[string]map[string]any{}
 )
 
-func addDefaults(sf SectionFlags) {
+func addDefaults(sf *SectionFlags) {
 	payload := map[string]any{}
-	for flag, details := range sf.Flags {
+	for flag, details := range sf.Flags() {
 		if bounded, ok := details.DefaultValue().(*cmd_toolkit.IntBounds); ok {
 			payload[flag] = bounded.Default()
 		} else {
 			payload[flag] = details.DefaultValue()
 		}
 	}
-	defaultConfigurationSettings[sf.SectionName] = payload
+	defaultConfigurationSettings[sf.SectionName()] = payload
 }
 
 type ExportFlagSettings struct {
@@ -193,5 +192,5 @@ func init() {
 	addDefaults(ExportFlags)
 	o := getBus()
 	c := getConfiguration()
-	AddFlags(o, c, ExportCmd.Flags(), ExportFlags, false)
+	AddFlags(o, c, ExportCmd.Flags(), ExportFlags)
 }

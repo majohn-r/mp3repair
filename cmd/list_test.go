@@ -586,16 +586,15 @@ var (
 			files.NewArtist("my artist", "music/my artist"),
 			"music/my artist/my album"),
 		"10 track 10.mp3", "track 10", 10)
-	safeSearchFlags = cmd.SectionFlags{
-		SectionName: "search",
-		Flags: map[string]*cmd.FlagDetails{
+	safeSearchFlags = cmd.NewSectionFlags().WithSectionName("search").WithFlags(
+		map[string]*cmd.FlagDetails{
 			cmd.SearchAlbumFilter:    cmd.NewFlagDetails().WithUsage("regular expression specifying which albums to select").WithExpectedType(cmd.StringType).WithDefaultValue(".*"),
 			cmd.SearchArtistFilter:   cmd.NewFlagDetails().WithUsage("regular expression specifying which artists to select").WithExpectedType(cmd.StringType).WithDefaultValue(".*"),
 			cmd.SearchTrackFilter:    cmd.NewFlagDetails().WithUsage("regular expression specifying which tracks to select").WithExpectedType(cmd.StringType).WithDefaultValue(".*"),
 			cmd.SearchTopDir:         cmd.NewFlagDetails().WithUsage("top directory specifying where to find mp3 files").WithExpectedType(cmd.StringType).WithDefaultValue("."),
 			cmd.SearchFileExtensions: cmd.NewFlagDetails().WithUsage("comma-delimited list of file extensions used by mp3 files").WithExpectedType(cmd.StringType).WithDefaultValue(".mp3"),
 		},
-	}
+	)
 )
 
 func TestShowID3V1Diagnostics(t *testing.T) {
@@ -1482,9 +1481,8 @@ func Test_ListRun(t *testing.T) {
 	}
 	cmd.SearchFlags = safeSearchFlags
 
-	testListFlags := cmd.SectionFlags{
-		SectionName: cmd.ListCommand,
-		Flags: map[string]*cmd.FlagDetails{
+	testListFlags := cmd.NewSectionFlags().WithSectionName(cmd.ListCommand).WithFlags(
+		map[string]*cmd.FlagDetails{
 			cmd.ListAlbums:       cmd.NewFlagDetails().WithAbbreviatedName("l").WithUsage("include album names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 			cmd.ListArtists:      cmd.NewFlagDetails().WithAbbreviatedName("r").WithUsage("include artist names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(true),
 			cmd.ListTracks:       cmd.NewFlagDetails().WithAbbreviatedName("t").WithUsage("include track names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
@@ -1494,13 +1492,12 @@ func Test_ListRun(t *testing.T) {
 			cmd.ListDetails:      cmd.NewFlagDetails().WithUsage("include details with tracks").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 			cmd.ListDiagnostic:   cmd.NewFlagDetails().WithUsage("include diagnostic information with tracks").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 		},
-	}
+	)
 	testCmd := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), testCmd.Flags(), testListFlags, true)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), testCmd.Flags(), testListFlags, cmd.SearchFlags)
 
-	testListFlags2 := cmd.SectionFlags{
-		SectionName: cmd.ListCommand,
-		Flags: map[string]*cmd.FlagDetails{
+	testListFlags2 := cmd.NewSectionFlags().WithSectionName(cmd.ListCommand).WithFlags(
+		map[string]*cmd.FlagDetails{
 			cmd.ListAlbums:       cmd.NewFlagDetails().WithAbbreviatedName("l").WithUsage("include album names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 			cmd.ListArtists:      cmd.NewFlagDetails().WithAbbreviatedName("r").WithUsage("include artist names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(true),
 			cmd.ListTracks:       cmd.NewFlagDetails().WithAbbreviatedName("t").WithUsage("include track names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(true),
@@ -1510,13 +1507,12 @@ func Test_ListRun(t *testing.T) {
 			cmd.ListDetails:      cmd.NewFlagDetails().WithUsage("include details with tracks").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 			cmd.ListDiagnostic:   cmd.NewFlagDetails().WithUsage("include diagnostic information with tracks").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 		},
-	}
+	)
 	testCmd2 := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), testCmd2.Flags(), testListFlags2, true)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), testCmd2.Flags(), testListFlags2, cmd.SearchFlags)
 
-	testListFlags3 := cmd.SectionFlags{
-		SectionName: cmd.ListCommand,
-		Flags: map[string]*cmd.FlagDetails{
+	testListFlags3 := cmd.NewSectionFlags().WithSectionName(cmd.ListCommand).WithFlags(
+		map[string]*cmd.FlagDetails{
 			cmd.ListAlbums:       cmd.NewFlagDetails().WithAbbreviatedName("l").WithUsage("include album names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 			cmd.ListArtists:      cmd.NewFlagDetails().WithAbbreviatedName("r").WithUsage("include artist names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 			cmd.ListTracks:       cmd.NewFlagDetails().WithAbbreviatedName("t").WithUsage("include track names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
@@ -1526,9 +1522,9 @@ func Test_ListRun(t *testing.T) {
 			cmd.ListDetails:      cmd.NewFlagDetails().WithUsage("include details with tracks").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 			cmd.ListDiagnostic:   cmd.NewFlagDetails().WithUsage("include diagnostic information with tracks").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 		},
-	}
+	)
 	testCmd3 := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), testCmd3.Flags(), testListFlags3, true)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), testCmd3.Flags(), testListFlags3, cmd.SearchFlags)
 
 	tests := map[string]struct {
 		cmd            *cobra.Command
@@ -1746,7 +1742,7 @@ func TestListHelp(t *testing.T) {
 	}()
 	cmd.SearchFlags = safeSearchFlags
 	commandUnderTest := cloneCommand(cmd.ListCmd)
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), commandUnderTest.Flags(), cmd.ListFlags, true)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), commandUnderTest.Flags(), cmd.ListFlags, cmd.SearchFlags)
 	tests := map[string]struct {
 		output.WantedRecording
 	}{

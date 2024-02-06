@@ -36,12 +36,11 @@ var (
 			"the backup folders.",
 		Run: RepairRun,
 	}
-	RepairFlags = SectionFlags{
-		SectionName: "repair",
-		Flags: map[string]*FlagDetails{
+	RepairFlags = NewSectionFlags().WithSectionName("repair").WithFlags(
+		map[string]*FlagDetails{
 			"dryRun": NewFlagDetails().WithUsage("output what would have been repaired, but make no repairs").WithExpectedType(BoolType).WithDefaultValue(false),
 		},
-	}
+	)
 )
 
 func RepairRun(cmd *cobra.Command, _ []string) {
@@ -276,5 +275,5 @@ func init() {
 	addDefaults(RepairFlags)
 	o := getBus()
 	c := getConfiguration()
-	AddFlags(o, c, RepairCmd.Flags(), RepairFlags, true)
+	AddFlags(o, c, RepairCmd.Flags(), RepairFlags, SearchFlags)
 }

@@ -462,20 +462,19 @@ func TestExportRun(t *testing.T) {
 	}
 	tests := map[string]struct {
 		cmd            *cobra.Command
-		flags          cmd.SectionFlags
+		flags          *cmd.SectionFlags
 		wantExitCode   int
 		wantExitCalled bool
 		output.WantedRecording
 	}{
 		"missing data": {
 			cmd: cmd.ExportCmd,
-			flags: cmd.SectionFlags{
-				SectionName: cmd.ExportCommand,
-				Flags: map[string]*cmd.FlagDetails{
+			flags: cmd.NewSectionFlags().WithSectionName(cmd.ExportCommand).WithFlags(
+				map[string]*cmd.FlagDetails{
 					cmd.ExportFlagOverwrite: cmd.NewFlagDetails().WithExpectedType(cmd.BoolType).WithDefaultValue(12),
 					cmd.ExportFlagDefaults:  nil,
 				},
-			},
+			),
 			wantExitCode:   cmd.ProgramError,
 			wantExitCalled: true,
 			WantedRecording: output.WantedRecording{
@@ -485,12 +484,11 @@ func TestExportRun(t *testing.T) {
 		},
 		"incomplete data": {
 			cmd: cmd.ExportCmd,
-			flags: cmd.SectionFlags{
-				SectionName: cmd.ExportCommand,
-				Flags: map[string]*cmd.FlagDetails{
+			flags: cmd.NewSectionFlags().WithSectionName(cmd.ExportCommand).WithFlags(
+				map[string]*cmd.FlagDetails{
 					cmd.ExportFlagOverwrite: cmd.NewFlagDetails().WithExpectedType(cmd.BoolType).WithDefaultValue(12),
 				},
-			},
+			),
 			wantExitCode:   cmd.ProgramError,
 			wantExitCalled: true,
 			WantedRecording: output.WantedRecording{
@@ -500,13 +498,12 @@ func TestExportRun(t *testing.T) {
 		},
 		"valid data": {
 			cmd: cmd.ExportCmd,
-			flags: cmd.SectionFlags{
-				SectionName: cmd.ExportCommand,
-				Flags: map[string]*cmd.FlagDetails{
+			flags: cmd.NewSectionFlags().WithSectionName(cmd.ExportCommand).WithFlags(
+				map[string]*cmd.FlagDetails{
 					cmd.ExportFlagOverwrite: cmd.NewFlagDetails().WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 					cmd.ExportFlagDefaults:  cmd.NewFlagDetails().WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 				},
-			},
+			),
 			wantExitCode:   cmd.UserError,
 			wantExitCalled: true,
 			WantedRecording: output.WantedRecording{

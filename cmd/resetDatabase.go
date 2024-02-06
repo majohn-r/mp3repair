@@ -68,9 +68,8 @@ This command does nothing if it determines that the repair command has not made 
 changes, unless the ` + resetDBForceFlag + ` flag is set.`,
 		Run: ResetDBExec,
 	}
-	ResetDatabaseFlags = SectionFlags{
-		SectionName: resetDBCommandName,
-		Flags: map[string]*FlagDetails{
+	ResetDatabaseFlags = NewSectionFlags().WithSectionName(resetDBCommandName).WithFlags(
+		map[string]*FlagDetails{
 			resetDBTimeout:             NewFlagDetails().WithAbbreviatedName(resetDBTimeoutAbbr).WithUsage(fmt.Sprintf("timeout in seconds (minimum %d, maximum %d) for stopping the media player service", minTimeout, maxTimeout)).WithExpectedType(IntType).WithDefaultValue(cmd_toolkit.NewIntBounds(minTimeout, defaultTimeout, maxTimeout)),
 			resetDBService:             NewFlagDetails().WithUsage("name of the media player service").WithExpectedType(StringType).WithDefaultValue("WMPNetworkSVC"),
 			resetDBMetadataDir:         NewFlagDetails().WithUsage("directory where the media player service metadata files are stored").WithExpectedType(StringType).WithDefaultValue(filepath.Join("%USERPROFILE%", "AppData", "Local", "Microsoft", "Media Player")),
@@ -78,7 +77,7 @@ changes, unless the ` + resetDBForceFlag + ` flag is set.`,
 			resetDBForce:               NewFlagDetails().WithAbbreviatedName(resetDBForceAbbr).WithUsage("if set, force a database reset").WithExpectedType(BoolType).WithDefaultValue(false),
 			resetDBIgnoreServiceErrors: NewFlagDetails().WithAbbreviatedName(resetDBIgnoreServiceErrorsAbbr).WithUsage("if set, ignore service errors and delete the media player service metadata files").WithExpectedType(BoolType).WithDefaultValue(false),
 		},
-	}
+	)
 	stateToStatus = map[svc.State]string{
 		svc.Stopped:         "stopped",
 		svc.StartPending:    "start pending",
@@ -449,5 +448,5 @@ func init() {
 	addDefaults(ResetDatabaseFlags)
 	o := getBus()
 	c := getConfiguration()
-	AddFlags(o, c, ResetDatabaseCmd.Flags(), ResetDatabaseFlags, false)
+	AddFlags(o, c, ResetDatabaseCmd.Flags(), ResetDatabaseFlags)
 }

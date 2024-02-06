@@ -88,14 +88,13 @@ var (
 			"  reports errors in the track numbers of mp3 files",
 		Run: CheckRun,
 	}
-	CheckFlags = SectionFlags{
-		SectionName: CheckCommand,
-		Flags: map[string]*FlagDetails{
+	CheckFlags = NewSectionFlags().WithSectionName(CheckCommand).WithFlags(
+		map[string]*FlagDetails{
 			CheckEmpty:     NewFlagDetails().WithAbbreviatedName(CheckEmptyAbbr).WithUsage("report empty album and artist directories").WithExpectedType(BoolType).WithDefaultValue(false),
 			CheckFiles:     NewFlagDetails().WithAbbreviatedName(CheckFilesAbbr).WithUsage("report metadata/file inconsistencies").WithExpectedType(BoolType).WithDefaultValue(false),
 			CheckNumbering: NewFlagDetails().WithAbbreviatedName(CheckNumberingAbbr).WithUsage("report missing track numbers and duplicated track numbering").WithExpectedType(BoolType).WithDefaultValue(false),
 		},
-	}
+	)
 )
 
 func CheckRun(cmd *cobra.Command, _ []string) {
@@ -679,5 +678,5 @@ func init() {
 	addDefaults(CheckFlags)
 	o := getBus()
 	c := getConfiguration()
-	AddFlags(o, c, CheckCmd.Flags(), CheckFlags, true)
+	AddFlags(o, c, CheckCmd.Flags(), CheckFlags, SearchFlags)
 }
