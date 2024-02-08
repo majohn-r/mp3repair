@@ -79,25 +79,25 @@ func ListRun(cmd *cobra.Command, _ []string) {
 	searchSettings, searchFlagsOk := EvaluateSearchFlags(o, producer)
 	if ProcessFlagErrors(o, eSlice) && searchFlagsOk {
 		if ls, ok := ProcessListFlags(o, values); ok {
-			LogCommandStart(o, ListCommand, map[string]any{
-				ListAlbumsFlag:         ls.albums,
-				"albums-user-set":      ls.albumsUserSet,
-				ListAnnotateFlag:       ls.annotate,
-				ListArtistsFlag:        ls.artists,
-				"artists-user-set":     ls.artistsUserSet,
-				ListSortByNumberFlag:   ls.sortByNumber,
-				"byNumber-user-set":    ls.sortByNumberUserSet,
-				ListSortByTitleFlag:    ls.sortByTitle,
-				"byTitle-user-set":     ls.sortByTitleUserSet,
-				ListDetailsFlag:        ls.details,
-				ListDiagnosticFlag:     ls.diagnostic,
-				ListTracksFlag:         ls.tracks,
-				"tracks-user-set":      ls.tracksUserSet,
-				SearchAlbumFilterFlag:  searchSettings.AlbumFilter,
-				SearchArtistFilterFlag: searchSettings.ArtistFilter,
-				SearchTrackFilterFlag:  searchSettings.TrackFilter,
-				SearchTopDirFlag:       searchSettings.TopDirectory,
-			})
+			details := map[string]any{
+				ListAlbumsFlag:       ls.albums,
+				"albums-user-set":    ls.albumsUserSet,
+				ListAnnotateFlag:     ls.annotate,
+				ListArtistsFlag:      ls.artists,
+				"artists-user-set":   ls.artistsUserSet,
+				ListSortByNumberFlag: ls.sortByNumber,
+				"byNumber-user-set":  ls.sortByNumberUserSet,
+				ListSortByTitleFlag:  ls.sortByTitle,
+				"byTitle-user-set":   ls.sortByTitleUserSet,
+				ListDetailsFlag:      ls.details,
+				ListDiagnosticFlag:   ls.diagnostic,
+				ListTracksFlag:       ls.tracks,
+				"tracks-user-set":    ls.tracksUserSet,
+			}
+			for k, v := range searchSettings.Values() {
+				details[k] = v
+			}
+			LogCommandStart(o, ListCommand, details)
 			if ls.HasWorkToDo(o) {
 				if ls.TracksSortable(o) {
 					allArtists, loaded := searchSettings.Load(o)

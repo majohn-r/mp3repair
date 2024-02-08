@@ -1077,7 +1077,7 @@ func TestCheckSettings_PerformFileAnalysis(t *testing.T) {
 			cs: cmd.NewCheckSettings().WithFiles(true),
 			args: args{
 				checkedArtists: []*cmd.CheckedArtist{},
-				ss:             &cmd.SearchSettings{},
+				ss:             cmd.NewSearchSettings(),
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
@@ -1094,11 +1094,7 @@ func TestCheckSettings_PerformFileAnalysis(t *testing.T) {
 			cs: cmd.NewCheckSettings().WithFiles(true),
 			args: args{
 				checkedArtists: cmd.PrepareCheckedArtists(generateArtists(4, 5, 6)),
-				ss: &cmd.SearchSettings{
-					ArtistFilter: regexp.MustCompile(".*"),
-					AlbumFilter:  regexp.MustCompile(".*"),
-					TrackFilter:  regexp.MustCompile(".*"),
-				},
+				ss:             cmd.NewSearchSettings().WithArtistFilter(regexp.MustCompile(".*")).WithAlbumFilter(regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
 			},
 			want:            true,
 			WantedRecording: output.WantedRecording{},
@@ -1198,11 +1194,7 @@ func TestCheckSettings_PerformChecks(t *testing.T) {
 			args: args{
 				artists:       generateArtists(1, 2, 3),
 				artistsLoaded: true,
-				ss: &cmd.SearchSettings{
-					ArtistFilter: regexp.MustCompile(".*"),
-					AlbumFilter:  regexp.MustCompile(".*"),
-					TrackFilter:  regexp.MustCompile(".*"),
-				},
+				ss:            cmd.NewSearchSettings().WithArtistFilter(regexp.MustCompile(".*")).WithAlbumFilter(regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
 			},
 			wantStatus: cmd.Success,
 			WantedRecording: output.WantedRecording{
@@ -1265,14 +1257,8 @@ func TestCheckSettings_MaybeDoWork(t *testing.T) {
 			},
 		},
 		"try a little work": {
-			cs: cmd.NewCheckSettings().WithEmpty(true),
-			ss: &cmd.SearchSettings{
-				TopDirectory:   filepath.Join(".", "no dir"),
-				FileExtensions: []string{".mp3"},
-				AlbumFilter:    regexp.MustCompile(".*"),
-				ArtistFilter:   regexp.MustCompile(".*"),
-				TrackFilter:    regexp.MustCompile(".*"),
-			},
+			cs:         cmd.NewCheckSettings().WithEmpty(true),
+			ss:         cmd.NewSearchSettings().WithTopDirectory(filepath.Join(".", "no dir")).WithFileExtensions([]string{".mp3"}).WithAlbumFilter(regexp.MustCompile(".*")).WithArtistFilter(regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
 			wantStatus: cmd.UserError,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -1357,6 +1343,7 @@ func TestCheckRun(t *testing.T) {
 					" --albumFilter='.*'" +
 					" --artistFilter='.*'" +
 					" --empty='false'" +
+					" --extensions='[.mp3]'" +
 					" --files='false'" +
 					" --numbering='false'" +
 					" --topDir='.'" +

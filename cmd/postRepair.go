@@ -32,12 +32,7 @@ func PostRepairRun(cmd *cobra.Command, _ []string) {
 	ss, searchFlagsOk := EvaluateSearchFlags(o, producer)
 	if searchFlagsOk {
 		// do some work here!
-		LogCommandStart(o, postRepairCommandName, map[string]any{
-			SearchAlbumFilterFlag:  ss.AlbumFilter,
-			SearchArtistFilterFlag: ss.ArtistFilter,
-			SearchTrackFilterFlag:  ss.TrackFilter,
-			SearchTopDirFlag:       ss.TopDirectory,
-		})
+		LogCommandStart(o, postRepairCommandName, ss.Values())
 		allArtists, loaded := ss.Load(o)
 		status = PostRepairWork(o, ss, allArtists, loaded)
 	}

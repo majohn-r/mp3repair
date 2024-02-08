@@ -208,7 +208,7 @@ func TestProcessSearchFlags(t *testing.T) {
 	}{
 		"no data": {
 			values:       map[string]*cmd.FlagValue{},
-			wantSettings: &cmd.SearchSettings{},
+			wantSettings: cmd.NewSearchSettings(),
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"albumFilter\" is not found.\n" +
 					"An internal error occurred: flag \"artistFilter\" is not found.\n" +
@@ -230,7 +230,7 @@ func TestProcessSearchFlags(t *testing.T) {
 				"topDir":       cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("no such dir"),
 				"extensions":   cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("foo,bar"),
 			},
-			wantSettings: &cmd.SearchSettings{},
+			wantSettings: cmd.NewSearchSettings(),
 			WantedRecording: output.WantedRecording{
 				Error: "The --albumFilter value \"[2\" cannot be used.\n" +
 					"Why?\n" +
@@ -288,14 +288,8 @@ func TestProcessSearchFlags(t *testing.T) {
 				"topDir":       cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("."),
 				"extensions":   cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(".mp3"),
 			},
-			wantSettings: &cmd.SearchSettings{
-				AlbumFilter:    regexp.MustCompile("[23]"),
-				ArtistFilter:   regexp.MustCompile("[0-7]"),
-				TrackFilter:    regexp.MustCompile("0+"),
-				TopDirectory:   ".",
-				FileExtensions: []string{".mp3"},
-			},
-			wantOk: true,
+			wantSettings: cmd.NewSearchSettings().WithAlbumFilter(regexp.MustCompile("[23]")).WithArtistFilter(regexp.MustCompile("[0-7]")).WithTrackFilter(regexp.MustCompile("0+")).WithTopDirectory(".").WithFileExtensions([]string{".mp3"}),
+			wantOk:       true,
 		},
 	}
 	for name, tt := range tests {
@@ -326,7 +320,7 @@ func TestEvaluateSearchFlags(t *testing.T) {
 	}{
 		"errors": {
 			producer:     testFlagProducer{},
-			wantSettings: &cmd.SearchSettings{},
+			wantSettings: cmd.NewSearchSettings(),
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"albumFilter\" does not exist.\n" +
 					"An internal error occurred: flag \"artistFilter\" does not exist.\n" +
@@ -350,14 +344,8 @@ func TestEvaluateSearchFlags(t *testing.T) {
 					"extensions":   {value: ".mp3", valueKind: cmd.StringType},
 				},
 			},
-			wantSettings: &cmd.SearchSettings{
-				AlbumFilter:    regexp.MustCompile(`\d+`),
-				ArtistFilter:   regexp.MustCompile("Beatles"),
-				TrackFilter:    regexp.MustCompile("Sadie"),
-				TopDirectory:   ".",
-				FileExtensions: []string{".mp3"},
-			},
-			wantOk: true,
+			wantSettings: cmd.NewSearchSettings().WithAlbumFilter(regexp.MustCompile(`\d+`)).WithArtistFilter(regexp.MustCompile("Beatles")).WithTrackFilter(regexp.MustCompile("Sadie")).WithTopDirectory(".").WithFileExtensions([]string{".mp3"}),
+			wantOk:       true,
 		},
 	}
 	for name, tt := range tests {
@@ -519,7 +507,7 @@ func TestSearchSettingsLoad(t *testing.T) {
 		output.WantedRecording
 	}{
 		"topDir read error": {
-			ss:    &cmd.SearchSettings{TopDirectory: "td"},
+			ss:    cmd.NewSearchSettings().WithTopDirectory("td"),
 			want:  []*files.Artist{},
 			want1: false,
 			WantedRecording: output.WantedRecording{
@@ -532,7 +520,7 @@ func TestSearchSettingsLoad(t *testing.T) {
 			},
 		},
 		"good read": {
-			ss:    &cmd.SearchSettings{TopDirectory: "music", FileExtensions: []string{".mp3"}},
+			ss:    cmd.NewSearchSettings().WithTopDirectory("music").WithFileExtensions([]string{".mp3"}),
 			want:  []*files.Artist{testArtist},
 			want1: true,
 		},
@@ -600,11 +588,7 @@ func TestSearchSettingsFilter(t *testing.T) {
 		output.WantedRecording
 	}{
 		"nothing to filter": {
-			ss: &cmd.SearchSettings{
-				ArtistFilter: regexp.MustCompile(".*"),
-				AlbumFilter:  regexp.MustCompile(".*"),
-				TrackFilter:  regexp.MustCompile(".*"),
-			},
+			ss:              cmd.NewSearchSettings().WithArtistFilter(regexp.MustCompile(".*")).WithAlbumFilter(regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
 			originalArtists: []*files.Artist{},
 			want:            []*files.Artist{},
 			want1:           false,
@@ -618,11 +602,7 @@ func TestSearchSettingsFilter(t *testing.T) {
 			},
 		},
 		"filter out everything": {
-			ss: &cmd.SearchSettings{
-				ArtistFilter: regexp.MustCompile("^$"),
-				AlbumFilter:  regexp.MustCompile("^$"),
-				TrackFilter:  regexp.MustCompile("^$"),
-			},
+			ss:              cmd.NewSearchSettings().WithArtistFilter(regexp.MustCompile("^$")).WithAlbumFilter(regexp.MustCompile("^$")).WithTrackFilter(regexp.MustCompile("^$")),
 			originalArtists: []*files.Artist{artist1, artist2, artist3},
 			want:            []*files.Artist{},
 			want1:           false,
@@ -636,11 +616,7 @@ func TestSearchSettingsFilter(t *testing.T) {
 			},
 		},
 		"filter out selectively": {
-			ss: &cmd.SearchSettings{
-				ArtistFilter: regexp.MustCompile("^A"),
-				AlbumFilter:  regexp.MustCompile("^A"),
-				TrackFilter:  regexp.MustCompile("^A"),
-			},
+			ss:              cmd.NewSearchSettings().WithArtistFilter(regexp.MustCompile("^A")).WithAlbumFilter(regexp.MustCompile("^A")).WithTrackFilter(regexp.MustCompile("^A")),
 			originalArtists: []*files.Artist{artist1, artist2, artist3},
 			want:            []*files.Artist{filteredArtist1},
 			want1:           true,

@@ -1032,11 +1032,7 @@ func TestRepairSettings_ProcessArtists(t *testing.T) {
 			args: args{
 				allArtists: generateArtists(2, 3, 4),
 				loaded:     true,
-				ss: &cmd.SearchSettings{
-					ArtistFilter: regexp.MustCompile(".*"),
-					AlbumFilter:  regexp.MustCompile(".*"),
-					TrackFilter:  regexp.MustCompile(".*"),
-				},
+				ss:         cmd.NewSearchSettings().WithArtistFilter(regexp.MustCompile(".*")).WithAlbumFilter(regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
 			},
 			wantStatus: cmd.Success,
 			WantedRecording: output.WantedRecording{
@@ -1102,8 +1098,18 @@ func TestRepairRun(t *testing.T) {
 					"What to do:\n" +
 					"Set --topDir to the path of a directory that contains artist directories.\n",
 				Log: "" +
-					"level='info' --albumFilter='.*' --artistFilter='.*' --dryRun='false' --topDir='.' --trackFilter='.*' command='repair' msg='executing command'\n" +
-					"level='error' --topDir='.' msg='cannot find any artist directories'\n",
+					"level='info'" +
+					" --albumFilter='.*'" +
+					" --artistFilter='.*'" +
+					" --dryRun='false'" +
+					" --extensions='[.mp3]'" +
+					" --topDir='.'" +
+					" --trackFilter='.*'" +
+					" command='repair'" +
+					" msg='executing command'\n" +
+					"level='error'" +
+					" --topDir='.'" +
+					" msg='cannot find any artist directories'\n",
 			},
 		},
 	}

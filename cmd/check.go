@@ -105,18 +105,18 @@ func CheckRun(cmd *cobra.Command, _ []string) {
 	searchSettings, searchFlagsOk := EvaluateSearchFlags(o, producer)
 	if ProcessFlagErrors(o, eSlice) && searchFlagsOk {
 		if cs, ok := ProcessCheckFlags(o, values); ok {
-			LogCommandStart(o, CheckCommand, map[string]any{
-				CheckEmptyFlag:         cs.empty,
-				"empty-user-set":       cs.emptyUserSet,
-				CheckFilesFlag:         cs.files,
-				"files-user-set":       cs.filesUserSet,
-				CheckNumberingFlag:     cs.numbering,
-				"numbering-user-set":   cs.numberingUserSet,
-				SearchAlbumFilterFlag:  searchSettings.AlbumFilter,
-				SearchArtistFilterFlag: searchSettings.ArtistFilter,
-				SearchTrackFilterFlag:  searchSettings.TrackFilter,
-				SearchTopDirFlag:       searchSettings.TopDirectory,
-			})
+			details := map[string]any{
+				CheckEmptyFlag:       cs.empty,
+				"empty-user-set":     cs.emptyUserSet,
+				CheckFilesFlag:       cs.files,
+				"files-user-set":     cs.filesUserSet,
+				CheckNumberingFlag:   cs.numbering,
+				"numbering-user-set": cs.numberingUserSet,
+			}
+			for k, v := range searchSettings.Values() {
+				details[k] = v
+			}
+			LogCommandStart(o, CheckCommand, details)
 			commandStatus = cs.MaybeDoWork(o, searchSettings)
 		}
 	}

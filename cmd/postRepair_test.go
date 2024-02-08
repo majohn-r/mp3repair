@@ -84,7 +84,7 @@ func TestPostRepairWork(t *testing.T) {
 		"no load": {args: args{}, wantStatus: cmd.UserError},
 		"no artists": {
 			args: args{
-				ss:         &cmd.SearchSettings{},
+				ss:         cmd.NewSearchSettings(),
 				allArtists: []*files.Artist{},
 				loaded:     true,
 			},
@@ -107,11 +107,7 @@ func TestPostRepairWork(t *testing.T) {
 		"artists with no work to do": {
 			dirExists: func(dir string) bool { return false },
 			args: args{
-				ss: &cmd.SearchSettings{
-					ArtistFilter: regexp.MustCompile(".*"),
-					AlbumFilter:  regexp.MustCompile(".*"),
-					TrackFilter:  regexp.MustCompile(".*"),
-				},
+				ss:         cmd.NewSearchSettings().WithArtistFilter(regexp.MustCompile(".*")).WithAlbumFilter(regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
 				allArtists: generateArtists(2, 3, 4),
 				loaded:     true,
 			},
@@ -124,11 +120,7 @@ func TestPostRepairWork(t *testing.T) {
 			dirExists: func(dir string) bool { return true },
 			removeAll: func(dir string) error { return nil },
 			args: args{
-				ss: &cmd.SearchSettings{
-					ArtistFilter: regexp.MustCompile(".*"),
-					AlbumFilter:  regexp.MustCompile(".*"),
-					TrackFilter:  regexp.MustCompile(".*"),
-				},
+				ss:         cmd.NewSearchSettings().WithArtistFilter(regexp.MustCompile(".*")).WithAlbumFilter(regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
 				allArtists: generateArtists(2, 3, 4),
 				loaded:     true,
 			},
@@ -161,11 +153,7 @@ func TestPostRepairWork(t *testing.T) {
 			dirExists: func(dir string) bool { return true },
 			removeAll: func(dir string) error { return fmt.Errorf("nope") },
 			args: args{
-				ss: &cmd.SearchSettings{
-					ArtistFilter: regexp.MustCompile(".*"),
-					AlbumFilter:  regexp.MustCompile(".*"),
-					TrackFilter:  regexp.MustCompile(".*"),
-				},
+				ss:         cmd.NewSearchSettings().WithArtistFilter(regexp.MustCompile(".*")).WithAlbumFilter(regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
 				allArtists: generateArtists(2, 3, 4),
 				loaded:     true,
 			},
@@ -257,6 +245,7 @@ func TestPostRepairRun(t *testing.T) {
 					"level='info'" +
 					" --albumFilter='.*'" +
 					" --artistFilter='.*'" +
+					" --extensions='[.mp3]'" +
 					" --topDir='.'" +
 					" --trackFilter='.*'" +
 					" command='postRepair'" +

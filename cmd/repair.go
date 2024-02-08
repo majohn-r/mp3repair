@@ -51,13 +51,11 @@ func RepairRun(cmd *cobra.Command, _ []string) {
 	searchSettings, searchFlagsOk := EvaluateSearchFlags(o, producer)
 	if ProcessFlagErrors(o, eSlice) && searchFlagsOk {
 		if rs, ok := ProcessRepairFlags(o, values); ok {
-			LogCommandStart(o, repairCommandName, map[string]any{
-				repairDryRunFlag:       rs.dryRun,
-				SearchAlbumFilterFlag:  searchSettings.AlbumFilter,
-				SearchArtistFilterFlag: searchSettings.ArtistFilter,
-				SearchTrackFilterFlag:  searchSettings.TrackFilter,
-				SearchTopDirFlag:       searchSettings.TopDirectory,
-			})
+			details := map[string]any{repairDryRunFlag: rs.dryRun}
+			for k, v := range searchSettings.Values() {
+				details[k] = v
+			}
+			LogCommandStart(o, repairCommandName, details)
 			allArtists, loaded := searchSettings.Load(o)
 			status = rs.ProcessArtists(o, allArtists, loaded, searchSettings)
 		}

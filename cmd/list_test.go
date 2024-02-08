@@ -1419,6 +1419,7 @@ func Test_ListRun(t *testing.T) {
 					" --byTitle='false'" +
 					" --details='false'" +
 					" --diagnostic='false'" +
+					" --extensions='[.mp3]'" +
 					" --topDir='.'" +
 					" --trackFilter='.*'" +
 					" --tracks='false'" +
@@ -1457,6 +1458,7 @@ func Test_ListRun(t *testing.T) {
 					" --byTitle='true'" +
 					" --details='false'" +
 					" --diagnostic='false'" +
+					" --extensions='[.mp3]'" +
 					" --topDir='.'" +
 					" --trackFilter='.*'" +
 					" --tracks='true'" +
@@ -1494,6 +1496,7 @@ func Test_ListRun(t *testing.T) {
 					" --byTitle='false'" +
 					" --details='false'" +
 					" --diagnostic='false'" +
+					" --extensions='[.mp3]'" +
 					" --topDir='.'" +
 					" --trackFilter='.*'" +
 					" --tracks='false'" +
@@ -1544,13 +1547,9 @@ func TestListSettingsProcessArtists(t *testing.T) {
 		"no data": {
 			ls: cmd.NewListSettings().WithArtists(true),
 			args: args{
-				allArtists: nil,
-				loaded:     true,
-				searchSettings: &cmd.SearchSettings{
-					ArtistFilter: regexp.MustCompile(".*"),
-					AlbumFilter:  regexp.MustCompile(".*"),
-					TrackFilter:  regexp.MustCompile(".*"),
-				},
+				allArtists:     nil,
+				loaded:         true,
+				searchSettings: cmd.NewSearchSettings().WithArtistFilter(regexp.MustCompile(".*")).WithAlbumFilter(regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
 			},
 			wantStatus: cmd.UserError,
 			WantedRecording: output.WantedRecording{
@@ -1566,13 +1565,9 @@ func TestListSettingsProcessArtists(t *testing.T) {
 		"with data": {
 			ls: cmd.NewListSettings().WithArtists(true),
 			args: args{
-				allArtists: generateArtists(3, 4, 5),
-				loaded:     true,
-				searchSettings: &cmd.SearchSettings{
-					ArtistFilter: regexp.MustCompile(".*"),
-					AlbumFilter:  regexp.MustCompile(".*"),
-					TrackFilter:  regexp.MustCompile(".*"),
-				},
+				allArtists:     generateArtists(3, 4, 5),
+				loaded:         true,
+				searchSettings: cmd.NewSearchSettings().WithArtistFilter(regexp.MustCompile(".*")).WithAlbumFilter(regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
 			},
 			wantStatus: cmd.Success,
 			WantedRecording: output.WantedRecording{

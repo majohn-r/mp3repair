@@ -58,11 +58,50 @@ var (
 )
 
 type SearchSettings struct {
-	AlbumFilter    *regexp.Regexp
-	ArtistFilter   *regexp.Regexp
-	TrackFilter    *regexp.Regexp
-	TopDirectory   string
-	FileExtensions []string
+	albumFilter    *regexp.Regexp
+	artistFilter   *regexp.Regexp
+	fileExtensions []string
+	topDirectory   string
+	trackFilter    *regexp.Regexp
+}
+
+func NewSearchSettings() *SearchSettings {
+	return &SearchSettings{}
+}
+
+func (ss *SearchSettings) Values() map[string]any {
+	return map[string]any{
+		SearchAlbumFilterFlag:    ss.albumFilter,
+		SearchArtistFilterFlag:   ss.artistFilter,
+		SearchTrackFilterFlag:    ss.trackFilter,
+		SearchTopDirFlag:         ss.topDirectory,
+		SearchFileExtensionsFlag: ss.fileExtensions,
+	}
+}
+
+func (ss *SearchSettings) WithAlbumFilter(r *regexp.Regexp) *SearchSettings {
+	ss.albumFilter = r
+	return ss
+}
+
+func (ss *SearchSettings) WithArtistFilter(r *regexp.Regexp) *SearchSettings {
+	ss.artistFilter = r
+	return ss
+}
+
+func (ss *SearchSettings) WithFileExtensions(s []string) *SearchSettings {
+	ss.fileExtensions = s
+	return ss
+}
+
+func (ss *SearchSettings) WithTopDirectory(s string) *SearchSettings {
+	ss.topDirectory = s
+	return ss
+}
+
+func (ss *SearchSettings) WithTrackFilter(r *regexp.Regexp) *SearchSettings {
+	ss.trackFilter = r
+	return ss
 }
 
 func EvaluateSearchFlags(o output.Bus, producer FlagProducer) (*SearchSettings, bool) {
@@ -80,7 +119,7 @@ func ProcessSearchFlags(o output.Bus, values map[string]*FlagValue) (settings *S
 	// process the filters first, so we can attempt to guide the user to better
 	// choice(s)
 	if albumFilter, _ok, _regexOk := EvaluateFilter(o, values, SearchAlbumFilter, SearchAlbumFilterFlag); _ok {
-		settings.AlbumFilter = albumFilter
+		settings.albumFilter = albumFilter
 	} else {
 		if !_regexOk {
 			regexOk = false
@@ -88,7 +127,7 @@ func ProcessSearchFlags(o output.Bus, values map[string]*FlagValue) (settings *S
 		ok = false
 	}
 	if artistFilter, _ok, _regexOk := EvaluateFilter(o, values, SearchArtistFilter, SearchArtistFilterFlag); _ok {
-		settings.ArtistFilter = artistFilter
+		settings.artistFilter = artistFilter
 	} else {
 		if !_regexOk {
 			regexOk = false
@@ -96,7 +135,7 @@ func ProcessSearchFlags(o output.Bus, values map[string]*FlagValue) (settings *S
 		ok = false
 	}
 	if trackFilter, _ok, _regexOk := EvaluateFilter(o, values, SearchTrackFilter, SearchTrackFilterFlag); _ok {
-		settings.TrackFilter = trackFilter
+		settings.trackFilter = trackFilter
 	} else {
 		if !_regexOk {
 			regexOk = false
@@ -108,12 +147,12 @@ func ProcessSearchFlags(o output.Bus, values map[string]*FlagValue) (settings *S
 		o.WriteCanonicalError(searchRegexInstructions)
 	}
 	if topDir, _ok := EvaluateTopDir(o, values); _ok {
-		settings.TopDirectory = topDir
+		settings.topDirectory = topDir
 	} else {
 		ok = false
 	}
 	if extensions, _ok := EvaluateFileExtensions(o, values); _ok {
-		settings.FileExtensions = extensions
+		settings.fileExtensions = extensions
 	} else {
 		ok = false
 	}
@@ -219,13 +258,13 @@ func EvaluateFilter(o output.Bus, values map[string]*FlagValue, flagName, nameAs
 func (ss *SearchSettings) Filter(o output.Bus, originalArtists []*files.Artist) ([]*files.Artist, bool) {
 	filteredArtists := []*files.Artist{}
 	for _, originalArtist := range originalArtists {
-		if ss.ArtistFilter.MatchString(originalArtist.Name()) && originalArtist.HasAlbums() {
+		if ss.artistFilter.MatchString(originalArtist.Name()) && originalArtist.HasAlbums() {
 			filteredArtist := originalArtist.Copy()
 			for _, originalAlbum := range originalArtist.Albums() {
-				if ss.AlbumFilter.MatchString(originalAlbum.Name()) && originalAlbum.HasTracks() {
+				if ss.albumFilter.MatchString(originalAlbum.Name()) && originalAlbum.HasTracks() {
 					filteredAlbum := originalAlbum.Copy(filteredArtist, false)
 					for _, originalTrack := range originalAlbum.Tracks() {
-						if ss.TrackFilter.MatchString(originalTrack.CommonName()) {
+						if ss.trackFilter.MatchString(originalTrack.CommonName()) {
 							filteredTrack := originalTrack.Copy(filteredAlbum)
 							filteredAlbum.AddTrack(filteredTrack)
 						}
@@ -244,12 +283,12 @@ func (ss *SearchSettings) Filter(o output.Bus, originalArtists []*files.Artist) 
 	if !ok {
 		o.WriteCanonicalError("No music files remain after filtering.")
 		o.WriteCanonicalError("Why?")
-		o.WriteCanonicalError("After applying %s=%q, %s=%q, and %s=%q, no files remained", SearchArtistFilterFlag, ss.ArtistFilter, SearchAlbumFilterFlag, ss.AlbumFilter, SearchTrackFilterFlag, ss.TrackFilter)
+		o.WriteCanonicalError("After applying %s=%q, %s=%q, and %s=%q, no files remained", SearchArtistFilterFlag, ss.artistFilter, SearchAlbumFilterFlag, ss.albumFilter, SearchTrackFilterFlag, ss.trackFilter)
 		o.WriteCanonicalError("What to do:\nUse less restrictive filter settings.")
 		o.Log(output.Error, "no files remain after filtering", map[string]any{
-			SearchArtistFilterFlag: ss.ArtistFilter,
-			SearchAlbumFilterFlag:  ss.AlbumFilter,
-			SearchTrackFilterFlag:  ss.TrackFilter,
+			SearchArtistFilterFlag: ss.artistFilter,
+			SearchAlbumFilterFlag:  ss.albumFilter,
+			SearchTrackFilterFlag:  ss.trackFilter,
 		})
 	}
 	return filteredArtists, ok
@@ -257,10 +296,10 @@ func (ss *SearchSettings) Filter(o output.Bus, originalArtists []*files.Artist) 
 
 func (ss *SearchSettings) Load(o output.Bus) ([]*files.Artist, bool) {
 	artists := []*files.Artist{}
-	if artistFiles, dirRead := ReadDirectory(o, ss.TopDirectory); dirRead {
+	if artistFiles, dirRead := ReadDirectory(o, ss.topDirectory); dirRead {
 		for _, artistFile := range artistFiles {
 			if artistFile.IsDir() {
-				artist := files.NewArtistFromFile(artistFile, ss.TopDirectory)
+				artist := files.NewArtistFromFile(artistFile, ss.topDirectory)
 				ss.addAlbums(o, artist)
 				artists = append(artists, artist)
 			}
@@ -270,10 +309,10 @@ func (ss *SearchSettings) Load(o output.Bus) ([]*files.Artist, bool) {
 	if !ok {
 		o.WriteCanonicalError("No music files could be found using the specified parameters.")
 		o.WriteCanonicalError("Why?")
-		o.WriteCanonicalError("There were no directories found in %q (the %s value)", ss.TopDirectory, SearchTopDirFlag)
+		o.WriteCanonicalError("There were no directories found in %q (the %s value)", ss.topDirectory, SearchTopDirFlag)
 		o.WriteCanonicalError("What to do:\nSet %s to the path of a directory that contains artist directories", SearchTopDirFlag)
 		o.Log(output.Error, "cannot find any artist directories", map[string]any{
-			SearchTopDirFlag: ss.TopDirectory,
+			SearchTopDirFlag: ss.topDirectory,
 		})
 	}
 	return artists, ok
@@ -307,7 +346,7 @@ func (ss *SearchSettings) addTracks(o output.Bus, album *files.Album) {
 func (ss *SearchSettings) isValidTrackFile(file fs.DirEntry) (string, bool) {
 	extension := filepath.Ext(file.Name())
 	if !file.IsDir() {
-		for _, expectedExtension := range ss.FileExtensions {
+		for _, expectedExtension := range ss.fileExtensions {
 			if expectedExtension == extension {
 				return extension, true
 			}
