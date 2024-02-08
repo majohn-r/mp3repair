@@ -26,7 +26,7 @@ func TestProcessRepairFlags(t *testing.T) {
 	}{
 		"bad value": {
 			values: map[string]*cmd.FlagValue{},
-			want:   &cmd.RepairSettings{},
+			want:   cmd.NewRepairSettings(),
 			want1:  false,
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"dryRun\" is not found.\n",
@@ -39,7 +39,7 @@ func TestProcessRepairFlags(t *testing.T) {
 		},
 		"good value": {
 			values: map[string]*cmd.FlagValue{"dryRun": cmd.NewFlagValue().WithValue(true)},
-			want:   &cmd.RepairSettings{DryRun: true},
+			want:   cmd.NewRepairSettings().WithDryRun(true),
 			want1:  true,
 		},
 	}
@@ -732,7 +732,7 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 		output.WantedRecording
 	}{
 		"clean dry run": {
-			rs:         &cmd.RepairSettings{DryRun: true},
+			rs:         cmd.NewRepairSettings().WithDryRun(true),
 			artists:    generateArtists(2, 3, 4),
 			wantStatus: cmd.Success,
 			WantedRecording: output.WantedRecording{
@@ -740,7 +740,7 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 			},
 		},
 		"dirty dry run": {
-			rs:         &cmd.RepairSettings{DryRun: true},
+			rs:         cmd.NewRepairSettings().WithDryRun(true),
 			artists:    dirty,
 			wantStatus: cmd.Success,
 			WantedRecording: output.WantedRecording{
@@ -901,7 +901,7 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 			},
 		},
 		"clean repair": {
-			rs:         &cmd.RepairSettings{DryRun: false},
+			rs:         cmd.NewRepairSettings().WithDryRun(false),
 			artists:    generateArtists(2, 3, 4),
 			wantStatus: cmd.Success,
 			WantedRecording: output.WantedRecording{
@@ -909,7 +909,7 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 			},
 		},
 		"dirty repair": {
-			rs:         &cmd.RepairSettings{DryRun: false},
+			rs:         cmd.NewRepairSettings().WithDryRun(false),
 			artists:    dirty,
 			wantStatus: cmd.SystemError,
 			WantedRecording: output.WantedRecording{
@@ -1023,12 +1023,12 @@ func TestRepairSettings_ProcessArtists(t *testing.T) {
 		output.WantedRecording
 	}{
 		"nothing to do": {
-			rs:         &cmd.RepairSettings{DryRun: true},
+			rs:         cmd.NewRepairSettings().WithDryRun(true),
 			args:       args{},
 			wantStatus: cmd.UserError,
 		},
 		"clean artists": {
-			rs: &cmd.RepairSettings{DryRun: true},
+			rs: cmd.NewRepairSettings().WithDryRun(true),
 			args: args{
 				allArtists: generateArtists(2, 3, 4),
 				loaded:     true,

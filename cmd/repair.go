@@ -52,7 +52,7 @@ func RepairRun(cmd *cobra.Command, _ []string) {
 	if ProcessFlagErrors(o, eSlice) && searchFlagsOk {
 		if rs, ok := ProcessRepairFlags(o, values); ok {
 			LogCommandStart(o, repairCommandName, map[string]any{
-				repairDryRunFlag:       rs.DryRun,
+				repairDryRunFlag:       rs.dryRun,
 				SearchAlbumFilterFlag:  searchSettings.AlbumFilter,
 				SearchArtistFilterFlag: searchSettings.ArtistFilter,
 				SearchTrackFilterFlag:  searchSettings.TrackFilter,
@@ -66,7 +66,16 @@ func RepairRun(cmd *cobra.Command, _ []string) {
 }
 
 type RepairSettings struct {
-	DryRun bool
+	dryRun bool
+}
+
+func NewRepairSettings() *RepairSettings {
+	return &RepairSettings{}
+}
+
+func (rs *RepairSettings) WithDryRun(b bool) *RepairSettings {
+	rs.dryRun = b
+	return rs
 }
 
 func (rs *RepairSettings) ProcessArtists(o output.Bus, allArtists []*files.Artist, loaded bool, ss *SearchSettings) int {
@@ -84,7 +93,7 @@ func (rs *RepairSettings) RepairArtists(o output.Bus, artists []*files.Artist) i
 	ReadMetadata(o, artists) // read all track metadata
 	checkedArtists := PrepareCheckedArtists(artists)
 	count := FindConflictedTracks(checkedArtists)
-	if rs.DryRun {
+	if rs.dryRun {
 		ReportRepairsNeeded(o, checkedArtists)
 	} else {
 		if count == 0 {
@@ -264,7 +273,7 @@ func ProcessRepairFlags(o output.Bus, values map[string]*FlagValue) (*RepairSett
 	rs := &RepairSettings{}
 	ok := true // optimistic
 	var err error
-	if rs.DryRun, _, err = GetBool(o, values, repairDryRun); err != nil {
+	if rs.dryRun, _, err = GetBool(o, values, repairDryRun); err != nil {
 		ok = false
 	}
 	return rs, ok
