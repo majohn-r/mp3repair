@@ -29,7 +29,7 @@ func TestProcessResetDBFlags(t *testing.T) {
 	}{
 		"massive errors": {
 			values: nil,
-			want:   &cmd.ResetDBSettings{},
+			want:   cmd.NewResetDBSettings(),
 			want1:  false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -57,14 +57,7 @@ func TestProcessResetDBFlags(t *testing.T) {
 				"service":             cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("music service"),
 				"timeout":             cmd.NewFlagValue().WithValueType(cmd.IntType).WithValue(5),
 			},
-			want: &cmd.ResetDBSettings{
-				Extension:           ".foo",
-				Force:               true,
-				IgnoreServiceErrors: true,
-				MetadataDir:         "metadata",
-				Service:             "music service",
-				Timeout:             5,
-			},
+			want:  cmd.NewResetDBSettings().WithExtension(".foo").WithForce(true).WithIgnoreServiceErrors(true).WithMetadataDir("metadata").WithService("music service").WithTimeout(5),
 			want1: true,
 		},
 	}
@@ -131,7 +124,7 @@ func TestResetDBSettings_WaitForStop(t *testing.T) {
 		output.WantedRecording
 	}{
 		"already timed out": {
-			rdbs:       &cmd.ResetDBSettings{Service: "my service", Timeout: 10},
+			rdbs:       cmd.NewResetDBSettings().WithService("my service").WithTimeout(10),
 			args:       args{expiration: time.Now().Add(time.Duration(-1) * time.Second)},
 			wantStatus: cmd.SystemError,
 			WantedRecording: output.WantedRecording{
@@ -146,7 +139,7 @@ func TestResetDBSettings_WaitForStop(t *testing.T) {
 			},
 		},
 		"query error": {
-			rdbs: &cmd.ResetDBSettings{Service: "my service", Timeout: 10},
+			rdbs: cmd.NewResetDBSettings().WithService("my service").WithTimeout(10),
 			args: args{
 				s:             newTestService(),
 				expiration:    time.Now().Add(time.Duration(1) * time.Second),
@@ -163,7 +156,7 @@ func TestResetDBSettings_WaitForStop(t *testing.T) {
 			},
 		},
 		"stops correctly": {
-			rdbs: &cmd.ResetDBSettings{Service: "my service", Timeout: 10},
+			rdbs: cmd.NewResetDBSettings().WithService("my service").WithTimeout(10),
 			args: args{
 				s: newTestService(
 					svc.Status{State: svc.Running},
@@ -244,7 +237,7 @@ func TestResetDBSettings_StopFoundService(t *testing.T) {
 		output.WantedRecording
 	}{
 		"defective service": {
-			rdbs: &cmd.ResetDBSettings{Service: "my service", Timeout: 10},
+			rdbs: cmd.NewResetDBSettings().WithService("my service").WithTimeout(10),
 			args: args{
 				manager: newTestManager(nil, nil),
 				service: newTestService(),
@@ -260,7 +253,7 @@ func TestResetDBSettings_StopFoundService(t *testing.T) {
 			},
 		},
 		"already stopped": {
-			rdbs: &cmd.ResetDBSettings{Service: "my service", Timeout: 10},
+			rdbs: cmd.NewResetDBSettings().WithService("my service").WithTimeout(10),
 			args: args{
 				manager: newTestManager(nil, nil),
 				service: newTestService(svc.Status{State: svc.Stopped}),
@@ -275,7 +268,7 @@ func TestResetDBSettings_StopFoundService(t *testing.T) {
 			},
 		},
 		"stopped easily": {
-			rdbs: &cmd.ResetDBSettings{Service: "my service", Timeout: 10},
+			rdbs: cmd.NewResetDBSettings().WithService("my service").WithTimeout(10),
 			args: args{
 				manager: newTestManager(nil, nil),
 				service: newTestService(
@@ -292,7 +285,7 @@ func TestResetDBSettings_StopFoundService(t *testing.T) {
 			},
 		},
 		"stopped with a little more difficulty": {
-			rdbs: &cmd.ResetDBSettings{Service: "my service", Timeout: 10},
+			rdbs: cmd.NewResetDBSettings().WithService("my service").WithTimeout(10),
 			args: args{
 				manager: newTestManager(nil, nil),
 				service: newTestService(
@@ -310,7 +303,7 @@ func TestResetDBSettings_StopFoundService(t *testing.T) {
 			},
 		},
 		"cannot be stopped": {
-			rdbs: &cmd.ResetDBSettings{Service: "my service", Timeout: 10},
+			rdbs: cmd.NewResetDBSettings().WithService("my service").WithTimeout(10),
 			args: args{
 				manager: newTestManager(nil, nil),
 				service: newTestService(svc.Status{State: svc.Paused}),
@@ -438,7 +431,7 @@ func TestResetDBSettings_HandleService(t *testing.T) {
 		output.WantedRecording
 	}{
 		"defective manager #1": {
-			rdbs:       &cmd.ResetDBSettings{Service: "my service", Timeout: 1},
+			rdbs:       cmd.NewResetDBSettings().WithService("my service").WithTimeout(1),
 			manager:    newTestManager(nil, []string{"my service"}),
 			wantStatus: cmd.SystemError,
 			WantedRecording: output.WantedRecording{
@@ -456,7 +449,7 @@ func TestResetDBSettings_HandleService(t *testing.T) {
 			},
 		},
 		"defective manager #2": {
-			rdbs:       &cmd.ResetDBSettings{Service: "my service", Timeout: 1},
+			rdbs:       cmd.NewResetDBSettings().WithService("my service").WithTimeout(1),
 			manager:    newTestManager(nil, nil),
 			wantStatus: cmd.SystemError,
 			WantedRecording: output.WantedRecording{
@@ -474,7 +467,7 @@ func TestResetDBSettings_HandleService(t *testing.T) {
 			},
 		},
 		"defective manager #3": {
-			rdbs:       &cmd.ResetDBSettings{Service: "my service", Timeout: 1},
+			rdbs:       cmd.NewResetDBSettings().WithService("my service").WithTimeout(1),
 			manager:    newTestManager(map[string]*mgr.Service{"my service": nil}, nil),
 			wantStatus: cmd.SystemError,
 			WantedRecording: output.WantedRecording{
@@ -522,7 +515,7 @@ func TestResetDBSettings_StopService(t *testing.T) {
 			connect: func() (*mgr.Mgr, error) {
 				return nil, fmt.Errorf("no manager available")
 			},
-			rdbs:       &cmd.ResetDBSettings{Service: "my service", Timeout: 1},
+			rdbs:       cmd.NewResetDBSettings().WithService("my service").WithTimeout(1),
 			wantStatus: cmd.SystemError,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -541,7 +534,7 @@ func TestResetDBSettings_StopService(t *testing.T) {
 			connect: func() (*mgr.Mgr, error) {
 				return nil, nil
 			},
-			rdbs:       &cmd.ResetDBSettings{Service: "my service", Timeout: 1},
+			rdbs:       cmd.NewResetDBSettings().WithService("my service").WithTimeout(1),
 			wantStatus: cmd.SystemError,
 			WantedRecording: output.WantedRecording{
 				Error: "The service \"my service\" cannot be opened: nil manager.\n",
@@ -591,13 +584,13 @@ func TestResetDBSettings_DeleteFiles(t *testing.T) {
 		output.WantedRecording
 	}{
 		"no files": {
-			rdbs:  &cmd.ResetDBSettings{MetadataDir: "metadata/dir"},
+			rdbs:  cmd.NewResetDBSettings().WithMetadataDir("metadata/dir"),
 			paths: nil,
 			want:  cmd.Success,
 		},
 		"undeletable files": {
 			remove: func(_ string) error { return fmt.Errorf("cannot remove file") },
-			rdbs:   &cmd.ResetDBSettings{MetadataDir: "metadata/dir"},
+			rdbs:   cmd.NewResetDBSettings().WithMetadataDir("metadata/dir"),
 			paths:  []string{"file1", "file2"},
 			want:   cmd.SystemError,
 			WantedRecording: output.WantedRecording{
@@ -615,7 +608,7 @@ func TestResetDBSettings_DeleteFiles(t *testing.T) {
 		},
 		"deletable files": {
 			remove: func(_ string) error { return nil },
-			rdbs:   &cmd.ResetDBSettings{MetadataDir: "metadata/dir"},
+			rdbs:   cmd.NewResetDBSettings().WithMetadataDir("metadata/dir"),
 			paths:  []string{"file1", "file2"},
 			want:   cmd.Success,
 			WantedRecording: output.WantedRecording{
@@ -653,7 +646,7 @@ func TestResetDBSettings_FilterMetadataFiles(t *testing.T) {
 		"no entries": {want: []string{}},
 		"mixed entries": {
 			plainFileExists: func(s string) bool { return !strings.Contains(s, "dir.") },
-			rdbs:            &cmd.ResetDBSettings{MetadataDir: "metadata", Extension: ".db"},
+			rdbs:            cmd.NewResetDBSettings().WithMetadataDir("metadata").WithExtension(".db"),
 			entries: []fs.DirEntry{
 				newTestFile("dir. foo.db", nil),
 				newTestFile("foo.db", nil),
@@ -691,7 +684,7 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 		output.WantedRecording
 	}{
 		"did not stop, cannot ignore it": {
-			rdbs:    &cmd.ResetDBSettings{Service: "musicService", IgnoreServiceErrors: false},
+			rdbs:    cmd.NewResetDBSettings().WithService("musicService").WithIgnoreServiceErrors(false),
 			stopped: false,
 			want:    cmd.UserError,
 			WantedRecording: output.WantedRecording{
@@ -707,7 +700,7 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 			readDirectory: func(_ output.Bus, _ string) ([]fs.DirEntry, bool) {
 				return nil, true
 			},
-			rdbs:    &cmd.ResetDBSettings{MetadataDir: "metadata"},
+			rdbs:    cmd.NewResetDBSettings().WithMetadataDir("metadata"),
 			stopped: true,
 			want:    cmd.Success,
 			WantedRecording: output.WantedRecording{
@@ -723,10 +716,7 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 			readDirectory: func(_ output.Bus, _ string) ([]fs.DirEntry, bool) {
 				return nil, true
 			},
-			rdbs: &cmd.ResetDBSettings{
-				MetadataDir:         "metadata",
-				IgnoreServiceErrors: true,
-			},
+			rdbs:    cmd.NewResetDBSettings().WithMetadataDir("metadata").WithIgnoreServiceErrors(true),
 			stopped: false,
 			want:    cmd.Success,
 			WantedRecording: output.WantedRecording{
@@ -744,12 +734,9 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 			},
 			plainFileExists: func(_ string) bool { return true },
 			remove:          func(_ string) error { return nil },
-			rdbs: &cmd.ResetDBSettings{
-				MetadataDir: "metadata",
-				Extension:   ".db",
-			},
-			stopped: true,
-			want:    cmd.Success,
+			rdbs:            cmd.NewResetDBSettings().WithMetadataDir("metadata").WithExtension(".db"),
+			stopped:         true,
+			want:            cmd.Success,
 			WantedRecording: output.WantedRecording{
 				Console: "1 out of 1 metadata files have been deleted from \"metadata\".\n",
 			},
@@ -792,7 +779,7 @@ func TestResetDBSettings_ResetService(t *testing.T) {
 	}{
 		"not dirty, no force": {
 			dirty: func() bool { return false },
-			rdbs:  &cmd.ResetDBSettings{Force: false},
+			rdbs:  cmd.NewResetDBSettings().WithForce(false),
 			want:  cmd.UserError,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -807,7 +794,7 @@ func TestResetDBSettings_ResetService(t *testing.T) {
 		},
 		"not dirty, force": {
 			dirty: func() bool { return false },
-			rdbs:  &cmd.ResetDBSettings{Force: true},
+			rdbs:  cmd.NewResetDBSettings().WithForce(true),
 			want:  cmd.SystemError,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -829,7 +816,7 @@ func TestResetDBSettings_ResetService(t *testing.T) {
 		},
 		"dirty, not force": {
 			dirty: func() bool { return true },
-			rdbs:  &cmd.ResetDBSettings{},
+			rdbs:  cmd.NewResetDBSettings(),
 			want:  cmd.SystemError,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
