@@ -231,7 +231,7 @@ func (t *Track) ReconcileMetadata() MetadataState {
 		numberingConflict:  t.Metadata.TrackDiffers(t.AlbumIndex),
 		trackNameConflict:  t.Metadata.TrackTitleDiffers(t.SimpleName),
 		albumNameConflict:  t.Metadata.AlbumTitleDiffers(t.ContainingAlbum.canonicalTitle),
-		artistNameConflict: t.Metadata.ArtistNameDiffers(t.ContainingAlbum.artist.CanonicalName),
+		artistNameConflict: t.Metadata.ArtistNameDiffers(t.ContainingAlbum.artist.canonicalName),
 		genreConflict:      t.Metadata.GenreDiffers(t.ContainingAlbum.canonicalGenre),
 		yearConflict:       t.Metadata.YearDiffers(t.ContainingAlbum.canonicalYear),
 		mcdiConflict:       t.Metadata.MCDIDiffers(t.ContainingAlbum.musicCDIdentifier),
@@ -266,7 +266,7 @@ func (t *Track) ReportMetadataProblems() []string {
 	}
 	if s.HasArtistNameConflict() {
 		diffs = append(diffs,
-			fmt.Sprintf("metadata does not agree with artist name %q", t.ContainingAlbum.artist.CanonicalName))
+			fmt.Sprintf("metadata does not agree with artist name %q", t.ContainingAlbum.artist.canonicalName))
 	}
 	if s.HasGenreConflict() {
 		diffs = append(diffs,
@@ -359,7 +359,7 @@ func ProcessArtistMetadata(o output.Bus, artists []*Artist) {
 		recordedArtistNames := make(map[string]int)
 		for _, album := range artist.Albums() {
 			for _, track := range album.Tracks() {
-				if track.Metadata != nil && track.Metadata.IsValid() && track.Metadata.CanonicalArtistNameMatches(artist.FileName) {
+				if track.Metadata != nil && track.Metadata.IsValid() && track.Metadata.CanonicalArtistNameMatches(artist.fileName) {
 					recordedArtistNames[track.Metadata.CanonicalArtist()]++
 				}
 			}
@@ -372,7 +372,7 @@ func ProcessArtistMetadata(o output.Bus, artists []*Artist) {
 				"artistName": artist.Name(),
 			})
 		} else if canonicalName != "" {
-			artist.CanonicalName = canonicalName
+			artist.canonicalName = canonicalName
 		}
 	}
 }

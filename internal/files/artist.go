@@ -8,11 +8,30 @@ import (
 // Artist encapsulates information about a recording artist (a solo performer, a
 // duo, a band, etc.)
 type Artist struct {
-	FileName string
-	Contents []*Album
+	albums   []*Album
+	fileName string
 	path     string
 	// artist name as recorded in the metadata for each track in each album
-	CanonicalName string
+	canonicalName string
+}
+
+func (a *Artist) WithAlbums(albums []*Album) *Artist {
+	a.albums = albums
+	return a
+}
+
+func (a *Artist) WithFileName(s string) *Artist {
+	a.fileName = s
+	return a
+}
+
+func (a *Artist) WithCanonicalName(s string) *Artist {
+	a.canonicalName = s
+	return a
+}
+
+func NewEmptyArtist() *Artist {
+	return &Artist{}
 }
 
 func NewArtistFromFile(f fs.DirEntry, dir string) *Artist {
@@ -21,14 +40,14 @@ func NewArtistFromFile(f fs.DirEntry, dir string) *Artist {
 }
 
 func (a *Artist) Copy() *Artist {
-	a2 := NewArtist(a.FileName, a.Path())
-	a2.CanonicalName = a.CanonicalName
+	a2 := NewArtist(a.fileName, a.Path())
+	a2.canonicalName = a.canonicalName
 	return a2
 }
 
 // NewArtist creates a new instance of Artist
 func NewArtist(n, p string) *Artist {
-	return &Artist{FileName: n, path: p, CanonicalName: n}
+	return &Artist{fileName: n, path: p, canonicalName: n}
 }
 
 func (a *Artist) Path() string {
@@ -37,7 +56,7 @@ func (a *Artist) Path() string {
 
 // Name returns the artist's name
 func (a *Artist) Name() string {
-	return a.FileName
+	return a.fileName
 }
 
 func (a *Artist) subDirectory(s string) string {
@@ -46,15 +65,15 @@ func (a *Artist) subDirectory(s string) string {
 
 // AddAlbum adds an album to the artist's slice of albums
 func (a *Artist) AddAlbum(album *Album) {
-	a.Contents = append(a.Contents, album)
+	a.albums = append(a.albums, album)
 }
 
 // Albums returns the slice of this artist's albums
 func (a *Artist) Albums() []*Album {
-	return a.Contents
+	return a.albums
 }
 
 // HasAlbums returns true if there any albums associated with the artist
 func (a *Artist) HasAlbums() bool {
-	return len(a.Contents) != 0
+	return len(a.albums) != 0
 }

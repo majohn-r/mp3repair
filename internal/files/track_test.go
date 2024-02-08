@@ -34,9 +34,10 @@ func Test_parseTrackName(t *testing.T) {
 	}{
 		"expected use case": {
 			args: args{
-				name:  "59 track name.mp3",
-				album: files.NewEmptyAlbum().WithTitle("some album").WithArtist(&files.Artist{FileName: "some artist"}),
-				ext:   ".mp3",
+				name: "59 track name.mp3",
+				album: files.NewEmptyAlbum().WithTitle("some album").WithArtist(
+					files.NewEmptyArtist().WithFileName("some artist")),
+				ext: ".mp3",
 			},
 			wantCommonName:  "track name",
 			wantTrackNumber: 59,
@@ -44,9 +45,10 @@ func Test_parseTrackName(t *testing.T) {
 		},
 		"expected use case with hyphen separator": {
 			args: args{
-				name:  "60-other track name.mp3",
-				album: files.NewEmptyAlbum().WithTitle("some album").WithArtist(&files.Artist{FileName: "some artist"}),
-				ext:   ".mp3",
+				name: "60-other track name.mp3",
+				album: files.NewEmptyAlbum().WithTitle("some album").WithArtist(
+					files.NewEmptyArtist().WithFileName("some artist")),
+				ext: ".mp3",
 			},
 			wantCommonName:  "other track name",
 			wantTrackNumber: 60,
@@ -54,9 +56,10 @@ func Test_parseTrackName(t *testing.T) {
 		},
 		"wrong extension": {
 			args: args{
-				name:  "59 track name.mp4",
-				album: files.NewEmptyAlbum().WithTitle("some album").WithArtist(&files.Artist{FileName: "some artist"}),
-				ext:   ".mp3",
+				name: "59 track name.mp4",
+				album: files.NewEmptyAlbum().WithTitle("some album").WithArtist(
+					files.NewEmptyArtist().WithFileName("some artist")),
+				ext: ".mp3",
 			},
 			wantCommonName:  "track name.mp4",
 			wantTrackNumber: 59,
@@ -67,9 +70,10 @@ func Test_parseTrackName(t *testing.T) {
 		},
 		"missing track number": {
 			args: args{
-				name:  "track name.mp3",
-				album: files.NewEmptyAlbum().WithTitle("some album").WithArtist(&files.Artist{FileName: "some artist"}),
-				ext:   ".mp3",
+				name: "track name.mp3",
+				album: files.NewEmptyAlbum().WithTitle("some album").WithArtist(
+					files.NewEmptyArtist().WithFileName("some artist")),
+				ext: ".mp3",
 			},
 			wantCommonName: "name",
 			WantedRecording: output.WantedRecording{
@@ -79,9 +83,10 @@ func Test_parseTrackName(t *testing.T) {
 		},
 		"missing track number, simple name": {
 			args: args{
-				name:  "trackName.mp3",
-				album: files.NewEmptyAlbum().WithTitle("some album").WithArtist(&files.Artist{FileName: "some artist"}),
-				ext:   ".mp3",
+				name: "trackName.mp3",
+				album: files.NewEmptyAlbum().WithTitle("some album").WithArtist(
+					files.NewEmptyArtist().WithFileName("some artist")),
+				ext: ".mp3",
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "The track \"trackName.mp3\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
@@ -284,7 +289,8 @@ func TestTrack_RecordingArtist(t *testing.T) {
 	}{
 		"orphan track": {t: &files.Track{}, want: ""},
 		"good track": {
-			t:    &files.Track{ContainingAlbum: files.NewEmptyAlbum().WithArtist(&files.Artist{FileName: "my artist"})},
+			t: &files.Track{ContainingAlbum: files.NewEmptyAlbum().WithArtist(
+				files.NewEmptyArtist().WithFileName("my artist"))},
 			want: "my artist",
 		},
 	}
@@ -711,7 +717,7 @@ func TestReadMetadata(t *testing.T) {
 				}
 			}
 			for _, artist := range tt.args.artists {
-				for _, album := range artist.Contents {
+				for _, album := range artist.Albums() {
 					for _, track := range album.Tracks() {
 						if track.NeedsMetadata() {
 							t.Errorf("%s track %q has no metadata", fnName, track.Path())
@@ -813,10 +819,8 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 		FullPath:   filepath.Join(testDir, trackName),
 		SimpleName: strings.TrimSuffix(trackName, ".mp3"),
 		AlbumIndex: 2,
-		ContainingAlbum: files.NewEmptyAlbum().WithTitle("fine album").WithCanonicalGenre("Classic Rock").WithCanonicalYear("2022").WithCanonicalTitle("fine album").WithMusicCDIdentifier([]byte("fine album")).WithArtist(&files.Artist{
-			FileName:      "fine artist",
-			CanonicalName: "fine artist",
-		}),
+		ContainingAlbum: files.NewEmptyAlbum().WithTitle("fine album").WithCanonicalGenre("Classic Rock").WithCanonicalYear("2022").WithCanonicalTitle("fine album").WithMusicCDIdentifier([]byte("fine album")).WithArtist(
+			files.NewEmptyArtist().WithFileName("fine artist").WithCanonicalName("fine artist")),
 		Metadata: &files.TrackMetadata{
 			Album:           []string{"", "unknown album", "unknown album"},
 			Artist:          []string{"", "unknown artist", "unknown artist"},
@@ -839,10 +843,8 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 		FullPath:   filepath.Join(testDir, "no such file"),
 		SimpleName: strings.TrimSuffix(trackName, ".mp3"),
 		AlbumIndex: 2,
-		ContainingAlbum: files.NewEmptyAlbum().WithTitle("fine album").WithCanonicalGenre("Classic Rock").WithCanonicalYear("2022").WithCanonicalTitle("fine album").WithMusicCDIdentifier([]byte("fine album")).WithArtist(&files.Artist{
-			FileName:      "fine artist",
-			CanonicalName: "fine artist",
-		}),
+		ContainingAlbum: files.NewEmptyAlbum().WithTitle("fine album").WithCanonicalGenre("Classic Rock").WithCanonicalYear("2022").WithCanonicalTitle("fine album").WithMusicCDIdentifier([]byte("fine album")).WithArtist(
+			files.NewEmptyArtist().WithFileName("fine artist").WithCanonicalName("fine artist")),
 		Metadata: &files.TrackMetadata{
 			Album:           []string{"", "unknown album", "unknown album"},
 			Artist:          []string{"", "unknown artist", "unknown artist"},
@@ -1113,10 +1115,11 @@ func TestTrack_reportMetadataErrors(t *testing.T) {
 		"error handling": {
 			args: args{
 				t: &files.Track{
-					SimpleName:      "silly track",
-					FullPath:        "Music\\silly artist\\silly album\\01 silly track.mp3",
-					Metadata:        &files.TrackMetadata{ErrCause: []string{"", "id3v1 error!", "id3v2 error!"}},
-					ContainingAlbum: files.NewEmptyAlbum().WithTitle("silly album").WithArtist(&files.Artist{FileName: "silly artist"}),
+					SimpleName: "silly track",
+					FullPath:   "Music\\silly artist\\silly album\\01 silly track.mp3",
+					Metadata:   &files.TrackMetadata{ErrCause: []string{"", "id3v1 error!", "id3v2 error!"}},
+					ContainingAlbum: files.NewEmptyAlbum().WithTitle("silly album").WithArtist(
+						files.NewEmptyArtist().WithFileName("silly artist")),
 				},
 			},
 			WantedRecording: output.WantedRecording{
