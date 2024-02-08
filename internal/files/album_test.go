@@ -31,20 +31,12 @@ func TestAlbum_RecordingArtistName(t *testing.T) {
 }
 
 func TestAlbum_Copy(t *testing.T) {
-	complexAlbum := files.NewAlbum("my album", files.NewArtist("my artist", "Music/my artist"), "Music/my artist/my album")
-	complexAlbum.CanonicalGenre = "rap"
-	complexAlbum.CanonicalTitle = "my special album"
-	complexAlbum.CanonicalYear = "1993"
-	complexAlbum.MusicCDIdentifier.Body = []byte{0, 1, 2}
+	complexAlbum := files.NewAlbum("my album", files.NewArtist("my artist", "Music/my artist"), "Music/my artist/my album").WithCanonicalGenre("rap").WithCanonicalTitle("my special album").WithCanonicalYear("1993").WithMusicCDIdentifier([]byte{0, 1, 2})
 	for k := 1; k <= 10; k++ {
 		track := files.NewTrack(complexAlbum, fmt.Sprintf("%d track %d.mp3", k, k), fmt.Sprintf("track %d.mp3", k), k)
 		complexAlbum.AddTrack(track)
 	}
-	complexAlbum2 := files.NewAlbum("my album", files.NewArtist("my artist", "Music/my artist"), "Music/my artist/my album")
-	complexAlbum2.CanonicalGenre = "rap"
-	complexAlbum2.CanonicalTitle = "my special album"
-	complexAlbum2.CanonicalYear = "1993"
-	complexAlbum2.MusicCDIdentifier.Body = []byte{0, 1, 2}
+	complexAlbum2 := files.NewAlbum("my album", files.NewArtist("my artist", "Music/my artist"), "Music/my artist/my album").WithCanonicalGenre("rap").WithCanonicalTitle("my special album").WithCanonicalYear("1993").WithMusicCDIdentifier([]byte{0, 1, 2})
 	for k := 1; k <= 10; k++ {
 		track := files.NewTrack(complexAlbum2, fmt.Sprintf("%d track %d.mp3", k, k), fmt.Sprintf("track %d.mp3", k), k)
 		complexAlbum2.AddTrack(track)
@@ -69,7 +61,7 @@ func TestAlbum_Copy(t *testing.T) {
 		"complex test": {
 			a: complexAlbum,
 			args: args{
-				ar:            complexAlbum.RecordingArtist.Copy(),
+				ar:            complexAlbum.GetArtist().Copy(),
 				includeTracks: true,
 			},
 			want: complexAlbum2,
@@ -160,11 +152,11 @@ func TestAlbum_HasTracks(t *testing.T) {
 		want bool
 	}{
 		"empty": {
-			a:    &files.Album{},
+			a:    files.NewEmptyAlbum(),
 			want: false,
 		},
 		"with tracks": {
-			a:    &files.Album{Contents: []*files.Track{{}}},
+			a:    files.NewEmptyAlbum().WithTracks([]*files.Track{{}}),
 			want: true,
 		},
 	}

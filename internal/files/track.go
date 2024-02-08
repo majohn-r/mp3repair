@@ -230,11 +230,11 @@ func (t *Track) ReconcileMetadata() MetadataState {
 	return MetadataState{
 		numberingConflict:  t.Metadata.TrackDiffers(t.AlbumIndex),
 		trackNameConflict:  t.Metadata.TrackTitleDiffers(t.SimpleName),
-		albumNameConflict:  t.Metadata.AlbumTitleDiffers(t.ContainingAlbum.CanonicalTitle),
-		artistNameConflict: t.Metadata.ArtistNameDiffers(t.ContainingAlbum.RecordingArtist.CanonicalName),
-		genreConflict:      t.Metadata.GenreDiffers(t.ContainingAlbum.CanonicalGenre),
-		yearConflict:       t.Metadata.YearDiffers(t.ContainingAlbum.CanonicalYear),
-		mcdiConflict:       t.Metadata.MCDIDiffers(t.ContainingAlbum.MusicCDIdentifier),
+		albumNameConflict:  t.Metadata.AlbumTitleDiffers(t.ContainingAlbum.canonicalTitle),
+		artistNameConflict: t.Metadata.ArtistNameDiffers(t.ContainingAlbum.artist.CanonicalName),
+		genreConflict:      t.Metadata.GenreDiffers(t.ContainingAlbum.canonicalGenre),
+		yearConflict:       t.Metadata.YearDiffers(t.ContainingAlbum.canonicalYear),
+		mcdiConflict:       t.Metadata.MCDIDiffers(t.ContainingAlbum.musicCDIdentifier),
 	}
 }
 
@@ -262,23 +262,23 @@ func (t *Track) ReportMetadataProblems() []string {
 	}
 	if s.HasAlbumNameConflict() {
 		diffs = append(diffs,
-			fmt.Sprintf("metadata does not agree with album name %q", t.ContainingAlbum.CanonicalTitle))
+			fmt.Sprintf("metadata does not agree with album name %q", t.ContainingAlbum.canonicalTitle))
 	}
 	if s.HasArtistNameConflict() {
 		diffs = append(diffs,
-			fmt.Sprintf("metadata does not agree with artist name %q", t.ContainingAlbum.RecordingArtist.CanonicalName))
+			fmt.Sprintf("metadata does not agree with artist name %q", t.ContainingAlbum.artist.CanonicalName))
 	}
 	if s.HasGenreConflict() {
 		diffs = append(diffs,
-			fmt.Sprintf("metadata does not agree with album genre %q", t.ContainingAlbum.CanonicalGenre))
+			fmt.Sprintf("metadata does not agree with album genre %q", t.ContainingAlbum.canonicalGenre))
 	}
 	if s.HasYearConflict() {
 		diffs = append(diffs,
-			fmt.Sprintf("metadata does not agree with album year %q", t.ContainingAlbum.CanonicalYear))
+			fmt.Sprintf("metadata does not agree with album year %q", t.ContainingAlbum.canonicalYear))
 	}
 	if s.HasMCDIConflict() {
 		diffs = append(diffs,
-			fmt.Sprintf("metadata does not agree with the MCDI frame %q", string(t.ContainingAlbum.MusicCDIdentifier.Body)))
+			fmt.Sprintf("metadata does not agree with the MCDI frame %q", string(t.ContainingAlbum.musicCDIdentifier.Body)))
 	}
 	sort.Strings(diffs)
 	return diffs
@@ -404,7 +404,7 @@ func ProcessAlbumMetadata(o output.Bus, artists []*Artist) {
 				if t.Metadata.CanonicalYear() != "" {
 					recordedYears[t.Metadata.CanonicalYear()]++
 				}
-				if t.Metadata.CanonicalAlbumTitleMatches(al.Title) {
+				if t.Metadata.CanonicalAlbumTitleMatches(al.title) {
 					recordedAlbumTitles[t.Metadata.CanonicalAlbum()]++
 				}
 				mcdiKey := string(t.Metadata.CanonicalMusicCDIdentifier().Body)
@@ -420,7 +420,7 @@ func ProcessAlbumMetadata(o output.Bus, artists []*Artist) {
 					"artistName": ar.Name(),
 				})
 			} else {
-				al.CanonicalGenre = canonicalGenre
+				al.canonicalGenre = canonicalGenre
 			}
 			if canonicalYear, ok := CanonicalChoice(recordedYears); !ok {
 				reportAmbiguousChoices(o, "year", fmt.Sprintf("%s by %s", al.Name(), ar.Name()), recordedYears)
@@ -431,7 +431,7 @@ func ProcessAlbumMetadata(o output.Bus, artists []*Artist) {
 					"artistName": ar.Name(),
 				})
 			} else {
-				al.CanonicalYear = canonicalYear
+				al.canonicalYear = canonicalYear
 			}
 			if canonicalAlbumTitle, ok := CanonicalChoice(recordedAlbumTitles); !ok {
 				reportAmbiguousChoices(o, "album title", fmt.Sprintf("%s by %s", al.Name(), ar.Name()), recordedAlbumTitles)
@@ -442,7 +442,7 @@ func ProcessAlbumMetadata(o output.Bus, artists []*Artist) {
 					"artistName": ar.Name(),
 				})
 			} else if canonicalAlbumTitle != "" {
-				al.CanonicalTitle = canonicalAlbumTitle
+				al.canonicalTitle = canonicalAlbumTitle
 			}
 			if canonicalMCDI, ok := CanonicalChoice(recordedMCDIs); !ok {
 				reportAmbiguousChoices(o, "MCDI frame", fmt.Sprintf("%s by %s", al.Name(), ar.Name()), recordedMCDIs)
@@ -453,7 +453,7 @@ func ProcessAlbumMetadata(o output.Bus, artists []*Artist) {
 					"artistName": ar.Name(),
 				})
 			} else {
-				al.MusicCDIdentifier = recordedMCDIFrames[canonicalMCDI]
+				al.musicCDIdentifier = recordedMCDIFrames[canonicalMCDI]
 			}
 		}
 	}
@@ -541,10 +541,10 @@ func ParseTrackName(o output.Bus, name string, album *Album, ext string) (common
 	if !trackNameRegex.MatchString(name) {
 		o.Log(output.Error, "the track name cannot be parsed", map[string]any{
 			"trackName":  name,
-			"albumName":  album.Title,
+			"albumName":  album.title,
 			"artistName": album.RecordingArtistName(),
 		})
-		o.WriteCanonicalError("The track %q on album %q by artist %q cannot be parsed", name, album.Title, album.RecordingArtistName())
+		o.WriteCanonicalError("The track %q on album %q by artist %q cannot be parsed", name, album.title, album.RecordingArtistName())
 		return
 	}
 	wantDigit := true
@@ -579,7 +579,7 @@ func (t *Track) AlbumName() string {
 	if t.ContainingAlbum == nil {
 		return ""
 	}
-	return t.ContainingAlbum.Title
+	return t.ContainingAlbum.title
 }
 
 // RecordingArtist returns the name of the artist on whose album this track
