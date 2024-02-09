@@ -30,7 +30,7 @@ const (
 	trackLength    = 1
 	genreOffset    = trackOffset + trackLength // genre list index
 	genreLength    = 1
-	Id3v1Length    = genreOffset + genreLength // total length of the ID3V1 block
+	id3v1Length    = genreOffset + genreLength // total length of the ID3V1 block
 )
 
 type id3v1Field struct {
@@ -243,17 +243,35 @@ func initID3v1Field(offset, length int) id3v1Field {
 	return id3v1Field{startOffset: offset, length: length, endOffset: offset + length}
 }
 
-// TODO: make Data field private
 type Id3v1Metadata struct {
-	Data []byte
+	data []byte
+}
+
+func (im *Id3v1Metadata) RawData() []byte {
+	return im.data
+}
+
+func (im *Id3v1Metadata) WithData(b []byte) *Id3v1Metadata {
+	im.data = make([]byte, id3v1Length)
+	if len(b) >= id3v1Length {
+		for k := 0; k < id3v1Length; k++ {
+			im.data[k] = b[k]
+		}
+	} else {
+		copy(im.data, b)
+		for k := len(b); k < id3v1Length; k++ {
+			im.data[k] = 0
+		}
+	}
+	return im
 }
 
 func NewID3v1Metadata() *Id3v1Metadata {
-	return &Id3v1Metadata{Data: make([]byte, Id3v1Length)}
+	return &Id3v1Metadata{data: make([]byte, id3v1Length)}
 }
 
 func (im *Id3v1Metadata) readString(f id3v1Field) string {
-	return Trim(string(im.Data[f.startOffset:f.endOffset]))
+	return Trim(string(im.data[f.startOffset:f.endOffset]))
 }
 
 func (im *Id3v1Metadata) IsValid() bool {
@@ -265,12 +283,12 @@ func (im *Id3v1Metadata) Title() string {
 }
 
 func (im *Id3v1Metadata) WriteString(s string, f id3v1Field) {
-	copy(im.Data[f.startOffset:f.endOffset], bytes.Repeat([]byte{0}, f.length))
+	copy(im.data[f.startOffset:f.endOffset], bytes.Repeat([]byte{0}, f.length))
 	// truncate long strings ...
 	if len(s) > f.length {
 		s = s[0:f.length]
 	}
-	copy(im.Data[f.startOffset:f.endOffset], s)
+	copy(im.data[f.startOffset:f.endOffset], s)
 }
 
 func repairName(s string) string {
@@ -322,7 +340,7 @@ func (im *Id3v1Metadata) SetComment(s string) {
 }
 
 func (im *Id3v1Metadata) readInt(f id3v1Field) int {
-	return int(im.Data[f.startOffset])
+	return int(im.data[f.startOffset])
 }
 
 func (im *Id3v1Metadata) Track() (i int, ok bool) {
@@ -334,7 +352,7 @@ func (im *Id3v1Metadata) Track() (i int, ok bool) {
 }
 
 func (im *Id3v1Metadata) writeInt(v int, f id3v1Field) {
-	im.Data[f.startOffset] = byte(v)
+	im.data[f.startOffset] = byte(v)
 }
 
 func (im *Id3v1Metadata) SetTrack(t int) (b bool) {
@@ -405,13 +423,13 @@ func InternalReadID3V1Metadata(path string, readFunc func(f *os.File, b []byte) 
 		return nil, err
 	}
 	defer file.Close()
-	if _, err = file.Seek(-Id3v1Length, io.SeekEnd); err != nil {
+	if _, err = file.Seek(-id3v1Length, io.SeekEnd); err != nil {
 		return nil, err
 	}
 	v1 := NewID3v1Metadata()
-	if r, err := readFunc(file, v1.Data); err != nil {
+	if r, err := readFunc(file, v1.data); err != nil {
 		return nil, err
-	} else if r < Id3v1Length {
+	} else if r < id3v1Length {
 		return nil, fmt.Errorf("cannot read id3v1 metadata from file %q; only %d bytes read", path, r)
 	}
 	if v1.IsValid() {
@@ -481,12 +499,12 @@ func (im *Id3v1Metadata) InternalWrite(path string, writeFunc func(f *os.File, b
 				}()
 				if _, err = io.Copy(tmpFile, src); err == nil {
 					src.Close()
-					if _, err = tmpFile.Seek(-Id3v1Length, io.SeekEnd); err == nil {
+					if _, err = tmpFile.Seek(-id3v1Length, io.SeekEnd); err == nil {
 						var n int
-						if n, err = writeFunc(tmpFile, im.Data); err == nil {
+						if n, err = writeFunc(tmpFile, im.data); err == nil {
 							tmpFile.Close()
-							if n != Id3v1Length {
-								err = fmt.Errorf("wrote %d bytes to %q, expected to write %d bytes", n, tmpPath, Id3v1Length)
+							if n != id3v1Length {
+								err = fmt.Errorf("wrote %d bytes to %q, expected to write %d bytes", n, tmpPath, id3v1Length)
 								return
 							}
 							if err = os.Rename(tmpPath, path); err == nil {

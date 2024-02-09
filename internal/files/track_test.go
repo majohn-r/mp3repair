@@ -597,7 +597,7 @@ func createID3V1TaggedData(m map[string]any) []byte {
 			}
 		}
 	}
-	return v1.Data
+	return v1.RawData()
 }
 
 func createConsistentlyTaggedData(audio []byte, m map[string]any) []byte {
