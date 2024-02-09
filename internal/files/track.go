@@ -656,8 +656,8 @@ func (t *Track) Details() (map[string]string, error) {
 		m := map[string]string{}
 		// only include known frames
 		for _, frame := range frames {
-			if value, ok := frameDescriptions[frame.Name]; ok {
-				m[value] = frame.Value
+			if value, ok := frameDescriptions[frame.name]; ok {
+				m[value] = frame.value
 			}
 		}
 		return m, nil

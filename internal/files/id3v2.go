@@ -177,16 +177,29 @@ func updateID3V2Metadata(tM *TrackMetadata, path string, sT SourceType) (e error
 	return
 }
 
-// TODO: make fields private
 type Id3v2TrackFrame struct {
-	Name  string
-	Value string
+	name  string
+	value string
+}
+
+func (itf *Id3v2TrackFrame) WithValue(s string) *Id3v2TrackFrame {
+	itf.value = s
+	return itf
+}
+
+func (itf *Id3v2TrackFrame) WithName(s string) *Id3v2TrackFrame {
+	itf.name = s
+	return itf
+}
+
+func NewId3v2TrackFrame() *Id3v2TrackFrame {
+	return &Id3v2TrackFrame{}
 }
 
 // String returns the contents of an ID3V2TrackFrame formatted in the form
 // "name = \"value\"".
 func (itf *Id3v2TrackFrame) String() string {
-	return fmt.Sprintf("%s = %q", itf.Name, itf.Value)
+	return fmt.Sprintf("%s = %q", itf.name, itf.value)
 }
 
 func ReadID3V2Metadata(path string) (version byte, encoding string, frameStrings []string, rawFrames []*Id3v2TrackFrame, e error) {
@@ -209,7 +222,7 @@ func ReadID3V2Metadata(path string) (version byte, encoding string, frameStrings
 			} else {
 				value = FramerSliceAsString(frameMap[n])
 			}
-			frame := &Id3v2TrackFrame{Name: n, Value: value}
+			frame := &Id3v2TrackFrame{name: n, value: value}
 			frameStrings = append(frameStrings, frame.String())
 			rawFrames = append(rawFrames, frame)
 		}

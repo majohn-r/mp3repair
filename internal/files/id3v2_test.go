@@ -238,7 +238,12 @@ func TestID3V2TrackFrameStringType(t *testing.T) {
 	tests := map[string]struct {
 		f    *files.Id3v2TrackFrame
 		want string
-	}{"usual": {f: &files.Id3v2TrackFrame{Name: "T1", Value: "V1"}, want: "T1 = \"V1\""}}
+	}{
+		"usual": {
+			f:    files.NewId3v2TrackFrame().WithName("T1").WithValue("V1"),
+			want: "T1 = \"V1\"",
+		},
+	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			if got := tt.f.String(); got != tt.want {
