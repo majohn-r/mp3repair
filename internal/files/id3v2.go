@@ -8,6 +8,7 @@ import (
 	"github.com/bogem/id3v2/v2"
 )
 
+// TODO: make fields private
 type Id3v2Metadata struct {
 	Album             string
 	Artist            string
@@ -176,6 +177,7 @@ func updateID3V2Metadata(tM *TrackMetadata, path string, sT SourceType) (e error
 	return
 }
 
+// TODO: make fields private
 type Id3v2TrackFrame struct {
 	Name  string
 	Value string

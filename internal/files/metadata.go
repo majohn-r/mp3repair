@@ -46,6 +46,7 @@ func (sT SourceType) Name() string {
 }
 
 // outside of unit tests
+// TODO: make fields private
 type TrackMetadata struct {
 	Album             []string           // public so unit tests can set it and force a difference
 	Artist            []string           // public so unit tests can set it and force a difference
@@ -169,6 +170,7 @@ func (tM *TrackMetadata) ErrorCauses() []string {
 	return errCauses
 }
 
+// TODO: make fields private
 type ComparableStrings struct {
 	ExternalName string
 	MetadataName string

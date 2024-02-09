@@ -243,6 +243,7 @@ func initID3v1Field(offset, length int) id3v1Field {
 	return id3v1Field{startOffset: offset, length: length, endOffset: offset + length}
 }
 
+// TODO: make Data field private
 type Id3v1Metadata struct {
 	Data []byte
 }
