@@ -8,16 +8,63 @@ import (
 	"github.com/bogem/id3v2/v2"
 )
 
-// TODO: make fields private
 type Id3v2Metadata struct {
-	Album             string
-	Artist            string
-	Title             string
-	Genre             string
-	Year              string
-	Track             int
-	MusicCDIdentifier id3v2.UnknownFrame
-	Err               error
+	albumName         string
+	artistName        string
+	err               error
+	genre             string
+	musicCDIdentifier id3v2.UnknownFrame
+	trackName         string
+	trackNumber       int
+	year              string
+}
+
+func (im *Id3v2Metadata) HasError() bool {
+	return im.err != nil
+}
+
+func (im *Id3v2Metadata) WithAlbumName(s string) *Id3v2Metadata {
+	im.albumName = s
+	return im
+}
+
+func (im *Id3v2Metadata) WithArtistName(s string) *Id3v2Metadata {
+	im.artistName = s
+	return im
+}
+
+func (im *Id3v2Metadata) WithTrackName(s string) *Id3v2Metadata {
+	im.trackName = s
+	return im
+}
+
+func (im *Id3v2Metadata) WithGenre(s string) *Id3v2Metadata {
+	im.genre = s
+	return im
+}
+
+func (im *Id3v2Metadata) WithYear(s string) *Id3v2Metadata {
+	im.year = s
+	return im
+}
+
+func (im *Id3v2Metadata) WithTrackNumber(i int) *Id3v2Metadata {
+	im.trackNumber = i
+	return im
+}
+
+func (im *Id3v2Metadata) WithMusicCDIdentifier(b []byte) *Id3v2Metadata {
+	im.musicCDIdentifier = id3v2.UnknownFrame{Body: b}
+	return im
+}
+
+func (im *Id3v2Metadata) WithErr(e error) *Id3v2Metadata {
+	im.err = e
+	return im
+}
+
+func NewId3v2Metadata() *Id3v2Metadata {
+	return &Id3v2Metadata{}
 }
 
 func readID3V2Tag(path string) (*id3v2.Tag, error) {
@@ -27,20 +74,20 @@ func readID3V2Tag(path string) (*id3v2.Tag, error) {
 func RawReadID3V2Metadata(path string) (d *Id3v2Metadata) {
 	d = &Id3v2Metadata{}
 	if tag, err := readID3V2Tag(path); err != nil {
-		d.Err = err
+		d.err = err
 	} else {
 		defer tag.Close()
 		if trackNumber, err := ToTrackNumber(tag.GetTextFrame(trackFrame).Text); err != nil {
-			d.Err = err
+			d.err = err
 		} else {
-			d.Album = RemoveLeadingBOMs(tag.Album())
-			d.Artist = RemoveLeadingBOMs(tag.Artist())
-			d.Genre = NormalizeGenre(RemoveLeadingBOMs(tag.Genre()))
-			d.Title = RemoveLeadingBOMs(tag.Title())
-			d.Track = trackNumber
-			d.Year = RemoveLeadingBOMs(tag.Year())
+			d.albumName = RemoveLeadingBOMs(tag.Album())
+			d.artistName = RemoveLeadingBOMs(tag.Artist())
+			d.genre = NormalizeGenre(RemoveLeadingBOMs(tag.Genre()))
+			d.trackName = RemoveLeadingBOMs(tag.Title())
+			d.trackNumber = trackNumber
+			d.year = RemoveLeadingBOMs(tag.Year())
 			mcdiFramers := tag.AllFrames()[mcdiFrame]
-			d.MusicCDIdentifier = SelectUnknownFrame(mcdiFramers)
+			d.musicCDIdentifier = SelectUnknownFrame(mcdiFramers)
 		}
 	}
 	return

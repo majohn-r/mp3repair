@@ -92,15 +92,15 @@ func ReadRawMetadata(path string) *TrackMetadata {
 	d := RawReadID3V2Metadata(path)
 	tM := NewTrackMetadata()
 	switch {
-	case id3v1Err != nil && d.Err != nil:
+	case id3v1Err != nil && d.err != nil:
 		tM.ErrCause[ID3V1] = id3v1Err.Error()
-		tM.ErrCause[ID3V2] = d.Err.Error()
+		tM.ErrCause[ID3V2] = d.err.Error()
 	case id3v1Err != nil:
 		tM.ErrCause[ID3V1] = id3v1Err.Error()
 		tM.SetID3v2Values(d)
 		tM.CanonicalType = ID3V2
-	case d.Err != nil:
-		tM.ErrCause[ID3V2] = d.Err.Error()
+	case d.err != nil:
+		tM.ErrCause[ID3V2] = d.err.Error()
 		tM.SetID3v1Values(v1)
 		tM.CanonicalType = ID3V1
 	default:
@@ -113,13 +113,13 @@ func ReadRawMetadata(path string) *TrackMetadata {
 
 func (tM *TrackMetadata) SetID3v2Values(d *Id3v2Metadata) {
 	i := ID3V2
-	tM.Album[i] = d.Album
-	tM.Artist[i] = d.Artist
-	tM.Title[i] = d.Title
-	tM.Genre[i] = d.Genre
-	tM.Year[i] = d.Year
-	tM.Track[i] = d.Track
-	tM.MusicCDIdentifier = d.MusicCDIdentifier
+	tM.Album[i] = d.albumName
+	tM.Artist[i] = d.artistName
+	tM.Title[i] = d.trackName
+	tM.Genre[i] = d.genre
+	tM.Year[i] = d.year
+	tM.Track[i] = d.trackNumber
+	tM.MusicCDIdentifier = d.musicCDIdentifier
 }
 
 func (tM *TrackMetadata) SetID3v1Values(v1 *Id3v1Metadata) {

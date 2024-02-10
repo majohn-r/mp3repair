@@ -73,15 +73,9 @@ func Test_trackMetadata_setId3v2Values(t *testing.T) {
 		"complete test": {
 			tM: files.NewTrackMetadata(),
 			args: args{
-				d: &files.Id3v2Metadata{
-					Album:             "Great album",
-					Artist:            "Great artist",
-					Title:             "Great track",
-					Genre:             "Pop",
-					Year:              "2022",
-					Track:             1,
-					MusicCDIdentifier: id3v2.UnknownFrame{Body: []byte{0, 2, 4}},
-				},
+				d: files.NewId3v2Metadata().WithAlbumName("Great album").WithArtistName(
+					"Great artist").WithTrackName("Great track").WithGenre("Pop").WithYear(
+					"2022").WithTrackNumber(1).WithMusicCDIdentifier([]byte{0, 2, 4}),
 			},
 			wantTM: &files.TrackMetadata{
 				Album:                      []string{"", "", "Great album"},

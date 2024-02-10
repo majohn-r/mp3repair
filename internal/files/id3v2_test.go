@@ -96,29 +96,28 @@ func Test_rawReadID3V2Metadata(t *testing.T) {
 		args
 		wantD *files.Id3v2Metadata
 	}{
-		"bad test": {args: args{path: "./noSuchFile!.mp3"}, wantD: &files.Id3v2Metadata{Err: fmt.Errorf("foo")}},
+		"bad test": {
+			args:  args{path: "./noSuchFile!.mp3"},
+			wantD: files.NewId3v2Metadata().WithErr(fmt.Errorf("foo")),
+		},
 		"good test": {
 			args: args{path: "./goodFile.mp3"},
-			wantD: &files.Id3v2Metadata{
-				Album:  "unknown album",
-				Artist: "unknown artist",
-				Title:  "unknown track",
-				Track:  2,
-			},
+			wantD: files.NewId3v2Metadata().WithAlbumName("unknown album").WithArtistName(
+				"unknown artist").WithTrackName("unknown track").WithTrackNumber(2),
 		},
 		"bad data test": {
 			args:  args{path: "./badFile.mp3"},
-			wantD: &files.Id3v2Metadata{Err: files.ErrMalformedTrackNumber},
+			wantD: files.NewId3v2Metadata().WithErr(files.ErrMalformedTrackNumber),
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			gotD := files.RawReadID3V2Metadata(tt.args.path)
-			if gotD.Err != nil {
-				if tt.wantD.Err == nil {
+			if gotD.HasError() {
+				if !tt.wantD.HasError() {
 					t.Errorf("%s = %v, want %v", fnName, gotD, tt.wantD)
 				}
-			} else if tt.wantD.Err != nil {
+			} else if tt.wantD.HasError() {
 				t.Errorf("%s = %v, want %v", fnName, gotD, tt.wantD)
 			}
 		})
