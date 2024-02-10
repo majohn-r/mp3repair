@@ -358,19 +358,61 @@ func Test_framerSliceAsString(t *testing.T) {
 func Test_id3v2NameDiffers(t *testing.T) {
 	const fnName = "id3v2NameDiffers()"
 	type args struct {
-		cS files.ComparableStrings
+		cS *files.ComparableStrings
 	}
 	tests := map[string]struct {
 		args
 		want bool
 	}{
-		"identical strings":                            {args: args{files.ComparableStrings{ExternalName: "simple name", MetadataName: "simple name"}}, want: false},
-		"identical strings with case differences":      {args: args{files.ComparableStrings{ExternalName: "SIMPLE name", MetadataName: "simple NAME"}}, want: false},
-		"strings of different length":                  {args: args{files.ComparableStrings{ExternalName: "simple name", MetadataName: "artist: simple name"}}, want: true},
-		"use of runes that are illegal for file names": {args: args{files.ComparableStrings{ExternalName: "simple_name", MetadataName: "simple:name"}}, want: false},
-		"metadata with trailing space":                 {args: args{files.ComparableStrings{ExternalName: "simple name", MetadataName: "simple name "}}, want: false},
-		"period on the end":                            {args: args{files.ComparableStrings{ExternalName: "simple name.", MetadataName: "simple name."}}, want: false},
-		"complex mismatch":                             {args: args{files.ComparableStrings{ExternalName: "simple_name", MetadataName: "simple: nam"}}, want: true},
+		"identical strings": {
+			args: args{
+				files.NewComparableStrings().WithExternal(
+					"simple name").WithMetadata("simple name"),
+			},
+			want: false,
+		},
+		"identical strings with case differences": {
+			args: args{
+				files.NewComparableStrings().WithExternal(
+					"SIMPLE name").WithMetadata("simple NAME"),
+			},
+			want: false,
+		},
+		"strings of different length": {
+			args: args{
+				files.NewComparableStrings().WithExternal(
+					"simple name").WithMetadata("artist: simple name"),
+			},
+			want: true,
+		},
+		"use of runes that are illegal for file names": {
+			args: args{
+				files.NewComparableStrings().WithExternal(
+					"simple_name").WithMetadata("simple:name"),
+			},
+			want: false,
+		},
+		"metadata with trailing space": {
+			args: args{
+				files.NewComparableStrings().WithExternal(
+					"simple name").WithMetadata("simple name "),
+			},
+			want: false,
+		},
+		"period on the end": {
+			args: args{
+				files.NewComparableStrings().WithExternal(
+					"simple name.").WithMetadata("simple name."),
+			},
+			want: false,
+		},
+		"complex mismatch": {
+			args: args{
+				files.NewComparableStrings().WithExternal(
+					"simple_name").WithMetadata("simple: nam"),
+			},
+			want: true,
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -411,14 +453,26 @@ func Test_normalizeGenre(t *testing.T) {
 func Test_id3v2GenreDiffers(t *testing.T) {
 	const fnName = "id3v2GenreDiffers()"
 	type args struct {
-		cS files.ComparableStrings
+		cS *files.ComparableStrings
 	}
 	tests := map[string]struct {
 		args
 		want bool
 	}{
-		"match":    {args: args{cS: files.ComparableStrings{ExternalName: "Classic Rock", MetadataName: "Classic Rock"}}, want: false},
-		"no match": {args: args{cS: files.ComparableStrings{ExternalName: "Classic Rock", MetadataName: "classic rock"}}, want: true},
+		"match": {
+			args: args{
+				cS: files.NewComparableStrings().WithExternal(
+					"Classic Rock").WithMetadata("Classic Rock"),
+			},
+			want: false,
+		},
+		"no match": {
+			args: args{
+				cS: files.NewComparableStrings().WithExternal(
+					"Classic Rock").WithMetadata("classic rock"),
+			},
+			want: true,
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {

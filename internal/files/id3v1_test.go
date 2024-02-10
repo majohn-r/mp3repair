@@ -1053,45 +1053,77 @@ func TestId3v1Metadata_write(t *testing.T) {
 func TestId3v1NameDiffers(t *testing.T) {
 	const fnName = "Id3v1NameDiffers()"
 	type args struct {
-		cS files.ComparableStrings
+		cS *files.ComparableStrings
 	}
 	tests := map[string]struct {
 		args
 		want bool
 	}{
 		"identical strings": {
-			args: args{files.ComparableStrings{ExternalName: "Fiddler On The Roof", MetadataName: "Fiddler On The Roof"}},
+			args: args{
+				cS: files.NewComparableStrings().WithExternal(
+					"Fiddler On The Roof").WithMetadata("Fiddler On The Roof"),
+			},
 			want: false,
 		},
 		"unusable characters in metadata": {
-			args: args{files.ComparableStrings{ExternalName: "Theme From M-A-S-H", MetadataName: "Theme From M*A*S*H"}},
+			args: args{
+				cS: files.NewComparableStrings().WithExternal(
+					"Theme From M-A-S-H").WithMetadata("Theme From M*A*S*H"),
+			},
 			want: false,
 		},
 		"really long name": {
-			args: args{files.ComparableStrings{
-				ExternalName: "A Funny Thing Happened On The Way To The Forum 1996 Broadway Revival Cast",
-				MetadataName: "A Funny Thing Happened On The",
-			}},
+			args: args{
+				cS: files.NewComparableStrings().WithExternal(
+					"A Funny Thing Happened On The Way To The Forum 1996 Broadway Revival Cast").WithMetadata(
+					"A Funny Thing Happened On The"),
+			},
 			want: false,
 		},
 		"non-ASCII values": {
-			args: args{files.ComparableStrings{ExternalName: "Grohg - Cortège Macabre", MetadataName: "Grohg - Cort\xe8ge Macabre"}},
+			args: args{
+				cS: files.NewComparableStrings().WithExternal(
+					"Grohg - Cortège Macabre").WithMetadata(
+					"Grohg - Cort\xe8ge Macabre"),
+			},
 			want: false,
 		},
 		"larger non-ASCII values": {
-			args: args{files.ComparableStrings{ExternalName: "Dvořák", MetadataName: "Dvor\xe1k"}},
+			args: args{
+				cS: files.NewComparableStrings().WithExternal(
+					"Dvořák").WithMetadata("Dvor\xe1k"),
+			},
 			want: false,
 		},
 		"identical strings with case differences": {
-			args: args{files.ComparableStrings{ExternalName: "SIMPLE name", MetadataName: "simple NAME"}},
+			args: args{
+				cS: files.NewComparableStrings().WithExternal(
+					"SIMPLE name").WithMetadata("simple NAME"),
+			},
 			want: false,
 		},
 		"strings of different length within name length limit": {
-			args: args{files.ComparableStrings{ExternalName: "simple name", MetadataName: "artist: simple name"}},
+			args: args{
+				cS: files.NewComparableStrings().WithExternal(
+					"simple name").WithMetadata("artist: simple name"),
+			},
 			want: true,
 		},
-		"use of runes that are illegal for file names": {args: args{files.ComparableStrings{ExternalName: "simple_name", MetadataName: "simple:name"}}, want: false},
-		"complex mismatch": {args: args{files.ComparableStrings{ExternalName: "simple_name", MetadataName: "simple: nam"}}, want: true},
+		"use of runes that are illegal for file names": {
+			args: args{
+				cS: files.NewComparableStrings().WithExternal(
+					"simple_name").WithMetadata("simple:name"),
+			},
+			want: false,
+		},
+		"complex mismatch": {
+			args: args{
+				cS: files.NewComparableStrings().WithExternal(
+					"simple_name").WithMetadata("simple: nam"),
+			},
+			want: true,
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -1105,21 +1137,38 @@ func TestId3v1NameDiffers(t *testing.T) {
 func TestId3v1GenreDiffers(t *testing.T) {
 	const fnName = "Id3v1GenreDiffers()"
 	type args struct {
-		cS files.ComparableStrings
+		cS *files.ComparableStrings
 	}
 	tests := map[string]struct {
 		args
 		want bool
 	}{
-		"match":    {args: args{cS: files.ComparableStrings{ExternalName: "Classic Rock", MetadataName: "Classic Rock"}}, want: false},
-		"no match": {args: args{cS: files.ComparableStrings{ExternalName: "Classic Rock", MetadataName: "classic rock"}}, want: true},
-		"other":    {args: args{cS: files.ComparableStrings{ExternalName: "Prog Rock", MetadataName: "Other"}}, want: false},
+		"match": {
+			args: args{
+				cS: files.NewComparableStrings().WithExternal(
+					"Classic Rock").WithMetadata("Classic Rock"),
+			},
+			want: false,
+		},
+		"no match": {
+			args: args{
+				cS: files.NewComparableStrings().WithExternal(
+					"Classic Rock").WithMetadata("classic rock"),
+			},
+			want: true,
+		},
+		"other": {
+			args: args{
+				cS: files.NewComparableStrings().WithExternal(
+					"Prog Rock").WithMetadata("Other"),
+			},
+			want: false,
+		},
 		"known genre": {
 			args: args{
-				cS: files.ComparableStrings{
-					ExternalName: "Classic Rock", // known id3v1 genre - "Other" will not match
-					MetadataName: "Other",
-				},
+				// known id3v1 genre - "Other" will not match
+				cS: files.NewComparableStrings().WithExternal(
+					"Classic Rock").WithMetadata("Other"),
 			},
 			want: true,
 		},

@@ -17,11 +17,11 @@ const (
 )
 
 var (
-	nameComparators = map[SourceType]func(ComparableStrings) bool{
+	nameComparators = map[SourceType]func(*ComparableStrings) bool{
 		ID3V1: Id3v1NameDiffers,
 		ID3V2: Id3v2NameDiffers,
 	}
-	genreComparators = map[SourceType]func(ComparableStrings) bool{
+	genreComparators = map[SourceType]func(*ComparableStrings) bool{
 		ID3V1: Id3v1GenreDiffers,
 		ID3V2: Id3v2GenreDiffers,
 	}
@@ -170,10 +170,31 @@ func (tM *TrackMetadata) ErrorCauses() []string {
 	return errCauses
 }
 
-// TODO: make fields private
 type ComparableStrings struct {
-	ExternalName string
-	MetadataName string
+	external string
+	metadata string
+}
+
+func (cs *ComparableStrings) External() string {
+	return cs.external
+}
+
+func (cs *ComparableStrings) Metadata() string {
+	return cs.metadata
+}
+
+func (cs *ComparableStrings) WithMetadata(s string) *ComparableStrings {
+	cs.metadata = s
+	return cs
+}
+
+func (cs *ComparableStrings) WithExternal(s string) *ComparableStrings {
+	cs.external = s
+	return cs
+}
+
+func NewComparableStrings() *ComparableStrings {
+	return &ComparableStrings{}
 }
 
 func (tM *TrackMetadata) TrackDiffers(track int) (differs bool) {
@@ -189,7 +210,7 @@ func (tM *TrackMetadata) TrackDiffers(track int) (differs bool) {
 
 func (tM *TrackMetadata) TrackTitleDiffers(title string) (differs bool) {
 	for _, sT := range sourceTypes {
-		comparison := ComparableStrings{ExternalName: title, MetadataName: tM.Title[sT]}
+		comparison := &ComparableStrings{external: title, metadata: tM.Title[sT]}
 		if tM.ErrCause[sT] == "" && nameComparators[sT](comparison) {
 			differs = true
 			tM.RequiresEdit[sT] = true
@@ -201,7 +222,7 @@ func (tM *TrackMetadata) TrackTitleDiffers(title string) (differs bool) {
 
 func (tM *TrackMetadata) AlbumTitleDiffers(albumTitle string) (differs bool) {
 	for _, sT := range sourceTypes {
-		comparison := ComparableStrings{ExternalName: albumTitle, MetadataName: tM.Album[sT]}
+		comparison := &ComparableStrings{external: albumTitle, metadata: tM.Album[sT]}
 		if tM.ErrCause[sT] == "" && nameComparators[sT](comparison) {
 			differs = true
 			tM.RequiresEdit[sT] = true
@@ -213,7 +234,7 @@ func (tM *TrackMetadata) AlbumTitleDiffers(albumTitle string) (differs bool) {
 
 func (tM *TrackMetadata) ArtistNameDiffers(artistName string) (differs bool) {
 	for _, sT := range sourceTypes {
-		comparison := ComparableStrings{ExternalName: artistName, MetadataName: tM.Artist[sT]}
+		comparison := &ComparableStrings{external: artistName, metadata: tM.Artist[sT]}
 		if tM.ErrCause[sT] == "" && nameComparators[sT](comparison) {
 			differs = true
 			tM.RequiresEdit[sT] = true
@@ -225,7 +246,7 @@ func (tM *TrackMetadata) ArtistNameDiffers(artistName string) (differs bool) {
 
 func (tM *TrackMetadata) GenreDiffers(genre string) (differs bool) {
 	for _, sT := range sourceTypes {
-		comparison := ComparableStrings{ExternalName: genre, MetadataName: tM.Genre[sT]}
+		comparison := &ComparableStrings{external: genre, metadata: tM.Genre[sT]}
 		if tM.ErrCause[sT] == "" && genreComparators[sT](comparison) {
 			differs = true
 			tM.RequiresEdit[sT] = true
@@ -256,12 +277,12 @@ func (tM *TrackMetadata) MCDIDiffers(f id3v2.UnknownFrame) (differs bool) {
 }
 
 func (tM *TrackMetadata) CanonicalAlbumTitleMatches(albumTitle string) bool {
-	comparison := ComparableStrings{ExternalName: albumTitle, MetadataName: tM.CanonicalAlbum()}
+	comparison := &ComparableStrings{external: albumTitle, metadata: tM.CanonicalAlbum()}
 	return !nameComparators[tM.CanonicalType](comparison)
 }
 
 func (tM *TrackMetadata) CanonicalArtistNameMatches(artistName string) bool {
-	comparison := ComparableStrings{ExternalName: artistName, MetadataName: tM.CanonicalArtist()}
+	comparison := &ComparableStrings{external: artistName, metadata: tM.CanonicalArtist()}
 	return !nameComparators[tM.CanonicalType](comparison)
 }
 

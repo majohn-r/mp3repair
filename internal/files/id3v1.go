@@ -519,9 +519,9 @@ func (im *Id3v1Metadata) InternalWrite(path string, writeFunc func(f *os.File, b
 	return
 }
 
-func Id3v1NameDiffers(cS ComparableStrings) bool {
+func Id3v1NameDiffers(cS *ComparableStrings) bool {
 	bs := []byte{}
-	for _, r := range strings.ToLower(cS.ExternalName) {
+	for _, r := range strings.ToLower(cS.External()) {
 		if b, ok := runeByteMapping[r]; ok {
 			bs = append(bs, b...)
 		} else {
@@ -534,7 +534,7 @@ func Id3v1NameDiffers(cS ComparableStrings) bool {
 	for bs[len(bs)-1] == ' ' {
 		bs = bs[:len(bs)-1]
 	}
-	metadataRunes := []rune(strings.ToLower(cS.MetadataName))
+	metadataRunes := []rune(strings.ToLower(cS.Metadata()))
 	externalRunes := []rune(string(bs))
 	if len(metadataRunes) != len(externalRunes) {
 		return true
@@ -552,15 +552,15 @@ func Id3v1NameDiffers(cS ComparableStrings) bool {
 	return false
 }
 
-func Id3v1GenreDiffers(cS ComparableStrings) bool {
+func Id3v1GenreDiffers(cS *ComparableStrings) bool {
 	InitGenreIndices()
-	if _, ok := GenreIndicesMap[strings.ToLower(cS.ExternalName)]; !ok {
+	if _, ok := GenreIndicesMap[strings.ToLower(cS.External())]; !ok {
 		// the external genre does not map to a known id3v1 genre but "Other"
 		// always matches the external name
-		if cS.MetadataName == "Other" {
+		if cS.Metadata() == "Other" {
 			return false
 		}
 	}
 	// external name is a known id3v1 genre, or metadata name is not "Other"
-	return cS.ExternalName != cS.MetadataName
+	return cS.External() != cS.Metadata()
 }

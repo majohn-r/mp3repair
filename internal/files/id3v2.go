@@ -250,9 +250,9 @@ func FramerSliceAsString(f []id3v2.Framer) string {
 	return fmt.Sprintf("<<%s>>", strings.Join(substrings, ", "))
 }
 
-func Id3v2NameDiffers(cS ComparableStrings) bool {
-	externalName := strings.ToLower(cS.ExternalName)
-	metadataName := strings.ToLower(cS.MetadataName)
+func Id3v2NameDiffers(cS *ComparableStrings) bool {
+	externalName := strings.ToLower(cS.External())
+	metadataName := strings.ToLower(cS.Metadata())
 	// strip off trailing space from the metadata value
 	for strings.HasSuffix(metadataName, " ") {
 		metadataName = metadataName[:len(metadataName)-1]
@@ -278,7 +278,7 @@ func Id3v2NameDiffers(cS ComparableStrings) bool {
 	return false // rune by rune comparison was successful
 }
 
-func Id3v2GenreDiffers(cS ComparableStrings) bool {
+func Id3v2GenreDiffers(cS *ComparableStrings) bool {
 	// differs unless exact match. Period.
-	return cS.ExternalName != cS.MetadataName
+	return cS.External() != cS.Metadata()
 }
