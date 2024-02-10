@@ -87,11 +87,11 @@ func TestRunMain(t *testing.T) {
 			cmdline:        []string{"happyApp", "arg1", "arg2"},
 			appVersion:     "0.1.2",
 			timestamp:      "2021-11-28T12:01:02Z05:00",
-			goVersion:      "1.21.x",
+			goVersion:      "1.22.x",
 			dependencies:   []string{"foo v1.1.1", "bar v1.2.2"},
 			wantedExitCode: 0,
 			WantedRecording: output.WantedRecording{
-				Log: "level='info' args='[arg1 arg2]' dependencies='[foo v1.1.1 bar v1.2.2]' goVersion='1.21.x' timeStamp='2021-11-28T12:01:02Z05:00' version='0.1.2' msg='execution starts'\n" +
+				Log: "level='info' args='[arg1 arg2]' dependencies='[foo v1.1.1 bar v1.2.2]' goVersion='1.22.x' timeStamp='2021-11-28T12:01:02Z05:00' version='0.1.2' msg='execution starts'\n" +
 					"level='info' duration='0s' exitCode='0' msg='execution ends'\n",
 			},
 		},

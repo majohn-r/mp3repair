@@ -48,24 +48,92 @@ func (sT SourceType) Name() string {
 // outside of unit tests
 // TODO: make fields private
 type TrackMetadata struct {
-	Album             []string           // public so unit tests can set it and force a difference
-	Artist            []string           // public so unit tests can set it and force a difference
-	Title             []string           // public so unit tests can set it and force a difference
-	Genre             []string           // public so unit tests can set it and force a difference
-	Year              []string           // public so unit tests can set it and force a difference
-	Track             []int              // public so unit tests can set it and force a difference
-	MusicCDIdentifier id3v2.UnknownFrame // public so unit tests can set it and force a difference
+	Album             []string
+	Artist            []string
 	CanonicalType     SourceType
 	ErrCause          []string
+	Genre             []string
+	MusicCDIdentifier id3v2.UnknownFrame
+	Title             []string
+	Track             []int
+	Year              []string
 	// these fields are set by the various xDiffers methods
 	CorrectedAlbum             []string
 	CorrectedArtist            []string
-	CorrectedTitle             []string
 	CorrectedGenre             []string
-	CorrectedYear              []string
-	CorrectedTrack             []int
 	CorrectedMusicCDIdentifier id3v2.UnknownFrame
+	CorrectedTitle             []string
+	CorrectedTrack             []int
+	CorrectedYear              []string
 	RequiresEdit               []bool
+}
+
+func (tm *TrackMetadata) WithTrack(k []int) *TrackMetadata {
+	for i := range min(len(k), int(TotalSources)) {
+		tm.Track[i] = k[i]
+	}
+	return tm
+}
+
+func (tm *TrackMetadata) WithYear(s []string) *TrackMetadata {
+	for i := range min(len(s), int(TotalSources)) {
+		tm.Year[i] = s[i]
+	}
+	return tm
+}
+
+func (tm *TrackMetadata) WithCorrectedAlbum(s []string) *TrackMetadata {
+	for i := range min(len(s), int(TotalSources)) {
+		tm.CorrectedAlbum[i] = s[i]
+	}
+	return tm
+}
+
+func (tm *TrackMetadata) WithCorrectedArtist(s []string) *TrackMetadata {
+	for i := range min(len(s), int(TotalSources)) {
+		tm.CorrectedArtist[i] = s[i]
+	}
+	return tm
+}
+
+func (tm *TrackMetadata) WithCorrectedGenre(s []string) *TrackMetadata {
+	for i := range min(len(s), int(TotalSources)) {
+		tm.CorrectedGenre[i] = s[i]
+	}
+	return tm
+}
+
+func (tm *TrackMetadata) WithCorrectedMusicCDIdentifier(b []byte) *TrackMetadata {
+	tm.CorrectedMusicCDIdentifier = id3v2.UnknownFrame{Body: b}
+	return tm
+}
+
+func (tm *TrackMetadata) WithCorrectedTitle(s []string) *TrackMetadata {
+	for i := range min(len(s), int(TotalSources)) {
+		tm.CorrectedTitle[i] = s[i]
+	}
+	return tm
+}
+
+func (tm *TrackMetadata) WithCorrectedTrack(k []int) *TrackMetadata {
+	for i := range min(len(k), int(TotalSources)) {
+		tm.CorrectedTrack[i] = k[i]
+	}
+	return tm
+}
+
+func (tm *TrackMetadata) WithCorrectedYear(s []string) *TrackMetadata {
+	for i := range min(len(s), int(TotalSources)) {
+		tm.CorrectedYear[i] = s[i]
+	}
+	return tm
+}
+
+func (tm *TrackMetadata) WithRequiresEdit(b []bool) *TrackMetadata {
+	for i := range min(len(b), int(TotalSources)) {
+		tm.RequiresEdit[i] = b[i]
+	}
+	return tm
 }
 
 func NewTrackMetadata() *TrackMetadata {
