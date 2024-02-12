@@ -183,37 +183,37 @@ func SelectUnknownFrame(mcdiFramers []id3v2.Framer) id3v2.UnknownFrame {
 }
 
 func updateID3V2Metadata(tM *TrackMetadata, path string, sT SourceType) (e error) {
-	if tM.RequiresEdit[sT] {
+	if tM.requiresEdit[sT] {
 		if tag, err := readID3V2Tag(path); err != nil {
 			e = err
 		} else {
 			defer tag.Close()
 			tag.SetDefaultEncoding(id3v2.EncodingUTF8)
-			album := tM.CorrectedAlbum[sT]
+			album := tM.correctedAlbumName[sT]
 			if album != "" {
 				tag.SetAlbum(album)
 			}
-			artist := tM.CorrectedArtist[sT]
+			artist := tM.correctedArtistName[sT]
 			if artist != "" {
 				tag.SetArtist(artist)
 			}
-			title := tM.CorrectedTitle[sT]
+			title := tM.correctedTrackName[sT]
 			if title != "" {
 				tag.SetTitle(title)
 			}
-			track := tM.CorrectedTrack[sT]
+			track := tM.correctedTrackNumber[sT]
 			if track != 0 {
 				tag.AddTextFrame("TRCK", tag.DefaultEncoding(), fmt.Sprintf("%d", track))
 			}
-			genre := tM.CorrectedGenre[sT]
+			genre := tM.correctedGenre[sT]
 			if genre != "" {
 				tag.SetGenre(genre)
 			}
-			year := tM.CorrectedYear[sT]
+			year := tM.correctedYear[sT]
 			if year != "" {
 				tag.SetYear(year)
 			}
-			mcdi := tM.CorrectedMusicCDIdentifier
+			mcdi := tM.correctedMusicCDIdentifier
 			if len(mcdi.Body) != 0 {
 				tag.DeleteFrames(mcdiFrame)
 				tag.AddFrame(mcdiFrame, mcdi)

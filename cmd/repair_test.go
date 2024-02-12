@@ -11,7 +11,6 @@ import (
 	"regexp"
 	"testing"
 
-	"github.com/bogem/id3v2/v2"
 	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"
@@ -642,25 +641,14 @@ func TestFindConflictedTracks(t *testing.T) {
 		for _, cAl := range cAr.Albums() {
 			for _, cT := range cAl.Tracks() {
 				t := cT.Track()
-				t.SetMetadata(&files.TrackMetadata{
-					Album:                      []string{"", "some other album", "some other album"},
-					Artist:                     []string{"", "some other artist", "some other artist"},
-					Genre:                      []string{"", "pop emo", "pop emo"},
-					MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{1, 2, 3}},
-					Title:                      []string{"", "some other title", "some other title"},
-					Track:                      []int{0, 99, 99},
-					Year:                       []string{"", "2001", "2001"},
-					CanonicalType:              files.ID3V1,
-					ErrCause:                   []string{"", "", ""},
-					CorrectedAlbum:             []string{"", "", ""},
-					CorrectedArtist:            []string{"", "", ""},
-					CorrectedGenre:             []string{"", "", ""},
-					CorrectedMusicCDIdentifier: id3v2.UnknownFrame{},
-					CorrectedTitle:             []string{"", "", ""},
-					CorrectedTrack:             []int{0, 0, 0},
-					CorrectedYear:              []string{"", "", ""},
-					RequiresEdit:               []bool{false, false, false},
-				})
+				t.SetMetadata(files.NewTrackMetadata().WithAlbumNames(
+					[]string{"", "some other album", "some other album"}).WithArtistNames(
+					[]string{"", "some other artist", "some other artist"}).WithGenres(
+					[]string{"", "pop emo", "pop emo"}).WithMusicCDIdentifier(
+					[]byte{1, 2, 3}).WithTrackNames(
+					[]string{"", "some other title", "some other title"}).WithTrackNumbers(
+					[]int{0, 99, 99}).WithYears(
+					[]string{"", "2001", "2001"}).WithPrimarySource(files.ID3V1))
 			}
 		}
 	}
@@ -703,25 +691,9 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 	for _, aR := range dirty {
 		for _, aL := range aR.Albums() {
 			for _, t := range aL.Tracks() {
-				t.SetMetadata(&files.TrackMetadata{
-					Album:                      []string{"", "", ""},
-					Artist:                     []string{"", "", ""},
-					Genre:                      []string{"", "", ""},
-					MusicCDIdentifier:          id3v2.UnknownFrame{Body: []byte{1, 2, 3}},
-					Title:                      []string{"", "", ""},
-					Track:                      []int{0, 99, 99},
-					Year:                       []string{"", "", ""},
-					CanonicalType:              files.ID3V1,
-					ErrCause:                   []string{"", "", ""},
-					CorrectedAlbum:             []string{"", "", ""},
-					CorrectedArtist:            []string{"", "", ""},
-					CorrectedGenre:             []string{"", "", ""},
-					CorrectedMusicCDIdentifier: id3v2.UnknownFrame{},
-					CorrectedTitle:             []string{"", "", ""},
-					CorrectedTrack:             []int{0, 0, 0},
-					CorrectedYear:              []string{"", "", ""},
-					RequiresEdit:               []bool{false, false, false},
-				})
+				t.SetMetadata(files.NewTrackMetadata().WithMusicCDIdentifier(
+					[]byte{1, 2, 3}).WithTrackNumbers([]int{0, 99, 99}).WithPrimarySource(
+					files.ID3V1))
 			}
 		}
 	}

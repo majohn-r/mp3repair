@@ -447,30 +447,30 @@ func WriteToFile(f *os.File, b []byte) (int, error) {
 }
 
 func updateID3V1Metadata(tM *TrackMetadata, path string, sT SourceType) (err error) {
-	if tM.RequiresEdit[sT] {
+	if tM.requiresEdit[sT] {
 		var v1 *Id3v1Metadata
 		if v1, err = InternalReadID3V1Metadata(path, FileReader); err == nil {
-			albumTitle := tM.CorrectedAlbum[sT]
+			albumTitle := tM.correctedAlbumName[sT]
 			if albumTitle != "" {
 				v1.SetAlbum(albumTitle)
 			}
-			artistName := tM.CorrectedArtist[sT]
+			artistName := tM.correctedArtistName[sT]
 			if artistName != "" {
 				v1.SetArtist(artistName)
 			}
-			trackTitle := tM.CorrectedTitle[sT]
+			trackTitle := tM.correctedTrackName[sT]
 			if trackTitle != "" {
 				v1.SetTitle(trackTitle)
 			}
-			trackNumber := tM.CorrectedTrack[sT]
+			trackNumber := tM.correctedTrackNumber[sT]
 			if trackNumber != 0 {
 				_ = v1.SetTrack(trackNumber)
 			}
-			genre := tM.CorrectedGenre[sT]
+			genre := tM.correctedGenre[sT]
 			if genre != "" {
 				v1.SetGenre(genre)
 			}
-			year := tM.CorrectedYear[sT]
+			year := tM.correctedYear[sT]
 			if year != "" {
 				v1.SetYear(year)
 			}

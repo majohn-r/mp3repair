@@ -561,7 +561,7 @@ func (t *Track) ReportMetadataErrors(o output.Bus) {
 	if t.HasMetadataError() {
 		for _, sT := range []SourceType{ID3V1, ID3V2} {
 			if metadata := t.metadata; metadata != nil {
-				if e := metadata.ErrCause[sT]; e != "" {
+				if e := metadata.errorCause[sT]; e != "" {
 					t.ReportMetadataReadError(o, sT, e)
 				}
 			}

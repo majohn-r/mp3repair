@@ -12,7 +12,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/bogem/id3v2/v2"
 	"github.com/cheggaaa/pb/v3"
 	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
@@ -653,24 +652,13 @@ func TestTrack_loadMetadata(t *testing.T) {
 			want: &files.TrackMetadata{}},
 		"read file": {
 			t: files.NewEmptyTrack().WithFullPath(filepath.Join(testDir, fileName)),
-			want: &files.TrackMetadata{
-				Album:             []string{"", albumName, albumName},
-				Artist:            []string{"", artistName, artistName},
-				Title:             []string{"", trackName, trackName},
-				Genre:             []string{"", genre, genre},
-				Year:              []string{"", year, year},
-				Track:             []int{0, track, track},
-				MusicCDIdentifier: id3v2.UnknownFrame{Body: []byte{0}},
-				CanonicalType:     files.ID3V2,
-				ErrCause:          []string{"", "", ""},
-				CorrectedAlbum:    []string{"", "", ""},
-				CorrectedArtist:   []string{"", "", ""},
-				CorrectedTitle:    []string{"", "", ""},
-				CorrectedGenre:    []string{"", "", ""},
-				CorrectedYear:     []string{"", "", ""},
-				CorrectedTrack:    []int{0, 0, 0},
-				RequiresEdit:      []bool{false, false, false},
-			},
+			want: files.NewTrackMetadata().WithAlbumNames([]string{
+				"", albumName, albumName}).WithArtistNames([]string{
+				"", artistName, artistName}).WithTrackNames([]string{
+				"", trackName, trackName}).WithGenres([]string{
+				"", genre, genre}).WithYears([]string{"", year, year}).WithTrackNumbers([]int{
+				0, track, track}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
+				files.ID3V2),
 		},
 	}
 	for name, tt := range tests {
@@ -770,32 +758,29 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	const fnName = "Track.ReportMetadataProblems()"
 	problematicArtist := files.NewArtist("problematic:artist", "")
 	problematicAlbum := files.NewAlbum("problematic:album", problematicArtist, "").WithCanonicalGenre("hard rock").WithCanonicalYear("1999")
-	metadata := files.NewTrackMetadata()
-	problematicTrack := files.NewTrack(problematicAlbum, "03 bad track.mp3", "bad track", 3).WithMetadata(metadata)
 	src := files.ID3V2
-	metadata.CanonicalType = src
-	metadata.Genre[src] = "unknown"
-	metadata.Year[src] = "2001"
-	metadata.Track[src] = 2
-	metadata.Album[src] = "unknown album"
-	metadata.Artist[src] = "unknown artist"
-	metadata.Title[src] = "unknown title"
-	metadata.MusicCDIdentifier = id3v2.UnknownFrame{Body: []byte{1, 3, 5}}
+	metadata := files.NewTrackMetadata().WithPrimarySource(src).WithMusicCDIdentifier([]byte{1, 3, 5})
+	metadata.SetAlbumName(src, "unknown album")
+	metadata.SetArtistName(src, "unknown artist")
+	metadata.SetGenre(src, "unknown")
+	metadata.SetTrackName(src, "unknown title")
+	metadata.SetTrackNumber(src, 2)
+	metadata.SetYear(src, "2001")
+	problematicTrack := files.NewTrack(problematicAlbum, "03 bad track.mp3", "bad track", 3).WithMetadata(metadata)
 	problematicAlbum.AddTrack(problematicTrack)
 	problematicArtist.AddAlbum(problematicAlbum)
 	goodArtist := files.NewArtist("good artist", "")
 	goodAlbum := files.NewAlbum("good album", goodArtist, "").WithCanonicalGenre("Classic Rock").WithCanonicalYear("1999")
-	metadata2 := files.NewTrackMetadata()
-	goodTrack := files.NewTrack(goodAlbum, "03 good track.mp3", "good track", 3).WithMetadata(metadata2)
 	src2 := files.ID3V1
-	metadata2.CanonicalType = src2
-	metadata2.Genre[src2] = "Classic Rock"
-	metadata2.Year[src2] = "1999"
-	metadata2.Track[src2] = 3
-	metadata2.Album[src2] = "good album"
-	metadata2.Artist[src2] = "good artist"
-	metadata2.Title[src2] = "good track"
-	metadata2.ErrCause[files.ID3V2] = "no id3v2 metadata, how odd"
+	metadata2 := files.NewTrackMetadata().WithPrimarySource(src2)
+	metadata2.SetAlbumName(src2, "good album")
+	metadata2.SetArtistName(src2, "good artist")
+	metadata2.SetErrorCause(files.ID3V2, "no id3v2 metadata, how odd")
+	metadata2.SetGenre(src2, "Classic Rock")
+	metadata2.SetTrackName(src2, "good track")
+	metadata2.SetTrackNumber(src2, 3)
+	metadata2.SetYear(src2, "1999")
+	goodTrack := files.NewTrack(goodAlbum, "03 good track.mp3", "good track", 3).WithMetadata(metadata2)
 	goodAlbum.AddTrack(goodTrack)
 	goodArtist.AddAlbum(goodAlbum)
 	tests := map[string]struct {
@@ -808,7 +793,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 		},
 		"track with error": {
 			t: files.NewEmptyTrack().WithMetadata(
-				&files.TrackMetadata{ErrCause: []string{"", "oops", "oops"}},
+				files.NewTrackMetadata().WithErrorCauses([]string{"", "oops", "oops"}),
 			),
 			want: []string{"differences cannot be determined: there was an error reading metadata"},
 		},
@@ -856,61 +841,28 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 	track := files.NewEmptyTrack().WithFullPath(filepath.Join(testDir, trackName)).WithName(strings.TrimSuffix(trackName, ".mp3")).WithNumber(2).WithAlbum(
 		files.NewEmptyAlbum().WithTitle("fine album").WithCanonicalGenre("Classic Rock").WithCanonicalYear("2022").WithCanonicalTitle("fine album").WithMusicCDIdentifier([]byte("fine album")).WithArtist(
 			files.NewEmptyArtist().WithFileName("fine artist").WithCanonicalName("fine artist"))).WithMetadata(
-		&files.TrackMetadata{
-			Album:           []string{"", "unknown album", "unknown album"},
-			Artist:          []string{"", "unknown artist", "unknown artist"},
-			Title:           []string{"", "unknown title", "unknown title"},
-			Genre:           []string{"", "unknown", "unknown"},
-			Year:            []string{"", "1900", "1900"},
-			Track:           []int{0, 1, 1},
-			CanonicalType:   files.ID3V2,
-			ErrCause:        make([]string, 3),
-			CorrectedAlbum:  make([]string, 3),
-			CorrectedArtist: make([]string, 3),
-			CorrectedTitle:  make([]string, 3),
-			CorrectedGenre:  make([]string, 3),
-			CorrectedYear:   make([]string, 3),
-			CorrectedTrack:  make([]int, 3),
-			RequiresEdit:    make([]bool, 3),
-		})
+		files.NewTrackMetadata().WithAlbumNames([]string{
+			"", "unknown album", "unknown album"}).WithArtistNames([]string{
+			"", "unknown artist", "unknown artist"}).WithTrackNames([]string{
+			"", "unknown title", "unknown title"}).WithGenres([]string{
+			"", "unknown", "unknown"}).WithYears([]string{"", "1900", "1900"}).WithTrackNumbers(
+			[]int{0, 1, 1}).WithPrimarySource(files.ID3V2))
 	deletedTrack := files.NewEmptyTrack().WithFullPath(filepath.Join(testDir, "no such file")).WithName(strings.TrimSuffix(trackName, ".mp3")).WithNumber(2).WithAlbum(
 		files.NewEmptyAlbum().WithTitle("fine album").WithCanonicalGenre("Classic Rock").WithCanonicalYear("2022").WithCanonicalTitle("fine album").WithMusicCDIdentifier([]byte("fine album")).WithArtist(
 			files.NewEmptyArtist().WithFileName("fine artist").WithCanonicalName("fine artist"))).WithMetadata(
-		&files.TrackMetadata{
-			Album:           []string{"", "unknown album", "unknown album"},
-			Artist:          []string{"", "unknown artist", "unknown artist"},
-			Title:           []string{"", "unknown title", "unknown title"},
-			Genre:           []string{"", "unknown", "unknown"},
-			Year:            []string{"", "1900", "1900"},
-			Track:           []int{0, 1, 1},
-			CanonicalType:   files.ID3V2,
-			ErrCause:        make([]string, 3),
-			CorrectedAlbum:  make([]string, 3),
-			CorrectedArtist: make([]string, 3),
-			CorrectedTitle:  make([]string, 3),
-			CorrectedGenre:  make([]string, 3),
-			CorrectedYear:   make([]string, 3),
-			CorrectedTrack:  make([]int, 3),
-			RequiresEdit:    make([]bool, 3),
-		})
-	editedTm := &files.TrackMetadata{
-		Album:             []string{"", "fine album", "fine album"},
-		Artist:            []string{"", "fine artist", "fine artist"},
-		Title:             []string{"", "edit this track", "edit this track"},
-		Genre:             []string{"", "Classic Rock", "Classic Rock"},
-		Year:              []string{"", "2022", "2022"},
-		Track:             []int{0, 2, 2},
-		MusicCDIdentifier: id3v2.UnknownFrame{Body: []byte("fine album")},
-		CanonicalType:     files.ID3V2,
-		ErrCause:          make([]string, 3),
-		CorrectedAlbum:    make([]string, 3),
-		CorrectedArtist:   make([]string, 3),
-		CorrectedTitle:    make([]string, 3),
-		CorrectedGenre:    make([]string, 3),
-		CorrectedYear:     make([]string, 3),
-		CorrectedTrack:    make([]int, 3),
-		RequiresEdit:      make([]bool, 3),
-	}
+		files.NewTrackMetadata().WithAlbumNames([]string{
+			"", "unknown album", "unknown album"}).WithArtistNames([]string{
+			"", "unknown artist", "unknown artist"}).WithTrackNames([]string{
+			"", "unknown title", "unknown title"}).WithGenres([]string{
+			"", "unknown", "unknown"}).WithYears([]string{"", "1900", "1900"}).WithTrackNumbers(
+			[]int{0, 1, 1}).WithPrimarySource(files.ID3V2))
+	editedTm := files.NewTrackMetadata().WithAlbumNames([]string{
+		"", "fine album", "fine album"}).WithArtistNames([]string{
+		"", "fine artist", "fine artist"}).WithTrackNames([]string{
+		"", "edit this track", "edit this track"}).WithGenres([]string{
+		"", "Classic Rock", "Classic Rock"}).WithYears([]string{
+		"", "2022", "2022"}).WithTrackNumbers([]int{0, 2, 2}).WithMusicCDIdentifier(
+		[]byte("fine album")).WithPrimarySource(files.ID3V2)
 	defer func() {
 		destroyDirectory(fnName, testDir)
 	}()
@@ -958,10 +910,9 @@ func Test_processArtistMetadata(t *testing.T) {
 	album1 := files.NewAlbum("album1", artist1, "")
 	artist1.AddAlbum(album1)
 	for k := 1; k <= 10; k++ {
-		tM := files.NewTrackMetadata()
 		src := files.ID3V2
-		tM.CanonicalType = src
-		tM.Artist[src] = "artist:name"
+		tM := files.NewTrackMetadata().WithPrimarySource(src)
+		tM.SetArtistName(src, "artist:name")
 		track := files.NewTrack(album1, fmt.Sprintf("%02d track%d.mp3", k, k), fmt.Sprintf("track%d", k), k).WithMetadata(tM)
 		album1.AddTrack(track)
 	}
@@ -969,10 +920,9 @@ func Test_processArtistMetadata(t *testing.T) {
 	album2 := files.NewAlbum("album2", artist2, "")
 	artist2.AddAlbum(album2)
 	for k := 1; k <= 10; k++ {
-		tM := files.NewTrackMetadata()
 		src := files.ID3V2
-		tM.CanonicalType = src
-		tM.Artist[src] = "unknown artist"
+		tM := files.NewTrackMetadata().WithPrimarySource(src)
+		tM.SetArtistName(src, "unknown artist")
 		track := files.NewTrack(album2, fmt.Sprintf("%02d track%d.mp3", k, k), fmt.Sprintf("track%d", k), k).WithMetadata(tM)
 		album2.AddTrack(track)
 	}
@@ -980,13 +930,12 @@ func Test_processArtistMetadata(t *testing.T) {
 	album3 := files.NewAlbum("album3", artist3, "")
 	artist3.AddAlbum(album3)
 	for k := 1; k <= 10; k++ {
-		tM := files.NewTrackMetadata()
 		src := files.ID3V2
-		tM.CanonicalType = src
+		tM := files.NewTrackMetadata().WithPrimarySource(src)
 		if k%2 == 0 {
-			tM.Artist[src] = "artist:name"
+			tM.SetArtistName(src, "artist:name")
 		} else {
-			tM.Artist[src] = "artist_name"
+			tM.SetArtistName(src, "artist_name")
 		}
 		track := files.NewTrack(album3, fmt.Sprintf("%02d track%d.mp3", k, k), fmt.Sprintf("track%d", k), k).WithMetadata(tM)
 		album3.AddTrack(track)
@@ -1030,11 +979,10 @@ func Test_processAlbumMetadata(t *testing.T) {
 	artists1 = append(artists1, artist1)
 	album1 := files.NewAlbum("good-album", artist1, "")
 	artist1.AddAlbum(album1)
-	tm := files.NewTrackMetadata()
-	tm.CanonicalType = src
-	tm.Genre[src] = "pop"
-	tm.Year[src] = "2022"
-	tm.Album[src] = "good:album"
+	tm := files.NewTrackMetadata().WithPrimarySource(src)
+	tm.SetAlbumName(src, "good:album")
+	tm.SetGenre(src, "pop")
+	tm.SetYear(src, "2022")
 	track1 := files.NewTrack(album1, "01 track1.mp3", "track1", 1).WithMetadata(tm)
 	album1.AddTrack(track1)
 	// more interesting test data
@@ -1043,25 +991,22 @@ func Test_processAlbumMetadata(t *testing.T) {
 	artists2 = append(artists2, artist2)
 	album2 := files.NewAlbum("another good_album", artist2, "")
 	artist2.AddAlbum(album2)
-	tm2a := files.NewTrackMetadata()
-	tm2a.CanonicalType = src
-	tm2a.Genre[src] = "unknown"
-	tm2a.Year[src] = ""
-	tm2a.Album[src] = "unknown album"
+	tm2a := files.NewTrackMetadata().WithPrimarySource(src)
+	tm2a.SetAlbumName(src, "unknown album")
+	tm2a.SetGenre(src, "unknown")
+	tm2a.SetYear(src, "")
 	track2a := files.NewTrack(album2, "01 track1.mp3", "track1", 1).WithMetadata(tm2a)
 	album2.AddTrack(track2a)
-	tm2b := files.NewTrackMetadata()
-	tm2b.CanonicalType = src
-	tm2b.Genre[src] = "pop"
-	tm2b.Year[src] = "2022"
-	tm2b.Album[src] = "another good:album"
+	tm2b := files.NewTrackMetadata().WithPrimarySource(src)
+	tm2b.SetAlbumName(src, "another good:album")
+	tm2b.SetGenre(src, "pop")
+	tm2b.SetYear(src, "2022")
 	track2b := files.NewTrack(album1, "02 track2.mp3", "track2", 2).WithMetadata(tm2b)
 	album2.AddTrack(track2b)
-	tm2c := files.NewTrackMetadata()
-	tm2c.CanonicalType = src
-	tm2c.Genre[src] = "pop"
-	tm2c.Year[src] = "2022"
-	tm2c.Album[src] = "another good:album"
+	tm2c := files.NewTrackMetadata().WithPrimarySource(src)
+	tm2c.SetAlbumName(src, "another good:album")
+	tm2c.SetGenre(src, "pop")
+	tm2c.SetYear(src, "2022")
 	track2c := files.NewTrack(album1, "03 track3.mp3", "track3", 3).WithMetadata(tm2c)
 	album2.AddTrack(track2c)
 	// error case data
@@ -1070,28 +1015,22 @@ func Test_processAlbumMetadata(t *testing.T) {
 	artists3 = append(artists3, artist3)
 	album3 := files.NewAlbum("problematic_album", artist3, "")
 	artist3.AddAlbum(album3)
-	tm3a := files.NewTrackMetadata()
-	tm3a.CanonicalType = src
-	tm3a.Genre[src] = "rock"
-	tm3a.Year[src] = "2023"
-	tm3a.Album[src] = "problematic:album"
-	tm3a.MusicCDIdentifier = id3v2.UnknownFrame{Body: []byte{1, 2, 3}}
+	tm3a := files.NewTrackMetadata().WithPrimarySource(src).WithMusicCDIdentifier([]byte{1, 2, 3})
+	tm3a.SetAlbumName(src, "problematic:album")
+	tm3a.SetGenre(src, "rock")
+	tm3a.SetYear(src, "2023")
 	track3a := files.NewTrack(album2, "01 track1.mp3", "track1", 1).WithMetadata(tm3a)
 	album3.AddTrack(track3a)
-	tm3b := files.NewTrackMetadata()
-	tm3b.CanonicalType = src
-	tm3b.Genre[src] = "pop"
-	tm3b.Year[src] = "2022"
-	tm3b.Album[src] = "problematic:Album"
-	tm3b.MusicCDIdentifier = id3v2.UnknownFrame{Body: []byte{1, 2, 3, 4}}
+	tm3b := files.NewTrackMetadata().WithPrimarySource(src).WithMusicCDIdentifier([]byte{1, 2, 3, 4})
+	tm3b.SetAlbumName(src, "problematic:Album")
+	tm3b.SetGenre(src, "pop")
+	tm3b.SetYear(src, "2022")
 	track3b := files.NewTrack(album1, "02 track2.mp3", "track2", 2).WithMetadata(tm3b)
 	album3.AddTrack(track3b)
-	tm3c := files.NewTrackMetadata()
-	tm3c.CanonicalType = src
-	tm3c.Genre[src] = "folk"
-	tm3c.Year[src] = "2021"
-	tm3c.Album[src] = "Problematic:album"
-	tm3c.MusicCDIdentifier = id3v2.UnknownFrame{Body: []byte{1, 2, 3, 4, 5}}
+	tm3c := files.NewTrackMetadata().WithPrimarySource(src).WithMusicCDIdentifier([]byte{1, 2, 3, 4, 5})
+	tm3c.SetAlbumName(src, "Problematic:album")
+	tm3c.SetGenre(src, "folk")
+	tm3c.SetYear(src, "2021")
 	track3c := files.NewTrack(album1, "03 track3.mp3", "track3", 3).WithMetadata(tm3c)
 	album3.AddTrack(track3c)
 	// verify code can handle missing metadata
@@ -1146,7 +1085,8 @@ func TestTrack_reportMetadataErrors(t *testing.T) {
 			args: args{
 				t: files.NewEmptyTrack().WithName("silly track").WithFullPath(
 					"Music\\silly artist\\silly album\\01 silly track.mp3").WithMetadata(
-					&files.TrackMetadata{ErrCause: []string{"", "id3v1 error!", "id3v2 error!"}}).WithAlbum(
+					files.NewTrackMetadata().WithErrorCauses(
+						[]string{"", "id3v1 error!", "id3v2 error!"})).WithAlbum(
 					files.NewEmptyAlbum().WithTitle("silly album").WithArtist(
 						files.NewEmptyArtist().WithFileName("silly artist"))),
 			},

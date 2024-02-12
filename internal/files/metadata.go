@@ -48,110 +48,183 @@ func (sT SourceType) Name() string {
 // outside of unit tests
 // TODO: make fields private
 type TrackMetadata struct {
-	Album             []string
-	Artist            []string
-	CanonicalType     SourceType
-	ErrCause          []string
-	Genre             []string
-	MusicCDIdentifier id3v2.UnknownFrame
-	Title             []string
-	Track             []int
-	Year              []string
+	albumName         []string
+	artistName        []string
+	primarySource     SourceType
+	errorCause        []string
+	genre             []string
+	musicCDIdentifier id3v2.UnknownFrame
+	trackName         []string
+	trackNumber       []int
+	year              []string
 	// these fields are set by the various xDiffers methods
-	CorrectedAlbum             []string
-	CorrectedArtist            []string
-	CorrectedGenre             []string
-	CorrectedMusicCDIdentifier id3v2.UnknownFrame
-	CorrectedTitle             []string
-	CorrectedTrack             []int
-	CorrectedYear              []string
-	RequiresEdit               []bool
+	correctedAlbumName         []string
+	correctedArtistName        []string
+	correctedGenre             []string
+	correctedMusicCDIdentifier id3v2.UnknownFrame
+	correctedTrackName         []string
+	correctedTrackNumber       []int
+	correctedYear              []string
+	requiresEdit               []bool
 }
 
-func (tm *TrackMetadata) WithTrack(k []int) *TrackMetadata {
+func (tm *TrackMetadata) SetAlbumName(src SourceType, s string) {
+	tm.albumName[src] = s
+}
+
+func (tm *TrackMetadata) SetArtistName(src SourceType, s string) {
+	tm.artistName[src] = s
+}
+
+func (tm *TrackMetadata) SetErrorCause(src SourceType, s string) {
+	tm.errorCause[src] = s
+}
+
+func (tm *TrackMetadata) SetGenre(src SourceType, s string) {
+	tm.genre[src] = s
+}
+
+func (tm *TrackMetadata) SetTrackName(src SourceType, s string) {
+	tm.trackName[src] = s
+}
+
+func (tm *TrackMetadata) SetTrackNumber(src SourceType, i int) {
+	tm.trackNumber[src] = i
+}
+
+func (tm *TrackMetadata) SetYear(src SourceType, s string) {
+	tm.year[src] = s
+}
+
+func (tm *TrackMetadata) WithAlbumNames(s []string) *TrackMetadata {
+	for i := range min(len(s), int(TotalSources)) {
+		tm.albumName[i] = s[i]
+	}
+	return tm
+}
+
+func (tm *TrackMetadata) WithArtistNames(s []string) *TrackMetadata {
+	for i := range min(len(s), int(TotalSources)) {
+		tm.artistName[i] = s[i]
+	}
+	return tm
+}
+
+func (tm *TrackMetadata) WithPrimarySource(t SourceType) *TrackMetadata {
+	tm.primarySource = t
+	return tm
+}
+
+func (tm *TrackMetadata) WithErrorCauses(s []string) *TrackMetadata {
+	for i := range min(len(s), int(TotalSources)) {
+		tm.errorCause[i] = s[i]
+	}
+	return tm
+}
+
+func (tm *TrackMetadata) WithGenres(s []string) *TrackMetadata {
+	for i := range min(len(s), int(TotalSources)) {
+		tm.genre[i] = s[i]
+	}
+	return tm
+}
+
+func (tm *TrackMetadata) WithMusicCDIdentifier(b []byte) *TrackMetadata {
+	tm.musicCDIdentifier = id3v2.UnknownFrame{Body: b}
+	return tm
+}
+
+func (tm *TrackMetadata) WithTrackNames(s []string) *TrackMetadata {
+	for i := range min(len(s), int(TotalSources)) {
+		tm.trackName[i] = s[i]
+	}
+	return tm
+}
+
+func (tm *TrackMetadata) WithTrackNumbers(k []int) *TrackMetadata {
 	for i := range min(len(k), int(TotalSources)) {
-		tm.Track[i] = k[i]
+		tm.trackNumber[i] = k[i]
 	}
 	return tm
 }
 
-func (tm *TrackMetadata) WithYear(s []string) *TrackMetadata {
+func (tm *TrackMetadata) WithYears(s []string) *TrackMetadata {
 	for i := range min(len(s), int(TotalSources)) {
-		tm.Year[i] = s[i]
+		tm.year[i] = s[i]
 	}
 	return tm
 }
 
-func (tm *TrackMetadata) WithCorrectedAlbum(s []string) *TrackMetadata {
+func (tm *TrackMetadata) WithCorrectedAlbumNames(s []string) *TrackMetadata {
 	for i := range min(len(s), int(TotalSources)) {
-		tm.CorrectedAlbum[i] = s[i]
+		tm.correctedAlbumName[i] = s[i]
 	}
 	return tm
 }
 
-func (tm *TrackMetadata) WithCorrectedArtist(s []string) *TrackMetadata {
+func (tm *TrackMetadata) WithCorrectedArtistNames(s []string) *TrackMetadata {
 	for i := range min(len(s), int(TotalSources)) {
-		tm.CorrectedArtist[i] = s[i]
+		tm.correctedArtistName[i] = s[i]
 	}
 	return tm
 }
 
-func (tm *TrackMetadata) WithCorrectedGenre(s []string) *TrackMetadata {
+func (tm *TrackMetadata) WithCorrectedGenres(s []string) *TrackMetadata {
 	for i := range min(len(s), int(TotalSources)) {
-		tm.CorrectedGenre[i] = s[i]
+		tm.correctedGenre[i] = s[i]
 	}
 	return tm
 }
 
 func (tm *TrackMetadata) WithCorrectedMusicCDIdentifier(b []byte) *TrackMetadata {
-	tm.CorrectedMusicCDIdentifier = id3v2.UnknownFrame{Body: b}
+	tm.correctedMusicCDIdentifier = id3v2.UnknownFrame{Body: b}
 	return tm
 }
 
-func (tm *TrackMetadata) WithCorrectedTitle(s []string) *TrackMetadata {
+func (tm *TrackMetadata) WithCorrectedTrackNames(s []string) *TrackMetadata {
 	for i := range min(len(s), int(TotalSources)) {
-		tm.CorrectedTitle[i] = s[i]
+		tm.correctedTrackName[i] = s[i]
 	}
 	return tm
 }
 
-func (tm *TrackMetadata) WithCorrectedTrack(k []int) *TrackMetadata {
+func (tm *TrackMetadata) WithCorrectedTrackNumbers(k []int) *TrackMetadata {
 	for i := range min(len(k), int(TotalSources)) {
-		tm.CorrectedTrack[i] = k[i]
+		tm.correctedTrackNumber[i] = k[i]
 	}
 	return tm
 }
 
-func (tm *TrackMetadata) WithCorrectedYear(s []string) *TrackMetadata {
+func (tm *TrackMetadata) WithCorrectedYears(s []string) *TrackMetadata {
 	for i := range min(len(s), int(TotalSources)) {
-		tm.CorrectedYear[i] = s[i]
+		tm.correctedYear[i] = s[i]
 	}
 	return tm
 }
 
-func (tm *TrackMetadata) WithRequiresEdit(b []bool) *TrackMetadata {
+func (tm *TrackMetadata) WithRequiresEdits(b []bool) *TrackMetadata {
 	for i := range min(len(b), int(TotalSources)) {
-		tm.RequiresEdit[i] = b[i]
+		tm.requiresEdit[i] = b[i]
 	}
 	return tm
 }
 
 func NewTrackMetadata() *TrackMetadata {
 	return &TrackMetadata{
-		Album:           make([]string, TotalSources),
-		Artist:          make([]string, TotalSources),
-		Title:           make([]string, TotalSources),
-		Genre:           make([]string, TotalSources),
-		Year:            make([]string, TotalSources),
-		Track:           make([]int, TotalSources),
-		ErrCause:        make([]string, TotalSources),
-		CorrectedAlbum:  make([]string, TotalSources),
-		CorrectedArtist: make([]string, TotalSources),
-		CorrectedTitle:  make([]string, TotalSources),
-		CorrectedGenre:  make([]string, TotalSources),
-		CorrectedYear:   make([]string, TotalSources),
-		CorrectedTrack:  make([]int, TotalSources),
-		RequiresEdit:    make([]bool, TotalSources),
+		albumName:            make([]string, TotalSources),
+		artistName:           make([]string, TotalSources),
+		trackName:            make([]string, TotalSources),
+		genre:                make([]string, TotalSources),
+		year:                 make([]string, TotalSources),
+		trackNumber:          make([]int, TotalSources),
+		errorCause:           make([]string, TotalSources),
+		correctedAlbumName:   make([]string, TotalSources),
+		correctedArtistName:  make([]string, TotalSources),
+		correctedTrackName:   make([]string, TotalSources),
+		correctedGenre:       make([]string, TotalSources),
+		correctedYear:        make([]string, TotalSources),
+		correctedTrackNumber: make([]int, TotalSources),
+		requiresEdit:         make([]bool, TotalSources),
 	}
 }
 
@@ -161,76 +234,76 @@ func ReadRawMetadata(path string) *TrackMetadata {
 	tM := NewTrackMetadata()
 	switch {
 	case id3v1Err != nil && d.err != nil:
-		tM.ErrCause[ID3V1] = id3v1Err.Error()
-		tM.ErrCause[ID3V2] = d.err.Error()
+		tM.errorCause[ID3V1] = id3v1Err.Error()
+		tM.errorCause[ID3V2] = d.err.Error()
 	case id3v1Err != nil:
-		tM.ErrCause[ID3V1] = id3v1Err.Error()
+		tM.errorCause[ID3V1] = id3v1Err.Error()
 		tM.SetID3v2Values(d)
-		tM.CanonicalType = ID3V2
+		tM.primarySource = ID3V2
 	case d.err != nil:
-		tM.ErrCause[ID3V2] = d.err.Error()
+		tM.errorCause[ID3V2] = d.err.Error()
 		tM.SetID3v1Values(v1)
-		tM.CanonicalType = ID3V1
+		tM.primarySource = ID3V1
 	default:
 		tM.SetID3v2Values(d)
 		tM.SetID3v1Values(v1)
-		tM.CanonicalType = ID3V2
+		tM.primarySource = ID3V2
 	}
 	return tM
 }
 
 func (tM *TrackMetadata) SetID3v2Values(d *Id3v2Metadata) {
 	i := ID3V2
-	tM.Album[i] = d.albumName
-	tM.Artist[i] = d.artistName
-	tM.Title[i] = d.trackName
-	tM.Genre[i] = d.genre
-	tM.Year[i] = d.year
-	tM.Track[i] = d.trackNumber
-	tM.MusicCDIdentifier = d.musicCDIdentifier
+	tM.albumName[i] = d.albumName
+	tM.artistName[i] = d.artistName
+	tM.trackName[i] = d.trackName
+	tM.genre[i] = d.genre
+	tM.year[i] = d.year
+	tM.trackNumber[i] = d.trackNumber
+	tM.musicCDIdentifier = d.musicCDIdentifier
 }
 
 func (tM *TrackMetadata) SetID3v1Values(v1 *Id3v1Metadata) {
 	index := ID3V1
-	tM.Album[index] = v1.Album()
-	tM.Artist[index] = v1.Artist()
-	tM.Title[index] = v1.Title()
+	tM.albumName[index] = v1.Album()
+	tM.artistName[index] = v1.Artist()
+	tM.trackName[index] = v1.Title()
 	if genre, ok := v1.Genre(); ok {
-		tM.Genre[index] = genre
+		tM.genre[index] = genre
 	}
-	tM.Year[index] = v1.Year()
+	tM.year[index] = v1.Year()
 	if track, ok := v1.Track(); ok {
-		tM.Track[index] = track
+		tM.trackNumber[index] = track
 	}
 }
 
 func (tM *TrackMetadata) IsValid() bool {
-	return tM.CanonicalType == ID3V1 || tM.CanonicalType == ID3V2
+	return tM.primarySource == ID3V1 || tM.primarySource == ID3V2
 }
 
 func (tM *TrackMetadata) CanonicalArtist() string {
-	return tM.Artist[tM.CanonicalType]
+	return tM.artistName[tM.primarySource]
 }
 
 func (tM *TrackMetadata) CanonicalAlbum() string {
-	return tM.Album[tM.CanonicalType]
+	return tM.albumName[tM.primarySource]
 }
 
 func (tM *TrackMetadata) CanonicalGenre() string {
-	return tM.Genre[tM.CanonicalType]
+	return tM.genre[tM.primarySource]
 }
 
 func (tM *TrackMetadata) CanonicalYear() string {
-	return tM.Year[tM.CanonicalType]
+	return tM.year[tM.primarySource]
 }
 
 func (tM *TrackMetadata) CanonicalMusicCDIdentifier() id3v2.UnknownFrame {
-	return tM.MusicCDIdentifier
+	return tM.musicCDIdentifier
 }
 
 func (tM *TrackMetadata) ErrorCauses() []string {
 	errCauses := []string{}
-	for _, e := range tM.ErrCause {
+	for _, e := range tM.errorCause {
 		if e != "" {
 			errCauses = append(errCauses, e)
 		}
@@ -267,10 +340,10 @@ func NewComparableStrings() *ComparableStrings {
 
 func (tM *TrackMetadata) TrackDiffers(track int) (differs bool) {
 	for _, sT := range sourceTypes {
-		if tM.ErrCause[sT] == "" && tM.Track[sT] != track {
+		if tM.errorCause[sT] == "" && tM.trackNumber[sT] != track {
 			differs = true
-			tM.RequiresEdit[sT] = true
-			tM.CorrectedTrack[sT] = track
+			tM.requiresEdit[sT] = true
+			tM.correctedTrackNumber[sT] = track
 		}
 	}
 	return
@@ -278,11 +351,11 @@ func (tM *TrackMetadata) TrackDiffers(track int) (differs bool) {
 
 func (tM *TrackMetadata) TrackTitleDiffers(title string) (differs bool) {
 	for _, sT := range sourceTypes {
-		comparison := &ComparableStrings{external: title, metadata: tM.Title[sT]}
-		if tM.ErrCause[sT] == "" && nameComparators[sT](comparison) {
+		comparison := &ComparableStrings{external: title, metadata: tM.trackName[sT]}
+		if tM.errorCause[sT] == "" && nameComparators[sT](comparison) {
 			differs = true
-			tM.RequiresEdit[sT] = true
-			tM.CorrectedTitle[sT] = title
+			tM.requiresEdit[sT] = true
+			tM.correctedTrackName[sT] = title
 		}
 	}
 	return
@@ -290,11 +363,11 @@ func (tM *TrackMetadata) TrackTitleDiffers(title string) (differs bool) {
 
 func (tM *TrackMetadata) AlbumTitleDiffers(albumTitle string) (differs bool) {
 	for _, sT := range sourceTypes {
-		comparison := &ComparableStrings{external: albumTitle, metadata: tM.Album[sT]}
-		if tM.ErrCause[sT] == "" && nameComparators[sT](comparison) {
+		comparison := &ComparableStrings{external: albumTitle, metadata: tM.albumName[sT]}
+		if tM.errorCause[sT] == "" && nameComparators[sT](comparison) {
 			differs = true
-			tM.RequiresEdit[sT] = true
-			tM.CorrectedAlbum[sT] = albumTitle
+			tM.requiresEdit[sT] = true
+			tM.correctedAlbumName[sT] = albumTitle
 		}
 	}
 	return
@@ -302,11 +375,11 @@ func (tM *TrackMetadata) AlbumTitleDiffers(albumTitle string) (differs bool) {
 
 func (tM *TrackMetadata) ArtistNameDiffers(artistName string) (differs bool) {
 	for _, sT := range sourceTypes {
-		comparison := &ComparableStrings{external: artistName, metadata: tM.Artist[sT]}
-		if tM.ErrCause[sT] == "" && nameComparators[sT](comparison) {
+		comparison := &ComparableStrings{external: artistName, metadata: tM.artistName[sT]}
+		if tM.errorCause[sT] == "" && nameComparators[sT](comparison) {
 			differs = true
-			tM.RequiresEdit[sT] = true
-			tM.CorrectedArtist[sT] = artistName
+			tM.requiresEdit[sT] = true
+			tM.correctedArtistName[sT] = artistName
 		}
 	}
 	return
@@ -314,11 +387,11 @@ func (tM *TrackMetadata) ArtistNameDiffers(artistName string) (differs bool) {
 
 func (tM *TrackMetadata) GenreDiffers(genre string) (differs bool) {
 	for _, sT := range sourceTypes {
-		comparison := &ComparableStrings{external: genre, metadata: tM.Genre[sT]}
-		if tM.ErrCause[sT] == "" && genreComparators[sT](comparison) {
+		comparison := &ComparableStrings{external: genre, metadata: tM.genre[sT]}
+		if tM.errorCause[sT] == "" && genreComparators[sT](comparison) {
 			differs = true
-			tM.RequiresEdit[sT] = true
-			tM.CorrectedGenre[sT] = genre
+			tM.requiresEdit[sT] = true
+			tM.correctedGenre[sT] = genre
 		}
 	}
 	return
@@ -326,32 +399,32 @@ func (tM *TrackMetadata) GenreDiffers(genre string) (differs bool) {
 
 func (tM *TrackMetadata) YearDiffers(year string) (differs bool) {
 	for _, sT := range sourceTypes {
-		if tM.ErrCause[sT] == "" && tM.Year[sT] != year {
+		if tM.errorCause[sT] == "" && tM.year[sT] != year {
 			differs = true
-			tM.RequiresEdit[sT] = true
-			tM.CorrectedYear[sT] = year
+			tM.requiresEdit[sT] = true
+			tM.correctedYear[sT] = year
 		}
 	}
 	return
 }
 
 func (tM *TrackMetadata) MCDIDiffers(f id3v2.UnknownFrame) (differs bool) {
-	if tM.ErrCause[ID3V2] == "" && !bytes.Equal(tM.MusicCDIdentifier.Body, f.Body) {
+	if tM.errorCause[ID3V2] == "" && !bytes.Equal(tM.musicCDIdentifier.Body, f.Body) {
 		differs = true
-		tM.RequiresEdit[ID3V2] = true
-		tM.CorrectedMusicCDIdentifier = f
+		tM.requiresEdit[ID3V2] = true
+		tM.correctedMusicCDIdentifier = f
 	}
 	return
 }
 
 func (tM *TrackMetadata) CanonicalAlbumTitleMatches(albumTitle string) bool {
 	comparison := &ComparableStrings{external: albumTitle, metadata: tM.CanonicalAlbum()}
-	return !nameComparators[tM.CanonicalType](comparison)
+	return !nameComparators[tM.primarySource](comparison)
 }
 
 func (tM *TrackMetadata) CanonicalArtistNameMatches(artistName string) bool {
 	comparison := &ComparableStrings{external: artistName, metadata: tM.CanonicalArtist()}
-	return !nameComparators[tM.CanonicalType](comparison)
+	return !nameComparators[tM.primarySource](comparison)
 }
 
 func updateMetadata(tM *TrackMetadata, path string) (e []error) {
