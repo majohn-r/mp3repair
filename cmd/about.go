@@ -26,13 +26,16 @@ const (
 )
 
 var (
-	Version  = "unknown version!" // semantic version
-	Creation string               // build timestamp in RFC3339 format (2006-01-02T15:04:05Z07:00)
+	// semantic version
+	Version = "unknown version!"
+	// build timestamp in RFC3339 format (2006-01-02T15:04:05Z07:00)
+	Creation string
 	// AboutCmd represents the about command
 	AboutCmd = &cobra.Command{
 		Use:   aboutCommand,
 		Short: "Provides information about the mp3 program",
-		Long: fmt.Sprintf("%q", aboutCommand) + ` provides the following information about the mp3 program:
+		Long: fmt.Sprintf("%q", aboutCommand) +
+			` provides the following information about the mp3 program:
 
 * The program version
 * Copyright information

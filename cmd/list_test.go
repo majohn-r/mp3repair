@@ -36,14 +36,38 @@ func TestProcessListFlags(t *testing.T) {
 					"An internal error occurred: flag \"byNumber\" is not found.\n" +
 					"An internal error occurred: flag \"byTitle\" is not found.\n" +
 					"An internal error occurred: flag \"tracks\" is not found.\n",
-				Log: "level='error' error='flag not found' flag='albums' msg='internal error'\n" +
-					"level='error' error='flag not found' flag='annotate' msg='internal error'\n" +
-					"level='error' error='flag not found' flag='artists' msg='internal error'\n" +
-					"level='error' error='flag not found' flag='details' msg='internal error'\n" +
-					"level='error' error='flag not found' flag='diagnostic' msg='internal error'\n" +
-					"level='error' error='flag not found' flag='byNumber' msg='internal error'\n" +
-					"level='error' error='flag not found' flag='byTitle' msg='internal error'\n" +
-					"level='error' error='flag not found' flag='tracks' msg='internal error'\n",
+				Log: "level='error'" +
+					" error='flag not found'" +
+					" flag='albums'" +
+					" msg='internal error'\n" +
+					"level='error'" +
+					" error='flag not found'" +
+					" flag='annotate'" +
+					" msg='internal error'\n" +
+					"level='error'" +
+					" error='flag not found'" +
+					" flag='artists'" +
+					" msg='internal error'\n" +
+					"level='error'" +
+					" error='flag not found'" +
+					" flag='details'" +
+					" msg='internal error'\n" +
+					"level='error'" +
+					" error='flag not found'" +
+					" flag='diagnostic'" +
+					" msg='internal error'\n" +
+					"level='error'" +
+					" error='flag not found'" +
+					" flag='byNumber'" +
+					" msg='internal error'\n" +
+					"level='error'" +
+					" error='flag not found'" +
+					" flag='byTitle'" +
+					" msg='internal error'\n" +
+					"level='error'" +
+					" error='flag not found'" +
+					" flag='tracks'" +
+					" msg='internal error'\n",
 			},
 		},
 		"configured": {
@@ -80,7 +104,8 @@ func TestProcessListFlags(t *testing.T) {
 				true).WithAnnotate(false).WithArtists(false).WithArtistsUserSet(
 				true).WithDetails(false).WithDiagnostic(false).WithSortByNumber(
 				false).WithSortByNumberUserSet(true).WithSortByTitle(
-				false).WithSortByTitleUserSet(true).WithTracks(false).WithTracksUserSet(true),
+				false).WithSortByTitleUserSet(true).WithTracks(false).WithTracksUserSet(
+				true),
 			want1: true,
 		},
 	}
@@ -114,11 +139,14 @@ func TestListSettingsHasWorkToDo(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Error: "No listing will be output.\n" +
 					"Why?\n" +
-					"The flags --albums, --artists, and --tracks are all configured false.\n" +
+					"The flags --albums, --artists, and --tracks are all configured" +
+					" false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command line.\n",
+					"[1] Edit the configuration file so that at least one of these flags" +
+					" is true, or\n" +
+					"[2] explicitly set at least one of these flags true on the command" +
+					" line.\n",
 			},
 		},
 		"none true, tracks explicitly set": {
@@ -126,11 +154,14 @@ func TestListSettingsHasWorkToDo(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Error: "No listing will be output.\n" +
 					"Why?\n" +
-					"In addition to --albums and --artists configured false, you explicitly set --tracks false.\n" +
+					"In addition to --albums and --artists configured false, you" +
+					" explicitly set --tracks false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command line.\n",
+					"[1] Edit the configuration file so that at least one of these flags" +
+					" is true, or\n" +
+					"[2] explicitly set at least one of these flags true on the command" +
+					" line.\n",
 			},
 		},
 		"none true, artists explicitly set": {
@@ -138,11 +169,14 @@ func TestListSettingsHasWorkToDo(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Error: "No listing will be output.\n" +
 					"Why?\n" +
-					"In addition to --albums and --tracks configured false, you explicitly set --artists false.\n" +
+					"In addition to --albums and --tracks configured false, you" +
+					" explicitly set --artists false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command line.\n",
+					"[1] Edit the configuration file so that at least one of these flags" +
+					" is true, or\n" +
+					"[2] explicitly set at least one of these flags true on the command" +
+					" line.\n",
 			},
 		},
 		"none true, artists and tracks explicitly set": {
@@ -150,11 +184,14 @@ func TestListSettingsHasWorkToDo(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Error: "No listing will be output.\n" +
 					"Why?\n" +
-					"In addition to --albums configured false, you explicitly set --artists and --tracks false.\n" +
+					"In addition to --albums configured false, you explicitly set" +
+					" --artists and --tracks false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command line.\n",
+					"[1] Edit the configuration file so that at least one of these flags" +
+					" is true, or\n" +
+					"[2] explicitly set at least one of these flags true on the command" +
+					" line.\n",
 			},
 		},
 		"none true, albums explicitly set": {
@@ -162,11 +199,14 @@ func TestListSettingsHasWorkToDo(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Error: "No listing will be output.\n" +
 					"Why?\n" +
-					"In addition to --artists and --tracks configured false, you explicitly set --albums false.\n" +
+					"In addition to --artists and --tracks configured false, you" +
+					" explicitly set --albums false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command line.\n",
+					"[1] Edit the configuration file so that at least one of these flags" +
+					" is true, or\n" +
+					"[2] explicitly set at least one of these flags true on the command" +
+					" line.\n",
 			},
 		},
 		"none true, albums and tracks explicitly set": {
@@ -174,11 +214,14 @@ func TestListSettingsHasWorkToDo(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Error: "No listing will be output.\n" +
 					"Why?\n" +
-					"In addition to --artists configured false, you explicitly set --albums and --tracks false.\n" +
+					"In addition to --artists configured false, you explicitly set" +
+					" --albums and --tracks false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command line.\n",
+					"[1] Edit the configuration file so that at least one of these flags" +
+					" is true, or\n" +
+					"[2] explicitly set at least one of these flags true on the command" +
+					" line.\n",
 			},
 		},
 		"none true, albums and artists explicitly set": {
@@ -186,23 +229,29 @@ func TestListSettingsHasWorkToDo(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Error: "No listing will be output.\n" +
 					"Why?\n" +
-					"In addition to --tracks configured false, you explicitly set --albums and --artists false.\n" +
+					"In addition to --tracks configured false, you explicitly set" +
+					" --albums and --artists false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command line.\n",
+					"[1] Edit the configuration file so that at least one of these flags" +
+					" is true, or\n" +
+					"[2] explicitly set at least one of these flags true on the command" +
+					" line.\n",
 			},
 		},
 		"none true, albums and artists and tracks explicitly set": {
-			ls: cmd.NewListSettings().WithAlbumsUserSet(true).WithArtistsUserSet(true).WithTracksUserSet(true),
+			ls: cmd.NewListSettings().WithAlbumsUserSet(true).WithArtistsUserSet(
+				true).WithTracksUserSet(true),
 			WantedRecording: output.WantedRecording{
 				Error: "No listing will be output.\n" +
 					"Why?\n" +
 					"You explicitly set --albums, --artists, and --tracks false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command line.\n",
+					"[1] Edit the configuration file so that at least one of these flags" +
+					" is true, or\n" +
+					"[2] explicitly set at least one of these flags true on the command" +
+					" line.\n",
 			},
 		},
 		"tracks true": {
@@ -257,47 +306,58 @@ func TestListSettingsTracksSortable(t *testing.T) {
 		output.WantedRecording
 	}{
 		"tracks listed, both options set, neither explicitly": {
-			ls:   cmd.NewListSettings().WithTracks(true).WithSortByNumber(true).WithSortByTitle(true),
+			ls: cmd.NewListSettings().WithTracks(true).WithSortByNumber(
+				true).WithSortByTitle(true),
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "Track sorting cannot be done.\n" +
 					"Why?\n" +
 					"The --byNumber and --byTitle flags are both configured true.\n" +
 					"What to do:\n" +
-					"Either edit the configuration file and use those default values, or use appropriate command line values.\n",
+					"Either edit the configuration file and use those default values, or" +
+					" use appropriate command line values.\n",
 			},
 		},
 		"tracks listed, both options set, by number explicitly": {
-			ls:   cmd.NewListSettings().WithTracks(true).WithSortByNumber(true).WithSortByNumberUserSet(true).WithSortByTitle(true),
+			ls: cmd.NewListSettings().WithTracks(true).WithSortByNumber(
+				true).WithSortByNumberUserSet(true).WithSortByTitle(true),
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "Track sorting cannot be done.\n" +
 					"Why?\n" +
-					"The --byTitle flag is configured true and you explicitly set --byNumber true.\n" +
+					"The --byTitle flag is configured true and you explicitly set" +
+					" --byNumber true.\n" +
 					"What to do:\n" +
-					"Either edit the configuration file and use those default values, or use appropriate command line values.\n",
+					"Either edit the configuration file and use those default values, or" +
+					" use appropriate command line values.\n",
 			},
 		},
 		"tracks listed, both options set, by title explicitly": {
-			ls:   cmd.NewListSettings().WithTracks(true).WithSortByNumber(true).WithSortByTitle(true).WithSortByTitleUserSet(true),
+			ls: cmd.NewListSettings().WithTracks(true).WithSortByNumber(
+				true).WithSortByTitle(true).WithSortByTitleUserSet(true),
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "Track sorting cannot be done.\n" +
 					"Why?\n" +
-					"The --byNumber flag is configured true and you explicitly set --byTitle true.\n" +
+					"The --byNumber flag is configured true and you explicitly set" +
+					" --byTitle true.\n" +
 					"What to do:\n" +
-					"Either edit the configuration file and use those default values, or use appropriate command line values.\n",
+					"Either edit the configuration file and use those default values, or" +
+					" use appropriate command line values.\n",
 			},
 		},
 		"tracks listed, both options set, both explicitly": {
-			ls:   cmd.NewListSettings().WithTracks(true).WithSortByNumber(true).WithSortByNumberUserSet(true).WithSortByTitle(true).WithSortByTitleUserSet(true),
+			ls: cmd.NewListSettings().WithTracks(true).WithSortByNumber(
+				true).WithSortByNumberUserSet(true).WithSortByTitle(
+				true).WithSortByTitleUserSet(true),
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "Track sorting cannot be done.\n" +
 					"Why?\n" +
 					"You explicitly set --byNumber and --byTitle true.\n" +
 					"What to do:\n" +
-					"Either edit the configuration file and use those default values, or use appropriate command line values.\n",
+					"Either edit the configuration file and use those default values, or" +
+					" use appropriate command line values.\n",
 			},
 		},
 		"tracks listed, no albums, sort by number, neither explicitly": {
@@ -307,13 +367,16 @@ func TestListSettingsTracksSortable(t *testing.T) {
 				Error: "Sorting tracks by number not possible.\n" +
 					"Why?\n" +
 					"Track numbers are only relevant if albums are also output.\n" +
-					"--albums is configured as false, and --byNumber is configured as true.\n" +
+					"--albums is configured as false, and --byNumber is configured as" +
+					" true.\n" +
 					"What to do:\n" +
-					"Either edit the configuration file or change which flags you set on the command line.\n",
+					"Either edit the configuration file or change which flags you set on" +
+					" the command line.\n",
 			},
 		},
 		"tracks listed, no albums, sort by number, albums explicitly": {
-			ls:   cmd.NewListSettings().WithAlbumsUserSet(true).WithTracks(true).WithSortByNumber(true),
+			ls: cmd.NewListSettings().WithAlbumsUserSet(true).WithTracks(
+				true).WithSortByNumber(true),
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "Sorting tracks by number not possible.\n" +
@@ -321,11 +384,13 @@ func TestListSettingsTracksSortable(t *testing.T) {
 					"Track numbers are only relevant if albums are also output.\n" +
 					"You set --albums false and --byNumber is configured as true.\n" +
 					"What to do:\n" +
-					"Either edit the configuration file or change which flags you set on the command line.\n",
+					"Either edit the configuration file or change which flags you set on" +
+					" the command line.\n",
 			},
 		},
 		"tracks listed, no albums, sort by number, sort explicitly": {
-			ls:   cmd.NewListSettings().WithTracks(true).WithSortByNumber(true).WithSortByNumberUserSet(true),
+			ls: cmd.NewListSettings().WithTracks(true).WithSortByNumber(
+				true).WithSortByNumberUserSet(true),
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "Sorting tracks by number not possible.\n" +
@@ -333,11 +398,13 @@ func TestListSettingsTracksSortable(t *testing.T) {
 					"Track numbers are only relevant if albums are also output.\n" +
 					"You set --byNumber true and --albums is configured as false.\n" +
 					"What to do:\n" +
-					"Either edit the configuration file or change which flags you set on the command line.\n",
+					"Either edit the configuration file or change which flags you set on" +
+					" the command line.\n",
 			},
 		},
 		"tracks listed, no albums, sort by number, both explicitly": {
-			ls:   cmd.NewListSettings().WithAlbumsUserSet(true).WithTracks(true).WithSortByNumber(true).WithSortByNumberUserSet(true),
+			ls: cmd.NewListSettings().WithAlbumsUserSet(true).WithTracks(
+				true).WithSortByNumber(true).WithSortByNumberUserSet(true),
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "Sorting tracks by number not possible.\n" +
@@ -345,11 +412,13 @@ func TestListSettingsTracksSortable(t *testing.T) {
 					"Track numbers are only relevant if albums are also output.\n" +
 					"You set --byNumber true and --albums false.\n" +
 					"What to do:\n" +
-					"Either edit the configuration file or change which flags you set on the command line.\n",
+					"Either edit the configuration file or change which flags you set on" +
+					" the command line.\n",
 			},
 		},
 		"tracks listed, both sorting options explicitly false": {
-			ls:   cmd.NewListSettings().WithTracks(true).WithSortByNumberUserSet(true).WithSortByTitleUserSet(true),
+			ls: cmd.NewListSettings().WithTracks(true).WithSortByNumberUserSet(
+				true).WithSortByTitleUserSet(true),
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "A listing of tracks is not possible.\n" +
@@ -360,27 +429,42 @@ func TestListSettingsTracksSortable(t *testing.T) {
 			},
 		},
 		"tracks listed, no sorting, user said no to number": {
-			ls:      cmd.NewListSettings().WithTracks(true).WithSortByNumberUserSet(true),
-			want:    true,
-			lsFinal: cmd.NewListSettings().WithTracks(true).WithSortByNumberUserSet(true).WithSortByTitle(true),
+			ls:   cmd.NewListSettings().WithTracks(true).WithSortByNumberUserSet(true),
+			want: true,
+			lsFinal: cmd.NewListSettings().WithTracks(true).WithSortByNumberUserSet(
+				true).WithSortByTitle(true),
 			WantedRecording: output.WantedRecording{
-				Log: "level='info' --albums='false' --byTitle='true' byNumber='false' msg='no track sorting set, providing a sensible value'\n",
+				Log: "level='info'" +
+					" --albums='false'" +
+					" --byTitle='true'" +
+					" byNumber='false'" +
+					" msg='no track sorting set, providing a sensible value'\n",
 			},
 		},
 		"tracks listed, no sorting, user said no to title": {
-			ls:      cmd.NewListSettings().WithTracks(true).WithSortByTitleUserSet(true),
-			want:    true,
-			lsFinal: cmd.NewListSettings().WithTracks(true).WithSortByNumber(true).WithSortByTitleUserSet(true),
+			ls:   cmd.NewListSettings().WithTracks(true).WithSortByTitleUserSet(true),
+			want: true,
+			lsFinal: cmd.NewListSettings().WithTracks(true).WithSortByNumber(
+				true).WithSortByTitleUserSet(true),
 			WantedRecording: output.WantedRecording{
-				Log: "level='info' --albums='false' --byTitle='false' byNumber='true' msg='no track sorting set, providing a sensible value'\n",
+				Log: "level='info'" +
+					" --albums='false'" +
+					" --byTitle='false'" +
+					" byNumber='true'" +
+					" msg='no track sorting set, providing a sensible value'\n",
 			},
 		},
 		"tracks listed, no sorting, albums included": {
-			ls:      cmd.NewListSettings().WithAlbums(true).WithTracks(true),
-			want:    true,
-			lsFinal: cmd.NewListSettings().WithAlbums(true).WithTracks(true).WithSortByNumber(true),
+			ls:   cmd.NewListSettings().WithAlbums(true).WithTracks(true),
+			want: true,
+			lsFinal: cmd.NewListSettings().WithAlbums(true).WithTracks(
+				true).WithSortByNumber(true),
 			WantedRecording: output.WantedRecording{
-				Log: "level='info' --albums='true' --byTitle='false' byNumber='true' msg='no track sorting set, providing a sensible value'\n",
+				Log: "level='info'" +
+					" --albums='true'" +
+					" --byTitle='false'" +
+					" byNumber='true'" +
+					" msg='no track sorting set, providing a sensible value'\n",
 			},
 		},
 		"tracks listed, no sorting, no albums": {
@@ -388,13 +472,19 @@ func TestListSettingsTracksSortable(t *testing.T) {
 			want:    true,
 			lsFinal: cmd.NewListSettings().WithTracks(true).WithSortByTitle(true),
 			WantedRecording: output.WantedRecording{
-				Log: "level='info' --albums='false' --byTitle='true' byNumber='false' msg='no track sorting set, providing a sensible value'\n",
+				Log: "level='info'" +
+					" --albums='false'" +
+					" --byTitle='true'" +
+					" byNumber='false'" +
+					" msg='no track sorting set, providing a sensible value'\n",
 			},
 		},
 		"tracks not listed, no sorting explicitly called for": {
-			ls:      cmd.NewListSettings().WithSortByNumberUserSet(true).WithSortByTitleUserSet(true),
-			want:    true,
-			lsFinal: cmd.NewListSettings().WithSortByNumberUserSet(true).WithSortByTitleUserSet(true),
+			ls: cmd.NewListSettings().WithSortByNumberUserSet(
+				true).WithSortByTitleUserSet(true),
+			want: true,
+			lsFinal: cmd.NewListSettings().WithSortByNumberUserSet(
+				true).WithSortByTitleUserSet(true),
 		},
 		"tracks not listed, sort by number explicitly called for": {
 			ls:   cmd.NewListSettings().WithSortByNumber(true).WithSortByNumberUserSet(true),
@@ -402,9 +492,11 @@ func TestListSettingsTracksSortable(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Error: "Your sorting preferences are not relevant.\n" +
 					"Why?\n" +
-					"Tracks are not included in the output, but you explicitly set --byNumber or --byTitle true.\n" +
+					"Tracks are not included in the output, but you explicitly set" +
+					" --byNumber or --byTitle true.\n" +
 					"What to do:\n" +
-					"Either set --tracks true or remove the sorting flags from the command line.\n",
+					"Either set --tracks true or remove the sorting flags from the" +
+					" command line.\n",
 			},
 		},
 		"tracks not listed, sort by title explicitly called for": {
@@ -413,25 +505,32 @@ func TestListSettingsTracksSortable(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Error: "Your sorting preferences are not relevant.\n" +
 					"Why?\n" +
-					"Tracks are not included in the output, but you explicitly set --byNumber or --byTitle true.\nWhat to do:\n" +
-					"Either set --tracks true or remove the sorting flags from the command line.\n",
+					"Tracks are not included in the output, but you explicitly set" +
+					" --byNumber or --byTitle true.\nWhat to do:\n" +
+					"Either set --tracks true or remove the sorting flags from the" +
+					" command line.\n",
 			},
 		},
 		"tracks not listed, sort by number and title explicitly called for": {
-			ls:   cmd.NewListSettings().WithSortByNumber(true).WithSortByNumberUserSet(true).WithSortByTitle(true).WithSortByTitleUserSet(true),
+			ls: cmd.NewListSettings().WithSortByNumber(true).WithSortByNumberUserSet(
+				true).WithSortByTitle(true).WithSortByTitleUserSet(true),
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "Your sorting preferences are not relevant.\n" +
 					"Why?\n" +
-					"Tracks are not included in the output, but you explicitly set --byNumber or --byTitle true.\n" +
+					"Tracks are not included in the output, but you explicitly set" +
+					" --byNumber or --byTitle true.\n" +
 					"What to do:\n" +
-					"Either set --tracks true or remove the sorting flags from the command line.\n",
+					"Either set --tracks true or remove the sorting flags from the" +
+					" command line.\n",
 			},
 		},
 		"tracks listed, albums too, just sort by number": {
-			ls:      cmd.NewListSettings().WithAlbums(true).WithTracks(true).WithSortByNumber(true),
-			want:    true,
-			lsFinal: cmd.NewListSettings().WithAlbums(true).WithTracks(true).WithSortByNumber(true),
+			ls: cmd.NewListSettings().WithAlbums(true).WithTracks(
+				true).WithSortByNumber(true),
+			want: true,
+			lsFinal: cmd.NewListSettings().WithAlbums(true).WithTracks(
+				true).WithSortByNumber(true),
 		},
 		"tracks listed, just sort by title": {
 			ls:      cmd.NewListSettings().WithTracks(true).WithSortByTitle(true),
@@ -447,7 +546,8 @@ func TestListSettingsTracksSortable(t *testing.T) {
 			}
 			if tt.want {
 				if *tt.ls != *tt.lsFinal {
-					t.Errorf("ListSettings.TracksSortable() ls = %v, want %v", tt.ls, tt.lsFinal)
+					t.Errorf("ListSettings.TracksSortable() ls = %v, want %v", tt.ls,
+						tt.lsFinal)
 				}
 			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -468,11 +568,21 @@ var (
 		"10 track 10.mp3", "track 10", 10)
 	safeSearchFlags = cmd.NewSectionFlags().WithSectionName("search").WithFlags(
 		map[string]*cmd.FlagDetails{
-			cmd.SearchAlbumFilter:    cmd.NewFlagDetails().WithUsage("regular expression specifying which albums to select").WithExpectedType(cmd.StringType).WithDefaultValue(".*"),
-			cmd.SearchArtistFilter:   cmd.NewFlagDetails().WithUsage("regular expression specifying which artists to select").WithExpectedType(cmd.StringType).WithDefaultValue(".*"),
-			cmd.SearchTrackFilter:    cmd.NewFlagDetails().WithUsage("regular expression specifying which tracks to select").WithExpectedType(cmd.StringType).WithDefaultValue(".*"),
-			cmd.SearchTopDir:         cmd.NewFlagDetails().WithUsage("top directory specifying where to find mp3 files").WithExpectedType(cmd.StringType).WithDefaultValue("."),
-			cmd.SearchFileExtensions: cmd.NewFlagDetails().WithUsage("comma-delimited list of file extensions used by mp3 files").WithExpectedType(cmd.StringType).WithDefaultValue(".mp3"),
+			cmd.SearchAlbumFilter: cmd.NewFlagDetails().WithUsage(
+				"regular expression specifying which albums to select").WithExpectedType(
+				cmd.StringType).WithDefaultValue(".*"),
+			cmd.SearchArtistFilter: cmd.NewFlagDetails().WithUsage(
+				"regular expression specifying which artists to select").WithExpectedType(
+				cmd.StringType).WithDefaultValue(".*"),
+			cmd.SearchTrackFilter: cmd.NewFlagDetails().WithUsage(
+				"regular expression specifying which tracks to select").WithExpectedType(
+				cmd.StringType).WithDefaultValue(".*"),
+			cmd.SearchTopDir: cmd.NewFlagDetails().WithUsage(
+				"top directory specifying where to find mp3 files").WithExpectedType(
+				cmd.StringType).WithDefaultValue("."),
+			cmd.SearchFileExtensions: cmd.NewFlagDetails().WithUsage(
+				"comma-delimited list of file extensions used by mp3" +
+					" files").WithExpectedType(cmd.StringType).WithDefaultValue(".mp3"),
 		},
 	)
 )
@@ -495,14 +605,23 @@ func TestShowID3V1Diagnostics(t *testing.T) {
 				tab:   2,
 			},
 			WantedRecording: output.WantedRecording{
-				Log: "level='error' error='could not read track' metadata='ID3V1' track='music\\my artist\\my album\\10 track 10.mp3' msg='metadata read error'\n",
+				Log: "level='error'" +
+					" error='could not read track'" +
+					" metadata='ID3V1'" +
+					" track='music\\my artist\\my album\\10 track 10.mp3'" +
+					" msg='metadata read error'\n",
 			},
 		},
 		"without error": {
 			args: args{
 				track: sampleTrack,
-				tags:  []string{"artist=my artist", "album=my album", "track=track 10", "number=10"},
-				tab:   2,
+				tags: []string{
+					"artist=my artist",
+					"album=my album",
+					"track=track 10",
+					"number=10",
+				},
+				tab: 2,
 			},
 			WantedRecording: output.WantedRecording{
 				Console: "" +
@@ -516,7 +635,8 @@ func TestShowID3V1Diagnostics(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			cmd.ShowID3V1Diagnostics(o, tt.args.track, tt.args.tags, tt.args.err, tt.args.tab)
+			cmd.ShowID3V1Diagnostics(o, tt.args.track, tt.args.tags, tt.args.err,
+				tt.args.tab)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("ShowID3V1Diagnostics() %s", issue)
@@ -545,7 +665,11 @@ func TestShowID3V2Diagnostics(t *testing.T) {
 				err:   fmt.Errorf("no ID3V2 data found"),
 			},
 			WantedRecording: output.WantedRecording{
-				Log: "level='error' error='no ID3V2 data found' metadata='ID3V2' track='music\\my artist\\my album\\10 track 10.mp3' msg='metadata read error'\n",
+				Log: "level='error'" +
+					" error='no ID3V2 data found'" +
+					" metadata='ID3V2'" +
+					" track='music\\my artist\\my album\\10 track 10.mp3'" +
+					" msg='metadata read error'\n",
 			},
 		},
 		"empty frames": {
@@ -581,7 +705,8 @@ func TestShowID3V2Diagnostics(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			cmd.ShowID3V2Diagnostics(o, tt.args.track, tt.args.version, tt.args.encoding, tt.args.frames, tt.args.err, tt.args.tab)
+			cmd.ShowID3V2Diagnostics(o, tt.args.track, tt.args.version, tt.args.encoding,
+				tt.args.frames, tt.args.err, tt.args.tab)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("ShowID3V2Diagnostics() %s", issue)
@@ -605,8 +730,18 @@ func TestListSettingsListTrackDiagnostics(t *testing.T) {
 			ls:   cmd.NewListSettings().WithDiagnostic(true),
 			args: args{track: sampleTrack, tab: 2},
 			WantedRecording: output.WantedRecording{
-				Log: "level='error' error='open music\\my artist\\my album\\10 track 10.mp3: The system cannot find the path specified.' metadata='ID3V2' track='music\\my artist\\my album\\10 track 10.mp3' msg='metadata read error'\n" +
-					"level='error' error='open music\\my artist\\my album\\10 track 10.mp3: The system cannot find the path specified.' metadata='ID3V1' track='music\\my artist\\my album\\10 track 10.mp3' msg='metadata read error'\n",
+				Log: "level='error'" +
+					" error='open music\\my artist\\my album\\10 track 10.mp3: The system" +
+					" cannot find the path specified.'" +
+					" metadata='ID3V2'" +
+					" track='music\\my artist\\my album\\10 track 10.mp3'" +
+					" msg='metadata read error'\n" +
+					"level='error'" +
+					" error='open music\\my artist\\my album\\10 track 10.mp3: The system" +
+					" cannot find the path specified.'" +
+					" metadata='ID3V1'" +
+					" track='music\\my artist\\my album\\10 track 10.mp3'" +
+					" msg='metadata read error'\n",
 			},
 		},
 		"not permitted": {
@@ -643,8 +778,12 @@ func TestShowDetails(t *testing.T) {
 				detailsError: fmt.Errorf("details service offline"),
 			},
 			WantedRecording: output.WantedRecording{
-				Error: "The details are not available for track \"track 10\" on album \"my album\" by artist \"my artist\": \"details service offline\".\n",
-				Log:   "level='error' error='details service offline' track='music\\my artist\\my album\\10 track 10.mp3' msg='cannot get details'\n",
+				Error: "The details are not available for track \"track 10\" on album" +
+					" \"my album\" by artist \"my artist\": \"details service offline\".\n",
+				Log: "level='error'" +
+					" error='details service offline'" +
+					" track='music\\my artist\\my album\\10 track 10.mp3'" +
+					" msg='cannot get details'\n",
 			},
 		},
 		"no error, and no details": {args: args{track: sampleTrack}},
@@ -668,7 +807,8 @@ func TestShowDetails(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			cmd.ShowDetails(o, tt.args.track, tt.args.details, tt.args.detailsError, tt.args.tab)
+			cmd.ShowDetails(o, tt.args.track, tt.args.details, tt.args.detailsError,
+				tt.args.tab)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("ShowDetails() %s", issue)
@@ -693,8 +833,15 @@ func TestListSettingsListTrackDetails(t *testing.T) {
 			ls:   cmd.NewListSettings().WithDetails(true),
 			args: args{track: sampleTrack, tab: 2},
 			WantedRecording: output.WantedRecording{
-				Error: "The details are not available for track \"track 10\" on album \"my album\" by artist \"my artist\": \"open music\\\\my artist\\\\my album\\\\10 track 10.mp3: The system cannot find the path specified.\".\n",
-				Log:   "level='error' error='open music\\my artist\\my album\\10 track 10.mp3: The system cannot find the path specified.' track='music\\my artist\\my album\\10 track 10.mp3' msg='cannot get details'\n",
+				Error: "The details are not available for track \"track 10\" on album" +
+					" \"my album\" by artist \"my artist\":" +
+					" \"open music\\\\my artist\\\\my album\\\\10 track 10.mp3: The" +
+					" system cannot find the path specified.\".\n",
+				Log: "level='error'" +
+					" error='open music\\my artist\\my album\\10 track 10.mp3: The system" +
+					" cannot find the path specified.'" +
+					" track='music\\my artist\\my album\\10 track 10.mp3'" +
+					" msg='cannot get details'\n",
 			},
 		},
 	}
@@ -728,12 +875,14 @@ func TestListSettingsAnnotateTrackName(t *testing.T) {
 			want:  "track 10",
 		},
 		"annotations, no albums, artists included": {
-			ls:    cmd.NewListSettings().WithAnnotate(true).WithAlbums(false).WithArtists(true),
+			ls: cmd.NewListSettings().WithAnnotate(true).WithAlbums(
+				false).WithArtists(true),
 			track: sampleTrack,
 			want:  "\"track 10\" on \"my album\"",
 		},
 		"annotations, no albums, no artists": {
-			ls:    cmd.NewListSettings().WithAnnotate(true).WithAlbums(false).WithArtists(false),
+			ls: cmd.NewListSettings().WithAnnotate(true).WithAlbums(
+				false).WithArtists(false),
 			track: sampleTrack,
 			want:  "\"track 10\" on \"my album\" by \"my artist\"",
 		},
@@ -987,7 +1136,9 @@ func TestListSettingsAnnotateAlbumName(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			album := files.NewAlbum("my album", files.NewArtist("my artist", filepath.Join("Music", "my artist")), filepath.Join("Music", "my artist", "my album"))
+			album := files.NewAlbum("my album",
+				files.NewArtist("my artist", filepath.Join("Music", "my artist")),
+				filepath.Join("Music", "my artist", "my album"))
 			if got := tt.ls.AnnotateAlbumName(album); got != tt.want {
 				t.Errorf("ListSettings.AnnotateAlbumName() = %v, want %v", got, tt.want)
 			}
@@ -1002,10 +1153,12 @@ func generateArtists(artistCount, albumCount, trackCount int) []*files.Artist {
 		artist := files.NewArtist(artistName, filepath.Join("Music", artistName))
 		for k := 0; k < albumCount; k++ {
 			albumName := fmt.Sprintf("my album %d%d", r, k)
-			album := files.NewAlbum(albumName, artist, filepath.Join("Music", "my artist", albumName))
+			album := files.NewAlbum(albumName, artist,
+				filepath.Join("Music", "my artist", albumName))
 			for j := 1; j <= trackCount; j++ {
 				trackName := fmt.Sprintf("my track %d%d%d", r, k, j)
-				track := files.NewTrack(album, fmt.Sprintf("%d %s.mp3", j, trackName), trackName, j)
+				track := files.NewTrack(album, fmt.Sprintf("%d %s.mp3", j, trackName),
+					trackName, j)
 				album.AddTrack(track)
 			}
 			artist.AddAlbum(album)
@@ -1051,7 +1204,8 @@ func TestListSettingsListAlbums(t *testing.T) {
 			},
 		},
 		"list tracks only": {
-			ls: cmd.NewListSettings().WithArtists(true).WithTracks(true).WithAnnotate(true).WithSortByTitle(true),
+			ls: cmd.NewListSettings().WithArtists(true).WithTracks(true).WithAnnotate(
+				true).WithSortByTitle(true),
 			args: args{
 				albums: generateAlbums(2, 2),
 				tab:    2,
@@ -1065,7 +1219,8 @@ func TestListSettingsListAlbums(t *testing.T) {
 			},
 		},
 		"list albums and tracks": {
-			ls: cmd.NewListSettings().WithAlbums(true).WithTracks(true).WithAnnotate(true).WithSortByNumber(true),
+			ls: cmd.NewListSettings().WithAlbums(true).WithTracks(true).WithAnnotate(
+				true).WithSortByNumber(true),
 			args: args{
 				albums: generateAlbums(3, 3),
 				tab:    0,
@@ -1108,7 +1263,8 @@ func TestListSettingsListArtists(t *testing.T) {
 	}{
 		"no artists": {ls: cmd.NewListSettings()},
 		"tracks": {
-			ls:      cmd.NewListSettings().WithTracks(true).WithAnnotate(true).WithSortByTitle(true),
+			ls: cmd.NewListSettings().WithTracks(true).WithAnnotate(
+				true).WithSortByTitle(true),
 			artists: generateArtists(3, 3, 3),
 			WantedRecording: output.WantedRecording{
 				Console: "" +
@@ -1158,7 +1314,8 @@ func TestListSettingsListArtists(t *testing.T) {
 			},
 		},
 		"albums and tracks": {
-			ls:      cmd.NewListSettings().WithAlbums(true).WithTracks(true).WithAnnotate(true).WithSortByNumber(true),
+			ls: cmd.NewListSettings().WithAlbums(true).WithTracks(
+				true).WithAnnotate(true).WithSortByNumber(true),
 			artists: generateArtists(3, 3, 3),
 			WantedRecording: output.WantedRecording{
 				Console: "" +
@@ -1211,7 +1368,8 @@ func TestListSettingsListArtists(t *testing.T) {
 			},
 		},
 		"artists and tracks": {
-			ls:      cmd.NewListSettings().WithArtists(true).WithTracks(true).WithAnnotate(true).WithSortByTitle(true),
+			ls: cmd.NewListSettings().WithArtists(true).WithTracks(
+				true).WithAnnotate(true).WithSortByTitle(true),
 			artists: generateArtists(3, 3, 3),
 			WantedRecording: output.WantedRecording{
 				Console: "" +
@@ -1267,7 +1425,8 @@ func TestListSettingsListArtists(t *testing.T) {
 			},
 		},
 		"everything": {
-			ls:      cmd.NewListSettings().WithArtists(true).WithAlbums(true).WithTracks(true).WithSortByNumber(true),
+			ls: cmd.NewListSettings().WithArtists(true).WithAlbums(
+				true).WithTracks(true).WithSortByNumber(true),
 			artists: generateArtists(3, 3, 3),
 			WantedRecording: output.WantedRecording{
 				Console: "" +
@@ -1346,48 +1505,98 @@ func Test_ListRun(t *testing.T) {
 
 	testListFlags := cmd.NewSectionFlags().WithSectionName(cmd.ListCommand).WithFlags(
 		map[string]*cmd.FlagDetails{
-			cmd.ListAlbums:       cmd.NewFlagDetails().WithAbbreviatedName("l").WithUsage("include album names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
-			cmd.ListArtists:      cmd.NewFlagDetails().WithAbbreviatedName("r").WithUsage("include artist names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(true),
-			cmd.ListTracks:       cmd.NewFlagDetails().WithAbbreviatedName("t").WithUsage("include track names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
-			cmd.ListSortByNumber: cmd.NewFlagDetails().WithUsage("sort tracks by track number").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
-			cmd.ListSortByTitle:  cmd.NewFlagDetails().WithUsage("sort tracks by track title").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
-			cmd.ListAnnotate:     cmd.NewFlagDetails().WithUsage("annotate listings with album and artist names").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
-			cmd.ListDetails:      cmd.NewFlagDetails().WithUsage("include details with tracks").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
-			cmd.ListDiagnostic:   cmd.NewFlagDetails().WithUsage("include diagnostic information with tracks").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.ListAlbums: cmd.NewFlagDetails().WithAbbreviatedName(
+				"l").WithUsage("include album names in listing").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(false),
+			cmd.ListArtists: cmd.NewFlagDetails().WithAbbreviatedName(
+				"r").WithUsage("include artist names in listing").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(true),
+			cmd.ListTracks: cmd.NewFlagDetails().WithAbbreviatedName(
+				"t").WithUsage("include track names in listing").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(false),
+			cmd.ListSortByNumber: cmd.NewFlagDetails().WithUsage(
+				"sort tracks by track number").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(false),
+			cmd.ListSortByTitle: cmd.NewFlagDetails().WithUsage(
+				"sort tracks by track title").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(false),
+			cmd.ListAnnotate: cmd.NewFlagDetails().WithUsage(
+				"annotate listings with album and artist names").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(false),
+			cmd.ListDetails: cmd.NewFlagDetails().WithUsage(
+				"include details with tracks").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(false),
+			cmd.ListDiagnostic: cmd.NewFlagDetails().WithUsage(
+				"include diagnostic information with tracks").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(false),
 		},
 	)
 	testCmd := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), testCmd.Flags(), testListFlags, cmd.SearchFlags)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), testCmd.Flags(),
+		testListFlags, cmd.SearchFlags)
 
 	testListFlags2 := cmd.NewSectionFlags().WithSectionName(cmd.ListCommand).WithFlags(
 		map[string]*cmd.FlagDetails{
-			cmd.ListAlbums:       cmd.NewFlagDetails().WithAbbreviatedName("l").WithUsage("include album names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
-			cmd.ListArtists:      cmd.NewFlagDetails().WithAbbreviatedName("r").WithUsage("include artist names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(true),
-			cmd.ListTracks:       cmd.NewFlagDetails().WithAbbreviatedName("t").WithUsage("include track names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(true),
-			cmd.ListSortByNumber: cmd.NewFlagDetails().WithUsage("sort tracks by track number").WithExpectedType(cmd.BoolType).WithDefaultValue(true),
-			cmd.ListSortByTitle:  cmd.NewFlagDetails().WithUsage("sort tracks by track title").WithExpectedType(cmd.BoolType).WithDefaultValue(true),
-			cmd.ListAnnotate:     cmd.NewFlagDetails().WithUsage("annotate listings with album and artist names").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
-			cmd.ListDetails:      cmd.NewFlagDetails().WithUsage("include details with tracks").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
-			cmd.ListDiagnostic:   cmd.NewFlagDetails().WithUsage("include diagnostic information with tracks").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.ListAlbums: cmd.NewFlagDetails().WithAbbreviatedName(
+				"l").WithUsage("include album names in listing").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(false),
+			cmd.ListArtists: cmd.NewFlagDetails().WithAbbreviatedName(
+				"r").WithUsage("include artist names in listing").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(true),
+			cmd.ListTracks: cmd.NewFlagDetails().WithAbbreviatedName(
+				"t").WithUsage("include track names in listing").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(true),
+			cmd.ListSortByNumber: cmd.NewFlagDetails().WithUsage(
+				"sort tracks by track number").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(true),
+			cmd.ListSortByTitle: cmd.NewFlagDetails().WithUsage(
+				"sort tracks by track title").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(true),
+			cmd.ListAnnotate: cmd.NewFlagDetails().WithUsage(
+				"annotate listings with album and artist names").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.ListDetails: cmd.NewFlagDetails().WithUsage(
+				"include details with tracks").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(false),
+			cmd.ListDiagnostic: cmd.NewFlagDetails().WithUsage(
+				"include diagnostic information with tracks").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(false),
 		},
 	)
 	testCmd2 := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), testCmd2.Flags(), testListFlags2, cmd.SearchFlags)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), testCmd2.Flags(),
+		testListFlags2, cmd.SearchFlags)
 
 	testListFlags3 := cmd.NewSectionFlags().WithSectionName(cmd.ListCommand).WithFlags(
 		map[string]*cmd.FlagDetails{
-			cmd.ListAlbums:       cmd.NewFlagDetails().WithAbbreviatedName("l").WithUsage("include album names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
-			cmd.ListArtists:      cmd.NewFlagDetails().WithAbbreviatedName("r").WithUsage("include artist names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
-			cmd.ListTracks:       cmd.NewFlagDetails().WithAbbreviatedName("t").WithUsage("include track names in listing").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
-			cmd.ListSortByNumber: cmd.NewFlagDetails().WithUsage("sort tracks by track number").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
-			cmd.ListSortByTitle:  cmd.NewFlagDetails().WithUsage("sort tracks by track title").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
-			cmd.ListAnnotate:     cmd.NewFlagDetails().WithUsage("annotate listings with album and artist names").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
-			cmd.ListDetails:      cmd.NewFlagDetails().WithUsage("include details with tracks").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
-			cmd.ListDiagnostic:   cmd.NewFlagDetails().WithUsage("include diagnostic information with tracks").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.ListAlbums: cmd.NewFlagDetails().WithAbbreviatedName(
+				"l").WithUsage("include album names in listing").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(false),
+			cmd.ListArtists: cmd.NewFlagDetails().WithAbbreviatedName(
+				"r").WithUsage("include artist names in listing").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(false),
+			cmd.ListTracks: cmd.NewFlagDetails().WithAbbreviatedName(
+				"t").WithUsage("include track names in listing").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(false),
+			cmd.ListSortByNumber: cmd.NewFlagDetails().WithUsage(
+				"sort tracks by track number").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(false),
+			cmd.ListSortByTitle: cmd.NewFlagDetails().WithUsage(
+				"sort tracks by track title").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(false),
+			cmd.ListAnnotate: cmd.NewFlagDetails().WithUsage(
+				"annotate listings with album and artist names").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(false),
+			cmd.ListDetails: cmd.NewFlagDetails().WithUsage(
+				"include details with tracks").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(false),
+			cmd.ListDiagnostic: cmd.NewFlagDetails().WithUsage(
+				"include diagnostic information with tracks").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(false),
 		},
 	)
 	testCmd3 := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), testCmd3.Flags(), testListFlags3, cmd.SearchFlags)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), testCmd3.Flags(),
+		testListFlags3, cmd.SearchFlags)
 
 	tests := map[string]struct {
 		cmd            *cobra.Command
@@ -1407,7 +1616,8 @@ func Test_ListRun(t *testing.T) {
 					"Why?\n" +
 					"There were no directories found in \".\" (the --topDir value).\n" +
 					"What to do:\n" +
-					"Set --topDir to the path of a directory that contains artist directories.\n",
+					"Set --topDir to the path of a directory that contains artist" +
+					" directories.\n",
 				Log: "" +
 					"level='info'" +
 					" --albumFilter='.*'" +
@@ -1446,7 +1656,8 @@ func Test_ListRun(t *testing.T) {
 					"Why?\n" +
 					"The --byNumber and --byTitle flags are both configured true.\n" +
 					"What to do:\n" +
-					"Either edit the configuration file and use those default values, or use appropriate command line values.\n",
+					"Either edit the configuration file and use those default values, or" +
+					" use appropriate command line values.\n",
 				Log: "" +
 					"level='info'" +
 					" --albumFilter='.*'" +
@@ -1480,11 +1691,14 @@ func Test_ListRun(t *testing.T) {
 				Error: "" +
 					"No listing will be output.\n" +
 					"Why?\n" +
-					"The flags --albums, --artists, and --tracks are all configured false.\n" +
+					"The flags --albums, --artists, and --tracks are all configured" +
+					" false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command line.\n",
+					"[1] Edit the configuration file so that at least one of these flags" +
+					" is true, or\n" +
+					"[2] explicitly set at least one of these flags true on the command" +
+					" line.\n",
 				Log: "" +
 					"level='info'" +
 					" --albumFilter='.*'" +
@@ -1547,27 +1761,36 @@ func TestListSettingsProcessArtists(t *testing.T) {
 		"no data": {
 			ls: cmd.NewListSettings().WithArtists(true),
 			args: args{
-				allArtists:     nil,
-				loaded:         true,
-				searchSettings: cmd.NewSearchSettings().WithArtistFilter(regexp.MustCompile(".*")).WithAlbumFilter(regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
+				allArtists: nil,
+				loaded:     true,
+				searchSettings: cmd.NewSearchSettings().WithArtistFilter(
+					regexp.MustCompile(".*")).WithAlbumFilter(
+					regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
 			},
 			wantStatus: cmd.UserError,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"No music files remain after filtering.\n" +
 					"Why?\n" +
-					"After applying --artistFilter=\".*\", --albumFilter=\".*\", and --trackFilter=\".*\", no files remained.\n" +
+					"After applying --artistFilter=\".*\", --albumFilter=\".*\", and" +
+					" --trackFilter=\".*\", no files remained.\n" +
 					"What to do:\n" +
 					"Use less restrictive filter settings.\n",
-				Log: "level='error' --albumFilter='.*' --artistFilter='.*' --trackFilter='.*' msg='no files remain after filtering'\n",
+				Log: "level='error'" +
+					" --albumFilter='.*'" +
+					" --artistFilter='.*'" +
+					" --trackFilter='.*'" +
+					" msg='no files remain after filtering'\n",
 			},
 		},
 		"with data": {
 			ls: cmd.NewListSettings().WithArtists(true),
 			args: args{
-				allArtists:     generateArtists(3, 4, 5),
-				loaded:         true,
-				searchSettings: cmd.NewSearchSettings().WithArtistFilter(regexp.MustCompile(".*")).WithAlbumFilter(regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
+				allArtists: generateArtists(3, 4, 5),
+				loaded:     true,
+				searchSettings: cmd.NewSearchSettings().WithArtistFilter(
+					regexp.MustCompile(".*")).WithAlbumFilter(
+					regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
 			},
 			wantStatus: cmd.Success,
 			WantedRecording: output.WantedRecording{
@@ -1581,8 +1804,10 @@ func TestListSettingsProcessArtists(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			if got := tt.ls.ProcessArtists(o, tt.args.allArtists, tt.args.loaded, tt.args.searchSettings); got != tt.wantStatus {
-				t.Errorf("ListSettings.ProcessArtists() got %d want %d", got, tt.wantStatus)
+			if got := tt.ls.ProcessArtists(o, tt.args.allArtists, tt.args.loaded,
+				tt.args.searchSettings); got != tt.wantStatus {
+				t.Errorf("ListSettings.ProcessArtists() got %d want %d", got,
+					tt.wantStatus)
 			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
@@ -1600,23 +1825,30 @@ func TestListHelp(t *testing.T) {
 	}()
 	cmd.SearchFlags = safeSearchFlags
 	commandUnderTest := cloneCommand(cmd.ListCmd)
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), commandUnderTest.Flags(), cmd.ListFlags, cmd.SearchFlags)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(),
+		commandUnderTest.Flags(), cmd.ListFlags, cmd.SearchFlags)
 	tests := map[string]struct {
 		output.WantedRecording
 	}{
 		"good": {
 			WantedRecording: output.WantedRecording{
 				Console: "" +
-					"\"list\" lists mp3 files and containing album and artist directories\n" +
+					"\"list\" lists mp3 files and containing album and artist" +
+					" directories\n" +
 					"\n" +
 					"Usage:\n" +
-					"  list [--albums] [--artists] [--tracks] [--annotate] [--details] [--diagnostic] [--byNumber | --byTitle] [--albumFilter regex] [--artistFilter regex] [--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +
+					"  list [--albums] [--artists] [--tracks] [--annotate] [--details]" +
+					" [--diagnostic] [--byNumber | --byTitle] [--albumFilter regex]" +
+					" [--artistFilter regex] [--trackFilter regex] [--topDir dir]" +
+					" [--extensions extensions]\n" +
 					"\n" +
 					"Examples:\n" +
 					"list --annotate\n" +
-					"  Annotate tracks with album and artist data and albums with artist data\n" +
+					"  Annotate tracks with album and artist data and albums with artist" +
+					" data\n" +
 					"list --details\n" +
-					"  Include detailed information, if available, for each track. This includes composer,\n" +
+					"  Include detailed information, if available, for each track. This" +
+					" includes composer,\n" +
 					"  conductor, key, lyricist, orchestra/band, and subtitle\n" +
 					"list --albums\n" +
 					"  Include the album names in the output\n" +
@@ -1630,19 +1862,32 @@ func TestListHelp(t *testing.T) {
 					"  Sort tracks by track number\n" +
 					"\n" +
 					"Flags:\n" +
-					"      --albumFilter string    regular expression specifying which albums to select (default \".*\")\n" +
-					"  -l, --albums                include album names in listing (default false)\n" +
-					"      --annotate              annotate listings with album and artist names (default false)\n" +
-					"      --artistFilter string   regular expression specifying which artists to select (default \".*\")\n" +
-					"  -r, --artists               include artist names in listing (default false)\n" +
-					"      --byNumber              sort tracks by track number (default false)\n" +
-					"      --byTitle               sort tracks by track title (default false)\n" +
-					"      --details               include details with tracks (default false)\n" +
-					"      --diagnostic            include diagnostic information with tracks (default false)\n" +
-					"      --extensions string     comma-delimited list of file extensions used by mp3 files (default \".mp3\")\n" +
-					"      --topDir string         top directory specifying where to find mp3 files (default \".\")\n" +
-					"      --trackFilter string    regular expression specifying which tracks to select (default \".*\")\n" +
-					"  -t, --tracks                include track names in listing (default false)\n",
+					"      --albumFilter string    " +
+					"regular expression specifying which albums to select (default \".*\")\n" +
+					"  -l, --albums                " +
+					"include album names in listing (default false)\n" +
+					"      --annotate              " +
+					"annotate listings with album and artist names (default false)\n" +
+					"      --artistFilter string   " +
+					"regular expression specifying which artists to select (default \".*\")\n" +
+					"  -r, --artists               " +
+					"include artist names in listing (default false)\n" +
+					"      --byNumber              " +
+					"sort tracks by track number (default false)\n" +
+					"      --byTitle               " +
+					"sort tracks by track title (default false)\n" +
+					"      --details               " +
+					"include details with tracks (default false)\n" +
+					"      --diagnostic            " +
+					"include diagnostic information with tracks (default false)\n" +
+					"      --extensions string     " +
+					"comma-delimited list of file extensions used by mp3 files (default \".mp3\")\n" +
+					"      --topDir string         " +
+					"top directory specifying where to find mp3 files (default \".\")\n" +
+					"      --trackFilter string    " +
+					"regular expression specifying which tracks to select (default \".*\")\n" +
+					"  -t, --tracks                " +
+					"include track names in listing (default false)\n",
 			},
 		},
 	}

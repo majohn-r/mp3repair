@@ -31,14 +31,22 @@ func TestAlbum_RecordingArtistName(t *testing.T) {
 }
 
 func TestAlbum_Copy(t *testing.T) {
-	complexAlbum := files.NewAlbum("my album", files.NewArtist("my artist", "Music/my artist"), "Music/my artist/my album").WithCanonicalGenre("rap").WithCanonicalTitle("my special album").WithCanonicalYear("1993").WithMusicCDIdentifier([]byte{0, 1, 2})
+	complexAlbum := files.NewAlbum("my album", files.NewArtist("my artist",
+		"Music/my artist"), "Music/my artist/my album").WithCanonicalGenre(
+		"rap").WithCanonicalTitle("my special album").WithCanonicalYear(
+		"1993").WithMusicCDIdentifier([]byte{0, 1, 2})
 	for k := 1; k <= 10; k++ {
-		track := files.NewTrack(complexAlbum, fmt.Sprintf("%d track %d.mp3", k, k), fmt.Sprintf("track %d.mp3", k), k)
+		track := files.NewTrack(complexAlbum, fmt.Sprintf("%d track %d.mp3", k, k),
+			fmt.Sprintf("track %d.mp3", k), k)
 		complexAlbum.AddTrack(track)
 	}
-	complexAlbum2 := files.NewAlbum("my album", files.NewArtist("my artist", "Music/my artist"), "Music/my artist/my album").WithCanonicalGenre("rap").WithCanonicalTitle("my special album").WithCanonicalYear("1993").WithMusicCDIdentifier([]byte{0, 1, 2})
+	complexAlbum2 := files.NewAlbum("my album", files.NewArtist("my artist",
+		"Music/my artist"), "Music/my artist/my album").WithCanonicalGenre(
+		"rap").WithCanonicalTitle("my special album").WithCanonicalYear(
+		"1993").WithMusicCDIdentifier([]byte{0, 1, 2})
 	for k := 1; k <= 10; k++ {
-		track := files.NewTrack(complexAlbum2, fmt.Sprintf("%d track %d.mp3", k, k), fmt.Sprintf("track %d.mp3", k), k)
+		track := files.NewTrack(complexAlbum2, fmt.Sprintf("%d track %d.mp3", k, k),
+			fmt.Sprintf("track %d.mp3", k), k)
 		complexAlbum2.AddTrack(track)
 	}
 	type args struct {
@@ -51,12 +59,14 @@ func TestAlbum_Copy(t *testing.T) {
 		want *files.Album
 	}{
 		"simple test": {
-			a: files.NewAlbum("album name", files.NewArtist("artist", "Music/artist"), "Music/artist/album name"),
+			a: files.NewAlbum("album name", files.NewArtist("artist", "Music/artist"),
+				"Music/artist/album name"),
 			args: args{
 				ar:            files.NewArtist("artist", "Music/artist"),
 				includeTracks: true,
 			},
-			want: files.NewAlbum("album name", files.NewArtist("artist", "Music/artist"), "Music/artist/album name"),
+			want: files.NewAlbum("album name", files.NewArtist("artist", "Music/artist"),
+				"Music/artist/album name"),
 		},
 		"complex test": {
 			a: complexAlbum,
@@ -69,7 +79,8 @@ func TestAlbum_Copy(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.a.Copy(tt.args.ar, tt.args.includeTracks); !reflect.DeepEqual(got, tt.want) {
+			if got := tt.a.Copy(tt.args.ar, tt.args.includeTracks); !reflect.DeepEqual(got,
+				tt.want) {
 				t.Errorf("Album.Copy() = %v, want %v", got, tt.want)
 			}
 		})
@@ -139,7 +150,8 @@ func TestNewAlbumFromFile(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := files.NewAlbumFromFile(tt.args.file, tt.args.ar); !reflect.DeepEqual(got, tt.want) {
+			if got := files.NewAlbumFromFile(tt.args.file,
+				tt.args.ar); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewAlbumFromFile() = %v, want %v", got, tt.want)
 			}
 		})

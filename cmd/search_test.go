@@ -34,13 +34,17 @@ func TestEvaluateFilter(t *testing.T) {
 			wantRegexOk: true, // not a bad regex, right?
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"albumFilter\" is not found.\n",
-				Log:   "level='error' error='flag not found' flag='albumFilter' msg='internal error'\n",
+				Log: "level='error'" +
+					" error='flag not found'" +
+					" flag='albumFilter'" +
+					" msg='internal error'\n",
 			},
 		},
 		"bad regex, user-supplied": {
 			args: args{
 				values: map[string]*cmd.FlagValue{
-					"albumFilter": cmd.NewFlagValue().WithExplicitlySet(true).WithValueType(cmd.StringType).WithValue("[9-0]"),
+					"albumFilter": cmd.NewFlagValue().WithExplicitlySet(
+						true).WithValueType(cmd.StringType).WithValue("[9-0]"),
 				},
 				flagName:   "albumFilter",
 				nameAsFlag: "--albumFilter",
@@ -48,16 +52,24 @@ func TestEvaluateFilter(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Error: "The --albumFilter value \"[9-0]\" cannot be used.\n" +
 					"Why?\n" +
-					"The value of --albumFilter that you specified is not a valid regular expression: error parsing regexp: invalid character class range: `9-0`.\n" +
+					"The value of --albumFilter that you specified is not a valid regular" +
+					" expression: error parsing regexp: invalid character class range:" +
+					" `9-0`.\n" +
 					"What to do:\n" +
-					"Either try a different setting, or omit setting --albumFilter and try the default value.\n",
-				Log: "level='error' --albumFilter='[9-0]' error='error parsing regexp: invalid character class range: `9-0`' user-set='true' msg='the filter cannot be parsed as a regular expression'\n",
+					"Either try a different setting, or omit setting --albumFilter and" +
+					" try the default value.\n",
+				Log: "level='error'" +
+					" --albumFilter='[9-0]'" +
+					" error='error parsing regexp: invalid character class range: `9-0`'" +
+					" user-set='true'" +
+					" msg='the filter cannot be parsed as a regular expression'\n",
 			},
 		},
 		"bad regex, as configured": {
 			args: args{
 				values: map[string]*cmd.FlagValue{
-					"albumFilter": cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(cmd.StringType).WithValue("[9-0]"),
+					"albumFilter": cmd.NewFlagValue().WithExplicitlySet(
+						false).WithValueType(cmd.StringType).WithValue("[9-0]"),
 				},
 				flagName:   "albumFilter",
 				nameAsFlag: "--albumFilter",
@@ -65,16 +77,24 @@ func TestEvaluateFilter(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Error: "The --albumFilter value \"[9-0]\" cannot be used.\n" +
 					"Why?\n" +
-					"The configured default value of --albumFilter is not a valid regular expression: error parsing regexp: invalid character class range: `9-0`.\n" +
+					"The configured default value of --albumFilter is not a valid" +
+					" regular expression: error parsing regexp: invalid character class" +
+					" range: `9-0`.\n" +
 					"What to do:\n" +
-					"Either edit the defaults.yaml file containing the settings, or explicitly set --albumFilter to a better value.\n",
-				Log: "level='error' --albumFilter='[9-0]' error='error parsing regexp: invalid character class range: `9-0`' user-set='false' msg='the filter cannot be parsed as a regular expression'\n",
+					"Either edit the defaults.yaml file containing the settings, or" +
+					" explicitly set --albumFilter to a better value.\n",
+				Log: "level='error'" +
+					" --albumFilter='[9-0]'" +
+					" error='error parsing regexp: invalid character class range: `9-0`'" +
+					" user-set='false'" +
+					" msg='the filter cannot be parsed as a regular expression'\n",
 			},
 		},
 		"good regex": {
 			args: args{
 				values: map[string]*cmd.FlagValue{
-					"albumFilter": cmd.NewFlagValue().WithExplicitlySet(true).WithValueType(cmd.StringType).WithValue(`\d`),
+					"albumFilter": cmd.NewFlagValue().WithExplicitlySet(
+						true).WithValueType(cmd.StringType).WithValue(`\d`),
 				},
 				flagName:   "albumFilter",
 				nameAsFlag: "--albumFilter",
@@ -87,15 +107,18 @@ func TestEvaluateFilter(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			gotFilter, gotOk, gotRegexOk := cmd.EvaluateFilter(o, tt.args.values, tt.args.flagName, tt.args.nameAsFlag)
+			gotFilter, gotOk, gotRegexOk := cmd.EvaluateFilter(o, tt.args.values,
+				tt.args.flagName, tt.args.nameAsFlag)
 			if !reflect.DeepEqual(gotFilter, tt.wantFilter) {
-				t.Errorf("EvaluateFilter() gotFilter = %v, want %v", gotFilter, tt.wantFilter)
+				t.Errorf("EvaluateFilter() gotFilter = %v, want %v", gotFilter,
+					tt.wantFilter)
 			}
 			if gotOk != tt.wantOk {
 				t.Errorf("EvaluateFilter() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
 			if gotRegexOk != tt.wantRegexOk {
-				t.Errorf("EvaluateFilter() gotRegexOk = %v, want %v", gotRegexOk, tt.wantRegexOk)
+				t.Errorf("EvaluateFilter() gotRegexOk = %v, want %v", gotRegexOk,
+					tt.wantRegexOk)
 			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
@@ -117,12 +140,16 @@ func TestEvaluateTopDir(t *testing.T) {
 			values: map[string]*cmd.FlagValue{},
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"topDir\" is not found.\n",
-				Log:   "level='error' error='flag not found' flag='topDir' msg='internal error'\n",
+				Log: "level='error'" +
+					" error='flag not found'" +
+					" flag='topDir'" +
+					" msg='internal error'\n",
 			},
 		},
 		"non-existent file, user set": {
 			values: map[string]*cmd.FlagValue{
-				"topDir": cmd.NewFlagValue().WithExplicitlySet(true).WithValueType(cmd.StringType).WithValue("no such directory"),
+				"topDir": cmd.NewFlagValue().WithExplicitlySet(true).WithValueType(
+					cmd.StringType).WithValue("no such directory"),
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "The --topDir value, \"no such directory\", cannot be used.\n" +
@@ -130,25 +157,38 @@ func TestEvaluateTopDir(t *testing.T) {
 					"The value you specified is not a readable file.\n" +
 					"What to do:\n" +
 					"Specify a value that is a readable file.\n",
-				Log: "level='error' --topDir='no such directory' error='CreateFile no such directory: The system cannot find the file specified.' user-set='true' msg='invalid directory'\n",
+				Log: "level='error'" +
+					" --topDir='no such directory'" +
+					" error='CreateFile no such directory: The system cannot find the file" +
+					" specified.'" +
+					" user-set='true'" +
+					" msg='invalid directory'\n",
 			},
 		},
 		"non-existent file, as configured": {
 			values: map[string]*cmd.FlagValue{
-				"topDir": cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(cmd.StringType).WithValue("no such directory"),
+				"topDir": cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(
+					cmd.StringType).WithValue("no such directory"),
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "The --topDir value, \"no such directory\", cannot be used.\n" +
 					"Why?\n" +
 					"The currently configured value is not a readable file.\n" +
 					"What to do:\n" +
-					"Edit the configuration file or specify --topDir with a value that is a readable file.\n",
-				Log: "level='error' --topDir='no such directory' error='CreateFile no such directory: The system cannot find the file specified.' user-set='false' msg='invalid directory'\n",
+					"Edit the configuration file or specify --topDir with a value that is" +
+					" a readable file.\n",
+				Log: "level='error'" +
+					" --topDir='no such directory'" +
+					" error='CreateFile no such directory: The system cannot find the file" +
+					" specified.'" +
+					" user-set='false'" +
+					" msg='invalid directory'\n",
 			},
 		},
 		"non-existent directory, user set": {
 			values: map[string]*cmd.FlagValue{
-				"topDir": cmd.NewFlagValue().WithExplicitlySet(true).WithValueType(cmd.StringType).WithValue("./commonFlags_test.go"),
+				"topDir": cmd.NewFlagValue().WithExplicitlySet(true).WithValueType(
+					cmd.StringType).WithValue("./commonFlags_test.go"),
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "The --topDir value, \"./commonFlags_test.go\", cannot be used.\n" +
@@ -156,25 +196,34 @@ func TestEvaluateTopDir(t *testing.T) {
 					"The value you specified is not the name of a directory.\n" +
 					"What to do:\n" +
 					"Specify a value that is the name of a directory.\n",
-				Log: "level='error' --topDir='./commonFlags_test.go' user-set='true' msg='the file is not a directory'\n",
+				Log: "level='error'" +
+					" --topDir='./commonFlags_test.go'" +
+					" user-set='true'" +
+					" msg='the file is not a directory'\n",
 			},
 		},
 		"non-existent directory, as configured": {
 			values: map[string]*cmd.FlagValue{
-				"topDir": cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(cmd.StringType).WithValue("./commonFlags_test.go"),
+				"topDir": cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(
+					cmd.StringType).WithValue("./commonFlags_test.go"),
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "The --topDir value, \"./commonFlags_test.go\", cannot be used.\n" +
 					"Why?\n" +
 					"The currently configured value is not the name of a directory.\n" +
 					"What to do:\n" +
-					"Edit the configuration file or specify --topDir with a value that is the name of a directory.\n",
-				Log: "level='error' --topDir='./commonFlags_test.go' user-set='false' msg='the file is not a directory'\n",
+					"Edit the configuration file or specify --topDir with a value that is" +
+					" the name of a directory.\n",
+				Log: "level='error'" +
+					" --topDir='./commonFlags_test.go'" +
+					" user-set='false'" +
+					" msg='the file is not a directory'\n",
 			},
 		},
 		"valid directory": {
 			values: map[string]*cmd.FlagValue{
-				"topDir": cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(cmd.StringType).WithValue("."),
+				"topDir": cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(
+					cmd.StringType).WithValue("."),
 			},
 			wantDir: ".",
 			wantOk:  true,
@@ -215,81 +264,147 @@ func TestProcessSearchFlags(t *testing.T) {
 					"An internal error occurred: flag \"trackFilter\" is not found.\n" +
 					"An internal error occurred: flag \"topDir\" is not found.\n" +
 					"An internal error occurred: flag \"extensions\" is not found.\n",
-				Log: "level='error' error='flag not found' flag='albumFilter' msg='internal error'\n" +
-					"level='error' error='flag not found' flag='artistFilter' msg='internal error'\n" +
-					"level='error' error='flag not found' flag='trackFilter' msg='internal error'\n" +
-					"level='error' error='flag not found' flag='topDir' msg='internal error'\n" +
-					"level='error' error='flag not found' flag='extensions' msg='internal error'\n",
+				Log: "level='error'" +
+					" error='flag not found'" +
+					" flag='albumFilter'" +
+					" msg='internal error'\n" +
+					"level='error'" +
+					" error='flag not found'" +
+					" flag='artistFilter'" +
+					" msg='internal error'\n" +
+					"level='error'" +
+					" error='flag not found'" +
+					" flag='trackFilter'" +
+					" msg='internal error'\n" +
+					"level='error'" +
+					" error='flag not found'" +
+					" flag='topDir'" +
+					" msg='internal error'\n" +
+					"level='error'" +
+					" error='flag not found'" +
+					" flag='extensions'" +
+					" msg='internal error'\n",
 			},
 		},
 		"bad data": {
 			values: map[string]*cmd.FlagValue{
-				"albumFilter":  cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("[2"),
-				"artistFilter": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("[1-0]"),
-				"trackFilter":  cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("0++"),
-				"topDir":       cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("no such dir"),
-				"extensions":   cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("foo,bar"),
+				"albumFilter": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(
+					"[2"),
+				"artistFilter": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(
+					"[1-0]"),
+				"trackFilter": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(
+					"0++"),
+				"topDir": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(
+					"no such dir"),
+				"extensions": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(
+					"foo,bar"),
 			},
 			wantSettings: cmd.NewSearchSettings(),
 			WantedRecording: output.WantedRecording{
 				Error: "The --albumFilter value \"[2\" cannot be used.\n" +
 					"Why?\n" +
-					"The configured default value of --albumFilter is not a valid regular expression: error parsing regexp: missing closing ]: `[2`.\n" +
+					"The configured default value of --albumFilter is not a valid regular" +
+					" expression: error parsing regexp: missing closing ]: `[2`.\n" +
 					"What to do:\n" +
-					"Either edit the defaults.yaml file containing the settings, or explicitly set --albumFilter to a better value.\n" +
+					"Either edit the defaults.yaml file containing the settings, or" +
+					" explicitly set --albumFilter to a better value.\n" +
 					"The --artistFilter value \"[1-0]\" cannot be used.\n" +
-					"Why?\nThe configured default value of --artistFilter is not a valid regular expression: error parsing regexp: invalid character class range: `1-0`.\n" +
+					"Why?\nThe configured default value of --artistFilter is not a valid" +
+					" regular expression: error parsing regexp: invalid character class range: `1-0`.\n" +
 					"What to do:\n" +
-					"Either edit the defaults.yaml file containing the settings, or explicitly set --artistFilter to a better value.\n" +
+					"Either edit the defaults.yaml file containing the settings, or" +
+					" explicitly set --artistFilter to a better value.\n" +
 					"The --trackFilter value \"0++\" cannot be used.\n" +
 					"Why?\n" +
-					"The configured default value of --trackFilter is not a valid regular expression: error parsing regexp: invalid nested repetition operator: `++`.\n" +
+					"The configured default value of --trackFilter is not a valid regular" +
+					" expression: error parsing regexp: invalid nested repetition operator: `++`.\n" +
 					"What to do:\n" +
-					"Either edit the defaults.yaml file containing the settings, or explicitly set --trackFilter to a better value.\n" +
+					"Either edit the defaults.yaml file containing the settings, or" +
+					" explicitly set --trackFilter to a better value.\n" +
 					"Here are some common errors in filter expressions and what to do:\n" +
 					"Character class problems\n" +
-					"Character classes are sets of 1 or more characters, enclosed in square brackets: []\n" +
+					"Character classes are sets of 1 or more characters, enclosed in square" +
+					" brackets: []\n" +
 					"A common error is to forget the final ] bracket.\n" +
-					"Character classes can include a range of characters, like this: [a-z], which means\n" +
-					"any character between a and z. Order is important - one might think that [z-a] would\n" +
-					"mean the same thing, but it doesn't; z comes after a. Do an internet search for ASCII\n" +
-					"table; that's the expected order for ranges of characters. And that means [A-z] means\n" +
+					"Character classes can include a range of characters, like this: [a-z]," +
+					" which means\n" +
+					"any character between a and z. Order is important - one might think" +
+					" that [z-a] would\n" +
+					"mean the same thing, but it doesn't; z comes after a. Do an internet" +
+					" search for ASCII\n" +
+					"table; that's the expected order for ranges of characters. And that" +
+					" means [A-z] means\n" +
 					"any letter, and [a-Z] is an error.\n" +
 					"Repetition problems\n" +
-					"The characters '+' and '*' specify repetition: a+ means \"exactly one a\" and a* means\n" +
-					"\"0 or more a's\". You can also put a count in curly braces - a{2} means \"exactly two a's\".\n" +
-					"Repetition can only be used once for a character or character class. 'a++', 'a+*',\n" +
+					"The characters '+' and '*' specify repetition: a+ means \"exactly" +
+					" one a\" and a* means\n" +
+					"\"0 or more a's\". You can also put a count in curly braces - a{2}" +
+					" means \"exactly two a's\".\n" +
+					"Repetition can only be used once for a character or character class." +
+					" 'a++', 'a+*',\n" +
 					"and so on, are not allowed.\n" +
-					"For more (too much, often, you are warned) information, do a web search for\n" +
+					"For more (too much, often, you are warned) information, do a web" +
+					" search for\n" +
 					"\"golang regexp\".\n" +
 					"The --topDir value, \"no such dir\", cannot be used.\n" +
 					"Why?\n" +
 					"The currently configured value is not a readable file.\n" +
 					"What to do:\n" +
-					"Edit the configuration file or specify --topDir with a value that is a readable file.\n" +
+					"Edit the configuration file or specify --topDir with a value that" +
+					" is a readable file.\n" +
 					"The extension \"foo\" cannot be used.\n" +
 					"The extension \"bar\" cannot be used.\n" +
 					"Why?\n" +
 					"Extensions must be at least two characters long and begin with '.'.\n" +
 					"What to do:\n" +
 					"Provide appropriate extensions.\n",
-				Log: "level='error' --albumFilter='[2' error='error parsing regexp: missing closing ]: `[2`' user-set='false' msg='the filter cannot be parsed as a regular expression'\n" +
-					"level='error' --artistFilter='[1-0]' error='error parsing regexp: invalid character class range: `1-0`' user-set='false' msg='the filter cannot be parsed as a regular expression'\n" +
-					"level='error' --trackFilter='0++' error='error parsing regexp: invalid nested repetition operator: `++`' user-set='false' msg='the filter cannot be parsed as a regular expression'\n" +
-					"level='error' --topDir='no such dir' error='CreateFile no such dir: The system cannot find the file specified.' user-set='false' msg='invalid directory'\n" +
-					"level='error' --extensions='foo,bar' rejected='[foo bar]' msg='invalid file extensions'\n",
+				Log: "level='error'" +
+					" --albumFilter='[2'" +
+					" error='error parsing regexp: missing closing ]: `[2`'" +
+					" user-set='false'" +
+					" msg='the filter cannot be parsed as a regular expression'\n" +
+					"level='error'" +
+					" --artistFilter='[1-0]'" +
+					" error='error parsing regexp: invalid character class range: `1-0`'" +
+					" user-set='false'" +
+					" msg='the filter cannot be parsed as a regular expression'\n" +
+					"level='error'" +
+					" --trackFilter='0++'" +
+					" error='error parsing regexp: invalid nested repetition operator:" +
+					" `++`'" +
+					" user-set='false'" +
+					" msg='the filter cannot be parsed as a regular expression'\n" +
+					"level='error'" +
+					" --topDir='no such dir'" +
+					" error='CreateFile no such dir: The system cannot find the file" +
+					" specified.'" +
+					" user-set='false'" +
+					" msg='invalid directory'\n" +
+					"level='error'" +
+					" --extensions='foo,bar'" +
+					" rejected='[foo bar]'" +
+					" msg='invalid file extensions'\n",
 			},
 		},
 		"good data": {
 			values: map[string]*cmd.FlagValue{
-				"albumFilter":  cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("[23]"),
-				"artistFilter": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("[0-7]"),
-				"trackFilter":  cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("0+"),
-				"topDir":       cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue("."),
-				"extensions":   cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(".mp3"),
+				"albumFilter": cmd.NewFlagValue().WithValueType(
+					cmd.StringType).WithValue("[23]"),
+				"artistFilter": cmd.NewFlagValue().WithValueType(
+					cmd.StringType).WithValue("[0-7]"),
+				"trackFilter": cmd.NewFlagValue().WithValueType(
+					cmd.StringType).WithValue("0+"),
+				"topDir": cmd.NewFlagValue().WithValueType(
+					cmd.StringType).WithValue("."),
+				"extensions": cmd.NewFlagValue().WithValueType(
+					cmd.StringType).WithValue(".mp3"),
 			},
-			wantSettings: cmd.NewSearchSettings().WithAlbumFilter(regexp.MustCompile("[23]")).WithArtistFilter(regexp.MustCompile("[0-7]")).WithTrackFilter(regexp.MustCompile("0+")).WithTopDirectory(".").WithFileExtensions([]string{".mp3"}),
-			wantOk:       true,
+			wantSettings: cmd.NewSearchSettings().WithAlbumFilter(
+				regexp.MustCompile("[23]")).WithArtistFilter(
+				regexp.MustCompile("[0-7]")).WithTrackFilter(
+				regexp.MustCompile("0+")).WithTopDirectory(".").WithFileExtensions(
+				[]string{".mp3"}),
+			wantOk: true,
 		},
 	}
 	for name, tt := range tests {
@@ -297,7 +412,8 @@ func TestProcessSearchFlags(t *testing.T) {
 			o := output.NewRecorder()
 			gotSettings, gotOk := cmd.ProcessSearchFlags(o, tt.values)
 			if !reflect.DeepEqual(gotSettings, tt.wantSettings) {
-				t.Errorf("ProcessSearchFlags() gotSettings = %v, want %v", gotSettings, tt.wantSettings)
+				t.Errorf("ProcessSearchFlags() gotSettings = %v, want %v", gotSettings,
+					tt.wantSettings)
 			}
 			if gotOk != tt.wantOk {
 				t.Errorf("ProcessSearchFlags() gotOk = %v, want %v", gotOk, tt.wantOk)
@@ -327,11 +443,21 @@ func TestEvaluateSearchFlags(t *testing.T) {
 					"An internal error occurred: flag \"extensions\" does not exist.\n" +
 					"An internal error occurred: flag \"topDir\" does not exist.\n" +
 					"An internal error occurred: flag \"trackFilter\" does not exist.\n",
-				Log: "level='error' error='flag \"albumFilter\" does not exist' msg='internal error'\n" +
-					"level='error' error='flag \"artistFilter\" does not exist' msg='internal error'\n" +
-					"level='error' error='flag \"extensions\" does not exist' msg='internal error'\n" +
-					"level='error' error='flag \"topDir\" does not exist' msg='internal error'\n" +
-					"level='error' error='flag \"trackFilter\" does not exist' msg='internal error'\n",
+				Log: "level='error'" +
+					" error='flag \"albumFilter\" does not exist'" +
+					" msg='internal error'\n" +
+					"level='error'" +
+					" error='flag \"artistFilter\" does not exist'" +
+					" msg='internal error'\n" +
+					"level='error'" +
+					" error='flag \"extensions\" does not exist'" +
+					" msg='internal error'\n" +
+					"level='error'" +
+					" error='flag \"topDir\" does not exist'" +
+					" msg='internal error'\n" +
+					"level='error'" +
+					" error='flag \"trackFilter\" does not exist'" +
+					" msg='internal error'\n",
 			},
 		},
 		"good data": {
@@ -344,8 +470,12 @@ func TestEvaluateSearchFlags(t *testing.T) {
 					"extensions":   {value: ".mp3", valueKind: cmd.StringType},
 				},
 			},
-			wantSettings: cmd.NewSearchSettings().WithAlbumFilter(regexp.MustCompile(`\d+`)).WithArtistFilter(regexp.MustCompile("Beatles")).WithTrackFilter(regexp.MustCompile("Sadie")).WithTopDirectory(".").WithFileExtensions([]string{".mp3"}),
-			wantOk:       true,
+			wantSettings: cmd.NewSearchSettings().WithAlbumFilter(
+				regexp.MustCompile(`\d+`)).WithArtistFilter(
+				regexp.MustCompile("Beatles")).WithTrackFilter(
+				regexp.MustCompile("Sadie")).WithTopDirectory(".").WithFileExtensions(
+				[]string{".mp3"}),
+			wantOk: true,
 		},
 	}
 	for name, tt := range tests {
@@ -353,7 +483,8 @@ func TestEvaluateSearchFlags(t *testing.T) {
 			o := output.NewRecorder()
 			gotSettings, gotOk := cmd.EvaluateSearchFlags(o, tt.producer)
 			if !reflect.DeepEqual(gotSettings, tt.wantSettings) {
-				t.Errorf("EvaluateSearchFlags() gotSettings = %v, want %v", gotSettings, tt.wantSettings)
+				t.Errorf("EvaluateSearchFlags() gotSettings = %v, want %v", gotSettings,
+					tt.wantSettings)
 			}
 			if gotOk != tt.wantOk {
 				t.Errorf("EvaluateSearchFlags() gotOk = %v, want %v", gotOk, tt.wantOk)
@@ -380,26 +511,32 @@ func TestEvaluateFileExtensions(t *testing.T) {
 			want1:  false,
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"extensions\" is not found.\n",
-				Log:   "level='error' error='flag not found' flag='extensions' msg='internal error'\n",
+				Log: "level='error'" +
+					" error='flag not found'" +
+					" flag='extensions'" +
+					" msg='internal error'\n",
 			},
 		},
 		"one extension": {
 			values: map[string]*cmd.FlagValue{
-				"extensions": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(".mp3"),
+				"extensions": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(
+					".mp3"),
 			},
 			want:  []string{".mp3"},
 			want1: true,
 		},
 		"two extensions": {
 			values: map[string]*cmd.FlagValue{
-				"extensions": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(".mp3,.mpthree"),
+				"extensions": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(
+					".mp3,.mpthree"),
 			},
 			want:  []string{".mp3", ".mpthree"},
 			want1: true,
 		},
 		"bad extensions": {
 			values: map[string]*cmd.FlagValue{
-				"extensions": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(".mp3,,foo,."),
+				"extensions": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(
+					".mp3,,foo,."),
 			},
 			want:  []string{".mp3"},
 			want1: false,
@@ -411,7 +548,10 @@ func TestEvaluateFileExtensions(t *testing.T) {
 					"Extensions must be at least two characters long and begin with '.'.\n" +
 					"What to do:\n" +
 					"Provide appropriate extensions.\n",
-				Log: "level='error' --extensions='.mp3,,foo,.' rejected='[ foo .]' msg='invalid file extensions'\n",
+				Log: "level='error'" +
+					" --extensions='.mp3,,foo,.'" +
+					" rejected='[ foo .]'" +
+					" msg='invalid file extensions'\n",
 			},
 		},
 	}
@@ -470,20 +610,24 @@ func TestSearchSettingsLoad(t *testing.T) {
 	album1Content1 := newTestFile("subfolder", []*testFile{newTestFile("foo", nil)})
 	album1Content2 := newTestFile("cover.jpg", nil)
 	album1Content3 := newTestFile("1 lovely music.mp3", nil)
-	album1 := newTestFile("album", []*testFile{album1Content1, album1Content2, album1Content3})
+	album1 := newTestFile("album", []*testFile{album1Content1, album1Content2,
+		album1Content3})
 	album2 := newTestFile("not an album", nil)
 	artist1 := newTestFile("artist", []*testFile{album1, album2})
 	artist2 := newTestFile("not an artist", nil)
 	topDir := newTestFile("music", []*testFile{artist1, artist2})
 	testFiles := map[string]*testFile{
-		topDir.name:                                                                topDir,
-		filepath.Join(topDir.name, artist1.name):                                   artist1,
-		filepath.Join(topDir.name, artist2.name):                                   artist2,
-		filepath.Join(topDir.name, artist1.name, album1.name):                      album1,
-		filepath.Join(topDir.name, artist1.name, album2.name):                      album2,
-		filepath.Join(topDir.name, artist1.name, album1.name, album1Content1.name): album1Content1,
-		filepath.Join(topDir.name, artist1.name, album1.name, album1Content2.name): album1Content2,
-		filepath.Join(topDir.name, artist1.name, album1.name, album1Content3.name): album1Content3,
+		topDir.name:                                           topDir,
+		filepath.Join(topDir.name, artist1.name):              artist1,
+		filepath.Join(topDir.name, artist2.name):              artist2,
+		filepath.Join(topDir.name, artist1.name, album1.name): album1,
+		filepath.Join(topDir.name, artist1.name, album2.name): album2,
+		filepath.Join(topDir.name, artist1.name, album1.name,
+			album1Content1.name): album1Content1,
+		filepath.Join(topDir.name, artist1.name, album1.name,
+			album1Content2.name): album1Content2,
+		filepath.Join(topDir.name, artist1.name, album1.name,
+			album1Content3.name): album1Content3,
 	}
 	testArtist := files.NewArtistFromFile(artist1, topDir.name)
 	testAlbum := files.NewAlbumFromFile(album1, testArtist)
@@ -515,12 +659,16 @@ func TestSearchSettingsLoad(t *testing.T) {
 					"Why?\n" +
 					"There were no directories found in \"td\" (the --topDir value).\n" +
 					"What to do:\n" +
-					"Set --topDir to the path of a directory that contains artist directories.\n",
-				Log: "level='error' --topDir='td' msg='cannot find any artist directories'\n",
+					"Set --topDir to the path of a directory that contains artist" +
+					" directories.\n",
+				Log: "level='error'" +
+					" --topDir='td'" +
+					" msg='cannot find any artist directories'\n",
 			},
 		},
 		"good read": {
-			ss:    cmd.NewSearchSettings().WithTopDirectory("music").WithFileExtensions([]string{".mp3"}),
+			ss: cmd.NewSearchSettings().WithTopDirectory("music").WithFileExtensions(
+				[]string{".mp3"}),
 			want:  []*files.Artist{testArtist},
 			want1: true,
 		},
@@ -588,35 +736,51 @@ func TestSearchSettingsFilter(t *testing.T) {
 		output.WantedRecording
 	}{
 		"nothing to filter": {
-			ss:              cmd.NewSearchSettings().WithArtistFilter(regexp.MustCompile(".*")).WithAlbumFilter(regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
+			ss: cmd.NewSearchSettings().WithArtistFilter(
+				regexp.MustCompile(".*")).WithAlbumFilter(
+				regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
 			originalArtists: []*files.Artist{},
 			want:            []*files.Artist{},
 			want1:           false,
 			WantedRecording: output.WantedRecording{
 				Error: "No music files remain after filtering.\n" +
 					"Why?\n" +
-					"After applying --artistFilter=\".*\", --albumFilter=\".*\", and --trackFilter=\".*\", no files remained.\n" +
+					"After applying --artistFilter=\".*\", --albumFilter=\".*\", and" +
+					" --trackFilter=\".*\", no files remained.\n" +
 					"What to do:\n" +
 					"Use less restrictive filter settings.\n",
-				Log: "level='error' --albumFilter='.*' --artistFilter='.*' --trackFilter='.*' msg='no files remain after filtering'\n",
+				Log: "level='error'" +
+					" --albumFilter='.*'" +
+					" --artistFilter='.*'" +
+					" --trackFilter='.*'" +
+					" msg='no files remain after filtering'\n",
 			},
 		},
 		"filter out everything": {
-			ss:              cmd.NewSearchSettings().WithArtistFilter(regexp.MustCompile("^$")).WithAlbumFilter(regexp.MustCompile("^$")).WithTrackFilter(regexp.MustCompile("^$")),
+			ss: cmd.NewSearchSettings().WithArtistFilter(
+				regexp.MustCompile("^$")).WithAlbumFilter(
+				regexp.MustCompile("^$")).WithTrackFilter(regexp.MustCompile("^$")),
 			originalArtists: []*files.Artist{artist1, artist2, artist3},
 			want:            []*files.Artist{},
 			want1:           false,
 			WantedRecording: output.WantedRecording{
 				Error: "No music files remain after filtering.\n" +
 					"Why?\n" +
-					"After applying --artistFilter=\"^$\", --albumFilter=\"^$\", and --trackFilter=\"^$\", no files remained.\n" +
+					"After applying --artistFilter=\"^$\", --albumFilter=\"^$\", and" +
+					" --trackFilter=\"^$\", no files remained.\n" +
 					"What to do:\n" +
 					"Use less restrictive filter settings.\n",
-				Log: "level='error' --albumFilter='^$' --artistFilter='^$' --trackFilter='^$' msg='no files remain after filtering'\n",
+				Log: "level='error'" +
+					" --albumFilter='^$'" +
+					" --artistFilter='^$'" +
+					" --trackFilter='^$'" +
+					" msg='no files remain after filtering'\n",
 			},
 		},
 		"filter out selectively": {
-			ss:              cmd.NewSearchSettings().WithArtistFilter(regexp.MustCompile("^A")).WithAlbumFilter(regexp.MustCompile("^A")).WithTrackFilter(regexp.MustCompile("^A")),
+			ss: cmd.NewSearchSettings().WithArtistFilter(
+				regexp.MustCompile("^A")).WithAlbumFilter(
+				regexp.MustCompile("^A")).WithTrackFilter(regexp.MustCompile("^A")),
 			originalArtists: []*files.Artist{artist1, artist2, artist3},
 			want:            []*files.Artist{filteredArtist1},
 			want1:           true,

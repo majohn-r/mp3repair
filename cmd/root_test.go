@@ -91,8 +91,17 @@ func TestRunMain(t *testing.T) {
 			dependencies:   []string{"foo v1.1.1", "bar v1.2.2"},
 			wantedExitCode: 0,
 			WantedRecording: output.WantedRecording{
-				Log: "level='info' args='[arg1 arg2]' dependencies='[foo v1.1.1 bar v1.2.2]' goVersion='1.22.x' timeStamp='2021-11-28T12:01:02Z05:00' version='0.1.2' msg='execution starts'\n" +
-					"level='info' duration='0s' exitCode='0' msg='execution ends'\n",
+				Log: "level='info'" +
+					" args='[arg1 arg2]'" +
+					" dependencies='[foo v1.1.1 bar v1.2.2]'" +
+					" goVersion='1.22.x'" +
+					" timeStamp='2021-11-28T12:01:02Z05:00'" +
+					" version='0.1.2'" +
+					" msg='execution starts'\n" +
+					"level='info'" +
+					" duration='0s'" +
+					" exitCode='0'" +
+					" msg='execution ends'\n",
 			},
 		},
 		"sad": {
@@ -104,9 +113,19 @@ func TestRunMain(t *testing.T) {
 			dependencies:   []string{"foo v1.1.2", "bar v1.2.3"},
 			wantedExitCode: 1,
 			WantedRecording: output.WantedRecording{
-				Error: "\"mp3\" version 0.2.3, created at 2021-11-29T13:02:03Z05:00, failed.\n",
-				Log: "level='info' args='[arg1a arg2a]' dependencies='[foo v1.1.2 bar v1.2.3]' goVersion='1.22.x' timeStamp='2021-11-29T13:02:03Z05:00' version='0.2.3' msg='execution starts'\n" +
-					"level='info' duration='0s' exitCode='1' msg='execution ends'\n",
+				Error: "" +
+					"\"mp3\" version 0.2.3, created at 2021-11-29T13:02:03Z05:00, failed.\n",
+				Log: "level='info'" +
+					" args='[arg1a arg2a]'" +
+					" dependencies='[foo v1.1.2 bar v1.2.3]'" +
+					" goVersion='1.22.x'" +
+					" timeStamp='2021-11-29T13:02:03Z05:00'" +
+					" version='0.2.3'" +
+					" msg='execution starts'\n" +
+					"level='info'" +
+					" duration='0s'" +
+					" exitCode='1'" +
+					" msg='execution ends'\n",
 			},
 		},
 	}
@@ -177,8 +196,12 @@ func TestCookCommandLineArguments(t *testing.T) {
 			},
 			want: []string{"foo", "bar"},
 			WantedRecording: output.WantedRecording{
-				Error: "An error was found in processng argument \"%arg%\": dereference service dead.\n",
-				Log:   "level='error' argument='%arg%' error='dereference service dead' msg='Invalid argument value'\n",
+				Error: "An error was found in processng argument \"%arg%\": dereference" +
+					" service dead.\n",
+				Log: "level='error'" +
+					" argument='%arg%'" +
+					" error='dereference service dead'" +
+					" msg='Invalid argument value'\n",
 			},
 		},
 	}
@@ -186,7 +209,8 @@ func TestCookCommandLineArguments(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.DereferenceEnvVar = tt.dereferenceEnvVar
-			if got := cmd.CookCommandLineArguments(o, tt.inputArgs); !reflect.DeepEqual(got, tt.want) {
+			if got := cmd.CookCommandLineArguments(o, tt.inputArgs); !reflect.DeepEqual(
+				got, tt.want) {
 				t.Errorf("CookCommandLineArguments() = %v, want %v", got, tt.want)
 			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -414,7 +438,8 @@ func Test_InitGlobals(t *testing.T) {
 				t.Errorf("InitGlobals: _c got %v want %v", got, tt.wantConfig)
 			}
 			if got := ExitFunctionCalled; got != tt.wantExitFuncCalled {
-				t.Errorf("InitGlobals: exit called got %t want %t", got, tt.wantExitFuncCalled)
+				t.Errorf("InitGlobals: exit called got %t want %t", got,
+					tt.wantExitFuncCalled)
 			}
 			if got := exitCodeRecorded; got != tt.wantExitValue {
 				t.Errorf("InitGlobals: exit code got %d want %d", got, tt.wantExitValue)
@@ -426,7 +451,8 @@ func Test_InitGlobals(t *testing.T) {
 				t.Errorf("InitGlobals: version got %q want %q", got, tt.wantVersion)
 			}
 			if got := flagIndicatorRecorded; got != tt.wantFlagIndicator {
-				t.Errorf("InitGlobals: flag indicator got %q want %q", got, tt.wantFlagIndicator)
+				t.Errorf("InitGlobals: flag indicator got %q want %q", got,
+					tt.wantFlagIndicator)
 			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
@@ -461,13 +487,16 @@ func TestRootUsage(t *testing.T) {
 					"\n" +
 					"mp3 repair\n" +
 					"\n" +
-					"The repair command creates backup files for each track it rewrites. After\n" +
+					"The repair command creates backup files for each track it rewrites." +
+					" After\n" +
 					"spot-checking files that have been repaired, clean up those backups:\n" +
 					"\n" +
 					"mp3 postRepair\n" +
 					"\n" +
-					"After repairing the mp3 files, the Windows media player system may be out of\n" +
-					"sync with the changes. While the system will eventually catch up, accelerate\n" +
+					"After repairing the mp3 files, the Windows media player system may be" +
+					" out of\n" +
+					"sync with the changes. While the system will eventually catch up," +
+					" accelerate\n" +
 					"the process:\n" +
 					"\n" +
 					"mp3 resetDatabase\n",

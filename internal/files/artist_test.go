@@ -9,8 +9,10 @@ import (
 )
 
 func TestArtist_Copy(t *testing.T) {
-	complexArtist := files.NewArtist("artist's name", "Music/artist's name").WithCanonicalName("Actually, Fred")
-	complexArtist2 := files.NewArtist("artist's name", "Music/artist's name").WithCanonicalName("Actually, Fred")
+	complexArtist := files.NewArtist(
+		"artist's name", "Music/artist's name").WithCanonicalName("Actually, Fred")
+	complexArtist2 := files.NewArtist(
+		"artist's name", "Music/artist's name").WithCanonicalName("Actually, Fred")
 	tests := map[string]struct {
 		a    *files.Artist
 		want *files.Artist
@@ -52,7 +54,8 @@ func TestNewArtistFromFile(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := files.NewArtistFromFile(tt.args.f, tt.args.dir); !reflect.DeepEqual(got, tt.want) {
+			if got := files.NewArtistFromFile(tt.args.f,
+				tt.args.dir); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewArtistFromFile() = %v, want %v", got, tt.want)
 			}
 		})

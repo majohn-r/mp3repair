@@ -70,12 +70,30 @@ changes, unless the ` + resetDBForceFlag + ` flag is set.`,
 	}
 	ResetDatabaseFlags = NewSectionFlags().WithSectionName(resetDBCommandName).WithFlags(
 		map[string]*FlagDetails{
-			resetDBTimeout:             NewFlagDetails().WithAbbreviatedName(resetDBTimeoutAbbr).WithUsage(fmt.Sprintf("timeout in seconds (minimum %d, maximum %d) for stopping the media player service", minTimeout, maxTimeout)).WithExpectedType(IntType).WithDefaultValue(cmd_toolkit.NewIntBounds(minTimeout, defaultTimeout, maxTimeout)),
-			resetDBService:             NewFlagDetails().WithUsage("name of the media player service").WithExpectedType(StringType).WithDefaultValue("WMPNetworkSVC"),
-			resetDBMetadataDir:         NewFlagDetails().WithUsage("directory where the media player service metadata files are stored").WithExpectedType(StringType).WithDefaultValue(filepath.Join("%USERPROFILE%", "AppData", "Local", "Microsoft", "Media Player")),
-			resetDBExtension:           NewFlagDetails().WithUsage("extension for metadata files").WithExpectedType(StringType).WithDefaultValue(".wmdb"),
-			resetDBForce:               NewFlagDetails().WithAbbreviatedName(resetDBForceAbbr).WithUsage("if set, force a database reset").WithExpectedType(BoolType).WithDefaultValue(false),
-			resetDBIgnoreServiceErrors: NewFlagDetails().WithAbbreviatedName(resetDBIgnoreServiceErrorsAbbr).WithUsage("if set, ignore service errors and delete the media player service metadata files").WithExpectedType(BoolType).WithDefaultValue(false),
+			resetDBTimeout: NewFlagDetails().WithAbbreviatedName(
+				resetDBTimeoutAbbr).WithUsage(fmt.Sprintf(
+				"timeout in seconds (minimum %d, maximum %d) for stopping the media player"+
+					" service", minTimeout, maxTimeout)).WithExpectedType(
+				IntType).WithDefaultValue(
+				cmd_toolkit.NewIntBounds(minTimeout, defaultTimeout, maxTimeout)),
+			resetDBService: NewFlagDetails().WithUsage(
+				"name of the media player service").WithExpectedType(
+				StringType).WithDefaultValue("WMPNetworkSVC"),
+			resetDBMetadataDir: NewFlagDetails().WithUsage(
+				"directory where the media player service metadata files are stored").WithExpectedType(
+				StringType).WithDefaultValue(
+				filepath.Join("%USERPROFILE%", "AppData", "Local", "Microsoft", "Media Player")),
+			resetDBExtension: NewFlagDetails().WithUsage(
+				"extension for metadata files").WithExpectedType(
+				StringType).WithDefaultValue(".wmdb"),
+			resetDBForce: NewFlagDetails().WithAbbreviatedName(
+				resetDBForceAbbr).WithUsage(
+				"if set, force a database reset").WithExpectedType(
+				BoolType).WithDefaultValue(false),
+			resetDBIgnoreServiceErrors: NewFlagDetails().WithAbbreviatedName(
+				resetDBIgnoreServiceErrorsAbbr).WithUsage(
+				"if set, ignore service errors and delete the media player service" +
+					" metadata files").WithExpectedType(BoolType).WithDefaultValue(false),
 		},
 	)
 	stateToStatus = map[svc.State]string{
@@ -165,9 +183,11 @@ func (rdbs *ResetDBSettings) ResetService(o output.Bus) (status int) {
 		status = UserError
 		o.WriteCanonicalError("The %q command has no work to perform.", resetDBCommandName)
 		o.WriteCanonicalError("Why?")
-		o.WriteCanonicalError("The %q program has not made any changes to any mp3 files\nsince the last successful database reset.", appName)
+		o.WriteCanonicalError("The %q program has not made any changes to any mp3 files\n"+
+			"since the last successful database reset.", appName)
 		o.WriteError("What to do:\n")
-		o.WriteCanonicalError("If you believe the Windows database needs to be reset, run this command\nagain and use the %q flag.", resetDBForceFlag)
+		o.WriteCanonicalError("If you believe the Windows database needs to be reset, run"+
+			" this command\nagain and use the %q flag.", resetDBForceFlag)
 	}
 	return
 }
@@ -211,9 +231,11 @@ func (rdbs *ResetDBSettings) StopService(o output.Bus) (ok bool, status int) {
 	var err error
 	if manager, err = Connect(); err != nil {
 		status = SystemError
-		o.WriteCanonicalError("An attempt to connect with the service manager failed; error is %v", err)
+		o.WriteCanonicalError("An attempt to connect with the service manager failed; error"+
+			" is %v", err)
 		o.WriteCanonicalError("Why?\nThis often fails due to lack of permissions")
-		o.WriteCanonicalError("What to do:\nIf you can, try running this command as an administrator.")
+		o.WriteCanonicalError("What to do:\n" +
+			"If you can, try running this command as an administrator.")
 		o.Log(output.Error, "service manager connect failed", map[string]any{"error": err})
 	} else {
 		ok, status = rdbs.HandleService(o, manager)
@@ -228,11 +250,13 @@ func listServices(manager ServiceManager) ([]string, error) {
 	return manager.ListServices()
 }
 
-func (rdbs *ResetDBSettings) HandleService(o output.Bus, manager ServiceManager) (ok bool, status int) {
+func (rdbs *ResetDBSettings) HandleService(o output.Bus, manager ServiceManager) (ok bool,
+	status int) {
 	status = Success
 	if service, serviceError := openService(manager, rdbs.service); serviceError != nil {
 		status = SystemError
-		o.WriteCanonicalError("The service %q cannot be opened: %v", rdbs.service, serviceError)
+		o.WriteCanonicalError("The service %q cannot be opened: %v", rdbs.service,
+			serviceError)
 		o.Log(output.Error, "service issue", map[string]any{
 			"service": rdbs.service,
 			"trigger": "OpenService",
@@ -314,7 +338,8 @@ func closeService(s ServiceRep) {
 	}
 }
 
-func (rdbs *ResetDBSettings) StopFoundService(o output.Bus, manager ServiceManager, service ServiceRep) (ok bool, funcStatus int) {
+func (rdbs *ResetDBSettings) StopFoundService(o output.Bus, manager ServiceManager,
+	service ServiceRep) (ok bool, funcStatus int) {
 	funcStatus = Success
 	defer func() {
 		_ = manager.Disconnect()
@@ -322,7 +347,8 @@ func (rdbs *ResetDBSettings) StopFoundService(o output.Bus, manager ServiceManag
 	}()
 	if status, err := runQuery(service); err != nil {
 		funcStatus = SystemError
-		o.WriteCanonicalError("An error occurred while trying to stop service %q: %v", rdbs.service, err)
+		o.WriteCanonicalError("An error occurred while trying to stop service %q: %v",
+			rdbs.service, err)
 		rdbs.ReportServiceQueryError(o, err)
 	} else {
 		if status.State == svc.Stopped {
@@ -360,12 +386,15 @@ func (rdbs *ResetDBSettings) ReportServiceStopped(o output.Bus) {
 	o.Log(output.Info, "service stopped", map[string]any{"service": rdbs.service})
 }
 
-func (rdbs *ResetDBSettings) WaitForStop(o output.Bus, s ServiceRep, expiration time.Time, checkInterval time.Duration) (ok bool, funcStatus int) {
+func (rdbs *ResetDBSettings) WaitForStop(o output.Bus, s ServiceRep, expiration time.Time,
+	checkInterval time.Duration) (ok bool, funcStatus int) {
 	funcStatus = Success
 	for {
 		if expiration.Before(time.Now()) {
 			funcStatus = SystemError
-			o.WriteCanonicalError("The service %q could not be stopped within the %d second timeout", rdbs.service, rdbs.timeout)
+			o.WriteCanonicalError(
+				"The service %q could not be stopped within the %d second timeout",
+				rdbs.service, rdbs.timeout)
 			o.Log(output.Error, "service issue", map[string]any{
 				"service": rdbs.service,
 				"trigger": "Stop",
@@ -377,7 +406,9 @@ func (rdbs *ResetDBSettings) WaitForStop(o output.Bus, s ServiceRep, expiration 
 		time.Sleep(checkInterval)
 		if status, err := runQuery(s); err != nil {
 			funcStatus = SystemError
-			o.WriteCanonicalError("An error occurred while attempting to stop the service %q: %v", rdbs.service, err)
+			o.WriteCanonicalError(
+				"An error occurred while attempting to stop the service %q: %v",
+				rdbs.service, err)
 			rdbs.ReportServiceQueryError(o, err)
 			break
 		} else if status.State == svc.Stopped {
@@ -395,8 +426,11 @@ func (rdbs *ResetDBSettings) DeleteMetadataFiles(o output.Bus, stopped bool) (st
 		if !rdbs.ignoreServiceErrors {
 			status = UserError
 			o.WriteCanonicalError("Metadata files will not be deleted")
-			o.WriteCanonicalError("Why?\nThe music service %q could not be stopped, and %q is false", rdbs.service, resetDBIgnoreServiceErrorsFlag)
-			o.WriteCanonicalError("What to do:\nRerun this command with %q set to true", resetDBIgnoreServiceErrorsFlag)
+			o.WriteCanonicalError(
+				"Why?\nThe music service %q could not be stopped, and %q is false",
+				rdbs.service, resetDBIgnoreServiceErrorsFlag)
+			o.WriteCanonicalError("What to do:\nRerun this command with %q set to true",
+				resetDBIgnoreServiceErrorsFlag)
 			return
 		}
 	}
@@ -441,7 +475,9 @@ func (rdbs *ResetDBSettings) DeleteFiles(o output.Bus, paths []string) (status i
 				count++
 			}
 		}
-		o.WriteCanonicalConsole("%d out of %d metadata files have been deleted from %q", count, len(paths), rdbs.metadataDir)
+		o.WriteCanonicalConsole(
+			"%d out of %d metadata files have been deleted from %q", count, len(paths),
+			rdbs.metadataDir)
 	}
 	return
 }

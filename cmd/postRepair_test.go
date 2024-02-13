@@ -31,7 +31,10 @@ func TestRemoveBackupDirectory(t *testing.T) {
 			dir:       "my directory",
 			want:      false,
 			WantedRecording: output.WantedRecording{
-				Log: "level='error' directory='my directory' error='dir locked' msg='cannot delete directory'\n",
+				Log: "level='error'" +
+					" directory='my directory'" +
+					" error='dir locked'" +
+					" msg='cannot delete directory'\n",
 			},
 		},
 		"success": {
@@ -93,7 +96,8 @@ func TestPostRepairWork(t *testing.T) {
 				Error: "" +
 					"No music files remain after filtering.\n" +
 					"Why?\n" +
-					"After applying --artistFilter=<nil>, --albumFilter=<nil>, and --trackFilter=<nil>, no files remained.\n" +
+					"After applying --artistFilter=<nil>, --albumFilter=<nil>, and" +
+					" --trackFilter=<nil>, no files remained.\n" +
 					"What to do:\n" +
 					"Use less restrictive filter settings.\n",
 				Log: "" +
@@ -107,7 +111,9 @@ func TestPostRepairWork(t *testing.T) {
 		"artists with no work to do": {
 			dirExists: func(dir string) bool { return false },
 			args: args{
-				ss:         cmd.NewSearchSettings().WithArtistFilter(regexp.MustCompile(".*")).WithAlbumFilter(regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
+				ss: cmd.NewSearchSettings().WithArtistFilter(
+					regexp.MustCompile(".*")).WithAlbumFilter(
+					regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
 				allArtists: generateArtists(2, 3, 4),
 				loaded:     true,
 			},
@@ -120,7 +126,9 @@ func TestPostRepairWork(t *testing.T) {
 			dirExists: func(dir string) bool { return true },
 			removeAll: func(dir string) error { return nil },
 			args: args{
-				ss:         cmd.NewSearchSettings().WithArtistFilter(regexp.MustCompile(".*")).WithAlbumFilter(regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
+				ss: cmd.NewSearchSettings().WithArtistFilter(
+					regexp.MustCompile(".*")).WithAlbumFilter(
+					regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
 				allArtists: generateArtists(2, 3, 4),
 				loaded:     true,
 			},
@@ -153,7 +161,9 @@ func TestPostRepairWork(t *testing.T) {
 			dirExists: func(dir string) bool { return true },
 			removeAll: func(dir string) error { return fmt.Errorf("nope") },
 			args: args{
-				ss:         cmd.NewSearchSettings().WithArtistFilter(regexp.MustCompile(".*")).WithAlbumFilter(regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
+				ss: cmd.NewSearchSettings().WithArtistFilter(
+					regexp.MustCompile(".*")).WithAlbumFilter(
+					regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
 				allArtists: generateArtists(2, 3, 4),
 				loaded:     true,
 			},
@@ -219,7 +229,8 @@ func TestPostRepairRun(t *testing.T) {
 		exitCalled = true
 	}
 	command := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), command.Flags(), safeSearchFlags)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), command.Flags(),
+		safeSearchFlags)
 	type args struct {
 		cmd *cobra.Command
 		in1 []string
@@ -240,7 +251,8 @@ func TestPostRepairRun(t *testing.T) {
 					"Why?\n" +
 					"There were no directories found in \".\" (the --topDir value).\n" +
 					"What to do:\n" +
-					"Set --topDir to the path of a directory that contains artist directories.\n",
+					"Set --topDir to the path of a directory that contains artist" +
+					" directories.\n",
 				Log: "" +
 					"level='info'" +
 					" --albumFilter='.*'" +
@@ -280,24 +292,32 @@ func TestPostRepairRun(t *testing.T) {
 
 func TestPostRepairHelp(t *testing.T) {
 	commandUnderTest := cloneCommand(cmd.PostRepairCmd)
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), commandUnderTest.Flags(), safeSearchFlags)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(),
+		commandUnderTest.Flags(), safeSearchFlags)
 	tests := map[string]struct {
 		output.WantedRecording
 	}{
 		"good": {
 			WantedRecording: output.WantedRecording{
 				Console: "" +
-					"\"postRepair\" deletes the backup directories (and their contents) created by the \"repair\" command\n" +
+					"\"postRepair\" deletes the backup directories (and their contents)" +
+					" created by the \"repair\" command\n" +
 					"\n" +
 					"Usage:\n" +
-					"  postRepair [--albumFilter regex] [--artistFilter regex] [--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +
+					"  postRepair [--albumFilter regex] [--artistFilter regex]" +
+					" [--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +
 					"\n" +
 					"Flags:\n" +
-					"      --albumFilter string    regular expression specifying which albums to select (default \".*\")\n" +
-					"      --artistFilter string   regular expression specifying which artists to select (default \".*\")\n" +
-					"      --extensions string     comma-delimited list of file extensions used by mp3 files (default \".mp3\")\n" +
-					"      --topDir string         top directory specifying where to find mp3 files (default \".\")\n" +
-					"      --trackFilter string    regular expression specifying which tracks to select (default \".*\")\n",
+					"      --albumFilter string    regular expression specifying which" +
+					" albums to select (default \".*\")\n" +
+					"      --artistFilter string   regular expression specifying which" +
+					" artists to select (default \".*\")\n" +
+					"      --extensions string     comma-delimited list of file extensions" +
+					" used by mp3 files (default \".mp3\")\n" +
+					"      --topDir string         top directory specifying where to find" +
+					" mp3 files (default \".\")\n" +
+					"      --trackFilter string    regular expression specifying which" +
+					" tracks to select (default \".*\")\n",
 			},
 		},
 	}

@@ -53,7 +53,8 @@ func TestAboutRun(t *testing.T) {
 			exitCode = -1
 			o := output.NewRecorder()
 			cmd.BusGetter = func() output.Bus { return o }
-			cmd.LogCommandStart = func(bus output.Bus, cmdName string, args map[string]any) {
+			cmd.LogCommandStart = func(bus output.Bus, cmdName string,
+				args map[string]any) {
 				bus.Log(output.Info, "executing command", map[string]any{"command": "about"})
 			}
 			cmd.GenerateAboutContent = func(bus output.Bus) {

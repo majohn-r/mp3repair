@@ -104,7 +104,8 @@ type ConfigSource interface {
 	StringDefault(string, string) (string, error)
 }
 
-func AddFlags(o output.Bus, c *cmd_toolkit.Configuration, flags flagConsumer, defs ...*SectionFlags) {
+func AddFlags(o output.Bus, c *cmd_toolkit.Configuration, flags flagConsumer,
+	defs ...*SectionFlags) {
 	for _, def := range defs {
 		config := c.SubConfiguration(def.sectionName)
 		// sort names for deterministic test output
@@ -118,7 +119,8 @@ func AddFlags(o output.Bus, c *cmd_toolkit.Configuration, flags flagConsumer, de
 			if details != nil {
 				details.AddFlag(o, config, flags, def.sectionName, name)
 			} else {
-				o.WriteCanonicalError("an internal error occurred: there are no details for flag %q", name)
+				o.WriteCanonicalError(
+					"an internal error occurred: there are no details for flag %q", name)
 				o.Log(output.Error, "internal error", map[string]any{
 					"section": def.sectionName,
 					"flag":    name,
@@ -130,7 +132,9 @@ func AddFlags(o output.Bus, c *cmd_toolkit.Configuration, flags flagConsumer, de
 }
 
 func reportDefaultTypeError(o output.Bus, flag, expected string, value any) {
-	o.WriteCanonicalError("an internal error occurred: the type of flag %q's value, '%v', is '%T', but '%s' was expected", flag, value, value, expected)
+	o.WriteCanonicalError(
+		"an internal error occurred: the type of flag %q's value, '%v', is '%T',"+
+			" but '%s' was expected", flag, value, value, expected)
 	o.Log(output.Error, "internal error", map[string]any{
 		"flag":     flag,
 		"value":    value,
@@ -140,7 +144,8 @@ func reportDefaultTypeError(o output.Bus, flag, expected string, value any) {
 	})
 }
 
-func (f *FlagDetails) AddFlag(o output.Bus, c ConfigSource, flags flagConsumer, sectionName, flagName string) {
+func (f *FlagDetails) AddFlag(o output.Bus, c ConfigSource, flags flagConsumer,
+	sectionName, flagName string) {
 	switch f.expectedType {
 	case StringType:
 		if statedDefault, _ok := f.defaultValue.(string); !_ok {
@@ -189,7 +194,8 @@ func (f *FlagDetails) AddFlag(o output.Bus, c ConfigSource, flags flagConsumer, 
 		}
 	default:
 		o.WriteCanonicalError(
-			"An internal error occurred: unspecified flag type; section %q, flag %q", sectionName, flagName)
+			"An internal error occurred: unspecified flag type; section %q, flag %q",
+			sectionName, flagName)
 		o.Log(output.Error, "internal error", map[string]any{
 			"section":        sectionName,
 			"flag":           flagName,
@@ -273,7 +279,8 @@ func ReadFlags(producer FlagProducer, defs *SectionFlags) (map[string]*FlagValue
 	return m, e
 }
 
-func GetBool(o output.Bus, results map[string]*FlagValue, flagName string) (val, userSet bool, e error) {
+func GetBool(o output.Bus, results map[string]*FlagValue,
+	flagName string) (val, userSet bool, e error) {
 	if fv, err := extractFlagValue(o, results, flagName); err != nil {
 		e = err
 	} else if fv == nil {
@@ -284,7 +291,8 @@ func GetBool(o output.Bus, results map[string]*FlagValue, flagName string) (val,
 			"error": e})
 	} else if v, ok := fv.value.(bool); !ok {
 		e = fmt.Errorf("flag value not boolean")
-		o.WriteCanonicalError("an internal error occurred: flag %q is not boolean (%v)", flagName, fv.value)
+		o.WriteCanonicalError("an internal error occurred: flag %q is not boolean (%v)",
+			flagName, fv.value)
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
 			"value": fv.value,
@@ -296,7 +304,8 @@ func GetBool(o output.Bus, results map[string]*FlagValue, flagName string) (val,
 	return
 }
 
-func GetInt(o output.Bus, results map[string]*FlagValue, flagName string) (val int, userSet bool, e error) {
+func GetInt(o output.Bus, results map[string]*FlagValue,
+	flagName string) (val int, userSet bool, e error) {
 	if fv, err := extractFlagValue(o, results, flagName); err != nil {
 		e = err
 	} else if fv == nil {
@@ -307,7 +316,8 @@ func GetInt(o output.Bus, results map[string]*FlagValue, flagName string) (val i
 			"error": e})
 	} else if v, ok := fv.value.(int); !ok {
 		e = fmt.Errorf("flag value not int")
-		o.WriteCanonicalError("an internal error occurred: flag %q is not an integer (%v)", flagName, fv.value)
+		o.WriteCanonicalError("an internal error occurred: flag %q is not an integer (%v)",
+			flagName, fv.value)
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
 			"value": fv.value,
@@ -319,7 +329,8 @@ func GetInt(o output.Bus, results map[string]*FlagValue, flagName string) (val i
 	return
 }
 
-func GetString(o output.Bus, results map[string]*FlagValue, flagName string) (val string, userSet bool, e error) {
+func GetString(o output.Bus, results map[string]*FlagValue,
+	flagName string) (val string, userSet bool, e error) {
 	if fv, err := extractFlagValue(o, results, flagName); err != nil {
 		e = err
 	} else if fv == nil {
@@ -330,7 +341,8 @@ func GetString(o output.Bus, results map[string]*FlagValue, flagName string) (va
 			"error": e})
 	} else if v, ok := fv.value.(string); !ok {
 		e = fmt.Errorf("flag value not string")
-		o.WriteCanonicalError("an internal error occurred: flag %q is not a string (%v)", flagName, fv.value)
+		o.WriteCanonicalError("an internal error occurred: flag %q is not a string (%v)",
+			flagName, fv.value)
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
 			"value": fv.value,
@@ -342,11 +354,14 @@ func GetString(o output.Bus, results map[string]*FlagValue, flagName string) (va
 	return
 }
 
-func extractFlagValue(o output.Bus, results map[string]*FlagValue, flagName string) (fv *FlagValue, e error) {
+func extractFlagValue(o output.Bus, results map[string]*FlagValue,
+	flagName string) (fv *FlagValue, e error) {
 	if results == nil {
 		e = fmt.Errorf("nil results")
 		o.WriteCanonicalError("an internal error occurred: no flag values exist")
-		o.Log(output.Error, "internal error", map[string]any{"error": "no results to extract flag values from"})
+		o.Log(output.Error, "internal error", map[string]any{
+			"error": "no results to extract flag values from",
+		})
 	} else if value, ok := results[flagName]; !ok {
 		e = fmt.Errorf("flag not found")
 		o.WriteCanonicalError("an internal error occurred: flag %q is not found", flagName)

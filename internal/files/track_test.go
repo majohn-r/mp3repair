@@ -63,8 +63,13 @@ func Test_parseTrackName(t *testing.T) {
 			wantCommonName:  "track name.mp4",
 			wantTrackNumber: 59,
 			WantedRecording: output.WantedRecording{
-				Error: "The track \"59 track name.mp4\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
-				Log:   "level='error' albumName='some album' artistName='some artist' trackName='59 track name.mp4' msg='the track name cannot be parsed'\n",
+				Error: "The track \"59 track name.mp4\" on album \"some album\" by" +
+					" artist \"some artist\" cannot be parsed.\n",
+				Log: "level='error'" +
+					" albumName='some album'" +
+					" artistName='some artist'" +
+					" trackName='59 track name.mp4'" +
+					" msg='the track name cannot be parsed'\n",
 			},
 		},
 		"missing track number": {
@@ -76,8 +81,13 @@ func Test_parseTrackName(t *testing.T) {
 			},
 			wantCommonName: "name",
 			WantedRecording: output.WantedRecording{
-				Error: "The track \"track name.mp3\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
-				Log:   "level='error' albumName='some album' artistName='some artist' trackName='track name.mp3' msg='the track name cannot be parsed'\n",
+				Error: "The track \"track name.mp3\" on album \"some album\" by artist" +
+					" \"some artist\" cannot be parsed.\n",
+				Log: "level='error'" +
+					" albumName='some album'" +
+					" artistName='some artist'" +
+					" trackName='track name.mp3'" +
+					" msg='the track name cannot be parsed'\n",
 			},
 		},
 		"missing track number, simple name": {
@@ -88,21 +98,29 @@ func Test_parseTrackName(t *testing.T) {
 				ext: ".mp3",
 			},
 			WantedRecording: output.WantedRecording{
-				Error: "The track \"trackName.mp3\" on album \"some album\" by artist \"some artist\" cannot be parsed.\n",
-				Log:   "level='error' albumName='some album' artistName='some artist' trackName='trackName.mp3' msg='the track name cannot be parsed'\n",
+				Error: "The track \"trackName.mp3\" on album \"some album\" by artist" +
+					" \"some artist\" cannot be parsed.\n",
+				Log: "level='error'" +
+					" albumName='some album'" +
+					" artistName='some artist'" +
+					" trackName='trackName.mp3'" +
+					" msg='the track name cannot be parsed'\n",
 			},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			gotCommonName, gotTrackNumber, gotValid := files.ParseTrackName(o, tt.args.name, tt.args.album, tt.args.ext)
+			gotCommonName, gotTrackNumber, gotValid := files.ParseTrackName(o,
+				tt.args.name, tt.args.album, tt.args.ext)
 			if tt.wantValid {
 				if gotCommonName != tt.wantCommonName {
-					t.Errorf("%s gotCommonName = %q, want %q", fnName, gotCommonName, tt.wantCommonName)
+					t.Errorf("%s gotCommonName = %q, want %q", fnName, gotCommonName,
+						tt.wantCommonName)
 				}
 				if gotTrackNumber != tt.wantTrackNumber {
-					t.Errorf("%s gotTrackNumber = %d, want %d", fnName, gotTrackNumber, tt.wantTrackNumber)
+					t.Errorf("%s gotTrackNumber = %d, want %d", fnName, gotTrackNumber,
+						tt.wantTrackNumber)
 				}
 			}
 			if gotValid != tt.wantValid {
@@ -125,12 +143,18 @@ func Test_sortTracks(t *testing.T) {
 		"degenerate case": {},
 		"mixed tracks": {
 			tracks: []*files.Track{
-				files.NewEmptyTrack().WithNumber(10).WithAlbum(files.NewAlbum("album2", files.NewArtist("artist3", ""), "")),
-				files.NewEmptyTrack().WithNumber(1).WithAlbum(files.NewAlbum("album2", files.NewArtist("artist3", ""), "")),
-				files.NewEmptyTrack().WithNumber(2).WithAlbum(files.NewAlbum("album1", files.NewArtist("artist3", ""), "")),
-				files.NewEmptyTrack().WithNumber(3).WithAlbum(files.NewAlbum("album3", files.NewArtist("artist2", ""), "")),
-				files.NewEmptyTrack().WithNumber(3).WithAlbum(files.NewAlbum("album3", files.NewArtist("artist4", ""), "")),
-				files.NewEmptyTrack().WithNumber(3).WithAlbum(files.NewAlbum("album5", files.NewArtist("artist2", ""), "")),
+				files.NewEmptyTrack().WithNumber(10).WithAlbum(
+					files.NewAlbum("album2", files.NewArtist("artist3", ""), "")),
+				files.NewEmptyTrack().WithNumber(1).WithAlbum(
+					files.NewAlbum("album2", files.NewArtist("artist3", ""), "")),
+				files.NewEmptyTrack().WithNumber(2).WithAlbum(
+					files.NewAlbum("album1", files.NewArtist("artist3", ""), "")),
+				files.NewEmptyTrack().WithNumber(3).WithAlbum(
+					files.NewAlbum("album3", files.NewArtist("artist2", ""), "")),
+				files.NewEmptyTrack().WithNumber(3).WithAlbum(
+					files.NewAlbum("album3", files.NewArtist("artist4", ""), "")),
+				files.NewEmptyTrack().WithNumber(3).WithAlbum(
+					files.NewAlbum("album5", files.NewArtist("artist2", ""), "")),
 			},
 		},
 	}
@@ -148,13 +172,18 @@ func Test_sortTracks(t *testing.T) {
 				artist1 := album1.RecordingArtistName()
 				artist2 := album2.RecordingArtistName()
 				if artist1 > artist2 {
-					t.Errorf("%s track[%d] artist name %q comes after track[%d] artist name %q", fnName, i-1, artist1, i, artist2)
+					t.Errorf("%s track[%d] artist name %q comes after"+
+						" track[%d] artist name %q", fnName, i-1, artist1, i, artist2)
 				} else if artist1 == artist2 {
 					if album1.Name() > album2.Name() {
-						t.Errorf("%s track[%d] album name %q comes after track[%d] album name %q", fnName, i-1, album1.Name(), i, album2.Name())
+						t.Errorf("%s track[%d] album name %q comes after"+
+							" track[%d] album name %q", fnName, i-1, album1.Name(), i,
+							album2.Name())
 					} else if album1.Name() == album2.Name() {
 						if track1.Number() > track2.Number() {
-							t.Errorf("%s track[%d] track %d comes after track[%d] track %d", fnName, i-1, track1.Number(), i, track2.Number())
+							t.Errorf("%s track[%d] track %d comes after"+
+								" track[%d] track %d", fnName, i-1, track1.Number(), i,
+								track2.Number())
 						}
 					}
 				}
@@ -283,7 +312,8 @@ func TestTrack_AlbumName(t *testing.T) {
 	}{
 		"orphan track": {t: files.NewEmptyTrack(), want: ""},
 		"good track": {
-			t:    files.NewEmptyTrack().WithAlbum(files.NewEmptyAlbum().WithTitle("my album name")),
+			t: files.NewEmptyTrack().WithAlbum(files.NewEmptyAlbum().WithTitle(
+				"my album name")),
 			want: "my album name"},
 	}
 	for name, tt := range tests {
@@ -324,7 +354,8 @@ func TestTrack_Path(t *testing.T) {
 		want string
 	}{
 		"typical": {
-			t:    files.NewEmptyTrack().WithFullPath("Music/my artist/my album/03 track.mp3"),
+			t: files.NewEmptyTrack().WithFullPath(
+				"Music/my artist/my album/03 track.mp3"),
 			want: "Music/my artist/my album/03 track.mp3",
 		},
 	}
@@ -344,7 +375,8 @@ func TestTrack_Directory(t *testing.T) {
 		want string
 	}{
 		"typical": {
-			t:    files.NewEmptyTrack().WithFullPath("Music/my artist/my album/03 track.mp3"),
+			t: files.NewEmptyTrack().WithFullPath(
+				"Music/my artist/my album/03 track.mp3"),
 			want: "Music\\my artist\\my album",
 		},
 	}
@@ -364,7 +396,8 @@ func TestTrack_FileName(t *testing.T) {
 		want string
 	}{
 		"typical": {
-			t:    files.NewEmptyTrack().WithFullPath("Music/my artist/my album/03 track.mp3"),
+			t: files.NewEmptyTrack().WithFullPath(
+				"Music/my artist/my album/03 track.mp3"),
 			want: "03 track.mp3",
 		},
 	}
@@ -387,11 +420,27 @@ func Test_pickKey(t *testing.T) {
 		wantS  string
 		wantOk bool
 	}{
-		"unanimous choice":       {args: args{m: map[string]int{"pop": 2}}, wantS: "pop", wantOk: true},
-		"majority for even size": {args: args{m: map[string]int{"pop": 3, "": 1}}, wantS: "pop", wantOk: true},
-		"majority for odd size":  {args: args{m: map[string]int{"pop": 2, "": 1}}, wantS: "pop", wantOk: true},
-		"no majority even size":  {args: args{m: map[string]int{"pop": 1, "alt-rock": 1}}},
-		"no majority odd size":   {args: args{m: map[string]int{"pop": 2, "alt-rock": 2, "folk": 1}}},
+		"unanimous choice": {
+			args:   args{m: map[string]int{"pop": 2}},
+			wantS:  "pop",
+			wantOk: true,
+		},
+		"majority for even size": {
+			args:   args{m: map[string]int{"pop": 3, "": 1}},
+			wantS:  "pop",
+			wantOk: true,
+		},
+		"majority for odd size": {
+			args:   args{m: map[string]int{"pop": 2, "": 1}},
+			wantS:  "pop",
+			wantOk: true,
+		},
+		"no majority even size": {
+			args: args{m: map[string]int{"pop": 1, "alt-rock": 1}},
+		},
+		"no majority odd size": {
+			args: args{m: map[string]int{"pop": 2, "alt-rock": 2, "folk": 1}},
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -496,11 +545,15 @@ func TestTrack_ID3V1Diagnostics(t *testing.T) {
 	invalidFile := "02 invalid.mp3"
 	if err := createFileWithContent(testDir, invalidFile, []byte{
 		'd', 'A', 'G', // 'd' for defective!
-		'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
-		'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		'O', 'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T', 'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm',
+		'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f',
+		'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
+		'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		'O', 'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ',
+		'T', 'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm',
 		'2', '0', '1', '3',
-		' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+		' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+		' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
 		0,
 		29,
 		12,
@@ -510,11 +563,15 @@ func TestTrack_ID3V1Diagnostics(t *testing.T) {
 	goodFile := "02 good.mp3"
 	if err := createFileWithContent(testDir, goodFile, []byte{
 		'T', 'A', 'G',
-		'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
-		'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-		'O', 'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ', 'T', 'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm',
+		'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f',
+		'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
+		'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0, 0, 0,
+		0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+		'O', 'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A', 't', ' ',
+		'T', 'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l', 'u', 'm',
 		'2', '0', '1', '3',
-		's', 'i', 'l', 'l', 'y', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+		's', 'i', 'l', 'l', 'y', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
+		' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
 		0,
 		29,
 		12,
@@ -656,9 +713,9 @@ func TestTrack_loadMetadata(t *testing.T) {
 				"", albumName, albumName}).WithArtistNames([]string{
 				"", artistName, artistName}).WithTrackNames([]string{
 				"", trackName, trackName}).WithGenres([]string{
-				"", genre, genre}).WithYears([]string{"", year, year}).WithTrackNumbers([]int{
-				0, track, track}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
-				files.ID3V2),
+				"", genre, genre}).WithYears([]string{"", year, year}).WithTrackNumbers(
+				[]int{0, track, track}).WithMusicCDIdentifier(
+				[]byte{0}).WithPrimarySource(files.ID3V2),
 		},
 	}
 	for name, tt := range tests {
@@ -703,7 +760,9 @@ func TestReadMetadata(t *testing.T) {
 			for n := 0; n < 50; n++ {
 				trackName := fmt.Sprintf("track %d-%d-%d", k, m, n)
 				trackFileName := fmt.Sprintf("%02d %s.mp3", n+1, trackName)
-				track := files.NewEmptyTrack().WithFullPath(filepath.Join(albumPath, trackFileName)).WithName(trackName).WithAlbum(album).WithNumber(n + 1).WithMetadata(nil)
+				track := files.NewEmptyTrack().WithFullPath(
+					filepath.Join(albumPath, trackFileName)).WithName(
+					trackName).WithAlbum(album).WithNumber(n + 1).WithMetadata(nil)
 				metadata := map[string]any{
 					"artist": artistName,
 					"album":  albumName,
@@ -713,7 +772,8 @@ func TestReadMetadata(t *testing.T) {
 					"track":  n + 1,
 				}
 				content := createConsistentlyTaggedData([]byte{0, 1, 2, 3, 4, 5, 6, byte(k), byte(m), byte(n)}, metadata)
-				if err := createFileWithContent(albumPath, trackFileName, content); err != nil {
+				if err := createFileWithContent(albumPath, trackFileName,
+					content); err != nil {
 					t.Errorf("%s error creating %q: %v", fnName, trackName, err)
 				}
 				album.AddTrack(track)
@@ -729,7 +789,12 @@ func TestReadMetadata(t *testing.T) {
 	tests := map[string]struct {
 		args
 		output.WantedRecording
-	}{"thorough test": {args: args{artists: artists}, WantedRecording: output.WantedRecording{Error: "Reading track metadata.\n"}}}
+	}{
+		"thorough test": {
+			args:            args{artists: artists},
+			WantedRecording: output.WantedRecording{Error: "Reading track metadata.\n"},
+		},
+	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
@@ -745,7 +810,8 @@ func TestReadMetadata(t *testing.T) {
 						if track.NeedsMetadata() {
 							t.Errorf("%s track %q has no metadata", fnName, track.Path())
 						} else if track.HasMetadataError() {
-							t.Errorf("%s track %q is defective: %v", fnName, track.Path(), track.GetMetadata().ErrorCauses())
+							t.Errorf("%s track %q is defective: %v", fnName,
+								track.Path(), track.GetMetadata().ErrorCauses())
 						}
 					}
 				}
@@ -757,20 +823,25 @@ func TestReadMetadata(t *testing.T) {
 func TestTrack_ReportMetadataProblems(t *testing.T) {
 	const fnName = "Track.ReportMetadataProblems()"
 	problematicArtist := files.NewArtist("problematic:artist", "")
-	problematicAlbum := files.NewAlbum("problematic:album", problematicArtist, "").WithCanonicalGenre("hard rock").WithCanonicalYear("1999")
+	problematicAlbum := files.NewAlbum(
+		"problematic:album", problematicArtist, "").WithCanonicalGenre(
+		"hard rock").WithCanonicalYear("1999")
 	src := files.ID3V2
-	metadata := files.NewTrackMetadata().WithPrimarySource(src).WithMusicCDIdentifier([]byte{1, 3, 5})
+	metadata := files.NewTrackMetadata().WithPrimarySource(src).WithMusicCDIdentifier(
+		[]byte{1, 3, 5})
 	metadata.SetAlbumName(src, "unknown album")
 	metadata.SetArtistName(src, "unknown artist")
 	metadata.SetGenre(src, "unknown")
 	metadata.SetTrackName(src, "unknown title")
 	metadata.SetTrackNumber(src, 2)
 	metadata.SetYear(src, "2001")
-	problematicTrack := files.NewTrack(problematicAlbum, "03 bad track.mp3", "bad track", 3).WithMetadata(metadata)
+	problematicTrack := files.NewTrack(
+		problematicAlbum, "03 bad track.mp3", "bad track", 3).WithMetadata(metadata)
 	problematicAlbum.AddTrack(problematicTrack)
 	problematicArtist.AddAlbum(problematicAlbum)
 	goodArtist := files.NewArtist("good artist", "")
-	goodAlbum := files.NewAlbum("good album", goodArtist, "").WithCanonicalGenre("Classic Rock").WithCanonicalYear("1999")
+	goodAlbum := files.NewAlbum("good album", goodArtist, "").WithCanonicalGenre(
+		"Classic Rock").WithCanonicalYear("1999")
 	src2 := files.ID3V1
 	metadata2 := files.NewTrackMetadata().WithPrimarySource(src2)
 	metadata2.SetAlbumName(src2, "good album")
@@ -780,7 +851,8 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	metadata2.SetTrackName(src2, "good track")
 	metadata2.SetTrackNumber(src2, 3)
 	metadata2.SetYear(src2, "1999")
-	goodTrack := files.NewTrack(goodAlbum, "03 good track.mp3", "good track", 3).WithMetadata(metadata2)
+	goodTrack := files.NewTrack(
+		goodAlbum, "03 good track.mp3", "good track", 3).WithMetadata(metadata2)
 	goodAlbum.AddTrack(goodTrack)
 	goodArtist.AddAlbum(goodAlbum)
 	tests := map[string]struct {
@@ -795,7 +867,8 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 			t: files.NewEmptyTrack().WithMetadata(
 				files.NewTrackMetadata().WithErrorCauses([]string{"", "oops", "oops"}),
 			),
-			want: []string{"differences cannot be determined: there was an error reading metadata"},
+			want: []string{"differences cannot be determined: " +
+				"there was an error reading metadata"},
 		},
 		"track with metadata differences": {
 			t: problematicTrack,
@@ -838,23 +911,35 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 	if err := createFileWithContent(testDir, trackName, trackContents); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, trackName, err)
 	}
-	track := files.NewEmptyTrack().WithFullPath(filepath.Join(testDir, trackName)).WithName(strings.TrimSuffix(trackName, ".mp3")).WithNumber(2).WithAlbum(
-		files.NewEmptyAlbum().WithTitle("fine album").WithCanonicalGenre("Classic Rock").WithCanonicalYear("2022").WithCanonicalTitle("fine album").WithMusicCDIdentifier([]byte("fine album")).WithArtist(
-			files.NewEmptyArtist().WithFileName("fine artist").WithCanonicalName("fine artist"))).WithMetadata(
+	track := files.NewEmptyTrack().WithFullPath(
+		filepath.Join(testDir, trackName)).WithName(
+		strings.TrimSuffix(trackName, ".mp3")).WithNumber(2).WithAlbum(
+		files.NewEmptyAlbum().WithTitle("fine album").WithCanonicalGenre(
+			"Classic Rock").WithCanonicalYear("2022").WithCanonicalTitle(
+			"fine album").WithMusicCDIdentifier([]byte("fine album")).WithArtist(
+			files.NewEmptyArtist().WithFileName("fine artist").WithCanonicalName(
+				"fine artist"))).WithMetadata(
 		files.NewTrackMetadata().WithAlbumNames([]string{
 			"", "unknown album", "unknown album"}).WithArtistNames([]string{
 			"", "unknown artist", "unknown artist"}).WithTrackNames([]string{
 			"", "unknown title", "unknown title"}).WithGenres([]string{
-			"", "unknown", "unknown"}).WithYears([]string{"", "1900", "1900"}).WithTrackNumbers(
+			"", "unknown", "unknown"}).WithYears(
+			[]string{"", "1900", "1900"}).WithTrackNumbers(
 			[]int{0, 1, 1}).WithPrimarySource(files.ID3V2))
-	deletedTrack := files.NewEmptyTrack().WithFullPath(filepath.Join(testDir, "no such file")).WithName(strings.TrimSuffix(trackName, ".mp3")).WithNumber(2).WithAlbum(
-		files.NewEmptyAlbum().WithTitle("fine album").WithCanonicalGenre("Classic Rock").WithCanonicalYear("2022").WithCanonicalTitle("fine album").WithMusicCDIdentifier([]byte("fine album")).WithArtist(
-			files.NewEmptyArtist().WithFileName("fine artist").WithCanonicalName("fine artist"))).WithMetadata(
+	deletedTrack := files.NewEmptyTrack().WithFullPath(
+		filepath.Join(testDir, "no such file")).WithName(
+		strings.TrimSuffix(trackName, ".mp3")).WithNumber(2).WithAlbum(
+		files.NewEmptyAlbum().WithTitle("fine album").WithCanonicalGenre(
+			"Classic Rock").WithCanonicalYear("2022").WithCanonicalTitle(
+			"fine album").WithMusicCDIdentifier([]byte("fine album")).WithArtist(
+			files.NewEmptyArtist().WithFileName("fine artist").WithCanonicalName(
+				"fine artist"))).WithMetadata(
 		files.NewTrackMetadata().WithAlbumNames([]string{
 			"", "unknown album", "unknown album"}).WithArtistNames([]string{
 			"", "unknown artist", "unknown artist"}).WithTrackNames([]string{
 			"", "unknown title", "unknown title"}).WithGenres([]string{
-			"", "unknown", "unknown"}).WithYears([]string{"", "1900", "1900"}).WithTrackNumbers(
+			"", "unknown", "unknown"}).WithYears(
+			[]string{"", "1900", "1900"}).WithTrackNumbers(
 			[]int{0, 1, 1}).WithPrimarySource(files.ID3V2))
 	editedTm := files.NewTrackMetadata().WithAlbumNames([]string{
 		"", "fine album", "fine album"}).WithArtistNames([]string{
@@ -874,8 +959,10 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 		"error checking": {
 			t: deletedTrack,
 			wantE: []string{
-				"open updateMetadata\\no such file: The system cannot find the file specified.",
-				"open updateMetadata\\no such file: The system cannot find the file specified.",
+				"open updateMetadata\\no such file: " +
+					"The system cannot find the file specified.",
+				"open updateMetadata\\no such file: " +
+					"The system cannot find the file specified.",
 			},
 		},
 		"no edit required": {
@@ -913,7 +1000,8 @@ func Test_processArtistMetadata(t *testing.T) {
 		src := files.ID3V2
 		tM := files.NewTrackMetadata().WithPrimarySource(src)
 		tM.SetArtistName(src, "artist:name")
-		track := files.NewTrack(album1, fmt.Sprintf("%02d track%d.mp3", k, k), fmt.Sprintf("track%d", k), k).WithMetadata(tM)
+		track := files.NewTrack(album1, fmt.Sprintf("%02d track%d.mp3", k, k),
+			fmt.Sprintf("track%d", k), k).WithMetadata(tM)
 		album1.AddTrack(track)
 	}
 	artist2 := files.NewArtist("artist_name", "")
@@ -923,7 +1011,8 @@ func Test_processArtistMetadata(t *testing.T) {
 		src := files.ID3V2
 		tM := files.NewTrackMetadata().WithPrimarySource(src)
 		tM.SetArtistName(src, "unknown artist")
-		track := files.NewTrack(album2, fmt.Sprintf("%02d track%d.mp3", k, k), fmt.Sprintf("track%d", k), k).WithMetadata(tM)
+		track := files.NewTrack(album2, fmt.Sprintf("%02d track%d.mp3", k, k),
+			fmt.Sprintf("track%d", k), k).WithMetadata(tM)
 		album2.AddTrack(track)
 	}
 	artist3 := files.NewArtist("artist_name", "")
@@ -937,7 +1026,8 @@ func Test_processArtistMetadata(t *testing.T) {
 		} else {
 			tM.SetArtistName(src, "artist_name")
 		}
-		track := files.NewTrack(album3, fmt.Sprintf("%02d track%d.mp3", k, k), fmt.Sprintf("track%d", k), k).WithMetadata(tM)
+		track := files.NewTrack(album3, fmt.Sprintf("%02d track%d.mp3", k, k),
+			fmt.Sprintf("track%d", k), k).WithMetadata(tM)
 		album3.AddTrack(track)
 	}
 	type args struct {
@@ -952,8 +1042,14 @@ func Test_processArtistMetadata(t *testing.T) {
 		"ambiguous choice": {
 			args: args{artists: []*files.Artist{artist3}},
 			WantedRecording: output.WantedRecording{
-				Error: "There are multiple artist name fields for \"artist_name\", and there is no unambiguously preferred choice; candidates are {\"artist:name\": 5 instances, \"artist_name\": 5 instances}.\n",
-				Log:   "level='error' artistName='artist_name' field='artist name' settings='map[artist:name:5 artist_name:5]' msg='no value has a majority of instances'\n",
+				Error: "There are multiple artist name fields for \"artist_name\"," +
+					" and there is no unambiguously preferred choice; candidates are" +
+					" {\"artist:name\": 5 instances, \"artist_name\": 5 instances}.\n",
+				Log: "level='error'" +
+					" artistName='artist_name'" +
+					" field='artist name'" +
+					" settings='map[artist:name:5 artist_name:5]'" +
+					" msg='no value has a majority of instances'\n",
 			},
 		},
 	}
@@ -1015,19 +1111,22 @@ func Test_processAlbumMetadata(t *testing.T) {
 	artists3 = append(artists3, artist3)
 	album3 := files.NewAlbum("problematic_album", artist3, "")
 	artist3.AddAlbum(album3)
-	tm3a := files.NewTrackMetadata().WithPrimarySource(src).WithMusicCDIdentifier([]byte{1, 2, 3})
+	tm3a := files.NewTrackMetadata().WithPrimarySource(src).WithMusicCDIdentifier(
+		[]byte{1, 2, 3})
 	tm3a.SetAlbumName(src, "problematic:album")
 	tm3a.SetGenre(src, "rock")
 	tm3a.SetYear(src, "2023")
 	track3a := files.NewTrack(album2, "01 track1.mp3", "track1", 1).WithMetadata(tm3a)
 	album3.AddTrack(track3a)
-	tm3b := files.NewTrackMetadata().WithPrimarySource(src).WithMusicCDIdentifier([]byte{1, 2, 3, 4})
+	tm3b := files.NewTrackMetadata().WithPrimarySource(src).WithMusicCDIdentifier(
+		[]byte{1, 2, 3, 4})
 	tm3b.SetAlbumName(src, "problematic:Album")
 	tm3b.SetGenre(src, "pop")
 	tm3b.SetYear(src, "2022")
 	track3b := files.NewTrack(album1, "02 track2.mp3", "track2", 2).WithMetadata(tm3b)
 	album3.AddTrack(track3b)
-	tm3c := files.NewTrackMetadata().WithPrimarySource(src).WithMusicCDIdentifier([]byte{1, 2, 3, 4, 5})
+	tm3c := files.NewTrackMetadata().WithPrimarySource(src).WithMusicCDIdentifier(
+		[]byte{1, 2, 3, 4, 5})
 	tm3c.SetAlbumName(src, "Problematic:album")
 	tm3c.SetGenre(src, "folk")
 	tm3c.SetYear(src, "2021")
@@ -1048,14 +1147,49 @@ func Test_processAlbumMetadata(t *testing.T) {
 		"errors": {
 			args: args{artists: artists3},
 			WantedRecording: output.WantedRecording{
-				Error: "There are multiple genre fields for \"problematic_album by problematic artist\", and there is no unambiguously preferred choice; candidates are {\"folk\": 1 instance, \"pop\": 1 instance, \"rock\": 1 instance}.\n" +
-					"There are multiple year fields for \"problematic_album by problematic artist\", and there is no unambiguously preferred choice; candidates are {\"2021\": 1 instance, \"2022\": 1 instance, \"2023\": 1 instance}.\n" +
-					"There are multiple album title fields for \"problematic_album by problematic artist\", and there is no unambiguously preferred choice; candidates are {\"Problematic:album\": 1 instance, \"problematic:Album\": 1 instance, \"problematic:album\": 1 instance}.\n" +
-					"There are multiple MCDI frame fields for \"problematic_album by problematic artist\", and there is no unambiguously preferred choice; candidates are {\"\\x01\\x02\\x03\": 1 instance, \"\\x01\\x02\\x03\\x04\": 1 instance, \"\\x01\\x02\\x03\\x04\\x05\": 1 instance}.\n",
-				Log: "level='error' albumName='problematic_album' artistName='problematic artist' field='genre' settings='map[folk:1 pop:1 rock:1]' msg='no value has a majority of instances'\n" +
-					"level='error' albumName='problematic_album' artistName='problematic artist' field='year' settings='map[2021:1 2022:1 2023:1]' msg='no value has a majority of instances'\n" +
-					"level='error' albumName='problematic_album' artistName='problematic artist' field='album title' settings='map[Problematic:album:1 problematic:Album:1 problematic:album:1]' msg='no value has a majority of instances'\n" +
-					"level='error' albumName='problematic_album' artistName='problematic artist' field='mcdi frame' settings='map[\x01\x02\x03:1 \x01\x02\x03\x04:1 \x01\x02\x03\x04\x05:1]' msg='no value has a majority of instances'\n",
+				Error: "There are multiple genre fields for \"problematic_album by" +
+					" problematic artist\", and there is no unambiguously preferred choice;" +
+					" candidates are {\"folk\": 1 instance, \"pop\": 1 instance, \"rock\":" +
+					" 1 instance}.\n" +
+					"There are multiple year fields for \"problematic_album by" +
+					" problematic artist\", and there is no unambiguously preferred" +
+					" choice; candidates are {\"2021\": 1 instance, \"2022\": 1 instance," +
+					" \"2023\": 1 instance}.\n" +
+					"There are multiple album title fields for \"problematic_album by" +
+					" problematic artist\", and there is no unambiguously preferred" +
+					" choice; candidates are {\"Problematic:album\": 1 instance," +
+					" \"problematic:Album\": 1 instance, \"problematic:album\": 1 instance}.\n" +
+					"There are multiple MCDI frame fields for \"problematic_album by" +
+					" problematic artist\", and there is no unambiguously preferred" +
+					" choice; candidates are {\"\\x01\\x02\\x03\": 1 instance," +
+					" \"\\x01\\x02\\x03\\x04\": 1 instance," +
+					" \"\\x01\\x02\\x03\\x04\\x05\": 1 instance}.\n",
+				Log: "level='error'" +
+					" albumName='problematic_album'" +
+					" artistName='problematic artist'" +
+					" field='genre'" +
+					" settings='map[folk:1 pop:1 rock:1]'" +
+					" msg='no value has a majority of instances'\n" +
+					"level='error'" +
+					" albumName='problematic_album'" +
+					" artistName='problematic artist'" +
+					" field='year'" +
+					" settings='map[2021:1 2022:1 2023:1]'" +
+					" msg='no value has a majority of instances'\n" +
+					"level='error'" +
+					" albumName='problematic_album'" +
+					" artistName='problematic artist'" +
+					" field='album title'" +
+					" settings='map[Problematic:album:1 problematic:Album:1" +
+					" problematic:album:1]'" +
+					" msg='no value has a majority of instances'\n" +
+					"level='error'" +
+					" albumName='problematic_album'" +
+					" artistName='problematic artist'" +
+					" field='mcdi frame'" +
+					" settings='map[\x01\x02\x03:1 \x01\x02\x03\x04:1" +
+					" \x01\x02\x03\x04\x05:1]'" +
+					" msg='no value has a majority of instances'\n",
 			},
 		},
 	}
@@ -1091,8 +1225,16 @@ func TestTrack_reportMetadataErrors(t *testing.T) {
 						files.NewEmptyArtist().WithFileName("silly artist"))),
 			},
 			WantedRecording: output.WantedRecording{
-				Log: "level='error' error='id3v1 error!' metadata='ID3V1' track='Music\\silly artist\\silly album\\01 silly track.mp3' msg='metadata read error'\n" +
-					"level='error' error='id3v2 error!' metadata='ID3V2' track='Music\\silly artist\\silly album\\01 silly track.mp3' msg='metadata read error'\n",
+				Log: "level='error'" +
+					" error='id3v1 error!'" +
+					" metadata='ID3V1'" +
+					" track='Music\\silly artist\\silly album\\01 silly track.mp3'" +
+					" msg='metadata read error'\n" +
+					"level='error'" +
+					" error='id3v2 error!'" +
+					" metadata='ID3V2'" +
+					" track='Music\\silly artist\\silly album\\01 silly track.mp3'" +
+					" msg='metadata read error'\n",
 			},
 		},
 	}
@@ -1196,10 +1338,18 @@ func (sb *sampleBus) WriteCanonicalConsole(_ string, _ ...any)       {}
 func (sb *sampleBus) WriteConsole(_ string, _ ...any)                {}
 func (sb *sampleBus) WriteCanonicalError(_ string, _ ...any)         {}
 func (sb *sampleBus) WriteError(_ string, _ ...any)                  {}
-func (sb *sampleBus) ConsoleWriter() io.Writer                       { return sb.consoleWriter }
-func (sb *sampleBus) ErrorWriter() io.Writer                         { return sb.errorWriter }
-func (sb *sampleBus) IsConsoleTTY() bool                             { return sb.consoleTTY }
-func (sb *sampleBus) IsErrorTTY() bool                               { return sb.errorTTY }
+func (sb *sampleBus) ConsoleWriter() io.Writer {
+	return sb.consoleWriter
+}
+func (sb *sampleBus) ErrorWriter() io.Writer {
+	return sb.errorWriter
+}
+func (sb *sampleBus) IsConsoleTTY() bool {
+	return sb.consoleTTY
+}
+func (sb *sampleBus) IsErrorTTY() bool {
+	return sb.errorTTY
+}
 
 func Test_getBestWriter(t *testing.T) {
 	errorWriter := &sampleWriter{name: "error"}
@@ -1239,7 +1389,8 @@ func Test_getBestWriter(t *testing.T) {
 // destroyDirectory destroys a directory and its contents.
 func destroyDirectory(fnName, dirName string) {
 	if err := os.RemoveAll(dirName); err != nil {
-		fmt.Fprintf(os.Stderr, "%s error destroying test directory %q: %v", fnName, dirName, err)
+		fmt.Fprintf(os.Stderr, "%s error destroying test directory %q: %v", fnName,
+			dirName, err)
 	}
 }
 

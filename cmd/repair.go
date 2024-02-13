@@ -23,22 +23,31 @@ const (
 var (
 	// RepairCmd represents the repair command
 	RepairCmd = &cobra.Command{
-		Use:                   repairCommandName + " [" + repairDryRunFlag + "] " + searchUsage,
+		Use: repairCommandName + " [" + repairDryRunFlag + "] " +
+			searchUsage,
 		DisableFlagsInUseLine: true,
-		Short:                 "Repairs problems found by running '" + CheckCommand + " " + CheckFilesFlag + "'",
+		Short: "Repairs problems found by running '" + CheckCommand + " " +
+			CheckFilesFlag + "'",
 		Long: "" +
-			fmt.Sprintf("%q repairs the problems found by running '%s %s'\n", repairCommandName, CheckCommand, CheckFilesFlag) +
+			fmt.Sprintf("%q repairs the problems found by running '%s %s'\n",
+				repairCommandName, CheckCommand, CheckFilesFlag) +
 			"\n" +
-			"This command rewrites the mp3 files that the " + CheckCommand + " command noted as having metadata\n" +
-			"inconsistent with the file structure. Prior to rewriting an mp3 file, the " + repairCommandName + "\n" +
-			"command creates a backup directory for the parent album and copies the original mp3\n" +
-			"file into that backup directory. Use the " + postRepairCommandName + " command to automatically delete\n" +
+			"This command rewrites the mp3 files that the " + CheckCommand +
+			" command noted as having metadata\n" +
+			"inconsistent with the file structure. Prior to rewriting an mp3 file, the " +
+			repairCommandName + "\n" +
+			"command creates a backup directory for the parent album and copies the" +
+			" original mp3\n" +
+			"file into that backup directory. Use the " + postRepairCommandName +
+			" command to automatically delete\n" +
 			"the backup folders.",
 		Run: RepairRun,
 	}
 	RepairFlags = NewSectionFlags().WithSectionName("repair").WithFlags(
 		map[string]*FlagDetails{
-			"dryRun": NewFlagDetails().WithUsage("output what would have been repaired, but make no repairs").WithExpectedType(BoolType).WithDefaultValue(false),
+			"dryRun": NewFlagDetails().WithUsage(
+				"output what would have been repaired, but make no repairs",
+			).WithExpectedType(BoolType).WithDefaultValue(false),
 		},
 	)
 )
@@ -76,7 +85,8 @@ func (rs *RepairSettings) WithDryRun(b bool) *RepairSettings {
 	return rs
 }
 
-func (rs *RepairSettings) ProcessArtists(o output.Bus, allArtists []*files.Artist, loaded bool, ss *SearchSettings) int {
+func (rs *RepairSettings) ProcessArtists(o output.Bus, allArtists []*files.Artist,
+	loaded bool, ss *SearchSettings) int {
 	status := UserError
 	if loaded {
 		if filteredArtists, filtered := ss.Filter(o, allArtists); filtered {
@@ -110,25 +120,35 @@ func FindConflictedTracks(checkedArtists []*CheckedArtist) int {
 			for _, cT := range cAl.Tracks() {
 				state := cT.backing.ReconcileMetadata()
 				if state.HasArtistNameConflict() {
-					cT.AddIssue(CheckConflictIssue, "the artist name field does not match the name of the artist directory")
+					cT.AddIssue(CheckConflictIssue,
+						"the artist name field does not match the name of the artist"+
+							" directory")
 				}
 				if state.HasAlbumNameConflict() {
-					cT.AddIssue(CheckConflictIssue, "the album name field does not match the name of the album directory")
+					cT.AddIssue(CheckConflictIssue,
+						"the album name field does not match the name of the album"+
+							" directory")
 				}
 				if state.HasGenreConflict() {
-					cT.AddIssue(CheckConflictIssue, "the genre field does not match the other tracks in the album")
+					cT.AddIssue(CheckConflictIssue,
+						"the genre field does not match the other tracks in the album")
 				}
 				if state.HasMCDIConflict() {
-					cT.AddIssue(CheckConflictIssue, "the music CD identifier field does not match the other tracks in the album")
+					cT.AddIssue(CheckConflictIssue,
+						"the music CD identifier field does not match the other tracks in"+
+							" the album")
 				}
 				if state.HasNumberingConflict() {
-					cT.AddIssue(CheckConflictIssue, "the track number field does not match the track's file name")
+					cT.AddIssue(CheckConflictIssue,
+						"the track number field does not match the track's file name")
 				}
 				if state.HasTrackNameConflict() {
-					cT.AddIssue(CheckConflictIssue, "the track name field does not match the track's file name")
+					cT.AddIssue(CheckConflictIssue,
+						"the track name field does not match the track's file name")
 				}
 				if state.HasYearConflict() {
-					cT.AddIssue(CheckConflictIssue, "the year field does not match the other tracks in the album")
+					cT.AddIssue(CheckConflictIssue,
+						"the year field does not match the other tracks in the album")
 				}
 				if cT.HasIssues() {
 					count++
@@ -181,7 +201,8 @@ func BackupAndFix(o output.Bus, checkedArtists []*CheckedArtist) int {
 								t := cT.backing
 								if AttemptCopy(o, t, path) {
 									err := t.UpdateMetadata()
-									if state := ProcessUpdateResult(o, t, err); state == SystemError {
+									if state := ProcessUpdateResult(o, t,
+										err); state == SystemError {
 										status = SystemError
 									}
 								} else {
@@ -224,17 +245,20 @@ func ProcessUpdateResult(o output.Bus, t *files.Track, err []error) int {
 func AttemptCopy(o output.Bus, t *files.Track, path string) (backedUp bool) {
 	backupFile := filepath.Join(path, fmt.Sprintf("%d.mp3", t.Number()))
 	if PlainFileExists(backupFile) {
-		o.WriteCanonicalError("The backup file for track file %q, %q, already exists", t, backupFile)
+		o.WriteCanonicalError("The backup file for track file %q, %q, already exists", t,
+			backupFile)
 		o.Log(output.Error, "file already exists", map[string]any{
 			"command": repairCommandName,
 			"file":    backupFile,
 		})
 	} else {
 		if err := CopyFile(t.Path(), backupFile); err == nil {
-			o.WriteCanonicalConsole("The track file %q has been backed up to %q", t, backupFile)
+			o.WriteCanonicalConsole("The track file %q has been backed up to %q", t,
+				backupFile)
 			backedUp = true
 		} else {
-			o.WriteCanonicalError("The track file %q could not be backed up due to error %v", t, err)
+			o.WriteCanonicalError(
+				"The track file %q could not be backed up due to error %v", t, err)
 			o.Log(output.Error, "error copying file", map[string]any{
 				"command":     repairCommandName,
 				"source":      t.Path(),
@@ -256,7 +280,9 @@ func EnsureBackupDirectoryExists(o output.Bus, cAl *CheckedAlbum) (path string, 
 		if err := Mkdir(path); err != nil {
 			exists = false
 			o.WriteCanonicalError("The directory %q cannot be created: %v", path, err)
-			o.WriteCanonicalError("The track files in the directory %q will not be repaired", cAl.backing.Path())
+			o.WriteCanonicalError(
+				"The track files in the directory %q will not be repaired",
+				cAl.backing.Path())
 			o.Log(output.Error, "cannot create directory", map[string]any{
 				"command":   repairCommandName,
 				"directory": path,

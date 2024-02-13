@@ -29,11 +29,14 @@ func ClearDirty(o output.Bus) {
 		if err := os.Remove(f); err != nil {
 			cmd_toolkit.ReportFileDeletionFailure(o, f, err)
 		} else {
-			o.Log(output.Info, "metadata dirty file deleted", map[string]any{"fileName": f})
+			o.Log(output.Info, "metadata dirty file deleted", map[string]any{
+				"fileName": f,
+			})
 		}
 	}
 }
 
 func Dirty() bool {
-	return cmd_toolkit.PlainFileExists(filepath.Join(cmd_toolkit.ApplicationPath(), DirtyFileName))
+	return cmd_toolkit.PlainFileExists(filepath.Join(
+		cmd_toolkit.ApplicationPath(), DirtyFileName))
 }

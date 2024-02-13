@@ -77,7 +77,8 @@ func RawReadID3V2Metadata(path string) (d *Id3v2Metadata) {
 		d.err = err
 	} else {
 		defer tag.Close()
-		if trackNumber, err := ToTrackNumber(tag.GetTextFrame(trackFrame).Text); err != nil {
+		if trackNumber, err := ToTrackNumber(
+			tag.GetTextFrame(trackFrame).Text); err != nil {
 			d.err = err
 		} else {
 			d.albumName = RemoveLeadingBOMs(tag.Album())
@@ -249,7 +250,8 @@ func (itf *Id3v2TrackFrame) String() string {
 	return fmt.Sprintf("%s = %q", itf.name, itf.value)
 }
 
-func ReadID3V2Metadata(path string) (version byte, encoding string, frameStrings []string, rawFrames []*Id3v2TrackFrame, e error) {
+func ReadID3V2Metadata(path string) (version byte, encoding string,
+	frameStrings []string, rawFrames []*Id3v2TrackFrame, e error) {
 	if tag, err := readID3V2Tag(path); err != nil {
 		e = err
 	} else {

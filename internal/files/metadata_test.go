@@ -11,10 +11,13 @@ import (
 )
 
 const (
-	cannotOpenFile  = "open readMetadata\\no such file.mp3: The system cannot find the file specified."
-	negativeSeek    = "seek readMetadata\\01 tagless.mp3: An attempt was made to move the file pointer before the beginning of the file."
-	noID3V1Metadata = "no id3v1 metadata found in file \"readMetadata\\\\03 id3v2.mp3\""
-	zeroBytes       = "zero length"
+	cannotOpenFile = "open readMetadata\\no such file.mp3:" +
+		" The system cannot find the file specified."
+	negativeSeek = "seek readMetadata\\01 tagless.mp3:" +
+		" An attempt was made to move the file pointer before the beginning of the file."
+	noID3V1Metadata = "no id3v1 metadata found in file" +
+		" \"readMetadata\\\\03 id3v2.mp3\""
+	zeroBytes = "zero length"
 )
 
 func Test_trackMetadata_setId3v1Values(t *testing.T) {
@@ -28,13 +31,14 @@ func Test_trackMetadata_setId3v1Values(t *testing.T) {
 		wantTM *files.TrackMetadata
 	}{
 		"complete test": {
-			tM: files.NewTrackMetadata(), args: args{v1: NewID3v1MetadataWithData(id3v1DataSet1)},
+			tM:   files.NewTrackMetadata(),
+			args: args{v1: NewID3v1MetadataWithData(id3v1DataSet1)},
 			wantTM: files.NewTrackMetadata().WithAlbumNames(
 				[]string{"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames(
 				[]string{"", "The Beatles", ""}).WithTrackNames(
 				[]string{"", "Ringo - Pop Profile [Interview", ""}).WithGenres(
-				[]string{"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers(
-				[]int{0, 29, 0}),
+				[]string{"", "Other", ""}).WithYears(
+				[]string{"", "2013", ""}).WithTrackNumbers([]int{0, 29, 0}),
 		},
 	}
 	for name, tt := range tests {
@@ -68,8 +72,9 @@ func Test_trackMetadata_setId3v2Values(t *testing.T) {
 				[]string{"", "", "Great album"}).WithArtistNames(
 				[]string{"", "", "Great artist"}).WithTrackNames(
 				[]string{"", "", "Great track"}).WithGenres(
-				[]string{"", "", "Pop"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers(
-				[]int{0, 0, 1}).WithMusicCDIdentifier([]byte{0, 2, 4}),
+				[]string{"", "", "Pop"}).WithYears([]string{
+				"", "", "2022"}).WithTrackNumbers([]int{
+				0, 0, 1}).WithMusicCDIdentifier([]byte{0, 2, 4}),
 		},
 	}
 	for name, tt := range tests {
@@ -95,7 +100,8 @@ func Test_readMetadata(t *testing.T) {
 	id3v1OnlyFile := "02 id3v1.mp3"
 	payloadID3v1Only := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	payloadID3v1Only = append(payloadID3v1Only, id3v1DataSet1...)
-	if err := createFileWithContent(testDir, id3v1OnlyFile, payloadID3v1Only); err != nil {
+	if err := createFileWithContent(testDir, id3v1OnlyFile,
+		payloadID3v1Only); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, id3v1OnlyFile, err)
 	}
 	id3v2OnlyFile := "03 id3v2.mp3"
@@ -110,13 +116,15 @@ func Test_readMetadata(t *testing.T) {
 		"TLEN": "1000",
 	}
 	payloadID3v2Only := createID3v2TaggedData([]byte{}, frames)
-	if err := createFileWithContent(testDir, id3v2OnlyFile, payloadID3v2Only); err != nil {
+	if err := createFileWithContent(testDir, id3v2OnlyFile,
+		payloadID3v2Only); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, id3v2OnlyFile, err)
 	}
 	completeFile := "04 complete.mp3"
 	payloadComplete := payloadID3v2Only
 	payloadComplete = append(payloadComplete, payloadID3v1Only...)
-	if err := createFileWithContent(testDir, completeFile, payloadComplete); err != nil {
+	if err := createFileWithContent(testDir, completeFile,
+		payloadComplete); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, completeFile, err)
 	}
 	defer func() {
@@ -131,11 +139,13 @@ func Test_readMetadata(t *testing.T) {
 	}{
 		"missing file": {
 			args: args{path: filepath.Join(testDir, "no such file.mp3")},
-			want: files.NewTrackMetadata().WithErrorCauses([]string{"", cannotOpenFile, cannotOpenFile}),
+			want: files.NewTrackMetadata().WithErrorCauses([]string{
+				"", cannotOpenFile, cannotOpenFile}),
 		},
 		"no metadata": {
 			args: args{path: filepath.Join(testDir, taglessFile)},
-			want: files.NewTrackMetadata().WithErrorCauses([]string{"", negativeSeek, files.ErrMissingTrackNumber.Error()}),
+			want: files.NewTrackMetadata().WithErrorCauses([]string{
+				"", negativeSeek, files.ErrMissingTrackNumber.Error()}),
 		},
 		"only id3v1 metadata": {
 			args: args{path: filepath.Join(testDir, id3v1OnlyFile)},
@@ -143,7 +153,8 @@ func Test_readMetadata(t *testing.T) {
 				[]string{"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames(
 				[]string{"", "The Beatles", ""}).WithTrackNames(
 				[]string{"", "Ringo - Pop Profile [Interview", ""}).WithGenres(
-				[]string{"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers(
+				[]string{"", "Other", ""}).WithYears([]string{
+				"", "2013", ""}).WithTrackNumbers(
 				[]int{0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses(
 				[]string{"", "", files.ErrMissingTrackNumber.Error()}),
 		},
@@ -194,7 +205,8 @@ func Test_trackMetadata_isValid(t *testing.T) {
 			want: false,
 		},
 		"after reading no metadata": {
-			tM:   files.NewTrackMetadata().WithErrorCauses([]string{"", negativeSeek, zeroBytes}),
+			tM: files.NewTrackMetadata().WithErrorCauses([]string{
+				"", negativeSeek, zeroBytes}),
 			want: false,
 		},
 		"after reading only id3v1 metadata": {
@@ -202,8 +214,8 @@ func Test_trackMetadata_isValid(t *testing.T) {
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
-				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
+				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers(
+				[]int{0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}),
 			want: true,
 		},
@@ -212,7 +224,8 @@ func Test_trackMetadata_isValid(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers(
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers(
 				[]int{0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{"", noID3V1Metadata, ""}),
 			want: true,
@@ -223,7 +236,8 @@ func Test_trackMetadata_isValid(t *testing.T) {
 				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres(
 				[]string{"", "Other", "dance music"}).WithYears([]string{
-				"", "2013", "2022"}).WithTrackNumbers([]int{0, 29, 2}).WithMusicCDIdentifier(
+				"", "2013", "2022"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier(
 				[]byte{0}).WithPrimarySource(files.ID3V2),
 			want: true,
 		},
@@ -248,8 +262,8 @@ func Test_trackMetadata_canonicalArtist(t *testing.T) {
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
-				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
+				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers(
+				[]int{0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}),
 			want: "The Beatles",
 		},
@@ -270,7 +284,8 @@ func Test_trackMetadata_canonicalArtist(t *testing.T) {
 				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres(
 				[]string{"", "Other", "dance music"}).WithYears([]string{
-				"", "2013", "2022"}).WithTrackNumbers([]int{0, 29, 2}).WithMusicCDIdentifier(
+				"", "2013", "2022"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier(
 				[]byte{0}).WithPrimarySource(files.ID3V2),
 			want: "unknown artist",
 		},
@@ -295,7 +310,8 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
+				"", "Other", ""}).WithYears(
+				[]string{"", "2013", ""}).WithTrackNumbers([]int{
 				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}),
 			want: "On Air: Live At The BBC, Volum",
@@ -305,7 +321,8 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers(
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers(
 				[]int{0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{"", noID3V1Metadata, ""}),
 			want: "unknown album",
@@ -316,7 +333,8 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres(
 				[]string{"", "Other", "dance music"}).WithYears([]string{
-				"", "2013", "2022"}).WithTrackNumbers([]int{0, 29, 2}).WithMusicCDIdentifier(
+				"", "2013", "2022"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier(
 				[]byte{0}).WithPrimarySource(files.ID3V2),
 			want: "unknown album",
 		},
@@ -341,8 +359,8 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
-				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
+				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers(
+				[]int{0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}),
 			want: "Other",
 		},
@@ -351,7 +369,8 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers(
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers(
 				[]int{0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{"", noID3V1Metadata, ""}),
 			want: "dance music",
@@ -362,7 +381,8 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres(
 				[]string{"", "Other", "dance music"}).WithYears([]string{
-				"", "2013", "2022"}).WithTrackNumbers([]int{0, 29, 2}).WithMusicCDIdentifier(
+				"", "2013", "2022"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier(
 				[]byte{0}).WithPrimarySource(files.ID3V2),
 			want: "dance music",
 		},
@@ -387,7 +407,8 @@ func Test_trackMetadata_canonicalYear(t *testing.T) {
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
+				"", "Other", ""}).WithYears(
+				[]string{"", "2013", ""}).WithTrackNumbers([]int{
 				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}),
 			want: "2013",
@@ -397,7 +418,8 @@ func Test_trackMetadata_canonicalYear(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers(
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers(
 				[]int{0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{"", noID3V1Metadata, ""}),
 			want: "2022",
@@ -450,18 +472,22 @@ func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
 		},
 		"after reading all metadata": {
 			tM: files.NewTrackMetadata().WithAlbumNames([]string{
-				"", "On Air: Live At The BBC, Volum", "unknown album"}).WithArtistNames([]string{
+				"", "On Air: Live At The BBC, Volum", "unknown album",
+			}).WithArtistNames([]string{
 				"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
-				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres([]string{
+				"", "Ringo - Pop Profile [Interview", "unknown track",
+			}).WithGenres([]string{
 				"", "Other", "dance music"}).WithYears([]string{
-				"", "2013", "2022"}).WithTrackNumbers([]int{0, 29, 2}).WithMusicCDIdentifier(
+				"", "2013", "2022"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier(
 				[]byte{0}).WithPrimarySource(files.ID3V2),
 			want: id3v2.UnknownFrame{Body: []byte{0}},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tM.CanonicalMusicCDIdentifier(); !reflect.DeepEqual(got, tt.want) {
+			if got := tt.tM.CanonicalMusicCDIdentifier(); !reflect.DeepEqual(got,
+				tt.want) {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
@@ -481,7 +507,8 @@ func Test_trackMetadata_errors(t *testing.T) {
 			want: []string{cannotOpenFile, cannotOpenFile},
 		},
 		"after reading no metadata": {
-			tM:   files.NewTrackMetadata().WithErrorCauses([]string{"", negativeSeek, zeroBytes}),
+			tM: files.NewTrackMetadata().WithErrorCauses([]string{
+				"", negativeSeek, zeroBytes}),
 			want: []string{negativeSeek, zeroBytes},
 		},
 		"after reading only id3v1 metadata": {
@@ -489,7 +516,8 @@ func Test_trackMetadata_errors(t *testing.T) {
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
+				"", "Other", ""}).WithYears(
+				[]string{"", "2013", ""}).WithTrackNumbers([]int{
 				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}),
 			want: []string{zeroBytes},
@@ -499,18 +527,22 @@ func Test_trackMetadata_errors(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers([]int{
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers([]int{
 				0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{"", noID3V1Metadata, ""}),
 			want: []string{noID3V1Metadata},
 		},
 		"after reading all metadata": {
 			tM: files.NewTrackMetadata().WithAlbumNames([]string{
-				"", "On Air: Live At The BBC, Volum", "unknown album"}).WithArtistNames([]string{
+				"", "On Air: Live At The BBC, Volum", "unknown album",
+			}).WithArtistNames([]string{
 				"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
-				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres([]string{
+				"", "Ringo - Pop Profile [Interview", "unknown track",
+			}).WithGenres([]string{
 				"", "Other", "dance music"}).WithYears([]string{
-				"", "2013", "2022"}).WithTrackNumbers([]int{0, 29, 2}).WithMusicCDIdentifier(
+				"", "2013", "2022"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier(
 				[]byte{0}).WithPrimarySource(files.ID3V2),
 			want: []string{},
 		},
@@ -536,23 +568,28 @@ func Test_trackMetadata_TrackDiffers(t *testing.T) {
 		wantTM *files.TrackMetadata
 	}{
 		"after read failure": {
-			tM:     files.NewTrackMetadata().WithErrorCauses([]string{"", cannotOpenFile, cannotOpenFile}),
-			args:   args{track: 20},
-			want:   false,
-			wantTM: files.NewTrackMetadata().WithErrorCauses([]string{"", cannotOpenFile, cannotOpenFile}),
+			tM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", cannotOpenFile, cannotOpenFile}),
+			args: args{track: 20},
+			want: false,
+			wantTM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", cannotOpenFile, cannotOpenFile}),
 		},
 		"after reading no metadata": {
-			tM:     files.NewTrackMetadata().WithErrorCauses([]string{"", negativeSeek, zeroBytes}),
-			args:   args{track: 20},
-			want:   false,
-			wantTM: files.NewTrackMetadata().WithErrorCauses([]string{"", negativeSeek, zeroBytes}),
+			tM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", negativeSeek, zeroBytes}),
+			args: args{track: 20},
+			want: false,
+			wantTM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", negativeSeek, zeroBytes}),
 		},
 		"after reading only id3v1 metadata": {
 			tM: files.NewTrackMetadata().WithAlbumNames([]string{
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
+				"", "Other", ""}).WithYears(
+				[]string{"", "2013", ""}).WithTrackNumbers([]int{
 				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}),
 			args: args{track: 20},
@@ -561,9 +598,11 @@ func Test_trackMetadata_TrackDiffers(t *testing.T) {
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
+				"", "Other", ""}).WithYears(
+				[]string{"", "2013", ""}).WithTrackNumbers([]int{
 				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
-				"", "", zeroBytes}).WithCorrectedTrackNumbers([]int{0, 20, 0}).WithRequiresEdits([]bool{
+				"", "", zeroBytes}).WithCorrectedTrackNumbers(
+				[]int{0, 20, 0}).WithRequiresEdits([]bool{
 				false, true, false}),
 		},
 		"after reading only id3v2 metadata": {
@@ -571,7 +610,8 @@ func Test_trackMetadata_TrackDiffers(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers([]int{
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers([]int{
 				0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{"", noID3V1Metadata, ""}),
 			args: args{track: 20},
@@ -580,29 +620,33 @@ func Test_trackMetadata_TrackDiffers(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers([]int{
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers([]int{
 				0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{
-				"", noID3V1Metadata, ""}).WithCorrectedTrackNumbers([]int{0, 0, 20}).WithRequiresEdits(
+				"", noID3V1Metadata, ""}).WithCorrectedTrackNumbers(
+				[]int{0, 0, 20}).WithRequiresEdits(
 				[]bool{false, false, true}),
 		},
 		"after reading all metadata": {
 			tM: files.NewTrackMetadata().WithAlbumNames([]string{
-				"", "On Air: Live At The BBC, Volum", "unknown album"}).WithArtistNames([]string{
-				"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
-				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres([]string{
-				"", "Other", "dance music"}).WithYears([]string{
+				"", "On Air: Live At The BBC, Volum", "unknown album"}).WithArtistNames(
+				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
+				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres(
+				[]string{"", "Other", "dance music"}).WithYears([]string{
 				"", "2013", "2022"}).WithTrackNumbers([]int{0, 29, 2}).WithMusicCDIdentifier(
 				[]byte{0}).WithPrimarySource(files.ID3V2),
 			args: args{track: 20},
 			want: true,
 			wantTM: files.NewTrackMetadata().WithAlbumNames([]string{
-				"", "On Air: Live At The BBC, Volum", "unknown album"}).WithArtistNames([]string{
-				"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
-				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres([]string{
-				"", "Other", "dance music"}).WithYears([]string{"", "2013", "2022"}).WithTrackNumbers(
+				"", "On Air: Live At The BBC, Volum", "unknown album"}).WithArtistNames(
+				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
+				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres(
+				[]string{"", "Other", "dance music"}).WithYears(
+				[]string{"", "2013", "2022"}).WithTrackNumbers(
 				[]int{0, 29, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
-				files.ID3V2).WithCorrectedTrackNumbers([]int{0, 20, 20}).WithRequiresEdits([]bool{
+				files.ID3V2).WithCorrectedTrackNumbers(
+				[]int{0, 20, 20}).WithRequiresEdits([]bool{
 				false, true, true}),
 		},
 	}
@@ -630,24 +674,28 @@ func Test_trackMetadata_TrackTitleDiffers(t *testing.T) {
 		wantTM      *files.TrackMetadata
 	}{
 		"after read failure": {
-			tM:          files.NewTrackMetadata().WithErrorCauses([]string{"", cannotOpenFile, cannotOpenFile}),
+			tM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", cannotOpenFile, cannotOpenFile}),
 			args:        args{title: "track name"},
 			wantDiffers: false,
-			wantTM:      files.NewTrackMetadata().WithErrorCauses([]string{"", cannotOpenFile, cannotOpenFile}),
+			wantTM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", cannotOpenFile, cannotOpenFile}),
 		},
 		"after reading no metadata": {
-			tM:          files.NewTrackMetadata().WithErrorCauses([]string{"", negativeSeek, zeroBytes}),
+			tM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", negativeSeek, zeroBytes}),
 			args:        args{title: "track name"},
 			wantDiffers: false,
-			wantTM:      files.NewTrackMetadata().WithErrorCauses([]string{"", negativeSeek, zeroBytes}),
+			wantTM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", negativeSeek, zeroBytes}),
 		},
 		"after reading only id3v1 metadata": {
 			tM: files.NewTrackMetadata().WithAlbumNames([]string{
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
-				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
+				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers(
+				[]int{0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}),
 			args:        args{title: "track name"},
 			wantDiffers: true,
@@ -655,8 +703,8 @@ func Test_trackMetadata_TrackTitleDiffers(t *testing.T) {
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
-				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
+				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers(
+				[]int{0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}).WithCorrectedTrackNames([]string{
 				"", "track name", ""}).WithRequiresEdits([]bool{false, true, false}),
 		},
@@ -665,7 +713,8 @@ func Test_trackMetadata_TrackTitleDiffers(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers([]int{
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers([]int{
 				0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{"", noID3V1Metadata, ""}),
 			args:        args{title: "track name"},
@@ -674,7 +723,8 @@ func Test_trackMetadata_TrackTitleDiffers(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers([]int{
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers([]int{
 				0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{
 				"", noID3V1Metadata, ""}).WithCorrectedTrackNames([]string{
@@ -682,38 +732,44 @@ func Test_trackMetadata_TrackTitleDiffers(t *testing.T) {
 		},
 		"after reading all metadata": {
 			tM: files.NewTrackMetadata().WithAlbumNames([]string{
-				"", "On Air: Live At The BBC, Volum", "unknown album"}).WithArtistNames([]string{
-				"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
-				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres([]string{
-				"", "Other", "dance music"}).WithYears([]string{
-				"", "2013", "2022"}).WithTrackNumbers([]int{0, 29, 2}).WithMusicCDIdentifier(
-				[]byte{0}).WithPrimarySource(files.ID3V2),
+				"", "On Air: Live At The BBC, Volum", "unknown album"}).WithArtistNames(
+				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
+				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres(
+				[]string{"", "Other", "dance music"}).WithYears([]string{
+				"", "2013", "2022"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
+				files.ID3V2),
 			args:        args{title: "track name"},
 			wantDiffers: true,
 			wantTM: files.NewTrackMetadata().WithAlbumNames([]string{
-				"", "On Air: Live At The BBC, Volum", "unknown album"}).WithArtistNames([]string{
-				"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
-				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres([]string{
-				"", "Other", "dance music"}).WithYears([]string{"", "2013", "2022"}).WithTrackNumbers(
+				"", "On Air: Live At The BBC, Volum", "unknown album"}).WithArtistNames(
+				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
+				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres(
+				[]string{"", "Other", "dance music"}).WithYears(
+				[]string{"", "2013", "2022"}).WithTrackNumbers(
 				[]int{0, 29, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithCorrectedTrackNames([]string{
 				"", "track name", "track name"}).WithRequiresEdits([]bool{false, true, true}),
 		},
 		"valid name": {
 			tM: files.NewTrackMetadata().WithAlbumNames([]string{
-				"", "On Air: Live At The BBC, Volum", "unknown album"}).WithArtistNames([]string{
-				"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
+				"", "On Air: Live At The BBC, Volum", "unknown album"}).WithArtistNames(
+				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
 				"", "Theme from M*A*S*H", "Theme from M*A*S*H"}).WithGenres([]string{
-				"", "Other", "dance music"}).WithYears([]string{"", "2013", "2022"}).WithTrackNumbers(
-				[]int{0, 29, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(files.ID3V2),
+				"", "Other", "dance music"}).WithYears(
+				[]string{"", "2013", "2022"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
+				files.ID3V2),
 			args:        args{title: "Theme From M-A-S-H"},
 			wantDiffers: false,
 			wantTM: files.NewTrackMetadata().WithAlbumNames([]string{
-				"", "On Air: Live At The BBC, Volum", "unknown album"}).WithArtistNames([]string{
-				"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
+				"", "On Air: Live At The BBC, Volum", "unknown album"}).WithArtistNames(
+				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
 				"", "Theme from M*A*S*H", "Theme from M*A*S*H"}).WithGenres([]string{
-				"", "Other", "dance music"}).WithYears([]string{"", "2013", "2022"}).WithTrackNumbers(
-				[]int{0, 29, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(files.ID3V2),
+				"", "Other", "dance music"}).WithYears([]string{
+				"", "2013", "2022"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
+				files.ID3V2),
 		},
 	}
 	for name, tt := range tests {
@@ -740,24 +796,28 @@ func Test_trackMetadata_AlbumTitleDiffers(t *testing.T) {
 		wantTM      *files.TrackMetadata
 	}{
 		"after read failure": {
-			tM:          files.NewTrackMetadata().WithErrorCauses([]string{"", cannotOpenFile, cannotOpenFile}),
+			tM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", cannotOpenFile, cannotOpenFile}),
 			args:        args{albumTitle: "album name"},
 			wantDiffers: false,
-			wantTM:      files.NewTrackMetadata().WithErrorCauses([]string{"", cannotOpenFile, cannotOpenFile}),
+			wantTM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", cannotOpenFile, cannotOpenFile}),
 		},
 		"after reading no metadata": {
-			tM:          files.NewTrackMetadata().WithErrorCauses([]string{"", negativeSeek, zeroBytes}),
+			tM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", negativeSeek, zeroBytes}),
 			args:        args{albumTitle: "album name"},
 			wantDiffers: false,
-			wantTM:      files.NewTrackMetadata().WithErrorCauses([]string{"", negativeSeek, zeroBytes}),
+			wantTM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", negativeSeek, zeroBytes}),
 		},
 		"after reading only id3v1 metadata": {
 			tM: files.NewTrackMetadata().WithAlbumNames([]string{
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
-				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
+				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers(
+				[]int{0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}),
 			args:        args{albumTitle: "album name"},
 			wantDiffers: true,
@@ -765,8 +825,8 @@ func Test_trackMetadata_AlbumTitleDiffers(t *testing.T) {
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
-				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
+				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers(
+				[]int{0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}).WithCorrectedAlbumNames([]string{
 				"", "album name", ""}).WithRequiresEdits([]bool{false, true, false}),
 		},
@@ -775,7 +835,8 @@ func Test_trackMetadata_AlbumTitleDiffers(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers([]int{
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers([]int{
 				0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{"", noID3V1Metadata, ""}),
 			args:        args{albumTitle: "album name"},
@@ -784,7 +845,8 @@ func Test_trackMetadata_AlbumTitleDiffers(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers([]int{
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers([]int{
 				0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{
 				"", noID3V1Metadata, ""}).WithCorrectedAlbumNames([]string{
@@ -796,7 +858,8 @@ func Test_trackMetadata_AlbumTitleDiffers(t *testing.T) {
 				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres(
 				[]string{"", "Other", "dance music"}).WithYears([]string{
-				"", "2013", "2022"}).WithTrackNumbers([]int{0, 29, 2}).WithMusicCDIdentifier(
+				"", "2013", "2022"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier(
 				[]byte{0}).WithPrimarySource(files.ID3V2),
 			args:        args{albumTitle: "album name"},
 			wantDiffers: true,
@@ -805,14 +868,16 @@ func Test_trackMetadata_AlbumTitleDiffers(t *testing.T) {
 				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres(
 				[]string{"", "Other", "dance music"}).WithYears([]string{
-				"", "2013", "2022"}).WithTrackNumbers([]int{0, 29, 2}).WithMusicCDIdentifier(
+				"", "2013", "2022"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier(
 				[]byte{0}).WithPrimarySource(files.ID3V2).WithCorrectedAlbumNames([]string{
 				"", "album name", "album name"}).WithRequiresEdits([]bool{false, true, true}),
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if gotDiffers := tt.tM.AlbumTitleDiffers(tt.args.albumTitle); gotDiffers != tt.wantDiffers {
+			if gotDiffers := tt.tM.AlbumTitleDiffers(
+				tt.args.albumTitle); gotDiffers != tt.wantDiffers {
 				t.Errorf("%s = %v, want %v", fnName, gotDiffers, tt.wantDiffers)
 			}
 			if !reflect.DeepEqual(tt.tM, tt.wantTM) {
@@ -834,24 +899,28 @@ func Test_trackMetadata_ArtistNameDiffers(t *testing.T) {
 		wantTM      *files.TrackMetadata
 	}{
 		"after read failure": {
-			tM:          files.NewTrackMetadata().WithErrorCauses([]string{"", cannotOpenFile, cannotOpenFile}),
+			tM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", cannotOpenFile, cannotOpenFile}),
 			args:        args{artistName: "artist name"},
 			wantDiffers: false,
-			wantTM:      files.NewTrackMetadata().WithErrorCauses([]string{"", cannotOpenFile, cannotOpenFile}),
+			wantTM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", cannotOpenFile, cannotOpenFile}),
 		},
 		"after reading no metadata": {
-			tM:          files.NewTrackMetadata().WithErrorCauses([]string{"", negativeSeek, zeroBytes}),
+			tM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", negativeSeek, zeroBytes}),
 			args:        args{artistName: "artist name"},
 			wantDiffers: false,
-			wantTM:      files.NewTrackMetadata().WithErrorCauses([]string{"", negativeSeek, zeroBytes}),
+			wantTM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", negativeSeek, zeroBytes}),
 		},
 		"after reading only id3v1 metadata": {
 			tM: files.NewTrackMetadata().WithAlbumNames([]string{
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
-				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
+				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers(
+				[]int{0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}),
 			args:        args{artistName: "artist name"},
 			wantDiffers: true,
@@ -859,8 +928,8 @@ func Test_trackMetadata_ArtistNameDiffers(t *testing.T) {
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
-				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
+				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers(
+				[]int{0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}).WithCorrectedArtistNames([]string{
 				"", "artist name", ""}).WithRequiresEdits([]bool{false, true, false}),
 		},
@@ -869,7 +938,8 @@ func Test_trackMetadata_ArtistNameDiffers(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers([]int{
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers([]int{
 				0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{"", noID3V1Metadata, ""}),
 			args:        args{artistName: "artist name"},
@@ -878,7 +948,8 @@ func Test_trackMetadata_ArtistNameDiffers(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers([]int{
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers([]int{
 				0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{
 				"", noID3V1Metadata, ""}).WithCorrectedArtistNames([]string{
@@ -890,7 +961,8 @@ func Test_trackMetadata_ArtistNameDiffers(t *testing.T) {
 				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres(
 				[]string{"", "Other", "dance music"}).WithYears([]string{
-				"", "2013", "2022"}).WithTrackNumbers([]int{0, 29, 2}).WithMusicCDIdentifier(
+				"", "2013", "2022"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier(
 				[]byte{0}).WithPrimarySource(files.ID3V2),
 			args:        args{artistName: "artist name"},
 			wantDiffers: true,
@@ -899,7 +971,8 @@ func Test_trackMetadata_ArtistNameDiffers(t *testing.T) {
 				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres(
 				[]string{"", "Other", "dance music"}).WithYears([]string{
-				"", "2013", "2022"}).WithTrackNumbers([]int{0, 29, 2}).WithMusicCDIdentifier(
+				"", "2013", "2022"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier(
 				[]byte{0}).WithPrimarySource(files.ID3V2).WithCorrectedArtistNames([]string{
 				"", "artist name", "artist name"}).WithRequiresEdits([]bool{
 				false, true, true}),
@@ -929,41 +1002,46 @@ func Test_trackMetadata_GenreDiffers(t *testing.T) {
 		wantTM      *files.TrackMetadata
 	}{
 		"after read failure": {
-			tM:          files.NewTrackMetadata().WithErrorCauses([]string{"", cannotOpenFile, cannotOpenFile}),
+			tM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", cannotOpenFile, cannotOpenFile}),
 			args:        args{genre: "Indie Pop"},
 			wantDiffers: false,
-			wantTM:      files.NewTrackMetadata().WithErrorCauses([]string{"", cannotOpenFile, cannotOpenFile}),
+			wantTM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", cannotOpenFile, cannotOpenFile}),
 		},
 		"after reading no metadata": {
-			tM:          files.NewTrackMetadata().WithErrorCauses([]string{"", negativeSeek, zeroBytes}),
+			tM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", negativeSeek, zeroBytes}),
 			args:        args{genre: "Indie Pop"},
 			wantDiffers: false,
-			wantTM:      files.NewTrackMetadata().WithErrorCauses([]string{"", negativeSeek, zeroBytes}),
+			wantTM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", negativeSeek, zeroBytes}),
 		},
 		"after reading only id3v1 metadata": {
 			tM: files.NewTrackMetadata().WithAlbumNames([]string{
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
-				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
-				"", "", zeroBytes}),
+				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers(
+				[]int{0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses(
+				[]string{"", "", zeroBytes}),
 			args:        args{genre: "Indie Pop"},
 			wantDiffers: false,
 			wantTM: files.NewTrackMetadata().WithAlbumNames([]string{
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
-				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
-				"", "", zeroBytes}),
+				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers(
+				[]int{0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses(
+				[]string{"", "", zeroBytes}),
 		},
 		"after reading only id3v2 metadata": {
 			tM: files.NewTrackMetadata().WithAlbumNames([]string{
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers(
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers(
 				[]int{0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{"", noID3V1Metadata, ""}),
 			args:        args{genre: "Indie Pop"},
@@ -972,7 +1050,8 @@ func Test_trackMetadata_GenreDiffers(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers(
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers(
 				[]int{0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{
 				"", noID3V1Metadata, ""}).WithCorrectedGenres([]string{
@@ -984,7 +1063,8 @@ func Test_trackMetadata_GenreDiffers(t *testing.T) {
 				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres(
 				[]string{"", "Other", "dance music"}).WithYears([]string{
-				"", "2013", "2022"}).WithTrackNumbers([]int{0, 29, 2}).WithMusicCDIdentifier(
+				"", "2013", "2022"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier(
 				[]byte{0}).WithPrimarySource(files.ID3V2),
 			args:        args{genre: "Indie Pop"},
 			wantDiffers: true,
@@ -993,14 +1073,16 @@ func Test_trackMetadata_GenreDiffers(t *testing.T) {
 				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres(
 				[]string{"", "Other", "dance music"}).WithYears([]string{
-				"", "2013", "2022"}).WithTrackNumbers([]int{0, 29, 2}).WithMusicCDIdentifier(
+				"", "2013", "2022"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier(
 				[]byte{0}).WithPrimarySource(files.ID3V2).WithCorrectedGenres([]string{
 				"", "", "Indie Pop"}).WithRequiresEdits([]bool{false, false, true}),
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if gotDiffers := tt.tM.GenreDiffers(tt.args.genre); gotDiffers != tt.wantDiffers {
+			if gotDiffers := tt.tM.GenreDiffers(
+				tt.args.genre); gotDiffers != tt.wantDiffers {
 				t.Errorf("%s = %v, want %v", fnName, gotDiffers, tt.wantDiffers)
 			}
 			if !reflect.DeepEqual(tt.tM, tt.wantTM) {
@@ -1022,24 +1104,28 @@ func Test_trackMetadata_YearDiffers(t *testing.T) {
 		wantTM      *files.TrackMetadata
 	}{
 		"after read failure": {
-			tM:          files.NewTrackMetadata().WithErrorCauses([]string{"", cannotOpenFile, cannotOpenFile}),
+			tM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", cannotOpenFile, cannotOpenFile}),
 			args:        args{year: "1999"},
 			wantDiffers: false,
-			wantTM:      files.NewTrackMetadata().WithErrorCauses([]string{"", cannotOpenFile, cannotOpenFile}),
+			wantTM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", cannotOpenFile, cannotOpenFile}),
 		},
 		"after reading no metadata": {
-			tM:          files.NewTrackMetadata().WithErrorCauses([]string{"", negativeSeek, zeroBytes}),
+			tM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", negativeSeek, zeroBytes}),
 			args:        args{year: "1999"},
 			wantDiffers: false,
-			wantTM:      files.NewTrackMetadata().WithErrorCauses([]string{"", negativeSeek, zeroBytes}),
+			wantTM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", negativeSeek, zeroBytes}),
 		},
 		"after reading only id3v1 metadata": {
 			tM: files.NewTrackMetadata().WithAlbumNames([]string{
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
-				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
+				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers(
+				[]int{0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}),
 			args:        args{year: "1999"},
 			wantDiffers: true,
@@ -1047,8 +1133,8 @@ func Test_trackMetadata_YearDiffers(t *testing.T) {
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
-				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
+				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers(
+				[]int{0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}).WithCorrectedYears([]string{
 				"", "1999", ""}).WithRequiresEdits([]bool{false, true, false}),
 		},
@@ -1057,7 +1143,8 @@ func Test_trackMetadata_YearDiffers(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers(
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers(
 				[]int{0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{"", noID3V1Metadata, ""}),
 			args:        args{year: "1999"},
@@ -1066,7 +1153,8 @@ func Test_trackMetadata_YearDiffers(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers(
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers(
 				[]int{0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{
 				"", noID3V1Metadata, ""}).WithCorrectedYears([]string{
@@ -1078,7 +1166,8 @@ func Test_trackMetadata_YearDiffers(t *testing.T) {
 				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres(
 				[]string{"", "Other", "dance music"}).WithYears([]string{
-				"", "2013", "2022"}).WithTrackNumbers([]int{0, 29, 2}).WithMusicCDIdentifier(
+				"", "2013", "2022"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier(
 				[]byte{0}).WithPrimarySource(files.ID3V2),
 			args:        args{year: "1999"},
 			wantDiffers: true,
@@ -1087,14 +1176,16 @@ func Test_trackMetadata_YearDiffers(t *testing.T) {
 				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres(
 				[]string{"", "Other", "dance music"}).WithYears([]string{
-				"", "2013", "2022"}).WithTrackNumbers([]int{0, 29, 2}).WithMusicCDIdentifier(
+				"", "2013", "2022"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier(
 				[]byte{0}).WithPrimarySource(files.ID3V2).WithCorrectedYears([]string{
 				"", "1999", "1999"}).WithRequiresEdits([]bool{false, true, true}),
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if gotDiffers := tt.tM.YearDiffers(tt.args.year); gotDiffers != tt.wantDiffers {
+			if gotDiffers := tt.tM.YearDiffers(
+				tt.args.year); gotDiffers != tt.wantDiffers {
 				t.Errorf("%s = %v, want %v", fnName, gotDiffers, tt.wantDiffers)
 			}
 			if !reflect.DeepEqual(tt.tM, tt.wantTM) {
@@ -1116,24 +1207,28 @@ func Test_trackMetadata_MCDIDiffers(t *testing.T) {
 		wantTM      *files.TrackMetadata
 	}{
 		"after read failure": {
-			tM:          files.NewTrackMetadata().WithErrorCauses([]string{"", cannotOpenFile, cannotOpenFile}),
+			tM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", cannotOpenFile, cannotOpenFile}),
 			args:        args{f: id3v2.UnknownFrame{Body: []byte{1, 2, 3}}},
 			wantDiffers: false,
-			wantTM:      files.NewTrackMetadata().WithErrorCauses([]string{"", cannotOpenFile, cannotOpenFile}),
+			wantTM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", cannotOpenFile, cannotOpenFile}),
 		},
 		"after reading no metadata": {
-			tM:          files.NewTrackMetadata().WithErrorCauses([]string{"", negativeSeek, zeroBytes}),
+			tM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", negativeSeek, zeroBytes}),
 			args:        args{f: id3v2.UnknownFrame{Body: []byte{1, 2, 3}}},
 			wantDiffers: false,
-			wantTM:      files.NewTrackMetadata().WithErrorCauses([]string{"", negativeSeek, zeroBytes}),
+			wantTM: files.NewTrackMetadata().WithErrorCauses(
+				[]string{"", negativeSeek, zeroBytes}),
 		},
 		"after reading only id3v1 metadata": {
 			tM: files.NewTrackMetadata().WithAlbumNames([]string{
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
-				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
+				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers(
+				[]int{0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}),
 			args:        args{f: id3v2.UnknownFrame{Body: []byte{1, 2, 3}}},
 			wantDiffers: false,
@@ -1141,8 +1236,8 @@ func Test_trackMetadata_MCDIDiffers(t *testing.T) {
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
-				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
+				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers(
+				[]int{0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}),
 		},
 		"after reading only id3v2 metadata": {
@@ -1150,7 +1245,8 @@ func Test_trackMetadata_MCDIDiffers(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers(
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers(
 				[]int{0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{"", noID3V1Metadata, ""}),
 			args:        args{f: id3v2.UnknownFrame{Body: []byte{1, 2, 3}}},
@@ -1159,7 +1255,8 @@ func Test_trackMetadata_MCDIDiffers(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers(
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers(
 				[]int{0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{
 				"", noID3V1Metadata, ""}).WithCorrectedMusicCDIdentifier([]byte{
@@ -1213,7 +1310,8 @@ func Test_trackMetadata_CanonicalAlbumTitleMatches(t *testing.T) {
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
+				"", "Other", ""}).WithYears(
+				[]string{"", "2013", ""}).WithTrackNumbers([]int{
 				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}),
 			args: args{albumTitle: "album name"},
@@ -1224,7 +1322,8 @@ func Test_trackMetadata_CanonicalAlbumTitleMatches(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers(
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers(
 				[]int{0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{"", noID3V1Metadata, ""}),
 			args: args{albumTitle: "album name"},
@@ -1236,7 +1335,8 @@ func Test_trackMetadata_CanonicalAlbumTitleMatches(t *testing.T) {
 				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres(
 				[]string{"", "Other", "dance music"}).WithYears([]string{
-				"", "2013", "2022"}).WithTrackNumbers([]int{0, 29, 2}).WithMusicCDIdentifier(
+				"", "2013", "2022"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier(
 				[]byte{0}).WithPrimarySource(files.ID3V2),
 			args: args{albumTitle: "album name"},
 			want: false,
@@ -1246,7 +1346,8 @@ func Test_trackMetadata_CanonicalAlbumTitleMatches(t *testing.T) {
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
+				"", "Other", ""}).WithYears(
+				[]string{"", "2013", ""}).WithTrackNumbers([]int{
 				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}),
 			args: args{albumTitle: "On Air: Live At The BBC, Volume 1"},
@@ -1257,7 +1358,8 @@ func Test_trackMetadata_CanonicalAlbumTitleMatches(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers([]int{
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers([]int{
 				0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{"", noID3V1Metadata, ""}),
 			args: args{albumTitle: "unknown album"},
@@ -1269,7 +1371,8 @@ func Test_trackMetadata_CanonicalAlbumTitleMatches(t *testing.T) {
 				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres(
 				[]string{"", "Other", "dance music"}).WithYears([]string{
-				"", "2013", "2022"}).WithTrackNumbers([]int{0, 29, 2}).WithMusicCDIdentifier(
+				"", "2013", "2022"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier(
 				[]byte{0}).WithPrimarySource(files.ID3V2),
 			args: args{albumTitle: "unknown album"},
 			want: true,
@@ -1277,7 +1380,8 @@ func Test_trackMetadata_CanonicalAlbumTitleMatches(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tM.CanonicalAlbumTitleMatches(tt.args.albumTitle); got != tt.want {
+			if got := tt.tM.CanonicalAlbumTitleMatches(
+				tt.args.albumTitle); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})
@@ -1299,7 +1403,8 @@ func Test_trackMetadata_CanonicalArtistNameMatches(t *testing.T) {
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
+				"", "Other", ""}).WithYears(
+				[]string{"", "2013", ""}).WithTrackNumbers([]int{
 				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}),
 			args: args{artistName: "artist name"},
@@ -1310,7 +1415,8 @@ func Test_trackMetadata_CanonicalArtistNameMatches(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers([]int{
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers([]int{
 				0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{"", noID3V1Metadata, ""}),
 			args: args{artistName: "artist name"},
@@ -1318,11 +1424,14 @@ func Test_trackMetadata_CanonicalArtistNameMatches(t *testing.T) {
 		},
 		"mismatch after reading all metadata": {
 			tM: files.NewTrackMetadata().WithAlbumNames([]string{
-				"", "On Air: Live At The BBC, Volum", "unknown album"}).WithArtistNames([]string{
+				"", "On Air: Live At The BBC, Volum", "unknown album",
+			}).WithArtistNames([]string{
 				"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
-				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres([]string{
+				"", "Ringo - Pop Profile [Interview", "unknown track",
+			}).WithGenres([]string{
 				"", "Other", "dance music"}).WithYears([]string{
-				"", "2013", "2022"}).WithTrackNumbers([]int{0, 29, 2}).WithMusicCDIdentifier(
+				"", "2013", "2022"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier(
 				[]byte{0}).WithPrimarySource(files.ID3V2),
 			args: args{artistName: "artist name"},
 			want: false,
@@ -1332,7 +1441,8 @@ func Test_trackMetadata_CanonicalArtistNameMatches(t *testing.T) {
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", ""}).WithGenres([]string{
-				"", "Other", ""}).WithYears([]string{"", "2013", ""}).WithTrackNumbers([]int{
+				"", "Other", ""}).WithYears(
+				[]string{"", "2013", ""}).WithTrackNumbers([]int{
 				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}),
 			args: args{artistName: "The Beatles"},
@@ -1343,7 +1453,8 @@ func Test_trackMetadata_CanonicalArtistNameMatches(t *testing.T) {
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
 				"", "", "unknown track"}).WithGenres([]string{
-				"", "", "dance music"}).WithYears([]string{"", "", "2022"}).WithTrackNumbers([]int{
+				"", "", "dance music"}).WithYears(
+				[]string{"", "", "2022"}).WithTrackNumbers([]int{
 				0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{"", noID3V1Metadata, ""}),
 			args: args{artistName: "unknown artist"},
@@ -1355,7 +1466,8 @@ func Test_trackMetadata_CanonicalArtistNameMatches(t *testing.T) {
 				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
 				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres(
 				[]string{"", "Other", "dance music"}).WithYears([]string{
-				"", "2013", "2022"}).WithTrackNumbers([]int{0, 29, 2}).WithMusicCDIdentifier(
+				"", "2013", "2022"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier(
 				[]byte{0}).WithPrimarySource(files.ID3V2),
 			args: args{artistName: "unknown artist"},
 			want: true,
@@ -1363,7 +1475,8 @@ func Test_trackMetadata_CanonicalArtistNameMatches(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tM.CanonicalArtistNameMatches(tt.args.artistName); got != tt.want {
+			if got := tt.tM.CanonicalArtistNameMatches(
+				tt.args.artistName); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
 			}
 		})

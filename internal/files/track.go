@@ -40,11 +40,15 @@ var (
 
 // Track encapsulates data about a track in an album.
 type Track struct {
-	album    *Album
-	fullPath string         // full path to the file associated with the track, including the file itself
-	metadata *TrackMetadata // read from the file only when needed; file i/o is expensive
-	name     string         // name of the track, without the track number or file extension, e.g., "First Track"
-	number   int            // number of the track
+	album *Album
+	// full path to the file associated with the track, including the file itself
+	fullPath string
+	// read from the file only when needed; file i/o is expensive
+	metadata *TrackMetadata
+	// name of the track, without the track number or file extension, e.g., "First Track"
+	name string
+	// number of the track
+	number int
 }
 
 func (t *Track) GetMetadata() *TrackMetadata {
@@ -280,7 +284,8 @@ func (t *Track) ReconcileMetadata() MetadataState {
 func (t *Track) ReportMetadataProblems() []string {
 	s := t.ReconcileMetadata()
 	if s.hasError {
-		return []string{"differences cannot be determined: there was an error reading metadata"}
+		return []string{
+			"differences cannot be determined: there was an error reading metadata"}
 	}
 	if s.noMetadata {
 		return []string{"differences cannot be determined: metadata has not been read"}
@@ -299,23 +304,28 @@ func (t *Track) ReportMetadataProblems() []string {
 	}
 	if s.HasAlbumNameConflict() {
 		diffs = append(diffs,
-			fmt.Sprintf("metadata does not agree with album name %q", t.album.canonicalTitle))
+			fmt.Sprintf("metadata does not agree with album name %q",
+				t.album.canonicalTitle))
 	}
 	if s.HasArtistNameConflict() {
 		diffs = append(diffs,
-			fmt.Sprintf("metadata does not agree with artist name %q", t.album.artist.canonicalName))
+			fmt.Sprintf("metadata does not agree with artist name %q",
+				t.album.artist.canonicalName))
 	}
 	if s.HasGenreConflict() {
 		diffs = append(diffs,
-			fmt.Sprintf("metadata does not agree with album genre %q", t.album.canonicalGenre))
+			fmt.Sprintf("metadata does not agree with album genre %q",
+				t.album.canonicalGenre))
 	}
 	if s.HasYearConflict() {
 		diffs = append(diffs,
-			fmt.Sprintf("metadata does not agree with album year %q", t.album.canonicalYear))
+			fmt.Sprintf("metadata does not agree with album year %q",
+				t.album.canonicalYear))
 	}
 	if s.HasMCDIConflict() {
 		diffs = append(diffs,
-			fmt.Sprintf("metadata does not agree with the MCDI frame %q", string(t.album.musicCDIdentifier.Body)))
+			fmt.Sprintf("metadata does not agree with the MCDI frame %q",
+				string(t.album.musicCDIdentifier.Body)))
 	}
 	sort.Strings(diffs)
 	return diffs
@@ -363,7 +373,9 @@ func ReadMetadata(o output.Bus, artists []*Artist) {
 	// derived from the Default ProgressBarTemplate used by the progress bar,
 	// following guidance in the ElementSpeed definition to change the output to
 	// display the speed in tracks per second
-	t := `{{with string . "prefix"}}{{.}} {{end}}{{counters . }} {{bar . }} {{percent . }} {{speed . "%s tracks per second"}}{{with string . "suffix"}} {{.}}{{end}}`
+	t := `{{with string . "prefix"}}{{.}} {{end}}{{counters . }} {{bar . }}` +
+		` {{percent . }} {{speed . "%s tracks per second"}}{{with string . "suffix"}}` +
+		` {{.}}{{end}}`
 	bar := pb.New(count).SetWriter(GetBestWriter(o)).SetTemplateString(t).Start()
 	for _, artist := range artists {
 		for _, album := range artist.Albums() {
@@ -396,7 +408,8 @@ func ProcessArtistMetadata(o output.Bus, artists []*Artist) {
 		recordedArtistNames := make(map[string]int)
 		for _, album := range artist.Albums() {
 			for _, track := range album.Tracks() {
-				if track.metadata != nil && track.metadata.IsValid() && track.metadata.CanonicalArtistNameMatches(artist.fileName) {
+				if track.metadata != nil && track.metadata.IsValid() &&
+					track.metadata.CanonicalArtistNameMatches(artist.fileName) {
 					recordedArtistNames[track.metadata.CanonicalArtist()]++
 				}
 			}
@@ -414,8 +427,11 @@ func ProcessArtistMetadata(o output.Bus, artists []*Artist) {
 	}
 }
 
-func reportAmbiguousChoices(o output.Bus, subject, context string, choices map[string]int) {
-	o.WriteCanonicalError("There are multiple %s fields for %q, and there is no unambiguously preferred choice; candidates are %v", subject, context, encodeChoices(choices))
+func reportAmbiguousChoices(o output.Bus, subject, context string,
+	choices map[string]int) {
+	o.WriteCanonicalError("There are multiple %s fields for %q,"+
+		" and there is no unambiguously preferred choice; candidates are %v", subject, context,
+		encodeChoices(choices))
 }
 
 func logAmbiguousValue(o output.Bus, m map[string]any) {
@@ -449,7 +465,8 @@ func ProcessAlbumMetadata(o output.Bus, artists []*Artist) {
 				recordedMCDIFrames[mcdiKey] = t.metadata.CanonicalMusicCDIdentifier()
 			}
 			if canonicalGenre, ok := CanonicalChoice(recordedGenres); !ok {
-				reportAmbiguousChoices(o, "genre", fmt.Sprintf("%s by %s", al.Name(), ar.Name()), recordedGenres)
+				reportAmbiguousChoices(o, "genre",
+					fmt.Sprintf("%s by %s", al.Name(), ar.Name()), recordedGenres)
 				logAmbiguousValue(o, map[string]any{
 					"field":      "genre",
 					"settings":   recordedGenres,
@@ -460,7 +477,8 @@ func ProcessAlbumMetadata(o output.Bus, artists []*Artist) {
 				al.canonicalGenre = canonicalGenre
 			}
 			if canonicalYear, ok := CanonicalChoice(recordedYears); !ok {
-				reportAmbiguousChoices(o, "year", fmt.Sprintf("%s by %s", al.Name(), ar.Name()), recordedYears)
+				reportAmbiguousChoices(o, "year",
+					fmt.Sprintf("%s by %s", al.Name(), ar.Name()), recordedYears)
 				logAmbiguousValue(o, map[string]any{
 					"field":      "year",
 					"settings":   recordedYears,
@@ -471,7 +489,8 @@ func ProcessAlbumMetadata(o output.Bus, artists []*Artist) {
 				al.canonicalYear = canonicalYear
 			}
 			if canonicalAlbumTitle, ok := CanonicalChoice(recordedAlbumTitles); !ok {
-				reportAmbiguousChoices(o, "album title", fmt.Sprintf("%s by %s", al.Name(), ar.Name()), recordedAlbumTitles)
+				reportAmbiguousChoices(o, "album title",
+					fmt.Sprintf("%s by %s", al.Name(), ar.Name()), recordedAlbumTitles)
 				logAmbiguousValue(o, map[string]any{
 					"field":      "album title",
 					"settings":   recordedAlbumTitles,
@@ -482,7 +501,8 @@ func ProcessAlbumMetadata(o output.Bus, artists []*Artist) {
 				al.canonicalTitle = canonicalAlbumTitle
 			}
 			if canonicalMCDI, ok := CanonicalChoice(recordedMCDIs); !ok {
-				reportAmbiguousChoices(o, "MCDI frame", fmt.Sprintf("%s by %s", al.Name(), ar.Name()), recordedMCDIs)
+				reportAmbiguousChoices(o, "MCDI frame",
+					fmt.Sprintf("%s by %s", al.Name(), ar.Name()), recordedMCDIs)
 				logAmbiguousValue(o, map[string]any{
 					"field":      "mcdi frame",
 					"settings":   recordedMCDIs,
@@ -575,14 +595,16 @@ func WaitForFilesClosed() {
 	}
 }
 
-func ParseTrackName(o output.Bus, name string, album *Album, ext string) (commonName string, trackNumber int, valid bool) {
+func ParseTrackName(o output.Bus, name string, album *Album,
+	ext string) (commonName string, trackNumber int, valid bool) {
 	if !trackNameRegex.MatchString(name) {
 		o.Log(output.Error, "the track name cannot be parsed", map[string]any{
 			"trackName":  name,
 			"albumName":  album.title,
 			"artistName": album.RecordingArtistName(),
 		})
-		o.WriteCanonicalError("The track %q on album %q by artist %q cannot be parsed", name, album.title, album.RecordingArtistName())
+		o.WriteCanonicalError("The track %q on album %q by artist %q cannot be parsed",
+			name, album.title, album.RecordingArtistName())
 		return
 	}
 	wantDigit := true

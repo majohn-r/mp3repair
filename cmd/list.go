@@ -36,14 +36,19 @@ const (
 var (
 	// ListCmd represents the list command
 	ListCmd = &cobra.Command{
-		Use:                   ListCommand + " [" + ListAlbumsFlag + "] [" + ListArtistsFlag + "] [" + ListTracksFlag + "] [" + ListAnnotateFlag + "] [" + ListDetailsFlag + "] [" + ListDiagnosticFlag + "] [" + ListSortByNumberFlag + " | " + ListSortByTitleFlag + "] " + searchUsage,
+		Use: ListCommand + " [" + ListAlbumsFlag + "] [" + ListArtistsFlag + "] " +
+			"[" + ListTracksFlag + "] [" + ListAnnotateFlag + "] [" + ListDetailsFlag + "] " +
+			"[" + ListDiagnosticFlag + "] [" + ListSortByNumberFlag + " | " +
+			ListSortByTitleFlag + "] " + searchUsage,
 		DisableFlagsInUseLine: true,
 		Short:                 "Lists mp3 files and containing album and artist directories",
-		Long:                  fmt.Sprintf("%q lists mp3 files and containing album and artist directories", ListCommand),
+		Long: fmt.Sprintf(
+			"%q lists mp3 files and containing album and artist directories", ListCommand),
 		Example: ListCommand + " " + ListAnnotateFlag + "\n" +
 			"  Annotate tracks with album and artist data and albums with artist data\n" +
 			ListCommand + " " + ListDetailsFlag + "\n" +
-			"  Include detailed information, if available, for each track. This includes composer,\n" +
+			"  Include detailed information, if available, for each track. This includes" +
+			" composer,\n" +
 			"  conductor, key, lyricist, orchestra/band, and subtitle\n" +
 			ListCommand + " " + ListAlbumsFlag + "\n" +
 			"  Include the album names in the output\n" +
@@ -59,14 +64,30 @@ var (
 	}
 	ListFlags = NewSectionFlags().WithSectionName(ListCommand).WithFlags(
 		map[string]*FlagDetails{
-			ListAlbums:       NewFlagDetails().WithAbbreviatedName("l").WithUsage("include album names in listing").WithExpectedType(BoolType).WithDefaultValue(false),
-			ListArtists:      NewFlagDetails().WithAbbreviatedName("r").WithUsage("include artist names in listing").WithExpectedType(BoolType).WithDefaultValue(false),
-			ListTracks:       NewFlagDetails().WithAbbreviatedName("t").WithUsage("include track names in listing").WithExpectedType(BoolType).WithDefaultValue(false),
-			ListSortByNumber: NewFlagDetails().WithUsage("sort tracks by track number").WithExpectedType(BoolType).WithDefaultValue(false),
-			ListSortByTitle:  NewFlagDetails().WithUsage("sort tracks by track title").WithExpectedType(BoolType).WithDefaultValue(false),
-			ListAnnotate:     NewFlagDetails().WithUsage("annotate listings with album and artist names").WithExpectedType(BoolType).WithDefaultValue(false),
-			ListDetails:      NewFlagDetails().WithUsage("include details with tracks").WithExpectedType(BoolType).WithDefaultValue(false),
-			ListDiagnostic:   NewFlagDetails().WithUsage("include diagnostic information with tracks").WithExpectedType(BoolType).WithDefaultValue(false),
+			ListAlbums: NewFlagDetails().WithAbbreviatedName("l").WithUsage(
+				"include album names in listing").WithExpectedType(
+				BoolType).WithDefaultValue(false),
+			ListArtists: NewFlagDetails().WithAbbreviatedName("r").WithUsage(
+				"include artist names in listing").WithExpectedType(
+				BoolType).WithDefaultValue(false),
+			ListTracks: NewFlagDetails().WithAbbreviatedName("t").WithUsage(
+				"include track names in listing").WithExpectedType(
+				BoolType).WithDefaultValue(false),
+			ListSortByNumber: NewFlagDetails().WithUsage(
+				"sort tracks by track number").WithExpectedType(BoolType).WithDefaultValue(
+				false),
+			ListSortByTitle: NewFlagDetails().WithUsage(
+				"sort tracks by track title").WithExpectedType(BoolType).WithDefaultValue(
+				false),
+			ListAnnotate: NewFlagDetails().WithUsage(
+				"annotate listings with album and artist names").WithExpectedType(
+				BoolType).WithDefaultValue(false),
+			ListDetails: NewFlagDetails().WithUsage(
+				"include details with tracks").WithExpectedType(BoolType).WithDefaultValue(
+				false),
+			ListDiagnostic: NewFlagDetails().WithUsage(
+				"include diagnostic information with tracks").WithExpectedType(
+				BoolType).WithDefaultValue(false),
 		},
 	)
 )
@@ -198,7 +219,8 @@ func (ls *ListSettings) WithTracksUserSet(b bool) *ListSettings {
 	return ls
 }
 
-func (ls *ListSettings) ProcessArtists(o output.Bus, allArtists []*files.Artist, loaded bool, searchSettings *SearchSettings) int {
+func (ls *ListSettings) ProcessArtists(o output.Bus, allArtists []*files.Artist,
+	loaded bool, searchSettings *SearchSettings) int {
 	status := UserError
 	if loaded {
 		if filteredArtists, filtered := searchSettings.Filter(o, allArtists); filtered {
@@ -263,7 +285,8 @@ func (ls *ListSettings) ListAlbums(o output.Bus, albums []*files.Album, tab int)
 func (ls *ListSettings) AnnotateAlbumName(album *files.Album) string {
 	switch {
 	case !ls.artists && ls.annotate:
-		return strings.Join([]string{quote(album.Name()), "by", quote(album.RecordingArtistName())}, " ")
+		return strings.Join([]string{quote(album.Name()), "by",
+			quote(album.RecordingArtistName())}, " ")
 	default:
 		return album.Name()
 	}
@@ -344,13 +367,17 @@ func (ls *ListSettings) ListTrackDetails(o output.Bus, track *files.Track, tab i
 }
 
 // split out for testing!
-func ShowDetails(o output.Bus, track *files.Track, details map[string]string, detailsError error, tab int) {
+func ShowDetails(o output.Bus, track *files.Track, details map[string]string,
+	detailsError error, tab int) {
 	if detailsError != nil {
 		o.Log(output.Error, "cannot get details", map[string]any{
 			"error": detailsError,
 			"track": track.String(),
 		})
-		o.WriteCanonicalError("The details are not available for track %q on album %q by artist %q: %q", track.CommonName(), track.AlbumName(), track.RecordingArtist(), detailsError.Error())
+		o.WriteCanonicalError(
+			"The details are not available for track %q on album %q by artist %q: %q",
+			track.CommonName(), track.AlbumName(), track.RecordingArtist(),
+			detailsError.Error())
 	} else if len(details) != 0 {
 		keys := []string{}
 		for k := range details {
@@ -374,7 +401,8 @@ func (ls *ListSettings) ListTrackDiagnostics(o output.Bus, track *files.Track, t
 }
 
 // split out for testing!
-func ShowID3V1Diagnostics(o output.Bus, track *files.Track, tags []string, err error, tab int) {
+func ShowID3V1Diagnostics(o output.Bus, track *files.Track, tags []string, err error,
+	tab int) {
 	if err != nil {
 		track.ReportMetadataReadError(o, files.ID3V1, err.Error())
 	} else {
@@ -385,7 +413,8 @@ func ShowID3V1Diagnostics(o output.Bus, track *files.Track, tags []string, err e
 }
 
 // split out for testing!
-func ShowID3V2Diagnostics(o output.Bus, track *files.Track, version byte, encoding string, frames []string, err error, tab int) {
+func ShowID3V2Diagnostics(o output.Bus, track *files.Track, version byte, encoding string,
+	frames []string, err error, tab int) {
 	if err != nil {
 		track.ReportMetadataReadError(o, files.ID3V2, err.Error())
 	} else {
@@ -407,18 +436,25 @@ func (ls *ListSettings) TracksSortable(o output.Bus) bool {
 			o.WriteCanonicalError("Why?")
 			if ls.sortByNumberUserSet {
 				if ls.sortByTitleUserSet {
-					o.WriteCanonicalError("You explicitly set %s and %s true", ListSortByNumberFlag, ListSortByTitleFlag)
+					o.WriteCanonicalError("You explicitly set %s and %s true",
+						ListSortByNumberFlag, ListSortByTitleFlag)
 				} else {
-					o.WriteCanonicalError("The %s flag is configured true and you explicitly set %s true", ListSortByTitleFlag, ListSortByNumberFlag)
+					o.WriteCanonicalError(
+						"The %s flag is configured true and you explicitly set %s true",
+						ListSortByTitleFlag, ListSortByNumberFlag)
 				}
 			} else {
 				if ls.sortByTitleUserSet {
-					o.WriteCanonicalError("The %s flag is configured true and you explicitly set %s true", ListSortByNumberFlag, ListSortByTitleFlag)
+					o.WriteCanonicalError(
+						"The %s flag is configured true and you explicitly set %s true",
+						ListSortByNumberFlag, ListSortByTitleFlag)
 				} else {
-					o.WriteCanonicalError("The %s and %s flags are both configured true", ListSortByNumberFlag, ListSortByTitleFlag)
+					o.WriteCanonicalError("The %s and %s flags are both configured true",
+						ListSortByNumberFlag, ListSortByTitleFlag)
 				}
 			}
-			o.WriteCanonicalError("What to do:\nEither edit the configuration file and use those default values, or use appropriate command line values")
+			o.WriteCanonicalError("What to do:\nEither edit the configuration file and use" +
+				" those default values, or use appropriate command line values")
 			return false
 		case ls.sortByNumber && !ls.albums:
 			o.WriteCanonicalError("Sorting tracks by number not possible.")
@@ -470,8 +506,11 @@ func (ls *ListSettings) TracksSortable(o output.Bus) bool {
 		(ls.sortByTitle && ls.sortByTitleUserSet) {
 		o.WriteCanonicalError("Your sorting preferences are not relevant")
 		o.WriteCanonicalError("Why?")
-		o.WriteCanonicalError("Tracks are not included in the output, but you explicitly set %s or %s true.", ListSortByNumberFlag, ListSortByTitleFlag)
-		o.WriteCanonicalError("What to do:\nEither set %s true or remove the sorting flags from the command line.", ListTracksFlag)
+		o.WriteCanonicalError(
+			"Tracks are not included in the output, but you explicitly set %s or %s true.",
+			ListSortByNumberFlag, ListSortByTitleFlag)
+		o.WriteCanonicalError("What to do:\nEither set %s true or remove the sorting flags"+
+			" from the command line.", ListTracksFlag)
 		return false
 	}
 	return true
@@ -502,15 +541,21 @@ func (ls *ListSettings) HasWorkToDo(o output.Bus) bool {
 			flagsFromConfig = append(flagsFromConfig, ListTracksFlag)
 		}
 		if len(flagsFromConfig) == 0 {
-			o.WriteCanonicalError("You explicitly set %s, %s, and %s false", ListAlbumsFlag, ListArtistsFlag, ListTracksFlag)
+			o.WriteCanonicalError("You explicitly set %s, %s, and %s false",
+				ListAlbumsFlag, ListArtistsFlag, ListTracksFlag)
 		} else {
-			o.WriteCanonicalError("In addition to %s configured false, you explicitly set %s false", strings.Join(flagsFromConfig, " and "), strings.Join(flagsUserSet, " and "))
+			o.WriteCanonicalError(
+				"In addition to %s configured false, you explicitly set %s false",
+				strings.Join(flagsFromConfig, " and "), strings.Join(flagsUserSet, " and "))
 		}
 	} else {
-		o.WriteCanonicalError("The flags %s, %s, and %s are all configured false", ListAlbumsFlag, ListArtistsFlag, ListTracksFlag)
+		o.WriteCanonicalError("The flags %s, %s, and %s are all configured false",
+			ListAlbumsFlag, ListArtistsFlag, ListTracksFlag)
 	}
 	o.WriteError("What to do:\n")
-	o.WriteCanonicalError("Either:\n[1] Edit the configuration file so that at least one of these flags is true, or\n[2] explicitly set at least one of these flags true on the command line")
+	o.WriteCanonicalError("Either:\n[1] Edit the configuration file so that at least one" +
+		" of these flags is true, or\n[2] explicitly set at least one of these flags true on" +
+		" the command line")
 	return false
 }
 
@@ -518,13 +563,15 @@ func ProcessListFlags(o output.Bus, values map[string]*FlagValue) (*ListSettings
 	settings := &ListSettings{}
 	ok := true // optimistic
 	var err error
-	if settings.albums, settings.albumsUserSet, err = GetBool(o, values, ListAlbums); err != nil {
+	if settings.albums, settings.albumsUserSet, err = GetBool(o, values,
+		ListAlbums); err != nil {
 		ok = false
 	}
 	if settings.annotate, _, err = GetBool(o, values, ListAnnotate); err != nil {
 		ok = false
 	}
-	if settings.artists, settings.artistsUserSet, err = GetBool(o, values, ListArtists); err != nil {
+	if settings.artists, settings.artistsUserSet, err = GetBool(o, values,
+		ListArtists); err != nil {
 		ok = false
 	}
 	if settings.details, _, err = GetBool(o, values, ListDetails); err != nil {
@@ -533,13 +580,16 @@ func ProcessListFlags(o output.Bus, values map[string]*FlagValue) (*ListSettings
 	if settings.diagnostic, _, err = GetBool(o, values, ListDiagnostic); err != nil {
 		ok = false
 	}
-	if settings.sortByNumber, settings.sortByNumberUserSet, err = GetBool(o, values, ListSortByNumber); err != nil {
+	if settings.sortByNumber, settings.sortByNumberUserSet, err = GetBool(o, values,
+		ListSortByNumber); err != nil {
 		ok = false
 	}
-	if settings.sortByTitle, settings.sortByTitleUserSet, err = GetBool(o, values, ListSortByTitle); err != nil {
+	if settings.sortByTitle, settings.sortByTitleUserSet, err = GetBool(o, values,
+		ListSortByTitle); err != nil {
 		ok = false
 	}
-	if settings.tracks, settings.tracksUserSet, err = GetBool(o, values, ListTracks); err != nil {
+	if settings.tracks, settings.tracksUserSet, err = GetBool(o, values,
+		ListTracks); err != nil {
 		ok = false
 	}
 	return settings, ok

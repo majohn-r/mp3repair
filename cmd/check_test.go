@@ -34,9 +34,18 @@ func TestProcessCheckFlags(t *testing.T) {
 					"An internal error occurred: flag \"files\" is not found.\n" +
 					"An internal error occurred: flag \"numbering\" is not found.\n",
 				Log: "" +
-					"level='error' error='flag not found' flag='empty' msg='internal error'\n" +
-					"level='error' error='flag not found' flag='files' msg='internal error'\n" +
-					"level='error' error='flag not found' flag='numbering' msg='internal error'\n",
+					"level='error'" +
+					" error='flag not found'" +
+					" flag='empty'" +
+					" msg='internal error'\n" +
+					"level='error'" +
+					" error='flag not found'" +
+					" flag='files'" +
+					" msg='internal error'\n" +
+					"level='error'" +
+					" error='flag not found'" +
+					" flag='numbering'" +
+					" msg='internal error'\n",
 			},
 		},
 		"out of the box": {
@@ -54,7 +63,9 @@ func TestProcessCheckFlags(t *testing.T) {
 				"files":     cmd.NewFlagValue().WithValue(true).WithExplicitlySet(true),
 				"numbering": cmd.NewFlagValue().WithValue(true).WithExplicitlySet(true),
 			},
-			want:  cmd.NewCheckSettings().WithEmpty(true).WithEmptyUserSet(true).WithFiles(true).WithFilesUserSet(true).WithNumbering(true).WithNumberingUserSet(true),
+			want: cmd.NewCheckSettings().WithEmpty(true).WithEmptyUserSet(
+				true).WithFiles(true).WithFilesUserSet(true).WithNumbering(
+				true).WithNumberingUserSet(true),
 			want1: true,
 		},
 	}
@@ -93,8 +104,10 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 					"The flags --empty, --files, and --numbering are all configured false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command line.\n",
+					"[1] Edit the configuration file so that at least one of these flags" +
+					" is true, or\n" +
+					"[2] explicitly set at least one of these flags true on the command" +
+					" line.\n",
 			},
 		},
 		"no work, empty configured that way": {
@@ -104,11 +117,14 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 				Error: "" +
 					"No checks will be executed.\n" +
 					"Why?\n" +
-					"In addition to --files and --numbering configured false, you explicitly set --empty false.\n" +
+					"In addition to --files and --numbering configured false, you" +
+					" explicitly set --empty false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command line.\n",
+					"[1] Edit the configuration file so that at least one of these flags" +
+					" is true, or\n" +
+					"[2] explicitly set at least one of these flags true on the command" +
+					" line.\n",
 			},
 		},
 		"no work, files configured that way": {
@@ -118,11 +134,14 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 				Error: "" +
 					"No checks will be executed.\n" +
 					"Why?\n" +
-					"In addition to --empty and --numbering configured false, you explicitly set --files false.\n" +
+					"In addition to --empty and --numbering configured false, you" +
+					" explicitly set --files false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command line.\n",
+					"[1] Edit the configuration file so that at least one of these flags" +
+					" is true, or\n" +
+					"[2] explicitly set at least one of these flags true on the command" +
+					" line.\n",
 			},
 		},
 		"no work, numbering configured that way": {
@@ -132,11 +151,14 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 				Error: "" +
 					"No checks will be executed.\n" +
 					"Why?\n" +
-					"In addition to --empty and --files configured false, you explicitly set --numbering false.\n" +
+					"In addition to --empty and --files configured false, you explicitly" +
+					" set --numbering false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command line.\n",
+					"[1] Edit the configuration file so that at least one of these flags" +
+					" is true, or\n" +
+					"[2] explicitly set at least one of these flags true on the command" +
+					" line.\n",
 			},
 		},
 		"no work, empty and files configured that way": {
@@ -146,11 +168,14 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 				Error: "" +
 					"No checks will be executed.\n" +
 					"Why?\n" +
-					"In addition to --numbering configured false, you explicitly set --empty and --files false.\n" +
+					"In addition to --numbering configured false, you explicitly set" +
+					" --empty and --files false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command line.\n",
+					"[1] Edit the configuration file so that at least one of these flags" +
+					" is true, or\n" +
+					"[2] explicitly set at least one of these flags true on the command" +
+					" line.\n",
 			},
 		},
 		"no work, empty and numbering configured that way": {
@@ -160,11 +185,14 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 				Error: "" +
 					"No checks will be executed.\n" +
 					"Why?\n" +
-					"In addition to --files configured false, you explicitly set --empty and --numbering false.\n" +
+					"In addition to --files configured false, you explicitly set --empty" +
+					" and --numbering false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command line.\n",
+					"[1] Edit the configuration file so that at least one of these flags" +
+					" is true, or\n" +
+					"[2] explicitly set at least one of these flags true on the command" +
+					" line.\n",
 			},
 		},
 		"no work, numbering and files configured that way": {
@@ -174,15 +202,19 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 				Error: "" +
 					"No checks will be executed.\n" +
 					"Why?\n" +
-					"In addition to --empty configured false, you explicitly set --files and --numbering false.\n" +
+					"In addition to --empty configured false, you explicitly set --files" +
+					" and --numbering false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command line.\n",
+					"[1] Edit the configuration file so that at least one of these flags" +
+					" is true, or\n" +
+					"[2] explicitly set at least one of these flags true on the command" +
+					" line.\n",
 			},
 		},
 		"no work, all flags configured that way": {
-			cs:   cmd.NewCheckSettings().WithNumberingUserSet(true).WithFilesUserSet(true).WithEmptyUserSet(true),
+			cs: cmd.NewCheckSettings().WithNumberingUserSet(true).WithFilesUserSet(
+				true).WithEmptyUserSet(true),
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -191,17 +223,40 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 					"You explicitly set --empty, --files, and --numbering false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command line.\n",
+					"[1] Edit the configuration file so that at least one of these flags" +
+					" is true, or\n" +
+					"[2] explicitly set at least one of these flags true on the command" +
+					" line.\n",
 			},
 		},
-		"check empty":               {cs: cmd.NewCheckSettings().WithEmpty(true), want: true},
-		"check files":               {cs: cmd.NewCheckSettings().WithFiles(true), want: true},
-		"check numbering":           {cs: cmd.NewCheckSettings().WithNumbering(true), want: true},
-		"check empty and files":     {cs: cmd.NewCheckSettings().WithEmpty(true).WithFiles(true), want: true},
-		"check empty and numbering": {cs: cmd.NewCheckSettings().WithEmpty(true).WithNumbering(true), want: true},
-		"check numbering and files": {cs: cmd.NewCheckSettings().WithNumbering(true).WithFiles(true), want: true},
-		"check everything":          {cs: cmd.NewCheckSettings().WithEmpty(true).WithFiles(true).WithNumbering(true), want: true},
+		"check empty": {
+			cs:   cmd.NewCheckSettings().WithEmpty(true),
+			want: true,
+		},
+		"check files": {
+			cs:   cmd.NewCheckSettings().WithFiles(true),
+			want: true,
+		},
+		"check numbering": {
+			cs:   cmd.NewCheckSettings().WithNumbering(true),
+			want: true,
+		},
+		"check empty and files": {
+			cs:   cmd.NewCheckSettings().WithEmpty(true).WithFiles(true),
+			want: true,
+		},
+		"check empty and numbering": {
+			cs:   cmd.NewCheckSettings().WithEmpty(true).WithNumbering(true),
+			want: true,
+		},
+		"check numbering and files": {
+			cs:   cmd.NewCheckSettings().WithNumbering(true).WithFiles(true),
+			want: true,
+		},
+		"check everything": {
+			cs:   cmd.NewCheckSettings().WithEmpty(true).WithFiles(true).WithNumbering(true),
+			want: true,
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -337,10 +392,12 @@ func TestNewCheckedAlbum(t *testing.T) {
 						t.Errorf("NewCheckedAlbum() created with issues")
 					}
 					if got.Album() != tt.album {
-						t.Errorf("NewCheckedAlbum() created with wrong album: got %v, want %v", got.Album(), tt.album)
+						t.Errorf("NewCheckedAlbum() created with wrong album: got %v, want %v",
+							got.Album(), tt.album)
 					}
 					if len(got.Tracks()) != len(tt.album.Tracks()) {
-						t.Errorf("NewCheckedAlbum() created with %d tracks, want %d", len(got.Tracks()), len(tt.album.Tracks()))
+						t.Errorf("NewCheckedAlbum() created with %d tracks, want %d",
+							len(got.Tracks()), len(tt.album.Tracks()))
 					}
 					got.AddIssue(cmd.CheckNumberingIssue, "missing track 1")
 					if !got.HasIssues() {
@@ -387,10 +444,13 @@ func TestNewCheckedArtist(t *testing.T) {
 						t.Errorf("NewCheckedArtist() created with issues")
 					}
 					if got.Artist() != tt.artist {
-						t.Errorf("NewCheckedArtist() created with wrong artist: got %v, want %v", got.Artist(), tt.artist)
+						t.Errorf(
+							"NewCheckedArtist() created with wrong artist: got %v, want %v",
+							got.Artist(), tt.artist)
 					}
 					if len(got.Albums()) != len(tt.artist.Albums()) {
-						t.Errorf("NewCheckedArtist() created with %d albums, want %d", len(got.Albums()), len(tt.artist.Albums()))
+						t.Errorf("NewCheckedArtist() created with %d albums, want %d",
+							len(got.Albums()), len(tt.artist.Albums()))
 					}
 					got.AddIssue(cmd.CheckEmptyIssue, "no albums!")
 					if !got.HasIssues() {
@@ -536,7 +596,8 @@ func TestCheckedAlbum_OutputIssues(t *testing.T) {
 	}
 	albumWithTrackIssues := cmd.NewCheckedAlbum(album2)
 	if albumWithTrackIssues != nil {
-		albumWithTrackIssues.Tracks()[3].AddIssue(cmd.CheckFilesIssue, "no metadata detected")
+		albumWithTrackIssues.Tracks()[3].AddIssue(cmd.CheckFilesIssue,
+			"no metadata detected")
 	}
 	var nilAlbum *files.Album
 	if albums := generateAlbums(1, 2); len(albums) > 0 {
@@ -776,10 +837,12 @@ func TestPrepareCheckedArtists(t *testing.T) {
 					}
 				}
 				if albums != tt.wantAlbums {
-					t.Errorf("PrepareCheckedArtists() = %d albums, want %v", albums, tt.wantAlbums)
+					t.Errorf("PrepareCheckedArtists() = %d albums, want %v", albums,
+						tt.wantAlbums)
 				}
 				if tracks != tt.wantTracks {
-					t.Errorf("PrepareCheckedArtists() = %d tracks, want %v", tracks, tt.wantTracks)
+					t.Errorf("PrepareCheckedArtists() = %d tracks, want %v", tracks,
+						tt.wantTracks)
 				}
 				for _, track := range collectedTracks {
 					found := false
@@ -790,7 +853,9 @@ func TestPrepareCheckedArtists(t *testing.T) {
 						}
 					}
 					if !found {
-						t.Errorf("PrepareCheckedArtists() cannot find track %q on %q by %q", track.FileName(), track.AlbumName(), track.RecordingArtist())
+						t.Errorf(
+							"PrepareCheckedArtists() cannot find track %q on %q by %q",
+							track.FileName(), track.AlbumName(), track.RecordingArtist())
 					}
 				}
 				copiedTracks := []*files.Track{}
@@ -815,7 +880,9 @@ func TestPrepareCheckedArtists(t *testing.T) {
 						}
 					}
 					if !found {
-						t.Errorf("PrepareCheckedArtists() cannot find copied track %q on %q by %q", track.FileName(), track.AlbumName(), track.RecordingArtist())
+						t.Errorf("PrepareCheckedArtists() cannot find copied track %q on"+
+							" %q by %q", track.FileName(), track.AlbumName(),
+							track.RecordingArtist())
 					}
 				}
 			}
@@ -861,7 +928,8 @@ func TestCheckSettings_PerformEmptyAnalysis(t *testing.T) {
 				}
 			}
 			if verifiedFound != tt.want {
-				t.Errorf("CheckSettings.PerformEmptyAnalysis() verified = %v, want %v", verifiedFound, tt.want)
+				t.Errorf("CheckSettings.PerformEmptyAnalysis() verified = %v, want %v",
+					verifiedFound, tt.want)
 			}
 		})
 	}
@@ -927,14 +995,16 @@ func TestGenerateNumberingIssues(t *testing.T) {
 				maxTrack: 20,
 			},
 			want: []string{
-				"multiple tracks identified as track 5: \"some other track\", \"track 4\" and \"track 5\"",
+				"multiple tracks identified as track 5: \"some other track\", \"track 4\"" +
+					" and \"track 5\"",
 				"missing tracks identified: 1-2, 4, 6-7, 9, 11-18, 20",
 			},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := cmd.GenerateNumberingIssues(tt.args.m, tt.args.maxTrack); !reflect.DeepEqual(got, tt.want) {
+			if got := cmd.GenerateNumberingIssues(tt.args.m,
+				tt.args.maxTrack); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("GenerateNumberingIssues() = %v, want %v", got, tt.want)
 			}
 		})
@@ -948,10 +1018,12 @@ func TestCheckSettings_PerformNumberingAnalysis(t *testing.T) {
 		artist := files.NewArtist(artistName, filepath.Join("Music", artistName))
 		for k := 0; k < 5; k++ {
 			albumName := fmt.Sprintf("my album %d%d", r, k)
-			album := files.NewAlbum(albumName, artist, filepath.Join("Music", "my artist", albumName))
+			album := files.NewAlbum(albumName, artist, filepath.Join("Music", "my artist",
+				albumName))
 			for j := 1; j <= 6; j += 2 {
 				trackName := fmt.Sprintf("my track %d%d%d", r, k, j)
-				track := files.NewTrack(album, fmt.Sprintf("%d %s.mp3", j, trackName), trackName, j)
+				track := files.NewTrack(album, fmt.Sprintf("%d %s.mp3", j, trackName),
+					trackName, j)
 				album.AddTrack(track)
 			}
 			artist.AddAlbum(album)
@@ -983,7 +1055,8 @@ func TestCheckSettings_PerformNumberingAnalysis(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			if got := tt.cs.PerformNumberingAnalysis(tt.checkedArtists); got != tt.want {
-				t.Errorf("CheckSettings.PerformNumberingAnalysis() = %v, want %v", got, tt.want)
+				t.Errorf("CheckSettings.PerformNumberingAnalysis() = %v, want %v", got,
+					tt.want)
 			}
 			verifiedFound := false
 			for _, artist := range tt.checkedArtists {
@@ -992,7 +1065,8 @@ func TestCheckSettings_PerformNumberingAnalysis(t *testing.T) {
 				}
 			}
 			if verifiedFound != tt.want {
-				t.Errorf("CheckSettings.PerformNumberingAnalysis() verified = %v, want %v", verifiedFound, tt.want)
+				t.Errorf("CheckSettings.PerformNumberingAnalysis() verified = %v, want %v",
+					verifiedFound, tt.want)
 			}
 		})
 	}
@@ -1033,8 +1107,10 @@ func TestRecordFileIssues(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if gotFoundIssues := cmd.RecordFileIssues(tt.args.checkedArtists, tt.args.track, tt.args.issues); gotFoundIssues != tt.wantFoundIssues {
-				t.Errorf("RecordFileIssues() = %v, want %v", gotFoundIssues, tt.wantFoundIssues)
+			if gotFoundIssues := cmd.RecordFileIssues(tt.args.checkedArtists,
+				tt.args.track, tt.args.issues); gotFoundIssues != tt.wantFoundIssues {
+				t.Errorf("RecordFileIssues() = %v, want %v", gotFoundIssues,
+					tt.wantFoundIssues)
 			}
 			if tt.wantFoundIssues {
 				hasIssues := false
@@ -1084,17 +1160,21 @@ func TestCheckSettings_PerformFileAnalysis(t *testing.T) {
 				Error: "" +
 					"No music files remain after filtering.\n" +
 					"Why?\n" +
-					"After applying --artistFilter=<nil>, --albumFilter=<nil>, and --trackFilter=<nil>, no files remained.\n" +
+					"After applying --artistFilter=<nil>, --albumFilter=<nil>, and" +
+					" --trackFilter=<nil>, no files remained.\n" +
 					"What to do:\n" +
 					"Use less restrictive filter settings.\n",
-				Log: "level='error' --albumFilter='<nil>' --artistFilter='<nil>' --trackFilter='<nil>' msg='no files remain after filtering'\n",
+				Log: "level='error' --albumFilter='<nil>' --artistFilter='<nil>'" +
+					" --trackFilter='<nil>' msg='no files remain after filtering'\n",
 			},
 		},
 		"work to do": {
 			cs: cmd.NewCheckSettings().WithFiles(true),
 			args: args{
 				checkedArtists: cmd.PrepareCheckedArtists(generateArtists(4, 5, 6)),
-				ss:             cmd.NewSearchSettings().WithArtistFilter(regexp.MustCompile(".*")).WithAlbumFilter(regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
+				ss: cmd.NewSearchSettings().WithArtistFilter(
+					regexp.MustCompile(".*")).WithAlbumFilter(regexp.MustCompile(
+					".*")).WithTrackFilter(regexp.MustCompile(".*")),
 			},
 			want:            true,
 			WantedRecording: output.WantedRecording{},
@@ -1103,7 +1183,8 @@ func TestCheckSettings_PerformFileAnalysis(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			if got := tt.cs.PerformFileAnalysis(o, tt.args.checkedArtists, tt.args.ss); got != tt.want {
+			if got := tt.cs.PerformFileAnalysis(o, tt.args.checkedArtists,
+				tt.args.ss); got != tt.want {
 				t.Errorf("CheckSettings.PerformFileAnalysis() = %v, want %v", got, tt.want)
 			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -1132,8 +1213,11 @@ func TestCheckSettings_MaybeReportCleanResults(t *testing.T) {
 			WantedRecording: output.WantedRecording{},
 		},
 		"all issues found, everything was checked": {
-			cs:              cmd.NewCheckSettings().WithEmpty(true).WithNumbering(true).WithFiles(true),
-			args:            args{emptyIssues: true, numberingIssues: true, fileIssues: true},
+			cs: cmd.NewCheckSettings().WithEmpty(true).WithNumbering(true).WithFiles(true),
+			args: args{
+				emptyIssues:     true,
+				numberingIssues: true,
+				fileIssues:      true},
 			WantedRecording: output.WantedRecording{},
 		},
 		"no issues found, everything was checked": {
@@ -1150,7 +1234,8 @@ func TestCheckSettings_MaybeReportCleanResults(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			tt.cs.MaybeReportCleanResults(o, tt.args.emptyIssues, tt.args.numberingIssues, tt.args.fileIssues)
+			tt.cs.MaybeReportCleanResults(o, tt.args.emptyIssues, tt.args.numberingIssues,
+				tt.args.fileIssues)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("CheckSettings.MaybeReportCleanResults() %s", issue)
@@ -1178,8 +1263,12 @@ func TestCheckSettings_PerformChecks(t *testing.T) {
 		output.WantedRecording
 	}{
 		"no artists loaded": {
-			cs:              nil,
-			args:            args{artists: generateArtists(1, 1, 1), artistsLoaded: false, ss: nil},
+			cs: nil,
+			args: args{
+				artists:       generateArtists(1, 1, 1),
+				artistsLoaded: false,
+				ss:            nil,
+			},
 			wantStatus:      cmd.UserError,
 			WantedRecording: output.WantedRecording{},
 		},
@@ -1194,7 +1283,9 @@ func TestCheckSettings_PerformChecks(t *testing.T) {
 			args: args{
 				artists:       generateArtists(1, 2, 3),
 				artistsLoaded: true,
-				ss:            cmd.NewSearchSettings().WithArtistFilter(regexp.MustCompile(".*")).WithAlbumFilter(regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
+				ss: cmd.NewSearchSettings().WithArtistFilter(
+					regexp.MustCompile(".*")).WithAlbumFilter(
+					regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
 			},
 			wantStatus: cmd.Success,
 			WantedRecording: output.WantedRecording{
@@ -1202,18 +1293,24 @@ func TestCheckSettings_PerformChecks(t *testing.T) {
 					"Artist \"my artist 0\"\n" +
 					"  Album \"my album 00\"\n" +
 					"    Track \"my track 001\"\n" +
-					"    * [files] differences cannot be determined: metadata has not been read\n" +
+					"    * [files]" +
+					" differences cannot be determined: metadata has not been read\n" +
 					"    Track \"my track 002\"\n" +
-					"    * [files] differences cannot be determined: metadata has not been read\n" +
+					"    * [files]" +
+					" differences cannot be determined: metadata has not been read\n" +
 					"    Track \"my track 003\"\n" +
-					"    * [files] differences cannot be determined: metadata has not been read\n" +
+					"    * [files]" +
+					" differences cannot be determined: metadata has not been read\n" +
 					"  Album \"my album 01\"\n" +
 					"    Track \"my track 011\"\n" +
-					"    * [files] differences cannot be determined: metadata has not been read\n" +
+					"    * [files]" +
+					" differences cannot be determined: metadata has not been read\n" +
 					"    Track \"my track 012\"\n" +
-					"    * [files] differences cannot be determined: metadata has not been read\n" +
+					"    * [files]" +
+					" differences cannot be determined: metadata has not been read\n" +
 					"    Track \"my track 013\"\n" +
-					"    * [files] differences cannot be determined: metadata has not been read\n" +
+					"    * [files]" +
+					" differences cannot be determined: metadata has not been read\n" +
 					"Empty Folder Analysis: no empty folders found.\n" +
 					"Numbering Analysis: no missing or duplicate tracks found.\n",
 			},
@@ -1222,7 +1319,8 @@ func TestCheckSettings_PerformChecks(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			if got := tt.cs.PerformChecks(o, tt.args.artists, tt.args.artistsLoaded, tt.args.ss); got != tt.wantStatus {
+			if got := tt.cs.PerformChecks(o, tt.args.artists, tt.args.artistsLoaded,
+				tt.args.ss); got != tt.wantStatus {
 				t.Errorf("CheckSettings.PerformChecks() got %d want %d", got, tt.wantStatus)
 			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -1249,28 +1347,42 @@ func TestCheckSettings_MaybeDoWork(t *testing.T) {
 				Error: "" +
 					"No checks will be executed.\n" +
 					"Why?\n" +
-					"The flags --empty, --files, and --numbering are all configured false.\n" +
+					"The flags --empty, --files, and --numbering are all configured" +
+					" false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command line.\n",
+					"[1] Edit the configuration file so that at least one of these flags" +
+					" is true, or\n" +
+					"[2] explicitly set at least one of these flags true on the command" +
+					" line.\n",
 			},
 		},
 		"try a little work": {
-			cs:         cmd.NewCheckSettings().WithEmpty(true),
-			ss:         cmd.NewSearchSettings().WithTopDirectory(filepath.Join(".", "no dir")).WithFileExtensions([]string{".mp3"}).WithAlbumFilter(regexp.MustCompile(".*")).WithArtistFilter(regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
+			cs: cmd.NewCheckSettings().WithEmpty(true),
+			ss: cmd.NewSearchSettings().WithTopDirectory(
+				filepath.Join(".", "no dir")).WithFileExtensions(
+				[]string{".mp3"}).WithAlbumFilter(
+				regexp.MustCompile(".*")).WithArtistFilter(
+				regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
 			wantStatus: cmd.UserError,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
-					"The directory \"no dir\" cannot be read: open no dir: The system cannot find the file specified.\n" +
+					"The directory \"no dir\" cannot be read: open no dir: The system" +
+					" cannot find the file specified.\n" +
 					"No music files could be found using the specified parameters.\n" +
 					"Why?\n" +
 					"There were no directories found in \"no dir\" (the --topDir value).\n" +
 					"What to do:\n" +
-					"Set --topDir to the path of a directory that contains artist directories.\n",
+					"Set --topDir to the path of a directory that contains artist" +
+					" directories.\n",
 				Log: "" +
-					"level='error' directory='no dir' error='open no dir: The system cannot find the file specified.' msg='cannot read directory'\n" +
-					"level='error' --topDir='no dir' msg='cannot find any artist directories'\n",
+					"level='error'" +
+					" directory='no dir'" +
+					" error='open no dir: The system cannot find the file specified.'" +
+					" msg='cannot read directory'\n" +
+					"level='error'" +
+					" --topDir='no dir'" +
+					" msg='cannot find any artist directories'\n",
 			},
 		},
 	}
@@ -1308,13 +1420,23 @@ func TestCheckRun(t *testing.T) {
 	cmd.SearchFlags = safeSearchFlags
 	checkFlags := cmd.NewSectionFlags().WithSectionName(cmd.CheckCommand).WithFlags(
 		map[string]*cmd.FlagDetails{
-			cmd.CheckEmpty:     cmd.NewFlagDetails().WithAbbreviatedName(cmd.CheckEmptyAbbr).WithUsage("report empty album and artist directories").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
-			cmd.CheckFiles:     cmd.NewFlagDetails().WithAbbreviatedName(cmd.CheckFilesAbbr).WithUsage("report metadata/file inconsistencies").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
-			cmd.CheckNumbering: cmd.NewFlagDetails().WithAbbreviatedName(cmd.CheckNumberingAbbr).WithUsage("report missing track numbers and duplicated track numbering").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+			cmd.CheckEmpty: cmd.NewFlagDetails().WithAbbreviatedName(
+				cmd.CheckEmptyAbbr).WithUsage(
+				"report empty album and artist directories").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(false),
+			cmd.CheckFiles: cmd.NewFlagDetails().WithAbbreviatedName(
+				cmd.CheckFilesAbbr).WithUsage(
+				"report metadata/file inconsistencies").WithExpectedType(
+				cmd.BoolType).WithDefaultValue(false),
+			cmd.CheckNumbering: cmd.NewFlagDetails().WithAbbreviatedName(
+				cmd.CheckNumberingAbbr).WithUsage(
+				"report missing track numbers and duplicated track" +
+					" numbering").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
 		},
 	)
 	command := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), command.Flags(), checkFlags, cmd.SearchFlags)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), command.Flags(),
+		checkFlags, cmd.SearchFlags)
 	type args struct {
 		cmd *cobra.Command
 		in1 []string
@@ -1333,11 +1455,14 @@ func TestCheckRun(t *testing.T) {
 				Error: "" +
 					"No checks will be executed.\n" +
 					"Why?\n" +
-					"The flags --empty, --files, and --numbering are all configured false.\n" +
+					"The flags --empty, --files, and --numbering are all configured" +
+					" false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command line.\n",
+					"[1] Edit the configuration file so that at least one of these flags" +
+					" is true, or\n" +
+					"[2] explicitly set at least one of these flags true on the command" +
+					" line.\n",
 				Log: "" +
 					"level='info'" +
 					" --albumFilter='.*'" +
@@ -1397,35 +1522,48 @@ func TestCheckHelp(t *testing.T) {
 	}()
 	cmd.SearchFlags = safeSearchFlags
 	commandUnderTest := cloneCommand(cmd.CheckCmd)
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), commandUnderTest.Flags(), cmd.CheckFlags, cmd.SearchFlags)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(),
+		commandUnderTest.Flags(), cmd.CheckFlags, cmd.SearchFlags)
 	tests := map[string]struct {
 		output.WantedRecording
 	}{
 		"good": {
 			WantedRecording: output.WantedRecording{
 				Console: "" +
-					"\"check\" runs checks on mp3 files and their containing directories and reports any problems detected\n" +
+					"\"check\" runs checks on mp3 files and their containing directories" +
+					" and reports any problems detected\n" +
 					"\n" +
 					"Usage:\n" +
-					"  check [--empty] [--files] [--numbering] [--albumFilter regex] [--artistFilter regex] [--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +
+					"  check [--empty] [--files] [--numbering] [--albumFilter regex]" +
+					" [--artistFilter regex] [--trackFilter regex] [--topDir dir]" +
+					" [--extensions extensions]\n" +
 					"\n" +
 					"Examples:\n" +
 					"check --empty\n" +
 					"  reports empty artist and album directories\n" +
 					"check --files\n" +
-					"  reads each mp3 file's metadata and reports any inconsistencies found\n" +
+					"  reads each mp3 file's metadata and reports any inconsistencies" +
+					" found\n" +
 					"check --numbering\n" +
 					"  reports errors in the track numbers of mp3 files\n" +
 					"\n" +
 					"Flags:\n" +
-					"      --albumFilter string    regular expression specifying which albums to select (default \".*\")\n" +
-					"      --artistFilter string   regular expression specifying which artists to select (default \".*\")\n" +
-					"  -e, --empty                 report empty album and artist directories (default false)\n" +
-					"      --extensions string     comma-delimited list of file extensions used by mp3 files (default \".mp3\")\n" +
-					"  -f, --files                 report metadata/file inconsistencies (default false)\n" +
-					"  -n, --numbering             report missing track numbers and duplicated track numbering (default false)\n" +
-					"      --topDir string         top directory specifying where to find mp3 files (default \".\")\n" +
-					"      --trackFilter string    regular expression specifying which tracks to select (default \".*\")\n",
+					"      --albumFilter string    " +
+					"regular expression specifying which albums to select (default \".*\")\n" +
+					"      --artistFilter string   " +
+					"regular expression specifying which artists to select (default \".*\")\n" +
+					"  -e, --empty                 " +
+					"report empty album and artist directories (default false)\n" +
+					"      --extensions string     " +
+					"comma-delimited list of file extensions used by mp3 files (default \".mp3\")\n" +
+					"  -f, --files                 " +
+					"report metadata/file inconsistencies (default false)\n" +
+					"  -n, --numbering             " +
+					"report missing track numbers and duplicated track numbering (default false)\n" +
+					"      --topDir string         " +
+					"top directory specifying where to find mp3 files (default \".\")\n" +
+					"      --trackFilter string    " +
+					"regular expression specifying which tracks to select (default \".*\")\n",
 			},
 		},
 	}

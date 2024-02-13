@@ -104,7 +104,8 @@ func CookCommandLineArguments(o output.Bus, inputArgs []string) []string {
 	if len(inputArgs) > 1 {
 		for _, arg := range inputArgs[1:] {
 			if cookedArg, err := DereferenceEnvVar(arg); err != nil {
-				o.WriteCanonicalError("An error was found in processng argument %q: %v", arg, err)
+				o.WriteCanonicalError("An error was found in processng argument %q: %v",
+					arg, err)
 				o.Log(output.Error, "Invalid argument value", map[string]any{
 					"argument": arg,
 					"error":    err,
@@ -151,7 +152,8 @@ func RunMain(o output.Bus, cmd CommandExecutor, start time.Time) {
 		"exitCode": exitCode,
 	})
 	if exitCode != 0 {
-		o.WriteCanonicalError("%q version %s, created at %s, failed", appName, Version, Creation)
+		o.WriteCanonicalError("%q version %s, created at %s, failed", appName, Version,
+			Creation)
 	}
 	Exit(exitCode)
 }

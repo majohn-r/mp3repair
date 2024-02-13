@@ -25,7 +25,8 @@ var (
 		ID3V1: Id3v1GenreDiffers,
 		ID3V2: Id3v2GenreDiffers,
 	}
-	metadataUpdaters = map[SourceType]func(tM *TrackMetadata, path string, src SourceType) error{
+	metadataUpdaters = map[SourceType]func(tM *TrackMetadata, path string,
+		src SourceType) error{
 		ID3V1: updateID3V1Metadata,
 		ID3V2: updateID3V2Metadata,
 	}
@@ -45,8 +46,6 @@ func (sT SourceType) Name() string {
 	}
 }
 
-// outside of unit tests
-// TODO: make fields private
 type TrackMetadata struct {
 	albumName         []string
 	artistName        []string

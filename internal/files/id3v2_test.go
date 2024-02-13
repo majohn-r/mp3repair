@@ -78,7 +78,8 @@ func Test_rawReadID3V2Metadata(t *testing.T) {
 		t.Errorf("%s failed to create ./goodFile.mp3: %v", fnName, err)
 	}
 	frames["TRCK"] = "oops"
-	if err := createFileWithContent(".", "badFile.mp3", createID3v2TaggedData(payload, frames)); err != nil {
+	if err := createFileWithContent(".", "badFile.mp3",
+		createID3v2TaggedData(payload, frames)); err != nil {
 		t.Errorf("%s failed to create ./badFile.mp3: %v", fnName, err)
 	}
 	defer func() {
@@ -157,13 +158,41 @@ func Test_toTrackNumber(t *testing.T) {
 		wantI   int
 		wantErr bool
 	}{
-		"good value":                     {args: args{s: "12"}, wantI: 12, wantErr: false},
-		"empty value":                    {args: args{s: ""}, wantI: 0, wantErr: true},
-		"BOM-infested empty value":       {args: args{s: "\ufeff"}, wantI: 0, wantErr: true},
-		"negative value":                 {args: args{s: "-12"}, wantI: 0, wantErr: true},
-		"invalid value":                  {args: args{s: "foo"}, wantI: 0, wantErr: true},
-		"complicated value":              {args: args{s: "12/39"}, wantI: 12, wantErr: false},
-		"BOM-infested complicated value": {args: args{s: "\ufeff12/39"}, wantI: 12, wantErr: false},
+		"good value": {
+			args:    args{s: "12"},
+			wantI:   12,
+			wantErr: false,
+		},
+		"empty value": {
+			args:    args{s: ""},
+			wantI:   0,
+			wantErr: true,
+		},
+		"BOM-infested empty value": {
+			args:    args{s: "\ufeff"},
+			wantI:   0,
+			wantErr: true,
+		},
+		"negative value": {
+			args:    args{s: "-12"},
+			wantI:   0,
+			wantErr: true,
+		},
+		"invalid value": {
+			args:    args{s: "foo"},
+			wantI:   0,
+			wantErr: true,
+		},
+		"complicated value": {
+			args:    args{s: "12/39"},
+			wantI:   12,
+			wantErr: false,
+		},
+		"BOM-infested complicated value": {
+			args:    args{s: "\ufeff12/39"},
+			wantI:   12,
+			wantErr: false,
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -209,7 +238,10 @@ func Test_selectUnknownFrame(t *testing.T) {
 		args
 		want id3v2.UnknownFrame
 	}{
-		"degenerate case": {args: args{mcdiFramers: nil}, want: id3v2.UnknownFrame{Body: []byte{0}}},
+		"degenerate case": {
+			args: args{mcdiFramers: nil},
+			want: id3v2.UnknownFrame{Body: []byte{0}},
+		},
 		"too many framers": {
 			args: args{mcdiFramers: []id3v2.Framer{id3v2.UnknownFrame{Body: []byte{1, 2, 3}}, id3v2.UnknownFrame{Body: []byte{4, 5, 6}}}},
 			want: id3v2.UnknownFrame{Body: []byte{0}},
@@ -338,11 +370,23 @@ func Test_framerSliceAsString(t *testing.T) {
 		args
 		want string
 	}{
-		"single UnknownFrame": {args: args{f: []id3v2.Framer{id3v2.UnknownFrame{Body: []byte{0, 1, 2}}}}, want: "<<[]byte{0x0, 0x1, 0x2}>>"},
-		"unexpected frame":    {args: args{f: []id3v2.Framer{unspecifiedFrame{content: "hello world"}}}, want: "<<files_test.unspecifiedFrame{content:\"hello world\"}>>"},
+		"single UnknownFrame": {
+			args: args{f: []id3v2.Framer{id3v2.UnknownFrame{Body: []byte{0, 1, 2}}}},
+			want: "<<[]byte{0x0, 0x1, 0x2}>>",
+		},
+		"unexpected frame": {
+			args: args{f: []id3v2.Framer{unspecifiedFrame{content: "hello world"}}},
+			want: "<<files_test.unspecifiedFrame{content:\"hello world\"}>>",
+		},
 		"multiple frames": {
-			args: args{f: []id3v2.Framer{id3v2.UnknownFrame{Body: []byte{0, 1, 2}}, unspecifiedFrame{content: "hello world"}}},
-			want: "<<[0 []byte{0x0, 0x1, 0x2}], [1 files_test.unspecifiedFrame{content:\"hello world\"}]>>",
+			args: args{
+				f: []id3v2.Framer{
+					id3v2.UnknownFrame{Body: []byte{0, 1, 2}},
+					unspecifiedFrame{content: "hello world"},
+				},
+			},
+			want: "<<[0 []byte{0x0, 0x1, 0x2}]," +
+				" [1 files_test.unspecifiedFrame{content:\"hello world\"}]>>",
 		},
 	}
 	for name, tt := range tests {
@@ -439,7 +483,10 @@ func Test_normalizeGenre(t *testing.T) {
 		}
 	}
 	tests["prog rock"] = test{args: args{g: "prog rock"}, want: "prog rock"}
-	tests["unexpected k/v"] = test{args: args{g: "(256)martian folk rock"}, want: "(256)martian folk rock"}
+	tests["unexpected k/v"] = test{
+		args: args{g: "(256)martian folk rock"},
+		want: "(256)martian folk rock",
+	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			if got := files.NormalizeGenre(tt.args.g); got != tt.want {

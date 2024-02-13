@@ -14,22 +14,26 @@ import (
 )
 
 const (
-	ExportCommand         = "export"
-	ExportFlagDefaults    = "defaults"
-	exportDefaultsAsFlag  = "--" + ExportFlagDefaults
-	exportDefaultsCure    = "What to do:\nUse either '" + exportDefaultsAsFlag + "' or '" + exportDefaultsAsFlag + "=true' to enable exporting defaults"
+	ExportCommand        = "export"
+	ExportFlagDefaults   = "defaults"
+	exportDefaultsAsFlag = "--" + ExportFlagDefaults
+	exportDefaultsCure   = "What to do:\nUse either '" + exportDefaultsAsFlag + "' or '" +
+		exportDefaultsAsFlag + "=true' to enable exporting defaults"
 	ExportFlagOverwrite   = "overwrite"
 	exportOverwriteAsFlag = "--" + ExportFlagOverwrite
-	exportOverwriteCure   = "What to do:\nUse either '" + exportOverwriteAsFlag + "' or '" + exportOverwriteAsFlag + "=true' to enable overwriting the existing file"
+	exportOverwriteCure   = "What to do:\nUse either '" + exportOverwriteAsFlag + "' or '" +
+		exportOverwriteAsFlag + "=true' to enable overwriting the existing file"
 )
 
 // ExportCmd represents the export command
 var (
 	ExportCmd = &cobra.Command{
-		Use:                   ExportCommand + " [" + exportDefaultsAsFlag + "] [" + exportOverwriteAsFlag + "]",
+		Use: ExportCommand + " [" + exportDefaultsAsFlag + "] [" +
+			exportOverwriteAsFlag + "]",
 		DisableFlagsInUseLine: true,
 		Short:                 "Exports default program configuration data",
-		Long:                  fmt.Sprintf("%q", ExportCommand) + ` exports default program configuration data to %APPDATA%\mp3\defaults.yaml`,
+		Long: fmt.Sprintf("%q", ExportCommand) +
+			` exports default program configuration data to %APPDATA%\mp3\defaults.yaml`,
 		Example: ExportCommand + " " + exportDefaultsAsFlag + "\n" +
 			"  Write default program configuration data\n" +
 			ExportCommand + " " + exportOverwriteAsFlag + "\n" +
@@ -38,8 +42,11 @@ var (
 	}
 	ExportFlags = NewSectionFlags().WithSectionName(ExportCommand).WithFlags(
 		map[string]*FlagDetails{
-			ExportFlagDefaults:  NewFlagDetails().WithAbbreviatedName("d").WithUsage("write default program configuration data").WithExpectedType(BoolType).WithDefaultValue(false),
-			ExportFlagOverwrite: NewFlagDetails().WithAbbreviatedName("o").WithUsage("overwrite existing file").WithExpectedType(BoolType).WithDefaultValue(false),
+			ExportFlagDefaults: NewFlagDetails().WithAbbreviatedName("d").WithUsage(
+				"write default program configuration data").WithExpectedType(
+				BoolType).WithDefaultValue(false),
+			ExportFlagOverwrite: NewFlagDetails().WithAbbreviatedName("o").WithUsage(
+				"overwrite existing file").WithExpectedType(BoolType).WithDefaultValue(false),
 		},
 	)
 	defaultConfigurationSettings = map[string]map[string]any{}
@@ -107,7 +114,8 @@ func ExportRun(cmd *cobra.Command, _ []string) {
 	Exit(status)
 }
 
-func ProcessExportFlags(o output.Bus, values map[string]*FlagValue) (*ExportFlagSettings, bool) {
+func ProcessExportFlags(o output.Bus, values map[string]*FlagValue) (*ExportFlagSettings,
+	bool) {
 	var err error
 	result := &ExportFlagSettings{}
 	ok := true // optimistic
@@ -115,7 +123,8 @@ func ProcessExportFlags(o output.Bus, values map[string]*FlagValue) (*ExportFlag
 	if err != nil {
 		ok = false
 	}
-	result.overwriteEnabled, result.overwriteSet, err = GetBool(o, values, ExportFlagOverwrite)
+	result.overwriteEnabled, result.overwriteSet, err = GetBool(o, values,
+		ExportFlagOverwrite)
 	if err != nil {
 		ok = false
 	}
@@ -183,7 +192,8 @@ func (efs *ExportFlagSettings) CanOverwriteFile(o output.Bus, f string) (canOver
 		if efs.overwriteSet {
 			o.WriteCanonicalError("Why?\nYou explicitly set %s false", exportOverwriteAsFlag)
 		} else {
-			o.WriteCanonicalError("Why?\nAs currently configured, overwriting the file is disabled")
+			o.WriteCanonicalError(
+				"Why?\nAs currently configured, overwriting the file is disabled")
 		}
 		o.WriteCanonicalError(exportOverwriteCure)
 	} else {
@@ -202,7 +212,8 @@ func (efs *ExportFlagSettings) CanWriteDefaults(o output.Bus) (canWrite bool) {
 		if efs.defaultsSet {
 			o.WriteCanonicalError("Why?\nYou explicitly set %s false", exportDefaultsAsFlag)
 		} else {
-			o.WriteCanonicalError("Why?\nAs currently configured, exporting default configuration settings is disabled")
+			o.WriteCanonicalError("Why?\nAs currently configured, exporting default" +
+				" configuration settings is disabled")
 		}
 		o.WriteCanonicalError(exportDefaultsCure)
 	} else {

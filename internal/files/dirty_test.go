@@ -21,7 +21,8 @@ func TestMarkDirty(t *testing.T) {
 		t.Errorf("%s error creating %q: %v", fnName, filledDir, err)
 	}
 	if err := createFile(filledDir, files.DirtyFileName); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, filepath.Join(filledDir, files.DirtyFileName), err)
+		t.Errorf("%s error creating %q: %v", fnName,
+			filepath.Join(filledDir, files.DirtyFileName), err)
 	}
 	defer func() {
 		destroyDirectory(fnName, emptyDir)
@@ -39,7 +40,10 @@ func TestMarkDirty(t *testing.T) {
 			appPath: emptyDir,
 			args:    args{cmd: "calling command"},
 			WantedRecording: output.WantedRecording{
-				Log: "level='info' fileName='empty\\metadata.dirty' msg='metadata dirty file written'\n",
+				Log: "" +
+					"level='info'" +
+					" fileName='empty\\metadata.dirty'" +
+					" msg='metadata dirty file written'\n",
 			},
 		},
 		"typical second use": {
@@ -81,7 +85,8 @@ func TestDirty(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			if tt.want {
-				if err := createFileWithContent(testDir, files.DirtyFileName, []byte("dirty")); err != nil {
+				if err := createFileWithContent(testDir, files.DirtyFileName,
+					[]byte("dirty")); err != nil {
 					t.Errorf("%s error creating %q: %v", fnName, files.DirtyFileName, err)
 				}
 			} else {
@@ -101,7 +106,8 @@ func TestClearDirty(t *testing.T) {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
 	oldAppPath := cmd_toolkit.ApplicationPath()
-	if err := createFileWithContent(testDir, files.DirtyFileName, []byte("dirty")); err != nil {
+	if err := createFileWithContent(testDir, files.DirtyFileName,
+		[]byte("dirty")); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, files.DirtyFileName, err)
 	}
 	// create another file structure with a dirty file that is open for reading
@@ -109,7 +115,8 @@ func TestClearDirty(t *testing.T) {
 	if err := cmd_toolkit.Mkdir(uncleanable); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, uncleanable, err)
 	}
-	if err := createFileWithContent(uncleanable, files.DirtyFileName, []byte("dirty")); err != nil {
+	if err := createFileWithContent(uncleanable, files.DirtyFileName,
+		[]byte("dirty")); err != nil {
 		t.Errorf("%s error creating second %q: %v", fnName, files.DirtyFileName, err)
 	}
 	f, err := os.Open(filepath.Join(uncleanable, files.DirtyFileName))
@@ -129,7 +136,10 @@ func TestClearDirty(t *testing.T) {
 		"successful removal": {
 			initialDirtyFolder: testDir,
 			WantedRecording: output.WantedRecording{
-				Log: "level='info' fileName='clearDirty\\metadata.dirty' msg='metadata dirty file deleted'\n",
+				Log: "" +
+					"level='info'" +
+					" fileName='clearDirty\\metadata.dirty'" +
+					" msg='metadata dirty file deleted'\n",
 			},
 		},
 		"nothing to remove": {
@@ -138,8 +148,15 @@ func TestClearDirty(t *testing.T) {
 		"unremovable file": {
 			initialDirtyFolder: uncleanable,
 			WantedRecording: output.WantedRecording{
-				Error: "The file \"clearDirty2\\\\metadata.dirty\" cannot be deleted: remove clearDirty2\\metadata.dirty: The process cannot access the file because it is being used by another process.\n",
-				Log:   "level='error' error='remove clearDirty2\\metadata.dirty: The process cannot access the file because it is being used by another process.' fileName='clearDirty2\\metadata.dirty' msg='cannot delete file'\n",
+				Error: "The file \"clearDirty2\\\\metadata.dirty\" cannot be deleted:" +
+					" remove clearDirty2\\metadata.dirty: The process cannot access the file" +
+					" because it is being used by another process.\n",
+				Log: "" +
+					"level='error'" +
+					" error='remove clearDirty2\\metadata.dirty: The process cannot access" +
+					" the file because it is being used by another process.'" +
+					" fileName='clearDirty2\\metadata.dirty'" +
+					" msg='cannot delete file'\n",
 			},
 		},
 	}

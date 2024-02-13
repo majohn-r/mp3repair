@@ -19,9 +19,12 @@ var (
 	PostRepairCmd = &cobra.Command{
 		Use:                   postRepairCommandName + " " + searchUsage,
 		DisableFlagsInUseLine: true,
-		Short:                 "Deletes the backup directories, and their contents, created by the " + repairCommandName + " command",
-		Long:                  fmt.Sprintf("%q deletes the backup directories (and their contents) created by the %q command", postRepairCommandName, repairCommandName),
-		Run:                   PostRepairRun,
+		Short: "Deletes the backup directories, and their contents, created" +
+			" by the " + repairCommandName + " command",
+		Long: fmt.Sprintf(
+			"%q deletes the backup directories (and their contents) created by the %q command",
+			postRepairCommandName, repairCommandName),
+		Run: PostRepairRun,
 	}
 )
 
@@ -39,7 +42,8 @@ func PostRepairRun(cmd *cobra.Command, _ []string) {
 	Exit(status)
 }
 
-func PostRepairWork(o output.Bus, ss *SearchSettings, allArtists []*files.Artist, loaded bool) int {
+func PostRepairWork(o output.Bus, ss *SearchSettings, allArtists []*files.Artist,
+	loaded bool) int {
 	status := UserError
 	if loaded {
 		if filteredArtists, filtered := ss.Filter(o, allArtists); filtered {
