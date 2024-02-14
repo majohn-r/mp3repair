@@ -280,9 +280,9 @@ func TestConcerns_ToConsole(t *testing.T) {
 				}
 			}
 			cI.ToConsole(o, tt.tab)
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("Concerns.ToConsole() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("Concerns.ToConsole() %s", difference)
 				}
 			}
 		})
@@ -322,9 +322,9 @@ func TestConcernedTrack_ToConsole(t *testing.T) {
 			}
 			o := output.NewRecorder()
 			tt.cT.ToConsole(o)
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ConcernedTrack.ToConsole() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ConcernedTrack.ToConsole() %s", difference)
 				}
 			}
 		})
@@ -380,9 +380,9 @@ func TestConcernedAlbum_ToConsole(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.cAl.ToConsole(o)
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ConcernedAlbum.ToConsole() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ConcernedAlbum.ToConsole() %s", difference)
 				}
 			}
 		})
@@ -545,9 +545,9 @@ func TestConcernedArtist_ToConsole(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.cAr.ToConsole(o)
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ConcernedArtist.ToConsole() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ConcernedArtist.ToConsole() %s", difference)
 				}
 			}
 		})

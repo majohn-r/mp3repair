@@ -120,9 +120,9 @@ func TestEvaluateFilter(t *testing.T) {
 				t.Errorf("EvaluateFilter() gotRegexOk = %v, want %v", gotRegexOk,
 					tt.wantRegexOk)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("EvaluateFilter() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("EvaluateFilter() %s", difference)
 				}
 			}
 		})
@@ -239,9 +239,9 @@ func TestEvaluateTopDir(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("EvaluateTopDir() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("EvaluateTopDir() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("EvaluateTopDir() %s", difference)
 				}
 			}
 		})
@@ -418,9 +418,9 @@ func TestProcessSearchFlags(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("ProcessSearchFlags() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ProcessSearchFlags() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ProcessSearchFlags() %s", difference)
 				}
 			}
 		})
@@ -489,9 +489,9 @@ func TestEvaluateSearchFlags(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("EvaluateSearchFlags() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("EvaluateSearchFlags() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("EvaluateSearchFlags() %s", difference)
 				}
 			}
 		})
@@ -565,9 +565,9 @@ func TestEvaluateFileExtensions(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("EvaluateFileExtensions() got1 = %v, want %v", got1, tt.want1)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("EvaluateFileExtensions() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("EvaluateFileExtensions() %s", difference)
 				}
 			}
 		})
@@ -683,9 +683,9 @@ func TestSearchSettingsLoad(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("SearchSettings.Load() got1 = %v, want %v", got1, tt.want1)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("SearchSettings.Load() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("SearchSettings.Load() %s", difference)
 				}
 			}
 		})
@@ -796,9 +796,9 @@ func TestSearchSettingsFilter(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("SearchSettings.Filter() got1 = %v, want %v", got1, tt.want1)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("SearchSettings.Filter() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("SearchSettings.Filter() %s", difference)
 				}
 			}
 		})

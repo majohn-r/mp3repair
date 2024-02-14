@@ -56,9 +56,9 @@ func TestRemoveBackupDirectory(t *testing.T) {
 			if got := cmd.RemoveBackupDirectory(o, tt.dir); got != tt.want {
 				t.Errorf("RemoveBackupDirectory() = %v, want %v", got, tt.want)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("RemoveBackupDirectory() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("RemoveBackupDirectory() %s", difference)
 				}
 			}
 		})
@@ -205,9 +205,9 @@ func TestPostRepairWork(t *testing.T) {
 			cmd.DirExists = tt.dirExists
 			o := output.NewRecorder()
 			cmd.PostRepairWork(o, tt.args.ss, tt.args.allArtists, tt.args.loaded)
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("PostRepairWork() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("PostRepairWork() %s", difference)
 				}
 			}
 		})
@@ -281,9 +281,9 @@ func TestPostRepairRun(t *testing.T) {
 			if got := exitCalled; got != tt.wantExitCalled {
 				t.Errorf("PostRepairRun() got %t want %t", got, tt.wantExitCalled)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("PostRepairRun() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("PostRepairRun() %s", difference)
 				}
 			}
 		})
@@ -327,9 +327,9 @@ func TestPostRepairHelp(t *testing.T) {
 			command := commandUnderTest
 			enableCommandRecording(o, command)
 			command.Help()
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("postRepair Help() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("postRepair Help() %s", difference)
 				}
 			}
 		})

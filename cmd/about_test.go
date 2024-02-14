@@ -67,9 +67,9 @@ func TestAboutRun(t *testing.T) {
 			if got := exitCalled; got != tt.wantExitCalled {
 				t.Errorf("AboutRun() got exit called %t want %t", got, tt.wantExitCalled)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("AboutRun() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("AboutRun() %s", difference)
 				}
 			}
 		})
@@ -122,9 +122,9 @@ func TestAboutHelp(t *testing.T) {
 			command := cmd.AboutCmd
 			enableCommandRecording(o, command)
 			command.Help()
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("about Help() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("about Help() %s", difference)
 				}
 			}
 		})

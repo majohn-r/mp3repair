@@ -153,9 +153,9 @@ func TestRunMain(t *testing.T) {
 			if capturedExitCode != tt.wantedExitCode {
 				t.Errorf("RunMain() got %d want %d", capturedExitCode, tt.wantedExitCode)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("RunMain() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("RunMain() %s", difference)
 				}
 			}
 		})
@@ -213,9 +213,9 @@ func TestCookCommandLineArguments(t *testing.T) {
 				got, tt.want) {
 				t.Errorf("CookCommandLineArguments() = %v, want %v", got, tt.want)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("CookCommandLineArguments() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("CookCommandLineArguments() %s", difference)
 				}
 			}
 		})
@@ -454,9 +454,9 @@ func Test_InitGlobals(t *testing.T) {
 				t.Errorf("InitGlobals: flag indicator got %q want %q", got,
 					tt.wantFlagIndicator)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("InitGlobals() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("InitGlobals() %s", difference)
 				}
 			}
 		})
@@ -509,9 +509,9 @@ func TestRootUsage(t *testing.T) {
 			command := cloneCommand(cmd.RootCmd)
 			enableCommandRecording(o, command)
 			command.Usage()
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("root Usage() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("root Usage() %s", difference)
 				}
 			}
 		})

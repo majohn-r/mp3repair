@@ -554,9 +554,9 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 						tt.wantUsage)
 				}
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("FlagDetails.AddFlag() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("FlagDetails.AddFlag() %s", difference)
 				}
 			}
 		})
@@ -886,9 +886,9 @@ func TestAddFlags(t *testing.T) {
 				t.Errorf("AddFlags() got %d registered flags, expected %d", got,
 					len(tt.wantNames))
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("GetBool() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("GetBool() %s", difference)
 				}
 			}
 		})
@@ -979,9 +979,9 @@ func TestGetBool(t *testing.T) {
 			if gotUserSet != tt.wantUserSet {
 				t.Errorf("GetBool() gotUserSet = %v, want %v", gotUserSet, tt.wantUserSet)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("AddFlags() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("AddFlags() %s", difference)
 				}
 			}
 		})
@@ -1073,9 +1073,9 @@ func TestGetInt(t *testing.T) {
 			if gotUserSet != tt.wantUserSet {
 				t.Errorf("GetInt() gotUserSet = %v, want %v", gotUserSet, tt.wantUserSet)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("GetInt() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("GetInt() %s", difference)
 				}
 			}
 		})
@@ -1167,9 +1167,9 @@ func TestGetString(t *testing.T) {
 			if gotUserSet != tt.wantUserSet {
 				t.Errorf("GetString() gotUserSet = %v, want %v", gotUserSet, tt.wantUserSet)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("GetString() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("GetString() %s", difference)
 				}
 			}
 		})
@@ -1204,9 +1204,9 @@ func TestProcessFlagErrors(t *testing.T) {
 			if gotOk := cmd.ProcessFlagErrors(o, tt.args.eSlice); gotOk != tt.wantOk {
 				t.Errorf("ProcessFlagErrors() = %v, want %v", gotOk, tt.wantOk)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ProcessFlagErrors() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ProcessFlagErrors() %s", difference)
 				}
 			}
 		})

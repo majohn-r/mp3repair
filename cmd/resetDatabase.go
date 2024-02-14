@@ -257,13 +257,13 @@ func (rdbs *ResetDBSettings) HandleService(o output.Bus, manager ServiceManager)
 		status = SystemError
 		o.WriteCanonicalError("The service %q cannot be opened: %v", rdbs.service,
 			serviceError)
-		o.Log(output.Error, "service issue", map[string]any{
+		o.Log(output.Error, "service problem", map[string]any{
 			"service": rdbs.service,
 			"trigger": "OpenService",
 			"error":   serviceError,
 		})
 		if serviceList, listError := listServices(manager); listError != nil {
-			o.Log(output.Error, "service issue", map[string]any{
+			o.Log(output.Error, "service problem", map[string]any{
 				"trigger": "ListServices",
 				"error":   listError,
 			})
@@ -365,7 +365,7 @@ func (rdbs *ResetDBSettings) StopFoundService(o output.Bus, manager ServiceManag
 		} else {
 			funcStatus = SystemError
 			o.WriteCanonicalError("The service %q cannot be stopped: %v", rdbs.service, err)
-			o.Log(output.Error, "service issue", map[string]any{
+			o.Log(output.Error, "service problem", map[string]any{
 				"service": rdbs.service,
 				"trigger": "Stop",
 				"error":   err,
@@ -395,7 +395,7 @@ func (rdbs *ResetDBSettings) WaitForStop(o output.Bus, s ServiceRep, expiration 
 			o.WriteCanonicalError(
 				"The service %q could not be stopped within the %d second timeout",
 				rdbs.service, rdbs.timeout)
-			o.Log(output.Error, "service issue", map[string]any{
+			o.Log(output.Error, "service problem", map[string]any{
 				"service": rdbs.service,
 				"trigger": "Stop",
 				"error":   "timed out",

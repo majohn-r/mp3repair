@@ -73,9 +73,9 @@ func TestExportFlagSettingsCanWriteDefaults(t *testing.T) {
 				t.Errorf("ExportFlagSettings.CanWriteDefaults() = %v, want %v",
 					gotCanWrite, tt.wantCanWrite)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ExportFlagSettings.CanWriteDefaults() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ExportFlagSettings.CanWriteDefaults() %s", difference)
 				}
 			}
 		})
@@ -151,9 +151,9 @@ func TestExportFlagSettingsCanOverwriteFile(t *testing.T) {
 				t.Errorf("ExportFlagSettings.CanOverwriteFile() = %v, want %v",
 					gotCanOverwrite, tt.wantCanOverwrite)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ExportFlagSettings.CanOverwriteFile() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ExportFlagSettings.CanOverwriteFile() %s", difference)
 				}
 			}
 		})
@@ -208,9 +208,9 @@ func TestCreateFile(t *testing.T) {
 			if got := cmd.CreateFile(o, tt.args.f, tt.args.content); got != tt.want {
 				t.Errorf("CreateFile() = %v, want %v", got, tt.want)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("CreateFile() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("CreateFile() %s", difference)
 				}
 			}
 		})
@@ -314,9 +314,9 @@ func TestExportFlagSettingsOverwriteFile(t *testing.T) {
 				t.Errorf("ExportFlagSettings.OverwriteFile() got %d want %d", got,
 					tt.wantStatus)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ExportFlagSettings.OverwriteFile() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ExportFlagSettings.OverwriteFile() %s", difference)
 				}
 			}
 		})
@@ -423,9 +423,9 @@ func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
 				t.Errorf("ExportFlagSettings.ExportDefaultConfiguration() got %d want %d",
 					got, tt.wantStatus)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ExportFlagSettings.ExportDefaultConfiguration() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ExportFlagSettings.ExportDefaultConfiguration() %s", difference)
 				}
 			}
 		})
@@ -520,9 +520,9 @@ func TestProcessExportFlags(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("ProcessExportFlags() got1 = %v, want %v", got1, tt.want1)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ProcessExportFlags() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ProcessExportFlags() %s", difference)
 				}
 			}
 		})
@@ -630,9 +630,9 @@ func TestExportRun(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.Bus = o // this is what getBus() should return when ExportRun calls it
 			cmd.ExportRun(tt.cmd, []string{})
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ExportRun() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ExportRun() %s", difference)
 				}
 			}
 			if got := exitCode; got != tt.wantExitCode {
@@ -677,9 +677,9 @@ func TestExportHelp(t *testing.T) {
 			command := cmd.ExportCmd
 			enableCommandRecording(o, command)
 			command.Help()
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("export Help() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("export Help() %s", difference)
 				}
 			}
 		})

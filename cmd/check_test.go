@@ -79,9 +79,9 @@ func TestProcessCheckFlags(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("ProcessCheckFlags() got1 = %v, want %v", got1, tt.want1)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ProcessCheckFlags() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ProcessCheckFlags() %s", difference)
 				}
 			}
 		})
@@ -264,9 +264,9 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 			if got := tt.cs.HasWorkToDo(o); got != tt.want {
 				t.Errorf("CheckSettings.HasWorkToDo() = %v, want %v", got, tt.want)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("CheckSettings.HasWorkToDo() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("CheckSettings.HasWorkToDo() %s", difference)
 				}
 			}
 		})
@@ -284,7 +284,7 @@ func TestCheckSettings_PerformEmptyAnalysis(t *testing.T) {
 			cs:             cmd.NewCheckSettings().WithEmpty(true),
 			checkedArtists: nil,
 		},
-		"full slice, no issues": {
+		"full slice, no problems": {
 			cs:             cmd.NewCheckSettings().WithEmpty(true),
 			checkedArtists: cmd.PrepareConcernedArtists(generateArtists(5, 6, 7)),
 		},
@@ -470,41 +470,40 @@ func TestRecordFileConcerns(t *testing.T) {
 	type args struct {
 		checkedArtists []*cmd.ConcernedArtist
 		track          *files.Track
-		issues         []string
+		concerns       []string
 	}
 	tests := map[string]struct {
 		args
-		wantFoundIssues bool
+		wantFoundConcerns bool
 	}{
-		"no issues": {
-			args:            args{checkedArtists: nil, track: nil, issues: nil},
-			wantFoundIssues: false,
+		"no concerns": {
+			args:              args{checkedArtists: nil, track: nil, concerns: nil},
+			wantFoundConcerns: false,
 		},
-		"issues": {
+		"concerns": {
 			args: args{
 				checkedArtists: cmd.PrepareConcernedArtists(originalArtists),
 				track:          tracks[len(tracks)-1],
-				issues:         []string{"mismatched artist", "mismatched album"},
+				concerns:       []string{"mismatched artist", "mismatched album"},
 			},
-			wantFoundIssues: true,
+			wantFoundConcerns: true,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if gotFoundIssues := cmd.RecordFileConcerns(tt.args.checkedArtists,
-				tt.args.track, tt.args.issues); gotFoundIssues != tt.wantFoundIssues {
-				t.Errorf("RecordFileConcerns() = %v, want %v", gotFoundIssues,
-					tt.wantFoundIssues)
+			if got := cmd.RecordFileConcerns(tt.args.checkedArtists,
+				tt.args.track, tt.args.concerns); got != tt.wantFoundConcerns {
+				t.Errorf("RecordFileConcerns() = %v, want %v", got, tt.wantFoundConcerns)
 			}
-			if tt.wantFoundIssues {
-				hasIssues := false
+			if tt.wantFoundConcerns {
+				hasConcerns := false
 				for _, cAr := range tt.args.checkedArtists {
 					if cAr.IsConcerned() {
-						hasIssues = true
+						hasConcerns = true
 					}
 				}
-				if !hasIssues {
-					t.Errorf("RecordFileConcerns() true, but no issues actually recorded")
+				if !hasConcerns {
+					t.Errorf("RecordFileConcerns() true, but no concerns actually recorded")
 				}
 			}
 		})
@@ -571,9 +570,9 @@ func TestCheckSettings_PerformFileAnalysis(t *testing.T) {
 				tt.args.ss); got != tt.want {
 				t.Errorf("CheckSettings.PerformFileAnalysis() = %v, want %v", got, tt.want)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("CheckSettings.PerformFileAnalysis() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("CheckSettings.PerformFileAnalysis() %s", difference)
 				}
 			}
 		})
@@ -582,31 +581,31 @@ func TestCheckSettings_PerformFileAnalysis(t *testing.T) {
 
 func TestCheckSettings_MaybeReportCleanResults(t *testing.T) {
 	type args struct {
-		emptyIssues     bool
-		numberingIssues bool
-		fileIssues      bool
+		emptyConcerns     bool
+		numberingConcerns bool
+		fileConcerns      bool
 	}
 	tests := map[string]struct {
 		cs *cmd.CheckSettings
 		args
 		output.WantedRecording
 	}{
-		"no issues found because nothing was checked": {
+		"no concerns found because nothing was checked": {
 			cs:              cmd.NewCheckSettings(),
 			args:            args{},
 			WantedRecording: output.WantedRecording{},
 		},
-		"all issues found, everything was checked": {
+		"all concerns found, everything was checked": {
 			cs: cmd.NewCheckSettings().WithEmpty(true).WithNumbering(true).WithFiles(true),
 			args: args{
-				emptyIssues:     true,
-				numberingIssues: true,
-				fileIssues:      true},
+				emptyConcerns:     true,
+				numberingConcerns: true,
+				fileConcerns:      true},
 			WantedRecording: output.WantedRecording{},
 		},
-		"no issues found, everything was checked": {
+		"no concerns found, everything was checked": {
 			cs:   cmd.NewCheckSettings().WithEmpty(true).WithNumbering(true).WithFiles(true),
-			args: args{emptyIssues: false, numberingIssues: false, fileIssues: false},
+			args: args{emptyConcerns: false, numberingConcerns: false, fileConcerns: false},
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"Empty Folder Analysis: no empty folders found.\n" +
@@ -618,11 +617,11 @@ func TestCheckSettings_MaybeReportCleanResults(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			tt.cs.MaybeReportCleanResults(o, tt.args.emptyIssues, tt.args.numberingIssues,
-				tt.args.fileIssues)
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("CheckSettings.MaybeReportCleanResults() %s", issue)
+			tt.cs.MaybeReportCleanResults(o, tt.args.emptyConcerns, tt.args.numberingConcerns,
+				tt.args.fileConcerns)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("CheckSettings.MaybeReportCleanResults() %s", difference)
 				}
 			}
 		})
@@ -707,9 +706,9 @@ func TestCheckSettings_PerformChecks(t *testing.T) {
 				tt.args.ss); got != tt.wantStatus {
 				t.Errorf("CheckSettings.PerformChecks() got %d want %d", got, tt.wantStatus)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("CheckSettings.PerformChecks() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("CheckSettings.PerformChecks() %s", difference)
 				}
 			}
 		})
@@ -776,9 +775,9 @@ func TestCheckSettings_MaybeDoWork(t *testing.T) {
 			if got := tt.cs.MaybeDoWork(o, tt.ss); got != tt.wantStatus {
 				t.Errorf("CheckSettings.MaybeDoWork() got %d want %d", got, tt.wantStatus)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("CheckSettings.MaybeDoWork() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("CheckSettings.MaybeDoWork() %s", difference)
 				}
 			}
 		})
@@ -878,9 +877,9 @@ func TestCheckRun(t *testing.T) {
 			if got := exitCalled; got != tt.wantExitCalled {
 				t.Errorf("CheckRun() got %t want %t", got, tt.wantExitCalled)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("CheckRun() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("CheckRun() %s", difference)
 				}
 			}
 		})
@@ -957,9 +956,9 @@ func TestCheckHelp(t *testing.T) {
 			command := commandUnderTest
 			enableCommandRecording(o, command)
 			command.Help()
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("check Help() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("check Help() %s", difference)
 				}
 			}
 		})

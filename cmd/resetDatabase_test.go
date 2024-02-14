@@ -91,9 +91,9 @@ func TestProcessResetDBFlags(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("ProcessResetDBFlags() got1 = %v, want %v", got1, tt.want1)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ProcessResetDBFlags() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ProcessResetDBFlags() %s", difference)
 				}
 			}
 		})
@@ -157,7 +157,7 @@ func TestResetDBSettings_WaitForStop(t *testing.T) {
 					" service='my service'" +
 					" timeout='10'" +
 					" trigger='Stop'" +
-					" msg='service issue'\n",
+					" msg='service problem'\n",
 			},
 		},
 		"query error": {
@@ -210,9 +210,9 @@ func TestResetDBSettings_WaitForStop(t *testing.T) {
 				t.Errorf("ResetDBSettings.WaitForStop() = %d, want %d", gotStatus,
 					tt.wantStatus)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ResetDBSettings.WaitForStop() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ResetDBSettings.WaitForStop() %s", difference)
 				}
 			}
 		})
@@ -343,7 +343,7 @@ func TestResetDBSettings_StopFoundService(t *testing.T) {
 					" error='no results from query'" +
 					" service='my service'" +
 					" trigger='Stop'" +
-					" msg='service issue'\n",
+					" msg='service problem'\n",
 			},
 		},
 	}
@@ -360,9 +360,9 @@ func TestResetDBSettings_StopFoundService(t *testing.T) {
 				t.Errorf("ResetDBSettings.StopFoundService() = %v, want %v", gotStatus,
 					tt.wantStatus)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ResetDBSettings.WaitForStop() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ResetDBSettings.WaitForStop() %s", difference)
 				}
 			}
 		})
@@ -445,9 +445,9 @@ func Test_listServices(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.ListServices(o, tt.args.manager, tt.args.services)
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ListServices() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ListServices() %s", difference)
 				}
 			}
 		})
@@ -477,7 +477,7 @@ func TestResetDBSettings_HandleService(t *testing.T) {
 					" error='no such service'" +
 					" service='my service'" +
 					" trigger='OpenService'" +
-					" msg='service issue'\n",
+					" msg='service problem'\n",
 			},
 		},
 		"defective manager #2": {
@@ -491,11 +491,11 @@ func TestResetDBSettings_HandleService(t *testing.T) {
 					" error='no such service'" +
 					" service='my service'" +
 					" trigger='OpenService'" +
-					" msg='service issue'\n" +
+					" msg='service problem'\n" +
 					"level='error'" +
 					" error='no services'" +
 					" trigger='ListServices'" +
-					" msg='service issue'\n",
+					" msg='service problem'\n",
 			},
 		},
 		"defective manager #3": {
@@ -524,9 +524,9 @@ func TestResetDBSettings_HandleService(t *testing.T) {
 				t.Errorf("ResetDBSettings.HandleService() = %v, want %v", gotStatus,
 					tt.wantStatus)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ResetDBSettings.HandleService() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ResetDBSettings.HandleService() %s", difference)
 				}
 			}
 		})
@@ -578,11 +578,11 @@ func TestResetDBSettings_StopService(t *testing.T) {
 					" error='nil manager'" +
 					" service='my service'" +
 					" trigger='OpenService'" +
-					" msg='service issue'\n" +
+					" msg='service problem'\n" +
 					"level='error'" +
 					" error='nil manager'" +
 					" trigger='ListServices'" +
-					" msg='service issue'\n",
+					" msg='service problem'\n",
 			},
 		},
 	}
@@ -598,9 +598,9 @@ func TestResetDBSettings_StopService(t *testing.T) {
 				t.Errorf("ResetDBSettings.StopService() = %v, want %v", gotStatus,
 					tt.wantStatus)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ResetDBSettings.StopService() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ResetDBSettings.StopService() %s", difference)
 				}
 			}
 		})
@@ -661,9 +661,9 @@ func TestResetDBSettings_DeleteFiles(t *testing.T) {
 			if got := tt.rdbs.DeleteFiles(o, tt.paths); got != tt.want {
 				t.Errorf("ResetDBSettings.DeleteFiles() %d want %d", got, tt.want)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ResetDBSettings.DeleteFiles() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ResetDBSettings.DeleteFiles() %s", difference)
 				}
 			}
 		})
@@ -795,9 +795,9 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 			if got := tt.rdbs.DeleteMetadataFiles(o, tt.stopped); got != tt.want {
 				t.Errorf("ResetDBSettings.DeleteMetadataFiles() %d want %d", got, tt.want)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ResetDBSettings.DeleteMetadataFiles() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ResetDBSettings.DeleteMetadataFiles() %s", difference)
 				}
 			}
 		})
@@ -892,9 +892,9 @@ func TestResetDBSettings_ResetService(t *testing.T) {
 			if got := tt.rdbs.ResetService(o); got != tt.want {
 				t.Errorf("ResetDBSettings.ResetService() got %d want %d", got, tt.want)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ResetDBSettings.ResetService() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ResetDBSettings.ResetService() %s", difference)
 				}
 			}
 		})
@@ -993,9 +993,9 @@ func TestResetDBExec(t *testing.T) {
 			if got := exitCalled; got != tt.wantExitCalled {
 				t.Errorf("ResetDBExec() %t want %t", got, tt.wantExitCalled)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("ResetDBExec() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ResetDBExec() %s", difference)
 				}
 			}
 		})
@@ -1074,9 +1074,9 @@ func TestResetDatabaseHelp(t *testing.T) {
 			command := commandUnderTest
 			enableCommandRecording(o, command)
 			command.Help()
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("resetDatabase Help() %s", issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("resetDatabase Help() %s", difference)
 				}
 			}
 		})

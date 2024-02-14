@@ -126,9 +126,9 @@ func Test_parseTrackName(t *testing.T) {
 			if gotValid != tt.wantValid {
 				t.Errorf("%s gotValid = %v, want %v", fnName, gotValid, tt.wantValid)
 			}
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("%s %s", fnName, issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("%s %s", fnName, difference)
 				}
 			}
 		})
@@ -799,9 +799,9 @@ func TestReadMetadata(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			files.ReadMetadata(o, tt.args.artists)
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("%s %s", fnName, issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("%s %s", fnName, difference)
 				}
 			}
 			for _, artist := range tt.args.artists {
@@ -1057,9 +1057,9 @@ func Test_processArtistMetadata(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			files.ProcessArtistMetadata(o, tt.args.artists)
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("%s %s", fnName, issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("%s %s", fnName, difference)
 				}
 			}
 		})
@@ -1197,9 +1197,9 @@ func Test_processAlbumMetadata(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			files.ProcessAlbumMetadata(o, tt.args.artists)
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("%s %s", fnName, issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("%s %s", fnName, difference)
 				}
 			}
 		})
@@ -1242,9 +1242,9 @@ func TestTrack_reportMetadataErrors(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.args.t.ReportMetadataErrors(o)
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("%s %s", fnName, issue)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("%s %s", fnName, difference)
 				}
 			}
 		})
