@@ -186,324 +186,43 @@ func (cs *CheckSettings) MaybeDoWork(o output.Bus, ss *SearchSettings) int {
 	return status
 }
 
-type CheckIssueType int32
-
-const (
-	CheckUnspecifiedIssue CheckIssueType = iota
-	CheckEmptyIssue
-	CheckFilesIssue
-	CheckNumberingIssue
-	CheckConflictIssue
-)
-
-func IssueTypeAsString(i CheckIssueType) string {
-	switch i {
-	case CheckEmptyIssue:
-		return CheckEmpty
-	case CheckFilesIssue:
-		return CheckFiles
-	case CheckNumberingIssue:
-		return CheckNumbering
-	case CheckConflictIssue:
-		return "metadata conflict"
-	}
-	return fmt.Sprintf("unspecified issue %d", i)
-}
-
-type CheckedIssues struct {
-	issues map[CheckIssueType][]string
-}
-
-func NewCheckedIssues() CheckedIssues {
-	return CheckedIssues{issues: map[CheckIssueType][]string{}}
-}
-
-func (cI CheckedIssues) AddIssue(source CheckIssueType, issue string) {
-	cI.issues[source] = append(cI.issues[source], issue)
-}
-
-func (cI CheckedIssues) HasIssues() bool {
-	for _, list := range cI.issues {
-		if len(list) > 0 {
-			return true
-		}
-	}
-	return false
-}
-
-func (cI CheckedIssues) OutputIssues(o output.Bus, tab int) {
-	if cI.HasIssues() {
-		iStrings := []string{}
-		for key, value := range cI.issues {
-			for _, s := range value {
-				iStrings = append(iStrings, fmt.Sprintf("* [%s] %s",
-					IssueTypeAsString(key), s))
-			}
-		}
-		slices.Sort(iStrings)
-		for _, s := range iStrings {
-			o.WriteConsole("%*s%s\n", tab, "", s)
-		}
-	}
-}
-
-type CheckedTrack struct {
-	CheckedIssues
-	backing *files.Track
-}
-
-func NewCheckedTrack(track *files.Track) *CheckedTrack {
-	if track == nil {
-		return nil
-	}
-	return &CheckedTrack{
-		CheckedIssues: NewCheckedIssues(),
-		backing:       track,
-	}
-}
-
-func (cT *CheckedTrack) AddIssue(source CheckIssueType, issue string) {
-	cT.CheckedIssues.AddIssue(source, issue)
-}
-
-func (cT *CheckedTrack) HasIssues() bool {
-	return cT.CheckedIssues.HasIssues()
-}
-
-func (cT *CheckedTrack) name() string {
-	return cT.backing.CommonName()
-}
-
-func (cT *CheckedTrack) OutputIssues(o output.Bus) {
-	if cT.HasIssues() {
-		o.WriteConsole("    Track %q\n", cT.name())
-		cT.CheckedIssues.OutputIssues(o, 4)
-	}
-}
-
-func (cT *CheckedTrack) Track() *files.Track {
-	return cT.backing
-}
-
-type CheckedAlbum struct {
-	CheckedIssues
-	tracks   []*CheckedTrack
-	backing  *files.Album
-	trackMap map[string]*CheckedTrack
-}
-
-func NewCheckedAlbum(album *files.Album) *CheckedAlbum {
-	if album == nil {
-		return nil
-	}
-	cAl := &CheckedAlbum{
-		CheckedIssues: NewCheckedIssues(),
-		tracks:        []*CheckedTrack{},
-		backing:       album,
-		trackMap:      map[string]*CheckedTrack{},
-	}
-	for _, track := range album.Tracks() {
-		cAl.AddTrack(track)
-	}
-	return cAl
-}
-
-func (cAl *CheckedAlbum) AddIssue(source CheckIssueType, issue string) {
-	cAl.CheckedIssues.AddIssue(source, issue)
-}
-
-func (cAl *CheckedAlbum) AddTrack(track *files.Track) {
-	if cT := NewCheckedTrack(track); cT != nil {
-		cAl.tracks = append(cAl.tracks, cT)
-		cAl.trackMap[cT.backing.FileName()] = cT
-	}
-}
-
-func (cAl *CheckedAlbum) Album() *files.Album {
-	return cAl.backing
-}
-
-func (cAl *CheckedAlbum) HasIssues() bool {
-	if cAl.CheckedIssues.HasIssues() {
-		return true
-	}
-	for _, cT := range cAl.tracks {
-		if cT.HasIssues() {
-			return true
-		}
-	}
-	return false
-}
-
-func (cAl *CheckedAlbum) name() string {
-	return cAl.backing.Name()
-}
-
-func (cAl *CheckedAlbum) Lookup(track *files.Track) *CheckedTrack {
-	var cT *CheckedTrack
-	if found, ok := cAl.trackMap[track.FileName()]; ok {
-		cT = found
-	}
-	return cT
-}
-
-func (cAl *CheckedAlbum) OutputIssues(o output.Bus) {
-	if cAl.HasIssues() {
-		o.WriteConsole("  Album %q\n", cAl.name())
-		cAl.CheckedIssues.OutputIssues(o, 2)
-		m := map[string]*CheckedTrack{}
-		names := []string{}
-		for _, cT := range cAl.tracks {
-			trackName := cT.name()
-			m[trackName] = cT
-			names = append(names, trackName)
-		}
-		slices.Sort(names)
-		for _, name := range names {
-			if cT := m[name]; cT != nil {
-				cT.OutputIssues(o)
-			}
-		}
-	}
-}
-
-func (cAl *CheckedAlbum) Tracks() []*CheckedTrack {
-	return cAl.tracks
-}
-
-type CheckedArtist struct {
-	CheckedIssues
-	albums   []*CheckedAlbum
-	backing  *files.Artist
-	albumMap map[string]*CheckedAlbum
-}
-
-func NewCheckedArtist(artist *files.Artist) *CheckedArtist {
-	if artist == nil {
-		return nil
-	}
-	cAr := &CheckedArtist{
-		CheckedIssues: NewCheckedIssues(),
-		albums:        []*CheckedAlbum{},
-		backing:       artist,
-		albumMap:      map[string]*CheckedAlbum{},
-	}
-	for _, album := range artist.Albums() {
-		cAr.AddAlbum(album)
-	}
-	return cAr
-}
-
-func (cAr *CheckedArtist) AddAlbum(album *files.Album) {
-	if cAl := NewCheckedAlbum(album); cAl != nil {
-		cAr.albums = append(cAr.albums, cAl)
-		cAr.albumMap[cAl.name()] = cAl
-	}
-}
-
-func (cAr *CheckedArtist) AddIssue(source CheckIssueType, issue string) {
-	cAr.CheckedIssues.AddIssue(source, issue)
-}
-
-func (cAr *CheckedArtist) Albums() []*CheckedAlbum {
-	return cAr.albums
-}
-
-func (cAr *CheckedArtist) Artist() *files.Artist {
-	return cAr.backing
-}
-
-func (cAr *CheckedArtist) HasIssues() bool {
-	if cAr.CheckedIssues.HasIssues() {
-		return true
-	}
-	for _, cAl := range cAr.albums {
-		if cAl.HasIssues() {
-			return true
-		}
-	}
-	return false
-}
-
-func (cAr *CheckedArtist) Lookup(track *files.Track) *CheckedTrack {
-	albumKey := track.AlbumName()
-	if cAl, ok := cAr.albumMap[albumKey]; ok {
-		return cAl.Lookup(track)
-	}
-	return nil
-}
-
-func (cAr *CheckedArtist) name() string {
-	return cAr.backing.Name()
-}
-
-func (cAr *CheckedArtist) OutputIssues(o output.Bus) {
-	if cAr.HasIssues() {
-		o.WriteConsole("Artist %q\n", cAr.name())
-		cAr.CheckedIssues.OutputIssues(o, 0)
-		m := map[string]*CheckedAlbum{}
-		names := []string{}
-		for _, cT := range cAr.albums {
-			albumName := cT.name()
-			m[albumName] = cT
-			names = append(names, albumName)
-		}
-		slices.Sort(names)
-		for _, name := range names {
-			if cAl := m[name]; cAl != nil {
-				cAl.OutputIssues(o)
-			}
-		}
-	}
-}
-
-func PrepareCheckedArtists(artists []*files.Artist) []*CheckedArtist {
-	checkedArtists := []*CheckedArtist{}
-	for _, artist := range artists {
-		if cAr := NewCheckedArtist(artist); cAr != nil {
-			checkedArtists = append(checkedArtists, cAr)
-		}
-	}
-	return checkedArtists
-}
-
 func (cs *CheckSettings) PerformChecks(o output.Bus, artists []*files.Artist,
 	artistsLoaded bool, ss *SearchSettings) int {
 	status := UserError
 	if artistsLoaded && len(artists) > 0 {
 		status = Success
-		checkedArtists := PrepareCheckedArtists(artists)
-		emptyFoldersFound := cs.PerformEmptyAnalysis(checkedArtists)
-		numberingIssuesFound := cs.PerformNumberingAnalysis(checkedArtists)
-		fileIssuesFound := cs.PerformFileAnalysis(o, checkedArtists, ss)
-		for _, artist := range checkedArtists {
-			artist.OutputIssues(o)
+		concernedArtists := PrepareConcernedArtists(artists)
+		emptyConcernsFound := cs.PerformEmptyAnalysis(concernedArtists)
+		numberingConcernsFound := cs.PerformNumberingAnalysis(concernedArtists)
+		fileConcernsFound := cs.PerformFileAnalysis(o, concernedArtists, ss)
+		for _, artist := range concernedArtists {
+			artist.ToConsole(o)
 		}
-		cs.MaybeReportCleanResults(o, emptyFoldersFound, numberingIssuesFound,
-			fileIssuesFound)
+		cs.MaybeReportCleanResults(o, emptyConcernsFound, numberingConcernsFound,
+			fileConcernsFound)
 	}
 	return status
 }
 
-func (cs *CheckSettings) MaybeReportCleanResults(o output.Bus, emptyIssues,
-	numberingIssues, fileIssues bool) {
-	if !emptyIssues && cs.empty {
+func (cs *CheckSettings) MaybeReportCleanResults(o output.Bus, emptyConcerns,
+	numberingConcerns, fileConcerns bool) {
+	if !emptyConcerns && cs.empty {
 		o.WriteCanonicalConsole("Empty Folder Analysis: no empty folders found")
 	}
-	if !numberingIssues && cs.numbering {
+	if !numberingConcerns && cs.numbering {
 		o.WriteCanonicalConsole("Numbering Analysis: no missing or duplicate tracks found")
 	}
-	if !fileIssues && cs.files {
+	if !fileConcerns && cs.files {
 		o.WriteCanonicalConsole("File Analysis: no inconsistencies found")
 	}
 }
 
-func (cs *CheckSettings) PerformFileAnalysis(o output.Bus, checkedArtists []*CheckedArtist,
-	ss *SearchSettings) bool {
-	foundIssues := false
+func (cs *CheckSettings) PerformFileAnalysis(o output.Bus,
+	concernedArtists []*ConcernedArtist, ss *SearchSettings) bool {
+	foundConcerns := false
 	if cs.files {
 		artists := []*files.Artist{}
-		for _, cAr := range checkedArtists {
+		for _, cAr := range concernedArtists {
 			artists = append(artists, cAr.Artist())
 		}
 		if filteredArtists, filtered := ss.Filter(o, artists); filtered {
@@ -511,39 +230,40 @@ func (cs *CheckSettings) PerformFileAnalysis(o output.Bus, checkedArtists []*Che
 			for _, artist := range filteredArtists {
 				for _, album := range artist.Albums() {
 					for _, track := range album.Tracks() {
-						issues := track.ReportMetadataProblems()
-						if found := RecordFileIssues(checkedArtists, track,
-							issues); found {
-							foundIssues = true
+						concerns := track.ReportMetadataProblems()
+						if found := RecordFileConcerns(concernedArtists, track,
+							concerns); found {
+							foundConcerns = true
 						}
 					}
 				}
 			}
 		}
 	}
-	return foundIssues
+	return foundConcerns
 }
 
-func RecordFileIssues(checkedArtists []*CheckedArtist, track *files.Track,
-	issues []string) (foundIssues bool) {
-	if len(issues) > 0 {
-		foundIssues = true
-		for _, cAr := range checkedArtists {
+func RecordFileConcerns(concernedArtists []*ConcernedArtist, track *files.Track,
+	concerns []string) (foundConcerns bool) {
+	if len(concerns) > 0 {
+		foundConcerns = true
+		for _, cAr := range concernedArtists {
 			if cT := cAr.Lookup(track); cT != nil {
-				for _, s := range issues {
-					cT.AddIssue(CheckFilesIssue, s)
+				for _, s := range concerns {
+					cT.AddConcern(FilesConcern, s)
 				}
 				break
 			}
 		}
 	}
-	return foundIssues
+	return foundConcerns
 }
 
-func (cs *CheckSettings) PerformNumberingAnalysis(checkedArtists []*CheckedArtist) bool {
-	foundIssues := false
+func (cs *CheckSettings) PerformNumberingAnalysis(
+	concernedArtists []*ConcernedArtist) bool {
+	foundConcerns := false
 	if cs.numbering {
-		for _, cAr := range checkedArtists {
+		for _, cAr := range concernedArtists {
 			for _, cAl := range cAr.Albums() {
 				trackMap := map[int][]string{}
 				maxTrack := len(cAl.Tracks())
@@ -555,21 +275,21 @@ func (cs *CheckSettings) PerformNumberingAnalysis(checkedArtists []*CheckedArtis
 						maxTrack = trackNumber
 					}
 				}
-				issues := GenerateNumberingIssues(trackMap, maxTrack)
-				if len(issues) > 0 {
-					foundIssues = true
-					for _, s := range issues {
-						cAl.AddIssue(CheckNumberingIssue, s)
+				concerns := GenerateNumberingConcerns(trackMap, maxTrack)
+				if len(concerns) > 0 {
+					foundConcerns = true
+					for _, s := range concerns {
+						cAl.AddConcern(NumberingConcern, s)
 					}
 				}
 			}
 		}
 	}
-	return foundIssues
+	return foundConcerns
 }
 
-func GenerateNumberingIssues(m map[int][]string, maxTrack int) []string {
-	issues := []string{}
+func GenerateNumberingConcerns(m map[int][]string, maxTrack int) []string {
+	concerns := []string{}
 	numbers := []int{}
 	// find duplicates
 	for k, v := range m {
@@ -583,9 +303,9 @@ func GenerateNumberingIssues(m map[int][]string, maxTrack int) []string {
 				formattedTracks = append(formattedTracks, fmt.Sprintf("%q", v[j]))
 			}
 			finalTrack := fmt.Sprintf("%q", v[len(v)-1])
-			issue := fmt.Sprintf("multiple tracks identified as track %d: %s and %s", k,
+			concern := fmt.Sprintf("multiple tracks identified as track %d: %s and %s", k,
 				strings.Join(formattedTracks, ", "), finalTrack)
-			issues = append(issues, issue)
+			concerns = append(concerns, concern)
 		}
 	}
 	// find missing track numbers
@@ -608,11 +328,11 @@ func GenerateNumberingIssues(m map[int][]string, maxTrack int) []string {
 		}
 	}
 	if len(missingNumbers) != 0 {
-		issue := fmt.Sprintf("missing tracks identified: %s",
+		concern := fmt.Sprintf("missing tracks identified: %s",
 			strings.Join(missingNumbers, ", "))
-		issues = append(issues, issue)
+		concerns = append(concerns, concern)
 	}
-	return issues
+	return concerns
 }
 
 func GenerateMissingNumbers(low, high int) string {
@@ -623,17 +343,17 @@ func GenerateMissingNumbers(low, high int) string {
 	}
 }
 
-func (cs *CheckSettings) PerformEmptyAnalysis(checkedArtists []*CheckedArtist) bool {
+func (cs *CheckSettings) PerformEmptyAnalysis(concernedArtists []*ConcernedArtist) bool {
 	emptyFoldersFound := false
 	if cs.empty {
-		for _, checkedArtist := range checkedArtists {
-			if !checkedArtist.Artist().HasAlbums() {
-				checkedArtist.AddIssue(CheckEmptyIssue, "no albums found")
+		for _, concernedArtist := range concernedArtists {
+			if !concernedArtist.Artist().HasAlbums() {
+				concernedArtist.AddConcern(EmptyConcern, "no albums found")
 				emptyFoldersFound = true
 			} else {
-				for _, checkedAlbum := range checkedArtist.Albums() {
-					if !checkedAlbum.Album().HasTracks() {
-						checkedAlbum.AddIssue(CheckEmptyIssue, "no tracks found")
+				for _, concernedAlbum := range concernedArtist.Albums() {
+					if !concernedAlbum.Album().HasTracks() {
+						concernedAlbum.AddConcern(EmptyConcern, "no tracks found")
 						emptyFoldersFound = true
 					}
 				}

@@ -273,627 +273,10 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 	}
 }
 
-func TestIssueTypeAsString(t *testing.T) {
-	tests := map[string]struct {
-		i    cmd.CheckIssueType
-		want string
-	}{
-		"unspecified": {i: cmd.CheckUnspecifiedIssue, want: "unspecified issue 0"},
-		"empty":       {i: cmd.CheckEmptyIssue, want: "empty"},
-		"files":       {i: cmd.CheckFilesIssue, want: "files"},
-		"numbering":   {i: cmd.CheckNumberingIssue, want: "numbering"},
-		"metadata":    {i: cmd.CheckConflictIssue, want: "metadata conflict"},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			if got := cmd.IssueTypeAsString(tt.i); got != tt.want {
-				t.Errorf("IssueTypeAsString() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestCheckedIssues_AddIssue(t *testing.T) {
-	type args struct {
-		source cmd.CheckIssueType
-		issue  string
-	}
-	tests := map[string]struct {
-		cI   cmd.CheckedIssues
-		args args
-	}{
-		"add empty issue": {
-			cI: cmd.NewCheckedIssues(),
-			args: args{
-				source: cmd.CheckEmptyIssue,
-				issue:  "no albums"},
-		},
-		"add files issue": {
-			cI: cmd.NewCheckedIssues(),
-			args: args{
-				source: cmd.CheckFilesIssue,
-				issue:  "genre mismatch"},
-		},
-		"add numbering issue": {
-			cI: cmd.NewCheckedIssues(),
-			args: args{
-				source: cmd.CheckNumberingIssue,
-				issue:  "missing track 3"},
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			if tt.cI.HasIssues() {
-				t.Errorf("CheckedIssues.AddIssue() has issues from the start")
-			}
-			tt.cI.AddIssue(tt.args.source, tt.args.issue)
-			if !tt.cI.HasIssues() {
-				t.Errorf("CheckedIssues.AddIssue() did not add an issue")
-			}
-		})
-	}
-}
-
-func TestNewCheckedTrack(t *testing.T) {
-	tests := map[string]struct {
-		track          *files.Track
-		wantValidValue bool
-	}{
-		"nil":  {track: nil, wantValidValue: false},
-		"real": {track: sampleTrack, wantValidValue: true},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := cmd.NewCheckedTrack(tt.track)
-			if tt.wantValidValue {
-				if got == nil {
-					t.Errorf("NewCheckedTrack() = %v, want non-nil", got)
-				} else {
-					if got.HasIssues() {
-						t.Errorf("NewCheckedTrack() has issues")
-					}
-					if got.Track() != tt.track {
-						t.Errorf("NewCheckedTrack() has the wrong track")
-					}
-					got.AddIssue(cmd.CheckFilesIssue, "no metadata")
-					if !got.HasIssues() {
-						t.Errorf("NewCheckedTrack() does not reflect added issue")
-					}
-				}
-			} else {
-				if got != nil {
-					t.Errorf("NewCheckedTrack() = %v, want nil", got)
-				}
-			}
-		})
-	}
-}
-
-func TestNewCheckedAlbum(t *testing.T) {
-	var testAlbum *files.Album
-	if albums := generateAlbums(1, 5); len(albums) > 0 {
-		testAlbum = albums[0]
-	}
-	tests := map[string]struct {
-		album          *files.Album
-		wantValidAlbum bool
-	}{
-		"nil":  {album: nil, wantValidAlbum: false},
-		"real": {album: testAlbum, wantValidAlbum: true},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := cmd.NewCheckedAlbum(tt.album)
-			if tt.wantValidAlbum {
-				if got == nil {
-					t.Errorf("NewCheckedAlbum() = %v, want non-nil", got)
-				} else {
-					if got.HasIssues() {
-						t.Errorf("NewCheckedAlbum() created with issues")
-					}
-					if got.Album() != tt.album {
-						t.Errorf("NewCheckedAlbum() created with wrong album: got %v, want %v",
-							got.Album(), tt.album)
-					}
-					if len(got.Tracks()) != len(tt.album.Tracks()) {
-						t.Errorf("NewCheckedAlbum() created with %d tracks, want %d",
-							len(got.Tracks()), len(tt.album.Tracks()))
-					}
-					got.AddIssue(cmd.CheckNumberingIssue, "missing track 1")
-					if !got.HasIssues() {
-						t.Errorf("NewCheckedAlbum() cannot add issue")
-					} else {
-						got.CheckedIssues = cmd.NewCheckedIssues()
-						if got.HasIssues() {
-							t.Errorf("NewCheckedAlbum() has issues with clean map")
-						}
-						for _, track := range got.Tracks() {
-							track.AddIssue(cmd.CheckFilesIssue, "missing metadata")
-							break
-						}
-						if !got.HasIssues() {
-							t.Errorf("NewCheckedAlbum() does not show issue assigned to track")
-						}
-					}
-				}
-			} else {
-				if got != nil {
-					t.Errorf("NewCheckedAlbum() = %v, want nil", got)
-				}
-			}
-		})
-	}
-}
-
-func TestNewCheckedArtist(t *testing.T) {
-	tests := map[string]struct {
-		artist          *files.Artist
-		wantValidArtist bool
-	}{
-		"nil":  {artist: nil, wantValidArtist: false},
-		"real": {artist: generateArtists(1, 4, 5)[0], wantValidArtist: true},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := cmd.NewCheckedArtist(tt.artist)
-			if tt.wantValidArtist {
-				if got == nil {
-					t.Errorf("NewCheckedArtist() = %v, want non-nil", got)
-				} else {
-					if got.HasIssues() {
-						t.Errorf("NewCheckedArtist() created with issues")
-					}
-					if got.Artist() != tt.artist {
-						t.Errorf(
-							"NewCheckedArtist() created with wrong artist: got %v, want %v",
-							got.Artist(), tt.artist)
-					}
-					if len(got.Albums()) != len(tt.artist.Albums()) {
-						t.Errorf("NewCheckedArtist() created with %d albums, want %d",
-							len(got.Albums()), len(tt.artist.Albums()))
-					}
-					got.AddIssue(cmd.CheckEmptyIssue, "no albums!")
-					if !got.HasIssues() {
-						t.Errorf("NewCheckedArtist()) cannot add issue")
-					} else {
-						got.CheckedIssues = cmd.NewCheckedIssues()
-						if got.HasIssues() {
-							t.Errorf("NewCheckedArtist() has issues with clean map")
-						}
-						for _, track := range got.Albums() {
-							track.AddIssue(cmd.CheckNumberingIssue, "missing track 909")
-							break
-						}
-						if !got.HasIssues() {
-							t.Errorf("NewCheckedArtist() does not show issue assigned to track")
-						}
-					}
-				}
-			} else {
-				if got != nil {
-					t.Errorf("NewCheckedArtist() = %v, want nil", got)
-				}
-			}
-		})
-	}
-}
-
-func TestCheckedIssues_OutputIssues(t *testing.T) {
-	tests := map[string]struct {
-		tab    int
-		issues map[cmd.CheckIssueType][]string
-		output.WantedRecording
-	}{
-		"no issues": {tab: 0, issues: nil, WantedRecording: output.WantedRecording{}},
-		"lots of issues, untabbed": {
-			tab: 0,
-			issues: map[cmd.CheckIssueType][]string{
-				cmd.CheckEmptyIssue:     {"no albums", "no tracks"},
-				cmd.CheckFilesIssue:     {"track 1 no data", "track 0 no data"},
-				cmd.CheckNumberingIssue: {"missing track 4", "missing track 1"},
-			},
-			WantedRecording: output.WantedRecording{
-				Console: "" +
-					"* [empty] no albums\n" +
-					"* [empty] no tracks\n" +
-					"* [files] track 0 no data\n" +
-					"* [files] track 1 no data\n" +
-					"* [numbering] missing track 1\n" +
-					"* [numbering] missing track 4\n",
-			},
-		},
-		"lots of issues, indented": {
-			tab: 2,
-			issues: map[cmd.CheckIssueType][]string{
-				cmd.CheckEmptyIssue:     {"no albums", "no tracks"},
-				cmd.CheckFilesIssue:     {"track 1 no data", "track 0 no data"},
-				cmd.CheckNumberingIssue: {"missing track 4", "missing track 1"},
-			},
-			WantedRecording: output.WantedRecording{
-				Console: "" +
-					"  * [empty] no albums\n" +
-					"  * [empty] no tracks\n" +
-					"  * [files] track 0 no data\n" +
-					"  * [files] track 1 no data\n" +
-					"  * [numbering] missing track 1\n" +
-					"  * [numbering] missing track 4\n",
-			},
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			cI := cmd.NewCheckedIssues()
-			o := output.NewRecorder()
-			for k, v := range tt.issues {
-				for _, s := range v {
-					cI.AddIssue(k, s)
-				}
-			}
-			cI.OutputIssues(o, tt.tab)
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("CheckedIssue.OutputIssues() %s", issue)
-				}
-			}
-		})
-	}
-}
-
-func TestCheckedTrack_OutputIssues(t *testing.T) {
-	tests := map[string]struct {
-		cT     *cmd.CheckedTrack
-		issues map[cmd.CheckIssueType][]string
-		output.WantedRecording
-	}{
-		"no issues": {
-			cT:              cmd.NewCheckedTrack(sampleTrack),
-			issues:          nil,
-			WantedRecording: output.WantedRecording{},
-		},
-		"some issues": {
-			cT: cmd.NewCheckedTrack(sampleTrack),
-			issues: map[cmd.CheckIssueType][]string{
-				cmd.CheckFilesIssue: {"missing ID3V1 metadata", "missing ID3V2 metadata"},
-			},
-			WantedRecording: output.WantedRecording{
-				Console: "" +
-					"    Track \"track 10\"\n" +
-					"    * [files] missing ID3V1 metadata\n" +
-					"    * [files] missing ID3V2 metadata\n",
-			},
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			for k, v := range tt.issues {
-				for _, s := range v {
-					tt.cT.AddIssue(k, s)
-				}
-			}
-			o := output.NewRecorder()
-			tt.cT.OutputIssues(o)
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("CheckedTrack.OutputIssues() %s", issue)
-				}
-			}
-		})
-	}
-}
-
-func TestCheckedAlbum_OutputIssues(t *testing.T) {
-	var album1 *files.Album
-	if albums := generateAlbums(1, 1); len(albums) > 0 {
-		album1 = albums[0]
-	}
-	albumWithIssues := cmd.NewCheckedAlbum(album1)
-	if albumWithIssues != nil {
-		albumWithIssues.AddIssue(cmd.CheckNumberingIssue, "missing track 2")
-	}
-	var album2 *files.Album
-	if albums := generateAlbums(1, 4); len(albums) > 0 {
-		album2 = albums[0]
-	}
-	albumWithTrackIssues := cmd.NewCheckedAlbum(album2)
-	if albumWithTrackIssues != nil {
-		albumWithTrackIssues.Tracks()[3].AddIssue(cmd.CheckFilesIssue,
-			"no metadata detected")
-	}
-	var nilAlbum *files.Album
-	if albums := generateAlbums(1, 2); len(albums) > 0 {
-		nilAlbum = albums[0]
-	}
-	tests := map[string]struct {
-		cAl *cmd.CheckedAlbum
-		output.WantedRecording
-	}{
-		"nil": {cAl: cmd.NewCheckedAlbum(nilAlbum)},
-		"album with issues itself": {
-			cAl: albumWithIssues,
-			WantedRecording: output.WantedRecording{
-				Console: "" +
-					"  Album \"my album 00\"\n" +
-					"  * [numbering] missing track 2\n",
-			},
-		},
-		"album with track issues": {
-			cAl: albumWithTrackIssues,
-			WantedRecording: output.WantedRecording{
-				Console: "" +
-					"  Album \"my album 00\"\n" +
-					"    Track \"my track 004\"\n" +
-					"    * [files] no metadata detected\n",
-			},
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			o := output.NewRecorder()
-			tt.cAl.OutputIssues(o)
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("CheckedAlbum.OutputIssues() %s", issue)
-				}
-			}
-		})
-	}
-}
-
-func TestCheckedArtist_OutputIssues(t *testing.T) {
-	// artist without issues
-	var artist1 *files.Artist
-	if artists := generateArtists(1, 1, 1); len(artists) > 0 {
-		artist1 = artists[0]
-	}
-	cAr000 := cmd.NewCheckedArtist(artist1)
-	// artist with artist issues
-	var artist2 *files.Artist
-	if artists := generateArtists(1, 0, 0); len(artists) > 0 {
-		artist2 = artists[0]
-	}
-	cAr001 := cmd.NewCheckedArtist(artist2)
-	if cAr001 != nil {
-		cAr001.AddIssue(cmd.CheckEmptyIssue, "no albums")
-	}
-	// artist with artist and album issues
-	var artist3 *files.Artist
-	if artists := generateArtists(1, 1, 0); len(artists) > 0 {
-		artist3 = artists[0]
-	}
-	cAr011 := cmd.NewCheckedArtist(artist3)
-	if cAr011 != nil {
-		cAr011.AddIssue(cmd.CheckEmptyIssue, "expected no albums")
-		cAr011.Albums()[0].AddIssue(cmd.CheckEmptyIssue, "no tracks")
-	}
-	// artist with artist, album, and track issues
-	var artist4 *files.Artist
-	if artists := generateArtists(1, 1, 1); len(artists) > 0 {
-		artist4 = artists[0]
-	}
-	cAr111 := cmd.NewCheckedArtist(artist4)
-	if cAr111 != nil {
-		cAr111.AddIssue(cmd.CheckEmptyIssue, "expected no albums")
-		cAr111.Albums()[0].AddIssue(cmd.CheckEmptyIssue, "expected no tracks")
-		cAr111.Albums()[0].Tracks()[0].AddIssue(cmd.CheckFilesIssue, "no metadata")
-	}
-	// artist with artist and track issues
-	var artist5 *files.Artist
-	if artists := generateArtists(1, 1, 1); len(artists) > 0 {
-		artist5 = artists[0]
-	}
-	cAr101 := cmd.NewCheckedArtist(artist5)
-	if cAr101 != nil {
-		cAr101.AddIssue(cmd.CheckEmptyIssue, "expected no albums")
-		cAr101.Albums()[0].Tracks()[0].AddIssue(cmd.CheckFilesIssue, "no metadata")
-	}
-	// artist with album issues
-	var artist6 *files.Artist
-	if artists := generateArtists(1, 1, 1); len(artists) > 0 {
-		artist6 = artists[0]
-	}
-	cAr010 := cmd.NewCheckedArtist(artist6)
-	if cAr010 != nil {
-		cAr010.Albums()[0].AddIssue(cmd.CheckEmptyIssue, "expected no tracks")
-	}
-	// artist with album and track issues
-	var artist7 *files.Artist
-	if artists := generateArtists(1, 1, 1); len(artists) > 0 {
-		artist7 = artists[0]
-	}
-	cAr110 := cmd.NewCheckedArtist(artist7)
-	if cAr110 != nil {
-		cAr110.Albums()[0].AddIssue(cmd.CheckEmptyIssue, "expected no tracks")
-		cAr110.Albums()[0].Tracks()[0].AddIssue(cmd.CheckFilesIssue, "no metadata")
-	}
-	// artist with track issues
-	var artist8 *files.Artist
-	if artists := generateArtists(1, 1, 1); len(artists) > 0 {
-		artist8 = artists[0]
-	}
-	cAr100 := cmd.NewCheckedArtist(artist8)
-	if cAr100 != nil {
-		cAr100.Albums()[0].Tracks()[0].AddIssue(cmd.CheckFilesIssue, "no metadata")
-	}
-	tests := map[string]struct {
-		cAr *cmd.CheckedArtist
-		output.WantedRecording
-	}{
-		"nothing": {cAr: cAr000},
-		"bad artist": {
-			cAr: cAr001,
-			WantedRecording: output.WantedRecording{
-				Console: "" +
-					"Artist \"my artist 0\"\n" +
-					"* [empty] no albums\n",
-			},
-		},
-		"bad artist, bad album": {
-			cAr: cAr011,
-			WantedRecording: output.WantedRecording{
-				Console: "" +
-					"Artist \"my artist 0\"\n" +
-					"* [empty] expected no albums\n" +
-					"  Album \"my album 00\"\n" +
-					"  * [empty] no tracks\n",
-			},
-		},
-		"bad artist, bad album, bad track": {
-			cAr: cAr111,
-			WantedRecording: output.WantedRecording{
-				Console: "" +
-					"Artist \"my artist 0\"\n" +
-					"* [empty] expected no albums\n" +
-					"  Album \"my album 00\"\n" +
-					"  * [empty] expected no tracks\n" +
-					"    Track \"my track 001\"\n" +
-					"    * [files] no metadata\n",
-			},
-		},
-		"bad artist, bad track": {
-			cAr: cAr101,
-			WantedRecording: output.WantedRecording{
-				Console: "" +
-					"Artist \"my artist 0\"\n" +
-					"* [empty] expected no albums\n" +
-					"  Album \"my album 00\"\n" +
-					"    Track \"my track 001\"\n" +
-					"    * [files] no metadata\n",
-			},
-		},
-		"bad album": {
-			cAr: cAr010,
-			WantedRecording: output.WantedRecording{
-				Console: "" +
-					"Artist \"my artist 0\"\n" +
-					"  Album \"my album 00\"\n" +
-					"  * [empty] expected no tracks\n",
-			},
-		},
-		"bad album, bad track": {
-			cAr: cAr110,
-			WantedRecording: output.WantedRecording{
-				Console: "" +
-					"Artist \"my artist 0\"\n" +
-					"  Album \"my album 00\"\n" +
-					"  * [empty] expected no tracks\n" +
-					"    Track \"my track 001\"\n" +
-					"    * [files] no metadata\n",
-			},
-		},
-		"bad track": {
-			cAr: cAr100,
-			WantedRecording: output.WantedRecording{
-				Console: "" +
-					"Artist \"my artist 0\"\n" +
-					"  Album \"my album 00\"\n" +
-					"    Track \"my track 001\"\n" +
-					"    * [files] no metadata\n",
-			},
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			o := output.NewRecorder()
-			tt.cAr.OutputIssues(o)
-			if issues, ok := o.Verify(tt.WantedRecording); !ok {
-				for _, issue := range issues {
-					t.Errorf("CheckedArtist.OutputIssues() %s", issue)
-				}
-			}
-		})
-	}
-}
-
-func TestPrepareCheckedArtists(t *testing.T) {
-	tests := map[string]struct {
-		artists    []*files.Artist
-		want       int
-		wantAlbums int
-		wantTracks int
-	}{
-		"empty": {},
-		"plenty": {
-			artists:    generateArtists(15, 16, 17),
-			want:       15,
-			wantAlbums: 15 * 16,
-			wantTracks: 15 * 16 * 17,
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			if got := cmd.PrepareCheckedArtists(tt.artists); len(got) != tt.want {
-				t.Errorf("PrepareCheckedArtists() = %d, want %v", len(got), tt.want)
-			} else {
-				albums := 0
-				tracks := 0
-				collectedTracks := []*files.Track{}
-				for _, artist := range got {
-					albums += len(artist.Albums())
-					for _, album := range artist.Albums() {
-						tracks += len(album.Tracks())
-						for _, cT := range album.Tracks() {
-							collectedTracks = append(collectedTracks, cT.Track())
-						}
-					}
-				}
-				if albums != tt.wantAlbums {
-					t.Errorf("PrepareCheckedArtists() = %d albums, want %v", albums,
-						tt.wantAlbums)
-				}
-				if tracks != tt.wantTracks {
-					t.Errorf("PrepareCheckedArtists() = %d tracks, want %v", tracks,
-						tt.wantTracks)
-				}
-				for _, track := range collectedTracks {
-					found := false
-					for _, cAr := range got {
-						if cAr.Lookup(track) != nil {
-							found = true
-							break
-						}
-					}
-					if !found {
-						t.Errorf(
-							"PrepareCheckedArtists() cannot find track %q on %q by %q",
-							track.FileName(), track.AlbumName(), track.RecordingArtist())
-					}
-				}
-				copiedTracks := []*files.Track{}
-				for _, artist := range tt.artists {
-					copiedAr := artist.Copy()
-					for _, album := range artist.Albums() {
-						copiedAl := album.Copy(copiedAr, false)
-						copiedAr.AddAlbum(copiedAl)
-						for _, track := range album.Tracks() {
-							copiedTr := track.Copy(copiedAl)
-							copiedAl.AddTrack(copiedTr)
-							copiedTracks = append(copiedTracks, copiedTr)
-						}
-					}
-				}
-				for _, track := range copiedTracks {
-					found := false
-					for _, cAr := range got {
-						if cAr.Lookup(track) != nil {
-							found = true
-							break
-						}
-					}
-					if !found {
-						t.Errorf("PrepareCheckedArtists() cannot find copied track %q on"+
-							" %q by %q", track.FileName(), track.AlbumName(),
-							track.RecordingArtist())
-					}
-				}
-			}
-		})
-	}
-}
-
 func TestCheckSettings_PerformEmptyAnalysis(t *testing.T) {
 	tests := map[string]struct {
 		cs             *cmd.CheckSettings
-		checkedArtists []*cmd.CheckedArtist
+		checkedArtists []*cmd.ConcernedArtist
 		want           bool
 	}{
 		"do nothing": {cs: cmd.NewCheckSettings().WithEmpty(false)},
@@ -903,16 +286,16 @@ func TestCheckSettings_PerformEmptyAnalysis(t *testing.T) {
 		},
 		"full slice, no issues": {
 			cs:             cmd.NewCheckSettings().WithEmpty(true),
-			checkedArtists: cmd.PrepareCheckedArtists(generateArtists(5, 6, 7)),
+			checkedArtists: cmd.PrepareConcernedArtists(generateArtists(5, 6, 7)),
 		},
 		"empty artists": {
 			cs:             cmd.NewCheckSettings().WithEmpty(true),
-			checkedArtists: cmd.PrepareCheckedArtists(generateArtists(1, 0, 10)),
+			checkedArtists: cmd.PrepareConcernedArtists(generateArtists(1, 0, 10)),
 			want:           true,
 		},
 		"empty albums": {
 			cs:             cmd.NewCheckSettings().WithEmpty(true),
-			checkedArtists: cmd.PrepareCheckedArtists(generateArtists(4, 6, 0)),
+			checkedArtists: cmd.PrepareConcernedArtists(generateArtists(4, 6, 0)),
 			want:           true,
 		},
 	}
@@ -923,7 +306,7 @@ func TestCheckSettings_PerformEmptyAnalysis(t *testing.T) {
 			}
 			verifiedFound := false
 			for _, artist := range tt.checkedArtists {
-				if artist.HasIssues() {
+				if artist.IsConcerned() {
 					verifiedFound = true
 				}
 			}
@@ -949,14 +332,15 @@ func TestGenerateMissingNumbers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := cmd.GenerateMissingNumbers(tt.args.low, tt.args.high); got != tt.want {
+			if got := cmd.GenerateMissingNumbers(tt.args.low,
+				tt.args.high); got != tt.want {
 				t.Errorf("GenerateMissingNumbers() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestGenerateNumberingIssues(t *testing.T) {
+func TestGenerateNumberingConcerns(t *testing.T) {
 	type args struct {
 		m        map[int][]string
 		maxTrack int
@@ -1003,9 +387,9 @@ func TestGenerateNumberingIssues(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := cmd.GenerateNumberingIssues(tt.args.m,
+			if got := cmd.GenerateNumberingConcerns(tt.args.m,
 				tt.args.maxTrack); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GenerateNumberingIssues() = %v, want %v", got, tt.want)
+				t.Errorf("GenerateNumberingConcerns() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -1033,22 +417,22 @@ func TestCheckSettings_PerformNumberingAnalysis(t *testing.T) {
 
 	tests := map[string]struct {
 		cs             *cmd.CheckSettings
-		checkedArtists []*cmd.CheckedArtist
+		checkedArtists []*cmd.ConcernedArtist
 		want           bool
 	}{
 		"no analysis": {
 			cs:             cmd.NewCheckSettings().WithNumbering(false),
-			checkedArtists: cmd.PrepareCheckedArtists(generateArtists(5, 6, 7)),
+			checkedArtists: cmd.PrepareConcernedArtists(generateArtists(5, 6, 7)),
 			want:           false,
 		},
 		"ok analysis": {
 			cs:             cmd.NewCheckSettings().WithNumbering(true),
-			checkedArtists: cmd.PrepareCheckedArtists(generateArtists(5, 6, 7)),
+			checkedArtists: cmd.PrepareConcernedArtists(generateArtists(5, 6, 7)),
 			want:           false,
 		},
 		"missing numbers found": {
 			cs:             cmd.NewCheckSettings().WithNumbering(true),
-			checkedArtists: cmd.PrepareCheckedArtists(defectiveArtists),
+			checkedArtists: cmd.PrepareConcernedArtists(defectiveArtists),
 			want:           true,
 		},
 	}
@@ -1060,7 +444,7 @@ func TestCheckSettings_PerformNumberingAnalysis(t *testing.T) {
 			}
 			verifiedFound := false
 			for _, artist := range tt.checkedArtists {
-				if artist.HasIssues() {
+				if artist.IsConcerned() {
 					verifiedFound = true
 				}
 			}
@@ -1072,7 +456,7 @@ func TestCheckSettings_PerformNumberingAnalysis(t *testing.T) {
 	}
 }
 
-func TestRecordFileIssues(t *testing.T) {
+func TestRecordFileConcerns(t *testing.T) {
 	originalArtists := generateArtists(5, 6, 7)
 	tracks := []*files.Track{}
 	for _, artist := range originalArtists {
@@ -1084,7 +468,7 @@ func TestRecordFileIssues(t *testing.T) {
 		}
 	}
 	type args struct {
-		checkedArtists []*cmd.CheckedArtist
+		checkedArtists []*cmd.ConcernedArtist
 		track          *files.Track
 		issues         []string
 	}
@@ -1098,7 +482,7 @@ func TestRecordFileIssues(t *testing.T) {
 		},
 		"issues": {
 			args: args{
-				checkedArtists: cmd.PrepareCheckedArtists(originalArtists),
+				checkedArtists: cmd.PrepareConcernedArtists(originalArtists),
 				track:          tracks[len(tracks)-1],
 				issues:         []string{"mismatched artist", "mismatched album"},
 			},
@@ -1107,20 +491,20 @@ func TestRecordFileIssues(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if gotFoundIssues := cmd.RecordFileIssues(tt.args.checkedArtists,
+			if gotFoundIssues := cmd.RecordFileConcerns(tt.args.checkedArtists,
 				tt.args.track, tt.args.issues); gotFoundIssues != tt.wantFoundIssues {
-				t.Errorf("RecordFileIssues() = %v, want %v", gotFoundIssues,
+				t.Errorf("RecordFileConcerns() = %v, want %v", gotFoundIssues,
 					tt.wantFoundIssues)
 			}
 			if tt.wantFoundIssues {
 				hasIssues := false
 				for _, cAr := range tt.args.checkedArtists {
-					if cAr.HasIssues() {
+					if cAr.IsConcerned() {
 						hasIssues = true
 					}
 				}
 				if !hasIssues {
-					t.Errorf("RecordFileIssues() true, but no issues actually recorded")
+					t.Errorf("RecordFileConcerns() true, but no issues actually recorded")
 				}
 			}
 		})
@@ -1134,7 +518,7 @@ func TestCheckSettings_PerformFileAnalysis(t *testing.T) {
 	}()
 	cmd.ReadMetadata = func(_ output.Bus, _ []*files.Artist) {}
 	type args struct {
-		checkedArtists []*cmd.CheckedArtist
+		checkedArtists []*cmd.ConcernedArtist
 		ss             *cmd.SearchSettings
 	}
 	tests := map[string]struct {
@@ -1152,7 +536,7 @@ func TestCheckSettings_PerformFileAnalysis(t *testing.T) {
 		"allowed, but nothing to check": {
 			cs: cmd.NewCheckSettings().WithFiles(true),
 			args: args{
-				checkedArtists: []*cmd.CheckedArtist{},
+				checkedArtists: []*cmd.ConcernedArtist{},
 				ss:             cmd.NewSearchSettings(),
 			},
 			want: false,
@@ -1171,7 +555,7 @@ func TestCheckSettings_PerformFileAnalysis(t *testing.T) {
 		"work to do": {
 			cs: cmd.NewCheckSettings().WithFiles(true),
 			args: args{
-				checkedArtists: cmd.PrepareCheckedArtists(generateArtists(4, 5, 6)),
+				checkedArtists: cmd.PrepareConcernedArtists(generateArtists(4, 5, 6)),
 				ss: cmd.NewSearchSettings().WithArtistFilter(
 					regexp.MustCompile(".*")).WithAlbumFilter(regexp.MustCompile(
 					".*")).WithTrackFilter(regexp.MustCompile(".*")),

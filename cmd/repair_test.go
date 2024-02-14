@@ -73,7 +73,7 @@ func TestEnsureBackupDirectoryExists(t *testing.T) {
 		album = albums[0]
 	}
 	tests := map[string]struct {
-		cAl        *cmd.CheckedAlbum
+		cAl        *cmd.ConcernedAlbum
 		dirExists  func(s string) bool
 		mkdir      func(s string) error
 		wantPath   string
@@ -81,20 +81,20 @@ func TestEnsureBackupDirectoryExists(t *testing.T) {
 		output.WantedRecording
 	}{
 		"dir already exists": {
-			cAl:        cmd.NewCheckedAlbum(album),
+			cAl:        cmd.NewConcernedAlbum(album),
 			dirExists:  func(_ string) bool { return true },
 			wantPath:   album.BackupDirectory(),
 			wantExists: true,
 		},
 		"dir does not exist but can be created": {
-			cAl:        cmd.NewCheckedAlbum(album),
+			cAl:        cmd.NewConcernedAlbum(album),
 			dirExists:  func(_ string) bool { return false },
 			mkdir:      func(_ string) error { return nil },
 			wantPath:   album.BackupDirectory(),
 			wantExists: true,
 		},
 		"dir does not exist and cannot be created": {
-			cAl:        cmd.NewCheckedAlbum(album),
+			cAl:        cmd.NewConcernedAlbum(album),
 			dirExists:  func(_ string) bool { return false },
 			mkdir:      func(_ string) error { return fmt.Errorf("plain file exists") },
 			wantPath:   album.BackupDirectory(),
@@ -321,11 +321,11 @@ func TestProcessUpdateResult(t *testing.T) {
 }
 
 func TestBackupAndFix(t *testing.T) {
-	checkedArtists := cmd.PrepareCheckedArtists(generateArtists(2, 3, 4))
-	for _, cAr := range checkedArtists {
+	concernedArtists := cmd.PrepareConcernedArtists(generateArtists(2, 3, 4))
+	for _, cAr := range concernedArtists {
 		for _, cAl := range cAr.Albums() {
 			for _, cT := range cAl.Tracks() {
-				cT.AddIssue(cmd.CheckConflictIssue,
+				cT.AddConcern(cmd.ConflictConcern,
 					"artist field does not match artist name")
 			}
 		}
@@ -339,19 +339,19 @@ func TestBackupAndFix(t *testing.T) {
 		cmd.CopyFile = originalCopyFile
 	}()
 	tests := map[string]struct {
-		dirExists       func(string) bool
-		plainFileExists func(string) bool
-		copyFile        func(string, string) error
-		checkedArtists  []*cmd.CheckedArtist
-		wantStatus      int
+		dirExists        func(string) bool
+		plainFileExists  func(string) bool
+		copyFile         func(string, string) error
+		concernedArtists []*cmd.ConcernedArtist
+		wantStatus       int
 		output.WantedRecording
 	}{
 		"basic test": {
-			dirExists:       func(_ string) bool { return true },
-			plainFileExists: func(_ string) bool { return false },
-			copyFile:        func(_, _ string) error { return nil },
-			checkedArtists:  checkedArtists,
-			wantStatus:      cmd.SystemError,
+			dirExists:        func(_ string) bool { return true },
+			plainFileExists:  func(_ string) bool { return false },
+			copyFile:         func(_, _ string) error { return nil },
+			concernedArtists: concernedArtists,
+			wantStatus:       cmd.SystemError,
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"The track file" +
@@ -647,11 +647,11 @@ func TestBackupAndFix(t *testing.T) {
 			},
 		},
 		"basic test2": {
-			dirExists:       func(_ string) bool { return false },
-			plainFileExists: func(_ string) bool { return false },
-			copyFile:        func(_, _ string) error { return nil },
-			checkedArtists:  checkedArtists,
-			wantStatus:      cmd.SystemError,
+			dirExists:        func(_ string) bool { return false },
+			plainFileExists:  func(_ string) bool { return false },
+			copyFile:         func(_, _ string) error { return nil },
+			concernedArtists: concernedArtists,
+			wantStatus:       cmd.SystemError,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"The directory" +
@@ -735,11 +735,11 @@ func TestBackupAndFix(t *testing.T) {
 			},
 		},
 		"basic test3": {
-			dirExists:       func(_ string) bool { return true },
-			plainFileExists: func(_ string) bool { return false },
-			copyFile:        func(_, _ string) error { return fmt.Errorf("oops") },
-			checkedArtists:  checkedArtists,
-			wantStatus:      cmd.SystemError,
+			dirExists:        func(_ string) bool { return true },
+			plainFileExists:  func(_ string) bool { return false },
+			copyFile:         func(_, _ string) error { return fmt.Errorf("oops") },
+			concernedArtists: concernedArtists,
+			wantStatus:       cmd.SystemError,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"The track file" +
@@ -1040,7 +1040,7 @@ func TestBackupAndFix(t *testing.T) {
 			cmd.PlainFileExists = tt.plainFileExists
 			cmd.CopyFile = tt.copyFile
 			o := output.NewRecorder()
-			if got := cmd.BackupAndFix(o, tt.checkedArtists); got != tt.wantStatus {
+			if got := cmd.BackupAndFix(o, tt.concernedArtists); got != tt.wantStatus {
 				t.Errorf("BackupAndFix() got %d want %d", got, tt.wantStatus)
 			}
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
@@ -1053,30 +1053,30 @@ func TestBackupAndFix(t *testing.T) {
 }
 
 func TestReportRepairsNeeded(t *testing.T) {
-	dirty := cmd.PrepareCheckedArtists(generateArtists(2, 3, 4))
+	dirty := cmd.PrepareConcernedArtists(generateArtists(2, 3, 4))
 	for _, cAr := range dirty {
 		for _, cAl := range cAr.Albums() {
 			for _, cT := range cAl.Tracks() {
-				cT.AddIssue(cmd.CheckConflictIssue, "artist field does not match artist name")
+				cT.AddConcern(cmd.ConflictConcern, "artist field does not match artist name")
 			}
 		}
 	}
-	clean := cmd.PrepareCheckedArtists(generateArtists(2, 3, 4))
+	clean := cmd.PrepareConcernedArtists(generateArtists(2, 3, 4))
 	tests := map[string]struct {
-		checkedArtists []*cmd.CheckedArtist
+		concernedArtists []*cmd.ConcernedArtist
 		output.WantedRecording
 	}{
 		"clean": {
-			checkedArtists: clean,
+			concernedArtists: clean,
 			WantedRecording: output.WantedRecording{
 				Console: "No repairable track defects were found.\n",
 			},
 		},
 		"dirty": {
-			checkedArtists: dirty,
+			concernedArtists: dirty,
 			WantedRecording: output.WantedRecording{
 				Console: "" +
-					"The following issues can be repaired:\n" +
+					"The following concerns can be repaired:\n" +
 					"Artist \"my artist 0\"\n" +
 					"  Album \"my album 00\"\n" +
 					"    Track \"my track 001\"\n" +
@@ -1139,7 +1139,7 @@ func TestReportRepairsNeeded(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			cmd.ReportRepairsNeeded(o, tt.checkedArtists)
+			cmd.ReportRepairsNeeded(o, tt.concernedArtists)
 			if issues, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, issue := range issues {
 					t.Errorf("ReportRepairsNeeded() %s", issue)
@@ -1150,7 +1150,7 @@ func TestReportRepairsNeeded(t *testing.T) {
 }
 
 func TestFindConflictedTracks(t *testing.T) {
-	dirty := cmd.PrepareCheckedArtists(generateArtists(2, 3, 4))
+	dirty := cmd.PrepareConcernedArtists(generateArtists(2, 3, 4))
 	for _, cAr := range dirty {
 		for _, cAl := range cAr.Albums() {
 			for _, cT := range cAl.Tracks() {
@@ -1166,17 +1166,17 @@ func TestFindConflictedTracks(t *testing.T) {
 			}
 		}
 	}
-	clean := cmd.PrepareCheckedArtists(generateArtists(2, 3, 4))
+	clean := cmd.PrepareConcernedArtists(generateArtists(2, 3, 4))
 	tests := map[string]struct {
-		checkedArtists []*cmd.CheckedArtist
-		want           int
+		concernedArtists []*cmd.ConcernedArtist
+		want             int
 	}{
-		"clean": {checkedArtists: clean, want: 0},
-		"dirty": {checkedArtists: dirty, want: 24},
+		"clean": {concernedArtists: clean, want: 0},
+		"dirty": {concernedArtists: dirty, want: 24},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := cmd.FindConflictedTracks(tt.checkedArtists); got != tt.want {
+			if got := cmd.FindConflictedTracks(tt.concernedArtists); got != tt.want {
 				t.Errorf("FindConflictedTracks() = %v, want %v", got, tt.want)
 			}
 		})
@@ -1231,7 +1231,7 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 			wantStatus: cmd.Success,
 			WantedRecording: output.WantedRecording{
 				Console: "" +
-					"The following issues can be repaired:\n" +
+					"The following concerns can be repaired:\n" +
 					"Artist \"my artist 0\"\n" +
 					"  Album \"my album 00\"\n" +
 					"    Track \"my track 001\"\n" +

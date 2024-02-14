@@ -99,58 +99,58 @@ func (rs *RepairSettings) ProcessArtists(o output.Bus, allArtists []*files.Artis
 func (rs *RepairSettings) RepairArtists(o output.Bus, artists []*files.Artist) int {
 	status := Success
 	ReadMetadata(o, artists) // read all track metadata
-	checkedArtists := PrepareCheckedArtists(artists)
-	count := FindConflictedTracks(checkedArtists)
+	concernedArtists := PrepareConcernedArtists(artists)
+	count := FindConflictedTracks(concernedArtists)
 	if rs.dryRun {
-		ReportRepairsNeeded(o, checkedArtists)
+		ReportRepairsNeeded(o, concernedArtists)
 	} else {
 		if count == 0 {
 			nothingToDo(o)
 		} else {
-			status = BackupAndFix(o, checkedArtists)
+			status = BackupAndFix(o, concernedArtists)
 		}
 	}
 	return status
 }
 
-func FindConflictedTracks(checkedArtists []*CheckedArtist) int {
+func FindConflictedTracks(concernedArtists []*ConcernedArtist) int {
 	count := 0
-	for _, cAr := range checkedArtists {
+	for _, cAr := range concernedArtists {
 		for _, cAl := range cAr.Albums() {
 			for _, cT := range cAl.Tracks() {
 				state := cT.backing.ReconcileMetadata()
 				if state.HasArtistNameConflict() {
-					cT.AddIssue(CheckConflictIssue,
+					cT.AddConcern(ConflictConcern,
 						"the artist name field does not match the name of the artist"+
 							" directory")
 				}
 				if state.HasAlbumNameConflict() {
-					cT.AddIssue(CheckConflictIssue,
+					cT.AddConcern(ConflictConcern,
 						"the album name field does not match the name of the album"+
 							" directory")
 				}
 				if state.HasGenreConflict() {
-					cT.AddIssue(CheckConflictIssue,
+					cT.AddConcern(ConflictConcern,
 						"the genre field does not match the other tracks in the album")
 				}
 				if state.HasMCDIConflict() {
-					cT.AddIssue(CheckConflictIssue,
+					cT.AddConcern(ConflictConcern,
 						"the music CD identifier field does not match the other tracks in"+
 							" the album")
 				}
 				if state.HasNumberingConflict() {
-					cT.AddIssue(CheckConflictIssue,
+					cT.AddConcern(ConflictConcern,
 						"the track number field does not match the track's file name")
 				}
 				if state.HasTrackNameConflict() {
-					cT.AddIssue(CheckConflictIssue,
+					cT.AddConcern(ConflictConcern,
 						"the track name field does not match the track's file name")
 				}
 				if state.HasYearConflict() {
-					cT.AddIssue(CheckConflictIssue,
+					cT.AddConcern(ConflictConcern,
 						"the year field does not match the other tracks in the album")
 				}
-				if cT.HasIssues() {
+				if cT.IsConcerned() {
 					count++
 				}
 			}
@@ -159,10 +159,10 @@ func FindConflictedTracks(checkedArtists []*CheckedArtist) int {
 	return count
 }
 
-func ReportRepairsNeeded(o output.Bus, checkedArtists []*CheckedArtist) {
+func ReportRepairsNeeded(o output.Bus, concernedArtists []*ConcernedArtist) {
 	artistNames := []string{}
-	artistMap := map[string]*CheckedArtist{}
-	for _, cAr := range checkedArtists {
+	artistMap := map[string]*ConcernedArtist{}
+	for _, cAr := range concernedArtists {
 		name := cAr.name()
 		artistNames = append(artistNames, name)
 		artistMap[name] = cAr
@@ -171,12 +171,12 @@ func ReportRepairsNeeded(o output.Bus, checkedArtists []*CheckedArtist) {
 	headerPrinted := false
 	for _, name := range artistNames {
 		if cAr := artistMap[name]; cAr != nil {
-			if cAr.HasIssues() {
+			if cAr.IsConcerned() {
 				if !headerPrinted {
-					o.WriteConsole("The following issues can be repaired:\n")
+					o.WriteConsole("The following concerns can be repaired:\n")
 					headerPrinted = true
 				}
-				cAr.OutputIssues(o)
+				cAr.ToConsole(o)
 			}
 		}
 	}
@@ -189,15 +189,15 @@ func nothingToDo(o output.Bus) {
 	o.WriteCanonicalConsole("No repairable track defects were found.")
 }
 
-func BackupAndFix(o output.Bus, checkedArtists []*CheckedArtist) int {
+func BackupAndFix(o output.Bus, concernedArtists []*ConcernedArtist) int {
 	status := Success
-	for _, cAr := range checkedArtists {
-		if cAr.HasIssues() {
+	for _, cAr := range concernedArtists {
+		if cAr.IsConcerned() {
 			for _, cAl := range cAr.albums {
-				if cAl.HasIssues() {
+				if cAl.IsConcerned() {
 					if path, exists := EnsureBackupDirectoryExists(o, cAl); exists {
 						for _, cT := range cAl.tracks {
-							if cT.HasIssues() {
+							if cT.IsConcerned() {
 								t := cT.backing
 								if AttemptCopy(o, t, path) {
 									err := t.UpdateMetadata()
@@ -273,7 +273,7 @@ func AttemptCopy(o output.Bus, t *files.Track, path string) (backedUp bool) {
 	return
 }
 
-func EnsureBackupDirectoryExists(o output.Bus, cAl *CheckedAlbum) (path string, exists bool) {
+func EnsureBackupDirectoryExists(o output.Bus, cAl *ConcernedAlbum) (path string, exists bool) {
 	path = cAl.backing.BackupDirectory()
 	exists = true
 	if !DirExists(path) {
