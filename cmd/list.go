@@ -256,22 +256,30 @@ func (ls *ListSettings) ListArtists(o output.Bus, artists []*files.Artist) {
 	}
 }
 
+type AlbumSlice []*files.Album
+
+func (as AlbumSlice) Len() int {
+	return len(as)
+}
+
+func (as AlbumSlice) Less(i, j int) bool {
+	if as[i].Name() == as[j].Name() {
+		return as[i].RecordingArtistName() < as[j].RecordingArtistName()
+	} else {
+		return as[i].Name() < as[j].Name()
+	}
+}
+
+func (as AlbumSlice) Swap(i, j int) {
+	as[i], as[j] = as[j], as[i]
+}
+
 func (ls *ListSettings) ListAlbums(o output.Bus, albums []*files.Album, tab int) {
 	if ls.albums {
-		m := map[string]*files.Album{}
-		albumNames := []string{}
+		sort.Sort(AlbumSlice(albums))
 		for _, album := range albums {
-			annotatedAlbumName := ls.AnnotateAlbumName(album)
-			m[annotatedAlbumName] = album
-			albumNames = append(albumNames, annotatedAlbumName)
-		}
-		sort.Strings(albumNames)
-		for _, name := range albumNames {
-			o.WriteConsole("%*sAlbum: %s\n", tab, "", name)
-			album := m[name]
-			if album != nil {
-				ls.ListTracks(o, album.Tracks(), tab+2)
-			}
+			o.WriteConsole("%*sAlbum: %s\n", tab, "", ls.AnnotateAlbumName(album))
+			ls.ListTracks(o, album.Tracks(), tab+2)
 		}
 	} else {
 		tracks := []*files.Track{}
@@ -323,22 +331,36 @@ func (ls *ListSettings) ListTracksByNumber(o output.Bus, tracks []*files.Track, 
 	}
 }
 
-func (ls *ListSettings) ListTracksByName(o output.Bus, tracks []*files.Track, tab int) {
-	annotatedNames := []string{}
-	m := map[string]*files.Track{}
-	for _, track := range tracks {
-		annotatedName := ls.AnnotateTrackName(track)
-		annotatedNames = append(annotatedNames, annotatedName)
-		m[annotatedName] = track
-	}
-	sort.Strings(annotatedNames)
-	for _, s := range annotatedNames {
-		o.WriteConsole("%*s%s\n", tab, "", s)
-		track := m[s]
-		if track != nil {
-			ls.ListTrackDetails(o, track, tab+2)
-			ls.ListTrackDiagnostics(o, track, tab+2)
+type TrackSlice []*files.Track
+
+func (ts TrackSlice) Len() int {
+	return len(ts)
+}
+
+func (ts TrackSlice) Less(i, j int) bool {
+	if ts[i].CommonName() == ts[j].CommonName() {
+		album1 := ts[i].Album()
+		album2 := ts[j].Album()
+		if album1.Name() == album2.Name() {
+			return album1.RecordingArtistName() < album2.RecordingArtistName()
+		} else {
+			return album1.Name() < album2.Name()
 		}
+	} else {
+		return ts[i].CommonName() < ts[j].CommonName()
+	}
+}
+
+func (ts TrackSlice) Swap(i, j int) {
+	ts[i], ts[j] = ts[j], ts[i]
+}
+
+func (ls *ListSettings) ListTracksByName(o output.Bus, tracks []*files.Track, tab int) {
+	sort.Sort(TrackSlice(tracks))
+	for _, track := range tracks {
+		o.WriteConsole("%*s%s\n", tab, "", ls.AnnotateTrackName(track))
+		ls.ListTrackDetails(o, track, tab+2)
+		ls.ListTrackDiagnostics(o, track, tab+2)
 	}
 }
 

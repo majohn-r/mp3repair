@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
+	"sort"
 	"testing"
 
 	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
@@ -950,6 +951,38 @@ func TestListSettingsListTracksByName(t *testing.T) {
 					"\"my track 009\" on \"my album 00\" by \"my artist 0\"\n",
 			},
 		},
+		"https://github.com/majohn-r/mp3/issues/147": {
+			ls: cmd.NewListSettings().WithAnnotate(true),
+			args: args{
+				tracks: []*files.Track{
+					files.NewEmptyTrack().WithName("Old Brown Shoe").WithAlbum(
+						files.NewEmptyAlbum().WithTitle("Anthology 3 [Disc 2]").WithArtist(
+							files.NewEmptyArtist().WithFileName("The Beatles"))),
+					files.NewEmptyTrack().WithName("Old Brown Shoe").WithAlbum(
+						files.NewEmptyAlbum().WithTitle("Live In Japan [Disc 1]").WithArtist(
+							files.NewEmptyArtist().WithFileName("George Harrison & Eric Clapton"))),
+					files.NewEmptyTrack().WithName("Old Brown Shoe").WithAlbum(
+						files.NewEmptyAlbum().WithTitle("Past Masters, Vol. 2").WithArtist(
+							files.NewEmptyArtist().WithFileName("The Beatles"))),
+					files.NewEmptyTrack().WithName("Old Brown Shoe").WithAlbum(
+						files.NewEmptyAlbum().WithTitle("Songs From The Material World - A Tribute To George Harrison").WithArtist(
+							files.NewEmptyArtist().WithFileName("Various Artists"))),
+					files.NewEmptyTrack().WithName("Old Brown Shoe (Take 2)").WithAlbum(
+						files.NewEmptyAlbum().WithTitle("Abbey Road- Sessions [Disc 2]").WithArtist(
+							files.NewEmptyArtist().WithFileName("The Beatles"))),
+				},
+				tab: 0,
+			},
+			WantedRecording: output.WantedRecording{
+				Console: "" +
+					`"Old Brown Shoe" on "Anthology 3 [Disc 2]" by "The Beatles"
+"Old Brown Shoe" on "Live In Japan [Disc 1]" by "George Harrison & Eric Clapton"
+"Old Brown Shoe" on "Past Masters, Vol. 2" by "The Beatles"
+"Old Brown Shoe" on "Songs From The Material World - A Tribute To George Harrison" by "Various Artists"
+"Old Brown Shoe (Take 2)" on "Abbey Road- Sessions [Disc 2]" by "The Beatles"
+`,
+			},
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -1239,6 +1272,63 @@ func TestListSettingsListAlbums(t *testing.T) {
 					"   1. my track 021\n" +
 					"   2. my track 022\n" +
 					"   3. my track 023\n",
+			},
+		},
+		"https://github.com/majohn-r/mp3/issues/147": {
+			ls: cmd.NewListSettings().WithAlbums(true).WithAnnotate(true),
+			args: args{
+				albums: []*files.Album{
+					files.NewEmptyAlbum().WithTitle("Live Rhymin' [Bonus Tracks]").WithArtist(
+						files.NewEmptyArtist().WithFileName("Paul Simon")),
+					files.NewEmptyAlbum().WithTitle("Live In Paris & Toronto [Disc 2]").WithArtist(
+						files.NewEmptyArtist().WithFileName("Loreena McKennitt")),
+					files.NewEmptyAlbum().WithTitle("Live In Paris & Toronto [Disc 1]").WithArtist(
+						files.NewEmptyArtist().WithFileName("Loreena McKennitt")),
+					files.NewEmptyAlbum().WithTitle("Live In Japan [Disc 2]").WithArtist(
+						files.NewEmptyArtist().WithFileName("George Harrison & Eric Clapton")),
+					files.NewEmptyAlbum().WithTitle("Live In Japan [Disc 1]").WithArtist(
+						files.NewEmptyArtist().WithFileName("George Harrison & Eric Clapton")),
+					files.NewEmptyAlbum().WithTitle("Live From New York City, 1967").WithArtist(
+						files.NewEmptyArtist().WithFileName("Simon & Garfunkel")),
+					files.NewEmptyAlbum().WithTitle("Live At The Circle Room").WithArtist(
+						files.NewEmptyArtist().WithFileName("Nat King Cole")),
+					files.NewEmptyAlbum().WithTitle("Live At The BBC [Disc 2]").WithArtist(
+						files.NewEmptyArtist().WithFileName("The Beatles")),
+					files.NewEmptyAlbum().WithTitle("Live At The BBC [Disc 1]").WithArtist(
+						files.NewEmptyArtist().WithFileName("The Beatles")),
+					files.NewEmptyAlbum().WithTitle("Live 1975-85 [Disc 3]").WithArtist(
+						files.NewEmptyArtist().WithFileName("Bruce Springsteen & The E Street Band")),
+					files.NewEmptyAlbum().WithTitle("Live 1975-85 [Disc 2]").WithArtist(
+						files.NewEmptyArtist().WithFileName("Bruce Springsteen & The E Street Band")),
+					files.NewEmptyAlbum().WithTitle("Live 1975-85 [Disc 1]").WithArtist(
+						files.NewEmptyArtist().WithFileName("Bruce Springsteen & The E Street Band")),
+					files.NewEmptyAlbum().WithTitle("Live").WithArtist(
+						files.NewEmptyArtist().WithFileName("Roger Whittaker")),
+					files.NewEmptyAlbum().WithTitle("Live").WithArtist(
+						files.NewEmptyArtist().WithFileName("Blondie")),
+					files.NewEmptyAlbum().WithTitle("Live").WithArtist(
+						files.NewEmptyArtist().WithFileName("Big Bad Voodoo Daddy")),
+				},
+				tab: 0,
+			},
+			WantedRecording: output.WantedRecording{
+				Console: "" +
+					`Album: "Live" by "Big Bad Voodoo Daddy"
+Album: "Live" by "Blondie"
+Album: "Live" by "Roger Whittaker"
+Album: "Live 1975-85 [Disc 1]" by "Bruce Springsteen & The E Street Band"
+Album: "Live 1975-85 [Disc 2]" by "Bruce Springsteen & The E Street Band"
+Album: "Live 1975-85 [Disc 3]" by "Bruce Springsteen & The E Street Band"
+Album: "Live At The BBC [Disc 1]" by "The Beatles"
+Album: "Live At The BBC [Disc 2]" by "The Beatles"
+Album: "Live At The Circle Room" by "Nat King Cole"
+Album: "Live From New York City, 1967" by "Simon & Garfunkel"
+Album: "Live In Japan [Disc 1]" by "George Harrison & Eric Clapton"
+Album: "Live In Japan [Disc 2]" by "George Harrison & Eric Clapton"
+Album: "Live In Paris & Toronto [Disc 1]" by "Loreena McKennitt"
+Album: "Live In Paris & Toronto [Disc 2]" by "Loreena McKennitt"
+Album: "Live Rhymin' [Bonus Tracks]" by "Paul Simon"
+`,
 			},
 		},
 	}
@@ -1901,6 +1991,98 @@ func TestListHelp(t *testing.T) {
 				for _, difference := range differences {
 					t.Errorf("list Help() %s", difference)
 				}
+			}
+		})
+	}
+}
+
+func TestTrackSliceSort(t *testing.T) {
+	tests := map[string]struct {
+		ts   []*files.Track
+		want []*files.Track
+	}{
+		"https://github.com/majohn-r/mp3/issues/147": {
+			ts: []*files.Track{
+				files.NewEmptyTrack().WithName("b").WithAlbum(
+					files.NewEmptyAlbum().WithTitle("b").WithArtist(
+						files.NewEmptyArtist().WithFileName("c"))),
+				files.NewEmptyTrack().WithName("b").WithAlbum(
+					files.NewEmptyAlbum().WithTitle("a").WithArtist(
+						files.NewEmptyArtist().WithFileName("c"))),
+				files.NewEmptyTrack().WithName("b").WithAlbum(
+					files.NewEmptyAlbum().WithTitle("b").WithArtist(
+						files.NewEmptyArtist().WithFileName("a"))),
+				files.NewEmptyTrack().WithName("a").WithAlbum(
+					files.NewEmptyAlbum().WithTitle("b").WithArtist(
+						files.NewEmptyArtist().WithFileName("c"))),
+				files.NewEmptyTrack().WithName("a").WithAlbum(
+					files.NewEmptyAlbum().WithTitle("a").WithArtist(
+						files.NewEmptyArtist().WithFileName("c"))),
+				files.NewEmptyTrack().WithName("a").WithAlbum(
+					files.NewEmptyAlbum().WithTitle("b").WithArtist(
+						files.NewEmptyArtist().WithFileName("a"))),
+			},
+			want: []*files.Track{
+				files.NewEmptyTrack().WithName("a").WithAlbum(
+					files.NewEmptyAlbum().WithTitle("a").WithArtist(
+						files.NewEmptyArtist().WithFileName("c"))),
+				files.NewEmptyTrack().WithName("a").WithAlbum(
+					files.NewEmptyAlbum().WithTitle("b").WithArtist(
+						files.NewEmptyArtist().WithFileName("a"))),
+				files.NewEmptyTrack().WithName("a").WithAlbum(
+					files.NewEmptyAlbum().WithTitle("b").WithArtist(
+						files.NewEmptyArtist().WithFileName("c"))),
+				files.NewEmptyTrack().WithName("b").WithAlbum(
+					files.NewEmptyAlbum().WithTitle("a").WithArtist(
+						files.NewEmptyArtist().WithFileName("c"))),
+				files.NewEmptyTrack().WithName("b").WithAlbum(
+					files.NewEmptyAlbum().WithTitle("b").WithArtist(
+						files.NewEmptyArtist().WithFileName("a"))),
+				files.NewEmptyTrack().WithName("b").WithAlbum(
+					files.NewEmptyAlbum().WithTitle("b").WithArtist(
+						files.NewEmptyArtist().WithFileName("c"))),
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			sort.Sort(cmd.TrackSlice(tt.ts))
+			if !reflect.DeepEqual(tt.ts, tt.want) {
+				t.Errorf("TrackSlice.Sort = %v, want %v", tt.ts, tt.want)
+			}
+		})
+	}
+}
+
+func TestAlbumSliceSort(t *testing.T) {
+	tests := map[string]struct {
+		ts   []*files.Album
+		want []*files.Album
+	}{
+		"https://github.com/majohn-r/mp3/issues/147": {
+			ts: []*files.Album{
+				files.NewEmptyAlbum().WithTitle("b").WithArtist(
+					files.NewEmptyArtist().WithFileName("c")),
+				files.NewEmptyAlbum().WithTitle("a").WithArtist(
+					files.NewEmptyArtist().WithFileName("c")),
+				files.NewEmptyAlbum().WithTitle("b").WithArtist(
+					files.NewEmptyArtist().WithFileName("a")),
+			},
+			want: []*files.Album{
+				files.NewEmptyAlbum().WithTitle("a").WithArtist(
+					files.NewEmptyArtist().WithFileName("c")),
+				files.NewEmptyAlbum().WithTitle("b").WithArtist(
+					files.NewEmptyArtist().WithFileName("a")),
+				files.NewEmptyAlbum().WithTitle("b").WithArtist(
+					files.NewEmptyArtist().WithFileName("c")),
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			sort.Sort(cmd.AlbumSlice(tt.ts))
+			if !reflect.DeepEqual(tt.ts, tt.want) {
+				t.Errorf("TrackSlice.Sort = %v, want %v", tt.ts, tt.want)
 			}
 		})
 	}
