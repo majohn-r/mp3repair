@@ -90,7 +90,7 @@ var (
 			"  reads each mp3 file's metadata and reports any inconsistencies found\n" +
 			CheckCommand + " " + CheckNumberingFlag + "\n" +
 			"  reports errors in the track numbers of mp3 files",
-		Run: CheckRun,
+		RunE: CheckRun,
 	}
 	CheckFlags = NewSectionFlags().WithSectionName(CheckCommand).WithFlags(
 		map[string]*FlagDetails{
@@ -108,8 +108,8 @@ var (
 	)
 )
 
-func CheckRun(cmd *cobra.Command, _ []string) {
-	commandStatus := ProgramError
+func CheckRun(cmd *cobra.Command, _ []string) error {
+	exitError := NewExitProgrammingError(CheckCommand)
 	o := getBus()
 	producer := cmd.Flags()
 	values, eSlice := ReadFlags(producer, CheckFlags)
@@ -128,10 +128,10 @@ func CheckRun(cmd *cobra.Command, _ []string) {
 				details[k] = v
 			}
 			LogCommandStart(o, CheckCommand, details)
-			commandStatus = cs.MaybeDoWork(o, searchSettings)
+			exitError = cs.MaybeDoWork(o, searchSettings)
 		}
 	}
-	Exit(commandStatus)
+	return ToErrorInterface(exitError)
 }
 
 type CheckSettings struct {
@@ -177,20 +177,20 @@ func (cs *CheckSettings) WithNumberingUserSet(b bool) *CheckSettings {
 	return cs
 }
 
-func (cs *CheckSettings) MaybeDoWork(o output.Bus, ss *SearchSettings) int {
-	status := UserError
+func (cs *CheckSettings) MaybeDoWork(o output.Bus, ss *SearchSettings) (err *ExitError) {
+	err = NewExitUserError(CheckCommand)
 	if cs.HasWorkToDo(o) {
 		allArtists, loaded := ss.Load(o)
-		status = cs.PerformChecks(o, allArtists, loaded, ss)
+		err = cs.PerformChecks(o, allArtists, loaded, ss)
 	}
-	return status
+	return
 }
 
 func (cs *CheckSettings) PerformChecks(o output.Bus, artists []*files.Artist,
-	artistsLoaded bool, ss *SearchSettings) int {
-	status := UserError
+	artistsLoaded bool, ss *SearchSettings) (err *ExitError) {
+	err = NewExitUserError(CheckCommand)
 	if artistsLoaded && len(artists) > 0 {
-		status = Success
+		err = nil
 		concernedArtists := PrepareConcernedArtists(artists)
 		emptyConcernsFound := cs.PerformEmptyAnalysis(concernedArtists)
 		numberingConcernsFound := cs.PerformNumberingAnalysis(concernedArtists)
@@ -201,7 +201,7 @@ func (cs *CheckSettings) PerformChecks(o output.Bus, artists []*files.Artist,
 		cs.MaybeReportCleanResults(o, emptyConcernsFound, numberingConcernsFound,
 			fileConcernsFound)
 	}
-	return status
+	return
 }
 
 func (cs *CheckSettings) MaybeReportCleanResults(o output.Bus, emptyConcerns,

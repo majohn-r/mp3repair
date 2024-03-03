@@ -4,6 +4,7 @@ Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
 package cmd
 
 import (
+	"fmt"
 	"os"
 	"sync"
 	"time"
@@ -13,29 +14,24 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// exit codes
-const (
-	Success      int = iota
-	UserError        // user did something silly
-	ProgramError     // program code error
-	SystemError      // unexpected errors, like file not found
-)
-
 var (
 	// RootCmd represents the base command when called without any subcommands
 	RootCmd = &cobra.Command{
-		Use:   "mp3",
-		Short: "A repair program for mp3 files",
-		Long: `A repair program for mp3 files.
-
-Most mp3 files contain metadata as well as audio data, and many audio systems rely on
-that metadata to associate the files with specific albums and artists, and to play
-those files in order. Mismatches between the file names (tracks, albums, and artists)
-and that metadata subvert a user's expectations derived from reading the file names and
-the names of their containing directories - tracks are mysteriously associated with
-non-existent albums, tracks play out of sequence, and so forth.
-
-The mp3 program exists to find such problems and repair the mp3 files' metadata.`,
+		SilenceErrors: true,
+		Use:           appName,
+		Short:         fmt.Sprintf("%q is a repair program for mp3 files", appName),
+		Long: fmt.Sprintf("%q is a repair program for mp3 files.\n"+
+			"\n"+
+			"Most mp3 files, particularly if ripped from CDs, contain metadata as well as\n"+
+			"audio data, and many audio systems use that metadata to associate the files\n"+
+			"with specific albums and artists, and to play those files in order. Mismatches\n"+
+			"between that metadata and the names of the mp3 files and the names of the\n"+
+			"directories containing them (the album and artist directories) subvert the\n"+
+			"user's expectations derived from reading those file and directory names -\n"+
+			"tracks are mysteriously associated with non-existent albums, tracks play out\n"+
+			"of sequence, and so forth.\n"+
+			"\n"+
+			"The %q program exists to find and repair such problems.", appName, appName),
 		Example: `The mp3 program might be used like this:
 
 First, get a listing of the available mp3 files:
@@ -49,9 +45,9 @@ mp3 ` + CheckCommand + ` ` + CheckFilesFlag + `
 If problems were found, repair the mp3 files:
 
 mp3 ` + repairCommandName + `
-
 The repair command creates backup files for each track it rewrites. After
-spot-checking files that have been repaired, clean up those backups:
+listening to the files that have been repaired (verifying that the repair
+process did not corrupt the audio), clean up those backups:
 
 mp3 ` + postRepairCommandName + `
 
@@ -87,7 +83,7 @@ func InitGlobals() {
 		ok := false
 		Bus = NewDefaultBus(cmd_toolkit.ProductionLogger)
 		if _, err := AppName(); err != nil {
-			SetAppName("mp3")
+			SetAppName(appName)
 		}
 		if InitLogging(Bus) && InitApplicationPath(Bus) {
 			InternalConfig, ok = ReadConfigurationFile(Bus)
@@ -129,10 +125,17 @@ type CommandExecutor interface {
 func Execute() {
 	start := time.Now()
 	o := getBus()
-	RunMain(o, RootCmd, start)
+	exitCode := RunMain(o, RootCmd, start)
+	Exit(exitCode)
 }
 
-func RunMain(o output.Bus, cmd CommandExecutor, start time.Time) {
+func RunMain(o output.Bus, cmd CommandExecutor, start time.Time) int {
+	defer func() {
+		if r := recover(); r != nil {
+			o.WriteCanonicalError("A runtime error occurred: %q", r)
+			o.Log(output.Error, "Panic recovered", map[string]any{"error": r})
+		}
+	}()
 	cookedArgs := CookCommandLineArguments(o, os.Args)
 	o.Log(output.Info, "execution starts", map[string]any{
 		"version":      Version,
@@ -143,10 +146,7 @@ func RunMain(o output.Bus, cmd CommandExecutor, start time.Time) {
 	})
 	cmd.SetArgs(cookedArgs)
 	err := cmd.Execute()
-	exitCode := 0
-	if err != nil {
-		exitCode = 1
-	}
+	exitCode := ObtainExitCode(err)
 	o.Log(output.Info, "execution ends", map[string]any{
 		"duration": Since(start),
 		"exitCode": exitCode,
@@ -155,7 +155,22 @@ func RunMain(o output.Bus, cmd CommandExecutor, start time.Time) {
 		o.WriteCanonicalError("%q version %s, created at %s, failed", appName, Version,
 			Creation)
 	}
-	Exit(exitCode)
+	return exitCode
+}
+
+func ObtainExitCode(err error) int {
+	switch {
+	case err == nil:
+		return 0
+	default:
+		if exitError, ok := err.(*ExitError); ok {
+			if exitError == nil {
+				return 0
+			}
+			return exitError.Status()
+		}
+		return 1
+	}
 }
 
 func init() {

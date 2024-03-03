@@ -60,7 +60,7 @@ var (
 			"  Sort tracks by name, ignoring track numbers\n" +
 			ListCommand + " " + ListSortByNumberFlag + "\n" +
 			"  Sort tracks by track number",
-		Run: ListRun,
+		RunE: ListRun,
 	}
 	ListFlags = NewSectionFlags().WithSectionName(ListCommand).WithFlags(
 		map[string]*FlagDetails{
@@ -92,8 +92,8 @@ var (
 	)
 )
 
-func ListRun(cmd *cobra.Command, _ []string) {
-	status := ProgramError
+func ListRun(cmd *cobra.Command, _ []string) error {
+	exitError := NewExitProgrammingError(ListCommand)
 	o := getBus()
 	producer := cmd.Flags()
 	values, eSlice := ReadFlags(producer, ListFlags)
@@ -122,16 +122,16 @@ func ListRun(cmd *cobra.Command, _ []string) {
 			if ls.HasWorkToDo(o) {
 				if ls.TracksSortable(o) {
 					allArtists, loaded := searchSettings.Load(o)
-					status = ls.ProcessArtists(o, allArtists, loaded, searchSettings)
+					exitError = ls.ProcessArtists(o, allArtists, loaded, searchSettings)
 				} else {
-					status = UserError
+					exitError = NewExitUserError(ListCommand)
 				}
 			} else {
-				status = UserError
+				exitError = NewExitUserError(ListCommand)
 			}
 		}
 	}
-	Exit(status)
+	return ToErrorInterface(exitError)
 }
 
 type ListSettings struct {
@@ -220,15 +220,15 @@ func (ls *ListSettings) WithTracksUserSet(b bool) *ListSettings {
 }
 
 func (ls *ListSettings) ProcessArtists(o output.Bus, allArtists []*files.Artist,
-	loaded bool, searchSettings *SearchSettings) int {
-	status := UserError
+	loaded bool, searchSettings *SearchSettings) (err *ExitError) {
+	err = NewExitUserError(ListCommand)
 	if loaded {
 		if filteredArtists, filtered := searchSettings.Filter(o, allArtists); filtered {
 			ls.ListArtists(o, filteredArtists)
-			status = Success
+			err = nil
 		}
 	}
-	return status
+	return err
 }
 
 func (ls *ListSettings) ListArtists(o output.Bus, artists []*files.Artist) {

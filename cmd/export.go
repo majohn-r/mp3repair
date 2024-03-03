@@ -38,7 +38,7 @@ var (
 			"  Write default program configuration data\n" +
 			ExportCommand + " " + exportOverwriteAsFlag + "\n" +
 			"  Overwrite a pre-existing defaults.yaml file",
-		Run: ExportRun,
+		RunE: ExportRun,
 	}
 	ExportFlags = NewSectionFlags().WithSectionName(ExportCommand).WithFlags(
 		map[string]*FlagDetails{
@@ -95,10 +95,10 @@ func (efs *ExportFlagSettings) WithOverwriteSet(b bool) *ExportFlagSettings {
 	return efs
 }
 
-func ExportRun(cmd *cobra.Command, _ []string) {
+func ExportRun(cmd *cobra.Command, _ []string) error {
 	o := getBus()
 	values, eSlice := ReadFlags(cmd.Flags(), ExportFlags)
-	status := ProgramError
+	exitError := NewExitProgrammingError(ExportCommand)
 	if ProcessFlagErrors(o, eSlice) {
 		settings, ok := ProcessExportFlags(o, values)
 		if ok {
@@ -108,10 +108,10 @@ func ExportRun(cmd *cobra.Command, _ []string) {
 				exportOverwriteAsFlag: settings.overwriteEnabled,
 				"overwrite-user-set":  settings.overwriteSet,
 			})
-			status = settings.ExportDefaultConfiguration(o)
+			exitError = settings.ExportDefaultConfiguration(o)
 		}
 	}
-	Exit(status)
+	return ToErrorInterface(exitError)
 }
 
 func ProcessExportFlags(o output.Bus, values map[string]*FlagValue) (*ExportFlagSettings,
@@ -140,31 +140,35 @@ func CreateFile(o output.Bus, f string, content []byte) bool {
 	return true
 }
 
-func (efs *ExportFlagSettings) ExportDefaultConfiguration(o output.Bus) int {
-	status := UserError
+func configFile() (path string, exists bool) {
+	path = filepath.Join(ApplicationPath(), cmd_toolkit.DefaultConfigFileName())
+	exists = PlainFileExists(path)
+	return
+}
+
+func (efs *ExportFlagSettings) ExportDefaultConfiguration(o output.Bus) (err *ExitError) {
+	err = NewExitUserError(ExportCommand)
 	if efs.CanWriteDefaults(o) {
 		// ignoring error return, as we're not marshalling structs, where mischief
 		// can occur
 		payload, _ := yaml.Marshal(defaultConfigurationSettings)
-		path := ApplicationPath()
-		f := filepath.Join(path, cmd_toolkit.DefaultConfigFileName())
-		if PlainFileExists(f) {
-			status = efs.OverwriteFile(o, f, payload)
+		if f, exists := configFile(); exists {
+			err = efs.OverwriteFile(o, f, payload)
 		} else {
 			if CreateFile(o, f, payload) {
-				status = Success
+				err = nil
 			} else {
-				status = SystemError
+				err = NewExitSystemError(ExportCommand)
 			}
 		}
 	}
-	return status
+	return
 }
 
-func (efs *ExportFlagSettings) OverwriteFile(o output.Bus, f string, payload []byte) int {
-	status := UserError
+func (efs *ExportFlagSettings) OverwriteFile(o output.Bus, f string, payload []byte) (e *ExitError) {
+	e = NewExitUserError(ExportCommand)
 	if efs.CanOverwriteFile(o, f) {
-		status = SystemError
+		e = NewExitSystemError(ExportCommand)
 		backup := f + "-backup"
 		if err := Rename(f, backup); err != nil {
 			o.WriteCanonicalError("The file %q cannot be renamed to %q: %v", f, backup, err)
@@ -175,10 +179,10 @@ func (efs *ExportFlagSettings) OverwriteFile(o output.Bus, f string, payload []b
 			})
 		} else if CreateFile(o, f, payload) {
 			Remove(backup)
-			status = Success
+			e = nil
 		}
 	}
-	return status
+	return
 }
 
 func (efs *ExportFlagSettings) CanOverwriteFile(o output.Bus, f string) (canOverwrite bool) {

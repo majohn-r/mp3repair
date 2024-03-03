@@ -28,8 +28,8 @@ github.com/lestrrat-go/strftime v0.0.0-20180220091553-9948d03c6207/go.mod h1:RMl
 github.com/lestrrat-go/strftime v1.0.6 h1:CFGsDEt1pOpFNU+TJB0nhz9jl+K0hZSLE205AhTIGQQ=
 github.com/lestrrat-go/strftime v1.0.6/go.mod h1:f7jQKgV5nnJpYgdEasS+/y7EsTb8ykN2z68n3TtcTaw=
 github.com/lestrrat/go-envload v0.0.0-20180220120943-6ed08b54a570/go.mod h1:BLt8L9ld7wVsvEWQbuLrUZnCMnUmLZ+CGDzKtclrTlE=
-github.com/majohn-r/cmd-toolkit v0.6.0 h1:R+g6zQEx7CcWSnjVk2S+AZZSc0LuFkY5rX0TfIoQajI=
-github.com/majohn-r/cmd-toolkit v0.6.0/go.mod h1:tBYoilh0Dqqjt+BYaYSQ6QLMXSYzGU/zVFfwCHz6DX0=
+github.com/majohn-r/cmd-toolkit v0.8.2 h1:Z4wRgYakU29HKIqhobiKPb5hj7LsJ8CtOh0LLqfZwPU=
+github.com/majohn-r/cmd-toolkit v0.8.2/go.mod h1:v9ekyMrLOmkEog8tGDS0goGhCW1ZjeKlIR9ebLdTDbg=
 github.com/majohn-r/output v0.3.1 h1:7TWdOsjxe3YRVnXmQR6o1YLQhLGNl6vLgWBoLr7h7gE=
 github.com/majohn-r/output v0.3.1/go.mod h1:0RtH3hspxHy+brJE4ae63MLNxNSJtMAfC6fal2r9Nhw=
 github.com/mattn/go-colorable v0.1.13 h1:fFA4WZxdEF4tXPZVKMLwD8oUnCTTo08duU7wxecdEvA=

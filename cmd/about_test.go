@@ -5,28 +5,53 @@ package cmd_test
 
 import (
 	"mp3/cmd"
+	"reflect"
 	"testing"
 
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"
+	"golang.org/x/sys/windows"
 )
 
 func TestAboutRun(t *testing.T) {
 	originalBusGetter := cmd.BusGetter
 	originalLogCommandStart := cmd.LogCommandStart
-	originalGenerateAboutContent := cmd.GenerateAboutContent
-	originalExit := cmd.Exit
+	originalInterpretBuildData := cmd.InterpretBuildData
+	originalLogPath := cmd.LogPath
+	originalVersion := cmd.Version
+	originalCreation := cmd.Creation
+	originalApplicationPath := cmd.ApplicationPath
+	originalPlainFileExists := cmd.PlainFileExists
+	originalIsElevatedFunc := cmd.IsElevated
 	defer func() {
 		cmd.BusGetter = originalBusGetter
 		cmd.LogCommandStart = originalLogCommandStart
-		cmd.GenerateAboutContent = originalGenerateAboutContent
-		cmd.Exit = originalExit
+		cmd.InterpretBuildData = originalInterpretBuildData
+		cmd.LogPath = originalLogPath
+		cmd.Version = originalVersion
+		cmd.Creation = originalCreation
+		cmd.ApplicationPath = originalApplicationPath
+		cmd.PlainFileExists = originalPlainFileExists
+		cmd.IsElevated = originalIsElevatedFunc
 	}()
-	var exitCalled bool
-	var exitCode int
-	cmd.Exit = func(code int) {
-		exitCalled = true
-		exitCode = code
+	cmd.InterpretBuildData = func() (string, []string) {
+		return "go1.22.x", []string{
+			"go.dependency.1 v1.2.3",
+			"go.dependency.2 v1.3.4",
+			"go.dependency.3 v0.1.2",
+		}
+	}
+	cmd.LogPath = func() string {
+		return "/my/files/tmp/logs/mp3"
+	}
+	cmd.Version = "0.40.0"
+	cmd.Creation = "2024-02-24T13:14:05-05:00"
+	cmd.ApplicationPath = func() string {
+		return "/my/files/apppath"
+	}
+	cmd.PlainFileExists = func(_ string) bool { return true }
+	cmd.IsElevated = func(_ windows.Token) bool {
+		return true
 	}
 	type args struct {
 		in0 *cobra.Command
@@ -34,39 +59,36 @@ func TestAboutRun(t *testing.T) {
 	}
 	tests := map[string]struct {
 		args
-		wantExitCode   int
-		wantExitCalled bool
 		output.WantedRecording
 	}{
 		"simple": {
 			WantedRecording: output.WantedRecording{
-				Console: "About content here.\n",
-				Log:     "level='info' command='about' msg='executing command'\n",
+				Console: "" +
+					"+-------------------------------------------------------------------------+\n" +
+					"| mp3 version 0.40.0, built on Saturday, February 24 2024, 13:14:05 -0500 |\n" +
+					"| Copyright © 2021-2024 Marc Johnson                                      |\n" +
+					"| Build Information                                                       |\n" +
+					"|  - Go version: go1.22.x                                                 |\n" +
+					"|  - Dependency: go.dependency.1 v1.2.3                                   |\n" +
+					"|  - Dependency: go.dependency.2 v1.3.4                                   |\n" +
+					"|  - Dependency: go.dependency.3 v0.1.2                                   |\n" +
+					"| Log files are written to /my/files/tmp/logs/mp3                         |\n" +
+					"| Configuration file \\my\\files\\apppath\\defaults.yaml exists               |\n" +
+					"| mp3 is running with elevated privileges                                 |\n" +
+					"+-------------------------------------------------------------------------+\n",
+				Log: "level='info' command='about' msg='executing command'\n",
 			},
-			wantExitCode:   0,
-			wantExitCalled: true,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			exitCalled = false
-			exitCode = -1
 			o := output.NewRecorder()
 			cmd.BusGetter = func() output.Bus { return o }
 			cmd.LogCommandStart = func(bus output.Bus, cmdName string,
 				args map[string]any) {
 				bus.Log(output.Info, "executing command", map[string]any{"command": "about"})
 			}
-			cmd.GenerateAboutContent = func(bus output.Bus) {
-				bus.WriteCanonicalConsole("about content here")
-			}
 			cmd.AboutRun(tt.args.in0, tt.args.in1)
-			if got := exitCode; got != tt.wantExitCode {
-				t.Errorf("AboutRun() got exit code %d want %d", got, tt.wantExitCode)
-			}
-			if got := exitCalled; got != tt.wantExitCalled {
-				t.Errorf("AboutRun() got exit called %t want %t", got, tt.wantExitCalled)
-			}
 			if differences, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, difference := range differences {
 					t.Errorf("AboutRun() %s", difference)
@@ -104,12 +126,13 @@ func TestAboutHelp(t *testing.T) {
 				Console: "" +
 					"\"about\" provides the following information about the mp3 program:\n" +
 					"\n" +
-					"* The program version\n" +
+					"* The program version and build timestamp\n" +
 					"* Copyright information\n" +
 					"* Build information:\n" +
-					"  * The build timestamp\n" +
 					"  * The version of go used to compile the code\n" +
 					"  * A list of dependencies and their versions\n" +
+					"* The directory where log files are written\n" +
+					"* The full path of the application configuration file and whether it exists\n" +
 					"\n" +
 					"Usage:\n" +
 					"  mp3 about\n",
@@ -126,6 +149,161 @@ func TestAboutHelp(t *testing.T) {
 				for _, difference := range differences {
 					t.Errorf("about Help() %s", difference)
 				}
+			}
+		})
+	}
+}
+
+func TestOutputAbout(t *testing.T) {
+	originalInterpretBuildData := cmd.InterpretBuildData
+	originalLogPath := cmd.LogPath
+	originalVersion := cmd.Version
+	originalCreation := cmd.Creation
+	originalApplicationPath := cmd.ApplicationPath
+	originalPlainFileExists := cmd.PlainFileExists
+	originalGetCurrentProcessToken := cmd.GetCurrentProcessToken
+	originalIsElevatedFunc := cmd.IsElevated
+	originalIsTerminal := cmd.IsTerminal
+	originalIsCygwinTerminal := cmd.IsCygwinTerminal
+	originalLookupEnv := cmd.LookupEnv
+	defer func() {
+		cmd.InterpretBuildData = originalInterpretBuildData
+		cmd.LogPath = originalLogPath
+		cmd.Version = originalVersion
+		cmd.Creation = originalCreation
+		cmd.ApplicationPath = originalApplicationPath
+		cmd.PlainFileExists = originalPlainFileExists
+		cmd.GetCurrentProcessToken = originalGetCurrentProcessToken
+		cmd.IsElevated = originalIsElevatedFunc
+		cmd.IsTerminal = originalIsTerminal
+		cmd.IsCygwinTerminal = originalIsCygwinTerminal
+		cmd.LookupEnv = originalLookupEnv
+	}()
+	cmd.InterpretBuildData = func() (string, []string) {
+		return "go1.22.x", []string{
+			"go.dependency.1 v1.2.3",
+			"go.dependency.2 v1.3.4",
+			"go.dependency.3 v0.1.2",
+		}
+	}
+	cmd.LogPath = func() string {
+		return "/my/files/tmp/logs/mp3"
+	}
+	cmd.Version = "0.40.0"
+	cmd.Creation = "2024-02-24T13:14:05-05:00"
+	cmd.ApplicationPath = func() string {
+		return "/my/files/apppath"
+	}
+	cmd.GetCurrentProcessToken = func() (t windows.Token) {
+		return
+	}
+	tests := map[string]struct {
+		plainFileExists      func(string) bool
+		forceElevated        bool
+		forceRedirection     bool
+		forceAdminPermission bool
+		want                 []string
+	}{
+		"with existing config file, elevated": {
+			plainFileExists:      func(_ string) bool { return true },
+			forceElevated:        true,
+			forceRedirection:     false,
+			forceAdminPermission: false,
+			want: []string{
+				"mp3 version 0.40.0, built on Saturday, February 24 2024, 13:14:05 -0500",
+				"Copyright © 2021-2024 Marc Johnson",
+				"Build Information",
+				" - Go version: go1.22.x",
+				" - Dependency: go.dependency.1 v1.2.3",
+				" - Dependency: go.dependency.2 v1.3.4",
+				" - Dependency: go.dependency.3 v0.1.2",
+				"Log files are written to /my/files/tmp/logs/mp3",
+				"Configuration file \\my\\files\\apppath\\defaults.yaml exists",
+				"mp3 is running with elevated privileges",
+			},
+		},
+		"without existing config file, not elevated, redirected, with admin permission": {
+			plainFileExists:      func(_ string) bool { return false },
+			forceElevated:        false,
+			forceRedirection:     true,
+			forceAdminPermission: true,
+			want: []string{
+				"mp3 version 0.40.0, built on Saturday, February 24 2024, 13:14:05 -0500",
+				"Copyright © 2021-2024 Marc Johnson",
+				"Build Information",
+				" - Go version: go1.22.x",
+				" - Dependency: go.dependency.1 v1.2.3",
+				" - Dependency: go.dependency.2 v1.3.4",
+				" - Dependency: go.dependency.3 v0.1.2",
+				"Log files are written to /my/files/tmp/logs/mp3",
+				"Configuration file \\my\\files\\apppath\\defaults.yaml does not yet exist",
+				"mp3 is not running with elevated privileges",
+				" - At least one of stdin, stdout, and stderr has been redirected",
+			},
+		},
+		"without existing config file, not elevated, redirected, no admin permission": {
+			plainFileExists:      func(_ string) bool { return false },
+			forceElevated:        false,
+			forceRedirection:     true,
+			forceAdminPermission: false,
+			want: []string{
+				"mp3 version 0.40.0, built on Saturday, February 24 2024, 13:14:05 -0500",
+				"Copyright © 2021-2024 Marc Johnson",
+				"Build Information",
+				" - Go version: go1.22.x",
+				" - Dependency: go.dependency.1 v1.2.3",
+				" - Dependency: go.dependency.2 v1.3.4",
+				" - Dependency: go.dependency.3 v0.1.2",
+				"Log files are written to /my/files/tmp/logs/mp3",
+				"Configuration file \\my\\files\\apppath\\defaults.yaml does not yet exist",
+				"mp3 is not running with elevated privileges",
+				" - At least one of stdin, stdout, and stderr has been redirected",
+				" - The environment variable MP3_RUNS_AS_ADMIN evaluates as false",
+			},
+		},
+		"without existing config file, not elevated, not redirected, no admin permission": {
+			plainFileExists:      func(_ string) bool { return false },
+			forceElevated:        false,
+			forceRedirection:     false,
+			forceAdminPermission: false,
+			want: []string{
+				"mp3 version 0.40.0, built on Saturday, February 24 2024, 13:14:05 -0500",
+				"Copyright © 2021-2024 Marc Johnson",
+				"Build Information",
+				" - Go version: go1.22.x",
+				" - Dependency: go.dependency.1 v1.2.3",
+				" - Dependency: go.dependency.2 v1.3.4",
+				" - Dependency: go.dependency.3 v0.1.2",
+				"Log files are written to /my/files/tmp/logs/mp3",
+				"Configuration file \\my\\files\\apppath\\defaults.yaml does not yet exist",
+				"mp3 is not running with elevated privileges",
+				" - The environment variable MP3_RUNS_AS_ADMIN evaluates as false",
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			cmd.PlainFileExists = tt.plainFileExists
+			cmd.IsElevated = func(_ windows.Token) bool {
+				return tt.forceElevated
+			}
+			cmd.IsTerminal = func(_ uintptr) bool {
+				return !tt.forceRedirection
+			}
+			cmd.IsCygwinTerminal = func(_ uintptr) bool {
+				return !tt.forceRedirection
+			}
+			if tt.forceAdminPermission {
+				cmd.LookupEnv = func(_ string) (string, bool) {
+					return "true", true
+				}
+			} else {
+				cmd.LookupEnv = func(_ string) (string, bool) {
+					return "false", true
+				}
+			}
+			if got := cmd.GatherOutput(output.NewNilBus()); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("GatherAbout() got %v, want %v", got, tt.want)
 			}
 		})
 	}

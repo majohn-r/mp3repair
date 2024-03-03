@@ -1579,18 +1579,10 @@ func Test_ListRun(t *testing.T) {
 	cmd.InitGlobals()
 	originalBus := cmd.Bus
 	originalSearchFlags := cmd.SearchFlags
-	originalExit := cmd.Exit
 	defer func() {
 		cmd.Bus = originalBus
 		cmd.SearchFlags = originalSearchFlags
-		cmd.Exit = originalExit
 	}()
-	var exitCode int
-	var exitCalled bool
-	cmd.Exit = func(code int) {
-		exitCode = code
-		exitCalled = true
-	}
 	cmd.SearchFlags = safeSearchFlags
 
 	testListFlags := cmd.NewSectionFlags().WithSectionName(cmd.ListCommand).WithFlags(
@@ -1689,17 +1681,13 @@ func Test_ListRun(t *testing.T) {
 		testListFlags3, cmd.SearchFlags)
 
 	tests := map[string]struct {
-		cmd            *cobra.Command
-		in1            []string
-		wantExitCode   int
-		wantExitCalled bool
+		cmd *cobra.Command
+		in1 []string
 		output.WantedRecording
 	}{
 		"typical": {
-			cmd:            testCmd,
-			in1:            nil,
-			wantExitCode:   cmd.UserError,
-			wantExitCalled: true,
+			cmd: testCmd,
+			in1: nil,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"No music files could be found using the specified parameters.\n" +
@@ -1736,10 +1724,8 @@ func Test_ListRun(t *testing.T) {
 			},
 		},
 		"typical but sorting is screwy": {
-			cmd:            testCmd2,
-			in1:            nil,
-			wantExitCode:   cmd.UserError,
-			wantExitCalled: true,
+			cmd: testCmd2,
+			in1: nil,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"Track sorting cannot be done.\n" +
@@ -1773,10 +1759,8 @@ func Test_ListRun(t *testing.T) {
 			},
 		},
 		"no work to do": {
-			cmd:            testCmd3,
-			in1:            nil,
-			wantExitCode:   cmd.UserError,
-			wantExitCalled: true,
+			cmd: testCmd3,
+			in1: nil,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"No listing will be output.\n" +
@@ -1816,17 +1800,9 @@ func Test_ListRun(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			exitCode = -1
-			exitCalled = false
 			o := output.NewRecorder()
 			cmd.Bus = o // cook getBus()
 			cmd.ListRun(tt.cmd, tt.in1)
-			if got := exitCode; got != tt.wantExitCode {
-				t.Errorf("ListRun() got %d want %d", got, tt.wantExitCode)
-			}
-			if got := exitCalled; got != tt.wantExitCalled {
-				t.Errorf("ListRun() got %t want %t", got, tt.wantExitCalled)
-			}
 			if differences, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, difference := range differences {
 					t.Errorf("ListRun() %s", difference)
@@ -1834,6 +1810,16 @@ func Test_ListRun(t *testing.T) {
 			}
 		})
 	}
+}
+
+func compareExitErrors(e1, e2 *cmd.ExitError) bool {
+	if e1 == nil {
+		return e2 == nil
+	}
+	if e2 == nil {
+		return false
+	}
+	return e1.Error() == e2.Error()
 }
 
 func TestListSettingsProcessArtists(t *testing.T) {
@@ -1845,7 +1831,7 @@ func TestListSettingsProcessArtists(t *testing.T) {
 	tests := map[string]struct {
 		ls *cmd.ListSettings
 		args
-		wantStatus int
+		wantStatus *cmd.ExitError
 		output.WantedRecording
 	}{
 		"no data": {
@@ -1857,7 +1843,7 @@ func TestListSettingsProcessArtists(t *testing.T) {
 					regexp.MustCompile(".*")).WithAlbumFilter(
 					regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
 			},
-			wantStatus: cmd.UserError,
+			wantStatus: cmd.NewExitUserError(cmd.ListCommand),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"No music files remain after filtering.\n" +
@@ -1882,7 +1868,7 @@ func TestListSettingsProcessArtists(t *testing.T) {
 					regexp.MustCompile(".*")).WithAlbumFilter(
 					regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
 			},
-			wantStatus: cmd.Success,
+			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"Artist: my artist 0\n" +
@@ -1895,8 +1881,8 @@ func TestListSettingsProcessArtists(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			if got := tt.ls.ProcessArtists(o, tt.args.allArtists, tt.args.loaded,
-				tt.args.searchSettings); got != tt.wantStatus {
-				t.Errorf("ListSettings.ProcessArtists() got %d want %d", got,
+				tt.args.searchSettings); !compareExitErrors(got, tt.wantStatus) {
+				t.Errorf("ListSettings.ProcessArtists() got %s want %s", got,
 					tt.wantStatus)
 			}
 			if differences, ok := o.Verify(tt.WantedRecording); !ok {

@@ -47,23 +47,26 @@ func TestExecute(t *testing.T) {
 
 type happyCommand struct{}
 
-func (h happyCommand) SetArgs(a []string) {}
+func (h happyCommand) SetArgs(_ []string) {}
 func (h happyCommand) Execute() error     { return nil }
 
 type sadCommand struct{}
 
-func (s sadCommand) SetArgs(a []string) {}
+func (s sadCommand) SetArgs(_ []string) {}
 func (s sadCommand) Execute() error     { return fmt.Errorf("sad") }
+
+type panickyCommand struct{}
+
+func (p panickyCommand) SetArgs(_ []string) {}
+func (p panickyCommand) Execute() error     { panic("oh dear") }
 
 func TestRunMain(t *testing.T) {
 	originalArgs := os.Args
 	originalSince := cmd.Since
-	originalExit := cmd.Exit
 	originalVersion := cmd.Version
 	originalCreation := cmd.Creation
 	defer func() {
 		cmd.Since = originalSince
-		cmd.Exit = originalExit
 		os.Args = originalArgs
 		cmd.Version = originalVersion
 		cmd.Creation = originalCreation
@@ -74,22 +77,20 @@ func TestRunMain(t *testing.T) {
 	}
 	tests := map[string]struct {
 		args
-		cmdline        []string
-		appVersion     string
-		timestamp      string
-		goVersion      string
-		dependencies   []string
-		wantedExitCode int
+		cmdline      []string
+		appVersion   string
+		timestamp    string
+		goVersion    string
+		dependencies []string
 		output.WantedRecording
 	}{
 		"happy": {
-			args:           args{cmd: happyCommand{}, start: time.Now()},
-			cmdline:        []string{"happyApp", "arg1", "arg2"},
-			appVersion:     "0.1.2",
-			timestamp:      "2021-11-28T12:01:02Z05:00",
-			goVersion:      "1.22.x",
-			dependencies:   []string{"foo v1.1.1", "bar v1.2.2"},
-			wantedExitCode: 0,
+			args:         args{cmd: happyCommand{}, start: time.Now()},
+			cmdline:      []string{"happyApp", "arg1", "arg2"},
+			appVersion:   "0.1.2",
+			timestamp:    "2021-11-28T12:01:02Z05:00",
+			goVersion:    "1.22.x",
+			dependencies: []string{"foo v1.1.1", "bar v1.2.2"},
 			WantedRecording: output.WantedRecording{
 				Log: "level='info'" +
 					" args='[arg1 arg2]'" +
@@ -105,13 +106,12 @@ func TestRunMain(t *testing.T) {
 			},
 		},
 		"sad": {
-			args:           args{cmd: sadCommand{}, start: time.Now()},
-			appVersion:     "0.2.3",
-			timestamp:      "2021-11-29T13:02:03Z05:00",
-			cmdline:        []string{"sadApp", "arg1a", "arg2a"},
-			goVersion:      "1.22.x",
-			dependencies:   []string{"foo v1.1.2", "bar v1.2.3"},
-			wantedExitCode: 1,
+			args:         args{cmd: sadCommand{}, start: time.Now()},
+			appVersion:   "0.2.3",
+			timestamp:    "2021-11-29T13:02:03Z05:00",
+			cmdline:      []string{"sadApp", "arg1a", "arg2a"},
+			goVersion:    "1.22.x",
+			dependencies: []string{"foo v1.1.2", "bar v1.2.3"},
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"\"mp3\" version 0.2.3, created at 2021-11-29T13:02:03Z05:00, failed.\n",
@@ -128,17 +128,34 @@ func TestRunMain(t *testing.T) {
 					" msg='execution ends'\n",
 			},
 		},
+		"panicky": {
+			args:         args{cmd: panickyCommand{}, start: time.Now()},
+			appVersion:   "0.2.3",
+			timestamp:    "2021-11-29T13:02:03Z05:00",
+			cmdline:      []string{"sadApp", "arg1a", "arg2a"},
+			goVersion:    "1.22.x",
+			dependencies: []string{"foo v1.1.2", "bar v1.2.3"},
+			WantedRecording: output.WantedRecording{
+				Error: "" +
+					"A runtime error occurred: \"oh dear\".\n",
+				Log: "level='info'" +
+					" args='[arg1a arg2a]'" +
+					" dependencies='[foo v1.1.2 bar v1.2.3]'" +
+					" goVersion='1.22.x'" +
+					" timeStamp='2021-11-29T13:02:03Z05:00'" +
+					" version='0.2.3'" +
+					" msg='execution starts'\n" +
+					"level='error'" +
+					" error='oh dear'" +
+					" msg='Panic recovered'\n",
+			},
+		},
 	}
 	for name, tt := range tests {
 		cmd.Since = func(_ time.Time) time.Duration {
 			return 0
 		}
-		var capturedExitCode int
-		cmd.Exit = func(code int) {
-			capturedExitCode = code
-		}
 		t.Run(name, func(t *testing.T) {
-			capturedExitCode = -1
 			os.Args = tt.cmdline
 			cmd.Version = tt.appVersion
 			cmd.Creation = tt.timestamp
@@ -150,9 +167,6 @@ func TestRunMain(t *testing.T) {
 			}
 			o := output.NewRecorder()
 			cmd.RunMain(o, tt.args.cmd, tt.args.start)
-			if capturedExitCode != tt.wantedExitCode {
-				t.Errorf("RunMain() got %d want %d", capturedExitCode, tt.wantedExitCode)
-			}
 			if differences, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, difference := range differences {
 					t.Errorf("RunMain() %s", difference)
@@ -486,17 +500,14 @@ func TestRootUsage(t *testing.T) {
 					"If problems were found, repair the mp3 files:\n" +
 					"\n" +
 					"mp3 repair\n" +
-					"\n" +
-					"The repair command creates backup files for each track it rewrites." +
-					" After\n" +
-					"spot-checking files that have been repaired, clean up those backups:\n" +
+					"The repair command creates backup files for each track it rewrites. After\n" +
+					"listening to the files that have been repaired (verifying that the repair\n" +
+					"process did not corrupt the audio), clean up those backups:\n" +
 					"\n" +
 					"mp3 postRepair\n" +
 					"\n" +
-					"After repairing the mp3 files, the Windows media player system may be" +
-					" out of\n" +
-					"sync with the changes. While the system will eventually catch up," +
-					" accelerate\n" +
+					"After repairing the mp3 files, the Windows media player system may be out of\n" +
+					"sync with the changes. While the system will eventually catch up, accelerate\n" +
 					"the process:\n" +
 					"\n" +
 					"mp3 resetDatabase\n",
@@ -513,6 +524,28 @@ func TestRootUsage(t *testing.T) {
 				for _, difference := range differences {
 					t.Errorf("root Usage() %s", difference)
 				}
+			}
+		})
+	}
+}
+
+func TestObtainExitCode(t *testing.T) {
+	var nilExitError *cmd.ExitError
+	tests := map[string]struct {
+		err  error
+		want int
+	}{
+		"nil":               {err: nil, want: 0},
+		"nil ExitError":     {err: nilExitError, want: 0},
+		"user error":        {err: cmd.NewExitUserError("command"), want: 1},
+		"programming error": {err: cmd.NewExitProgrammingError("command"), want: 2},
+		"system error":      {err: cmd.NewExitSystemError("command"), want: 3},
+		"unexpected":        {err: fmt.Errorf("some error"), want: 1},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := cmd.ObtainExitCode(tt.err); got != tt.want {
+				t.Errorf("ObtainExitCode() = %v, want %v", got, tt.want)
 			}
 		})
 	}

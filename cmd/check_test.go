@@ -642,7 +642,7 @@ func TestCheckSettings_PerformChecks(t *testing.T) {
 	tests := map[string]struct {
 		cs *cmd.CheckSettings
 		args
-		wantStatus int
+		wantStatus *cmd.ExitError
 		output.WantedRecording
 	}{
 		"no artists loaded": {
@@ -652,13 +652,13 @@ func TestCheckSettings_PerformChecks(t *testing.T) {
 				artistsLoaded: false,
 				ss:            nil,
 			},
-			wantStatus:      cmd.UserError,
+			wantStatus:      cmd.NewExitUserError("check"),
 			WantedRecording: output.WantedRecording{},
 		},
 		"no artists": {
 			cs:              nil,
 			args:            args{artists: nil, artistsLoaded: true, ss: nil},
-			wantStatus:      cmd.UserError,
+			wantStatus:      cmd.NewExitUserError("check"),
 			WantedRecording: output.WantedRecording{},
 		},
 		"artists to check, check everything": {
@@ -670,7 +670,7 @@ func TestCheckSettings_PerformChecks(t *testing.T) {
 					regexp.MustCompile(".*")).WithAlbumFilter(
 					regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
 			},
-			wantStatus: cmd.Success,
+			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"Artist \"my artist 0\"\n" +
@@ -703,8 +703,8 @@ func TestCheckSettings_PerformChecks(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			if got := tt.cs.PerformChecks(o, tt.args.artists, tt.args.artistsLoaded,
-				tt.args.ss); got != tt.wantStatus {
-				t.Errorf("CheckSettings.PerformChecks() got %d want %d", got, tt.wantStatus)
+				tt.args.ss); !compareExitErrors(got, tt.wantStatus) {
+				t.Errorf("CheckSettings.PerformChecks() got %s want %s", got, tt.wantStatus)
 			}
 			if differences, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, difference := range differences {
@@ -719,13 +719,13 @@ func TestCheckSettings_MaybeDoWork(t *testing.T) {
 	tests := map[string]struct {
 		cs         *cmd.CheckSettings
 		ss         *cmd.SearchSettings
-		wantStatus int
+		wantStatus *cmd.ExitError
 		output.WantedRecording
 	}{
 		"nothing to do": {
 			cs:         cmd.NewCheckSettings(),
 			ss:         nil,
-			wantStatus: cmd.UserError,
+			wantStatus: cmd.NewExitUserError("check"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"No checks will be executed.\n" +
@@ -747,7 +747,7 @@ func TestCheckSettings_MaybeDoWork(t *testing.T) {
 				[]string{".mp3"}).WithAlbumFilter(
 				regexp.MustCompile(".*")).WithArtistFilter(
 				regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
-			wantStatus: cmd.UserError,
+			wantStatus: cmd.NewExitUserError("check"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"The directory \"no dir\" cannot be read: open no dir: The system" +
@@ -772,8 +772,8 @@ func TestCheckSettings_MaybeDoWork(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			if got := tt.cs.MaybeDoWork(o, tt.ss); got != tt.wantStatus {
-				t.Errorf("CheckSettings.MaybeDoWork() got %d want %d", got, tt.wantStatus)
+			if got := tt.cs.MaybeDoWork(o, tt.ss); !compareExitErrors(got, tt.wantStatus) {
+				t.Errorf("CheckSettings.MaybeDoWork() got %s want %s", got, tt.wantStatus)
 			}
 			if differences, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, difference := range differences {
@@ -788,18 +788,10 @@ func TestCheckRun(t *testing.T) {
 	cmd.InitGlobals()
 	originalBus := cmd.Bus
 	originalSearchFlags := cmd.SearchFlags
-	originalExit := cmd.Exit
 	defer func() {
 		cmd.Bus = originalBus
 		cmd.SearchFlags = originalSearchFlags
-		cmd.Exit = originalExit
 	}()
-	var exitCode int
-	var exitCalled bool
-	cmd.Exit = func(code int) {
-		exitCalled = true
-		exitCode = code
-	}
 	cmd.SearchFlags = safeSearchFlags
 	checkFlags := cmd.NewSectionFlags().WithSectionName(cmd.CheckCommand).WithFlags(
 		map[string]*cmd.FlagDetails{
@@ -826,14 +818,10 @@ func TestCheckRun(t *testing.T) {
 	}
 	tests := map[string]struct {
 		args
-		wantExitCode   int
-		wantExitCalled bool
 		output.WantedRecording
 	}{
 		"default case": {
-			args:           args{cmd: command},
-			wantExitCode:   cmd.UserError,
-			wantExitCalled: true,
+			args: args{cmd: command},
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"No checks will be executed.\n" +
@@ -866,17 +854,9 @@ func TestCheckRun(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			exitCode = -1
-			exitCalled = false
 			o := output.NewRecorder()
 			cmd.Bus = o // cook getBus()
 			cmd.CheckRun(tt.args.cmd, tt.args.in1)
-			if got := exitCode; got != tt.wantExitCode {
-				t.Errorf("CheckRun() got %d want %d", got, tt.wantExitCode)
-			}
-			if got := exitCalled; got != tt.wantExitCalled {
-				t.Errorf("CheckRun() got %t want %t", got, tt.wantExitCalled)
-			}
 			if differences, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, difference := range differences {
 					t.Errorf("CheckRun() %s", difference)
@@ -894,6 +874,7 @@ func cloneCommand(original *cobra.Command) *cobra.Command {
 		Long:                  original.Long,
 		Example:               original.Example,
 		Run:                   original.Run,
+		RunE:                  original.RunE,
 	}
 	return clone
 }
@@ -913,13 +894,63 @@ func TestCheckHelp(t *testing.T) {
 		"good": {
 			WantedRecording: output.WantedRecording{
 				Console: "" +
-					"\"check\" runs checks on mp3 files and their containing directories" +
-					" and reports any problems detected\n" +
+					"\"check\" runs checks on mp3 files and their containing directories and reports any problems detected\n" +
 					"\n" +
 					"Usage:\n" +
-					"  check [--empty] [--files] [--numbering] [--albumFilter regex]" +
-					" [--artistFilter regex] [--trackFilter regex] [--topDir dir]" +
-					" [--extensions extensions]\n" +
+					"  check [--empty] [--files] [--numbering] [--albumFilter regex] [--artistFilter regex] [--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +
+					"\n" +
+					"Examples:\n" +
+					"check --empty\n" +
+					"  reports empty artist and album directories\n" +
+					"check --files\n" +
+					"  reads each mp3 file's metadata and reports any inconsistencies found\n" +
+					"check --numbering\n" +
+					"  reports errors in the track numbers of mp3 files\n" +
+					"\n" +
+					"Flags:\n" +
+					"      --albumFilter string    regular expression specifying which albums to select (default \".*\")\n" +
+					"      --artistFilter string   regular expression specifying which artists to select (default \".*\")\n" +
+					"  -e, --empty                 report empty album and artist directories (default false)\n" +
+					"      --extensions string     comma-delimited list of file extensions used by mp3 files (default \".mp3\")\n" +
+					"  -f, --files                 report metadata/file inconsistencies (default false)\n" +
+					"  -n, --numbering             report missing track numbers and duplicated track numbering (default false)\n" +
+					"      --topDir string         top directory specifying where to find mp3 files (default \".\")\n" +
+					"      --trackFilter string    regular expression specifying which tracks to select (default \".*\")\n",
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			o := output.NewRecorder()
+			command := commandUnderTest
+			enableCommandRecording(o, command)
+			command.Help()
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("check Help() %s", difference)
+				}
+			}
+		})
+	}
+}
+
+func TestCheckUsage(t *testing.T) {
+	originalSearchFlags := cmd.SearchFlags
+	defer func() {
+		cmd.SearchFlags = originalSearchFlags
+	}()
+	cmd.SearchFlags = safeSearchFlags
+	commandUnderTest := cloneCommand(cmd.CheckCmd)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(),
+		commandUnderTest.Flags(), cmd.CheckFlags, cmd.SearchFlags)
+	tests := map[string]struct {
+		output.WantedRecording
+	}{
+		"good": {
+			WantedRecording: output.WantedRecording{
+				Console: "" +
+					"Usage:\n" +
+					"  check [--empty] [--files] [--numbering] [--albumFilter regex] [--artistFilter regex] [--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +
 					"\n" +
 					"Examples:\n" +
 					"check --empty\n" +
@@ -955,10 +986,10 @@ func TestCheckHelp(t *testing.T) {
 			o := output.NewRecorder()
 			command := commandUnderTest
 			enableCommandRecording(o, command)
-			command.Help()
+			command.Usage()
 			if differences, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, difference := range differences {
-					t.Errorf("check Help() %s", difference)
+					t.Errorf("check Usage() %s", difference)
 				}
 			}
 		})

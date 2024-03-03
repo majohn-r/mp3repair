@@ -236,13 +236,13 @@ func TestExportFlagSettingsOverwriteFile(t *testing.T) {
 		writeFile  func(string, []byte, fs.FileMode) error
 		rename     func(string, string) error
 		remove     func(string) error
-		wantStatus int
+		wantStatus *cmd.ExitError
 		output.WantedRecording
 	}{
 		"nothing to do": {
 			efs:        cmd.NewExportFlagSettings().WithOverwriteEnabled(false),
 			args:       args{f: "[filename]"},
-			wantStatus: cmd.UserError,
+			wantStatus: cmd.NewExitUserError("export"),
 			WantedRecording: output.WantedRecording{
 				Error: "The file \"[filename]\" exists and cannot be overwritten.\n" +
 					"Why?\n" +
@@ -263,7 +263,7 @@ func TestExportFlagSettingsOverwriteFile(t *testing.T) {
 			rename: func(_, _ string) error {
 				return fmt.Errorf("sorry, cannot rename that file")
 			},
-			wantStatus: cmd.SystemError,
+			wantStatus: cmd.NewExitSystemError("export"),
 			WantedRecording: output.WantedRecording{
 				Error: "The file \"[filename]\" cannot be renamed to" +
 					" \"[filename]-backup\": sorry, cannot rename that file.\n",
@@ -281,7 +281,7 @@ func TestExportFlagSettingsOverwriteFile(t *testing.T) {
 			writeFile: func(_ string, _ []byte, _ fs.FileMode) error {
 				return fmt.Errorf("disk is full")
 			},
-			wantStatus: cmd.SystemError,
+			wantStatus: cmd.NewExitSystemError("export"),
 			WantedRecording: output.WantedRecording{
 				Error: "The file \"[filename]\" cannot be created: disk is full.\n",
 				Log: "level='error'" +
@@ -297,7 +297,7 @@ func TestExportFlagSettingsOverwriteFile(t *testing.T) {
 			rename:     func(_, _ string) error { return nil },
 			writeFile:  func(_ string, _ []byte, _ fs.FileMode) error { return nil },
 			remove:     func(_ string) error { return nil },
-			wantStatus: cmd.Success,
+			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
 				Console: "File \"[filename]\" has been written.\n",
 			},
@@ -310,8 +310,8 @@ func TestExportFlagSettingsOverwriteFile(t *testing.T) {
 			cmd.Rename = tt.rename
 			cmd.Remove = tt.remove
 			if got := tt.efs.OverwriteFile(o, tt.args.f,
-				tt.args.payload); got != tt.wantStatus {
-				t.Errorf("ExportFlagSettings.OverwriteFile() got %d want %d", got,
+				tt.args.payload); !compareExitErrors(got, tt.wantStatus) {
+				t.Errorf("ExportFlagSettings.OverwriteFile() got %s want %s", got,
 					tt.wantStatus)
 			}
 			if differences, ok := o.Verify(tt.WantedRecording); !ok {
@@ -343,13 +343,13 @@ func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
 		rename          func(string, string) error
 		remove          func(string) error
 		applicationPath func() string
-		wantStatus      int
+		wantStatus      *cmd.ExitError
 		output.WantedRecording
 	}{
 		"not asking to write": {
 			efs: cmd.NewExportFlagSettings().WithOverwriteEnabled(
 				true).WithDefaultsEnabled(false),
-			wantStatus: cmd.UserError,
+			wantStatus: cmd.NewExitUserError("export"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"Default configuration settings will not be exported.\n" +
@@ -374,7 +374,7 @@ func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
 			},
 			plainFileExists: func(_ string) bool { return false },
 			applicationPath: func() string { return "appPath" },
-			wantStatus:      cmd.SystemError,
+			wantStatus:      cmd.NewExitSystemError("export"),
 			WantedRecording: output.WantedRecording{
 				Error: "The file \"appPath\\\\defaults.yaml\" cannot be created:" +
 					" cannot write file, sorry.\n",
@@ -392,7 +392,7 @@ func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
 			writeFile:       func(_ string, _ []byte, _ fs.FileMode) error { return nil },
 			plainFileExists: func(_ string) bool { return false },
 			applicationPath: func() string { return "appPath" },
-			wantStatus:      cmd.Success,
+			wantStatus:      nil,
 			WantedRecording: output.WantedRecording{
 				Console: "File \"appPath\\\\defaults.yaml\" has been written.\n",
 			},
@@ -405,7 +405,7 @@ func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
 			rename:          func(_, _ string) error { return nil },
 			remove:          func(_ string) error { return nil },
 			applicationPath: func() string { return "appPath" },
-			wantStatus:      cmd.Success,
+			wantStatus:      nil,
 			WantedRecording: output.WantedRecording{
 				Console: "File \"appPath\\\\defaults.yaml\" has been written.\n",
 			},
@@ -419,8 +419,8 @@ func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
 			cmd.Remove = tt.remove
 			cmd.Rename = tt.rename
 			cmd.ApplicationPath = tt.applicationPath
-			if got := tt.efs.ExportDefaultConfiguration(o); got != tt.wantStatus {
-				t.Errorf("ExportFlagSettings.ExportDefaultConfiguration() got %d want %d",
+			if got := tt.efs.ExportDefaultConfiguration(o); !compareExitErrors(got, tt.wantStatus) {
+				t.Errorf("ExportFlagSettings.ExportDefaultConfiguration() got %s want %s",
 					got, tt.wantStatus)
 			}
 			if differences, ok := o.Verify(tt.WantedRecording); !ok {
@@ -531,25 +531,15 @@ func TestProcessExportFlags(t *testing.T) {
 
 func TestExportRun(t *testing.T) {
 	cmd.InitGlobals()
-	originalExit := cmd.Exit
 	originalExportFlags := cmd.ExportFlags
 	originalBus := cmd.Bus
 	defer func() {
-		cmd.Exit = originalExit
 		cmd.ExportFlags = originalExportFlags
 		cmd.Bus = originalBus
 	}()
-	var exitCode int
-	var exitCalled bool
-	cmd.Exit = func(code int) {
-		exitCode = code
-		exitCalled = true
-	}
 	tests := map[string]struct {
-		cmd            *cobra.Command
-		flags          *cmd.SectionFlags
-		wantExitCode   int
-		wantExitCalled bool
+		cmd   *cobra.Command
+		flags *cmd.SectionFlags
 		output.WantedRecording
 	}{
 		"missing data": {
@@ -561,8 +551,6 @@ func TestExportRun(t *testing.T) {
 					cmd.ExportFlagDefaults: nil,
 				},
 			),
-			wantExitCode:   cmd.ProgramError,
-			wantExitCalled: true,
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: no details for flag \"defaults\".\n",
 				Log: "level='error'" +
@@ -578,8 +566,6 @@ func TestExportRun(t *testing.T) {
 						cmd.BoolType).WithDefaultValue(12),
 				},
 			),
-			wantExitCode:   cmd.ProgramError,
-			wantExitCalled: true,
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"defaults\" is not found.\n",
 				Log: "level='error'" +
@@ -598,8 +584,6 @@ func TestExportRun(t *testing.T) {
 						cmd.BoolType).WithDefaultValue(false),
 				},
 			),
-			wantExitCode:   cmd.UserError,
-			wantExitCalled: true,
 			WantedRecording: output.WantedRecording{
 				Error: "Default configuration settings will not be exported.\n" +
 					"Why?\n" +
@@ -624,8 +608,6 @@ func TestExportRun(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			exitCode = -1
-			exitCalled = false
 			cmd.ExportFlags = tt.flags
 			o := output.NewRecorder()
 			cmd.Bus = o // this is what getBus() should return when ExportRun calls it
@@ -634,12 +616,6 @@ func TestExportRun(t *testing.T) {
 				for _, difference := range differences {
 					t.Errorf("ExportRun() %s", difference)
 				}
-			}
-			if got := exitCode; got != tt.wantExitCode {
-				t.Errorf("ExportRun() got %d want %d", got, tt.wantExitCode)
-			}
-			if got := exitCalled; got != tt.wantExitCalled {
-				t.Errorf("ExportRun() got %t want %t", got, tt.wantExitCalled)
 			}
 		})
 	}

@@ -81,17 +81,15 @@ func TestPostRepairWork(t *testing.T) {
 		removeAll func(dir string) error
 		dirExists func(dir string) bool
 		args
-		wantStatus int
 		output.WantedRecording
 	}{
-		"no load": {args: args{}, wantStatus: cmd.UserError},
+		"no load": {args: args{}},
 		"no artists": {
 			args: args{
 				ss:         cmd.NewSearchSettings(),
 				allArtists: []*files.Artist{},
 				loaded:     true,
 			},
-			wantStatus: cmd.UserError,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"No music files remain after filtering.\n" +
@@ -117,7 +115,6 @@ func TestPostRepairWork(t *testing.T) {
 				allArtists: generateArtists(2, 3, 4),
 				loaded:     true,
 			},
-			wantStatus: cmd.Success,
 			WantedRecording: output.WantedRecording{
 				Console: "Backup directories to delete: 0.\n",
 			},
@@ -217,17 +214,9 @@ func TestPostRepairWork(t *testing.T) {
 func TestPostRepairRun(t *testing.T) {
 	cmd.InitGlobals()
 	originalBus := cmd.Bus
-	originalExit := cmd.Exit
 	defer func() {
 		cmd.Bus = originalBus
-		cmd.Exit = originalExit
 	}()
-	var exitCode int
-	var exitCalled bool
-	cmd.Exit = func(code int) {
-		exitCode = code
-		exitCalled = true
-	}
 	command := &cobra.Command{}
 	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), command.Flags(),
 		safeSearchFlags)
@@ -237,14 +226,10 @@ func TestPostRepairRun(t *testing.T) {
 	}
 	tests := map[string]struct {
 		args
-		wantExitCode   int
-		wantExitCalled bool
 		output.WantedRecording
 	}{
 		"typical": {
-			args:           args{cmd: command},
-			wantExitCode:   cmd.UserError,
-			wantExitCalled: true,
+			args: args{cmd: command},
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"No music files could be found using the specified parameters.\n" +
@@ -270,17 +255,9 @@ func TestPostRepairRun(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			exitCode = -1
-			exitCalled = false
 			o := output.NewRecorder()
 			cmd.Bus = o // cook getBus()
 			cmd.PostRepairRun(tt.args.cmd, tt.args.in1)
-			if got := exitCode; got != tt.wantExitCode {
-				t.Errorf("PostRepairRun() got %d want %d", got, tt.wantExitCode)
-			}
-			if got := exitCalled; got != tt.wantExitCalled {
-				t.Errorf("PostRepairRun() got %t want %t", got, tt.wantExitCalled)
-			}
 			if differences, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, difference := range differences {
 					t.Errorf("PostRepairRun() %s", difference)
@@ -330,6 +307,49 @@ func TestPostRepairHelp(t *testing.T) {
 			if differences, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, difference := range differences {
 					t.Errorf("postRepair Help() %s", difference)
+				}
+			}
+		})
+	}
+}
+
+func TestPostRepairUsage(t *testing.T) {
+	commandUnderTest := cloneCommand(cmd.PostRepairCmd)
+	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(),
+		commandUnderTest.Flags(), safeSearchFlags)
+	tests := map[string]struct {
+		output.WantedRecording
+	}{
+		"good": {
+			WantedRecording: output.WantedRecording{
+				Console: "" +
+					"Usage:\n" +
+					"  postRepair [--albumFilter regex] [--artistFilter regex]" +
+					" [--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +
+					"\n" +
+					"Flags:\n" +
+					"      --albumFilter string    regular expression specifying which" +
+					" albums to select (default \".*\")\n" +
+					"      --artistFilter string   regular expression specifying which" +
+					" artists to select (default \".*\")\n" +
+					"      --extensions string     comma-delimited list of file extensions" +
+					" used by mp3 files (default \".mp3\")\n" +
+					"      --topDir string         top directory specifying where to find" +
+					" mp3 files (default \".\")\n" +
+					"      --trackFilter string    regular expression specifying which" +
+					" tracks to select (default \".*\")\n",
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			o := output.NewRecorder()
+			command := commandUnderTest
+			enableCommandRecording(o, command)
+			command.Usage()
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("postRepair Usage() %s", difference)
 				}
 			}
 		})

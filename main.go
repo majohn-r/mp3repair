@@ -17,6 +17,10 @@ var (
 )
 
 func main() {
-	cmd.InitializeAbout(version, creation)
-	executor()
+	elevationControl := cmd.NewElevationControl()
+	if !elevationControl.WillRunElevated() {
+		elevationControl.ConfigureExit()
+		cmd.InitializeAbout(version, creation)
+		executor()
+	}
 }

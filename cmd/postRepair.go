@@ -24,12 +24,12 @@ var (
 		Long: fmt.Sprintf(
 			"%q deletes the backup directories (and their contents) created by the %q command",
 			postRepairCommandName, repairCommandName),
-		Run: PostRepairRun,
+		RunE: PostRepairRun,
 	}
 )
 
-func PostRepairRun(cmd *cobra.Command, _ []string) {
-	status := ProgramError
+func PostRepairRun(cmd *cobra.Command, _ []string) error {
+	exitError := NewExitProgrammingError(postRepairCommandName)
 	o := getBus()
 	producer := cmd.Flags()
 	ss, searchFlagsOk := EvaluateSearchFlags(o, producer)
@@ -37,17 +37,17 @@ func PostRepairRun(cmd *cobra.Command, _ []string) {
 		// do some work here!
 		LogCommandStart(o, postRepairCommandName, ss.Values())
 		allArtists, loaded := ss.Load(o)
-		status = PostRepairWork(o, ss, allArtists, loaded)
+		exitError = PostRepairWork(o, ss, allArtists, loaded)
 	}
-	Exit(status)
+	return ToErrorInterface(exitError)
 }
 
 func PostRepairWork(o output.Bus, ss *SearchSettings, allArtists []*files.Artist,
-	loaded bool) int {
-	status := UserError
+	loaded bool) (e *ExitError) {
+	e = NewExitUserError(postRepairCommandName)
 	if loaded {
 		if filteredArtists, filtered := ss.Filter(o, allArtists); filtered {
-			status = Success
+			e = nil
 			dirs := []string{}
 			for _, artist := range filteredArtists {
 				for _, album := range artist.Albums() {
@@ -65,14 +65,14 @@ func PostRepairWork(o output.Bus, ss *SearchSettings, allArtists []*files.Artist
 					if RemoveBackupDirectory(o, dir) {
 						dirsDeleted++
 					} else {
-						status = SystemError
+						e = NewExitSystemError(postRepairCommandName)
 					}
 				}
 				o.WriteCanonicalConsole("Backup directories deleted: %d", dirsDeleted)
 			}
 		}
 	}
-	return status
+	return
 }
 
 func RemoveBackupDirectory(o output.Bus, dir string) bool {

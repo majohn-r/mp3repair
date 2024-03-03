@@ -41,7 +41,7 @@ var (
 			"file into that backup directory. Use the " + postRepairCommandName +
 			" command to automatically delete\n" +
 			"the backup folders.",
-		Run: RepairRun,
+		RunE: RepairRun,
 	}
 	RepairFlags = NewSectionFlags().WithSectionName("repair").WithFlags(
 		map[string]*FlagDetails{
@@ -52,8 +52,8 @@ var (
 	)
 )
 
-func RepairRun(cmd *cobra.Command, _ []string) {
-	status := ProgramError
+func RepairRun(cmd *cobra.Command, _ []string) error {
+	exitError := NewExitProgrammingError(repairCommandName)
 	o := getBus()
 	producer := cmd.Flags()
 	values, eSlice := ReadFlags(producer, RepairFlags)
@@ -66,10 +66,10 @@ func RepairRun(cmd *cobra.Command, _ []string) {
 			}
 			LogCommandStart(o, repairCommandName, details)
 			allArtists, loaded := searchSettings.Load(o)
-			status = rs.ProcessArtists(o, allArtists, loaded, searchSettings)
+			exitError = rs.ProcessArtists(o, allArtists, loaded, searchSettings)
 		}
 	}
-	Exit(status)
+	return ToErrorInterface(exitError)
 }
 
 type RepairSettings struct {
@@ -86,18 +86,17 @@ func (rs *RepairSettings) WithDryRun(b bool) *RepairSettings {
 }
 
 func (rs *RepairSettings) ProcessArtists(o output.Bus, allArtists []*files.Artist,
-	loaded bool, ss *SearchSettings) int {
-	status := UserError
+	loaded bool, ss *SearchSettings) (e *ExitError) {
+	e = NewExitUserError(repairCommandName)
 	if loaded {
 		if filteredArtists, filtered := ss.Filter(o, allArtists); filtered {
-			status = rs.RepairArtists(o, filteredArtists)
+			e = rs.RepairArtists(o, filteredArtists)
 		}
 	}
-	return status
+	return
 }
 
-func (rs *RepairSettings) RepairArtists(o output.Bus, artists []*files.Artist) int {
-	status := Success
+func (rs *RepairSettings) RepairArtists(o output.Bus, artists []*files.Artist) (e *ExitError) {
 	ReadMetadata(o, artists) // read all track metadata
 	concernedArtists := PrepareConcernedArtists(artists)
 	count := FindConflictedTracks(concernedArtists)
@@ -107,10 +106,10 @@ func (rs *RepairSettings) RepairArtists(o output.Bus, artists []*files.Artist) i
 		if count == 0 {
 			nothingToDo(o)
 		} else {
-			status = BackupAndFix(o, concernedArtists)
+			e = BackupAndFix(o, concernedArtists)
 		}
 	}
-	return status
+	return
 }
 
 func FindConflictedTracks(concernedArtists []*ConcernedArtist) int {
@@ -189,8 +188,7 @@ func nothingToDo(o output.Bus) {
 	o.WriteCanonicalConsole("No repairable track defects were found.")
 }
 
-func BackupAndFix(o output.Bus, concernedArtists []*ConcernedArtist) int {
-	status := Success
+func BackupAndFix(o output.Bus, concernedArtists []*ConcernedArtist) (e *ExitError) {
 	for _, cAr := range concernedArtists {
 		if cAr.IsConcerned() {
 			for _, cAl := range cAr.albums {
@@ -201,35 +199,33 @@ func BackupAndFix(o output.Bus, concernedArtists []*ConcernedArtist) int {
 								t := cT.backing
 								if AttemptCopy(o, t, path) {
 									err := t.UpdateMetadata()
-									if state := ProcessUpdateResult(o, t,
-										err); state == SystemError {
-										status = SystemError
+									if e2 := ProcessUpdateResult(o, t, err); e2 != nil {
+										e = e2
 									}
 								} else {
-									status = SystemError
+									e = NewExitSystemError(repairCommandName)
 								}
 							}
 						}
 					} else {
-						status = SystemError
+						e = NewExitSystemError(repairCommandName)
 					}
 				}
 			}
 		}
 	}
-	return status
+	return
 }
 
-func ProcessUpdateResult(o output.Bus, t *files.Track, err []error) int {
-	status := Success
+func ProcessUpdateResult(o output.Bus, t *files.Track, err []error) (e *ExitError) {
 	if len(err) == 0 {
 		o.WriteConsole("%q repaired.\n", t)
 		MarkDirty(o)
 	} else {
 		o.WriteCanonicalError("An error occurred repairing track %q", t)
 		errorStrings := []string{}
-		for _, e := range err {
-			errorStrings = append(errorStrings, fmt.Sprintf("%q", e.Error()))
+		for _, e2 := range err {
+			errorStrings = append(errorStrings, fmt.Sprintf("%q", e2.Error()))
 		}
 		o.Log(output.Error, "cannot edit track", map[string]any{
 			"command":   repairCommandName,
@@ -237,9 +233,9 @@ func ProcessUpdateResult(o output.Bus, t *files.Track, err []error) int {
 			"fileName":  t.FileName(),
 			"error":     fmt.Sprintf("[%s]", strings.Join(errorStrings, ", ")),
 		})
-		status = SystemError
+		e = NewExitSystemError(repairCommandName)
 	}
-	return status
+	return
 }
 
 func AttemptCopy(o output.Bus, t *files.Track, path string) (backedUp bool) {

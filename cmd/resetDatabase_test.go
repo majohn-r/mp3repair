@@ -140,14 +140,14 @@ func TestResetDBSettings_WaitForStop(t *testing.T) {
 		rdbs *cmd.ResetDBSettings
 		args
 		wantOk     bool
-		wantStatus int
+		wantStatus *cmd.ExitError
 		output.WantedRecording
 	}{
 		"already timed out": {
 			rdbs: cmd.NewResetDBSettings().WithService(
 				"my service").WithTimeout(10),
 			args:       args{expiration: time.Now().Add(time.Duration(-1) * time.Second)},
-			wantStatus: cmd.SystemError,
+			wantStatus: cmd.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Error: "The service \"my service\" could not be stopped within the 10" +
 					" second timeout.\n",
@@ -167,7 +167,7 @@ func TestResetDBSettings_WaitForStop(t *testing.T) {
 				expiration:    time.Now().Add(time.Duration(1) * time.Second),
 				checkInterval: 1 * time.Millisecond,
 			},
-			wantStatus: cmd.SystemError,
+			wantStatus: cmd.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Error: "An error occurred while attempting to stop the service " +
 					"\"my service\": no results from query.\n",
@@ -189,7 +189,7 @@ func TestResetDBSettings_WaitForStop(t *testing.T) {
 				checkInterval: 1 * time.Millisecond,
 			},
 			wantOk:     true,
-			wantStatus: cmd.Success,
+			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
 				Log: "" +
 					"level='info'" +
@@ -206,8 +206,8 @@ func TestResetDBSettings_WaitForStop(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("ResetDBSettings.WaitForStop() = %t, want %t", gotOk, tt.wantOk)
 			}
-			if gotStatus != tt.wantStatus {
-				t.Errorf("ResetDBSettings.WaitForStop() = %d, want %d", gotStatus,
+			if !compareExitErrors(gotStatus, tt.wantStatus) {
+				t.Errorf("ResetDBSettings.WaitForStop() = %s, want %s", gotStatus,
 					tt.wantStatus)
 			}
 			if differences, ok := o.Verify(tt.WantedRecording); !ok {
@@ -258,7 +258,7 @@ func TestResetDBSettings_StopFoundService(t *testing.T) {
 		rdbs *cmd.ResetDBSettings
 		args
 		wantOk     bool
-		wantStatus int
+		wantStatus *cmd.ExitError
 		output.WantedRecording
 	}{
 		"defective service": {
@@ -267,7 +267,7 @@ func TestResetDBSettings_StopFoundService(t *testing.T) {
 				manager: newTestManager(nil, nil),
 				service: newTestService(),
 			},
-			wantStatus: cmd.SystemError,
+			wantStatus: cmd.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Error: "An error occurred while trying to stop service \"my service\":" +
 					" no results from query.\n",
@@ -285,7 +285,7 @@ func TestResetDBSettings_StopFoundService(t *testing.T) {
 				service: newTestService(svc.Status{State: svc.Stopped}),
 			},
 			wantOk:     true,
-			wantStatus: cmd.Success,
+			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
 				Log: "" +
 					"level='info'" +
@@ -302,7 +302,7 @@ func TestResetDBSettings_StopFoundService(t *testing.T) {
 					svc.Status{State: svc.Stopped}),
 			},
 			wantOk:     true,
-			wantStatus: cmd.Success,
+			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
 				Log: "" +
 					"level='info'" +
@@ -320,7 +320,7 @@ func TestResetDBSettings_StopFoundService(t *testing.T) {
 					svc.Status{State: svc.Stopped}),
 			},
 			wantOk:     true,
-			wantStatus: cmd.Success,
+			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
 				Log: "" +
 					"level='info'" +
@@ -334,7 +334,7 @@ func TestResetDBSettings_StopFoundService(t *testing.T) {
 				manager: newTestManager(nil, nil),
 				service: newTestService(svc.Status{State: svc.Paused}),
 			},
-			wantStatus: cmd.SystemError,
+			wantStatus: cmd.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Error: "The service \"my service\" cannot be stopped:" +
 					" no results from query.\n",
@@ -356,7 +356,7 @@ func TestResetDBSettings_StopFoundService(t *testing.T) {
 				t.Errorf("ResetDBSettings.StopFoundService() = %v, want %v", gotOk,
 					tt.wantOk)
 			}
-			if gotStatus != tt.wantStatus {
+			if !compareExitErrors(gotStatus, tt.wantStatus) {
 				t.Errorf("ResetDBSettings.StopFoundService() = %v, want %v", gotStatus,
 					tt.wantStatus)
 			}
@@ -459,13 +459,13 @@ func TestResetDBSettings_HandleService(t *testing.T) {
 		rdbs       *cmd.ResetDBSettings
 		manager    cmd.ServiceManager
 		wantOk     bool
-		wantStatus int
+		wantStatus *cmd.ExitError
 		output.WantedRecording
 	}{
 		"defective manager #1": {
 			rdbs:       cmd.NewResetDBSettings().WithService("my service").WithTimeout(1),
 			manager:    newTestManager(nil, []string{"my service"}),
-			wantStatus: cmd.SystemError,
+			wantStatus: cmd.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"The service \"my service\" cannot be opened: no such service.\n" +
@@ -483,7 +483,7 @@ func TestResetDBSettings_HandleService(t *testing.T) {
 		"defective manager #2": {
 			rdbs:       cmd.NewResetDBSettings().WithService("my service").WithTimeout(1),
 			manager:    newTestManager(nil, nil),
-			wantStatus: cmd.SystemError,
+			wantStatus: cmd.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Error: "The service \"my service\" cannot be opened: no such service.\n",
 				Log: "" +
@@ -501,7 +501,7 @@ func TestResetDBSettings_HandleService(t *testing.T) {
 		"defective manager #3": {
 			rdbs:       cmd.NewResetDBSettings().WithService("my service").WithTimeout(1),
 			manager:    newTestManager(map[string]*mgr.Service{"my service": nil}, nil),
-			wantStatus: cmd.SystemError,
+			wantStatus: cmd.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Error: "An error occurred while trying to stop service \"my service\":" +
 					" no service.\n",
@@ -520,7 +520,7 @@ func TestResetDBSettings_HandleService(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("ResetDBSettings.HandleService() = %v, want %v", gotOk, tt.wantOk)
 			}
-			if gotStatus != tt.wantStatus {
+			if !compareExitErrors(gotStatus, tt.wantStatus) {
 				t.Errorf("ResetDBSettings.HandleService() = %v, want %v", gotStatus,
 					tt.wantStatus)
 			}
@@ -542,7 +542,7 @@ func TestResetDBSettings_StopService(t *testing.T) {
 		connect    func() (*mgr.Mgr, error)
 		rdbs       *cmd.ResetDBSettings
 		wantOk     bool
-		wantStatus int
+		wantStatus *cmd.ExitError
 		output.WantedRecording
 	}{
 		"connect fails": {
@@ -550,7 +550,7 @@ func TestResetDBSettings_StopService(t *testing.T) {
 				return nil, fmt.Errorf("no manager available")
 			},
 			rdbs:       cmd.NewResetDBSettings().WithService("my service").WithTimeout(1),
-			wantStatus: cmd.SystemError,
+			wantStatus: cmd.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"An attempt to connect with the service manager failed;" +
@@ -570,7 +570,7 @@ func TestResetDBSettings_StopService(t *testing.T) {
 				return nil, nil
 			},
 			rdbs:       cmd.NewResetDBSettings().WithService("my service").WithTimeout(1),
-			wantStatus: cmd.SystemError,
+			wantStatus: cmd.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Error: "The service \"my service\" cannot be opened: nil manager.\n",
 				Log: "" +
@@ -594,7 +594,7 @@ func TestResetDBSettings_StopService(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("ResetDBSettings.StopService() = %v, want %v", gotOk, tt.wantOk)
 			}
-			if gotStatus != tt.wantStatus {
+			if !compareExitErrors(gotStatus, tt.wantStatus) {
 				t.Errorf("ResetDBSettings.StopService() = %v, want %v", gotStatus,
 					tt.wantStatus)
 			}
@@ -616,19 +616,19 @@ func TestResetDBSettings_DeleteFiles(t *testing.T) {
 		remove func(string) error
 		rdbs   *cmd.ResetDBSettings
 		paths  []string
-		want   int
+		want   *cmd.ExitError
 		output.WantedRecording
 	}{
 		"no files": {
 			rdbs:  cmd.NewResetDBSettings().WithMetadataDir("metadata/dir"),
 			paths: nil,
-			want:  cmd.Success,
+			want:  nil,
 		},
 		"undeletable files": {
 			remove: func(_ string) error { return fmt.Errorf("cannot remove file") },
 			rdbs:   cmd.NewResetDBSettings().WithMetadataDir("metadata/dir"),
 			paths:  []string{"file1", "file2"},
-			want:   cmd.SystemError,
+			want:   cmd.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Console: "0 out of 2 metadata files have been deleted from" +
 					" \"metadata/dir\".\n",
@@ -647,7 +647,7 @@ func TestResetDBSettings_DeleteFiles(t *testing.T) {
 			remove: func(_ string) error { return nil },
 			rdbs:   cmd.NewResetDBSettings().WithMetadataDir("metadata/dir"),
 			paths:  []string{"file1", "file2"},
-			want:   cmd.Success,
+			want:   nil,
 			WantedRecording: output.WantedRecording{
 				Console: "2 out of 2 metadata files have been deleted from" +
 					" \"metadata/dir\".\n",
@@ -658,8 +658,8 @@ func TestResetDBSettings_DeleteFiles(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			cmd.Remove = tt.remove
 			o := output.NewRecorder()
-			if got := tt.rdbs.DeleteFiles(o, tt.paths); got != tt.want {
-				t.Errorf("ResetDBSettings.DeleteFiles() %d want %d", got, tt.want)
+			if got := tt.rdbs.DeleteFiles(o, tt.paths); !compareExitErrors(got, tt.want) {
+				t.Errorf("ResetDBSettings.DeleteFiles() %s want %s", got, tt.want)
 			}
 			if differences, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, difference := range differences {
@@ -720,14 +720,14 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 		remove          func(string) error
 		rdbs            *cmd.ResetDBSettings
 		stopped         bool
-		want            int
+		want            *cmd.ExitError
 		output.WantedRecording
 	}{
 		"did not stop, cannot ignore it": {
 			rdbs: cmd.NewResetDBSettings().WithService(
 				"musicService").WithIgnoreServiceErrors(false),
 			stopped: false,
-			want:    cmd.UserError,
+			want:    cmd.NewExitUserError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"Metadata files will not be deleted.\n" +
@@ -744,7 +744,7 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 			},
 			rdbs:    cmd.NewResetDBSettings().WithMetadataDir("metadata"),
 			stopped: true,
-			want:    cmd.Success,
+			want:    nil,
 			WantedRecording: output.WantedRecording{
 				Console: "No metadata files were found in \"metadata\".\n",
 				Log: "" +
@@ -761,7 +761,7 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 			rdbs: cmd.NewResetDBSettings().WithMetadataDir(
 				"metadata").WithIgnoreServiceErrors(true),
 			stopped: false,
-			want:    cmd.Success,
+			want:    nil,
 			WantedRecording: output.WantedRecording{
 				Console: "No metadata files were found in \"metadata\".\n",
 				Log: "" +
@@ -780,7 +780,7 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 			rdbs: cmd.NewResetDBSettings().WithMetadataDir(
 				"metadata").WithExtension(".db"),
 			stopped: true,
-			want:    cmd.Success,
+			want:    nil,
 			WantedRecording: output.WantedRecording{
 				Console: "1 out of 1 metadata files have been deleted from \"metadata\".\n",
 			},
@@ -792,8 +792,8 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 			cmd.PlainFileExists = tt.plainFileExists
 			cmd.Remove = tt.remove
 			o := output.NewRecorder()
-			if got := tt.rdbs.DeleteMetadataFiles(o, tt.stopped); got != tt.want {
-				t.Errorf("ResetDBSettings.DeleteMetadataFiles() %d want %d", got, tt.want)
+			if got := tt.rdbs.DeleteMetadataFiles(o, tt.stopped); !compareExitErrors(got, tt.want) {
+				t.Errorf("ResetDBSettings.DeleteMetadataFiles() %s want %s", got, tt.want)
 			}
 			if differences, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, difference := range differences {
@@ -818,13 +818,13 @@ func TestResetDBSettings_ResetService(t *testing.T) {
 	tests := map[string]struct {
 		dirty func() bool
 		rdbs  *cmd.ResetDBSettings
-		want  int
+		want  *cmd.ExitError
 		output.WantedRecording
 	}{
 		"not dirty, no force": {
 			dirty: func() bool { return false },
 			rdbs:  cmd.NewResetDBSettings().WithForce(false),
-			want:  cmd.UserError,
+			want:  cmd.NewExitUserError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"The \"resetDatabase\" command has no work to perform.\n" +
@@ -839,7 +839,7 @@ func TestResetDBSettings_ResetService(t *testing.T) {
 		"not dirty, force": {
 			dirty: func() bool { return false },
 			rdbs:  cmd.NewResetDBSettings().WithForce(true),
-			want:  cmd.SystemError,
+			want:  cmd.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"An attempt to connect with the service manager failed;" +
@@ -863,7 +863,7 @@ func TestResetDBSettings_ResetService(t *testing.T) {
 		"dirty, not force": {
 			dirty: func() bool { return true },
 			rdbs:  cmd.NewResetDBSettings(),
-			want:  cmd.SystemError,
+			want:  cmd.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"An attempt to connect with the service manager failed;" +
@@ -889,8 +889,8 @@ func TestResetDBSettings_ResetService(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			cmd.Dirty = tt.dirty
 			o := output.NewRecorder()
-			if got := tt.rdbs.ResetService(o); got != tt.want {
-				t.Errorf("ResetDBSettings.ResetService() got %d want %d", got, tt.want)
+			if got := tt.rdbs.ResetService(o); !compareExitErrors(got, tt.want) {
+				t.Errorf("ResetDBSettings.ResetService() got %s want %s", got, tt.want)
 			}
 			if differences, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, difference := range differences {
@@ -905,18 +905,10 @@ func TestResetDBExec(t *testing.T) {
 	cmd.InitGlobals()
 	originalBus := cmd.Bus
 	originalDirty := cmd.Dirty
-	originalExit := cmd.Exit
 	defer func() {
 		cmd.Bus = originalBus
 		cmd.Dirty = originalDirty
-		cmd.Exit = originalExit
 	}()
-	var exitCode int
-	var exitCalled bool
-	cmd.Exit = func(code int) {
-		exitCode = code
-		exitCalled = true
-	}
 	cmd.Dirty = func() bool { return false }
 	flags := cmd.NewSectionFlags().WithSectionName("resetDatabase").WithFlags(
 		map[string]*cmd.FlagDetails{
@@ -948,16 +940,12 @@ func TestResetDBExec(t *testing.T) {
 	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), myCommand.Flags(),
 		flags)
 	tests := map[string]struct {
-		cmd            *cobra.Command
-		in1            []string
-		wantExitCode   int
-		wantExitCalled bool
+		cmd *cobra.Command
+		in1 []string
 		output.WantedRecording
 	}{
 		"simple": {
-			cmd:            myCommand,
-			wantExitCode:   cmd.UserError,
-			wantExitCalled: true,
+			cmd: myCommand,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"The \"resetDatabase\" command has no work to perform.\n" +
@@ -982,17 +970,9 @@ func TestResetDBExec(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			exitCode = -1
-			exitCalled = false
 			o := output.NewRecorder()
 			cmd.Bus = o
 			cmd.ResetDBExec(tt.cmd, tt.in1)
-			if got := exitCode; got != tt.wantExitCode {
-				t.Errorf("ResetDBExec() %d want %d", got, tt.wantExitCode)
-			}
-			if got := exitCalled; got != tt.wantExitCalled {
-				t.Errorf("ResetDBExec() %t want %t", got, tt.wantExitCalled)
-			}
 			if differences, ok := o.Verify(tt.WantedRecording); !ok {
 				for _, difference := range differences {
 					t.Errorf("ResetDBExec() %s", difference)
@@ -1085,81 +1065,129 @@ func TestResetDatabaseHelp(t *testing.T) {
 
 func TestUpdateServiceStatus(t *testing.T) {
 	type args struct {
-		currentStatus  int
-		proposedStatus int
+		currentStatus  *cmd.ExitError
+		proposedStatus *cmd.ExitError
 	}
 	tests := map[string]struct {
 		args
-		want int
+		want *cmd.ExitError
 	}{
 		"success, success": {
-			args: args{currentStatus: cmd.Success, proposedStatus: cmd.Success},
-			want: cmd.Success,
+			args: args{
+				currentStatus:  nil,
+				proposedStatus: nil,
+			},
+			want: nil,
 		},
 		"success, user error": {
-			args: args{currentStatus: cmd.Success, proposedStatus: cmd.UserError},
-			want: cmd.UserError,
+			args: args{
+				currentStatus:  nil,
+				proposedStatus: cmd.NewExitUserError("resetDatabase"),
+			},
+			want: cmd.NewExitUserError("resetDatabase"),
 		},
 		"success, program error": {
-			args: args{currentStatus: cmd.Success, proposedStatus: cmd.ProgramError},
-			want: cmd.ProgramError,
+			args: args{
+				currentStatus:  nil,
+				proposedStatus: cmd.NewExitProgrammingError("resetDatabase"),
+			},
+			want: cmd.NewExitProgrammingError("resetDatabase"),
 		},
 		"success, system error": {
-			args: args{currentStatus: cmd.Success, proposedStatus: cmd.SystemError},
-			want: cmd.SystemError,
+			args: args{
+				currentStatus:  nil,
+				proposedStatus: cmd.NewExitSystemError("resetDatabase"),
+			},
+			want: cmd.NewExitSystemError("resetDatabase"),
 		},
 		"user error, success": {
-			args: args{currentStatus: cmd.UserError, proposedStatus: cmd.Success},
-			want: cmd.UserError,
+			args: args{
+				currentStatus:  cmd.NewExitUserError("resetDatabase"),
+				proposedStatus: nil,
+			},
+			want: cmd.NewExitUserError("resetDatabase"),
 		},
 		"user error, user error": {
-			args: args{currentStatus: cmd.UserError, proposedStatus: cmd.UserError},
-			want: cmd.UserError,
+			args: args{
+				currentStatus:  cmd.NewExitUserError("resetDatabase"),
+				proposedStatus: cmd.NewExitUserError("resetDatabase"),
+			},
+			want: cmd.NewExitUserError("resetDatabase"),
 		},
 		"user error, program error": {
-			args: args{currentStatus: cmd.UserError, proposedStatus: cmd.ProgramError},
-			want: cmd.UserError,
+			args: args{
+				currentStatus:  cmd.NewExitUserError("resetDatabase"),
+				proposedStatus: cmd.NewExitProgrammingError("resetDatabase"),
+			},
+			want: cmd.NewExitUserError("resetDatabase"),
 		},
 		"user error, system error": {
-			args: args{currentStatus: cmd.UserError, proposedStatus: cmd.SystemError},
-			want: cmd.UserError,
+			args: args{
+				currentStatus:  cmd.NewExitUserError("resetDatabase"),
+				proposedStatus: cmd.NewExitSystemError("resetDatabase"),
+			},
+			want: cmd.NewExitUserError("resetDatabase"),
 		},
 		"program error, success": {
-			args: args{currentStatus: cmd.ProgramError, proposedStatus: cmd.Success},
-			want: cmd.ProgramError,
+			args: args{
+				currentStatus:  cmd.NewExitProgrammingError("resetDatabase"),
+				proposedStatus: nil,
+			},
+			want: cmd.NewExitProgrammingError("resetDatabase"),
 		},
 		"program error, user error": {
-			args: args{currentStatus: cmd.ProgramError, proposedStatus: cmd.UserError},
-			want: cmd.ProgramError,
+			args: args{
+				currentStatus:  cmd.NewExitProgrammingError("resetDatabase"),
+				proposedStatus: cmd.NewExitUserError("resetDatabase"),
+			},
+			want: cmd.NewExitProgrammingError("resetDatabase"),
 		},
 		"program error, program error": {
-			args: args{currentStatus: cmd.ProgramError, proposedStatus: cmd.ProgramError},
-			want: cmd.ProgramError,
+			args: args{
+				currentStatus:  cmd.NewExitProgrammingError("resetDatabase"),
+				proposedStatus: cmd.NewExitProgrammingError("resetDatabase"),
+			},
+			want: cmd.NewExitProgrammingError("resetDatabase"),
 		},
 		"program error, system error": {
-			args: args{currentStatus: cmd.ProgramError, proposedStatus: cmd.SystemError},
-			want: cmd.ProgramError,
+			args: args{
+				currentStatus:  cmd.NewExitProgrammingError("resetDatabase"),
+				proposedStatus: cmd.NewExitSystemError("resetDatabase"),
+			},
+			want: cmd.NewExitProgrammingError("resetDatabase"),
 		},
 		"system error, success": {
-			args: args{currentStatus: cmd.SystemError, proposedStatus: cmd.Success},
-			want: cmd.SystemError,
+			args: args{
+				currentStatus:  cmd.NewExitSystemError("resetDatabase"),
+				proposedStatus: nil,
+			},
+			want: cmd.NewExitSystemError("resetDatabase"),
 		},
 		"system error, user error": {
-			args: args{currentStatus: cmd.SystemError, proposedStatus: cmd.UserError},
-			want: cmd.SystemError,
+			args: args{
+				currentStatus:  cmd.NewExitSystemError("resetDatabase"),
+				proposedStatus: cmd.NewExitUserError("resetDatabase"),
+			},
+			want: cmd.NewExitSystemError("resetDatabase"),
 		},
 		"system error, program error": {
-			args: args{currentStatus: cmd.SystemError, proposedStatus: cmd.ProgramError},
-			want: cmd.SystemError,
+			args: args{
+				currentStatus:  cmd.NewExitSystemError("resetDatabase"),
+				proposedStatus: cmd.NewExitProgrammingError("resetDatabase"),
+			},
+			want: cmd.NewExitSystemError("resetDatabase"),
 		},
 		"system error, system error": {
-			args: args{currentStatus: cmd.SystemError, proposedStatus: cmd.SystemError},
-			want: cmd.SystemError,
+			args: args{
+				currentStatus:  cmd.NewExitSystemError("resetDatabase"),
+				proposedStatus: cmd.NewExitSystemError("resetDatabase"),
+			},
+			want: cmd.NewExitSystemError("resetDatabase"),
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := cmd.UpdateServiceStatus(tt.args.currentStatus, tt.args.proposedStatus); got != tt.want {
+			if got := cmd.UpdateServiceStatus(tt.args.currentStatus, tt.args.proposedStatus); !compareExitErrors(got, tt.want) {
 				t.Errorf("UpdateServiceStatus() = %v, want %v", got, tt.want)
 			}
 		})
@@ -1176,13 +1204,25 @@ func TestMaybeClearDirty(t *testing.T) {
 		clearDirtyCalled = true
 	}
 	tests := map[string]struct {
-		status int
+		status *cmd.ExitError
 		want   bool
 	}{
-		"success":       {status: cmd.Success, want: true},
-		"user error":    {status: cmd.UserError, want: false},
-		"program error": {status: cmd.ProgramError, want: false},
-		"system error":  {status: cmd.SystemError, want: false},
+		"success": {
+			status: nil,
+			want:   true,
+		},
+		"user error": {
+			status: cmd.NewExitUserError("resetDatabase"),
+			want:   false,
+		},
+		"program error": {
+			status: cmd.NewExitProgrammingError("resetDatabase"),
+			want:   false,
+		},
+		"system error": {
+			status: cmd.NewExitSystemError("resetDatabase"),
+			want:   false,
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
