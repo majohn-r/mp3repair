@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/majohn-r/output"
 	"golang.org/x/sys/windows"
 )
 
@@ -45,50 +46,6 @@ func Test_EnvironmentPermits(t *testing.T) {
 			}
 			if got := environmentPermits(); got != tt.want {
 				t.Errorf("environmentPermits() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func Test_RedirectedIO(t *testing.T) {
-	originalIsTerminal := IsTerminal
-	originalIsCygwinTerminal := IsCygwinTerminal
-	defer func() {
-		IsTerminal = originalIsTerminal
-		IsCygwinTerminal = originalIsCygwinTerminal
-	}()
-	tests := map[string]struct {
-		terminal       bool
-		cygwinTerminal bool
-		want           bool
-	}{
-		"isTerminal": {
-			terminal:       true,
-			cygwinTerminal: false,
-			want:           false,
-		},
-		"isCygwinTerminal": {
-			terminal:       false,
-			cygwinTerminal: true,
-			want:           false,
-		},
-		"is both (possible??)": {
-			terminal:       true,
-			cygwinTerminal: true,
-			want:           false,
-		},
-		"is neither": {
-			terminal:       false,
-			cygwinTerminal: false,
-			want:           true,
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			IsTerminal = func(_ uintptr) bool { return tt.terminal }
-			IsCygwinTerminal = func(_ uintptr) bool { return tt.cygwinTerminal }
-			if got := redirectedIO(); got != tt.want {
-				t.Errorf("redirectedIO() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -137,42 +94,58 @@ func initExamples() {
 		ec000 = NewElevationControl()
 		ec000.adminPermitted = false
 		ec000.elevated = false
-		ec000.redirected = false
+		ec000.stderrRedirected = false
+		ec000.stdinRedirected = false
+		ec000.stdoutRedirected = false
 
 		ec001 = NewElevationControl()
 		ec001.adminPermitted = false
 		ec001.elevated = false
-		ec001.redirected = true
+		ec001.stderrRedirected = true
+		ec001.stdinRedirected = true
+		ec001.stdoutRedirected = true
 
 		ec010 = NewElevationControl()
 		ec010.adminPermitted = false
 		ec010.elevated = true
-		ec010.redirected = false
+		ec010.stderrRedirected = false
+		ec010.stdinRedirected = false
+		ec010.stdoutRedirected = false
 
 		ec011 = NewElevationControl()
 		ec011.adminPermitted = false
 		ec011.elevated = true
-		ec011.redirected = true
+		ec011.stderrRedirected = true
+		ec011.stdinRedirected = true
+		ec011.stdoutRedirected = true
 
 		ec100 = NewElevationControl()
 		ec100.adminPermitted = true
 		ec100.elevated = false
-		ec100.redirected = false
+		ec100.stderrRedirected = false
+		ec100.stdinRedirected = false
+		ec100.stdoutRedirected = false
 
 		ec101 = NewElevationControl()
 		ec101.adminPermitted = true
 		ec101.elevated = false
-		ec101.redirected = true
+		ec101.stderrRedirected = true
+		ec101.stdinRedirected = true
+		ec101.stdoutRedirected = true
 
 		ec110 = NewElevationControl()
 		ec110.adminPermitted = true
 		ec110.elevated = true
-		ec110.redirected = false
+		ec110.stderrRedirected = false
+		ec110.stdinRedirected = false
+		ec110.stdoutRedirected = false
 
 		ec111 = NewElevationControl()
 		ec111.adminPermitted = true
 		ec111.elevated = true
-		ec111.redirected = true
+		ec111.stderrRedirected = true
+		ec111.stdinRedirected = true
+		ec111.stdoutRedirected = true
 
 		examplesInitialized = true
 	}
@@ -390,7 +363,7 @@ func TestElevationControl_Status(t *testing.T) {
 			appName: "myApp",
 			want: []string{
 				"myApp is not running with elevated privileges",
-				"At least one of stdin, stdout, and stderr has been redirected",
+				"stderr, stdin, and stdout have been redirected",
 				"The environment variable MP3_RUNS_AS_ADMIN evaluates as false",
 			},
 		},
@@ -420,7 +393,7 @@ func TestElevationControl_Status(t *testing.T) {
 			appName: "myApp",
 			want: []string{
 				"myApp is not running with elevated privileges",
-				"At least one of stdin, stdout, and stderr has been redirected",
+				"stderr, stdin, and stdout have been redirected",
 			},
 		},
 		"110": {
@@ -437,11 +410,736 @@ func TestElevationControl_Status(t *testing.T) {
 				"myApp is running with elevated privileges",
 			},
 		},
+		"stderr redirected": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   true,
+				stderrRedirected: true,
+				stdinRedirected:  false,
+				stdoutRedirected: false,
+			},
+			appName: "myApp",
+			want: []string{
+				"myApp is not running with elevated privileges",
+				"stderr has been redirected",
+			},
+		},
+		"stdin redirected": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   true,
+				stderrRedirected: false,
+				stdinRedirected:  true,
+				stdoutRedirected: false,
+			},
+			appName: "myApp",
+			want: []string{
+				"myApp is not running with elevated privileges",
+				"stdin has been redirected",
+			},
+		},
+		"stderr and stdin redirected": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   true,
+				stderrRedirected: true,
+				stdinRedirected:  true,
+				stdoutRedirected: false,
+			},
+			appName: "myApp",
+			want: []string{
+				"myApp is not running with elevated privileges",
+				"stderr and stdin have been redirected",
+			},
+		},
+		"stdout redirected": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   true,
+				stderrRedirected: false,
+				stdinRedirected:  false,
+				stdoutRedirected: true,
+			},
+			appName: "myApp",
+			want: []string{
+				"myApp is not running with elevated privileges",
+				"stdout has been redirected",
+			},
+		},
+		"stderr and stdout redirected": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   true,
+				stderrRedirected: true,
+				stdinRedirected:  false,
+				stdoutRedirected: true,
+			},
+			appName: "myApp",
+			want: []string{
+				"myApp is not running with elevated privileges",
+				"stderr and stdout have been redirected",
+			},
+		},
+		"stdin and stdout redirected": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   true,
+				stderrRedirected: false,
+				stdinRedirected:  true,
+				stdoutRedirected: true,
+			},
+			appName: "myApp",
+			want: []string{
+				"myApp is not running with elevated privileges",
+				"stdin and stdout have been redirected",
+			},
+		},
+		"stderr, stdin, and stdout redirected": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   true,
+				stderrRedirected: true,
+				stdinRedirected:  true,
+				stdoutRedirected: true,
+			},
+			appName: "myApp",
+			want: []string{
+				"myApp is not running with elevated privileges",
+				"stderr, stdin, and stdout have been redirected",
+			},
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			if got := tt.ec.Status(tt.appName); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("ElevationControl.Status() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestElevationControl_Log(t *testing.T) {
+	tests := map[string]struct {
+		ec *ElevationControl
+		output.WantedRecording
+	}{
+		"00000": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   false,
+				stderrRedirected: false,
+				stdinRedirected:  false,
+				stdoutRedirected: false,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='false'" +
+					" elevated='false'" +
+					" stderr_redirected='false'" +
+					" stdin_redirected='false'" +
+					" stdout_redirected='false'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"00001": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   false,
+				stderrRedirected: false,
+				stdinRedirected:  false,
+				stdoutRedirected: true,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='false'" +
+					" elevated='false'" +
+					" stderr_redirected='false'" +
+					" stdin_redirected='false'" +
+					" stdout_redirected='true'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"00010": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   false,
+				stderrRedirected: false,
+				stdinRedirected:  true,
+				stdoutRedirected: false,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='false'" +
+					" elevated='false'" +
+					" stderr_redirected='false'" +
+					" stdin_redirected='true'" +
+					" stdout_redirected='false'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"00011": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   false,
+				stderrRedirected: false,
+				stdinRedirected:  true,
+				stdoutRedirected: true,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='false'" +
+					" elevated='false'" +
+					" stderr_redirected='false'" +
+					" stdin_redirected='true'" +
+					" stdout_redirected='true'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"00100": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   false,
+				stderrRedirected: true,
+				stdinRedirected:  false,
+				stdoutRedirected: false,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='false'" +
+					" elevated='false'" +
+					" stderr_redirected='true'" +
+					" stdin_redirected='false'" +
+					" stdout_redirected='false'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"00101": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   false,
+				stderrRedirected: true,
+				stdinRedirected:  false,
+				stdoutRedirected: true,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='false'" +
+					" elevated='false'" +
+					" stderr_redirected='true'" +
+					" stdin_redirected='false'" +
+					" stdout_redirected='true'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"00110": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   false,
+				stderrRedirected: true,
+				stdinRedirected:  true,
+				stdoutRedirected: false,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='false'" +
+					" elevated='false'" +
+					" stderr_redirected='true'" +
+					" stdin_redirected='true'" +
+					" stdout_redirected='false'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"00111": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   false,
+				stderrRedirected: true,
+				stdinRedirected:  true,
+				stdoutRedirected: true,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='false'" +
+					" elevated='false'" +
+					" stderr_redirected='true'" +
+					" stdin_redirected='true'" +
+					" stdout_redirected='true'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"01000": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   true,
+				stderrRedirected: false,
+				stdinRedirected:  false,
+				stdoutRedirected: false,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='true'" +
+					" elevated='false'" +
+					" stderr_redirected='false'" +
+					" stdin_redirected='false'" +
+					" stdout_redirected='false'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"01001": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   true,
+				stderrRedirected: false,
+				stdinRedirected:  false,
+				stdoutRedirected: true,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='true'" +
+					" elevated='false'" +
+					" stderr_redirected='false'" +
+					" stdin_redirected='false'" +
+					" stdout_redirected='true'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"01010": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   true,
+				stderrRedirected: false,
+				stdinRedirected:  true,
+				stdoutRedirected: false,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='true'" +
+					" elevated='false'" +
+					" stderr_redirected='false'" +
+					" stdin_redirected='true'" +
+					" stdout_redirected='false'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"01011": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   true,
+				stderrRedirected: false,
+				stdinRedirected:  true,
+				stdoutRedirected: true,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='true'" +
+					" elevated='false'" +
+					" stderr_redirected='false'" +
+					" stdin_redirected='true'" +
+					" stdout_redirected='true'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"01100": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   true,
+				stderrRedirected: true,
+				stdinRedirected:  false,
+				stdoutRedirected: false,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='true'" +
+					" elevated='false'" +
+					" stderr_redirected='true'" +
+					" stdin_redirected='false'" +
+					" stdout_redirected='false'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"01101": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   true,
+				stderrRedirected: true,
+				stdinRedirected:  false,
+				stdoutRedirected: true,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='true'" +
+					" elevated='false'" +
+					" stderr_redirected='true'" +
+					" stdin_redirected='false'" +
+					" stdout_redirected='true'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"01110": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   true,
+				stderrRedirected: true,
+				stdinRedirected:  true,
+				stdoutRedirected: false,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='true'" +
+					" elevated='false'" +
+					" stderr_redirected='true'" +
+					" stdin_redirected='true'" +
+					" stdout_redirected='false'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"01111": {
+			ec: &ElevationControl{
+				elevated:         false,
+				adminPermitted:   true,
+				stderrRedirected: true,
+				stdinRedirected:  true,
+				stdoutRedirected: true,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='true'" +
+					" elevated='false'" +
+					" stderr_redirected='true'" +
+					" stdin_redirected='true'" +
+					" stdout_redirected='true'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"10000": {
+			ec: &ElevationControl{
+				elevated:         true,
+				adminPermitted:   false,
+				stderrRedirected: false,
+				stdinRedirected:  false,
+				stdoutRedirected: false,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='false'" +
+					" elevated='true'" +
+					" stderr_redirected='false'" +
+					" stdin_redirected='false'" +
+					" stdout_redirected='false'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"10001": {
+			ec: &ElevationControl{
+				elevated:         true,
+				adminPermitted:   false,
+				stderrRedirected: false,
+				stdinRedirected:  false,
+				stdoutRedirected: true,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='false'" +
+					" elevated='true'" +
+					" stderr_redirected='false'" +
+					" stdin_redirected='false'" +
+					" stdout_redirected='true'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"10010": {
+			ec: &ElevationControl{
+				elevated:         true,
+				adminPermitted:   false,
+				stderrRedirected: false,
+				stdinRedirected:  true,
+				stdoutRedirected: false,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='false'" +
+					" elevated='true'" +
+					" stderr_redirected='false'" +
+					" stdin_redirected='true'" +
+					" stdout_redirected='false'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"10011": {
+			ec: &ElevationControl{
+				elevated:         true,
+				adminPermitted:   false,
+				stderrRedirected: false,
+				stdinRedirected:  true,
+				stdoutRedirected: true,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='false'" +
+					" elevated='true'" +
+					" stderr_redirected='false'" +
+					" stdin_redirected='true'" +
+					" stdout_redirected='true'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"10100": {
+			ec: &ElevationControl{
+				elevated:         true,
+				adminPermitted:   false,
+				stderrRedirected: true,
+				stdinRedirected:  false,
+				stdoutRedirected: false,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='false'" +
+					" elevated='true'" +
+					" stderr_redirected='true'" +
+					" stdin_redirected='false'" +
+					" stdout_redirected='false'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"10101": {
+			ec: &ElevationControl{
+				elevated:         true,
+				adminPermitted:   false,
+				stderrRedirected: true,
+				stdinRedirected:  false,
+				stdoutRedirected: true,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='false'" +
+					" elevated='true'" +
+					" stderr_redirected='true'" +
+					" stdin_redirected='false'" +
+					" stdout_redirected='true'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"10110": {
+			ec: &ElevationControl{
+				elevated:         true,
+				adminPermitted:   false,
+				stderrRedirected: true,
+				stdinRedirected:  true,
+				stdoutRedirected: false,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='false'" +
+					" elevated='true'" +
+					" stderr_redirected='true'" +
+					" stdin_redirected='true'" +
+					" stdout_redirected='false'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"10111": {
+			ec: &ElevationControl{
+				elevated:         true,
+				adminPermitted:   false,
+				stderrRedirected: true,
+				stdinRedirected:  true,
+				stdoutRedirected: true,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='false'" +
+					" elevated='true'" +
+					" stderr_redirected='true'" +
+					" stdin_redirected='true'" +
+					" stdout_redirected='true'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"11000": {
+			ec: &ElevationControl{
+				elevated:         true,
+				adminPermitted:   true,
+				stderrRedirected: false,
+				stdinRedirected:  false,
+				stdoutRedirected: false,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='true'" +
+					" elevated='true'" +
+					" stderr_redirected='false'" +
+					" stdin_redirected='false'" +
+					" stdout_redirected='false'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"11001": {
+			ec: &ElevationControl{
+				elevated:         true,
+				adminPermitted:   true,
+				stderrRedirected: false,
+				stdinRedirected:  false,
+				stdoutRedirected: true,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='true'" +
+					" elevated='true'" +
+					" stderr_redirected='false'" +
+					" stdin_redirected='false'" +
+					" stdout_redirected='true'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"11010": {
+			ec: &ElevationControl{
+				elevated:         true,
+				adminPermitted:   true,
+				stderrRedirected: false,
+				stdinRedirected:  true,
+				stdoutRedirected: false,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='true'" +
+					" elevated='true'" +
+					" stderr_redirected='false'" +
+					" stdin_redirected='true'" +
+					" stdout_redirected='false'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"11011": {
+			ec: &ElevationControl{
+				elevated:         true,
+				adminPermitted:   true,
+				stderrRedirected: false,
+				stdinRedirected:  true,
+				stdoutRedirected: true,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='true'" +
+					" elevated='true'" +
+					" stderr_redirected='false'" +
+					" stdin_redirected='true'" +
+					" stdout_redirected='true'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"11100": {
+			ec: &ElevationControl{
+				elevated:         true,
+				adminPermitted:   true,
+				stderrRedirected: true,
+				stdinRedirected:  false,
+				stdoutRedirected: false,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='true'" +
+					" elevated='true'" +
+					" stderr_redirected='true'" +
+					" stdin_redirected='false'" +
+					" stdout_redirected='false'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"11101": {
+			ec: &ElevationControl{
+				elevated:         true,
+				adminPermitted:   true,
+				stderrRedirected: true,
+				stdinRedirected:  false,
+				stdoutRedirected: true,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='true'" +
+					" elevated='true'" +
+					" stderr_redirected='true'" +
+					" stdin_redirected='false'" +
+					" stdout_redirected='true'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"11110": {
+			ec: &ElevationControl{
+				elevated:         true,
+				adminPermitted:   true,
+				stderrRedirected: true,
+				stdinRedirected:  true,
+				stdoutRedirected: false,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='true'" +
+					" elevated='true'" +
+					" stderr_redirected='true'" +
+					" stdin_redirected='true'" +
+					" stdout_redirected='false'" +
+					" msg='elevation state'\n",
+			},
+		},
+		"11111": {
+			ec: &ElevationControl{
+				elevated:         true,
+				adminPermitted:   true,
+				stderrRedirected: true,
+				stdinRedirected:  true,
+				stdoutRedirected: true,
+			},
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" admin_permission='true'" +
+					" elevated='true'" +
+					" stderr_redirected='true'" +
+					" stdin_redirected='true'" +
+					" stdout_redirected='true'" +
+					" msg='elevation state'\n",
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			o := output.NewRecorder()
+			tt.ec.Log(o, output.Info)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("ElevationControl.Log() %s", difference)
+				}
 			}
 		})
 	}

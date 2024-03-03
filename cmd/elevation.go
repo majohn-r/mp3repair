@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 	"syscall"
+
+	"github.com/majohn-r/output"
 )
 
 const (
@@ -25,14 +27,23 @@ func environmentPermits() bool {
 	return defaultEnvironmentSetting
 }
 
-func redirectedIO() bool {
-	for _, device := range []*os.File{os.Stdin, os.Stderr, os.Stdout} {
-		fd := device.Fd()
-		if !IsTerminal(fd) && !IsCygwinTerminal(fd) {
-			return true
-		}
+func redirectedDescriptor(fd uintptr) bool {
+	if !IsTerminal(fd) && !IsCygwinTerminal(fd) {
+		return true
 	}
 	return false
+}
+
+func stderrState() bool {
+	return redirectedDescriptor(os.Stderr.Fd())
+}
+
+func stdinState() bool {
+	return redirectedDescriptor(os.Stdin.Fd())
+}
+
+func stdoutState() bool {
+	return redirectedDescriptor(os.Stdout.Fd())
 }
 
 func processIsElevated() bool {
@@ -41,24 +52,32 @@ func processIsElevated() bool {
 }
 
 type ElevationControl struct {
-	adminPermitted bool
-	elevated       bool
-	redirected     bool
+	adminPermitted   bool
+	elevated         bool
+	stderrRedirected bool
+	stdinRedirected  bool
+	stdoutRedirected bool
 }
 
 func NewElevationControl() *ElevationControl {
 	return &ElevationControl{
-		adminPermitted: environmentPermits(),
-		elevated:       processIsElevated(),
-		redirected:     redirectedIO(),
+		adminPermitted:   environmentPermits(),
+		elevated:         processIsElevated(),
+		stderrRedirected: stderrState(),
+		stdinRedirected:  stdinState(),
+		stdoutRedirected: stdoutState(),
 	}
+}
+
+func (ec *ElevationControl) redirected() bool {
+	return ec.stderrRedirected || ec.stdinRedirected || ec.stdoutRedirected
 }
 
 func (ec *ElevationControl) canElevate() bool {
 	if ec.elevated {
 		return false // already there, so, no
 	}
-	if ec.redirected {
+	if ec.redirected() {
 		return false // redirection will be lost, so, no
 	}
 	return ec.adminPermitted // ok, obey the environment variable then
@@ -108,14 +127,41 @@ func (ec *ElevationControl) WillRunElevated() bool {
 	return false
 }
 
+func (ec *ElevationControl) Log(o output.Bus, level output.Level) {
+	o.Log(level, "elevation state", map[string]any{
+		"elevated":          ec.elevated,
+		"admin_permission":  ec.adminPermitted,
+		"stderr_redirected": ec.stderrRedirected,
+		"stdin_redirected":  ec.stdinRedirected,
+		"stdout_redirected": ec.stdoutRedirected,
+	})
+}
+
 func (ec *ElevationControl) Status(appName string) []string {
 	results := []string{}
 	if ec.elevated {
 		results = append(results, fmt.Sprintf("%s is running with elevated privileges", appName))
 	} else {
 		results = append(results, fmt.Sprintf("%s is not running with elevated privileges", appName))
-		if ec.redirected {
-			results = append(results, "At least one of stdin, stdout, and stderr has been redirected")
+		if ec.redirected() {
+			redirectedIO := []string{}
+			if ec.stderrRedirected {
+				redirectedIO = append(redirectedIO, "stderr")
+			}
+			if ec.stdinRedirected {
+				redirectedIO = append(redirectedIO, "stdin")
+			}
+			if ec.stdoutRedirected {
+				redirectedIO = append(redirectedIO, "stdout")
+			}
+			switch len(redirectedIO) {
+			case 1:
+				results = append(results, fmt.Sprintf("%s has been redirected", redirectedIO[0]))
+			case 2:
+				results = append(results, fmt.Sprintf("%s have been redirected", strings.Join(redirectedIO, " and ")))
+			case 3:
+				results = append(results, "stderr, stdin, and stdout have been redirected")
+			}
 		}
 		if !ec.adminPermitted {
 			results = append(results, fmt.Sprintf("The environment variable %s evaluates as false", adminPermissionVar))

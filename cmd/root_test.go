@@ -13,6 +13,7 @@ import (
 
 	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
+	"golang.org/x/sys/windows"
 )
 
 func TestExecute(t *testing.T) {
@@ -65,12 +66,24 @@ func TestRunMain(t *testing.T) {
 	originalSince := cmd.Since
 	originalVersion := cmd.Version
 	originalCreation := cmd.Creation
+	originalIsElevatedFunc := cmd.IsElevated
+	originalIsTerminal := cmd.IsTerminal
+	originalIsCygwinTerminal := cmd.IsCygwinTerminal
+	originalLookupEnv := cmd.LookupEnv
 	defer func() {
 		cmd.Since = originalSince
 		os.Args = originalArgs
 		cmd.Version = originalVersion
 		cmd.Creation = originalCreation
+		cmd.IsElevated = originalIsElevatedFunc
+		cmd.IsTerminal = originalIsTerminal
+		cmd.IsCygwinTerminal = originalIsCygwinTerminal
+		cmd.LookupEnv = originalLookupEnv
 	}()
+	cmd.IsElevated = func(_ windows.Token) bool { return true }
+	cmd.IsTerminal = func(_ uintptr) bool { return true }
+	cmd.IsCygwinTerminal = func(_ uintptr) bool { return true }
+	cmd.LookupEnv = func(_ string) (string, bool) { return "", false }
 	type args struct {
 		cmd   cmd.CommandExecutor
 		start time.Time
@@ -100,6 +113,13 @@ func TestRunMain(t *testing.T) {
 					" version='0.1.2'" +
 					" msg='execution starts'\n" +
 					"level='info'" +
+					" admin_permission='true'" +
+					" elevated='true'" +
+					" stderr_redirected='false'" +
+					" stdin_redirected='false'" +
+					" stdout_redirected='false'" +
+					" msg='elevation state'\n" +
+					"level='info'" +
 					" duration='0s'" +
 					" exitCode='0'" +
 					" msg='execution ends'\n",
@@ -123,6 +143,13 @@ func TestRunMain(t *testing.T) {
 					" version='0.2.3'" +
 					" msg='execution starts'\n" +
 					"level='info'" +
+					" admin_permission='true'" +
+					" elevated='true'" +
+					" stderr_redirected='false'" +
+					" stdin_redirected='false'" +
+					" stdout_redirected='false'" +
+					" msg='elevation state'\n" +
+					"level='info'" +
 					" duration='0s'" +
 					" exitCode='1'" +
 					" msg='execution ends'\n",
@@ -145,6 +172,13 @@ func TestRunMain(t *testing.T) {
 					" timeStamp='2021-11-29T13:02:03Z05:00'" +
 					" version='0.2.3'" +
 					" msg='execution starts'\n" +
+					"level='info'" +
+					" admin_permission='true'" +
+					" elevated='true'" +
+					" stderr_redirected='false'" +
+					" stdin_redirected='false'" +
+					" stdout_redirected='false'" +
+					" msg='elevation state'\n" +
 					"level='error'" +
 					" error='oh dear'" +
 					" msg='Panic recovered'\n",

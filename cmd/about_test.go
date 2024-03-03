@@ -238,7 +238,7 @@ func TestOutputAbout(t *testing.T) {
 				"Log files are written to /my/files/tmp/logs/mp3",
 				"Configuration file \\my\\files\\apppath\\defaults.yaml does not yet exist",
 				"mp3 is not running with elevated privileges",
-				" - At least one of stdin, stdout, and stderr has been redirected",
+				" - stderr, stdin, and stdout have been redirected",
 			},
 		},
 		"without existing config file, not elevated, redirected, no admin permission": {
@@ -257,7 +257,7 @@ func TestOutputAbout(t *testing.T) {
 				"Log files are written to /my/files/tmp/logs/mp3",
 				"Configuration file \\my\\files\\apppath\\defaults.yaml does not yet exist",
 				"mp3 is not running with elevated privileges",
-				" - At least one of stdin, stdout, and stderr has been redirected",
+				" - stderr, stdin, and stdout have been redirected",
 				" - The environment variable MP3_RUNS_AS_ADMIN evaluates as false",
 			},
 		},

@@ -144,6 +144,7 @@ func RunMain(o output.Bus, cmd CommandExecutor, start time.Time) int {
 		"dependencies": BuildDependencies(),
 		"args":         cookedArgs,
 	})
+	NewElevationControl().Log(o, output.Info)
 	cmd.SetArgs(cookedArgs)
 	err := cmd.Execute()
 	exitCode := ObtainExitCode(err)
