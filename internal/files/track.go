@@ -293,7 +293,15 @@ func (t *Track) ReportMetadataProblems() []string {
 	if !s.HasConflicts() {
 		return nil
 	}
-	var diffs []string
+	// 7: 1 each for
+	// - track numbering conflict
+	// - track name conflict
+	// - album name conflict
+	// - artist name conflict
+	// - album year conflict
+	// - album genre conflict
+	// - MCDI conflict
+	diffs := make([]string, 0, 7)
 	if s.HasNumberingConflict() {
 		diffs = append(diffs,
 			fmt.Sprintf("metadata does not agree with track number %d", t.number))
@@ -517,12 +525,12 @@ func ProcessAlbumMetadata(o output.Bus, artists []*Artist) {
 }
 
 func encodeChoices(m map[string]int) string {
-	var keys []string
+	keys := make([]string, 0, len(m))
 	for k := range m {
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-	var values []string
+	values := make([]string, 0, len(m))
 	for _, k := range keys {
 		count := m[k]
 		if count == 1 {

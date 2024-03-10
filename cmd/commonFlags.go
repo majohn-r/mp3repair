@@ -109,7 +109,7 @@ func AddFlags(o output.Bus, c *cmd_toolkit.Configuration, flags flagConsumer,
 	for _, def := range defs {
 		config := c.SubConfiguration(def.sectionName)
 		// sort names for deterministic test output
-		sortedNames := []string{}
+		sortedNames := make([]string, 0, len(def.flags))
 		for name := range def.flags {
 			sortedNames = append(sortedNames, name)
 		}
@@ -243,7 +243,7 @@ func ReadFlags(producer FlagProducer, defs *SectionFlags) (map[string]*FlagValue
 	m := map[string]*FlagValue{}
 	e := []error{}
 	// sort names for deterministic output in unit tests
-	sortedNames := []string{}
+	sortedNames := make([]string, 0, len(defs.flags))
 	for name := range defs.flags {
 		sortedNames = append(sortedNames, name)
 	}

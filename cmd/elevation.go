@@ -138,13 +138,13 @@ func (ec *ElevationControl) Log(o output.Bus, level output.Level) {
 }
 
 func (ec *ElevationControl) Status(appName string) []string {
-	results := []string{}
+	results := make([]string, 0, 3)
 	if ec.elevated {
 		results = append(results, fmt.Sprintf("%s is running with elevated privileges", appName))
 	} else {
 		results = append(results, fmt.Sprintf("%s is not running with elevated privileges", appName))
 		if ec.redirected() {
-			redirectedIO := []string{}
+			redirectedIO := make([]string, 0, 3)
 			if ec.stderrRedirected {
 				redirectedIO = append(redirectedIO, "stderr")
 			}

@@ -534,7 +534,7 @@ func (im *Id3v1Metadata) WriteString(s string, f id3v1Field) {
 }
 
 func repairName(s string) string {
-	var bs []byte
+	bs := make([]byte, 0, 2*len(s))
 	for _, r := range s {
 		if b, ok := runeByteMapping[r]; ok {
 			bs = append(bs, b...)
@@ -640,7 +640,7 @@ func ReadID3v1Metadata(path string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	var output []string
+	output := make([]string, 0, 5)
 	output = append(output, fmt.Sprintf("Artist: %q", v1.Artist()),
 		fmt.Sprintf("Album: %q", v1.Album()), fmt.Sprintf("Title: %q", v1.Title()))
 	if track, ok := v1.Track(); ok {
@@ -770,7 +770,7 @@ func (im *Id3v1Metadata) InternalWrite(path string,
 }
 
 func Id3v1NameDiffers(cS *ComparableStrings) bool {
-	bs := []byte{}
+	bs := make([]byte, 0, 2*len(cS.External()))
 	for _, r := range strings.ToLower(cS.External()) {
 		if b, ok := runeByteMapping[r]; ok {
 			bs = append(bs, b...)

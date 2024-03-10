@@ -295,7 +295,7 @@ func EvaluateFilter(o output.Bus, values map[string]*FlagValue, flagName,
 
 func (ss *SearchSettings) Filter(o output.Bus,
 	originalArtists []*files.Artist) ([]*files.Artist, bool) {
-	filteredArtists := []*files.Artist{}
+	filteredArtists := make([]*files.Artist, 0, len(originalArtists))
 	for _, originalArtist := range originalArtists {
 		if ss.artistFilter.MatchString(originalArtist.Name()) && originalArtist.HasAlbums() {
 			filteredArtist := originalArtist.Copy()
@@ -337,8 +337,9 @@ func (ss *SearchSettings) Filter(o output.Bus,
 }
 
 func (ss *SearchSettings) Load(o output.Bus) ([]*files.Artist, bool) {
-	artists := []*files.Artist{}
-	if artistFiles, dirRead := ReadDirectory(o, ss.topDirectory); dirRead {
+	artistFiles, dirRead := ReadDirectory(o, ss.topDirectory)
+	artists := make([]*files.Artist, 0, len(artistFiles))
+	if dirRead {
 		for _, artistFile := range artistFiles {
 			if artistFile.IsDir() {
 				artist := files.NewArtistFromFile(artistFile, ss.topDirectory)

@@ -301,7 +301,7 @@ func (tM *TrackMetadata) CanonicalMusicCDIdentifier() id3v2.UnknownFrame {
 }
 
 func (tM *TrackMetadata) ErrorCauses() []string {
-	errCauses := []string{}
+	errCauses := make([]string, 0, len(tM.errorCause))
 	for _, e := range tM.errorCause {
 		if e != "" {
 			errCauses = append(errCauses, e)

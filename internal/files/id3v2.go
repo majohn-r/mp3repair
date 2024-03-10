@@ -259,7 +259,7 @@ func ReadID3V2Metadata(path string) (version byte, encoding string,
 		version = tag.Version()
 		encoding = tag.DefaultEncoding().Name
 		frameMap := tag.AllFrames()
-		var frameNames []string
+		frameNames := make([]string, 0, len(frameMap))
 		for k := range frameMap {
 			frameNames = append(frameNames, k)
 		}
@@ -280,7 +280,7 @@ func ReadID3V2Metadata(path string) (version byte, encoding string,
 }
 
 func FramerSliceAsString(f []id3v2.Framer) string {
-	var substrings []string
+	substrings := make([]string, 0, len(f))
 	if len(f) == 1 {
 		if data, ok := f[0].(id3v2.UnknownFrame); ok {
 			substrings = append(substrings, fmt.Sprintf("%#v", data.Body))

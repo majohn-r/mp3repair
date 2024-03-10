@@ -298,7 +298,7 @@ func ListServices(o output.Bus, manager ServiceManager, services []string) {
 				m[e] = append(m[e], serviceName)
 			}
 		}
-		states := []string{}
+		states := make([]string, 0, len(m))
 		for k := range m {
 			states = append(states, k)
 		}

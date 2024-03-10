@@ -55,7 +55,7 @@ func (c Concerns) IsConcerned() bool {
 
 func (c Concerns) ToConsole(o output.Bus, tab int) {
 	if c.IsConcerned() {
-		cStrings := []string{}
+		cStrings := make([]string, 0, len(c.concerns))
 		for key, value := range c.concerns {
 			for _, s := range value {
 				cStrings = append(cStrings, fmt.Sprintf("* [%s] %s", ConcernName(key), s))
@@ -119,7 +119,7 @@ func NewConcernedAlbum(album *files.Album) *ConcernedAlbum {
 	}
 	cAl := &ConcernedAlbum{
 		Concerns: NewConcerns(),
-		tracks:   []*ConcernedTrack{},
+		tracks:   make([]*ConcernedTrack, 0, len(album.Tracks())),
 		backing:  album,
 		trackMap: map[string]*ConcernedTrack{},
 	}
@@ -173,7 +173,7 @@ func (cAl *ConcernedAlbum) ToConsole(o output.Bus) {
 		o.WriteConsole("  Album %q\n", cAl.name())
 		cAl.Concerns.ToConsole(o, 2)
 		m := map[string]*ConcernedTrack{}
-		names := []string{}
+		names := make([]string, 0, len(cAl.tracks))
 		for _, cT := range cAl.tracks {
 			trackName := cT.name()
 			m[trackName] = cT
@@ -205,7 +205,7 @@ func NewConcernedArtist(artist *files.Artist) *ConcernedArtist {
 	}
 	cAr := &ConcernedArtist{
 		Concerns: NewConcerns(),
-		albums:   []*ConcernedAlbum{},
+		albums:   make([]*ConcernedAlbum, 0, len(artist.Albums())),
 		backing:  artist,
 		albumMap: map[string]*ConcernedAlbum{},
 	}
@@ -263,7 +263,7 @@ func (cAr *ConcernedArtist) ToConsole(o output.Bus) {
 		o.WriteConsole("Artist %q\n", cAr.name())
 		cAr.Concerns.ToConsole(o, 0)
 		m := map[string]*ConcernedAlbum{}
-		names := []string{}
+		names := make([]string, 0, len(cAr.albums))
 		for _, cT := range cAr.albums {
 			albumName := cT.name()
 			m[albumName] = cT
@@ -279,7 +279,7 @@ func (cAr *ConcernedArtist) ToConsole(o output.Bus) {
 }
 
 func PrepareConcernedArtists(artists []*files.Artist) []*ConcernedArtist {
-	concernedArtists := []*ConcernedArtist{}
+	concernedArtists := make([]*ConcernedArtist, 0, len(artists))
 	for _, artist := range artists {
 		if cAr := NewConcernedArtist(artist); cAr != nil {
 			concernedArtists = append(concernedArtists, cAr)

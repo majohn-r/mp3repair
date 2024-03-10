@@ -96,7 +96,7 @@ func InitGlobals() {
 }
 
 func CookCommandLineArguments(o output.Bus, inputArgs []string) []string {
-	args := []string{}
+	args := make([]string, 0, len(inputArgs))
 	if len(inputArgs) > 1 {
 		for _, arg := range inputArgs[1:] {
 			if cookedArg, err := DereferenceEnvVar(arg); err != nil {

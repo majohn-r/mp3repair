@@ -159,7 +159,7 @@ func FindConflictedTracks(concernedArtists []*ConcernedArtist) int {
 }
 
 func ReportRepairsNeeded(o output.Bus, concernedArtists []*ConcernedArtist) {
-	artistNames := []string{}
+	artistNames := make([]string, 0, len(concernedArtists))
 	artistMap := map[string]*ConcernedArtist{}
 	for _, cAr := range concernedArtists {
 		name := cAr.name()
@@ -223,7 +223,7 @@ func ProcessUpdateResult(o output.Bus, t *files.Track, err []error) (e *ExitErro
 		MarkDirty(o)
 	} else {
 		o.WriteCanonicalError("An error occurred repairing track %q", t)
-		errorStrings := []string{}
+		errorStrings := make([]string, 0, len(err))
 		for _, e2 := range err {
 			errorStrings = append(errorStrings, fmt.Sprintf("%q", e2.Error()))
 		}

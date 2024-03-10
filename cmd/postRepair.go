@@ -48,7 +48,11 @@ func PostRepairWork(o output.Bus, ss *SearchSettings, allArtists []*files.Artist
 	if loaded {
 		if filteredArtists, filtered := ss.Filter(o, allArtists); filtered {
 			e = nil
-			dirs := []string{}
+			dirCount := 0
+			for _, artist := range filteredArtists {
+				dirCount += len(artist.Albums())
+			}
+			dirs := make([]string, 0, dirCount)
 			for _, artist := range filteredArtists {
 				for _, album := range artist.Albums() {
 					dir := album.BackupDirectory()

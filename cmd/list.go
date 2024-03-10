@@ -234,7 +234,7 @@ func (ls *ListSettings) ProcessArtists(o output.Bus, allArtists []*files.Artist,
 func (ls *ListSettings) ListArtists(o output.Bus, artists []*files.Artist) {
 	if ls.artists {
 		m := map[string]*files.Artist{}
-		names := []string{}
+		names := make([]string, 0, len(artists))
 		for _, a := range artists {
 			m[a.Name()] = a
 			names = append(names, a.Name())
@@ -248,7 +248,11 @@ func (ls *ListSettings) ListArtists(o output.Bus, artists []*files.Artist) {
 			}
 		}
 	} else {
-		albums := []*files.Album{}
+		albumCount := 0
+		for _, a := range artists {
+			albumCount += len(a.Albums())
+		}
+		albums := make([]*files.Album, 0, albumCount)
 		for _, a := range artists {
 			albums = append(albums, a.Albums()...)
 		}
@@ -282,7 +286,11 @@ func (ls *ListSettings) ListAlbums(o output.Bus, albums []*files.Album, tab int)
 			ls.ListTracks(o, album.Tracks(), tab+2)
 		}
 	} else {
-		tracks := []*files.Track{}
+		trackCount := 0
+		for _, album := range albums {
+			trackCount += len(album.Tracks())
+		}
+		tracks := make([]*files.Track, 0, trackCount)
 		for _, album := range albums {
 			tracks = append(tracks, album.Tracks()...)
 		}
@@ -315,7 +323,7 @@ func (ls *ListSettings) ListTracks(o output.Bus, tracks []*files.Track, tab int)
 
 func (ls *ListSettings) ListTracksByNumber(o output.Bus, tracks []*files.Track, tab int) {
 	m := map[int]*files.Track{}
-	numbers := []int{}
+	numbers := make([]int, 0, len(tracks))
 	for _, track := range tracks {
 		numbers = append(numbers, track.Number())
 		m[track.Number()] = track
@@ -401,7 +409,7 @@ func ShowDetails(o output.Bus, track *files.Track, details map[string]string,
 			track.CommonName(), track.AlbumName(), track.RecordingArtist(),
 			detailsError.Error())
 	} else if len(details) != 0 {
-		keys := []string{}
+		keys := make([]string, 0, len(details))
 		for k := range details {
 			keys = append(keys, k)
 		}
@@ -545,8 +553,8 @@ func (ls *ListSettings) HasWorkToDo(o output.Bus) bool {
 	userPartiallyAtFault := ls.albumsUserSet || ls.artistsUserSet || ls.tracksUserSet
 	o.WriteCanonicalError("No listing will be output.\nWhy?\n")
 	if userPartiallyAtFault {
-		flagsUserSet := []string{}
-		flagsFromConfig := []string{}
+		flagsUserSet := make([]string, 0, 3)
+		flagsFromConfig := make([]string, 0, 3)
 		if ls.albumsUserSet {
 			flagsUserSet = append(flagsUserSet, ListAlbumsFlag)
 		} else {

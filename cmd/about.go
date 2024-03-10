@@ -59,13 +59,22 @@ func AboutRun(_ *cobra.Command, _ []string) error {
 	return nil
 }
 
-func GatherOutput(o output.Bus) (lines []string) {
+func GatherOutput(o output.Bus) []string {
+	goVersion, buildDependencies := InterpretBuildData()
+	// 9: 1 each for
+	// - app name
+	// - copyright
+	// - build information header
+	// - go version
+	// - log file location
+	// - configuration file status
+	// - and up to 3 for elevation status
+	lines := make([]string, 0, 9+len(buildDependencies))
 	lines = append(lines,
 		cmd_toolkit.DecoratedAppName(appName, Version, Creation),
 		cmd_toolkit.Copyright(o, firstYear, Creation, author),
-		cmd_toolkit.BuildInformationHeader())
-	goVersion, buildDependencies := InterpretBuildData()
-	lines = append(lines, cmd_toolkit.FormatGoVersion(goVersion))
+		cmd_toolkit.BuildInformationHeader(),
+		cmd_toolkit.FormatGoVersion(goVersion))
 	lines = append(lines, cmd_toolkit.FormatBuildDependencies(buildDependencies)...)
 	lines = append(lines, fmt.Sprintf("Log files are written to %s", LogPath()))
 	if path, exists := configFile(); exists {
@@ -80,7 +89,7 @@ func GatherOutput(o output.Bus) (lines []string) {
 			lines = append(lines, fmt.Sprintf(" - %s", s))
 		}
 	}
-	return
+	return lines
 }
 
 func InitializeAbout(version, creation string) {

@@ -221,7 +221,7 @@ func (cs *CheckSettings) PerformFileAnalysis(o output.Bus,
 	concernedArtists []*ConcernedArtist, ss *SearchSettings) bool {
 	foundConcerns := false
 	if cs.files {
-		artists := []*files.Artist{}
+		artists := make([]*files.Artist, 0, len(concernedArtists))
 		for _, cAr := range concernedArtists {
 			artists = append(artists, cAr.Artist())
 		}
@@ -289,7 +289,7 @@ func (cs *CheckSettings) PerformNumberingAnalysis(
 }
 
 func GenerateNumberingConcerns(m map[int][]string, maxTrack int) []string {
-	concerns := []string{}
+	concerns := make([]string, 0, len(m)+1)
 	numbers := []int{}
 	// find duplicates
 	for k, v := range m {
@@ -298,7 +298,7 @@ func GenerateNumberingConcerns(m map[int][]string, maxTrack int) []string {
 		}
 		if len(v) > 1 {
 			slices.Sort(v)
-			formattedTracks := []string{}
+			formattedTracks := make([]string, 0, len(v)-1)
 			for j := 0; j < len(v)-1; j++ {
 				formattedTracks = append(formattedTracks, fmt.Sprintf("%q", v[j]))
 			}
@@ -370,8 +370,8 @@ func (cs *CheckSettings) HasWorkToDo(o output.Bus) bool {
 	userPartiallyAtFault := cs.emptyUserSet || cs.filesUserSet || cs.numberingUserSet
 	o.WriteCanonicalError("No checks will be executed.\nWhy?\n")
 	if userPartiallyAtFault {
-		flagsUserSet := []string{}
-		flagsFromConfig := []string{}
+		flagsUserSet := make([]string, 0, 3)
+		flagsFromConfig := make([]string, 0, 3)
 		if cs.emptyUserSet {
 			flagsUserSet = append(flagsUserSet, CheckEmptyFlag)
 		} else {
