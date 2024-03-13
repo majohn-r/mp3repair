@@ -40,6 +40,7 @@ var (
 		Name:  "build",
 		Usage: "build the executable",
 		Action: func(a *goyek.A) {
+			fmt.Println("Building executable")
 			exec, path, flags, jsonInput := readConfig()
 			// logged output shows up when running verbose (-v) or on error
 			a.Logf("json input: %d %d %d %q %q %d\n", jsonInput.majorLevel, jsonInput.minorLevel, jsonInput.patchLevel, jsonInput.description, jsonInput.name, jsonInput.firstYear)
@@ -57,10 +58,11 @@ var (
 		},
 	})
 
-	_ = goyek.Define(goyek.Task{
+	clean = goyek.Define(goyek.Task{
 		Name:  "clean",
 		Usage: "delete build products",
 		Action: func(a *goyek.A) {
+			fmt.Println("Deleting build products")
 			exec, path, _, _ := readConfig()
 			os.Remove(filepath.Join("..", path, versionInfoFile))
 			os.Remove(filepath.Join("..", path, resourceFile))
@@ -103,40 +105,100 @@ var (
 		},
 	})
 
-	_ = goyek.Define(goyek.Task{
+	format = goyek.Define(goyek.Task{
 		Name:  "format",
 		Usage: "clean up source code formatting",
 		Action: func(a *goyek.A) {
+			fmt.Println("Cleaning up source code formatting")
 			o := &bytes.Buffer{}
 			cmd.Exec(a, "gofmt -e -l -s -w .", options(o)...)
 			print(o)
 		},
 	})
 
-	_ = goyek.Define(goyek.Task{
+	lint = goyek.Define(goyek.Task{
 		Name:  "lint",
 		Usage: "run the linter on source code",
 		Action: func(a *goyek.A) {
+			fmt.Println("Linting source code")
 			o := &bytes.Buffer{}
 			cmd.Exec(a, "gocritic check -enableAll ./...", options(o)...)
 			print(o)
 		},
 	})
 
-	_ = goyek.Define(goyek.Task{
+	nilaway = goyek.Define(goyek.Task{
 		Name:  "nilaway",
 		Usage: "run nilaway on source code",
 		Action: func(a *goyek.A) {
+			fmt.Println("Running nilaway analysis")
 			unifiedOutput := &bytes.Buffer{}
 			cmd.Exec(a, "nilaway ./...", options(unifiedOutput)...)
 			print(unifiedOutput)
 		},
 	})
 
+	vulnCheck = goyek.Define(goyek.Task{
+		Name:  "vulnCheck",
+		Usage: "run vulnerability check on source code",
+		Action: func(a *goyek.A) {
+			fmt.Println("Running vulnerability checks")
+			unifiedOutput := &bytes.Buffer{}
+			cmd.Exec(a, "govulncheck ./...", options(unifiedOutput)...)
+			print(unifiedOutput)
+		},
+	})
+
+	updateLinter = goyek.Define(goyek.Task{
+		Name:  "updateLinter",
+		Usage: "update linter tooling",
+		Action: func(a *goyek.A) {
+			fmt.Println("Updating linter")
+			unifiedOutput := &bytes.Buffer{}
+			cmd.Exec(a, "go install -v github.com/go-critic/go-critic/cmd/gocritic@latest", options(unifiedOutput)...)
+			print(unifiedOutput)
+		},
+	})
+
+	updateNilaway = goyek.Define(goyek.Task{
+		Name:  "updateNilaway",
+		Usage: "update nilaway tooling",
+		Action: func(a *goyek.A) {
+			fmt.Println("Updating nilaway")
+			unifiedOutput := &bytes.Buffer{}
+			cmd.Exec(a, "go install -v go.uber.org/nilaway/cmd/nilaway@latest", options(unifiedOutput)...)
+			print(unifiedOutput)
+		},
+	})
+
+	updateVulnCheck = goyek.Define(goyek.Task{
+		Name:  "updateVulnCheck",
+		Usage: "update vulnCheck tooling",
+		Action: func(a *goyek.A) {
+			fmt.Println("Updating vulnerability check")
+			unifiedOutput := &bytes.Buffer{}
+			cmd.Exec(a, "go install -v golang.org/x/vuln/cmd/govulncheck@latest", options(unifiedOutput)...)
+			print(unifiedOutput)
+		},
+	})
+
+	updateTools = goyek.Define(goyek.Task{
+		Name:  "updateTools",
+		Usage: "update third party tooling",
+		Deps:  goyek.Deps{updateLinter, updateNilaway, updateVulnCheck},
+	})
+
 	_ = goyek.Define(goyek.Task{
+		Name:  "preCommit",
+		Usage: "run all pre-commit tasks",
+		Deps:  goyek.Deps{clean, updateTools, lint, nilaway, format, vulnCheck, tests, build},
+	})
+
+	tests = goyek.Define(goyek.Task{
 		Name:  "tests",
 		Usage: "run unit tests",
 		Action: func(a *goyek.A) {
+			fmt.Println("Running all unit tests")
 			o := &bytes.Buffer{}
 			cmd.Exec(a, "go test -cover ./...", options(o)...)
 			print(o)
