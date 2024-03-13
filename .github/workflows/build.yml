@@ -22,6 +22,15 @@ jobs:
         with:
           name: lint results
           path: lint-issues.txt
+      - name: Install nilaway
+        run: go install go.uber.org/nilaway/cmd/nilaway@latest
+      - name: Run nilaway
+        run: nilaway ./... > nilaway-issues.txt
+      - name: Post nilaway issues
+        uses: actions/upload-artifact@v3
+        with:
+          name: nilaway results
+          path: nilaway-issues.txt
       - name: Run format check
         run: gofmt -d -e -l ./ > format-issues.txt
       - name: Post format issues
