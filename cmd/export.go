@@ -33,7 +33,7 @@ var (
 		DisableFlagsInUseLine: true,
 		Short:                 "Exports default program configuration data",
 		Long: fmt.Sprintf("%q", ExportCommand) +
-			` exports default program configuration data to %APPDATA%\mp3\defaults.yaml`,
+			` exports default program configuration data to %APPDATA%\mp3repair\defaults.yaml`,
 		Example: ExportCommand + " " + exportDefaultsAsFlag + "\n" +
 			"  Write default program configuration data\n" +
 			ExportCommand + " " + exportOverwriteAsFlag + "\n" +

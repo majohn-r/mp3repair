@@ -32,30 +32,30 @@ var (
 			"of sequence, and so forth.\n"+
 			"\n"+
 			"The %q program exists to find and repair such problems.", appName, appName),
-		Example: `The mp3 program might be used like this:
+		Example: `The ` + appName + ` program might be used like this:
 
 First, get a listing of the available mp3 files:
 
-mp3 ` + ListCommand + ` -lrt
+` + appName + ` ` + ListCommand + ` -lrt
 
 Then check for problems in the track metadata:
 
-mp3 ` + CheckCommand + ` ` + CheckFilesFlag + `
+` + appName + ` ` + CheckCommand + ` ` + CheckFilesFlag + `
 
 If problems were found, repair the mp3 files:
 
-mp3 ` + repairCommandName + `
+` + appName + ` ` + repairCommandName + `
 The repair command creates backup files for each track it rewrites. After
 listening to the files that have been repaired (verifying that the repair
 process did not corrupt the audio), clean up those backups:
 
-mp3 ` + postRepairCommandName + `
+` + appName + ` ` + postRepairCommandName + `
 
 After repairing the mp3 files, the Windows media player system may be out of
 sync with the changes. While the system will eventually catch up, accelerate
 the process:
 
-mp3 ` + resetDBCommandName,
+` + appName + ` ` + resetDBCommandName,
 	}
 	// safe values until properly initialized
 	Bus            = output.NewNilBus()

@@ -5,8 +5,8 @@ package cmd_test
 
 import (
 	"fmt"
-	"mp3/cmd"
-	"mp3/internal/files"
+	"mp3repair/cmd"
+	"mp3repair/internal/files"
 	"path/filepath"
 	"reflect"
 	"regexp"
@@ -951,7 +951,7 @@ func TestListSettingsListTracksByName(t *testing.T) {
 					"\"my track 009\" on \"my album 00\" by \"my artist 0\"\n",
 			},
 		},
-		"https://github.com/majohn-r/mp3/issues/147": {
+		"https://github.com/majohn-r/mp3repair/issues/147": {
 			ls: cmd.NewListSettings().WithAnnotate(true),
 			args: args{
 				tracks: []*files.Track{
@@ -1274,7 +1274,7 @@ func TestListSettingsListAlbums(t *testing.T) {
 					"   3. my track 023\n",
 			},
 		},
-		"https://github.com/majohn-r/mp3/issues/147": {
+		"https://github.com/majohn-r/mp3repair/issues/147": {
 			ls: cmd.NewListSettings().WithAlbums(true).WithAnnotate(true),
 			args: args{
 				albums: []*files.Album{
@@ -1987,7 +1987,7 @@ func TestTrackSliceSort(t *testing.T) {
 		ts   []*files.Track
 		want []*files.Track
 	}{
-		"https://github.com/majohn-r/mp3/issues/147": {
+		"https://github.com/majohn-r/mp3repair/issues/147": {
 			ts: []*files.Track{
 				files.NewEmptyTrack().WithName("b").WithAlbum(
 					files.NewEmptyAlbum().WithTitle("b").WithArtist(
@@ -2045,7 +2045,7 @@ func TestAlbumSliceSort(t *testing.T) {
 		ts   []*files.Album
 		want []*files.Album
 	}{
-		"https://github.com/majohn-r/mp3/issues/147": {
+		"https://github.com/majohn-r/mp3repair/issues/147": {
 			ts: []*files.Album{
 				files.NewEmptyAlbum().WithTitle("b").WithArtist(
 					files.NewEmptyArtist().WithFileName("c")),

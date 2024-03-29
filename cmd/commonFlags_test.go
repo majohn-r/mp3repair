@@ -2,7 +2,7 @@ package cmd_test
 
 import (
 	"fmt"
-	"mp3/cmd"
+	"mp3repair/cmd"
 	"path/filepath"
 	"reflect"
 	"testing"

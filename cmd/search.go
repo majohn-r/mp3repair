@@ -5,7 +5,7 @@ package cmd
 
 import (
 	"io/fs"
-	"mp3/internal/files"
+	"mp3repair/internal/files"
 	"os"
 	"path/filepath"
 	"regexp"

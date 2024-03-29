@@ -5,8 +5,8 @@ package cmd_test
 
 import (
 	"fmt"
-	"mp3/cmd"
-	"mp3/internal/files"
+	"mp3repair/cmd"
+	"mp3repair/internal/files"
 	"path/filepath"
 	"reflect"
 	"regexp"

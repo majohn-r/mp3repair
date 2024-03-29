@@ -1,4 +1,4 @@
-module mp3
+module mp3repair
 
 go 1.22
 

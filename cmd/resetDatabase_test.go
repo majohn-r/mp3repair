@@ -6,7 +6,7 @@ package cmd_test
 import (
 	"fmt"
 	"io/fs"
-	"mp3/cmd"
+	"mp3repair/cmd"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -829,7 +829,7 @@ func TestResetDBSettings_ResetService(t *testing.T) {
 				Error: "" +
 					"The \"resetDatabase\" command has no work to perform.\n" +
 					"Why?\n" +
-					"The \"mp3\" program has not made any changes to any mp3 files\n" +
+					"The \"mp3repair\" program has not made any changes to any mp3 files\n" +
 					"since the last successful database reset.\n" +
 					"What to do:\n" +
 					"If you believe the Windows database needs to be reset, run this command\n" +
@@ -950,7 +950,7 @@ func TestResetDBExec(t *testing.T) {
 				Error: "" +
 					"The \"resetDatabase\" command has no work to perform.\n" +
 					"Why?\n" +
-					"The \"mp3\" program has not made any changes to any mp3 files\n" +
+					"The \"mp3repair\" program has not made any changes to any mp3 files\n" +
 					"since the last successful database reset.\n" +
 					"What to do:\n" +
 					"If you believe the Windows database needs to be reset, run this" +

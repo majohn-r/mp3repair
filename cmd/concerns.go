@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"fmt"
-	"mp3/internal/files"
+	"mp3repair/internal/files"
 	"slices"
 
 	"github.com/majohn-r/output"

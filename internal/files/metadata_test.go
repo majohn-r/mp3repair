@@ -1,7 +1,7 @@
 package files_test
 
 import (
-	"mp3/internal/files"
+	"mp3repair/internal/files"
 	"path/filepath"
 	"reflect"
 	"testing"

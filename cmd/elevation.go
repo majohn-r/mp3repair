@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	adminPermissionVar        = "MP3_RUNS_AS_ADMIN"
+	adminPermissionVar        = "MP3REPAIR_RUNS_AS_ADMIN"
 	defaultEnvironmentSetting = true
 )
 

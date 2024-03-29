@@ -1,6 +1,6 @@
 ---
   - function: application
-    value: mp3.exe
+    value: mp3repair.exe
     description: mp3 repair utility
   - function: path
     value: .

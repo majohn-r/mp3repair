@@ -4,8 +4,8 @@ Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
 package cmd_test
 
 import (
-	"mp3/cmd"
-	"mp3/internal/files"
+	"mp3repair/cmd"
+	"mp3repair/internal/files"
 	"testing"
 
 	"github.com/majohn-r/output"

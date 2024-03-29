@@ -1,11 +1,11 @@
 /*
 Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
 */
-//go:generate goversioninfo -icon=mp3.ico
+//go:generate goversioninfo -icon=mp3repair.ico
 package main
 
 import (
-	"mp3/cmd"
+	"mp3repair/cmd"
 )
 
 var (

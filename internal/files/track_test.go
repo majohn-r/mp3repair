@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"mp3/internal/files"
+	"mp3repair/internal/files"
 	"os"
 	"path/filepath"
 	"reflect"

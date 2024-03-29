@@ -265,15 +265,15 @@ func Test_mergeArguments(t *testing.T) {
 			want: "",
 		},
 		"one arg": {
-			args: []string{"mp3"},
+			args: []string{"mp3repair"},
 			want: "",
 		},
 		"two args": {
-			args: []string{"mp3", "list"},
+			args: []string{"mp3repair", "list"},
 			want: "list",
 		},
 		"multiple args": {
-			args: []string{"mp3", "list", "-t", "--byTitle"},
+			args: []string{"mp3repair", "list", "-t", "--byTitle"},
 			want: "list -t --byTitle",
 		},
 	}
@@ -355,7 +355,7 @@ func TestElevationControl_Status(t *testing.T) {
 			appName: "myApp",
 			want: []string{
 				"myApp is not running with elevated privileges",
-				"The environment variable MP3_RUNS_AS_ADMIN evaluates as false",
+				"The environment variable MP3REPAIR_RUNS_AS_ADMIN evaluates as false",
 			},
 		},
 		"001": {
@@ -364,7 +364,7 @@ func TestElevationControl_Status(t *testing.T) {
 			want: []string{
 				"myApp is not running with elevated privileges",
 				"stderr, stdin, and stdout have been redirected",
-				"The environment variable MP3_RUNS_AS_ADMIN evaluates as false",
+				"The environment variable MP3REPAIR_RUNS_AS_ADMIN evaluates as false",
 			},
 		},
 		"010": {

@@ -1,4 +1,4 @@
-module mp3/build
+module mp3repair/build
 
 go 1.22
 

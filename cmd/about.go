@@ -12,19 +12,9 @@ import (
 	"github.com/spf13/cobra"
 )
 
-/*
-The **about** command provides information about the **mp3** program, including:
-
-- The program version
-- The build timestamp
-- Copyright information
-- The version of go used to compile the code
-- A list of dependencies and their versions
-*/
-
 const (
 	aboutCommand = "about"
-	appName      = "mp3" // the name of the application
+	appName      = "mp3repair" // the name of the application
 	author       = "Marc Johnson"
 	firstYear    = 2021 // the year when development of this application began
 )
@@ -37,9 +27,9 @@ var (
 	// AboutCmd represents the about command
 	AboutCmd = &cobra.Command{
 		Use:   aboutCommand,
-		Short: "Provides information about the mp3 program",
+		Short: "Provides information about the " + appName + " program",
 		Long: fmt.Sprintf("%q", aboutCommand) +
-			` provides the following information about the mp3 program:
+			` provides the following information about the ` + appName + ` program:
 
 * The program version and build timestamp
 * Copyright information

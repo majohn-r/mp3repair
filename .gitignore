@@ -21,8 +21,8 @@
 !build/version.txt
 
 # files created during the build process
-cmd/mp3/resource.syso
-cmd/mp3/versionInfo.json
+cmd/mp3repair/resource.syso
+cmd/mp3repair/versionInfo.json
 resource.syso
 versionInfo.json
 go.work.sum

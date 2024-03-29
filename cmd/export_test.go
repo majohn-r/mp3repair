@@ -6,7 +6,7 @@ package cmd_test
 import (
 	"fmt"
 	"io/fs"
-	"mp3/cmd"
+	"mp3repair/cmd"
 	"reflect"
 	"testing"
 
@@ -629,10 +629,10 @@ func TestExportHelp(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"\"export\" exports default program configuration data to" +
-					" %APPDATA%\\mp3\\defaults.yaml\n" +
+					" %APPDATA%\\mp3repair\\defaults.yaml\n" +
 					"\n" +
 					"Usage:\n" +
-					"  mp3 export [--defaults] [--overwrite]\n" +
+					"  mp3repair export [--defaults] [--overwrite]\n" +
 					"\n" +
 					"Examples:\n" +
 					"export --defaults\n" +

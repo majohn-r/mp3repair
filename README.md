@@ -1,15 +1,15 @@
-# mp3
+# mp3repair
 
-[![GoDoc Reference](https://godoc.org/github.com/majohn-r/mp3?status.svg)](https://pkg.go.dev/github.com/majohn-r/mp3)
-[![go.mod](https://img.shields.io/github/go-mod/go-version/majohn-r/mp3)](go.mod)
-[![LICENSE](https://img.shields.io/github/license/majohn-r/mp3)](LICENSE)
+[![GoDoc Reference](https://godoc.org/github.com/majohn-r/mp3repair?status.svg)](https://pkg.go.dev/github.com/majohn-r/mp3repair)
+[![go.mod](https://img.shields.io/github/go-mod/go-version/majohn-r/mp3repair)](go.mod)
+[![LICENSE](https://img.shields.io/github/license/majohn-r/mp3repair)](LICENSE)
 
-[![Release](https://img.shields.io/github/v/release/majohn-r/mp3?include_prereleases)](https://github.com/majohn-r/mp3/releases)
-[![Code Coverage Report](https://codecov.io/github/majohn-r/mp3/branch/main/graph/badge.svg)](https://codecov.io/github/majohn-r/mp3)
-[![Go Report Card](https://goreportcard.com/badge/github.com/majohn-r/mp3)](https://goreportcard.com/report/github.com/majohn-r/mp3)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/majohn-r/mp3/build.yml?branch=main)](https://github.com/majohn-r/mp3/actions?query=workflow%3Abuild+branch%3Amain)
+[![Release](https://img.shields.io/github/v/release/majohn-r/mp3repair?include_prereleases)](https://github.com/majohn-r/mp3repair/releases)
+[![Code Coverage Report](https://codecov.io/github/majohn-r/mp3repair/branch/main/graph/badge.svg)](https://codecov.io/github/majohn-r/mp3repair)
+[![Go Report Card](https://goreportcard.com/badge/github.com/majohn-r/mp3repair)](https://goreportcard.com/report/github.com/majohn-r/mp3repair)
+[![Build Status](https://img.shields.io/github/actions/workflow/status/majohn-r/mp3repair/build.yml?branch=main)](https://github.com/majohn-r/mp3repair/actions?query=workflow%3Abuild+branch%3Amain)
 
-- [mp3](#mp3)
+- [mp3repair](#mp3repair)
   - [Purpose](#purpose)
   - [Commands](#commands)
     - [about](#about)
@@ -51,16 +51,17 @@
 
 ## Purpose
 
-The purpose of the **mp3** project is to help manage _mp3_ sound files in
-Windows.
+The purpose of the **mp3repair** project is to repair the metadata contained in
+_mp3_ sound files in Windows.
 
 ## Commands
 
-The **mp3** program supports the following commands:
+The **mp3repair** program supports the following commands:
 
 ### about
 
-The **about** command provides information about the **mp3** program, including:
+The **about** command provides information about the **mp3repair** program,
+including:
 
 - The program version
 - The build timestamp
@@ -83,25 +84,25 @@ Argument Name   | Value   | Default Value | Description
 
 ##### -empty
 
-If **true**, **mp3** ignores the **-albumFilter** and **-artistFilter**
+If **true**, **mp3repair** ignores the **-albumFilter** and **-artistFilter**
 settings. An _artist_ directory is any subdirectory of the **-topDir**
-directory, and **mp3** considers it to be empty if it contains no
+directory, and **mp3repair** considers it to be empty if it contains no
 subdirectories. An album directory is any subdirectory of an artist directory
-and **mp3** considers it empty if it contains no mp3 files.
+and **mp3repair** considers it empty if it contains no mp3 files.
 
 ##### -gaps
 
-**mp3** assumes that the mp3 files in an album directory are numbered as tracks,
-starting with **1** and ending with **N** where **N** is the number of mp3 files
-in the directory. If any mp3 files have an associated track number outside the
-range of **1..N**, **mp3** lists them in the output, as well as any track
-numbers in the expected range that are not associated with any mp3 files in the
-directory.
+**mp3repair** assumes that the mp3 files in an album directory are numbered as
+tracks, starting with **1** and ending with **N** where **N** is the number of
+mp3 files in the directory. If any mp3 files have an associated track number
+outside the range of **1..N**, **mp3repair** lists them in the output, as well
+as any track numbers in the expected range that are not associated with any mp3
+files in the directory.
 
 ##### -integrity
 
-**mp3** reads the **mp3 tags** for each track file; the **-integrity** check
-looks for discrepancies between that data and the files:
+**mp3repair** reads the **mp3 metadata** for each track file; the **-integrity**
+check looks for discrepancies between that data and the files:
 
 - Verify that the track file name begins with the track number encoded in the
   _TRCK_ (track number/position in set) frame of the ID3V2 tag and the track
@@ -143,7 +144,8 @@ illegal in WIndows file names:
 
 ### export
 
-The **export** command provides a means for exporting data to the file system. It is governed by these command arguments:
+The **export** command provides a means for exporting data to the file system.
+It is governed by these command arguments:
 
 Argument Name  | Value   | Default Value | Description
 ---------------+---------+---------------+-------------
@@ -154,8 +156,8 @@ Argument Name  | Value   | Default Value | Description
 
 ##### -defaults
 
-If true, **mp3** writes the command defaults to a file named **defaults.yaml**
-in the **%APPDATA%\mp3** directory.
+If true, **mp3repair** writes the command defaults to a file named
+**defaults.yaml** in the **%APPDATA%\mp3repair** directory.
 
 ### list
 
@@ -176,17 +178,17 @@ Argument Name        | Value   | Default Value | Description
 
 ##### -annotate
 
-If true, **mp3** provides the following annotations:
+If true, **mp3repair** provides the following annotations:
 
 1. Album names will include the recording artist if artists are not included
    (**-includeArtists=false**)
 2. Track names will include the album name if albums are not included
-   (**-includeAlbums=false**), and the recording artist if artists are also not included
-   (**-includeArtists=false**)
+   (**-includeAlbums=false**), and the recording artist if artists are also not
+   included (**-includeArtists=false**)
 
 ##### -details
 
-If true, **mp3** provides the following details, if available:
+If true, **mp3repair** provides the following details, if available:
 
 1. Composer, which corresponds to the _TCOM_ (Composer) frame of the track's
    ID3V2 tag.
@@ -207,15 +209,15 @@ Allowed values are **numeric** and **alpha**. If **numeric** sorting is
 reqested, track and album listing must both be enabled; otherwise, it makes no
 sense.
 
-If any value other than **numeric** or **alpha** is used, **mp3** will be
+If any value other than **numeric** or **alpha** is used, **mp3repair** will be
 replace it with an appropriate value as follows:
 
-1. If tracks are not listed (**-includeTracks=false**), **mp3** ignores the
-   value.
+1. If tracks are not listed (**-includeTracks=false**), **mp3repair** ignores
+   the value.
 2. If tracks and albums are listed (**-includeTracks=true** and
-   **-includeAlbums=true**), **mp3** replaces the value with **numeric**.
+   **-includeAlbums=true**), **mp3repair** replaces the value with **numeric**.
 3. If tracks are listed (**-includeTracks=true**) but albums are not listed
-   (**-includeAlbums=false**), **mp3** replaces the value with **alpha**.
+   (**-includeAlbums=false**), **mp3repair** replaces the value with **alpha**.
 
 ### postRepair
 
@@ -251,7 +253,7 @@ command has edited at least one mp3 file since the last time the
 If you need to reset the database (for instance: because you used another
 program such as **WinAmp** to edit mp3 file metadata) and the **resetDatabase**
 command insists that it doesn't need to do anything, simply create a file named
-**metadata.dirty** in the **%APPDATA%\mp3** directory and run the
+**metadata.dirty** in the **%APPDATA%\mp3repair** directory and run the
 **resetDatabase** command again.
 
 The **resetDatabase** command has the following command arguments:
@@ -322,11 +324,11 @@ to specify different values for those command arguments.
 The user may find that she is constantly overriding some command arguments on
 the command line with the same values. The user can simplify their usage and
 override the default command argument values by placing a text file named
-**defaults.yaml** in the **%APPDATA%\mp3** directory. By default, there is no
-such directory, and the user must create it; the **export** command can be used
-to create a baseline version of the file, in the correct directory.
+**defaults.yaml** in the **%APPDATA%\mp3repair** directory. By default, there is
+no such directory, and the user must create it; the **export** command can be
+used to create a baseline version of the file, in the correct directory.
 
-See [YAML](#yaml) for a brief description of how the **mp3** program uses _YAML_
+See [YAML](#yaml) for a brief description of how the **mp3repair** program uses _YAML_
 and a link to _YAML_ documentation.
 
 The **defaults.yaml** file may contain seven blocks, all of which are optional:
@@ -423,7 +425,7 @@ A few comments concerning argument values:
 
 Argument values may contain references to environment variables. These can be
 specified either in **Windows** format (**%VAR_NAME%**) or in **\*nix** format
-(**\$VAR_NAME**), such as **$APPDATA/mp3** or **%APPDATA%\mp3**.
+(**\$VAR_NAME**), such as **$APPDATA/mp3repair** or **%APPDATA%\mp3repair**.
 
 The referenced environment variables must exist. Referring to a non-existent
 (e.g., misspelled) variable will result in the program failing with one or more
@@ -431,8 +433,8 @@ error messages specifying the missing variable.
 
 #### File Separators
 
-File separators, as in a path to the music files, may be forward slashes (**/**) or
-backward slashes (**\\**).
+File separators, as in a path to the music files, may be forward slashes (**/**)
+or backward slashes (**\\**).
 
 #### Numeric Values
 
@@ -447,15 +449,15 @@ _F_, _false_, _FALSE_, or _False_.
 
 ## Environment
 
-**mp3** depends on the following environment variables being set:
+**mp3repair** depends on the following environment variables being set:
 
-1. **TMP** or **TEMP** - the system temporary directory. mp3 looks for **TMP**
-   first, and, if that variable is not defined, then mp3 looks for **TEMP**. One
-   of them must be set so that log files can be written.
+1. **TMP** or **TEMP** - the system temporary directory. mp3repair looks for
+   **TMP** first, and, if that variable is not defined, then mp3repair looks for
+   **TEMP**. One of them must be set so that log files can be written.
 
 ## Dependencies
 
-**mp3** uses the following third party libraries:
+**mp3repair** uses the following third party libraries:
 
 - Basic command structure and logging implementation:
   [https://github.com/majohn-r/cmd-toolkit](https://github.com/majohn-r/cmd-toolkit).
@@ -480,21 +482,23 @@ libraries.
 MP3 files contain metadata in the form of ID3V2 tags and ID3V1 tags; ID3V1 is
 the older tag format and is severely constrained compared to ID3V2, but it is
 still widely supported and it is common to find MP3 files that contain both.
-While the **mp3** program primarily deals with the richer ID3V2 metadata, the
-**check** and **repair** commands will notice when ID3V1 tags are not in sync
-with the files and rewrite them as necessary. Information about the **ID3V1**
-tag formt can be found here: [https://id3.org/ID3v1](https://id3.org/ID3v1).
+While the **mp3repair** program primarily deals with the richer ID3V2 metadata,
+the **check** and **repair** commands will notice when ID3V1 tags are not in
+sync with the files and rewrite them as necessary. Information about the
+**ID3V1** tag formt can be found here:
+[https://id3.org/ID3v1](https://id3.org/ID3v1).
 
 ### ID3V2.3.0
 
-The **mp3** program depends heavily on the MP3 files containing an **ID3V2.3.0**
-tag, which stores information about the audio file, particularly metadata, such
-as the title and performer. Information about the **ID3V2.3.0** tag format can
-be found here: [https://id3.org/id3v2.3.0](https://id3.org/id3v2.3.0).
+The **mp3repair** program depends heavily on the MP3 files containing an
+**ID3V2.3.0** tag, which stores information about the audio file, particularly
+metadata, such as the title and performer. Information about the **ID3V2.3.0**
+tag format can be found here:
+[https://id3.org/id3v2.3.0](https://id3.org/id3v2.3.0).
 
 ### YAML
 
-The **mp3** program reads user-supplied files, written in YAML, for purposes
-such as configuring default argument values. For information on writing such
-files, the **YAML** specification can be found here:
+The **mp3repair** program reads user-supplied files, written in YAML, for
+purposes such as configuring default argument values. For information on writing
+such files, the **YAML** specification can be found here:
 [https://yaml.org/spec/1.2.2/](https://yaml.org/spec/1.2.2/).

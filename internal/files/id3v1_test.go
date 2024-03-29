@@ -2,7 +2,7 @@ package files_test
 
 import (
 	"fmt"
-	"mp3/internal/files"
+	"mp3repair/internal/files"
 	"os"
 	"path/filepath"
 	"reflect"

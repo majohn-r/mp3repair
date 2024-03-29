@@ -4,7 +4,7 @@ Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
 package cmd_test
 
 import (
-	"mp3/cmd"
+	"mp3repair/cmd"
 	"reflect"
 	"testing"
 
@@ -42,7 +42,7 @@ func TestAboutRun(t *testing.T) {
 		}
 	}
 	cmd.LogPath = func() string {
-		return "/my/files/tmp/logs/mp3"
+		return "/my/files/tmp/logs/mp3repair"
 	}
 	cmd.Version = "0.40.0"
 	cmd.Creation = "2024-02-24T13:14:05-05:00"
@@ -64,18 +64,18 @@ func TestAboutRun(t *testing.T) {
 		"simple": {
 			WantedRecording: output.WantedRecording{
 				Console: "" +
-					"+-------------------------------------------------------------------------+\n" +
-					"| mp3 version 0.40.0, built on Saturday, February 24 2024, 13:14:05 -0500 |\n" +
-					"| Copyright © 2021-2024 Marc Johnson                                      |\n" +
-					"| Build Information                                                       |\n" +
-					"|  - Go version: go1.22.x                                                 |\n" +
-					"|  - Dependency: go.dependency.1 v1.2.3                                   |\n" +
-					"|  - Dependency: go.dependency.2 v1.3.4                                   |\n" +
-					"|  - Dependency: go.dependency.3 v0.1.2                                   |\n" +
-					"| Log files are written to /my/files/tmp/logs/mp3                         |\n" +
-					"| Configuration file \\my\\files\\apppath\\defaults.yaml exists               |\n" +
-					"| mp3 is running with elevated privileges                                 |\n" +
-					"+-------------------------------------------------------------------------+\n",
+					"+-------------------------------------------------------------------------------+\n" +
+					"| mp3repair version 0.40.0, built on Saturday, February 24 2024, 13:14:05 -0500 |\n" +
+					"| Copyright © 2021-2024 Marc Johnson                                            |\n" +
+					"| Build Information                                                             |\n" +
+					"|  - Go version: go1.22.x                                                       |\n" +
+					"|  - Dependency: go.dependency.1 v1.2.3                                         |\n" +
+					"|  - Dependency: go.dependency.2 v1.3.4                                         |\n" +
+					"|  - Dependency: go.dependency.3 v0.1.2                                         |\n" +
+					"| Log files are written to /my/files/tmp/logs/mp3repair                         |\n" +
+					"| Configuration file \\my\\files\\apppath\\defaults.yaml exists                     |\n" +
+					"| mp3repair is running with elevated privileges                                 |\n" +
+					"+-------------------------------------------------------------------------------+\n",
 				Log: "level='info' command='about' msg='executing command'\n",
 			},
 		},
@@ -124,7 +124,7 @@ func TestAboutHelp(t *testing.T) {
 		"good": {
 			WantedRecording: output.WantedRecording{
 				Console: "" +
-					"\"about\" provides the following information about the mp3 program:\n" +
+					"\"about\" provides the following information about the mp3repair program:\n" +
 					"\n" +
 					"* The program version and build timestamp\n" +
 					"* Copyright information\n" +
@@ -135,7 +135,7 @@ func TestAboutHelp(t *testing.T) {
 					"* The full path of the application configuration file and whether it exists\n" +
 					"\n" +
 					"Usage:\n" +
-					"  mp3 about\n",
+					"  mp3repair about\n",
 			},
 		},
 	}
@@ -187,7 +187,7 @@ func TestOutputAbout(t *testing.T) {
 		}
 	}
 	cmd.LogPath = func() string {
-		return "/my/files/tmp/logs/mp3"
+		return "/my/files/tmp/logs/mp3repair"
 	}
 	cmd.Version = "0.40.0"
 	cmd.Creation = "2024-02-24T13:14:05-05:00"
@@ -210,16 +210,16 @@ func TestOutputAbout(t *testing.T) {
 			forceRedirection:     false,
 			forceAdminPermission: false,
 			want: []string{
-				"mp3 version 0.40.0, built on Saturday, February 24 2024, 13:14:05 -0500",
+				"mp3repair version 0.40.0, built on Saturday, February 24 2024, 13:14:05 -0500",
 				"Copyright © 2021-2024 Marc Johnson",
 				"Build Information",
 				" - Go version: go1.22.x",
 				" - Dependency: go.dependency.1 v1.2.3",
 				" - Dependency: go.dependency.2 v1.3.4",
 				" - Dependency: go.dependency.3 v0.1.2",
-				"Log files are written to /my/files/tmp/logs/mp3",
+				"Log files are written to /my/files/tmp/logs/mp3repair",
 				"Configuration file \\my\\files\\apppath\\defaults.yaml exists",
-				"mp3 is running with elevated privileges",
+				"mp3repair is running with elevated privileges",
 			},
 		},
 		"without existing config file, not elevated, redirected, with admin permission": {
@@ -228,16 +228,16 @@ func TestOutputAbout(t *testing.T) {
 			forceRedirection:     true,
 			forceAdminPermission: true,
 			want: []string{
-				"mp3 version 0.40.0, built on Saturday, February 24 2024, 13:14:05 -0500",
+				"mp3repair version 0.40.0, built on Saturday, February 24 2024, 13:14:05 -0500",
 				"Copyright © 2021-2024 Marc Johnson",
 				"Build Information",
 				" - Go version: go1.22.x",
 				" - Dependency: go.dependency.1 v1.2.3",
 				" - Dependency: go.dependency.2 v1.3.4",
 				" - Dependency: go.dependency.3 v0.1.2",
-				"Log files are written to /my/files/tmp/logs/mp3",
+				"Log files are written to /my/files/tmp/logs/mp3repair",
 				"Configuration file \\my\\files\\apppath\\defaults.yaml does not yet exist",
-				"mp3 is not running with elevated privileges",
+				"mp3repair is not running with elevated privileges",
 				" - stderr, stdin, and stdout have been redirected",
 			},
 		},
@@ -247,18 +247,18 @@ func TestOutputAbout(t *testing.T) {
 			forceRedirection:     true,
 			forceAdminPermission: false,
 			want: []string{
-				"mp3 version 0.40.0, built on Saturday, February 24 2024, 13:14:05 -0500",
+				"mp3repair version 0.40.0, built on Saturday, February 24 2024, 13:14:05 -0500",
 				"Copyright © 2021-2024 Marc Johnson",
 				"Build Information",
 				" - Go version: go1.22.x",
 				" - Dependency: go.dependency.1 v1.2.3",
 				" - Dependency: go.dependency.2 v1.3.4",
 				" - Dependency: go.dependency.3 v0.1.2",
-				"Log files are written to /my/files/tmp/logs/mp3",
+				"Log files are written to /my/files/tmp/logs/mp3repair",
 				"Configuration file \\my\\files\\apppath\\defaults.yaml does not yet exist",
-				"mp3 is not running with elevated privileges",
+				"mp3repair is not running with elevated privileges",
 				" - stderr, stdin, and stdout have been redirected",
-				" - The environment variable MP3_RUNS_AS_ADMIN evaluates as false",
+				" - The environment variable MP3REPAIR_RUNS_AS_ADMIN evaluates as false",
 			},
 		},
 		"without existing config file, not elevated, not redirected, no admin permission": {
@@ -267,17 +267,17 @@ func TestOutputAbout(t *testing.T) {
 			forceRedirection:     false,
 			forceAdminPermission: false,
 			want: []string{
-				"mp3 version 0.40.0, built on Saturday, February 24 2024, 13:14:05 -0500",
+				"mp3repair version 0.40.0, built on Saturday, February 24 2024, 13:14:05 -0500",
 				"Copyright © 2021-2024 Marc Johnson",
 				"Build Information",
 				" - Go version: go1.22.x",
 				" - Dependency: go.dependency.1 v1.2.3",
 				" - Dependency: go.dependency.2 v1.3.4",
 				" - Dependency: go.dependency.3 v0.1.2",
-				"Log files are written to /my/files/tmp/logs/mp3",
+				"Log files are written to /my/files/tmp/logs/mp3repair",
 				"Configuration file \\my\\files\\apppath\\defaults.yaml does not yet exist",
-				"mp3 is not running with elevated privileges",
-				" - The environment variable MP3_RUNS_AS_ADMIN evaluates as false",
+				"mp3repair is not running with elevated privileges",
+				" - The environment variable MP3REPAIR_RUNS_AS_ADMIN evaluates as false",
 			},
 		},
 	}

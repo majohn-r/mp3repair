@@ -5,7 +5,7 @@ package cmd_test
 
 import (
 	"fmt"
-	"mp3/cmd"
+	"mp3repair/cmd"
 	"os"
 	"reflect"
 	"testing"
@@ -134,7 +134,7 @@ func TestRunMain(t *testing.T) {
 			dependencies: []string{"foo v1.1.2", "bar v1.2.3"},
 			WantedRecording: output.WantedRecording{
 				Error: "" +
-					"\"mp3\" version 0.2.3, created at 2021-11-29T13:02:03Z05:00, failed.\n",
+					"\"mp3repair\" version 0.2.3, created at 2021-11-29T13:02:03Z05:00, failed.\n",
 				Log: "level='info'" +
 					" args='[arg1a arg2a]'" +
 					" dependencies='[foo v1.1.2 bar v1.2.3]'" +
@@ -521,30 +521,30 @@ func TestRootUsage(t *testing.T) {
 					"Usage:\n" +
 					"\n" +
 					"Examples:\n" +
-					"The mp3 program might be used like this:\n" +
+					"The mp3repair program might be used like this:\n" +
 					"\n" +
 					"First, get a listing of the available mp3 files:\n" +
 					"\n" +
-					"mp3 list -lrt\n" +
+					"mp3repair list -lrt\n" +
 					"\n" +
 					"Then check for problems in the track metadata:\n" +
 					"\n" +
-					"mp3 check --files\n" +
+					"mp3repair check --files\n" +
 					"\n" +
 					"If problems were found, repair the mp3 files:\n" +
 					"\n" +
-					"mp3 repair\n" +
+					"mp3repair repair\n" +
 					"The repair command creates backup files for each track it rewrites. After\n" +
 					"listening to the files that have been repaired (verifying that the repair\n" +
 					"process did not corrupt the audio), clean up those backups:\n" +
 					"\n" +
-					"mp3 postRepair\n" +
+					"mp3repair postRepair\n" +
 					"\n" +
 					"After repairing the mp3 files, the Windows media player system may be out of\n" +
 					"sync with the changes. While the system will eventually catch up, accelerate\n" +
 					"the process:\n" +
 					"\n" +
-					"mp3 resetDatabase\n",
+					"mp3repair resetDatabase\n",
 			},
 		},
 	}
