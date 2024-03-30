@@ -1005,7 +1005,7 @@ func TestResetDatabaseHelp(t *testing.T) {
 				Console: "" +
 					"\"resetDatabase\" resets the Windows music database\n" +
 					"\n" +
-					"The changes made by the 'repair' command make the music files" +
+					"The changes made by the 'repair' command make the mp3 files" +
 					" inconsistent with the\n" +
 					"database Windows uses to organize the files into albums and artists." +
 					" This command\n" +

@@ -1980,7 +1980,7 @@ func TestRepairRun(t *testing.T) {
 			cmd: command,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
-					"No music files could be found using the specified parameters.\n" +
+					"No mp3 files could be found using the specified parameters.\n" +
 					"Why?\n" +
 					"There were no directories found in \".\" (the --topDir value).\n" +
 					"What to do:\n" +

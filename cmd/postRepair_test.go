@@ -92,7 +92,7 @@ func TestPostRepairWork(t *testing.T) {
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "" +
-					"No music files remain after filtering.\n" +
+					"No mp3 files remain after filtering.\n" +
 					"Why?\n" +
 					"After applying --artistFilter=<nil>, --albumFilter=<nil>, and" +
 					" --trackFilter=<nil>, no files remained.\n" +
@@ -232,7 +232,7 @@ func TestPostRepairRun(t *testing.T) {
 			args: args{cmd: command},
 			WantedRecording: output.WantedRecording{
 				Error: "" +
-					"No music files could be found using the specified parameters.\n" +
+					"No mp3 files could be found using the specified parameters.\n" +
 					"Why?\n" +
 					"There were no directories found in \".\" (the --topDir value).\n" +
 					"What to do:\n" +

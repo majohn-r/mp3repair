@@ -55,7 +55,7 @@ var (
 		Short:                 "Resets the Windows music database",
 		Long: fmt.Sprintf("%q", resetDBCommandName) + ` resets the Windows music database
 
-The changes made by the '` + repairCommandName + `' command make the music files inconsistent with the
+The changes made by the '` + repairCommandName + `' command make the mp3 files inconsistent with the
 database Windows uses to organize the files into albums and artists. This command
 resets that database, which it accomplishes by deleting the database files.
 
@@ -64,7 +64,7 @@ media player service. If there is such an active service, this command will need
 run as administrator. If, for whatever reasons, the service cannot be stopped, using the` +
 			"\n" + resetDBIgnoreServiceErrorsFlag + ` flag allows the database files to be deleted, if possible.
 
-This command does nothing if it determines that the repair command has not made any
+This command does nothing if it determines that the ` + repairCommandName + ` command has not made any
 changes, unless the ` + resetDBForceFlag + ` flag is set.`,
 		RunE: ResetDBExec,
 	}

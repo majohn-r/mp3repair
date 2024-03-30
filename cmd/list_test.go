@@ -1690,7 +1690,7 @@ func Test_ListRun(t *testing.T) {
 			in1: nil,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
-					"No music files could be found using the specified parameters.\n" +
+					"No mp3 files could be found using the specified parameters.\n" +
 					"Why?\n" +
 					"There were no directories found in \".\" (the --topDir value).\n" +
 					"What to do:\n" +
@@ -1846,7 +1846,7 @@ func TestListSettingsProcessArtists(t *testing.T) {
 			wantStatus: cmd.NewExitUserError(cmd.ListCommand),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
-					"No music files remain after filtering.\n" +
+					"No mp3 files remain after filtering.\n" +
 					"Why?\n" +
 					"After applying --artistFilter=\".*\", --albumFilter=\".*\", and" +
 					" --trackFilter=\".*\", no files remained.\n" +

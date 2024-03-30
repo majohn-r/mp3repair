@@ -321,7 +321,7 @@ func (ss *SearchSettings) Filter(o output.Bus,
 	}
 	ok := len(filteredArtists) > 0
 	if !ok {
-		o.WriteCanonicalError("No music files remain after filtering.")
+		o.WriteCanonicalError("No mp3 files remain after filtering.")
 		o.WriteCanonicalError("Why?")
 		o.WriteCanonicalError("After applying %s=%q, %s=%q, and %s=%q, no files remained",
 			SearchArtistFilterFlag, ss.artistFilter, SearchAlbumFilterFlag, ss.albumFilter,
@@ -351,7 +351,7 @@ func (ss *SearchSettings) Load(o output.Bus) ([]*files.Artist, bool) {
 	ok := len(artists) > 0
 	if !ok {
 		o.WriteCanonicalError(
-			"No music files could be found using the specified parameters.")
+			"No mp3 files could be found using the specified parameters.")
 		o.WriteCanonicalError("Why?")
 		o.WriteCanonicalError("There were no directories found in %q (the %s value)",
 			ss.topDirectory, SearchTopDirFlag)

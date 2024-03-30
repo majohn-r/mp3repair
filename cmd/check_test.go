@@ -541,7 +541,7 @@ func TestCheckSettings_PerformFileAnalysis(t *testing.T) {
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
-					"No music files remain after filtering.\n" +
+					"No mp3 files remain after filtering.\n" +
 					"Why?\n" +
 					"After applying --artistFilter=<nil>, --albumFilter=<nil>, and" +
 					" --trackFilter=<nil>, no files remained.\n" +
@@ -752,7 +752,7 @@ func TestCheckSettings_MaybeDoWork(t *testing.T) {
 				Error: "" +
 					"The directory \"no dir\" cannot be read: open no dir: The system" +
 					" cannot find the file specified.\n" +
-					"No music files could be found using the specified parameters.\n" +
+					"No mp3 files could be found using the specified parameters.\n" +
 					"Why?\n" +
 					"There were no directories found in \"no dir\" (the --topDir value).\n" +
 					"What to do:\n" +
@@ -894,7 +894,7 @@ func TestCheckHelp(t *testing.T) {
 		"good": {
 			WantedRecording: output.WantedRecording{
 				Console: "" +
-					"\"check\" runs checks on mp3 files and their containing directories and reports any problems detected\n" +
+					"\"check\" inspects mp3 files and their containing directories and reports any problems detected\n" +
 					"\n" +
 					"Usage:\n" +
 					"  check [--empty] [--files] [--numbering] [--albumFilter regex] [--artistFilter regex] [--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +

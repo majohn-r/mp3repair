@@ -45,7 +45,7 @@ Then check for problems in the track metadata:
 If problems were found, repair the mp3 files:
 
 ` + appName + ` ` + repairCommandName + `
-The repair command creates backup files for each track it rewrites. After
+The ` + repairCommandName + ` command creates backup files for each track it rewrites. After
 listening to the files that have been repaired (verifying that the repair
 process did not corrupt the audio), clean up those backups:
 

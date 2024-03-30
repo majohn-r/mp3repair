@@ -613,7 +613,7 @@ func TestAddFlags(t *testing.T) {
 						"regular expression specifying which artists to select",
 					).WithExpectedType(cmd.StringType).WithDefaultValue(".*"),
 					"topDir": cmd.NewFlagDetails().WithUsage(
-						"top directory specifying where to find music files",
+						"top directory specifying where to find mp3 files",
 					).WithExpectedType(cmd.BoolType).WithDefaultValue(
 						filepath.Join("%HOMEPATH%", "Music")),
 				},
@@ -685,7 +685,7 @@ func TestAddFlags(t *testing.T) {
 						"regular expression specifying which artists to select",
 					).WithExpectedType(cmd.StringType).WithDefaultValue(".*"),
 					"topDir": cmd.NewFlagDetails().WithUsage(
-						"top directory specifying where to find music files",
+						"top directory specifying where to find mp3 files",
 					).WithExpectedType(cmd.BoolType).WithDefaultValue(
 						filepath.Join("%HOMEPATH%", "Music")),
 				},
@@ -817,7 +817,7 @@ func TestAddFlags(t *testing.T) {
 						"regular expression specifying which artists to select",
 					).WithExpectedType(cmd.StringType).WithDefaultValue(".*"),
 					"topDir": cmd.NewFlagDetails().WithUsage(
-						"top directory specifying where to find music files",
+						"top directory specifying where to find mp3 files",
 					).WithExpectedType(cmd.BoolType).WithDefaultValue(
 						filepath.Join("%HOMEPATH%", "Music")),
 				},

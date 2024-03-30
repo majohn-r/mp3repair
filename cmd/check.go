@@ -79,9 +79,9 @@ var (
 			CheckFilesFlag + "] [" + CheckNumberingFlag + "] " + searchUsage,
 		DisableFlagsInUseLine: true,
 		Short: "" +
-			"Runs checks on mp3 files and their directories and reports" + " problems",
+			"Inspects mp3 files and their directories and reports" + " problems",
 		Long: fmt.Sprintf(
-			"%q runs checks on mp3 files and their containing directories and reports any"+
+			"%q inspects mp3 files and their containing directories and reports any"+
 				" problems detected", CheckCommand),
 		Example: "" +
 			CheckCommand + " " + CheckEmptyFlag + "\n" +

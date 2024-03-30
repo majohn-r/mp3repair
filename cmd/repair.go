@@ -43,7 +43,7 @@ var (
 			"the backup folders.",
 		RunE: RepairRun,
 	}
-	RepairFlags = NewSectionFlags().WithSectionName("repair").WithFlags(
+	RepairFlags = NewSectionFlags().WithSectionName(repairCommandName).WithFlags(
 		map[string]*FlagDetails{
 			"dryRun": NewFlagDetails().WithUsage(
 				"output what would have been repaired, but make no repairs",
