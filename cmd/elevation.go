@@ -106,7 +106,7 @@ func mergeArguments(args []string) string {
 
 // credit: https://gist.github.com/jerblack/d0eb182cc5a1c1d92d92a4c4fcc416c6
 
-func runElevated() {
+func runElevated() (status bool) {
 	verb := "runas"
 	exe, _ := os.Executable()
 	cwd, _ := os.Getwd()
@@ -116,13 +116,21 @@ func runElevated() {
 	cwdPtr, _ := syscall.UTF16PtrFromString(cwd)
 	argPtr, _ := syscall.UTF16PtrFromString(args)
 	var showCmd int32 = syscall.SW_NORMAL
-	ShellExecute(0, verbPtr, exePtr, argPtr, cwdPtr, showCmd)
+	// https://github.com/majohn-r/mp3repair/issues/157 if ShellExecute returns
+	// no error, assume the user accepted admin privileges and return true
+	// status
+	if err := ShellExecute(0, verbPtr, exePtr, argPtr, cwdPtr, showCmd); err == nil {
+		status = true
+	}
+	return
 }
 
 func (ec *ElevationControl) WillRunElevated() bool {
 	if ec.canElevate() {
-		runElevated()
-		return true
+		// https://github.com/majohn-r/mp3repair/issues/157 if privileges can be
+		// elevated successfully, return true, else assume user declined and
+		// return false.
+		return runElevated()
 	}
 	return false
 }
