@@ -16,6 +16,7 @@ import (
 	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"
+	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/mgr"
 )
@@ -535,9 +536,12 @@ func TestResetDBSettings_HandleService(t *testing.T) {
 
 func TestResetDBSettings_StopService(t *testing.T) {
 	originalConnect := cmd.Connect
+	originalIsElevated := cmd.IsElevated
 	defer func() {
 		cmd.Connect = originalConnect
+		cmd.IsElevated = originalIsElevated
 	}()
+	cmd.IsElevated = func(_ windows.Token) bool { return false }
 	tests := map[string]struct {
 		connect    func() (*mgr.Mgr, error)
 		rdbs       *cmd.ResetDBSettings
@@ -554,9 +558,9 @@ func TestResetDBSettings_StopService(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"An attempt to connect with the service manager failed;" +
-					" error is no manager available.\n" +
+					" error is 'no manager available'.\n" +
 					"Why?\n" +
-					"This often fails due to lack of permissions.\n" +
+					"This failure is likely to be due to lack of permissions.\n" +
 					"What to do:\n" +
 					"If you can, try running this command as an administrator.\n",
 				Log: "" +
@@ -808,11 +812,14 @@ func TestResetDBSettings_ResetService(t *testing.T) {
 	originalDirty := cmd.Dirty
 	originalClearDirty := cmd.ClearDirty
 	originalConnect := cmd.Connect
+	originalIsElevated := cmd.IsElevated
 	defer func() {
 		cmd.Dirty = originalDirty
 		cmd.ClearDirty = originalClearDirty
 		cmd.Connect = originalConnect
+		cmd.IsElevated = originalIsElevated
 	}()
+	cmd.IsElevated = func(_ windows.Token) bool { return false }
 	cmd.ClearDirty = func(_ output.Bus) {}
 	cmd.Connect = func() (*mgr.Mgr, error) { return nil, fmt.Errorf("access denied") }
 	tests := map[string]struct {
@@ -843,9 +850,9 @@ func TestResetDBSettings_ResetService(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"An attempt to connect with the service manager failed;" +
-					" error is access denied.\n" +
+					" error is 'access denied'.\n" +
 					"Why?\n" +
-					"This often fails due to lack of permissions.\n" +
+					"This failure is likely to be due to lack of permissions.\n" +
 					"What to do:\n" +
 					"If you can, try running this command as an administrator.\n" +
 					"Metadata files will not be deleted.\n" +
@@ -867,9 +874,9 @@ func TestResetDBSettings_ResetService(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"An attempt to connect with the service manager failed;" +
-					" error is access denied.\n" +
+					" error is 'access denied'.\n" +
 					"Why?\n" +
-					"This often fails due to lack of permissions.\n" +
+					"This failure is likely to be due to lack of permissions.\n" +
 					"What to do:\n" +
 					"If you can, try running this command as an administrator.\n" +
 					"Metadata files will not be deleted.\n" +
@@ -1230,6 +1237,43 @@ func TestMaybeClearDirty(t *testing.T) {
 			cmd.MaybeClearDirty(output.NewNilBus(), tt.status)
 			if got := clearDirtyCalled; got != tt.want {
 				t.Errorf("MaybeClearDirty = %t want %t", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestOutputSystemErrorCause(t *testing.T) {
+	originalIsElevated := cmd.IsElevated
+	defer func() {
+		cmd.IsElevated = originalIsElevated
+	}()
+	tests := map[string]struct {
+		isElevated func(windows.Token) bool
+		output.WantedRecording
+	}{
+		"elevated": {
+			isElevated: func(_ windows.Token) bool { return true },
+		},
+		"ordinary": {
+			isElevated: func(_ windows.Token) bool { return false },
+			WantedRecording: output.WantedRecording{
+				Error: "" +
+					"Why?\n" +
+					"This failure is likely to be due to lack of permissions.\n" +
+					"What to do:\n" +
+					"If you can, try running this command as an administrator.\n",
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			cmd.IsElevated = tt.isElevated
+			o := output.NewRecorder()
+			cmd.OutputSystemErrorCause(o)
+			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+				for _, difference := range differences {
+					t.Errorf("OutputSystemErrorCause() %s", difference)
+				}
 			}
 		})
 	}

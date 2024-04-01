@@ -232,15 +232,21 @@ func (rdbs *ResetDBSettings) StopService(o output.Bus) (ok bool, e *ExitError) {
 	if manager, err = Connect(); err != nil {
 		e = NewExitSystemError(resetDBCommandName)
 		o.WriteCanonicalError("An attempt to connect with the service manager failed; error"+
-			" is %v", err)
-		o.WriteCanonicalError("Why?\nThis often fails due to lack of permissions")
-		o.WriteCanonicalError("What to do:\n" +
-			"If you can, try running this command as an administrator.")
+			" is '%v'", err)
+		OutputSystemErrorCause(o)
 		o.Log(output.Error, "service manager connect failed", map[string]any{"error": err})
 	} else {
 		ok, e = rdbs.HandleService(o, manager)
 	}
 	return
+}
+
+func OutputSystemErrorCause(o output.Bus) {
+	if !processIsElevated() {
+		o.WriteCanonicalError("Why?\nThis failure is likely to be due to lack of permissions")
+		o.WriteCanonicalError("What to do:\n" +
+			"If you can, try running this command as an administrator.")
+	}
 }
 
 func listServices(manager ServiceManager) ([]string, error) {
