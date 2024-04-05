@@ -9,7 +9,7 @@ require (
 	github.com/majohn-r/output v0.3.2
 	github.com/mattn/go-isatty v0.0.20
 	github.com/spf13/cobra v1.8.0
-	golang.org/x/sys v0.18.0
+	golang.org/x/sys v0.19.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 

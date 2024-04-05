@@ -144,7 +144,7 @@ var (
 		Action: func(a *goyek.A) {
 			fmt.Println("Running vulnerability checks")
 			unifiedOutput := &bytes.Buffer{}
-			cmd.Exec(a, "govulncheck ./...", options(unifiedOutput)...)
+			cmd.Exec(a, "govulncheck -show verbose ./...", options(unifiedOutput)...)
 			print(unifiedOutput)
 		},
 	})
