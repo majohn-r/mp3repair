@@ -47,11 +47,9 @@ func (e *ExitError) Status() int {
 	return int(e.errorCode)
 }
 
-func ToErrorInterface(e *ExitError) (err error) {
+func ToErrorInterface(e *ExitError) error {
 	if reflect.ValueOf(e).IsNil() {
-		err = nil
-	} else {
-		err = e
+		return nil
 	}
-	return
+	return e
 }

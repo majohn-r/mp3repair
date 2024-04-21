@@ -775,6 +775,16 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 					" msg='no files found'\n",
 			},
 		},
+		"not stopped but ignored, cannot read metadata directory": {
+			readDirectory: func(_ output.Bus, _ string) ([]fs.DirEntry, bool) {
+				return nil, false
+			},
+			rdbs: cmd.NewResetDBSettings().WithMetadataDir(
+				"metadata").WithIgnoreServiceErrors(true),
+			stopped:         false,
+			want:            nil,
+			WantedRecording: output.WantedRecording{},
+		},
 		"work to do": {
 			readDirectory: func(_ output.Bus, _ string) ([]fs.DirEntry, bool) {
 				return []fs.DirEntry{newTestFile("foo.db", nil)}, true

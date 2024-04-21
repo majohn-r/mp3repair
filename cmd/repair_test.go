@@ -321,9 +321,24 @@ func TestProcessUpdateResult(t *testing.T) {
 
 func TestBackupAndFix(t *testing.T) {
 	concernedArtists := cmd.PrepareConcernedArtists(generateArtists(2, 3, 4))
+	skipArtist := true
+	skipAlbum := true
+	skipTrack := true
 	for _, cAr := range concernedArtists {
+		if skipArtist {
+			skipArtist = false
+			continue
+		}
 		for _, cAl := range cAr.Albums() {
+			if skipAlbum {
+				skipAlbum = false
+				continue
+			}
 			for _, cT := range cAl.Tracks() {
+				if skipTrack {
+					skipTrack = false
+					continue
+				}
 				cT.AddConcern(cmd.ConflictConcern,
 					"artist field does not match artist name")
 			}
@@ -354,74 +369,6 @@ func TestBackupAndFix(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"The track file" +
-					" \"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\"" +
-					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 00\\\\pre-repair-backup\\\\1.mp3\".\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 00\\\\2 my track 002.mp3\"" +
-					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 00\\\\pre-repair-backup\\\\2.mp3\".\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 00\\\\3 my track 003.mp3\"" +
-					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 00\\\\pre-repair-backup\\\\3.mp3\".\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 00\\\\4 my track 004.mp3\"" +
-					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 00\\\\pre-repair-backup\\\\4.mp3\".\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 01\\\\1 my track 011.mp3\"" +
-					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 01\\\\pre-repair-backup\\\\1.mp3\".\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 01\\\\2 my track 012.mp3\"" +
-					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 01\\\\pre-repair-backup\\\\2.mp3\".\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 01\\\\3 my track 013.mp3\"" +
-					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 01\\\\pre-repair-backup\\\\3.mp3\".\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 01\\\\4 my track 014.mp3\"" +
-					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 01\\\\pre-repair-backup\\\\4.mp3\".\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 02\\\\1 my track 021.mp3\"" +
-					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 02\\\\pre-repair-backup\\\\1.mp3\".\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 02\\\\2 my track 022.mp3\"" +
-					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 02\\\\pre-repair-backup\\\\2.mp3\".\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 02\\\\3 my track 023.mp3\"" +
-					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 02\\\\pre-repair-backup\\\\3.mp3\".\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 02\\\\4 my track 024.mp3\"" +
-					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 02\\\\pre-repair-backup\\\\4.mp3\".\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 10\\\\1 my track 101.mp3\"" +
-					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 10\\\\pre-repair-backup\\\\1.mp3\".\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 10\\\\2 my track 102.mp3\"" +
-					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 10\\\\pre-repair-backup\\\\2.mp3\".\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 10\\\\3 my track 103.mp3\"" +
-					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 10\\\\pre-repair-backup\\\\3.mp3\".\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 10\\\\4 my track 104.mp3\"" +
-					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 10\\\\pre-repair-backup\\\\4.mp3\".\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 11\\\\1 my track 111.mp3\"" +
-					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 11\\\\pre-repair-backup\\\\1.mp3\".\n" +
-					"The track file" +
 					" \"Music\\\\my artist\\\\my album 11\\\\2 my track 112.mp3\"" +
 					" has been backed up to" +
 					" \"Music\\\\my artist\\\\my album 11\\\\pre-repair-backup\\\\2.mp3\".\n" +
@@ -451,40 +398,6 @@ func TestBackupAndFix(t *testing.T) {
 					" \"Music\\\\my artist\\\\my album 12\\\\pre-repair-backup\\\\4.mp3\".\n",
 				Error: "" +
 					"An error occurred repairing track" +
-					" \"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\".\n" +
-					"An error occurred repairing track" +
-					" \"Music\\\\my artist\\\\my album 00\\\\2 my track 002.mp3\".\n" +
-					"An error occurred repairing track" +
-					" \"Music\\\\my artist\\\\my album 00\\\\3 my track 003.mp3\".\n" +
-					"An error occurred repairing track" +
-					" \"Music\\\\my artist\\\\my album 00\\\\4 my track 004.mp3\".\n" +
-					"An error occurred repairing track" +
-					" \"Music\\\\my artist\\\\my album 01\\\\1 my track 011.mp3\".\n" +
-					"An error occurred repairing track" +
-					" \"Music\\\\my artist\\\\my album 01\\\\2 my track 012.mp3\".\n" +
-					"An error occurred repairing track" +
-					" \"Music\\\\my artist\\\\my album 01\\\\3 my track 013.mp3\".\n" +
-					"An error occurred repairing track" +
-					" \"Music\\\\my artist\\\\my album 01\\\\4 my track 014.mp3\".\n" +
-					"An error occurred repairing track" +
-					" \"Music\\\\my artist\\\\my album 02\\\\1 my track 021.mp3\".\n" +
-					"An error occurred repairing track" +
-					" \"Music\\\\my artist\\\\my album 02\\\\2 my track 022.mp3\".\n" +
-					"An error occurred repairing track" +
-					" \"Music\\\\my artist\\\\my album 02\\\\3 my track 023.mp3\".\n" +
-					"An error occurred repairing track" +
-					" \"Music\\\\my artist\\\\my album 02\\\\4 my track 024.mp3\".\n" +
-					"An error occurred repairing track" +
-					" \"Music\\\\my artist\\\\my album 10\\\\1 my track 101.mp3\".\n" +
-					"An error occurred repairing track" +
-					" \"Music\\\\my artist\\\\my album 10\\\\2 my track 102.mp3\".\n" +
-					"An error occurred repairing track" +
-					" \"Music\\\\my artist\\\\my album 10\\\\3 my track 103.mp3\".\n" +
-					"An error occurred repairing track" +
-					" \"Music\\\\my artist\\\\my album 10\\\\4 my track 104.mp3\".\n" +
-					"An error occurred repairing track" +
-					" \"Music\\\\my artist\\\\my album 11\\\\1 my track 111.mp3\".\n" +
-					"An error occurred repairing track" +
 					" \"Music\\\\my artist\\\\my album 11\\\\2 my track 112.mp3\".\n" +
 					"An error occurred repairing track" +
 					" \"Music\\\\my artist\\\\my album 11\\\\3 my track 113.mp3\".\n" +
@@ -499,108 +412,6 @@ func TestBackupAndFix(t *testing.T) {
 					"An error occurred repairing track" +
 					" \"Music\\\\my artist\\\\my album 12\\\\4 my track 124.mp3\".\n",
 				Log: "" +
-					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 00'" +
-					" error='[\"no edit required\"]'" +
-					" fileName='1 my track 001.mp3'" +
-					" msg='cannot edit track'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 00'" +
-					" error='[\"no edit required\"]'" +
-					" fileName='2 my track 002.mp3'" +
-					" msg='cannot edit track'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 00'" +
-					" error='[\"no edit required\"]'" +
-					" fileName='3 my track 003.mp3'" +
-					" msg='cannot edit track'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 00'" +
-					" error='[\"no edit required\"]'" +
-					" fileName='4 my track 004.mp3'" +
-					" msg='cannot edit track'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 01'" +
-					" error='[\"no edit required\"]'" +
-					" fileName='1 my track 011.mp3'" +
-					" msg='cannot edit track'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 01'" +
-					" error='[\"no edit required\"]'" +
-					" fileName='2 my track 012.mp3'" +
-					" msg='cannot edit track'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 01'" +
-					" error='[\"no edit required\"]'" +
-					" fileName='3 my track 013.mp3'" +
-					" msg='cannot edit track'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 01'" +
-					" error='[\"no edit required\"]'" +
-					" fileName='4 my track 014.mp3'" +
-					" msg='cannot edit track'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 02'" +
-					" error='[\"no edit required\"]'" +
-					" fileName='1 my track 021.mp3'" +
-					" msg='cannot edit track'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 02'" +
-					" error='[\"no edit required\"]'" +
-					" fileName='2 my track 022.mp3'" +
-					" msg='cannot edit track'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 02'" +
-					" error='[\"no edit required\"]'" +
-					" fileName='3 my track 023.mp3'" +
-					" msg='cannot edit track'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 02'" +
-					" error='[\"no edit required\"]'" +
-					" fileName='4 my track 024.mp3'" +
-					" msg='cannot edit track'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 10'" +
-					" error='[\"no edit required\"]'" +
-					" fileName='1 my track 101.mp3'" +
-					" msg='cannot edit track'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 10'" +
-					" error='[\"no edit required\"]'" +
-					" fileName='2 my track 102.mp3'" +
-					" msg='cannot edit track'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 10'" +
-					" error='[\"no edit required\"]'" +
-					" fileName='3 my track 103.mp3'" +
-					" msg='cannot edit track'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 10'" +
-					" error='[\"no edit required\"]'" +
-					" fileName='4 my track 104.mp3'" +
-					" msg='cannot edit track'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 11'" +
-					" error='[\"no edit required\"]'" +
-					" fileName='1 my track 111.mp3'" +
-					" msg='cannot edit track'\n" +
 					"level='error'" +
 					" command='repair'" +
 					" directory='Music\\my artist\\my album 11'" +
@@ -654,33 +465,6 @@ func TestBackupAndFix(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"The directory" +
-					" \"Music\\\\my artist\\\\my album 00\\\\pre-repair-backup\"" +
-					" cannot be created: mkdir" +
-					" Music\\my artist\\my album 00\\pre-repair-backup: The system cannot" +
-					" find the path specified.\n" +
-					"The track files in the directory" +
-					" \"Music\\\\my artist\\\\my album 00\" will not be repaired.\n" +
-					"The directory " +
-					"\"Music\\\\my artist\\\\my album 01\\\\pre-repair-backup\" cannot be" +
-					" created: mkdir Music\\my artist\\my album 01\\pre-repair-backup:" +
-					" The system cannot find the path specified.\n" +
-					"The track files in the directory" +
-					" \"Music\\\\my artist\\\\my album 01\" will not be repaired.\n" +
-					"The directory" +
-					" \"Music\\\\my artist\\\\my album 02\\\\pre-repair-backup\"" +
-					" cannot be created: mkdir" +
-					" Music\\my artist\\my album 02\\pre-repair-backup: The system cannot" +
-					" find the path specified.\n" +
-					"The track files in the directory" +
-					" \"Music\\\\my artist\\\\my album 02\" will not be repaired.\n" +
-					"The directory" +
-					" \"Music\\\\my artist\\\\my album 10\\\\pre-repair-backup\"" +
-					" cannot be created: mkdir" +
-					" Music\\my artist\\my album 10\\pre-repair-backup: The system cannot" +
-					" find the path specified.\n" +
-					"The track files in the directory" +
-					" \"Music\\\\my artist\\\\my album 10\" will not be repaired.\n" +
-					"The directory" +
 					" \"Music\\\\my artist\\\\my album 11\\\\pre-repair-backup\"" +
 					" cannot be created: mkdir" +
 					" Music\\my artist\\my album 11\\pre-repair-backup: The system cannot" +
@@ -695,30 +479,6 @@ func TestBackupAndFix(t *testing.T) {
 					"The track files in the directory" +
 					" \"Music\\\\my artist\\\\my album 12\" will not be repaired.\n",
 				Log: "" +
-					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 00\\pre-repair-backup'" +
-					" error='mkdir Music\\my artist\\my album 00\\pre-repair-backup: The" +
-					" system cannot find the path specified.'" +
-					" msg='cannot create directory'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 01\\pre-repair-backup'" +
-					" error='mkdir Music\\my artist\\my album 01\\pre-repair-backup: The" +
-					" system cannot find the path specified.'" +
-					" msg='cannot create directory'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 02\\pre-repair-backup'" +
-					" error='mkdir Music\\my artist\\my album 02\\pre-repair-backup: The" +
-					" system cannot find the path specified.'" +
-					" msg='cannot create directory'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 10\\pre-repair-backup'" +
-					" error='mkdir Music\\my artist\\my album 10\\pre-repair-backup: The" +
-					" system cannot find the path specified.'" +
-					" msg='cannot create directory'\n" +
 					"level='error'" +
 					" command='repair'" +
 					" directory='Music\\my artist\\my album 11\\pre-repair-backup'" +
@@ -741,108 +501,6 @@ func TestBackupAndFix(t *testing.T) {
 			wantStatus:       cmd.NewExitSystemError("repair"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\"" +
-					" could not be backed up due to error oops.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\"" +
-					" will not be repaired.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 00\\\\2 my track 002.mp3\"" +
-					" could not be backed up due to error oops.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 00\\\\2 my track 002.mp3\"" +
-					" will not be repaired.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 00\\\\3 my track 003.mp3\"" +
-					" could not be backed up due to error oops.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 00\\\\3 my track 003.mp3\"" +
-					" will not be repaired.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 00\\\\4 my track 004.mp3\"" +
-					" could not be backed up due to error oops.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 00\\\\4 my track 004.mp3\"" +
-					" will not be repaired.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 01\\\\1 my track 011.mp3\"" +
-					" could not be backed up due to error oops.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 01\\\\1 my track 011.mp3\"" +
-					" will not be repaired.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 01\\\\2 my track 012.mp3\"" +
-					" could not be backed up due to error oops.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 01\\\\2 my track 012.mp3\"" +
-					" will not be repaired.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 01\\\\3 my track 013.mp3\"" +
-					" could not be backed up due to error oops.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 01\\\\3 my track 013.mp3\"" +
-					" will not be repaired.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 01\\\\4 my track 014.mp3\"" +
-					" could not be backed up due to error oops.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 01\\\\4 my track 014.mp3\"" +
-					" will not be repaired.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 02\\\\1 my track 021.mp3\"" +
-					" could not be backed up due to error oops.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 02\\\\1 my track 021.mp3\"" +
-					" will not be repaired.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 02\\\\2 my track 022.mp3\"" +
-					" could not be backed up due to error oops.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 02\\\\2 my track 022.mp3\"" +
-					" will not be repaired.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 02\\\\3 my track 023.mp3\"" +
-					" could not be backed up due to error oops.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 02\\\\3 my track 023.mp3\"" +
-					" will not be repaired.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 02\\\\4 my track 024.mp3\"" +
-					" could not be backed up due to error oops.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 02\\\\4 my track 024.mp3\"" +
-					" will not be repaired.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 10\\\\1 my track 101.mp3\"" +
-					" could not be backed up due to error oops.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 10\\\\1 my track 101.mp3\"" +
-					" will not be repaired.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 10\\\\2 my track 102.mp3\"" +
-					" could not be backed up due to error oops.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 10\\\\2 my track 102.mp3\"" +
-					" will not be repaired.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 10\\\\3 my track 103.mp3\"" +
-					" could not be backed up due to error oops.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 10\\\\3 my track 103.mp3\"" +
-					" will not be repaired.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 10\\\\4 my track 104.mp3\"" +
-					" could not be backed up due to error oops.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 10\\\\4 my track 104.mp3\"" +
-					" will not be repaired.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 11\\\\1 my track 111.mp3\"" +
-					" could not be backed up due to error oops.\n" +
-					"The track file" +
-					" \"Music\\\\my artist\\\\my album 11\\\\1 my track 111.mp3\"" +
-					" will not be repaired.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 11\\\\2 my track 112.mp3\"" +
 					" could not be backed up due to error oops.\n" +
@@ -886,108 +544,6 @@ func TestBackupAndFix(t *testing.T) {
 					" \"Music\\\\my artist\\\\my album 12\\\\4 my track 124.mp3\"" +
 					" will not be repaired.\n",
 				Log: "" +
-					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 00\\pre-repair-backup\\1.mp3'" +
-					" error='oops'" +
-					" source='Music\\my artist\\my album 00\\1 my track 001.mp3'" +
-					" msg='error copying file'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 00\\pre-repair-backup\\2.mp3'" +
-					" error='oops'" +
-					" source='Music\\my artist\\my album 00\\2 my track 002.mp3'" +
-					" msg='error copying file'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 00\\pre-repair-backup\\3.mp3'" +
-					" error='oops'" +
-					" source='Music\\my artist\\my album 00\\3 my track 003.mp3'" +
-					" msg='error copying file'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 00\\pre-repair-backup\\4.mp3'" +
-					" error='oops'" +
-					" source='Music\\my artist\\my album 00\\4 my track 004.mp3'" +
-					" msg='error copying file'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 01\\pre-repair-backup\\1.mp3'" +
-					" error='oops'" +
-					" source='Music\\my artist\\my album 01\\1 my track 011.mp3'" +
-					" msg='error copying file'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 01\\pre-repair-backup\\2.mp3'" +
-					" error='oops'" +
-					" source='Music\\my artist\\my album 01\\2 my track 012.mp3'" +
-					" msg='error copying file'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 01\\pre-repair-backup\\3.mp3'" +
-					" error='oops'" +
-					" source='Music\\my artist\\my album 01\\3 my track 013.mp3'" +
-					" msg='error copying file'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 01\\pre-repair-backup\\4.mp3'" +
-					" error='oops'" +
-					" source='Music\\my artist\\my album 01\\4 my track 014.mp3'" +
-					" msg='error copying file'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 02\\pre-repair-backup\\1.mp3'" +
-					" error='oops'" +
-					" source='Music\\my artist\\my album 02\\1 my track 021.mp3'" +
-					" msg='error copying file'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 02\\pre-repair-backup\\2.mp3'" +
-					" error='oops'" +
-					" source='Music\\my artist\\my album 02\\2 my track 022.mp3'" +
-					" msg='error copying file'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 02\\pre-repair-backup\\3.mp3'" +
-					" error='oops'" +
-					" source='Music\\my artist\\my album 02\\3 my track 023.mp3'" +
-					" msg='error copying file'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 02\\pre-repair-backup\\4.mp3'" +
-					" error='oops'" +
-					" source='Music\\my artist\\my album 02\\4 my track 024.mp3'" +
-					" msg='error copying file'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 10\\pre-repair-backup\\1.mp3'" +
-					" error='oops'" +
-					" source='Music\\my artist\\my album 10\\1 my track 101.mp3'" +
-					" msg='error copying file'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 10\\pre-repair-backup\\2.mp3'" +
-					" error='oops'" +
-					" source='Music\\my artist\\my album 10\\2 my track 102.mp3'" +
-					" msg='error copying file'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 10\\pre-repair-backup\\3.mp3'" +
-					" error='oops'" +
-					" source='Music\\my artist\\my album 10\\3 my track 103.mp3'" +
-					" msg='error copying file'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 10\\pre-repair-backup\\4.mp3'" +
-					" error='oops'" +
-					" source='Music\\my artist\\my album 10\\4 my track 104.mp3'" +
-					" msg='error copying file'\n" +
-					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 11\\pre-repair-backup\\1.mp3'" +
-					" error='oops'" +
-					" source='Music\\my artist\\my album 11\\1 my track 111.mp3'" +
-					" msg='error copying file'\n" +
 					"level='error'" +
 					" command='repair'" +
 					" destination='Music\\my artist\\my album 11\\pre-repair-backup\\2.mp3'" +

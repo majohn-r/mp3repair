@@ -67,9 +67,11 @@ func GatherOutput(o output.Bus) []string {
 		cmd_toolkit.FormatGoVersion(goVersion))
 	lines = append(lines, cmd_toolkit.FormatBuildDependencies(buildDependencies)...)
 	lines = append(lines, fmt.Sprintf("Log files are written to %s", LogPath()))
-	if path, exists := configFile(); exists {
+	path, exists := configFile()
+	switch {
+	case exists:
 		lines = append(lines, fmt.Sprintf("Configuration file %s exists", path))
-	} else {
+	default:
 		lines = append(lines, fmt.Sprintf("Configuration file %s does not yet exist", path))
 	}
 	elevationData := NewElevationControl().Status(appName)

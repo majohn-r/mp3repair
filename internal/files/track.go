@@ -344,9 +344,9 @@ func (t *Track) ReportMetadataProblems() []string {
 func (t *Track) UpdateMetadata() (e []error) {
 	if !t.ReconcileMetadata().HasConflicts() {
 		e = append(e, ErrNoEditNeeded)
-	} else {
-		e = append(e, updateMetadata(t.metadata, t.fullPath)...)
+		return
 	}
+	e = append(e, updateMetadata(t.metadata, t.fullPath)...)
 	return
 }
 
@@ -422,14 +422,17 @@ func ProcessArtistMetadata(o output.Bus, artists []*Artist) {
 				}
 			}
 		}
-		if canonicalName, ok := CanonicalChoice(recordedArtistNames); !ok {
+		canonicalName, ok := CanonicalChoice(recordedArtistNames)
+		if !ok {
 			reportAmbiguousChoices(o, "artist name", artist.Name(), recordedArtistNames)
 			logAmbiguousValue(o, map[string]any{
 				"field":      "artist name",
 				"settings":   recordedArtistNames,
 				"artistName": artist.Name(),
 			})
-		} else if canonicalName != "" {
+			continue
+		}
+		if canonicalName != "" {
 			artist.canonicalName = canonicalName
 		}
 	}
@@ -472,7 +475,11 @@ func ProcessAlbumMetadata(o output.Bus, artists []*Artist) {
 				recordedMCDIs[mcdiKey]++
 				recordedMCDIFrames[mcdiKey] = t.metadata.CanonicalMusicCDIdentifier()
 			}
-			if canonicalGenre, ok := CanonicalChoice(recordedGenres); !ok {
+			canonicalGenre, ok := CanonicalChoice(recordedGenres)
+			switch {
+			case ok:
+				al.canonicalGenre = canonicalGenre
+			default:
 				reportAmbiguousChoices(o, "genre",
 					fmt.Sprintf("%s by %s", al.Name(), ar.Name()), recordedGenres)
 				logAmbiguousValue(o, map[string]any{
@@ -481,10 +488,12 @@ func ProcessAlbumMetadata(o output.Bus, artists []*Artist) {
 					"albumName":  al.Name(),
 					"artistName": ar.Name(),
 				})
-			} else {
-				al.canonicalGenre = canonicalGenre
 			}
-			if canonicalYear, ok := CanonicalChoice(recordedYears); !ok {
+			canonicalYear, ok := CanonicalChoice(recordedYears)
+			switch {
+			case ok:
+				al.canonicalYear = canonicalYear
+			default:
 				reportAmbiguousChoices(o, "year",
 					fmt.Sprintf("%s by %s", al.Name(), ar.Name()), recordedYears)
 				logAmbiguousValue(o, map[string]any{
@@ -493,10 +502,14 @@ func ProcessAlbumMetadata(o output.Bus, artists []*Artist) {
 					"albumName":  al.Name(),
 					"artistName": ar.Name(),
 				})
-			} else {
-				al.canonicalYear = canonicalYear
 			}
-			if canonicalAlbumTitle, ok := CanonicalChoice(recordedAlbumTitles); !ok {
+			canonicalAlbumTitle, ok := CanonicalChoice(recordedAlbumTitles)
+			switch {
+			case ok:
+				if canonicalAlbumTitle != "" {
+					al.canonicalTitle = canonicalAlbumTitle
+				}
+			default:
 				reportAmbiguousChoices(o, "album title",
 					fmt.Sprintf("%s by %s", al.Name(), ar.Name()), recordedAlbumTitles)
 				logAmbiguousValue(o, map[string]any{
@@ -505,10 +518,12 @@ func ProcessAlbumMetadata(o output.Bus, artists []*Artist) {
 					"albumName":  al.Name(),
 					"artistName": ar.Name(),
 				})
-			} else if canonicalAlbumTitle != "" {
-				al.canonicalTitle = canonicalAlbumTitle
 			}
-			if canonicalMCDI, ok := CanonicalChoice(recordedMCDIs); !ok {
+			canonicalMCDI, ok := CanonicalChoice(recordedMCDIs)
+			switch {
+			case ok:
+				al.musicCDIdentifier = recordedMCDIFrames[canonicalMCDI]
+			default:
 				reportAmbiguousChoices(o, "MCDI frame",
 					fmt.Sprintf("%s by %s", al.Name(), ar.Name()), recordedMCDIs)
 				logAmbiguousValue(o, map[string]any{
@@ -517,8 +532,6 @@ func ProcessAlbumMetadata(o output.Bus, artists []*Artist) {
 					"albumName":  al.Name(),
 					"artistName": ar.Name(),
 				})
-			} else {
-				al.musicCDIdentifier = recordedMCDIFrames[canonicalMCDI]
 			}
 		}
 	}
@@ -533,9 +546,10 @@ func encodeChoices(m map[string]int) string {
 	values := make([]string, 0, len(m))
 	for _, k := range keys {
 		count := m[k]
-		if count == 1 {
+		switch count {
+		case 1:
 			values = append(values, fmt.Sprintf("%q: 1 instance", k))
-		} else {
+		default:
 			values = append(values, fmt.Sprintf("%q: %d instances", k, count))
 		}
 	}
@@ -618,16 +632,16 @@ func ParseTrackName(o output.Bus, name string, album *Album,
 	wantDigit := true
 	runes := []rune(name)
 	for i, r := range runes {
-		if wantDigit {
-			if r >= '0' && r <= '9' {
-				trackNumber *= 10
-				trackNumber += int(r - '0')
-			} else {
-				wantDigit = false
-			}
-		} else {
+		if !wantDigit {
 			commonName = strings.TrimSuffix(string(runes[i:]), ext)
 			break
+		}
+		switch {
+		case r >= '0' && r <= '9':
+			trackNumber *= 10
+			trackNumber += int(r - '0')
+		default:
+			wantDigit = false
 		}
 	}
 	valid = true
@@ -680,16 +694,16 @@ func (t *Track) ID3V2Diagnostics() (version byte, encoding string, frames []stri
 
 // Details returns relevant details about the track
 func (t *Track) Details() (map[string]string, error) {
-	if _, _, _, frames, err := ReadID3V2Metadata(t.fullPath); err != nil {
+	_, _, _, frames, err := ReadID3V2Metadata(t.fullPath)
+	if err != nil {
 		return nil, err
-	} else {
-		m := map[string]string{}
-		// only include known frames
-		for _, frame := range frames {
-			if value, ok := frameDescriptions[frame.name]; ok {
-				m[value] = frame.value
-			}
-		}
-		return m, nil
 	}
+	m := map[string]string{}
+	// only include known frames
+	for _, frame := range frames {
+		if value, ok := frameDescriptions[frame.name]; ok {
+			m[value] = frame.value
+		}
+	}
+	return m, nil
 }

@@ -28,7 +28,7 @@ var (
 	metadataUpdaters = map[SourceType]func(tM *TrackMetadata, path string,
 		src SourceType) error{
 		ID3V1: updateID3V1Metadata,
-		ID3V2: updateID3V2Metadata,
+		ID3V2: UpdateID3V2Metadata,
 	}
 	sourceTypes = []SourceType{ID3V1, ID3V2}
 )

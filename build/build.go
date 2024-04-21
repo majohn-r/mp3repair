@@ -317,9 +317,10 @@ func generateVersionInfo(path string, jsonInput *productData) {
 	version := fmt.Sprintf("v%d.%d.%d", jsonInput.majorLevel, jsonInput.minorLevel, jsonInput.patchLevel)
 	data.StringFileInfo.FileVersion = version
 	currentYear := time.Now().Year()
-	if currentYear == jsonInput.firstYear {
+	switch {
+	case currentYear == jsonInput.firstYear:
 		data.StringFileInfo.LegalCopyright = fmt.Sprintf("Copyright © %d Marc Johnson", currentYear)
-	} else {
+	default:
 		data.StringFileInfo.LegalCopyright = fmt.Sprintf("Copyright © %d-%d Marc Johnson", jsonInput.firstYear, currentYear)
 	}
 	data.StringFileInfo.ProductName = jsonInput.name
@@ -329,10 +330,11 @@ func generateVersionInfo(path string, jsonInput *productData) {
 	b, _ := json.Marshal(data)
 	fullPath := filepath.Join("..", path, versionInfoFile)
 	file, fileErr := os.Create(fullPath)
-	if fileErr == nil {
+	switch fileErr {
+	case nil:
 		defer file.Close()
 		file.Write(b)
-	} else {
+	default:
 		fmt.Printf("Error writing %q! %v\n", versionInfoFile, fileErr)
 	}
 }

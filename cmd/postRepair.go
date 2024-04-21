@@ -66,9 +66,10 @@ func PostRepairWork(o output.Bus, ss *SearchSettings, allArtists []*files.Artist
 				sort.Strings(dirs)
 				dirsDeleted := 0
 				for _, dir := range dirs {
-					if RemoveBackupDirectory(o, dir) {
+					switch RemoveBackupDirectory(o, dir) {
+					case true:
 						dirsDeleted++
-					} else {
+					default:
 						e = NewExitSystemError(postRepairCommandName)
 					}
 				}

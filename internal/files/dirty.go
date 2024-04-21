@@ -25,15 +25,14 @@ func MarkDirty(o output.Bus) {
 
 func ClearDirty(o output.Bus) {
 	f := filepath.Join(cmd_toolkit.ApplicationPath(), DirtyFileName)
-	if cmd_toolkit.PlainFileExists(f) {
-		if err := os.Remove(f); err != nil {
-			cmd_toolkit.ReportFileDeletionFailure(o, f, err)
-		} else {
-			o.Log(output.Info, "metadata dirty file deleted", map[string]any{
-				"fileName": f,
-			})
-		}
+	if !cmd_toolkit.PlainFileExists(f) {
+		return
 	}
+	if err := os.Remove(f); err != nil {
+		cmd_toolkit.ReportFileDeletionFailure(o, f, err)
+		return
+	}
+	o.Log(output.Info, "metadata dirty file deleted", map[string]any{"fileName": f})
 }
 
 func Dirty() bool {

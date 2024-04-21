@@ -96,20 +96,19 @@ func (rs *RepairSettings) ProcessArtists(o output.Bus, allArtists []*files.Artis
 	return
 }
 
-func (rs *RepairSettings) RepairArtists(o output.Bus, artists []*files.Artist) (e *ExitError) {
+func (rs *RepairSettings) RepairArtists(o output.Bus, artists []*files.Artist) *ExitError {
 	ReadMetadata(o, artists) // read all track metadata
 	concernedArtists := PrepareConcernedArtists(artists)
 	count := FindConflictedTracks(concernedArtists)
 	if rs.dryRun {
 		ReportRepairsNeeded(o, concernedArtists)
-	} else {
-		if count == 0 {
-			nothingToDo(o)
-		} else {
-			e = BackupAndFix(o, concernedArtists)
-		}
+		return nil
 	}
-	return
+	if count == 0 {
+		nothingToDo(o)
+		return nil
+	}
+	return BackupAndFix(o, concernedArtists)
 }
 
 func FindConflictedTracks(concernedArtists []*ConcernedArtist) int {
@@ -190,26 +189,30 @@ func nothingToDo(o output.Bus) {
 
 func BackupAndFix(o output.Bus, concernedArtists []*ConcernedArtist) (e *ExitError) {
 	for _, cAr := range concernedArtists {
-		if cAr.IsConcerned() {
-			for _, cAl := range cAr.albums {
-				if cAl.IsConcerned() {
-					if path, exists := EnsureBackupDirectoryExists(o, cAl); exists {
-						for _, cT := range cAl.tracks {
-							if cT.IsConcerned() {
-								t := cT.backing
-								if AttemptCopy(o, t, path) {
-									err := t.UpdateMetadata()
-									if e2 := ProcessUpdateResult(o, t, err); e2 != nil {
-										e = e2
-									}
-								} else {
-									e = NewExitSystemError(repairCommandName)
-								}
-							}
-						}
-					} else {
-						e = NewExitSystemError(repairCommandName)
-					}
+		if !cAr.IsConcerned() {
+			continue
+		}
+		for _, cAl := range cAr.albums {
+			if !cAl.IsConcerned() {
+				continue
+			}
+			path, exists := EnsureBackupDirectoryExists(o, cAl)
+			if !exists {
+				e = NewExitSystemError(repairCommandName)
+				continue
+			}
+			for _, cT := range cAl.tracks {
+				if !cT.IsConcerned() {
+					continue
+				}
+				t := cT.backing
+				if !AttemptCopy(o, t, path) {
+					e = NewExitSystemError(repairCommandName)
+					continue
+				}
+				err := t.UpdateMetadata()
+				if e2 := ProcessUpdateResult(o, t, err); e2 != nil {
+					e = e2
 				}
 			}
 		}
@@ -218,10 +221,7 @@ func BackupAndFix(o output.Bus, concernedArtists []*ConcernedArtist) (e *ExitErr
 }
 
 func ProcessUpdateResult(o output.Bus, t *files.Track, err []error) (e *ExitError) {
-	if len(err) == 0 {
-		o.WriteConsole("%q repaired.\n", t)
-		MarkDirty(o)
-	} else {
+	if len(err) != 0 {
 		o.WriteCanonicalError("An error occurred repairing track %q", t)
 		errorStrings := make([]string, 0, len(err))
 		for _, e2 := range err {
@@ -234,25 +234,31 @@ func ProcessUpdateResult(o output.Bus, t *files.Track, err []error) (e *ExitErro
 			"error":     fmt.Sprintf("[%s]", strings.Join(errorStrings, ", ")),
 		})
 		e = NewExitSystemError(repairCommandName)
+		return
 	}
+	o.WriteConsole("%q repaired.\n", t)
+	MarkDirty(o)
 	return
 }
 
 func AttemptCopy(o output.Bus, t *files.Track, path string) (backedUp bool) {
 	backupFile := filepath.Join(path, fmt.Sprintf("%d.mp3", t.Number()))
-	if PlainFileExists(backupFile) {
+	switch {
+	case PlainFileExists(backupFile):
 		o.WriteCanonicalError("The backup file for track file %q, %q, already exists", t,
 			backupFile)
 		o.Log(output.Error, "file already exists", map[string]any{
 			"command": repairCommandName,
 			"file":    backupFile,
 		})
-	} else {
-		if err := CopyFile(t.Path(), backupFile); err == nil {
+	default:
+		err := CopyFile(t.Path(), backupFile)
+		switch err {
+		case nil:
 			o.WriteCanonicalConsole("The track file %q has been backed up to %q", t,
 				backupFile)
 			backedUp = true
-		} else {
+		default:
 			o.WriteCanonicalError(
 				"The track file %q could not be backed up due to error %v", t, err)
 			o.Log(output.Error, "error copying file", map[string]any{

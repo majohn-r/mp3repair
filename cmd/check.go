@@ -338,9 +338,8 @@ func GenerateNumberingConcerns(m map[int][]string, maxTrack int) []string {
 func GenerateMissingNumbers(low, high int) string {
 	if low == high {
 		return fmt.Sprintf("%d", low)
-	} else {
-		return fmt.Sprintf("%d-%d", low, high)
 	}
+	return fmt.Sprintf("%d-%d", low, high)
 }
 
 func (cs *CheckSettings) PerformEmptyAnalysis(concernedArtists []*ConcernedArtist) bool {
@@ -350,12 +349,12 @@ func (cs *CheckSettings) PerformEmptyAnalysis(concernedArtists []*ConcernedArtis
 			if !concernedArtist.Artist().HasAlbums() {
 				concernedArtist.AddConcern(EmptyConcern, "no albums found")
 				emptyFoldersFound = true
-			} else {
-				for _, concernedAlbum := range concernedArtist.Albums() {
-					if !concernedAlbum.Album().HasTracks() {
-						concernedAlbum.AddConcern(EmptyConcern, "no tracks found")
-						emptyFoldersFound = true
-					}
+				continue // next artist, please
+			}
+			for _, concernedAlbum := range concernedArtist.Albums() {
+				if !concernedAlbum.Album().HasTracks() {
+					concernedAlbum.AddConcern(EmptyConcern, "no tracks found")
+					emptyFoldersFound = true
 				}
 			}
 		}
@@ -369,34 +368,39 @@ func (cs *CheckSettings) HasWorkToDo(o output.Bus) bool {
 	}
 	userPartiallyAtFault := cs.emptyUserSet || cs.filesUserSet || cs.numberingUserSet
 	o.WriteCanonicalError("No checks will be executed.\nWhy?\n")
-	if userPartiallyAtFault {
+	switch userPartiallyAtFault {
+	case true:
 		flagsUserSet := make([]string, 0, 3)
 		flagsFromConfig := make([]string, 0, 3)
-		if cs.emptyUserSet {
+		switch cs.emptyUserSet {
+		case true:
 			flagsUserSet = append(flagsUserSet, CheckEmptyFlag)
-		} else {
+		case false:
 			flagsFromConfig = append(flagsFromConfig, CheckEmptyFlag)
 		}
-		if cs.filesUserSet {
+		switch cs.filesUserSet {
+		case true:
 			flagsUserSet = append(flagsUserSet, CheckFilesFlag)
-		} else {
+		case false:
 			flagsFromConfig = append(flagsFromConfig, CheckFilesFlag)
 		}
-		if cs.numberingUserSet {
+		switch cs.numberingUserSet {
+		case true:
 			flagsUserSet = append(flagsUserSet, CheckNumberingFlag)
-		} else {
+		case false:
 			flagsFromConfig = append(flagsFromConfig, CheckNumberingFlag)
 		}
-		if len(flagsFromConfig) == 0 {
+		switch len(flagsFromConfig) {
+		case 0:
 			o.WriteCanonicalError("You explicitly set %s, %s, and %s false",
 				CheckEmptyFlag, CheckFilesFlag, CheckNumberingFlag)
-		} else {
+		default:
 			o.WriteCanonicalError(
 				"In addition to %s configured false, you explicitly set %s false",
 				strings.Join(flagsFromConfig, " and "),
 				strings.Join(flagsUserSet, " and "))
 		}
-	} else {
+	case false:
 		o.WriteCanonicalError("The flags %s, %s, and %s are all configured false",
 			CheckEmptyFlag, CheckFilesFlag, CheckNumberingFlag)
 	}

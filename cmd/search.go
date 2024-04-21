@@ -131,28 +131,31 @@ func ProcessSearchFlags(o output.Bus, values map[string]*FlagValue) (settings *S
 	settings = &SearchSettings{}
 	// process the filters first, so we can attempt to guide the user to better
 	// choice(s)
-	if albumFilter, _ok, _regexOk := EvaluateFilter(o, values, SearchAlbumFilter,
-		SearchAlbumFilterFlag); _ok {
+	albumFilter, _ok, _regexOk := EvaluateFilter(o, values, SearchAlbumFilter, SearchAlbumFilterFlag)
+	switch {
+	case _ok:
 		settings.albumFilter = albumFilter
-	} else {
+	default:
 		if !_regexOk {
 			regexOk = false
 		}
 		ok = false
 	}
-	if artistFilter, _ok, _regexOk := EvaluateFilter(o, values, SearchArtistFilter,
-		SearchArtistFilterFlag); _ok {
+	artistFilter, _ok, _regexOk := EvaluateFilter(o, values, SearchArtistFilter, SearchArtistFilterFlag)
+	switch {
+	case _ok:
 		settings.artistFilter = artistFilter
-	} else {
+	default:
 		if !_regexOk {
 			regexOk = false
 		}
 		ok = false
 	}
-	if trackFilter, _ok, _regexOk := EvaluateFilter(o, values, SearchTrackFilter,
-		SearchTrackFilterFlag); _ok {
+	trackFilter, _ok, _regexOk := EvaluateFilter(o, values, SearchTrackFilter, SearchTrackFilterFlag)
+	switch {
+	case _ok:
 		settings.trackFilter = trackFilter
-	} else {
+	default:
 		if !_regexOk {
 			regexOk = false
 		}
@@ -162,134 +165,149 @@ func ProcessSearchFlags(o output.Bus, values map[string]*FlagValue) (settings *S
 		// user has attempted to use filters that don't compile
 		o.WriteCanonicalError(searchRegexInstructions)
 	}
-	if topDir, _ok := EvaluateTopDir(o, values); _ok {
+	topDir, _ok := EvaluateTopDir(o, values)
+	switch {
+	case _ok:
 		settings.topDirectory = topDir
-	} else {
+	default:
 		ok = false
 	}
-	if extensions, _ok := EvaluateFileExtensions(o, values); _ok {
+	extensions, _ok := EvaluateFileExtensions(o, values)
+	switch {
+	case _ok:
 		settings.fileExtensions = extensions
-	} else {
+	default:
 		ok = false
 	}
 	return
 }
 
 func EvaluateFileExtensions(o output.Bus, values map[string]*FlagValue) ([]string, bool) {
+	rawValue, _, err := GetString(o, values, SearchFileExtensions)
+	if err != nil {
+		return []string{}, false
+	}
+	candidates := strings.Split(rawValue, ",")
+	failedCandidates := []string{}
 	extensions := []string{}
-	ok := false
-	if rawValue, _, err := GetString(o, values, SearchFileExtensions); err == nil {
-		candidates := strings.Split(rawValue, ",")
-		failedCandidates := []string{}
-		ok = true
-		for _, candidate := range candidates {
-			if strings.HasPrefix(candidate, ".") && len(candidate) >= 2 {
-				extensions = append(extensions, candidate)
-			} else {
-				o.WriteCanonicalError("The extension %q cannot be used.", candidate)
-				failedCandidates = append(failedCandidates, candidate)
-				ok = false
-			}
+	ok := true
+	for _, candidate := range candidates {
+		switch {
+		case strings.HasPrefix(candidate, ".") && len(candidate) >= 2:
+			extensions = append(extensions, candidate)
+		default:
+			o.WriteCanonicalError("The extension %q cannot be used.", candidate)
+			failedCandidates = append(failedCandidates, candidate)
+			ok = false
 		}
-		if !ok {
-			o.WriteCanonicalError("Why?")
-			o.WriteCanonicalError(
-				"Extensions must be at least two characters long and begin with '.'")
-			o.WriteCanonicalError("What to do:\nProvide appropriate extensions.")
-			o.Log(output.Error, "invalid file extensions", map[string]any{
-				"rejected":               failedCandidates,
-				SearchFileExtensionsFlag: rawValue,
-			})
-		}
+	}
+	if !ok {
+		o.WriteCanonicalError("Why?")
+		o.WriteCanonicalError(
+			"Extensions must be at least two characters long and begin with '.'")
+		o.WriteCanonicalError("What to do:\nProvide appropriate extensions.")
+		o.Log(output.Error, "invalid file extensions", map[string]any{
+			"rejected":               failedCandidates,
+			SearchFileExtensionsFlag: rawValue,
+		})
 	}
 	return extensions, ok
 }
 
 func EvaluateTopDir(o output.Bus, values map[string]*FlagValue) (dir string, ok bool) {
-	if rawValue, userSet, err := GetString(o, values, SearchTopDir); err == nil {
-		if file, err := os.Stat(rawValue); err != nil {
-			o.WriteCanonicalError("The %s value, %q, cannot be used", SearchTopDirFlag,
-				rawValue)
-			o.Log(output.Error, "invalid directory", map[string]any{
-				"error":          err,
-				SearchTopDirFlag: rawValue,
-				"user-set":       userSet,
-			})
-			o.WriteCanonicalError("Why?")
-			if userSet {
-				o.WriteCanonicalError("The value you specified is not a readable file.")
-				o.WriteCanonicalError(
-					"What to do:\nSpecify a value that is a readable file.")
-			} else {
-				o.WriteCanonicalError(
-					"The currently configured value is not a readable file.")
-				o.WriteCanonicalError("What to do:\n"+
-					"Edit the configuration file or specify %s with a value that is a"+
-					" readable file.", SearchTopDirFlag)
-			}
-		} else {
-			if file.IsDir() {
-				dir = rawValue
-				ok = true
-			} else {
-				o.WriteCanonicalError("The %s value, %q, cannot be used", SearchTopDirFlag,
-					rawValue)
-				o.Log(output.Error, "the file is not a directory", map[string]any{
-					SearchTopDirFlag: rawValue,
-					"user-set":       userSet,
-				})
-				o.WriteCanonicalError("Why?")
-				if userSet {
-					o.WriteCanonicalError(
-						"The value you specified is not the name of a directory.")
-					o.WriteCanonicalError("What to do:\n" +
-						"Specify a value that is the name of a directory.")
-				} else {
-					o.WriteCanonicalError(
-						"The currently configured value is not the name of a directory.")
-					o.WriteCanonicalError("What to do:\n"+
-						"Edit the configuration file or specify %s with a value that is the"+
-						" name of a directory.", SearchTopDirFlag)
-				}
-			}
-		}
+	rawValue, userSet, err := GetString(o, values, SearchTopDir)
+	if err != nil {
+		return
 	}
+	file, err := os.Stat(rawValue)
+	if err != nil {
+		o.WriteCanonicalError("The %s value, %q, cannot be used", SearchTopDirFlag,
+			rawValue)
+		o.Log(output.Error, "invalid directory", map[string]any{
+			"error":          err,
+			SearchTopDirFlag: rawValue,
+			"user-set":       userSet,
+		})
+		o.WriteCanonicalError("Why?")
+		switch userSet {
+		case true:
+			o.WriteCanonicalError("The value you specified is not a readable file.")
+			o.WriteCanonicalError(
+				"What to do:\nSpecify a value that is a readable file.")
+		case false:
+			o.WriteCanonicalError(
+				"The currently configured value is not a readable file.")
+			o.WriteCanonicalError("What to do:\n"+
+				"Edit the configuration file or specify %s with a value that is a"+
+				" readable file.", SearchTopDirFlag)
+		}
+		return
+	}
+	if !file.IsDir() {
+		o.WriteCanonicalError("The %s value, %q, cannot be used", SearchTopDirFlag,
+			rawValue)
+		o.Log(output.Error, "the file is not a directory", map[string]any{
+			SearchTopDirFlag: rawValue,
+			"user-set":       userSet,
+		})
+		o.WriteCanonicalError("Why?")
+		switch userSet {
+		case true:
+			o.WriteCanonicalError(
+				"The value you specified is not the name of a directory.")
+			o.WriteCanonicalError("What to do:\n" +
+				"Specify a value that is the name of a directory.")
+		default:
+			o.WriteCanonicalError(
+				"The currently configured value is not the name of a directory.")
+			o.WriteCanonicalError("What to do:\n"+
+				"Edit the configuration file or specify %s with a value that is the"+
+				" name of a directory.", SearchTopDirFlag)
+		}
+		return
+	}
+	dir = rawValue
+	ok = true
 	return
 }
 
 func EvaluateFilter(o output.Bus, values map[string]*FlagValue, flagName,
 	nameAsFlag string) (filter *regexp.Regexp, ok, regexOk bool) {
 	regexOk = true
-	if rawValue, userSet, err := GetString(o, values, flagName); err == nil {
-		if f, err := regexp.Compile(rawValue); err != nil {
-			o.Log(output.Error, "the filter cannot be parsed as a regular expression",
-				map[string]any{
-					nameAsFlag: rawValue,
-					"user-set": userSet,
-					"error":    err,
-				})
-			o.WriteCanonicalError("the %s value %q cannot be used", nameAsFlag, rawValue)
-			if userSet {
-				o.WriteCanonicalError("Why?\n"+
-					"The value of %s that you specified is not a valid regular expression: %v.",
-					nameAsFlag, err)
-				o.WriteCanonicalError("What to do:\n"+
-					"Either try a different setting,"+
-					" or omit setting %s and try the default value.", nameAsFlag)
-			} else {
-				o.WriteCanonicalError("Why?\n"+
-					"The configured default value of %s is not a valid regular expression: %v.",
-					nameAsFlag, err)
-				o.WriteCanonicalError("What to do:\n"+
-					"Either edit the defaults.yaml file containing the settings,"+
-					" or explicitly set %s to a better value.", nameAsFlag)
-			}
-			regexOk = false
-		} else {
-			filter = f
-			ok = true
-		}
+	rawValue, userSet, err := GetString(o, values, flagName)
+	if err != nil {
+		return
 	}
+	f, err := regexp.Compile(rawValue)
+	if err != nil {
+		o.Log(output.Error, "the filter cannot be parsed as a regular expression",
+			map[string]any{
+				nameAsFlag: rawValue,
+				"user-set": userSet,
+				"error":    err,
+			})
+		o.WriteCanonicalError("the %s value %q cannot be used", nameAsFlag, rawValue)
+		switch {
+		case userSet:
+			o.WriteCanonicalError("Why?\n"+
+				"The value of %s that you specified is not a valid regular expression: %v.",
+				nameAsFlag, err)
+			o.WriteCanonicalError("What to do:\n"+
+				"Either try a different setting,"+
+				" or omit setting %s and try the default value.", nameAsFlag)
+		default:
+			o.WriteCanonicalError("Why?\n"+
+				"The configured default value of %s is not a valid regular expression: %v.",
+				nameAsFlag, err)
+			o.WriteCanonicalError("What to do:\n"+
+				"Either edit the defaults.yaml file containing the settings,"+
+				" or explicitly set %s to a better value.", nameAsFlag)
+		}
+		regexOk = false
+		return
+	}
+	filter = f
+	ok = true
 	return
 }
 

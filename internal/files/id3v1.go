@@ -495,11 +495,12 @@ func (im *Id3v1Metadata) RawData() []byte {
 
 func (im *Id3v1Metadata) WithData(b []byte) *Id3v1Metadata {
 	im.data = make([]byte, id3v1Length)
-	if len(b) >= id3v1Length {
+	switch {
+	case len(b) >= id3v1Length:
 		for k := 0; k < id3v1Length; k++ {
 			im.data[k] = b[k]
 		}
-	} else {
+	default:
 		copy(im.data, b)
 		for k := len(b); k < id3v1Length; k++ {
 			im.data[k] = 0
@@ -536,9 +537,11 @@ func (im *Id3v1Metadata) WriteString(s string, f id3v1Field) {
 func repairName(s string) string {
 	bs := make([]byte, 0, 2*len(s))
 	for _, r := range s {
-		if b, ok := runeByteMapping[r]; ok {
+		b, ok := runeByteMapping[r]
+		switch {
+		case ok:
 			bs = append(bs, b...)
-		} else {
+		default:
 			bs = append(bs, byte(r))
 		}
 	}
@@ -621,11 +624,12 @@ func InitGenreIndices() {
 
 func (im *Id3v1Metadata) SetGenre(s string) {
 	InitGenreIndices()
-	if index, ok := GenreIndicesMap[strings.ToLower(s)]; !ok {
+	index, ok := GenreIndicesMap[strings.ToLower(s)]
+	if !ok {
 		im.writeInt(GenreIndicesMap["other"], genreField)
-	} else {
-		im.writeInt(index, genreField)
+		return
 	}
+	im.writeInt(index, genreField)
 }
 
 func Trim(s string) string {
@@ -671,17 +675,18 @@ func InternalReadID3V1Metadata(path string,
 		return nil, err
 	}
 	v1 := NewID3v1Metadata()
-	if r, err := readFunc(file, v1.data); err != nil {
+	r, err := readFunc(file, v1.data)
+	if err != nil {
 		return nil, err
-	} else if r < id3v1Length {
+	}
+	if r < id3v1Length {
 		return nil,
-			fmt.Errorf("cannot read id3v1 metadata from file %q; only %d bytes read", path,
-				r)
+			fmt.Errorf("cannot read id3v1 metadata from file %q; only %d bytes read", path, r)
 	}
-	if v1.IsValid() {
-		return v1, nil
+	if !v1.IsValid() {
+		return nil, fmt.Errorf("no id3v1 metadata found in file %q", path)
 	}
-	return nil, fmt.Errorf("no id3v1 metadata found in file %q", path)
+	return v1, nil
 }
 
 func (im *Id3v1Metadata) Write(path string) error {
@@ -772,9 +777,11 @@ func (im *Id3v1Metadata) InternalWrite(path string,
 func Id3v1NameDiffers(cS *ComparableStrings) bool {
 	bs := make([]byte, 0, 2*len(cS.External()))
 	for _, r := range strings.ToLower(cS.External()) {
-		if b, ok := runeByteMapping[r]; ok {
+		b, ok := runeByteMapping[r]
+		switch {
+		case ok:
 			bs = append(bs, b...)
-		} else {
+		default:
 			bs = append(bs, byte(r))
 		}
 	}

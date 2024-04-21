@@ -55,9 +55,11 @@ var (
 func addDefaults(sf *SectionFlags) {
 	payload := map[string]any{}
 	for flag, details := range sf.Flags() {
-		if bounded, ok := details.DefaultValue().(*cmd_toolkit.IntBounds); ok {
+		bounded, ok := details.DefaultValue().(*cmd_toolkit.IntBounds)
+		switch ok {
+		case true:
 			payload[flag] = bounded.Default()
-		} else {
+		case false:
 			payload[flag] = details.DefaultValue()
 		}
 	}
@@ -146,46 +148,45 @@ func configFile() (path string, exists bool) {
 	return
 }
 
-func (efs *ExportFlagSettings) ExportDefaultConfiguration(o output.Bus) (err *ExitError) {
-	err = NewExitUserError(ExportCommand)
-	if efs.CanWriteDefaults(o) {
-		// ignoring error return, as we're not marshalling structs, where mischief
-		// can occur
-		payload, _ := yaml.Marshal(defaultConfigurationSettings)
-		if f, exists := configFile(); exists {
-			err = efs.OverwriteFile(o, f, payload)
-		} else {
-			if CreateFile(o, f, payload) {
-				err = nil
-			} else {
-				err = NewExitSystemError(ExportCommand)
-			}
-		}
+func (efs *ExportFlagSettings) ExportDefaultConfiguration(o output.Bus) *ExitError {
+	if !efs.CanWriteDefaults(o) {
+		return NewExitUserError(ExportCommand)
 	}
-	return
+	// ignoring error return, as we're not marshalling structs, where mischief
+	// can occur
+	payload, _ := yaml.Marshal(defaultConfigurationSettings)
+	f, exists := configFile()
+	if exists {
+		return efs.OverwriteFile(o, f, payload)
+	}
+	if !CreateFile(o, f, payload) {
+		return NewExitSystemError(ExportCommand)
+	}
+	return nil
 }
 
-func (efs *ExportFlagSettings) OverwriteFile(o output.Bus, f string, payload []byte) (e *ExitError) {
-	e = NewExitUserError(ExportCommand)
-	if efs.CanOverwriteFile(o, f) {
-		e = NewExitSystemError(ExportCommand)
-		backup := f + "-backup"
-		if err := Rename(f, backup); err != nil {
-			o.WriteCanonicalError("The file %q cannot be renamed to %q: %v", f, backup, err)
-			o.Log(output.Error, "rename failed", map[string]any{
-				"error": err,
-				"old":   f,
-				"new":   backup,
-			})
-		} else if CreateFile(o, f, payload) {
-			Remove(backup)
-			e = nil
-		}
+func (efs *ExportFlagSettings) OverwriteFile(o output.Bus, f string, payload []byte) *ExitError {
+	if !efs.CanOverwriteFile(o, f) {
+		return NewExitUserError(ExportCommand)
 	}
-	return
+	backup := f + "-backup"
+	if err := Rename(f, backup); err != nil {
+		o.WriteCanonicalError("The file %q cannot be renamed to %q: %v", f, backup, err)
+		o.Log(output.Error, "rename failed", map[string]any{
+			"error": err,
+			"old":   f,
+			"new":   backup,
+		})
+		return NewExitSystemError(ExportCommand)
+	}
+	if !CreateFile(o, f, payload) {
+		return NewExitSystemError(ExportCommand)
+	}
+	Remove(backup)
+	return nil
 }
 
-func (efs *ExportFlagSettings) CanOverwriteFile(o output.Bus, f string) (canOverwrite bool) {
+func (efs *ExportFlagSettings) CanOverwriteFile(o output.Bus, f string) bool {
 	if !efs.overwriteEnabled {
 		o.WriteCanonicalError("The file %q exists and cannot be overwritten", f)
 		o.Log(output.Error, "overwrite is not permitted", map[string]any{
@@ -193,37 +194,37 @@ func (efs *ExportFlagSettings) CanOverwriteFile(o output.Bus, f string) (canOver
 			"fileName":            f,
 			"user-set":            efs.overwriteSet,
 		})
-		if efs.overwriteSet {
+		switch {
+		case efs.overwriteSet:
 			o.WriteCanonicalError("Why?\nYou explicitly set %s false", exportOverwriteAsFlag)
-		} else {
+		default:
 			o.WriteCanonicalError(
 				"Why?\nAs currently configured, overwriting the file is disabled")
 		}
 		o.WriteCanonicalError(exportOverwriteCure)
-	} else {
-		canOverwrite = true
+		return false
 	}
-	return
+	return true
 }
 
-func (efs *ExportFlagSettings) CanWriteDefaults(o output.Bus) (canWrite bool) {
+func (efs *ExportFlagSettings) CanWriteDefaults(o output.Bus) bool {
 	if !efs.defaultsEnabled {
 		o.WriteCanonicalError("default configuration settings will not be exported")
 		o.Log(output.Error, "export defaults disabled", map[string]any{
 			exportDefaultsAsFlag: false,
 			"user-set":           efs.defaultsSet,
 		})
-		if efs.defaultsSet {
+		switch {
+		case efs.defaultsSet:
 			o.WriteCanonicalError("Why?\nYou explicitly set %s false", exportDefaultsAsFlag)
-		} else {
+		default:
 			o.WriteCanonicalError("Why?\nAs currently configured, exporting default" +
 				" configuration settings is disabled")
 		}
 		o.WriteCanonicalError(exportDefaultsCure)
-	} else {
-		canWrite = true
+		return false
 	}
-	return
+	return true
 }
 
 func init() {

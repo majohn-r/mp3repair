@@ -5,9 +5,8 @@ import (
 	"io"
 	"mp3repair/internal/files"
 	"os"
-	"sort"
-
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/bogem/id3v2/v2"
@@ -524,6 +523,30 @@ func Test_id3v2GenreDiffers(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			if got := files.Id3v2GenreDiffers(tt.args.cS); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_updateID3V2Metadata(t *testing.T) {
+	type args struct {
+		tM   *files.TrackMetadata
+		path string
+		sT   files.SourceType
+	}
+	tests := map[string]struct {
+		args
+		wantErr bool
+	}{
+		"no need for edit": {
+			args:    args{tM: files.NewTrackMetadata()}, // empty struct implicitly does not need an edit
+			wantErr: false,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if err := files.UpdateID3V2Metadata(tt.args.tM, tt.args.path, tt.args.sT); (err != nil) != tt.wantErr {
+				t.Errorf("UpdateID3V2Metadata() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}

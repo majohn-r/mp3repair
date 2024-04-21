@@ -73,24 +73,25 @@ func readID3V2Tag(path string) (*id3v2.Tag, error) {
 
 func RawReadID3V2Metadata(path string) (d *Id3v2Metadata) {
 	d = &Id3v2Metadata{}
-	if tag, err := readID3V2Tag(path); err != nil {
+	tag, err := readID3V2Tag(path)
+	if err != nil {
 		d.err = err
-	} else {
-		defer tag.Close()
-		if trackNumber, err := ToTrackNumber(
-			tag.GetTextFrame(trackFrame).Text); err != nil {
-			d.err = err
-		} else {
-			d.albumName = RemoveLeadingBOMs(tag.Album())
-			d.artistName = RemoveLeadingBOMs(tag.Artist())
-			d.genre = NormalizeGenre(RemoveLeadingBOMs(tag.Genre()))
-			d.trackName = RemoveLeadingBOMs(tag.Title())
-			d.trackNumber = trackNumber
-			d.year = RemoveLeadingBOMs(tag.Year())
-			mcdiFramers := tag.AllFrames()[mcdiFrame]
-			d.musicCDIdentifier = SelectUnknownFrame(mcdiFramers)
-		}
+		return
 	}
+	defer tag.Close()
+	trackNumber, err := ToTrackNumber(tag.GetTextFrame(trackFrame).Text)
+	if err != nil {
+		d.err = err
+		return
+	}
+	d.albumName = RemoveLeadingBOMs(tag.Album())
+	d.artistName = RemoveLeadingBOMs(tag.Artist())
+	d.genre = NormalizeGenre(RemoveLeadingBOMs(tag.Genre()))
+	d.trackName = RemoveLeadingBOMs(tag.Title())
+	d.trackNumber = trackNumber
+	d.year = RemoveLeadingBOMs(tag.Year())
+	mcdiFramers := tag.AllFrames()[mcdiFrame]
+	d.musicCDIdentifier = SelectUnknownFrame(mcdiFramers)
 	return
 }
 
@@ -135,10 +136,11 @@ func ToTrackNumber(s string) (i int, err error) {
 	bs := []byte(s)
 	for j, b := range bs {
 		c := int(b)
-		if c >= '0' && c <= '9' {
+		switch {
+		case c >= '0' && c <= '9':
 			n *= 10
 			n += c - '0'
-		} else {
+		default:
 			// found something other than a digit
 			switch j {
 			case 0: // never saw a digit
@@ -183,46 +185,46 @@ func SelectUnknownFrame(mcdiFramers []id3v2.Framer) id3v2.UnknownFrame {
 	return id3v2.UnknownFrame{Body: []byte{0}}
 }
 
-func updateID3V2Metadata(tM *TrackMetadata, path string, sT SourceType) (e error) {
-	if tM.requiresEdit[sT] {
-		if tag, err := readID3V2Tag(path); err != nil {
-			e = err
-		} else {
-			defer tag.Close()
-			tag.SetDefaultEncoding(id3v2.EncodingUTF8)
-			album := tM.correctedAlbumName[sT]
-			if album != "" {
-				tag.SetAlbum(album)
-			}
-			artist := tM.correctedArtistName[sT]
-			if artist != "" {
-				tag.SetArtist(artist)
-			}
-			title := tM.correctedTrackName[sT]
-			if title != "" {
-				tag.SetTitle(title)
-			}
-			track := tM.correctedTrackNumber[sT]
-			if track != 0 {
-				tag.AddTextFrame("TRCK", tag.DefaultEncoding(), fmt.Sprintf("%d", track))
-			}
-			genre := tM.correctedGenre[sT]
-			if genre != "" {
-				tag.SetGenre(genre)
-			}
-			year := tM.correctedYear[sT]
-			if year != "" {
-				tag.SetYear(year)
-			}
-			mcdi := tM.correctedMusicCDIdentifier
-			if len(mcdi.Body) != 0 {
-				tag.DeleteFrames(mcdiFrame)
-				tag.AddFrame(mcdiFrame, mcdi)
-			}
-			e = tag.Save()
-		}
+func UpdateID3V2Metadata(tM *TrackMetadata, path string, sT SourceType) error {
+	if !tM.requiresEdit[sT] {
+		return nil
 	}
-	return
+	tag, err := readID3V2Tag(path)
+	if err != nil {
+		return err
+	}
+	defer tag.Close()
+	tag.SetDefaultEncoding(id3v2.EncodingUTF8)
+	album := tM.correctedAlbumName[sT]
+	if album != "" {
+		tag.SetAlbum(album)
+	}
+	artist := tM.correctedArtistName[sT]
+	if artist != "" {
+		tag.SetArtist(artist)
+	}
+	title := tM.correctedTrackName[sT]
+	if title != "" {
+		tag.SetTitle(title)
+	}
+	track := tM.correctedTrackNumber[sT]
+	if track != 0 {
+		tag.AddTextFrame("TRCK", tag.DefaultEncoding(), fmt.Sprintf("%d", track))
+	}
+	genre := tM.correctedGenre[sT]
+	if genre != "" {
+		tag.SetGenre(genre)
+	}
+	year := tM.correctedYear[sT]
+	if year != "" {
+		tag.SetYear(year)
+	}
+	mcdi := tM.correctedMusicCDIdentifier
+	if len(mcdi.Body) != 0 {
+		tag.DeleteFrames(mcdiFrame)
+		tag.AddFrame(mcdiFrame, mcdi)
+	}
+	return tag.Save()
 }
 
 type Id3v2TrackFrame struct {
@@ -252,46 +254,53 @@ func (itf *Id3v2TrackFrame) String() string {
 
 func ReadID3V2Metadata(path string) (version byte, encoding string,
 	frameStrings []string, rawFrames []*Id3v2TrackFrame, e error) {
-	if tag, err := readID3V2Tag(path); err != nil {
+	tag, err := readID3V2Tag(path)
+	if err != nil {
 		e = err
-	} else {
-		defer tag.Close()
-		version = tag.Version()
-		encoding = tag.DefaultEncoding().Name
-		frameMap := tag.AllFrames()
-		frameNames := make([]string, 0, len(frameMap))
-		for k := range frameMap {
-			frameNames = append(frameNames, k)
+		return
+	}
+	defer tag.Close()
+	version = tag.Version()
+	encoding = tag.DefaultEncoding().Name
+	frameMap := tag.AllFrames()
+	frameNames := make([]string, 0, len(frameMap))
+	for k := range frameMap {
+		frameNames = append(frameNames, k)
+	}
+	sort.Strings(frameNames)
+	for _, n := range frameNames {
+		var value string
+		switch {
+		case strings.HasPrefix(n, "T"): // tag
+			value = RemoveLeadingBOMs(tag.GetTextFrame(n).Text)
+		default:
+			value = FramerSliceAsString(frameMap[n])
 		}
-		sort.Strings(frameNames)
-		for _, n := range frameNames {
-			var value string
-			if strings.HasPrefix(n, "T") {
-				value = RemoveLeadingBOMs(tag.GetTextFrame(n).Text)
-			} else {
-				value = FramerSliceAsString(frameMap[n])
-			}
-			frame := &Id3v2TrackFrame{name: n, value: value}
-			frameStrings = append(frameStrings, frame.String())
-			rawFrames = append(rawFrames, frame)
-		}
+		frame := &Id3v2TrackFrame{name: n, value: value}
+		frameStrings = append(frameStrings, frame.String())
+		rawFrames = append(rawFrames, frame)
 	}
 	return
 }
 
 func FramerSliceAsString(f []id3v2.Framer) string {
 	substrings := make([]string, 0, len(f))
-	if len(f) == 1 {
-		if data, ok := f[0].(id3v2.UnknownFrame); ok {
+	switch {
+	case len(f) == 1:
+		data, ok := f[0].(id3v2.UnknownFrame)
+		switch {
+		case ok:
 			substrings = append(substrings, fmt.Sprintf("%#v", data.Body))
-		} else {
+		default:
 			substrings = append(substrings, fmt.Sprintf("%#v", f[0]))
 		}
-	} else {
+	default:
 		for k, framer := range f {
-			if data, ok := framer.(id3v2.UnknownFrame); ok {
+			data, ok := framer.(id3v2.UnknownFrame)
+			switch {
+			case ok:
 				substrings = append(substrings, fmt.Sprintf("[%d %#v]", k, data.Body))
-			} else {
+			default:
 				substrings = append(substrings, fmt.Sprintf("[%d %#v]", k, framer))
 			}
 		}

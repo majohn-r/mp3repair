@@ -97,19 +97,21 @@ func InitGlobals() {
 
 func CookCommandLineArguments(o output.Bus, inputArgs []string) []string {
 	args := make([]string, 0, len(inputArgs))
-	if len(inputArgs) > 1 {
-		for _, arg := range inputArgs[1:] {
-			if cookedArg, err := DereferenceEnvVar(arg); err != nil {
-				o.WriteCanonicalError("An error was found in processng argument %q: %v",
-					arg, err)
-				o.Log(output.Error, "Invalid argument value", map[string]any{
-					"argument": arg,
-					"error":    err,
-				})
-			} else {
-				args = append(args, cookedArg)
-			}
+	if len(inputArgs) <= 1 {
+		return args
+	}
+	for _, arg := range inputArgs[1:] {
+		cookedArg, err := DereferenceEnvVar(arg)
+		if err != nil {
+			o.WriteCanonicalError("An error was found in processng argument %q: %v",
+				arg, err)
+			o.Log(output.Error, "Invalid argument value", map[string]any{
+				"argument": arg,
+				"error":    err,
+			})
+			continue
 		}
+		args = append(args, cookedArg)
 	}
 	return args
 }

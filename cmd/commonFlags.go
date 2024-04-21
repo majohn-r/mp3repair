@@ -116,9 +116,8 @@ func AddFlags(o output.Bus, c *cmd_toolkit.Configuration, flags flagConsumer,
 		slices.Sort(sortedNames)
 		for _, name := range sortedNames {
 			details := def.flags[name]
-			if details != nil {
-				details.AddFlag(o, config, flags, def.sectionName, name)
-			} else {
+			switch details {
+			case nil:
 				o.WriteCanonicalError(
 					"an internal error occurred: there are no details for flag %q", name)
 				o.Log(output.Error, "internal error", map[string]any{
@@ -126,6 +125,8 @@ func AddFlags(o output.Bus, c *cmd_toolkit.Configuration, flags flagConsumer,
 					"flag":    name,
 					"error":   "no details present",
 				})
+			default:
+				details.AddFlag(o, config, flags, def.sectionName, name)
 			}
 		}
 	}
@@ -148,49 +149,58 @@ func (f *FlagDetails) AddFlag(o output.Bus, c ConfigSource, flags flagConsumer,
 	sectionName, flagName string) {
 	switch f.expectedType {
 	case StringType:
-		if statedDefault, _ok := f.defaultValue.(string); !_ok {
+		statedDefault, _ok := f.defaultValue.(string)
+		if !_ok {
 			reportDefaultTypeError(o, flagName, "string", f.defaultValue)
-		} else {
-			if newDefault, err := c.StringDefault(flagName, statedDefault); err != nil {
-				cmd_toolkit.ReportInvalidConfigurationData(o, sectionName, err)
-			} else {
-				usage := cmd_toolkit.DecorateStringFlagUsage(f.usage, newDefault)
-				if f.abbreviatedName == "" {
-					flags.String(flagName, newDefault, usage)
-				} else {
-					flags.StringP(flagName, f.abbreviatedName, newDefault, usage)
-				}
-			}
+			return
+		}
+		newDefault, err := c.StringDefault(flagName, statedDefault)
+		if err != nil {
+			cmd_toolkit.ReportInvalidConfigurationData(o, sectionName, err)
+			return
+		}
+		usage := cmd_toolkit.DecorateStringFlagUsage(f.usage, newDefault)
+		switch f.abbreviatedName {
+		case "":
+			flags.String(flagName, newDefault, usage)
+		default:
+			flags.StringP(flagName, f.abbreviatedName, newDefault, usage)
 		}
 	case BoolType:
-		if statedDefault, _ok := f.defaultValue.(bool); !_ok {
+		statedDefault, _ok := f.defaultValue.(bool)
+		if !_ok {
 			reportDefaultTypeError(o, flagName, "bool", f.defaultValue)
-		} else {
-			if newDefault, err := c.BoolDefault(flagName, statedDefault); err != nil {
-				cmd_toolkit.ReportInvalidConfigurationData(o, sectionName, err)
-			} else {
-				usage := cmd_toolkit.DecorateBoolFlagUsage(f.usage, newDefault)
-				if f.abbreviatedName == "" {
-					flags.Bool(flagName, newDefault, usage)
-				} else {
-					flags.BoolP(flagName, f.abbreviatedName, newDefault, usage)
-				}
-			}
+			return
+		}
+		newDefault, err := c.BoolDefault(flagName, statedDefault)
+		if err != nil {
+			cmd_toolkit.ReportInvalidConfigurationData(o, sectionName, err)
+			return
+		}
+		usage := cmd_toolkit.DecorateBoolFlagUsage(f.usage, newDefault)
+		switch f.abbreviatedName {
+		case "":
+			flags.Bool(flagName, newDefault, usage)
+		default:
+			flags.BoolP(flagName, f.abbreviatedName, newDefault, usage)
 		}
 	case IntType:
-		if bounds, _ok := f.defaultValue.(*cmd_toolkit.IntBounds); !_ok {
+		bounds, _ok := f.defaultValue.(*cmd_toolkit.IntBounds)
+		if !_ok {
 			reportDefaultTypeError(o, flagName, "*cmd_toolkit.IntBounds", f.defaultValue)
-		} else {
-			if newDefault, err := c.IntDefault(flagName, bounds); err != nil {
-				cmd_toolkit.ReportInvalidConfigurationData(o, sectionName, err)
-			} else {
-				usage := cmd_toolkit.DecorateIntFlagUsage(f.usage, newDefault)
-				if f.abbreviatedName == "" {
-					flags.Int(flagName, newDefault, usage)
-				} else {
-					flags.IntP(flagName, f.abbreviatedName, newDefault, usage)
-				}
-			}
+			return
+		}
+		newDefault, err := c.IntDefault(flagName, bounds)
+		if err != nil {
+			cmd_toolkit.ReportInvalidConfigurationData(o, sectionName, err)
+			return
+		}
+		usage := cmd_toolkit.DecorateIntFlagUsage(f.usage, newDefault)
+		switch f.abbreviatedName {
+		case "":
+			flags.Int(flagName, newDefault, usage)
+		default:
+			flags.IntP(flagName, f.abbreviatedName, newDefault, usage)
 		}
 	default:
 		o.WriteCanonicalError(
@@ -252,27 +262,27 @@ func ReadFlags(producer FlagProducer, defs *SectionFlags) (map[string]*FlagValue
 		var err error
 		details := defs.flags[name]
 		if details == nil {
-			err = fmt.Errorf("no details for flag %q", name)
-		} else {
-			val := &FlagValue{
-				explicitlySet: producer.Changed(name),
-				valueType:     details.expectedType,
-			}
-			switch details.expectedType {
-			case BoolType:
-				val.value, err = producer.GetBool(name)
-			case StringType:
-				val.value, err = producer.GetString(name)
-			case IntType:
-				val.value, err = producer.GetInt(name)
-			default:
-				err = fmt.Errorf("unknown type for flag --%s", name)
-			}
-			if err == nil {
-				m[name] = val
-			}
+			e = append(e, fmt.Errorf("no details for flag %q", name))
+			continue
 		}
-		if err != nil {
+		val := &FlagValue{
+			explicitlySet: producer.Changed(name),
+			valueType:     details.expectedType,
+		}
+		switch details.expectedType {
+		case BoolType:
+			val.value, err = producer.GetBool(name)
+		case StringType:
+			val.value, err = producer.GetString(name)
+		case IntType:
+			val.value, err = producer.GetInt(name)
+		default:
+			err = fmt.Errorf("unknown type for flag --%s", name)
+		}
+		switch err {
+		case nil:
+			m[name] = val
+		default:
 			e = append(e, err)
 		}
 	}
@@ -281,15 +291,21 @@ func ReadFlags(producer FlagProducer, defs *SectionFlags) (map[string]*FlagValue
 
 func GetBool(o output.Bus, results map[string]*FlagValue,
 	flagName string) (val, userSet bool, e error) {
-	if fv, err := extractFlagValue(o, results, flagName); err != nil {
+	fv, err := extractFlagValue(o, results, flagName)
+	if err != nil {
 		e = err
-	} else if fv == nil {
+		return
+	}
+	if fv == nil {
 		e = fmt.Errorf("no data associated with flag")
 		o.WriteCanonicalError("an internal error occurred: flag %q has no data", flagName)
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
 			"error": e})
-	} else if v, ok := fv.value.(bool); !ok {
+		return
+	}
+	v, ok := fv.value.(bool)
+	if !ok {
 		e = fmt.Errorf("flag value not boolean")
 		o.WriteCanonicalError("an internal error occurred: flag %q is not boolean (%v)",
 			flagName, fv.value)
@@ -297,24 +313,30 @@ func GetBool(o output.Bus, results map[string]*FlagValue,
 			"flag":  flagName,
 			"value": fv.value,
 			"error": e})
-	} else {
-		val = v
-		userSet = fv.explicitlySet
+		return
 	}
+	val = v
+	userSet = fv.explicitlySet
 	return
 }
 
 func GetInt(o output.Bus, results map[string]*FlagValue,
 	flagName string) (val int, userSet bool, e error) {
-	if fv, err := extractFlagValue(o, results, flagName); err != nil {
+	fv, err := extractFlagValue(o, results, flagName)
+	if err != nil {
 		e = err
-	} else if fv == nil {
+		return
+	}
+	if fv == nil {
 		e = fmt.Errorf("no data associated with flag")
 		o.WriteCanonicalError("an internal error occurred: flag %q has no data", flagName)
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
 			"error": e})
-	} else if v, ok := fv.value.(int); !ok {
+		return
+	}
+	v, ok := fv.value.(int)
+	if !ok {
 		e = fmt.Errorf("flag value not int")
 		o.WriteCanonicalError("an internal error occurred: flag %q is not an integer (%v)",
 			flagName, fv.value)
@@ -322,24 +344,30 @@ func GetInt(o output.Bus, results map[string]*FlagValue,
 			"flag":  flagName,
 			"value": fv.value,
 			"error": e})
-	} else {
-		val = v
-		userSet = fv.explicitlySet
+		return
 	}
+	val = v
+	userSet = fv.explicitlySet
 	return
 }
 
 func GetString(o output.Bus, results map[string]*FlagValue,
 	flagName string) (val string, userSet bool, e error) {
-	if fv, err := extractFlagValue(o, results, flagName); err != nil {
+	fv, err := extractFlagValue(o, results, flagName)
+	if err != nil {
 		e = err
-	} else if fv == nil {
+		return
+	}
+	if fv == nil {
 		e = fmt.Errorf("no data associated with flag")
 		o.WriteCanonicalError("an internal error occurred: flag %q has no data", flagName)
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
 			"error": e})
-	} else if v, ok := fv.value.(string); !ok {
+		return
+	}
+	v, ok := fv.value.(string)
+	if !ok {
 		e = fmt.Errorf("flag value not string")
 		o.WriteCanonicalError("an internal error occurred: flag %q is not a string (%v)",
 			flagName, fv.value)
@@ -347,10 +375,10 @@ func GetString(o output.Bus, results map[string]*FlagValue,
 			"flag":  flagName,
 			"value": fv.value,
 			"error": e})
-	} else {
-		val = v
-		userSet = fv.explicitlySet
+		return
 	}
+	val = v
+	userSet = fv.explicitlySet
 	return
 }
 
@@ -362,29 +390,31 @@ func extractFlagValue(o output.Bus, results map[string]*FlagValue,
 		o.Log(output.Error, "internal error", map[string]any{
 			"error": "no results to extract flag values from",
 		})
-	} else if value, ok := results[flagName]; !ok {
+		return
+	}
+	value, ok := results[flagName]
+	if !ok {
 		e = fmt.Errorf("flag not found")
 		o.WriteCanonicalError("an internal error occurred: flag %q is not found", flagName)
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
 			"error": e,
 		})
-	} else {
-		fv = value
+		return
 	}
+	fv = value
 	return
 }
 
-func ProcessFlagErrors(o output.Bus, eSlice []error) (ok bool) {
+func ProcessFlagErrors(o output.Bus, eSlice []error) bool {
 	if len(eSlice) != 0 {
 		for _, e := range eSlice {
 			o.WriteCanonicalError("an internal error occurred: %v", e)
 			o.Log(output.Error, "internal error", map[string]any{"error": e})
 		}
-	} else {
-		ok = true
+		return false
 	}
-	return
+	return true
 }
 
 func init() {

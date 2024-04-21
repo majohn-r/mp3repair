@@ -18,11 +18,11 @@ const (
 func environmentPermits() bool {
 	if value, ok := LookupEnv(adminPermissionVar); ok {
 		// interpret value as bool
-		if boolValue, err := strconv.ParseBool(value); err != nil {
-			fmt.Printf("Value %q of environment variable %q is neither true nor false\n", value, adminPermissionVar)
-		} else {
+		boolValue, err := strconv.ParseBool(value)
+		if err == nil {
 			return boolValue
 		}
+		fmt.Printf("Value %q of environment variable %q is neither true nor false\n", value, adminPermissionVar)
 	}
 	return defaultEnvironmentSetting
 }
@@ -149,31 +149,31 @@ func (ec *ElevationControl) Status(appName string) []string {
 	results := make([]string, 0, 3)
 	if ec.elevated {
 		results = append(results, fmt.Sprintf("%s is running with elevated privileges", appName))
-	} else {
-		results = append(results, fmt.Sprintf("%s is not running with elevated privileges", appName))
-		if ec.redirected() {
-			redirectedIO := make([]string, 0, 3)
-			if ec.stderrRedirected {
-				redirectedIO = append(redirectedIO, "stderr")
-			}
-			if ec.stdinRedirected {
-				redirectedIO = append(redirectedIO, "stdin")
-			}
-			if ec.stdoutRedirected {
-				redirectedIO = append(redirectedIO, "stdout")
-			}
-			switch len(redirectedIO) {
-			case 1:
-				results = append(results, fmt.Sprintf("%s has been redirected", redirectedIO[0]))
-			case 2:
-				results = append(results, fmt.Sprintf("%s have been redirected", strings.Join(redirectedIO, " and ")))
-			case 3:
-				results = append(results, "stderr, stdin, and stdout have been redirected")
-			}
+		return results
+	}
+	results = append(results, fmt.Sprintf("%s is not running with elevated privileges", appName))
+	if ec.redirected() {
+		redirectedIO := make([]string, 0, 3)
+		if ec.stderrRedirected {
+			redirectedIO = append(redirectedIO, "stderr")
 		}
-		if !ec.adminPermitted {
-			results = append(results, fmt.Sprintf("The environment variable %s evaluates as false", adminPermissionVar))
+		if ec.stdinRedirected {
+			redirectedIO = append(redirectedIO, "stdin")
 		}
+		if ec.stdoutRedirected {
+			redirectedIO = append(redirectedIO, "stdout")
+		}
+		switch len(redirectedIO) {
+		case 1:
+			results = append(results, fmt.Sprintf("%s has been redirected", redirectedIO[0]))
+		case 2:
+			results = append(results, fmt.Sprintf("%s have been redirected", strings.Join(redirectedIO, " and ")))
+		case 3:
+			results = append(results, "stderr, stdin, and stdout have been redirected")
+		}
+	}
+	if !ec.adminPermitted {
+		results = append(results, fmt.Sprintf("The environment variable %s evaluates as false", adminPermissionVar))
 	}
 	return results
 }

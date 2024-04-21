@@ -119,14 +119,16 @@ func ListRun(cmd *cobra.Command, _ []string) error {
 				details[k] = v
 			}
 			LogCommandStart(o, ListCommand, details)
-			if ls.HasWorkToDo(o) {
-				if ls.TracksSortable(o) {
+			switch ls.HasWorkToDo(o) {
+			case true:
+				switch ls.TracksSortable(o) {
+				case true:
 					allArtists, loaded := searchSettings.Load(o)
 					exitError = ls.ProcessArtists(o, allArtists, loaded, searchSettings)
-				} else {
+				case false:
 					exitError = NewExitUserError(ListCommand)
 				}
-			} else {
+			case false:
 				exitError = NewExitUserError(ListCommand)
 			}
 		}
@@ -247,17 +249,17 @@ func (ls *ListSettings) ListArtists(o output.Bus, artists []*files.Artist) {
 				ls.ListAlbums(o, artist.Albums(), 2)
 			}
 		}
-	} else {
-		albumCount := 0
-		for _, a := range artists {
-			albumCount += len(a.Albums())
-		}
-		albums := make([]*files.Album, 0, albumCount)
-		for _, a := range artists {
-			albums = append(albums, a.Albums()...)
-		}
-		ls.ListAlbums(o, albums, 0)
+		return
 	}
+	albumCount := 0
+	for _, a := range artists {
+		albumCount += len(a.Albums())
+	}
+	albums := make([]*files.Album, 0, albumCount)
+	for _, a := range artists {
+		albums = append(albums, a.Albums()...)
+	}
+	ls.ListAlbums(o, albums, 0)
 }
 
 type AlbumSlice []*files.Album
@@ -269,9 +271,8 @@ func (as AlbumSlice) Len() int {
 func (as AlbumSlice) Less(i, j int) bool {
 	if as[i].Name() == as[j].Name() {
 		return as[i].RecordingArtistName() < as[j].RecordingArtistName()
-	} else {
-		return as[i].Name() < as[j].Name()
 	}
+	return as[i].Name() < as[j].Name()
 }
 
 func (as AlbumSlice) Swap(i, j int) {
@@ -285,17 +286,17 @@ func (ls *ListSettings) ListAlbums(o output.Bus, albums []*files.Album, tab int)
 			o.WriteConsole("%*sAlbum: %s\n", tab, "", ls.AnnotateAlbumName(album))
 			ls.ListTracks(o, album.Tracks(), tab+2)
 		}
-	} else {
-		trackCount := 0
-		for _, album := range albums {
-			trackCount += len(album.Tracks())
-		}
-		tracks := make([]*files.Track, 0, trackCount)
-		for _, album := range albums {
-			tracks = append(tracks, album.Tracks()...)
-		}
-		ls.ListTracks(o, tracks, tab)
+		return
 	}
+	trackCount := 0
+	for _, album := range albums {
+		trackCount += len(album.Tracks())
+	}
+	tracks := make([]*files.Track, 0, trackCount)
+	for _, album := range albums {
+		tracks = append(tracks, album.Tracks()...)
+	}
+	ls.ListTracks(o, tracks, tab)
 }
 
 func (ls *ListSettings) AnnotateAlbumName(album *files.Album) string {
@@ -351,12 +352,10 @@ func (ts TrackSlice) Less(i, j int) bool {
 		album2 := ts[j].Album()
 		if album1.Name() == album2.Name() {
 			return album1.RecordingArtistName() < album2.RecordingArtistName()
-		} else {
-			return album1.Name() < album2.Name()
 		}
-	} else {
-		return ts[i].CommonName() < ts[j].CommonName()
+		return album1.Name() < album2.Name()
 	}
+	return ts[i].CommonName() < ts[j].CommonName()
 }
 
 func (ts TrackSlice) Swap(i, j int) {
@@ -408,16 +407,19 @@ func ShowDetails(o output.Bus, track *files.Track, details map[string]string,
 			"The details are not available for track %q on album %q by artist %q: %q",
 			track.CommonName(), track.AlbumName(), track.RecordingArtist(),
 			detailsError.Error())
-	} else if len(details) != 0 {
-		keys := make([]string, 0, len(details))
-		for k := range details {
-			keys = append(keys, k)
-		}
-		sort.Strings(keys)
-		o.WriteConsole("%*sDetails:\n", tab, "")
-		for _, k := range keys {
-			o.WriteConsole("%*s%s = %q\n", tab+2, "", k, details[k])
-		}
+		return
+	}
+	if len(details) == 0 {
+		return
+	}
+	keys := make([]string, 0, len(details))
+	for k := range details {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	o.WriteConsole("%*sDetails:\n", tab, "")
+	for _, k := range keys {
+		o.WriteConsole("%*s%s = %q\n", tab+2, "", k, details[k])
 	}
 }
 
@@ -435,10 +437,10 @@ func ShowID3V1Diagnostics(o output.Bus, track *files.Track, tags []string, err e
 	tab int) {
 	if err != nil {
 		track.ReportMetadataReadError(o, files.ID3V1, err.Error())
-	} else {
-		for _, s := range tags {
-			o.WriteConsole("%*sID3V1 %s\n", tab, "", s)
-		}
+		return
+	}
+	for _, s := range tags {
+		o.WriteConsole("%*sID3V1 %s\n", tab, "", s)
 	}
 }
 
@@ -447,12 +449,12 @@ func ShowID3V2Diagnostics(o output.Bus, track *files.Track, version byte, encodi
 	frames []string, err error, tab int) {
 	if err != nil {
 		track.ReportMetadataReadError(o, files.ID3V2, err.Error())
-	} else {
-		o.WriteConsole("%*sID3V2 Version: %v\n", tab, "", version)
-		o.WriteConsole("%*sID3V2 Encoding: %q\n", tab, "", encoding)
-		for _, frame := range frames {
-			o.WriteConsole("%*sID3V2 %s\n", tab, "", frame)
-		}
+		return
+	}
+	o.WriteConsole("%*sID3V2 Version: %v\n", tab, "", version)
+	o.WriteConsole("%*sID3V2 Encoding: %q\n", tab, "", encoding)
+	for _, frame := range frames {
+		o.WriteConsole("%*sID3V2 %s\n", tab, "", frame)
 	}
 }
 
@@ -464,21 +466,24 @@ func (ls *ListSettings) TracksSortable(o output.Bus) bool {
 		case bothSortingOptionsSet:
 			o.WriteCanonicalError("Track sorting cannot be done")
 			o.WriteCanonicalError("Why?")
-			if ls.sortByNumberUserSet {
-				if ls.sortByTitleUserSet {
+			switch ls.sortByNumberUserSet {
+			case true:
+				switch ls.sortByTitleUserSet {
+				case true:
 					o.WriteCanonicalError("You explicitly set %s and %s true",
 						ListSortByNumberFlag, ListSortByTitleFlag)
-				} else {
+				case false:
 					o.WriteCanonicalError(
 						"The %s flag is configured true and you explicitly set %s true",
 						ListSortByTitleFlag, ListSortByNumberFlag)
 				}
-			} else {
-				if ls.sortByTitleUserSet {
+			case false:
+				switch ls.sortByTitleUserSet {
+				case true:
 					o.WriteCanonicalError(
 						"The %s flag is configured true and you explicitly set %s true",
 						ListSortByNumberFlag, ListSortByTitleFlag)
-				} else {
+				case false:
 					o.WriteCanonicalError("The %s and %s flags are both configured true",
 						ListSortByNumberFlag, ListSortByTitleFlag)
 				}
@@ -490,16 +495,19 @@ func (ls *ListSettings) TracksSortable(o output.Bus) bool {
 			o.WriteCanonicalError("Sorting tracks by number not possible.")
 			o.WriteCanonicalError("Why?")
 			o.WriteCanonicalError("Track numbers are only relevant if albums are also output.")
-			if ls.sortByNumberUserSet {
-				if ls.albumsUserSet {
+			switch ls.sortByNumberUserSet {
+			case true:
+				switch ls.albumsUserSet {
+				case true:
 					o.WriteCanonicalError("You set %s true and %s false.", ListSortByNumberFlag, ListAlbumsFlag)
-				} else {
+				case false:
 					o.WriteCanonicalError("You set %s true and %s is configured as false", ListSortByNumberFlag, ListAlbumsFlag)
 				}
-			} else {
-				if ls.albumsUserSet {
+			case false:
+				switch ls.albumsUserSet {
+				case true:
 					o.WriteCanonicalError("You set %s false and %s is configured as true", ListAlbumsFlag, ListSortByNumberFlag)
-				} else {
+				case false:
 					o.WriteCanonicalError("%s is configured as false, and %s is configured as true", ListAlbumsFlag, ListSortByNumberFlag)
 				}
 			}
@@ -520,9 +528,10 @@ func (ls *ListSettings) TracksSortable(o output.Bus) bool {
 			case ls.sortByTitleUserSet:
 				ls.sortByNumber = true // pick the other setting
 			default: // ok, pick something sensible, user does not care
-				if ls.albums {
+				switch ls.albums {
+				case true:
 					ls.sortByNumber = true
-				} else {
+				case false:
 					ls.sortByTitle = true
 				}
 			}
@@ -531,9 +540,10 @@ func (ls *ListSettings) TracksSortable(o output.Bus) bool {
 				ListSortByNumber:    ls.sortByNumber,
 				ListSortByTitleFlag: ls.sortByTitle,
 			})
+			return true
 		}
-	} else if (ls.sortByNumber && ls.sortByNumberUserSet) ||
-		(ls.sortByTitle && ls.sortByTitleUserSet) {
+	}
+	if (ls.sortByNumber && ls.sortByNumberUserSet) || (ls.sortByTitle && ls.sortByTitleUserSet) {
 		o.WriteCanonicalError("Your sorting preferences are not relevant")
 		o.WriteCanonicalError("Why?")
 		o.WriteCanonicalError(
@@ -550,35 +560,39 @@ func (ls *ListSettings) HasWorkToDo(o output.Bus) bool {
 	if ls.albums || ls.artists || ls.tracks {
 		return true
 	}
-	userPartiallyAtFault := ls.albumsUserSet || ls.artistsUserSet || ls.tracksUserSet
 	o.WriteCanonicalError("No listing will be output.\nWhy?\n")
-	if userPartiallyAtFault {
+	switch {
+	case ls.albumsUserSet || ls.artistsUserSet || ls.tracksUserSet:
 		flagsUserSet := make([]string, 0, 3)
 		flagsFromConfig := make([]string, 0, 3)
-		if ls.albumsUserSet {
+		switch {
+		case ls.albumsUserSet:
 			flagsUserSet = append(flagsUserSet, ListAlbumsFlag)
-		} else {
+		default:
 			flagsFromConfig = append(flagsFromConfig, ListAlbumsFlag)
 		}
-		if ls.artistsUserSet {
+		switch {
+		case ls.artistsUserSet:
 			flagsUserSet = append(flagsUserSet, ListArtistsFlag)
-		} else {
+		default:
 			flagsFromConfig = append(flagsFromConfig, ListArtistsFlag)
 		}
-		if ls.tracksUserSet {
+		switch {
+		case ls.tracksUserSet:
 			flagsUserSet = append(flagsUserSet, ListTracksFlag)
-		} else {
+		default:
 			flagsFromConfig = append(flagsFromConfig, ListTracksFlag)
 		}
-		if len(flagsFromConfig) == 0 {
+		switch len(flagsFromConfig) {
+		case 0:
 			o.WriteCanonicalError("You explicitly set %s, %s, and %s false",
 				ListAlbumsFlag, ListArtistsFlag, ListTracksFlag)
-		} else {
+		default:
 			o.WriteCanonicalError(
 				"In addition to %s configured false, you explicitly set %s false",
 				strings.Join(flagsFromConfig, " and "), strings.Join(flagsUserSet, " and "))
 		}
-	} else {
+	default: // user did not set any of the relevant flags that way
 		o.WriteCanonicalError("The flags %s, %s, and %s are all configured false",
 			ListAlbumsFlag, ListArtistsFlag, ListTracksFlag)
 	}
