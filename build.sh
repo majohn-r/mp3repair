@@ -14,7 +14,7 @@ fi
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null && pwd )"
 cd "${DIR}/build"
 if [[ "${tracing}" == "true" ]]; then
-    go run . -v "$@"
+    DIR=${DIR} go run . -v "$@"
 else
-    go run . "$@"
+    DIR=${DIR} go run . "$@"
 fi
