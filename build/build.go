@@ -1,11 +1,8 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/fs"
-	"os"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -13,8 +10,9 @@ import (
 	"time"
 
 	"github.com/goyek/goyek/v2"
-	"github.com/goyek/x/cmd"
 	"github.com/josephspurrier/goversioninfo"
+	tools_build "github.com/majohn-r/tools-build"
+	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
 )
 
@@ -27,7 +25,9 @@ const (
 )
 
 var (
-	build = goyek.Define(goyek.Task{
+	fileSystem = afero.NewOsFs()
+	pD         *productData
+	build      = goyek.Define(goyek.Task{
 		Name:  "build",
 		Usage: "build the executable",
 		Action: func(a *goyek.A) {
@@ -40,15 +40,14 @@ var (
 		Usage: "delete build products",
 		Action: func(a *goyek.A) {
 			fmt.Println("deleting build products")
-			exec, path, _, _ := readConfig()
-			workingDir := WorkingDir()
+			loadProductData()
 			files := []string{
-				filepath.Join(workingDir, path, versionInfoFile),
-				filepath.Join(workingDir, path, resourceFile),
-				filepath.Join(workingDir, coverageFile),
-				filepath.Join(workingDir, exec),
+				versionInfoFile,
+				resourceFile,
+				coverageFile,
+				pD.executable,
 			}
-			Clean(files)
+			tools_build.Clean(files)
 		},
 	})
 
@@ -56,7 +55,7 @@ var (
 		Name:  "coverage",
 		Usage: "run unit tests and produce a coverage report",
 		Action: func(a *goyek.A) {
-			GenerateCoverageReport(a, coverageFile)
+			tools_build.GenerateCoverageReport(a, coverageFile)
 		},
 	})
 
@@ -64,7 +63,7 @@ var (
 		Name:  "doc",
 		Usage: "generate documentation",
 		Action: func(a *goyek.A) {
-			GenerateDocumentation(a)
+			tools_build.GenerateDocumentation(a, []string{"build"})
 		},
 	})
 
@@ -72,7 +71,7 @@ var (
 		Name:  "format",
 		Usage: "clean up source code formatting",
 		Action: func(a *goyek.A) {
-			Format(a)
+			tools_build.Format(a)
 		},
 	})
 
@@ -80,7 +79,7 @@ var (
 		Name:  "lint",
 		Usage: "run the linter on source code",
 		Action: func(a *goyek.A) {
-			Lint(a)
+			tools_build.Lint(a)
 		},
 	})
 
@@ -88,7 +87,7 @@ var (
 		Name:  "nilaway",
 		Usage: "run nilaway on source code",
 		Action: func(a *goyek.A) {
-			NilAway(a)
+			tools_build.NilAway(a)
 		},
 	})
 
@@ -96,7 +95,7 @@ var (
 		Name:  "vulnCheck",
 		Usage: "run vulnerability check on source code",
 		Action: func(a *goyek.A) {
-			VulnerabilityCheck(a)
+			tools_build.VulnerabilityCheck(a)
 		},
 	})
 
@@ -110,195 +109,15 @@ var (
 		Name:  "tests",
 		Usage: "run unit tests",
 		Action: func(a *goyek.A) {
-			UnitTests(a)
+			tools_build.UnitTests(a)
 		},
 	})
 )
 
-// WorkingDir returns a best guess of the working directory
-func WorkingDir() string {
-	if dir, ok := os.LookupEnv("DIR"); ok {
-		return dir
-	}
-	return ".."
-}
-
-// Clean deletes the named files
-func Clean(files []string) {
-	for _, file := range files {
-		os.Remove(file)
-	}
-}
-
-// Format runs the gofmt tool to repair the formatting of each source file
-func Format(a *goyek.A) {
-	fmt.Println("cleaning up source code formatting")
-	RunCommand(a, "gofmt -e -l -s -w .")
-}
-
-// GenerateCoverageReport runs the unit tests, generating a coverage profile; if
-// the unit tests all succeed, generates the report as HTML to be displayed in
-// the current browser window
-func GenerateCoverageReport(a *goyek.A, file string) {
-	fmt.Printf("executing unit tests, writing coverage data to %q\n", file)
-	l := fmt.Sprintf("go test -coverprofile=%s ./...", file)
-	if RunCommand(a, l) {
-		fmt.Printf("displaying coverage report from %q\n", file)
-		l = fmt.Sprintf("go tool cover -html=%s", file)
-		RunCommand(a, l)
-	}
-}
-
-// GenerateDocumentation generates documentation of the code, outputting it to
-// stdout
-func GenerateDocumentation(a *goyek.A) {
-	dirs, err := codeDirs()
-	if err != nil {
-		return
-	}
-	o := &bytes.Buffer{}
-	for _, f := range dirs {
-		if f == "build" {
-			continue
-		}
-		l := fmt.Sprintf("go doc -all ./%s", f)
-		if !cmd.Exec(a, l, MakeCmdOptions(o)...) {
-			break
-		}
-	}
-	print(o)
-}
-
-// Lint runs lint on the source code after making sure that the lint tool is up
-// to date
-func Lint(a *goyek.A) {
-	install(a, "github.com/go-critic/go-critic/cmd/gocritic")
-	fmt.Println("linting source code")
-	RunCommand(a, "gocritic check -enableAll ./...")
-}
-
-// NilAway runs the nilaway tool, which attempts, via static analysis, to detect
-// potential nil access errors
-func NilAway(a *goyek.A) {
-	install(a, "go.uber.org/nilaway/cmd/nilaway")
-	fmt.Println("running nilaway analysis")
-	RunCommand(a, "nilaway ./...")
-}
-
-// RunCommand runs a command and displays all of its output; returns true on
-// success
-func RunCommand(a *goyek.A, command string) bool {
-	outputBuffer := &bytes.Buffer{}
-	defer print(outputBuffer)
-	return cmd.Exec(a, command, MakeCmdOptions(outputBuffer)...)
-}
-
-// UnitTests runs all unit tests, with code coverage enabled
-func UnitTests(a *goyek.A) {
-	fmt.Println("running all unit tests")
-	RunCommand(a, "go test -cover ./...")
-}
-
-// VulnerabilityCheck runs the govulncheck tool, which checks for unresolved
-// known vulnerabilities in the libraries used
-func VulnerabilityCheck(a *goyek.A) {
-	install(a, "golang.org/x/vuln/cmd/govulncheck")
-	fmt.Println("running vulnerability checks")
-	RunCommand(a, "govulncheck -show verbose ./...")
-}
-
-func allDirs(top string) (dirs []string, err error) {
-	var entries []fs.DirEntry
-	if entries, err = os.ReadDir(top); err != nil {
-		return
-	}
-	for _, entry := range entries {
-		if !entry.IsDir() {
-			continue
-		}
-		f := filepath.Join(top, entry.Name())
-		dirs = append(dirs, f)
-		var subDirs []string
-		if subDirs, err = allDirs(f); err != nil {
-			return
-		}
-		dirs = append(dirs, subDirs...)
-	}
-	return
-}
-
-func codeDirs() ([]string, error) {
-	dirs, err := allDirs(WorkingDir())
-	if err != nil {
-		return nil, err
-	}
-	workingDir := WorkingDir() + "/"
-	codeDirectories := []string{}
-	for _, directory := range dirs {
-		var entries []fs.DirEntry
-		if entries, err = os.ReadDir(directory); err != nil {
-			return nil, err
-		}
-		if includesCode(entries) {
-			cleanDirectory := strings.ReplaceAll(directory, "\\", "/")
-			cleanDirectory = strings.TrimPrefix(cleanDirectory, workingDir)
-			codeDirectories = append(codeDirectories, cleanDirectory)
-		}
-	}
-	return codeDirectories, nil
-}
-
-// Generate runs the 'go generate' tool
-func Generate(a *goyek.A, path string) {
-	b := &bytes.Buffer{}
-	var o []cmd.Option
-	o = append(o, cmd.Dir(filepath.Join(WorkingDir(), path)), cmd.Stderr(b), cmd.Stdout(b))
-	cmd.Exec(a, "go generate", o...)
-	print(b)
-}
-
-func includesCode(entries []fs.DirEntry) (ok bool) {
-	for _, e := range entries {
-		if isCode(e) {
-			ok = true
-			return
-		}
-	}
-	return
-}
-
-func install(a *goyek.A, packageName string) {
-	fmt.Printf("installing the latest version of %s\n", packageName)
-	RunCommand(a, fmt.Sprintf("go install -v %s@latest", packageName))
-}
-
-func isCode(entry fs.DirEntry) (ok bool) {
-	if entry.Type().IsRegular() {
-		n := entry.Name()
-		ok = strings.HasSuffix(n, ".go") && !strings.HasSuffix(n, "_test.go") && !strings.HasPrefix(n, "testing")
-	}
-	return
-}
-
-// MakeCmdOptions creates a slice of cmd.Option instances consisting of the
-// working directory, stderr (using the provided buffer), and stdout (using the
-// same provided buffer)
-func MakeCmdOptions(b *bytes.Buffer) (o []cmd.Option) {
-	return append(o, cmd.Dir(WorkingDir()), cmd.Stderr(b), cmd.Stdout(b))
-}
-
-func print(b *bytes.Buffer) {
-	s := b.String()
-	if s != "" {
-		fmt.Println(s)
-	}
-}
-
 type Config struct {
 	// special functions:
 	//   application: the application name
-	//   path:        the relative path to the main package
-	//   timestamp:   flag gets a timestamp value
+	//   timestamp:   treat as Flag, but the associated value is generated at runtime
 	Function string
 	// flag name
 	Flag string
@@ -310,103 +129,98 @@ type Config struct {
 }
 
 func buildExecutable(a *goyek.A) {
-	fmt.Println("building executable")
-	exec, path, flags, configData := readConfig()
+	loadProductData()
 	// logged output shows up when running verbose (-v) or on error
-	a.Logf("configuration: %#v", configData)
-	a.Logf("executable: %s", exec)
-	a.Logf("path: %s", path)
-	if len(flags) > 0 {
-		a.Log("flags:")
-		for _, flag := range flags {
-			a.Logf("\t%q", flag)
-		}
+	a.Logf("configuration: %#v", pD)
+	pD.generateVersionInfo()
+	if tools_build.Generate(a) {
+		fmt.Println("building executable")
+		tools_build.RunCommand(a, fmt.Sprintf("go build -ldflags %q -o %s .", strings.Join(pD.flags, " "), pD.executable))
 	}
-	generateVersionInfo(path, configData)
-	Generate(a, path)
-	RunCommand(a, fmt.Sprintf("go build -ldflags %q -o %s %s", strings.Join(flags, " "), exec, path))
 }
 
 type productData struct {
-	majorLevel  int
-	minorLevel  int
-	patchLevel  int
-	description string
-	name        string
-	firstYear   int
+	majorLevel      int
+	minorLevel      int
+	patchLevel      int
+	semanticVersion string
+	flags           []string
+	description     string
+	name            string
+	executable      string
+	firstYear       int
 }
 
-func generateVersionInfo(path string, input *productData) {
+func (pD *productData) copyright() string {
+	currentYear := time.Now().Year()
+	switch {
+	case currentYear == pD.firstYear:
+		return fmt.Sprintf("Copyright © %d Marc Johnson", currentYear)
+	default:
+		return fmt.Sprintf("Copyright © %d-%d Marc Johnson", pD.firstYear, currentYear)
+	}
+}
+
+func (pD *productData) generateVersionInfo() {
 	data := goversioninfo.VersionInfo{}
-	data.FixedFileInfo.FileVersion.Major = input.majorLevel
-	data.FixedFileInfo.FileVersion.Minor = input.minorLevel
-	data.FixedFileInfo.FileVersion.Patch = input.patchLevel
-	data.FixedFileInfo.ProductVersion.Major = input.majorLevel
-	data.FixedFileInfo.ProductVersion.Minor = input.minorLevel
-	data.FixedFileInfo.ProductVersion.Patch = input.patchLevel
+	data.FixedFileInfo.FileVersion.Major = pD.majorLevel
+	data.FixedFileInfo.FileVersion.Minor = pD.minorLevel
+	data.FixedFileInfo.FileVersion.Patch = pD.patchLevel
+	data.FixedFileInfo.ProductVersion.Major = pD.majorLevel
+	data.FixedFileInfo.ProductVersion.Minor = pD.minorLevel
+	data.FixedFileInfo.ProductVersion.Patch = pD.patchLevel
 	data.FixedFileInfo.FileFlagsMask = "3f"
 	data.FixedFileInfo.FileOS = "040004"
 	data.FixedFileInfo.FileType = "01"
-	data.StringFileInfo.FileDescription = input.description
-	version := fmt.Sprintf("v%d.%d.%d", input.majorLevel, input.minorLevel, input.patchLevel)
-	data.StringFileInfo.FileVersion = version
-	currentYear := time.Now().Year()
-	switch {
-	case currentYear == input.firstYear:
-		data.StringFileInfo.LegalCopyright = fmt.Sprintf("Copyright © %d Marc Johnson", currentYear)
-	default:
-		data.StringFileInfo.LegalCopyright = fmt.Sprintf("Copyright © %d-%d Marc Johnson", input.firstYear, currentYear)
-	}
-	data.StringFileInfo.ProductName = input.name
-	data.StringFileInfo.ProductVersion = version
+	data.StringFileInfo.FileDescription = pD.description
+	data.StringFileInfo.FileVersion = pD.semanticVersion
+	data.StringFileInfo.LegalCopyright = pD.copyright()
+	data.StringFileInfo.ProductName = pD.name
+	data.StringFileInfo.ProductVersion = pD.semanticVersion
 	data.VarFileInfo.Translation.LangID = goversioninfo.LngUSEnglish
 	data.VarFileInfo.Translation.CharsetID = goversioninfo.CsUnicode
 	b, _ := json.Marshal(data)
-	fullPath := filepath.Join(WorkingDir(), path, versionInfoFile)
-	file, fileErr := os.Create(fullPath)
-	switch fileErr {
-	case nil:
-		defer file.Close()
-		file.Write(b)
-	default:
+	fullPath := filepath.Join(tools_build.WorkingDir(), versionInfoFile)
+	if fileErr := afero.WriteFile(fileSystem, fullPath, b, 0o644); fileErr != nil {
 		fmt.Printf("error writing %q! %v\n", versionInfoFile, fileErr)
 	}
 }
 
-func readConfig() (exec, path string, flags []string, input *productData) {
-	rawYaml, _ := os.ReadFile(buildDataFile)
-	input = &productData{}
-	var data []Config
-	_ = yaml.Unmarshal(rawYaml, &data)
-	for _, value := range data {
-		switch value.Function {
-		case "application":
-			exec = value.Value
-			input.name = value.Name
-			input.description = value.Description
-		case "firstYear":
-			if i, err := strconv.Atoi(value.Value); err == nil {
-				input.firstYear = i
-			}
-		case "path":
-			path = value.Value
-		case "timestamp":
-			flags = append(flags, fmt.Sprintf("-X %s=%s", value.Flag, time.Now().Format(time.RFC3339)))
-		default:
-			flags = append(flags, fmt.Sprintf("-X %s=%s", value.Flag, value.Value))
-			switch value.Flag {
-			case "main.version":
-				var major int
-				var minor int
-				var patch int
-				if count, err := fmt.Sscanf(value.Value, "%d.%d.%d", &major, &minor, &patch); count == 3 && err == nil {
-					input.majorLevel = major
-					input.minorLevel = minor
-					input.patchLevel = patch
+func loadProductData() {
+	if pD == nil {
+		rawPD := &productData{}
+		rawYaml, _ := afero.ReadFile(fileSystem, buildDataFile)
+		var data []Config
+		_ = yaml.Unmarshal(rawYaml, &data)
+		for _, value := range data {
+			switch value.Function {
+			case "application":
+				rawPD.executable = value.Value
+				rawPD.name = value.Name
+				rawPD.description = value.Description
+			case "firstYear":
+				if i, err := strconv.Atoi(value.Value); err == nil {
+					rawPD.firstYear = i
+				}
+			case "timestamp":
+				rawPD.flags = append(rawPD.flags, fmt.Sprintf("-X %s=%s", value.Flag, time.Now().Format(time.RFC3339)))
+			default:
+				rawPD.flags = append(rawPD.flags, fmt.Sprintf("-X %s=%s", value.Flag, value.Value))
+				switch value.Flag {
+				case "main.version":
+					var major int
+					var minor int
+					var patch int
+					if count, err := fmt.Sscanf(value.Value, "%d.%d.%d", &major, &minor, &patch); count == 3 && err == nil {
+						rawPD.majorLevel = major
+						rawPD.minorLevel = minor
+						rawPD.patchLevel = patch
+						rawPD.semanticVersion = fmt.Sprintf("v%s", value.Value)
+					}
 				}
 			}
 		}
+		sort.Strings(rawPD.flags)
+		pD = rawPD
 	}
-	sort.Strings(flags)
-	return
 }

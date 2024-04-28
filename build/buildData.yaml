@@ -3,8 +3,6 @@
     value: mp3repair.exe
     name: mp3repair
     description: mp3 repair utility
-  - function: path
-    value: .
   - function: timestamp
     flag: main.creation
   - function: firstYear
