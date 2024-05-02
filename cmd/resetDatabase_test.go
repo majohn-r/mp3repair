@@ -682,7 +682,7 @@ func TestResetDBSettings_FilterMetadataFiles(t *testing.T) {
 	tests := map[string]struct {
 		plainFileExists func(string) bool
 		rdbs            *cmd.ResetDBSettings
-		entries         []fs.DirEntry
+		entries         []fs.FileInfo
 		want            []string
 	}{
 		"no entries": {want: []string{}},
@@ -690,7 +690,7 @@ func TestResetDBSettings_FilterMetadataFiles(t *testing.T) {
 			plainFileExists: func(s string) bool { return !strings.Contains(s, "dir.") },
 			rdbs: cmd.NewResetDBSettings().WithMetadataDir(
 				"metadata").WithExtension(".db"),
-			entries: []fs.DirEntry{
+			entries: []fs.FileInfo{
 				newTestFile("dir. foo.db", nil),
 				newTestFile("foo.db", nil),
 				newTestFile("foo", nil),
@@ -719,7 +719,7 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 		cmd.Remove = originalRemove
 	}()
 	tests := map[string]struct {
-		readDirectory   func(output.Bus, string) ([]fs.DirEntry, bool)
+		readDirectory   func(output.Bus, string) ([]fs.FileInfo, bool)
 		plainFileExists func(string) bool
 		remove          func(string) error
 		rdbs            *cmd.ResetDBSettings
@@ -743,7 +743,7 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 			},
 		},
 		"stopped, no metadata": {
-			readDirectory: func(_ output.Bus, _ string) ([]fs.DirEntry, bool) {
+			readDirectory: func(_ output.Bus, _ string) ([]fs.FileInfo, bool) {
 				return nil, true
 			},
 			rdbs:    cmd.NewResetDBSettings().WithMetadataDir("metadata"),
@@ -759,7 +759,7 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 			},
 		},
 		"not stopped but ignored, no metadata": {
-			readDirectory: func(_ output.Bus, _ string) ([]fs.DirEntry, bool) {
+			readDirectory: func(_ output.Bus, _ string) ([]fs.FileInfo, bool) {
 				return nil, true
 			},
 			rdbs: cmd.NewResetDBSettings().WithMetadataDir(
@@ -776,7 +776,7 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 			},
 		},
 		"not stopped but ignored, cannot read metadata directory": {
-			readDirectory: func(_ output.Bus, _ string) ([]fs.DirEntry, bool) {
+			readDirectory: func(_ output.Bus, _ string) ([]fs.FileInfo, bool) {
 				return nil, false
 			},
 			rdbs: cmd.NewResetDBSettings().WithMetadataDir(
@@ -786,8 +786,8 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 			WantedRecording: output.WantedRecording{},
 		},
 		"work to do": {
-			readDirectory: func(_ output.Bus, _ string) ([]fs.DirEntry, bool) {
-				return []fs.DirEntry{newTestFile("foo.db", nil)}, true
+			readDirectory: func(_ output.Bus, _ string) ([]fs.FileInfo, bool) {
+				return []fs.FileInfo{newTestFile("foo.db", nil)}, true
 			},
 			plainFileExists: func(_ string) bool { return true },
 			remove:          func(_ string) error { return nil },

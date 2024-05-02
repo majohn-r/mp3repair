@@ -461,7 +461,7 @@ func (rdbs *ResetDBSettings) DeleteMetadataFiles(o output.Bus, stopped bool) *Ex
 	return nil
 }
 
-func (rdbs *ResetDBSettings) FilterMetadataFiles(entries []fs.DirEntry) []string {
+func (rdbs *ResetDBSettings) FilterMetadataFiles(entries []fs.FileInfo) []string {
 	paths := []string{}
 	for _, file := range entries {
 		if strings.HasSuffix(file.Name(), rdbs.extension) {

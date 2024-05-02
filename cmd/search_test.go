@@ -8,6 +8,7 @@ import (
 	"reflect"
 	"regexp"
 	"testing"
+	"time"
 
 	"github.com/majohn-r/output"
 )
@@ -576,6 +577,7 @@ func TestEvaluateFileExtensions(t *testing.T) {
 
 type testFile struct {
 	name  string
+	mode  fs.FileMode
 	files []*testFile
 }
 
@@ -584,22 +586,31 @@ func (tf *testFile) Name() string {
 }
 
 func (tf *testFile) IsDir() bool {
-	return len(tf.files) > 0
+	return tf.mode.IsDir()
 }
 
-func (tf *testFile) Type() fs.FileMode {
-	if tf.IsDir() {
-		return fs.ModeDir
-	}
+func (tf *testFile) Mode() fs.FileMode {
+	return tf.mode
+}
+
+func (tf *testFile) ModTime() time.Time {
+	return time.Now()
+}
+
+func (tf *testFile) Size() int64 {
 	return 0
 }
 
-func (tf *testFile) Info() (fs.FileInfo, error) {
-	return nil, nil
+func (tf *testFile) Sys() any {
+	return nil
 }
 
-func newTestFile(name string, content []*testFile) *testFile {
-	return &testFile{name: name, files: content}
+func newTestFile(name string, contents []*testFile) *testFile {
+	fm := fs.ModeDir
+	if len(contents) == 0 {
+		fm = 0
+	}
+	return &testFile{name: name, files: contents, mode: fm}
 }
 
 func TestSearchSettingsLoad(t *testing.T) {
@@ -610,8 +621,7 @@ func TestSearchSettingsLoad(t *testing.T) {
 	album1Content1 := newTestFile("subfolder", []*testFile{newTestFile("foo", nil)})
 	album1Content2 := newTestFile("cover.jpg", nil)
 	album1Content3 := newTestFile("1 lovely music.mp3", nil)
-	album1 := newTestFile("album", []*testFile{album1Content1, album1Content2,
-		album1Content3})
+	album1 := newTestFile("album", []*testFile{album1Content1, album1Content2, album1Content3})
 	album2 := newTestFile("not an album", nil)
 	artist1 := newTestFile("artist", []*testFile{album1, album2})
 	artist2 := newTestFile("not an artist", nil)
@@ -634,15 +644,15 @@ func TestSearchSettingsLoad(t *testing.T) {
 	testArtist.AddAlbum(testAlbum)
 	testTrack := files.NewTrack(testAlbum, album1Content3.name, "lovely music", 1)
 	testAlbum.AddTrack(testTrack)
-	cmd.ReadDirectory = func(_ output.Bus, dir string) ([]fs.DirEntry, bool) {
+	cmd.ReadDirectory = func(_ output.Bus, dir string) ([]fs.FileInfo, bool) {
 		if tf, ok := testFiles[dir]; ok {
-			entries := []fs.DirEntry{}
+			entries := []fs.FileInfo{}
 			for _, f := range tf.files {
 				entries = append(entries, f)
 			}
 			return entries, true
 		}
-		return []fs.DirEntry{}, false
+		return []fs.FileInfo{}, false
 	}
 	tests := map[string]struct {
 		ss    *cmd.SearchSettings

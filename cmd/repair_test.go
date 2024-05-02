@@ -466,30 +466,24 @@ func TestBackupAndFix(t *testing.T) {
 				Error: "" +
 					"The directory" +
 					" \"Music\\\\my artist\\\\my album 11\\\\pre-repair-backup\"" +
-					" cannot be created: mkdir" +
-					" Music\\my artist\\my album 11\\pre-repair-backup: The system cannot" +
-					" find the path specified.\n" +
+					" cannot be created: parent directory is not a directory.\n" +
 					"The track files in the directory" +
 					" \"Music\\\\my artist\\\\my album 11\" will not be repaired.\n" +
 					"The directory" +
 					" \"Music\\\\my artist\\\\my album 12\\\\pre-repair-backup\"" +
-					" cannot be created: mkdir" +
-					" Music\\my artist\\my album 12\\pre-repair-backup: The system cannot" +
-					" find the path specified.\n" +
+					" cannot be created: parent directory is not a directory.\n" +
 					"The track files in the directory" +
 					" \"Music\\\\my artist\\\\my album 12\" will not be repaired.\n",
 				Log: "" +
 					"level='error'" +
 					" command='repair'" +
 					" directory='Music\\my artist\\my album 11\\pre-repair-backup'" +
-					" error='mkdir Music\\my artist\\my album 11\\pre-repair-backup: The" +
-					" system cannot find the path specified.'" +
+					" error='parent directory is not a directory'" +
 					" msg='cannot create directory'\n" +
 					"level='error'" +
 					" command='repair'" +
 					" directory='Music\\my artist\\my album 12\\pre-repair-backup'" +
-					" error='mkdir Music\\my artist\\my album 12\\pre-repair-backup: The" +
-					" system cannot find the path specified.'" +
+					" error='parent directory is not a directory'" +
 					" msg='cannot create directory'\n",
 			},
 		},

@@ -63,7 +63,7 @@ func (a *Album) WithMusicCDIdentifier(b []byte) *Album {
 	return a
 }
 
-func NewAlbumFromFile(file fs.DirEntry, ar *Artist) *Album {
+func NewAlbumFromFile(file fs.FileInfo, ar *Artist) *Album {
 	albumName := file.Name()
 	return NewAlbum(albumName, ar, ar.subDirectory(albumName))
 }

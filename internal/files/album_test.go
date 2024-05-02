@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+	"time"
 )
 
 func TestAlbum_RecordingArtistName(t *testing.T) {
@@ -106,34 +107,48 @@ func TestAlbum_BackupDirectory(t *testing.T) {
 	}
 }
 
+/*
+	Name() string       // base name of the file
+	Size() int64        // length in bytes for regular files; system-dependent for others
+	Mode() FileMode     // file mode bits
+	ModTime() time.Time // modification time
+	IsDir() bool        // abbreviation for Mode().IsDir()
+	Sys() any           // underlying data source (can return nil)
+*/
+
 type testFile struct {
-	name  string
-	files []*testFile
+	name string
+	mode fs.FileMode
 }
 
 func (tf *testFile) Name() string {
 	return tf.name
 }
 
-func (tf *testFile) IsDir() bool {
-	return len(tf.files) > 0
-}
-
-func (tf *testFile) Type() fs.FileMode {
-	if tf.IsDir() {
-		return fs.ModeDir
-	}
+func (tf *testFile) Size() int64 {
 	return 0
 }
 
-func (tf *testFile) Info() (fs.FileInfo, error) {
-	return nil, nil
+func (tf *testFile) Mode() fs.FileMode {
+	return tf.mode
+}
+
+func (tf *testFile) ModTime() time.Time {
+	return time.Now()
+}
+
+func (tf *testFile) IsDir() bool {
+	return tf.mode.IsDir()
+}
+
+func (tf *testFile) Sys() any {
+	return nil
 }
 
 func TestNewAlbumFromFile(t *testing.T) {
 	testArtist := files.NewArtist("artist name", filepath.Join("Music", "artist name"))
 	type args struct {
-		file fs.DirEntry
+		file fs.FileInfo
 		ar   *files.Artist
 	}
 	tests := map[string]struct {

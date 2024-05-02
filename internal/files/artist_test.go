@@ -37,7 +37,7 @@ func TestArtist_Copy(t *testing.T) {
 
 func TestNewArtistFromFile(t *testing.T) {
 	type args struct {
-		f   fs.DirEntry
+		f   fs.FileInfo
 		dir string
 	}
 	tests := map[string]struct {

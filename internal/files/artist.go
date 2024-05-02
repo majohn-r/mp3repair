@@ -34,7 +34,7 @@ func NewEmptyArtist() *Artist {
 	return &Artist{}
 }
 
-func NewArtistFromFile(f fs.DirEntry, dir string) *Artist {
+func NewArtistFromFile(f fs.FileInfo, dir string) *Artist {
 	artistName := f.Name()
 	return NewArtist(artistName, filepath.Join(dir, artistName))
 }

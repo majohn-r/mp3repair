@@ -410,7 +410,7 @@ func (ss *SearchSettings) addTracks(o output.Bus, album *files.Album) {
 
 }
 
-func (ss *SearchSettings) isValidTrackFile(file fs.DirEntry) (string, bool) {
+func (ss *SearchSettings) isValidTrackFile(file fs.FileInfo) (string, bool) {
 	extension := filepath.Ext(file.Name())
 	if !file.IsDir() {
 		for _, expectedExtension := range ss.fileExtensions {
