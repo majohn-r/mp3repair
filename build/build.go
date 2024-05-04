@@ -91,6 +91,14 @@ var (
 		},
 	})
 
+	updateDependencies = goyek.Define(goyek.Task{
+		Name:  "updateDependencies",
+		Usage: "update dependencies",
+		Action: func(a *goyek.A) {
+			tools_build.UpdateDependencies(a)
+		},
+	})
+
 	vulnCheck = goyek.Define(goyek.Task{
 		Name:  "vulnCheck",
 		Usage: "run vulnerability check on source code",
@@ -102,7 +110,16 @@ var (
 	_ = goyek.Define(goyek.Task{
 		Name:  "preCommit",
 		Usage: "run all pre-commit tasks",
-		Deps:  goyek.Deps{clean, lint, nilaway, format, vulnCheck, tests, build},
+		Deps: goyek.Deps{
+			clean,
+			updateDependencies,
+			lint,
+			nilaway,
+			format,
+			vulnCheck,
+			tests,
+			build,
+		},
 	})
 
 	tests = goyek.Define(goyek.Task{
