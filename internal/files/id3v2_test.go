@@ -82,9 +82,11 @@ func Test_rawReadID3V2Metadata(t *testing.T) {
 		t.Errorf("%s failed to create ./badFile.mp3: %v", fnName, err)
 	}
 	defer func() {
+		// TODO: replace with afero?
 		if err := os.Remove("./goodFile.mp3"); err != nil {
 			t.Errorf("%s failed to delete ./goodFile.mp3: %v", fnName, err)
 		}
+		// TODO: replace with afero?
 		if err := os.Remove("./badFile.mp3"); err != nil {
 			t.Errorf("%s failed to delete ./badFile.mp3: %v", fnName, err)
 		}
@@ -306,6 +308,7 @@ func Test_readID3V2Metadata(t *testing.T) {
 		t.Errorf("%s failed to create ./goodFile.mp3: %v", fnName, err)
 	}
 	defer func() {
+		// TODO: replace with afero?
 		if err := os.Remove("./goodFile.mp3"); err != nil {
 			t.Errorf("%s failed to delete ./goodFile.mp3: %v", fnName, err)
 		}

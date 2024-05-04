@@ -478,6 +478,7 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 		t.Errorf("%s failed to create ./goodFile.mp3: %v", fnName, err)
 	}
 	defer func() {
+		// TODO: replace with afero?
 		if err := os.Remove("./goodFile.mp3"); err != nil {
 			t.Errorf("%s failed to delete ./goodFile.mp3: %v", fnName, err)
 		}
@@ -1278,6 +1279,7 @@ func TestTrack_Details(t *testing.T) {
 		t.Errorf("%s failed to create ./goodFile.mp3: %v", fnName, err)
 	}
 	defer func() {
+		// TODO: replace with afero?
 		if err := os.Remove("./goodFile.mp3"); err != nil {
 			t.Errorf("%s failed to delete ./goodFile.mp3: %v", fnName, err)
 		}
@@ -1388,6 +1390,7 @@ func Test_getBestWriter(t *testing.T) {
 
 // destroyDirectory destroys a directory and its contents.
 func destroyDirectory(fnName, dirName string) {
+	// TODO: replace with afero
 	if err := os.RemoveAll(dirName); err != nil {
 		fmt.Fprintf(os.Stderr, "%s error destroying test directory %q: %v", fnName,
 			dirName, err)
@@ -1402,11 +1405,12 @@ func createFileWithContent(dir, name string, content []byte) error {
 
 // createNamedFile creates a specified name with the specified content.
 func createNamedFile(fileName string, content []byte) (err error) {
+	// TODO: replace with afero
 	_, err = os.Stat(fileName)
 	if err == nil {
 		err = fmt.Errorf("file %q already exists", fileName)
-	} else if errors.Is(err, os.ErrNotExist) {
-		err = os.WriteFile(fileName, content, cmd_toolkit.StdFilePermissions)
+	} else if errors.Is(err, os.ErrNotExist) { // TODO: replace with afero
+		err = os.WriteFile(fileName, content, cmd_toolkit.StdFilePermissions) // TODO: replace with afero
 	}
 	return
 }

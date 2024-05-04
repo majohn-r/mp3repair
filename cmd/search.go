@@ -219,7 +219,7 @@ func EvaluateTopDir(o output.Bus, values map[string]*FlagValue) (dir string, ok 
 	if err != nil {
 		return
 	}
-	file, err := os.Stat(rawValue)
+	file, err := os.Stat(rawValue) // TODO: replace with afero
 	if err != nil {
 		o.WriteCanonicalError("The %s value, %q, cannot be used", SearchTopDirFlag,
 			rawValue)

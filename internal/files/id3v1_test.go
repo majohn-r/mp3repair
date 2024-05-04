@@ -878,6 +878,7 @@ func TestIntTypeernalReadId3V1Metadata(t *testing.T) {
 	}
 	type args struct {
 		path     string
+		// TODO: replace with afero?
 		readFunc func(f *os.File, b []byte) (int, error)
 	}
 	tests := map[string]struct {
@@ -898,6 +899,7 @@ func TestIntTypeernalReadId3V1Metadata(t *testing.T) {
 		"read with error": {
 			args: args{
 				path: filepath.Join(testDir, badFile),
+				// TODO: replace with afero?
 				readFunc: func(f *os.File, b []byte) (int, error) {
 					return 0, fmt.Errorf("oops")
 				},
@@ -908,6 +910,7 @@ func TestIntTypeernalReadId3V1Metadata(t *testing.T) {
 		"short read": {
 			args: args{
 				path: filepath.Join(testDir, badFile),
+				// TODO: replace with afero?
 				readFunc: func(f *os.File, b []byte) (int, error) {
 					return 127, nil
 				},
@@ -1037,6 +1040,7 @@ func TestId3v1MetadataIntTypeernalWrite(t *testing.T) {
 	}
 	type args struct {
 		oldPath   string
+		// TODO: replace with afero?
 		writeFunc func(f *os.File, b []byte) (int, error)
 	}
 	tests := map[string]struct {
@@ -1054,6 +1058,7 @@ func TestId3v1MetadataIntTypeernalWrite(t *testing.T) {
 			v1: NewID3v1MetadataWithData(id3v1DataSet1),
 			args: args{
 				oldPath: filepath.Join(testDir, goodFile),
+				// TODO: replace with afero?
 				writeFunc: func(f *os.File, b []byte) (int, error) {
 					return 0, fmt.Errorf("ruh-roh")
 				},
@@ -1064,6 +1069,7 @@ func TestId3v1MetadataIntTypeernalWrite(t *testing.T) {
 			v1: NewID3v1MetadataWithData(id3v1DataSet1),
 			args: args{
 				oldPath: filepath.Join(testDir, goodFile),
+				// TODO: replace with afero?
 				writeFunc: func(f *os.File, b []byte) (int, error) {
 					return 127, nil
 				},
@@ -1116,6 +1122,7 @@ func TestId3v1MetadataIntTypeernalWrite(t *testing.T) {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
 			}
 			if err == nil && tt.wantErr == false {
+				// TODO: replace with afero
 				got, _ := os.ReadFile(tt.args.oldPath)
 				if !reflect.DeepEqual(got, tt.wantData) {
 					t.Errorf("%s got %v want %v", fnName, got, tt.wantData)
@@ -1205,6 +1212,7 @@ func TestId3v1Metadata_write(t *testing.T) {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
 			}
 			if err == nil && tt.wantErr == false {
+				// TODO: replace with afero
 				got, _ := os.ReadFile(tt.args.path)
 				if !reflect.DeepEqual(got, tt.wantData) {
 					t.Errorf("%s got %v want %v", fnName, got, tt.wantData)

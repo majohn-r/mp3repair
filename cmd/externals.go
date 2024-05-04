@@ -47,10 +47,10 @@ var (
 	Connect                = mgr.Connect
 	Exit                   = os.Exit
 	LookupEnv              = os.LookupEnv
-	Rename                 = os.Rename
-	Remove                 = os.Remove
-	RemoveAll              = os.RemoveAll
-	WriteFile              = os.WriteFile
+	Rename                 = os.Rename // TODO: replace with afero
+	Remove                 = os.Remove // TODO: replace with afero
+	RemoveAll              = os.RemoveAll // TODO: replace with afero
+	WriteFile              = os.WriteFile // TODO: replace with afero
 	NewDefaultBus          = output.NewDefaultBus
 	Since                  = time.Since
 	GetCurrentProcessToken = windows.GetCurrentProcessToken

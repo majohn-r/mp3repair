@@ -90,6 +90,7 @@ func TestDirty(t *testing.T) {
 					t.Errorf("%s error creating %q: %v", fnName, files.DirtyFileName, err)
 				}
 			} else {
+				// TODO: replace with afero
 				os.Remove(filepath.Join(testDir, files.DirtyFileName))
 			}
 			if gotDirty := files.Dirty(); gotDirty != tt.want {
@@ -119,6 +120,7 @@ func TestClearDirty(t *testing.T) {
 		[]byte("dirty")); err != nil {
 		t.Errorf("%s error creating second %q: %v", fnName, files.DirtyFileName, err)
 	}
+	// TODO: replace with afero
 	f, err := os.Open(filepath.Join(uncleanable, files.DirtyFileName))
 	if err != nil {
 		t.Errorf("%s error opening second %q: %v", fnName, files.DirtyFileName, err)

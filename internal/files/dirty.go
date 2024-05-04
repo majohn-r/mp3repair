@@ -15,9 +15,11 @@ const (
 
 func MarkDirty(o output.Bus) {
 	f := filepath.Join(cmd_toolkit.ApplicationPath(), DirtyFileName)
+	// TODO: replace with afero
 	if _, err := os.Stat(f); err != nil && errors.Is(err, os.ErrNotExist) {
 		// ignore error - if the file didn't exist a moment ago, there is no
 		// reason to assume that the file cannot be written to
+		// TODO: replace with afero
 		_ = os.WriteFile(f, []byte("dirty"), cmd_toolkit.StdFilePermissions)
 		o.Log(output.Info, "metadata dirty file written", map[string]any{"fileName": f})
 	}
@@ -28,6 +30,7 @@ func ClearDirty(o output.Bus) {
 	if !cmd_toolkit.PlainFileExists(f) {
 		return
 	}
+	// TODO: replace with afero
 	if err := os.Remove(f); err != nil {
 		cmd_toolkit.ReportFileDeletionFailure(o, f, err)
 		return

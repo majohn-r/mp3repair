@@ -660,12 +660,15 @@ func ReadID3v1Metadata(path string) ([]string, error) {
 	return output, nil
 }
 
+// TODO: replace with afero?
 func FileReader(f *os.File, b []byte) (int, error) {
 	return f.Read(b)
 }
 
 func InternalReadID3V1Metadata(path string,
+	// TODO: replace with afero?
 	readFunc func(f *os.File, b []byte) (int, error)) (*Id3v1Metadata, error) {
+	// TODO: replace with afero?
 	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
@@ -693,6 +696,7 @@ func (im *Id3v1Metadata) Write(path string) error {
 	return im.InternalWrite(path, WriteToFile)
 }
 
+// TODO: replace with afero?
 func WriteToFile(f *os.File, b []byte) (int, error) {
 	return f.Write(b)
 }
@@ -732,14 +736,19 @@ func updateID3V1Metadata(tM *TrackMetadata, path string, sT SourceType) (err err
 }
 
 func (im *Id3v1Metadata) InternalWrite(path string,
+	// TODO: replace with afero?
 	writeFunc func(f *os.File, b []byte) (int, error)) (err error) {
+	// TODO: replace with afero?
 	var src *os.File
+	// TODO: replace with afero?
 	if src, err = os.Open(path); err == nil {
 		defer src.Close()
 		var stat fs.FileInfo
 		if stat, err = src.Stat(); err == nil {
 			tmpPath := path + "-id3v1"
+			// TODO: replace with afero?
 			var tmpFile *os.File
+			// TODO: replace with afero?
 			if tmpFile, err = os.OpenFile(tmpPath, os.O_RDWR|os.O_CREATE,
 				stat.Mode()); err == nil {
 				defer tmpFile.Close()
@@ -747,6 +756,7 @@ func (im *Id3v1Metadata) InternalWrite(path string,
 				tempfileShouldBeRemoved := true
 				defer func() {
 					if tempfileShouldBeRemoved {
+						// TODO: replace with afero?
 						os.Remove(tmpPath)
 					}
 				}()
@@ -762,6 +772,7 @@ func (im *Id3v1Metadata) InternalWrite(path string,
 									tmpPath, id3v1Length)
 								return
 							}
+							// TODO: replace with afero?
 							if err = os.Rename(tmpPath, path); err == nil {
 								tempfileShouldBeRemoved = false
 							}
