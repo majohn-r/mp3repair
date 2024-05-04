@@ -877,7 +877,7 @@ func TestIntTypeernalReadId3V1Metadata(t *testing.T) {
 		t.Errorf("%s error creating %q: %v", testDir, goodFile, err)
 	}
 	type args struct {
-		path     string
+		path string
 		// TODO: replace with afero?
 		readFunc func(f *os.File, b []byte) (int, error)
 	}
@@ -1039,7 +1039,7 @@ func TestId3v1MetadataIntTypeernalWrite(t *testing.T) {
 		t.Errorf("%s error creating %q: %v", testDir, goodFile, err)
 	}
 	type args struct {
-		oldPath   string
+		oldPath string
 		// TODO: replace with afero?
 		writeFunc func(f *os.File, b []byte) (int, error)
 	}

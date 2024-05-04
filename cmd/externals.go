@@ -47,8 +47,8 @@ var (
 	Connect                = mgr.Connect
 	Exit                   = os.Exit
 	LookupEnv              = os.LookupEnv
-	Rename                 = os.Rename // TODO: replace with afero
-	Remove                 = os.Remove // TODO: replace with afero
+	Rename                 = os.Rename    // TODO: replace with afero
+	Remove                 = os.Remove    // TODO: replace with afero
 	RemoveAll              = os.RemoveAll // TODO: replace with afero
 	WriteFile              = os.WriteFile // TODO: replace with afero
 	NewDefaultBus          = output.NewDefaultBus
