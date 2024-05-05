@@ -88,7 +88,7 @@ func InitializeAbout(version, creation string) {
 	Version = version
 	Creation = creation
 	InitBuildData(Version, Creation)
-	SetFirstYear(firstYear)
+	cmd_toolkit.SetFirstYear(firstYear)
 }
 
 func init() {

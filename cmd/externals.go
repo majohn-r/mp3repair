@@ -17,12 +17,10 @@ import (
 
 var (
 	ApplicationPath        = cmd_toolkit.ApplicationPath
-	AppName                = cmd_toolkit.AppName
 	BuildDependencies      = cmd_toolkit.BuildDependencies
 	CopyFile               = cmd_toolkit.CopyFile
 	DereferenceEnvVar      = cmd_toolkit.DereferenceEnvVar
 	DirExists              = cmd_toolkit.DirExists
-	GenerateAboutContent   = cmd_toolkit.GenerateAboutContent
 	GoVersion              = cmd_toolkit.GoVersion
 	InitApplicationPath    = cmd_toolkit.InitApplicationPath
 	InitBuildData          = cmd_toolkit.InitBuildData
@@ -35,7 +33,6 @@ var (
 	ReadConfigurationFile  = cmd_toolkit.ReadConfigurationFile
 	ReadDirectory          = cmd_toolkit.ReadDirectory
 	SetAppName             = cmd_toolkit.SetAppName
-	SetFirstYear           = cmd_toolkit.SetFirstYear
 	SetFlagIndicator       = cmd_toolkit.SetFlagIndicator
 	ClearDirty             = files.ClearDirty
 	Dirty                  = files.Dirty
@@ -47,10 +44,10 @@ var (
 	Connect                = mgr.Connect
 	Exit                   = os.Exit
 	LookupEnv              = os.LookupEnv
-	Rename                 = os.Rename    // TODO: replace with afero
-	Remove                 = os.Remove    // TODO: replace with afero
-	RemoveAll              = os.RemoveAll // TODO: replace with afero
-	WriteFile              = os.WriteFile // TODO: replace with afero
+	Rename                 = os.Rename
+	Remove                 = os.Remove
+	RemoveAll              = os.RemoveAll
+	WriteFile              = os.WriteFile
 	NewDefaultBus          = output.NewDefaultBus
 	Since                  = time.Since
 	GetCurrentProcessToken = windows.GetCurrentProcessToken

@@ -3,13 +3,13 @@ package files_test
 import (
 	"fmt"
 	"mp3repair/internal/files"
-	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 
 	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	"github.com/spf13/afero"
 )
 
 var (
@@ -829,13 +829,14 @@ func TestInitGenreIndices(t *testing.T) {
 }
 
 func TestIntTypeernalReadId3V1Metadata(t *testing.T) {
+	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
 	const fnName = "internalReadId3V1Metadata()"
 	testDir := "id3v1read"
 	if err := cmd_toolkit.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
 	defer func() {
-		destroyDirectory(fnName, testDir)
+		cmd_toolkit.AssignFileSystem(originalFileSystem)
 	}()
 	shortFile := "short.mp3"
 	if err := createFileWithContent(testDir, shortFile, []byte{0, 1, 2}); err != nil {
@@ -877,9 +878,8 @@ func TestIntTypeernalReadId3V1Metadata(t *testing.T) {
 		t.Errorf("%s error creating %q: %v", testDir, goodFile, err)
 	}
 	type args struct {
-		path string
-		// TODO: replace with afero?
-		readFunc func(f *os.File, b []byte) (int, error)
+		path     string
+		readFunc func(f afero.File, b []byte) (int, error)
 	}
 	tests := map[string]struct {
 		args
@@ -899,8 +899,7 @@ func TestIntTypeernalReadId3V1Metadata(t *testing.T) {
 		"read with error": {
 			args: args{
 				path: filepath.Join(testDir, badFile),
-				// TODO: replace with afero?
-				readFunc: func(f *os.File, b []byte) (int, error) {
+				readFunc: func(f afero.File, b []byte) (int, error) {
 					return 0, fmt.Errorf("oops")
 				},
 			},
@@ -910,8 +909,7 @@ func TestIntTypeernalReadId3V1Metadata(t *testing.T) {
 		"short read": {
 			args: args{
 				path: filepath.Join(testDir, badFile),
-				// TODO: replace with afero?
-				readFunc: func(f *os.File, b []byte) (int, error) {
+				readFunc: func(f afero.File, b []byte) (int, error) {
 					return 127, nil
 				},
 			},
@@ -944,14 +942,15 @@ func TestIntTypeernalReadId3V1Metadata(t *testing.T) {
 }
 
 func Test_readId3v1Metadata(t *testing.T) {
+	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	defer func() {
+		cmd_toolkit.AssignFileSystem(originalFileSystem)
+	}()
 	const fnName = "readId3v1Metadata()"
 	testDir := "id3v1read"
 	if err := cmd_toolkit.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
-	defer func() {
-		destroyDirectory(fnName, testDir)
-	}()
 	goodFile := "good.mp3"
 	payload := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -1008,14 +1007,15 @@ func Test_readId3v1Metadata(t *testing.T) {
 }
 
 func TestId3v1MetadataIntTypeernalWrite(t *testing.T) {
+	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	defer func() {
+		cmd_toolkit.AssignFileSystem(originalFileSystem)
+	}()
 	const fnName = "Id3v1Metadata.internalWrite()"
 	testDir := "id3v1write"
 	if err := cmd_toolkit.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
-	defer func() {
-		destroyDirectory(fnName, testDir)
-	}()
 	shortFile := "short.mp3"
 	if err := createFileWithContent(testDir, shortFile, []byte{0, 1, 2}); err != nil {
 		t.Errorf("%s error creating %q: %v", testDir, shortFile, err)
@@ -1039,9 +1039,8 @@ func TestId3v1MetadataIntTypeernalWrite(t *testing.T) {
 		t.Errorf("%s error creating %q: %v", testDir, goodFile, err)
 	}
 	type args struct {
-		oldPath string
-		// TODO: replace with afero?
-		writeFunc func(f *os.File, b []byte) (int, error)
+		oldPath   string
+		writeFunc func(f afero.File, b []byte) (int, error)
 	}
 	tests := map[string]struct {
 		v1 *files.Id3v1Metadata
@@ -1058,8 +1057,7 @@ func TestId3v1MetadataIntTypeernalWrite(t *testing.T) {
 			v1: NewID3v1MetadataWithData(id3v1DataSet1),
 			args: args{
 				oldPath: filepath.Join(testDir, goodFile),
-				// TODO: replace with afero?
-				writeFunc: func(f *os.File, b []byte) (int, error) {
+				writeFunc: func(f afero.File, b []byte) (int, error) {
 					return 0, fmt.Errorf("ruh-roh")
 				},
 			},
@@ -1069,8 +1067,7 @@ func TestId3v1MetadataIntTypeernalWrite(t *testing.T) {
 			v1: NewID3v1MetadataWithData(id3v1DataSet1),
 			args: args{
 				oldPath: filepath.Join(testDir, goodFile),
-				// TODO: replace with afero?
-				writeFunc: func(f *os.File, b []byte) (int, error) {
+				writeFunc: func(f afero.File, b []byte) (int, error) {
 					return 127, nil
 				},
 			},
@@ -1122,8 +1119,7 @@ func TestId3v1MetadataIntTypeernalWrite(t *testing.T) {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
 			}
 			if err == nil && tt.wantErr == false {
-				// TODO: replace with afero
-				got, _ := os.ReadFile(tt.args.oldPath)
+				got, _ := afero.ReadFile(cmd_toolkit.FileSystem(), tt.args.oldPath)
 				if !reflect.DeepEqual(got, tt.wantData) {
 					t.Errorf("%s got %v want %v", fnName, got, tt.wantData)
 				}
@@ -1133,14 +1129,15 @@ func TestId3v1MetadataIntTypeernalWrite(t *testing.T) {
 }
 
 func TestId3v1Metadata_write(t *testing.T) {
+	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	defer func() {
+		cmd_toolkit.AssignFileSystem(originalFileSystem)
+	}()
 	const fnName = "Id3v1Metadata.write()"
 	testDir := "id3v1write"
 	if err := cmd_toolkit.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
-	defer func() {
-		destroyDirectory(fnName, testDir)
-	}()
 	goodFile := "good.mp3"
 	payload := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -1212,8 +1209,7 @@ func TestId3v1Metadata_write(t *testing.T) {
 				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
 			}
 			if err == nil && tt.wantErr == false {
-				// TODO: replace with afero
-				got, _ := os.ReadFile(tt.args.path)
+				got, _ := afero.ReadFile(cmd_toolkit.FileSystem(), tt.args.path)
 				if !reflect.DeepEqual(got, tt.wantData) {
 					t.Errorf("%s got %v want %v", fnName, got, tt.wantData)
 				}

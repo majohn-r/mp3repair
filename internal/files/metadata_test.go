@@ -8,6 +8,7 @@ import (
 
 	"github.com/bogem/id3v2/v2"
 	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	"github.com/spf13/afero"
 )
 
 const (
@@ -88,6 +89,10 @@ func Test_trackMetadata_setId3v2Values(t *testing.T) {
 }
 
 func Test_readMetadata(t *testing.T) {
+	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	defer func() {
+		cmd_toolkit.AssignFileSystem(originalFileSystem)
+	}()
 	const fnName = "readMetadata()"
 	testDir := "readMetadata"
 	if err := cmd_toolkit.Mkdir(testDir); err != nil {
@@ -127,9 +132,6 @@ func Test_readMetadata(t *testing.T) {
 		payloadComplete); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, completeFile, err)
 	}
-	defer func() {
-		destroyDirectory(fnName, testDir)
-	}()
 	type args struct {
 		path string
 	}
@@ -140,12 +142,18 @@ func Test_readMetadata(t *testing.T) {
 		"missing file": {
 			args: args{path: filepath.Join(testDir, "no such file.mp3")},
 			want: files.NewTrackMetadata().WithErrorCauses([]string{
-				"", cannotOpenFile, cannotOpenFile}),
+				"",
+				"open readMetadata\\no such file.mp3: file does not exist",
+				"open readMetadata\\no such file.mp3: file does not exist",
+			}),
 		},
 		"no metadata": {
 			args: args{path: filepath.Join(testDir, taglessFile)},
 			want: files.NewTrackMetadata().WithErrorCauses([]string{
-				"", negativeSeek, files.ErrMissingTrackNumber.Error()}),
+				"",
+				"file is not long enough to contain ID3V1 metadata",
+				files.ErrMissingTrackNumber.Error(),
+			}),
 		},
 		"only id3v1 metadata": {
 			args: args{path: filepath.Join(testDir, id3v1OnlyFile)},

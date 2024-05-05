@@ -7,6 +7,9 @@ import (
 	"io/fs"
 	"os"
 	"strings"
+
+	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	"github.com/spf13/afero"
 )
 
 // values per https://id3.org/ID3v1 as of August 16 2022
@@ -660,23 +663,22 @@ func ReadID3v1Metadata(path string) ([]string, error) {
 	return output, nil
 }
 
-// TODO: replace with afero?
-func FileReader(f *os.File, b []byte) (int, error) {
+func FileReader(f afero.File, b []byte) (int, error) {
 	return f.Read(b)
 }
 
 func InternalReadID3V1Metadata(path string,
-	// TODO: replace with afero?
-	readFunc func(f *os.File, b []byte) (int, error)) (*Id3v1Metadata, error) {
-	// TODO: replace with afero?
-	file, err := os.Open(path)
+	readFunc func(f afero.File, b []byte) (int, error)) (*Id3v1Metadata, error) {
+	file, err := cmd_toolkit.FileSystem().Open(path)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
-	if _, err = file.Seek(-id3v1Length, io.SeekEnd); err != nil {
-		return nil, err
+	fstat, _ := file.Stat()
+	if fstat != nil && fstat.Size() < id3v1Length {
+		return nil, fmt.Errorf("file is not long enough to contain ID3V1 metadata")
 	}
+	file.Seek(-id3v1Length, io.SeekEnd)
 	v1 := NewID3v1Metadata()
 	r, err := readFunc(file, v1.data)
 	if err != nil {
@@ -696,8 +698,7 @@ func (im *Id3v1Metadata) Write(path string) error {
 	return im.InternalWrite(path, WriteToFile)
 }
 
-// TODO: replace with afero?
-func WriteToFile(f *os.File, b []byte) (int, error) {
+func WriteToFile(f afero.File, b []byte) (int, error) {
 	return f.Write(b)
 }
 
@@ -736,32 +737,31 @@ func updateID3V1Metadata(tM *TrackMetadata, path string, sT SourceType) (err err
 }
 
 func (im *Id3v1Metadata) InternalWrite(path string,
-	// TODO: replace with afero?
-	writeFunc func(f *os.File, b []byte) (int, error)) (err error) {
-	// TODO: replace with afero?
-	var src *os.File
-	// TODO: replace with afero?
-	if src, err = os.Open(path); err == nil {
+	writeFunc func(f afero.File, b []byte) (int, error)) (err error) {
+	fS := cmd_toolkit.FileSystem()
+	var src afero.File
+	if src, err = fS.Open(path); err == nil {
 		defer src.Close()
 		var stat fs.FileInfo
 		if stat, err = src.Stat(); err == nil {
 			tmpPath := path + "-id3v1"
-			// TODO: replace with afero?
-			var tmpFile *os.File
-			// TODO: replace with afero?
-			if tmpFile, err = os.OpenFile(tmpPath, os.O_RDWR|os.O_CREATE,
-				stat.Mode()); err == nil {
+			var tmpFile afero.File
+			if tmpFile, err = fS.OpenFile(tmpPath, os.O_RDWR|os.O_CREATE, stat.Mode()); err == nil {
 				defer tmpFile.Close()
 				// borrowed this piece of logic from id3v2 tag.Save() method
 				tempfileShouldBeRemoved := true
 				defer func() {
 					if tempfileShouldBeRemoved {
-						// TODO: replace with afero?
-						os.Remove(tmpPath)
+						fS.Remove(tmpPath)
 					}
 				}()
 				if _, err = io.Copy(tmpFile, src); err == nil {
 					src.Close()
+					fileInfo, _ := fS.Stat(tmpPath)
+					if fileInfo != nil && fileInfo.Size() < id3v1Length {
+						err = fmt.Errorf("file %q is too short", tmpPath)
+						return
+					}
 					if _, err = tmpFile.Seek(-id3v1Length, io.SeekEnd); err == nil {
 						var n int
 						if n, err = writeFunc(tmpFile, im.data); err == nil {
@@ -772,8 +772,7 @@ func (im *Id3v1Metadata) InternalWrite(path string,
 									tmpPath, id3v1Length)
 								return
 							}
-							// TODO: replace with afero?
-							if err = os.Rename(tmpPath, path); err == nil {
+							if err = fS.Rename(tmpPath, path); err == nil {
 								tempfileShouldBeRemoved = false
 							}
 						}

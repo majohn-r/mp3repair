@@ -4,12 +4,14 @@ import (
 	"fmt"
 	"io"
 	"mp3repair/internal/files"
-	"os"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"testing"
 
 	"github.com/bogem/id3v2/v2"
+	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	"github.com/spf13/afero"
 )
 
 func makeTextFrame(id, content string) []byte {
@@ -57,6 +59,10 @@ func createID3v2TaggedData(audio []byte, frames map[string]string) []byte {
 }
 
 func Test_rawReadID3V2Metadata(t *testing.T) {
+	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	defer func() {
+		cmd_toolkit.AssignFileSystem(originalFileSystem)
+	}()
 	const fnName = "rawReadID3V2Metadata()"
 	payload := make([]byte, 0)
 	for k := 0; k < 256; k++ {
@@ -81,16 +87,6 @@ func Test_rawReadID3V2Metadata(t *testing.T) {
 		createID3v2TaggedData(payload, frames)); err != nil {
 		t.Errorf("%s failed to create ./badFile.mp3: %v", fnName, err)
 	}
-	defer func() {
-		// TODO: replace with afero?
-		if err := os.Remove("./goodFile.mp3"); err != nil {
-			t.Errorf("%s failed to delete ./goodFile.mp3: %v", fnName, err)
-		}
-		// TODO: replace with afero?
-		if err := os.Remove("./badFile.mp3"); err != nil {
-			t.Errorf("%s failed to delete ./badFile.mp3: %v", fnName, err)
-		}
-	}()
 	type args struct {
 		path string
 	}
@@ -286,6 +282,10 @@ func TestID3V2TrackFrameStringType(t *testing.T) {
 }
 
 func Test_readID3V2Metadata(t *testing.T) {
+	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	defer func() {
+		cmd_toolkit.AssignFileSystem(originalFileSystem)
+	}()
 	const fnName = "readID3V2Metadata()"
 	payload := make([]byte, 0)
 	for k := 0; k < 256; k++ {
@@ -304,15 +304,10 @@ func Test_readID3V2Metadata(t *testing.T) {
 		"Fake": "ummm",
 	}
 	content := createID3v2TaggedData(payload, frames)
-	if err := createFileWithContent(".", "goodFile.mp3", content); err != nil {
-		t.Errorf("%s failed to create ./goodFile.mp3: %v", fnName, err)
+	goodFileName := "goodFile.mp3"
+	if err := createFileWithContent(".", goodFileName, content); err != nil {
+		t.Errorf("%s failed to create %s: %v", fnName, goodFileName, err)
 	}
-	defer func() {
-		// TODO: replace with afero?
-		if err := os.Remove("./goodFile.mp3"); err != nil {
-			t.Errorf("%s failed to delete ./goodFile.mp3: %v", fnName, err)
-		}
-	}()
 	type args struct {
 		path string
 	}
@@ -325,7 +320,7 @@ func Test_readID3V2Metadata(t *testing.T) {
 	}{
 		"error case": {args: args{path: "./no such file"}, wantErr: true},
 		"good case": {
-			args:        args{path: "./goodfile.mp3"},
+			args:        args{path: filepath.Join(".", goodFileName)},
 			wantEnc:     "ISO-8859-1",
 			wantVersion: 3,
 			wantF: []string{

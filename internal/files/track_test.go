@@ -15,6 +15,7 @@ import (
 	"github.com/cheggaaa/pb/v3"
 	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
+	"github.com/spf13/afero"
 )
 
 func Test_parseTrackName(t *testing.T) {
@@ -213,6 +214,10 @@ func TestTrack_AlbumPath(t *testing.T) {
 }
 
 func TestTrack_CopyFile(t *testing.T) {
+	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	defer func() {
+		cmd_toolkit.AssignFileSystem(originalFileSystem)
+	}()
 	const fnName = "Track.CopyFile()"
 	topDir := "copies"
 	if err := cmd_toolkit.Mkdir(topDir); err != nil {
@@ -223,9 +228,6 @@ func TestTrack_CopyFile(t *testing.T) {
 	if err := createFile(topDir, srcName); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, srcPath, err)
 	}
-	defer func() {
-		destroyDirectory(fnName, topDir)
-	}()
 	type args struct {
 		destination string
 	}
@@ -456,6 +458,10 @@ func Test_pickKey(t *testing.T) {
 }
 
 func TestTrack_ID3V2Diagnostics(t *testing.T) {
+	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	defer func() {
+		cmd_toolkit.AssignFileSystem(originalFileSystem)
+	}()
 	const fnName = "Track.ID3V2Diagnostics()"
 	audio := make([]byte, 0)
 	for k := 0; k < 256; k++ {
@@ -474,15 +480,10 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 		"Fake": "ummm",
 	}
 	content := createID3v2TaggedData(audio, frames)
-	if err := createFileWithContent(".", "goodFile.mp3", content); err != nil {
+	goodFileName := "goodFile.mp3"
+	if err := createFileWithContent(".", goodFileName, content); err != nil {
 		t.Errorf("%s failed to create ./goodFile.mp3: %v", fnName, err)
 	}
-	defer func() {
-		// TODO: replace with afero?
-		if err := os.Remove("./goodFile.mp3"); err != nil {
-			t.Errorf("%s failed to delete ./goodFile.mp3: %v", fnName, err)
-		}
-	}()
 	tests := map[string]struct {
 		t           *files.Track
 		wantEnc     string
@@ -495,7 +496,7 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 			wantErr: true,
 		},
 		"good case": {
-			t:           files.NewEmptyTrack().WithFullPath("./goodfile.mp3"),
+			t:           files.NewEmptyTrack().WithFullPath(filepath.Join(".", goodFileName)),
 			wantEnc:     "ISO-8859-1",
 			wantVersion: 3,
 			wantF: []string{
@@ -533,6 +534,10 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 }
 
 func TestTrack_ID3V1Diagnostics(t *testing.T) {
+	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	defer func() {
+		cmd_toolkit.AssignFileSystem(originalFileSystem)
+	}()
 	const fnName = "Track.ID3V1Diagnostics()"
 	testDir := "id3v1Diagnostics"
 	if err := cmd_toolkit.Mkdir(testDir); err != nil {
@@ -579,9 +584,6 @@ func TestTrack_ID3V1Diagnostics(t *testing.T) {
 	}); err != nil {
 		t.Errorf("%s cannot create %q: %v", fnName, goodFile, err)
 	}
-	defer func() {
-		destroyDirectory(fnName, testDir)
-	}()
 	tests := map[string]struct {
 		t       *files.Track
 		want    []string
@@ -675,6 +677,10 @@ func createConsistentlyTaggedData(audio []byte, m map[string]any) []byte {
 }
 
 func TestTrack_loadMetadata(t *testing.T) {
+	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	defer func() {
+		cmd_toolkit.AssignFileSystem(originalFileSystem)
+	}()
 	const fnName = "track.loadMetadata()"
 	testDir := "loadMetadata"
 	if err := cmd_toolkit.Mkdir(testDir); err != nil {
@@ -698,9 +704,6 @@ func TestTrack_loadMetadata(t *testing.T) {
 	if err := createFileWithContent(testDir, fileName, payload); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, fileName, err)
 	}
-	defer func() {
-		destroyDirectory(fnName, testDir)
-	}()
 	tests := map[string]struct {
 		t    *files.Track
 		want *files.TrackMetadata
@@ -735,6 +738,10 @@ func TestTrack_loadMetadata(t *testing.T) {
 }
 
 func TestReadMetadata(t *testing.T) {
+	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	defer func() {
+		cmd_toolkit.AssignFileSystem(originalFileSystem)
+	}()
 	const fnName = "ReadMetadata()"
 	// 5 artists, 20 albums each, 50 tracks apiece ... total: 5,000 tracks
 	testDir := "ReadMetadata"
@@ -781,9 +788,6 @@ func TestReadMetadata(t *testing.T) {
 			}
 		}
 	}
-	defer func() {
-		destroyDirectory(fnName, testDir)
-	}()
 	type args struct {
 		artists []*files.Artist
 	}
@@ -895,11 +899,16 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 }
 
 func TestTrack_UpdateMetadata(t *testing.T) {
+	// unfortunately, we cannot use a memory-mapped filesystem here, as the
+	// updating of ID3V2 tags is hardcoded to use the os file system.
 	const fnName = "Track.UpdateMetadata()"
 	testDir := "updateMetadata"
 	if err := cmd_toolkit.Mkdir(testDir); err != nil {
 		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
 	}
+	defer func() {
+		os.RemoveAll(testDir)
+	}()
 	trackName := "edit this track.mp3"
 	trackContents := createConsistentlyTaggedData([]byte(trackName), map[string]any{
 		"artist": "unknown artist",
@@ -949,9 +958,6 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 		"", "Classic Rock", "Classic Rock"}).WithYears([]string{
 		"", "2022", "2022"}).WithTrackNumbers([]int{0, 2, 2}).WithMusicCDIdentifier(
 		[]byte("fine album")).WithPrimarySource(files.ID3V2)
-	defer func() {
-		destroyDirectory(fnName, testDir)
-	}()
 	tests := map[string]struct {
 		t      *files.Track
 		wantE  []string
@@ -960,10 +966,8 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 		"error checking": {
 			t: deletedTrack,
 			wantE: []string{
-				"open updateMetadata\\no such file: " +
-					"The system cannot find the file specified.",
-				"open updateMetadata\\no such file: " +
-					"The system cannot find the file specified.",
+				"open updateMetadata\\no such file: The system cannot find the file specified.",
+				"open updateMetadata\\no such file: The system cannot find the file specified.",
 			},
 		},
 		"no edit required": {
@@ -1253,6 +1257,10 @@ func TestTrack_reportMetadataErrors(t *testing.T) {
 }
 
 func TestTrack_Details(t *testing.T) {
+	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	defer func() {
+		cmd_toolkit.AssignFileSystem(originalFileSystem)
+	}()
 	const fnName = "Track.Details()"
 	audio := make([]byte, 0)
 	for k := 0; k < 256; k++ {
@@ -1275,15 +1283,10 @@ func TestTrack_Details(t *testing.T) {
 		"TPE3": "Someone with a stick",
 	}
 	content := createID3v2TaggedData(audio, frames)
-	if err := createFileWithContent(".", "goodFile.mp3", content); err != nil {
-		t.Errorf("%s failed to create ./goodFile.mp3: %v", fnName, err)
+	goodFileName := "goodFile.mp3"
+	if err := createFileWithContent(".", goodFileName, content); err != nil {
+		t.Errorf("%s failed to create ./%s: %v", fnName, goodFileName, err)
 	}
-	defer func() {
-		// TODO: replace with afero?
-		if err := os.Remove("./goodFile.mp3"); err != nil {
-			t.Errorf("%s failed to delete ./goodFile.mp3: %v", fnName, err)
-		}
-	}()
 	tests := map[string]struct {
 		t       *files.Track
 		want    map[string]string
@@ -1294,7 +1297,7 @@ func TestTrack_Details(t *testing.T) {
 			wantErr: true,
 		},
 		"good case": {
-			t: files.NewEmptyTrack().WithFullPath("./goodfile.mp3"),
+			t: files.NewEmptyTrack().WithFullPath(filepath.Join(".", goodFileName)),
 			want: map[string]string{
 				"Composer":       "a couple of idiots",
 				"Lyricist":       "An infinite number of monkeys with a typewriter",
@@ -1388,15 +1391,6 @@ func Test_getBestWriter(t *testing.T) {
 	}
 }
 
-// destroyDirectory destroys a directory and its contents.
-func destroyDirectory(fnName, dirName string) {
-	// TODO: replace with afero
-	if err := os.RemoveAll(dirName); err != nil {
-		fmt.Fprintf(os.Stderr, "%s error destroying test directory %q: %v", fnName,
-			dirName, err)
-	}
-}
-
 // createFileWithContent creates a file in a specified directory.
 func createFileWithContent(dir, name string, content []byte) error {
 	fileName := filepath.Join(dir, name)
@@ -1405,12 +1399,12 @@ func createFileWithContent(dir, name string, content []byte) error {
 
 // createNamedFile creates a specified name with the specified content.
 func createNamedFile(fileName string, content []byte) (err error) {
-	// TODO: replace with afero
-	_, err = os.Stat(fileName)
+	fs := cmd_toolkit.FileSystem()
+	_, err = fs.Stat(fileName)
 	if err == nil {
 		err = fmt.Errorf("file %q already exists", fileName)
-	} else if errors.Is(err, os.ErrNotExist) { // TODO: replace with afero
-		err = os.WriteFile(fileName, content, cmd_toolkit.StdFilePermissions) // TODO: replace with afero
+	} else if errors.Is(err, afero.ErrFileNotFound) {
+		err = afero.WriteFile(fs, fileName, content, cmd_toolkit.StdFilePermissions)
 	}
 	return
 }

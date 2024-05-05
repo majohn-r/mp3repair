@@ -6,11 +6,11 @@ package cmd
 import (
 	"io/fs"
 	"mp3repair/internal/files"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strings"
 
+	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
@@ -219,7 +219,7 @@ func EvaluateTopDir(o output.Bus, values map[string]*FlagValue) (dir string, ok 
 	if err != nil {
 		return
 	}
-	file, err := os.Stat(rawValue) // TODO: replace with afero
+	file, err := cmd_toolkit.FileSystem().Stat(rawValue)
 	if err != nil {
 		o.WriteCanonicalError("The %s value, %q, cannot be used", SearchTopDirFlag,
 			rawValue)

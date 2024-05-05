@@ -10,7 +10,9 @@ import (
 	"testing"
 	"time"
 
+	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
+	"github.com/spf13/afero"
 )
 
 func TestEvaluateFilter(t *testing.T) {
@@ -131,6 +133,10 @@ func TestEvaluateFilter(t *testing.T) {
 }
 
 func TestEvaluateTopDir(t *testing.T) {
+	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	defer func() {
+		cmd_toolkit.AssignFileSystem(originalFileSystem)
+	}()
 	tests := map[string]struct {
 		values  map[string]*cmd.FlagValue
 		wantDir string
@@ -160,8 +166,7 @@ func TestEvaluateTopDir(t *testing.T) {
 					"Specify a value that is a readable file.\n",
 				Log: "level='error'" +
 					" --topDir='no such directory'" +
-					" error='CreateFile no such directory: The system cannot find the file" +
-					" specified.'" +
+					" error='open no such directory: file does not exist'" +
 					" user-set='true'" +
 					" msg='invalid directory'\n",
 			},
@@ -180,8 +185,7 @@ func TestEvaluateTopDir(t *testing.T) {
 					" a readable file.\n",
 				Log: "level='error'" +
 					" --topDir='no such directory'" +
-					" error='CreateFile no such directory: The system cannot find the file" +
-					" specified.'" +
+					" error='open no such directory: file does not exist'" +
 					" user-set='false'" +
 					" msg='invalid directory'\n",
 			},
@@ -194,13 +198,14 @@ func TestEvaluateTopDir(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Error: "The --topDir value, \"./commonFlags_test.go\", cannot be used.\n" +
 					"Why?\n" +
-					"The value you specified is not the name of a directory.\n" +
+					"The value you specified is not a readable file.\n" +
 					"What to do:\n" +
-					"Specify a value that is the name of a directory.\n",
+					"Specify a value that is a readable file.\n",
 				Log: "level='error'" +
 					" --topDir='./commonFlags_test.go'" +
+					" error='open commonFlags_test.go: file does not exist'" +
 					" user-set='true'" +
-					" msg='the file is not a directory'\n",
+					" msg='invalid directory'\n",
 			},
 		},
 		"non-existent directory, as configured": {
@@ -211,14 +216,15 @@ func TestEvaluateTopDir(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Error: "The --topDir value, \"./commonFlags_test.go\", cannot be used.\n" +
 					"Why?\n" +
-					"The currently configured value is not the name of a directory.\n" +
+					"The currently configured value is not a readable file.\n" +
 					"What to do:\n" +
 					"Edit the configuration file or specify --topDir with a value that is" +
-					" the name of a directory.\n",
+					" a readable file.\n",
 				Log: "level='error'" +
 					" --topDir='./commonFlags_test.go'" +
+					" error='open commonFlags_test.go: file does not exist'" +
 					" user-set='false'" +
-					" msg='the file is not a directory'\n",
+					" msg='invalid directory'\n",
 			},
 		},
 		"valid directory": {

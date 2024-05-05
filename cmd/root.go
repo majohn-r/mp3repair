@@ -82,7 +82,7 @@ func InitGlobals() {
 	if !Initialized {
 		ok := false
 		Bus = NewDefaultBus(cmd_toolkit.ProductionLogger)
-		if _, err := AppName(); err != nil {
+		if _, err := cmd_toolkit.AppName(); err != nil {
 			SetAppName(appName)
 		}
 		if InitLogging(Bus) && InitApplicationPath(Bus) {

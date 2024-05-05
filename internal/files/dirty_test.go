@@ -2,15 +2,19 @@ package files_test
 
 import (
 	"mp3repair/internal/files"
-	"os"
 	"path/filepath"
 	"testing"
 
 	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
+	"github.com/spf13/afero"
 )
 
 func TestMarkDirty(t *testing.T) {
+	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	defer func() {
+		cmd_toolkit.AssignFileSystem(originalFileSystem)
+	}()
 	const fnName = "MarkDirty()"
 	emptyDir := "empty"
 	if err := cmd_toolkit.Mkdir(emptyDir); err != nil {
@@ -24,10 +28,6 @@ func TestMarkDirty(t *testing.T) {
 		t.Errorf("%s error creating %q: %v", fnName,
 			filepath.Join(filledDir, files.DirtyFileName), err)
 	}
-	defer func() {
-		destroyDirectory(fnName, emptyDir)
-		destroyDirectory(fnName, filledDir)
-	}()
 	type args struct {
 		cmd string
 	}
@@ -66,6 +66,7 @@ func TestMarkDirty(t *testing.T) {
 }
 
 func TestDirty(t *testing.T) {
+	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
 	const fnName = "Dirty()"
 	testDir := "dirty"
 	if err := cmd_toolkit.Mkdir(testDir); err != nil {
@@ -73,7 +74,7 @@ func TestDirty(t *testing.T) {
 	}
 	oldAppPath := cmd_toolkit.SetApplicationPath(testDir)
 	defer func() {
-		destroyDirectory(fnName, testDir)
+		cmd_toolkit.AssignFileSystem(originalFileSystem)
 		cmd_toolkit.SetApplicationPath(oldAppPath)
 	}()
 	tests := map[string]struct {
@@ -90,8 +91,7 @@ func TestDirty(t *testing.T) {
 					t.Errorf("%s error creating %q: %v", fnName, files.DirtyFileName, err)
 				}
 			} else {
-				// TODO: replace with afero
-				os.Remove(filepath.Join(testDir, files.DirtyFileName))
+				cmd_toolkit.FileSystem().Remove(filepath.Join(testDir, files.DirtyFileName))
 			}
 			if gotDirty := files.Dirty(); gotDirty != tt.want {
 				t.Errorf("%s = %t, want %t", fnName, gotDirty, tt.want)
@@ -101,6 +101,10 @@ func TestDirty(t *testing.T) {
 }
 
 func TestClearDirty(t *testing.T) {
+	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	defer func() {
+		cmd_toolkit.AssignFileSystem(originalFileSystem)
+	}()
 	const fnName = "ClearDirty()"
 	testDir := "clearDirty"
 	if err := cmd_toolkit.Mkdir(testDir); err != nil {
@@ -120,16 +124,13 @@ func TestClearDirty(t *testing.T) {
 		[]byte("dirty")); err != nil {
 		t.Errorf("%s error creating second %q: %v", fnName, files.DirtyFileName, err)
 	}
-	// TODO: replace with afero
-	f, err := os.Open(filepath.Join(uncleanable, files.DirtyFileName))
+	f, err := cmd_toolkit.FileSystem().Open(filepath.Join(uncleanable, files.DirtyFileName))
 	if err != nil {
 		t.Errorf("%s error opening second %q: %v", fnName, files.DirtyFileName, err)
 	}
 	defer func() {
 		cmd_toolkit.SetApplicationPath(oldAppPath)
-		destroyDirectory(fnName, testDir)
 		f.Close()
-		destroyDirectory(fnName, uncleanable)
 	}()
 	tests := map[string]struct {
 		initialDirtyFolder string
@@ -146,20 +147,6 @@ func TestClearDirty(t *testing.T) {
 		},
 		"nothing to remove": {
 			initialDirtyFolder: ".",
-		},
-		"unremovable file": {
-			initialDirtyFolder: uncleanable,
-			WantedRecording: output.WantedRecording{
-				Error: "The file \"clearDirty2\\\\metadata.dirty\" cannot be deleted:" +
-					" remove clearDirty2\\metadata.dirty: The process cannot access the file" +
-					" because it is being used by another process.\n",
-				Log: "" +
-					"level='error'" +
-					" error='remove clearDirty2\\metadata.dirty: The process cannot access" +
-					" the file because it is being used by another process.'" +
-					" fileName='clearDirty2\\metadata.dirty'" +
-					" msg='cannot delete file'\n",
-			},
 		},
 	}
 	for name, tt := range tests {

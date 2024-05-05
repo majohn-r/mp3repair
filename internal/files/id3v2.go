@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/bogem/id3v2/v2"
+	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
 )
 
 type Id3v2Metadata struct {
@@ -68,7 +69,11 @@ func NewId3v2Metadata() *Id3v2Metadata {
 }
 
 func readID3V2Tag(path string) (*id3v2.Tag, error) {
-	return id3v2.Open(path, id3v2.Options{Parse: true, ParseFrames: nil})
+	file, err := cmd_toolkit.FileSystem().Open(path)
+	if err != nil {
+		return nil, err
+	}
+	return id3v2.ParseReader(file, id3v2.Options{Parse: true, ParseFrames: nil})
 }
 
 func RawReadID3V2Metadata(path string) (d *Id3v2Metadata) {
