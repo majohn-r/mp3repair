@@ -137,6 +137,10 @@ func TestEvaluateTopDir(t *testing.T) {
 	defer func() {
 		cmd_toolkit.AssignFileSystem(originalFileSystem)
 	}()
+	goodDir := "music"
+	badDir := filepath.Join(goodDir, "moreMusic")
+	cmd_toolkit.FileSystem().Mkdir(goodDir, cmd_toolkit.StdDirPermissions)
+	afero.WriteFile(cmd_toolkit.FileSystem(), badDir, []byte("data"), cmd_toolkit.StdFilePermissions)
 	tests := map[string]struct {
 		values  map[string]*cmd.FlagValue
 		wantDir string
@@ -193,46 +197,44 @@ func TestEvaluateTopDir(t *testing.T) {
 		"non-existent directory, user set": {
 			values: map[string]*cmd.FlagValue{
 				"topDir": cmd.NewFlagValue().WithExplicitlySet(true).WithValueType(
-					cmd.StringType).WithValue("./commonFlags_test.go"),
+					cmd.StringType).WithValue(badDir),
 			},
 			WantedRecording: output.WantedRecording{
-				Error: "The --topDir value, \"./commonFlags_test.go\", cannot be used.\n" +
+				Error: "The --topDir value, \"music\\\\moreMusic\", cannot be used.\n" +
 					"Why?\n" +
-					"The value you specified is not a readable file.\n" +
+					"The value you specified is not the name of a directory.\n" +
 					"What to do:\n" +
-					"Specify a value that is a readable file.\n",
+					"Specify a value that is the name of a directory.\n",
 				Log: "level='error'" +
-					" --topDir='./commonFlags_test.go'" +
-					" error='open commonFlags_test.go: file does not exist'" +
+					" --topDir='" + badDir + "'" +
 					" user-set='true'" +
-					" msg='invalid directory'\n",
+					" msg='the file is not a directory'\n",
 			},
 		},
 		"non-existent directory, as configured": {
 			values: map[string]*cmd.FlagValue{
 				"topDir": cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(
-					cmd.StringType).WithValue("./commonFlags_test.go"),
+					cmd.StringType).WithValue(badDir),
 			},
 			WantedRecording: output.WantedRecording{
-				Error: "The --topDir value, \"./commonFlags_test.go\", cannot be used.\n" +
+				Error: "The --topDir value, \"music\\\\moreMusic\", cannot be used.\n" +
 					"Why?\n" +
-					"The currently configured value is not a readable file.\n" +
+					"The currently configured value is not the name of a directory.\n" +
 					"What to do:\n" +
 					"Edit the configuration file or specify --topDir with a value that is" +
-					" a readable file.\n",
+					" the name of a directory.\n",
 				Log: "level='error'" +
-					" --topDir='./commonFlags_test.go'" +
-					" error='open commonFlags_test.go: file does not exist'" +
+					" --topDir='" + badDir + "'" +
 					" user-set='false'" +
-					" msg='invalid directory'\n",
+					" msg='the file is not a directory'\n",
 			},
 		},
 		"valid directory": {
 			values: map[string]*cmd.FlagValue{
 				"topDir": cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(
-					cmd.StringType).WithValue("."),
+					cmd.StringType).WithValue(goodDir),
 			},
-			wantDir: ".",
+			wantDir: goodDir,
 			wantOk:  true,
 		},
 	}
