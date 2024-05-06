@@ -2,6 +2,7 @@ package files
 
 import (
 	"bytes"
+	"strings"
 
 	"github.com/bogem/id3v2/v2"
 )
@@ -398,13 +399,32 @@ func (tM *TrackMetadata) GenreDiffers(genre string) (differs bool) {
 
 func (tM *TrackMetadata) YearDiffers(year string) (differs bool) {
 	for _, sT := range sourceTypes {
-		if tM.errorCause[sT] == "" && tM.year[sT] != year {
+		if tM.errorCause[sT] == "" && !YearsMatch(tM.year[sT], year) {
 			differs = true
 			tM.requiresEdit[sT] = true
 			tM.correctedYear[sT] = year
 		}
 	}
 	return
+}
+
+// YearsMatch compares a year field, as recorded in metadata, against the
+// album's canonical year; returns true if they are considered equal
+func YearsMatch(metadataYear, albumYear string) bool {
+	switch {
+	case len(metadataYear) < len(albumYear):
+		if metadataYear == "" {
+			return false
+		}
+		return strings.HasPrefix(albumYear, metadataYear)
+	case len(metadataYear) > len(albumYear):
+		if albumYear == "" {
+			return false
+		}
+		return strings.HasPrefix(metadataYear, albumYear)
+	default:
+		return metadataYear == albumYear
+	}
 }
 
 func (tM *TrackMetadata) MCDIDiffers(f id3v2.UnknownFrame) (differs bool) {

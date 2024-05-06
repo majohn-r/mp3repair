@@ -1189,6 +1189,26 @@ func Test_trackMetadata_YearDiffers(t *testing.T) {
 				[]byte{0}).WithPrimarySource(files.ID3V2).WithCorrectedYears([]string{
 				"", "1999", "1999"}).WithRequiresEdits([]bool{false, true, true}),
 		},
+		"no mismatch on years": {
+			tM: files.NewTrackMetadata().WithAlbumNames([]string{
+				"", "On Air: Live At The BBC, Volum", "unknown album"}).WithArtistNames(
+				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
+				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres(
+				[]string{"", "Other", "dance music"}).WithYears([]string{
+				"", "1968", "1968 (2018)"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier(
+				[]byte{0}).WithPrimarySource(files.ID3V2),
+			args:        args{year: "1968"},
+			wantDiffers: false,
+			wantTM: files.NewTrackMetadata().WithAlbumNames([]string{
+				"", "On Air: Live At The BBC, Volum", "unknown album"}).WithArtistNames(
+				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
+				"", "Ringo - Pop Profile [Interview", "unknown track"}).WithGenres(
+				[]string{"", "Other", "dance music"}).WithYears([]string{
+				"", "1968", "1968 (2018)"}).WithTrackNumbers(
+				[]int{0, 29, 2}).WithMusicCDIdentifier(
+				[]byte{0}).WithPrimarySource(files.ID3V2),
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -1506,6 +1526,61 @@ func TestSourceType_name(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			if got := tt.sT.Name(); got != tt.want {
 				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
+			}
+		})
+	}
+}
+
+func TestYearsMatch(t *testing.T) {
+	type args struct {
+		metadataYear string
+		albumYear    string
+	}
+	tests := map[string]struct {
+		args
+		want bool
+	}{
+		"two empty years": {
+			args: args{metadataYear: "", albumYear: ""},
+			want: true,
+		},
+		"empty metadata year": {
+			args: args{metadataYear: "", albumYear: "1968"},
+			want: false,
+		},
+		"empty album year": {
+			args: args{metadataYear: "1968", albumYear: ""},
+			want: false,
+		},
+		"match equal lengths": {
+			args: args{metadataYear: "1968", albumYear: "1968"},
+			want: true,
+		},
+		"mismatch equal lengths": {
+			args: args{metadataYear: "1968", albumYear: "1969"},
+			want: false,
+		},
+		"match album > metadata": {
+			args: args{metadataYear: "1968", albumYear: "1968 (2018)"},
+			want: true,
+		},
+		"mismatch album > metadata": {
+			args: args{metadataYear: "1968", albumYear: "1969 (2019)"},
+			want: false,
+		},
+		"match album < metadata": {
+			args: args{metadataYear: "1968 (2018)", albumYear: "1968"},
+			want: true,
+		},
+		"mismatch album < metadata": {
+			args: args{metadataYear: "1968 (2018)", albumYear: "1969"},
+			want: false,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := files.YearsMatch(tt.args.metadataYear, tt.args.albumYear); got != tt.want {
+				t.Errorf("YearsMatch() = %v, want %v", got, tt.want)
 			}
 		})
 	}
