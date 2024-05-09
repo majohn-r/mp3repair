@@ -482,6 +482,8 @@ var (
 	zeroByteField = initID3v1Field(zeroByteOffset, zeroByteLength)
 	trackField    = initID3v1Field(trackOffset, trackLength)
 	genreField    = initID3v1Field(genreOffset, genreLength)
+
+	ErrNoID3V1MetadataFound = fmt.Errorf("no ID3V1 metadata found")
 )
 
 func initID3v1Field(offset, length int) id3v1Field {
@@ -667,8 +669,7 @@ func FileReader(f afero.File, b []byte) (int, error) {
 	return f.Read(b)
 }
 
-func InternalReadID3V1Metadata(path string,
-	readFunc func(f afero.File, b []byte) (int, error)) (*Id3v1Metadata, error) {
+func InternalReadID3V1Metadata(path string, readFunc func(f afero.File, b []byte) (int, error)) (*Id3v1Metadata, error) {
 	file, err := cmd_toolkit.FileSystem().Open(path)
 	if err != nil {
 		return nil, err
@@ -676,7 +677,7 @@ func InternalReadID3V1Metadata(path string,
 	defer file.Close()
 	fstat, _ := file.Stat()
 	if fstat != nil && fstat.Size() < id3v1Length {
-		return nil, fmt.Errorf("file is not long enough to contain ID3V1 metadata")
+		return nil, ErrNoID3V1MetadataFound
 	}
 	file.Seek(-id3v1Length, io.SeekEnd)
 	v1 := NewID3v1Metadata()
@@ -689,7 +690,7 @@ func InternalReadID3V1Metadata(path string,
 			fmt.Errorf("cannot read id3v1 metadata from file %q; only %d bytes read", path, r)
 	}
 	if !v1.IsValid() {
-		return nil, fmt.Errorf("no id3v1 metadata found in file %q", path)
+		return nil, ErrNoID3V1MetadataFound
 	}
 	return v1, nil
 }

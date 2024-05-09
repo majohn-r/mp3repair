@@ -191,8 +191,15 @@ func (t *Track) SetMetadata(tM *TrackMetadata) {
 
 // MetadataState contains information about metadata problems
 type MetadataState struct {
-	hasError           bool
-	noMetadata         bool
+	// errors occurred reading both ID3V1 and ID3V2 metadata
+	corruptMetadata bool
+	// no attempt has been made to read metadata
+	noMetadata bool
+	// an attempt was made to read metadata, but there was no ID3V1 metadata found
+	missingID3V1 bool
+	// an attempt was made to read metadata, but there was no ID3V2 metadata found
+	missingID3V2 bool
+	// various conflicts
 	numberingConflict  bool
 	trackNameConflict  bool
 	albumNameConflict  bool
@@ -265,27 +272,45 @@ func (t *Track) ReconcileMetadata() MetadataState {
 	if t.metadata == nil {
 		return MetadataState{noMetadata: true}
 	}
+	mS := MetadataState{}
+	metadataErrors := t.metadata.ErrorCauses()
+	if len(metadataErrors) != 0 {
+		for _, e := range metadataErrors {
+			switch e {
+			case ErrNoID3V1MetadataFound.Error():
+				mS.missingID3V1 = true
+			case ErrNoID3V2MetadataFound.Error():
+				mS.missingID3V2 = true
+			}
+		}
+		if mS.missingID3V1 && mS.missingID3V2 {
+			return mS
+		}
+	}
 	if !t.metadata.IsValid() {
-		return MetadataState{hasError: true}
+		mS.corruptMetadata = true
+		return mS
 	}
-	return MetadataState{
-		numberingConflict:  t.metadata.TrackDiffers(t.number),
-		trackNameConflict:  t.metadata.TrackTitleDiffers(t.name),
-		albumNameConflict:  t.metadata.AlbumTitleDiffers(t.album.canonicalTitle),
-		artistNameConflict: t.metadata.ArtistNameDiffers(t.album.artist.canonicalName),
-		genreConflict:      t.metadata.GenreDiffers(t.album.canonicalGenre),
-		yearConflict:       t.metadata.YearDiffers(t.album.canonicalYear),
-		mcdiConflict:       t.metadata.MCDIDiffers(t.album.musicCDIdentifier),
-	}
+	mS.numberingConflict = t.metadata.TrackDiffers(t.number)
+	mS.trackNameConflict = t.metadata.TrackTitleDiffers(t.name)
+	mS.albumNameConflict = t.metadata.AlbumTitleDiffers(t.album.canonicalTitle)
+	mS.artistNameConflict = t.metadata.ArtistNameDiffers(t.album.artist.canonicalName)
+	mS.genreConflict = t.metadata.GenreDiffers(t.album.canonicalGenre)
+	mS.yearConflict = t.metadata.YearDiffers(t.album.canonicalYear)
+	mS.mcdiConflict = t.metadata.MCDIDiffers(t.album.musicCDIdentifier)
+	return mS
 }
 
 // ReportMetadataProblems returns a slice of strings describing the problems
 // found by calling ReconcileMetadata().
 func (t *Track) ReportMetadataProblems() []string {
 	s := t.ReconcileMetadata()
-	if s.hasError {
+	if s.corruptMetadata {
 		return []string{
-			"differences cannot be determined: there was an error reading metadata"}
+			"differences cannot be determined: track metadata may be corrupted"}
+	}
+	if s.missingID3V1 && s.missingID3V2 {
+		return []string{"differences cannot be determined: the track file contains no metadata"}
 	}
 	if s.noMetadata {
 		return []string{"differences cannot be determined: metadata has not been read"}

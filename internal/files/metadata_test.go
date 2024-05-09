@@ -151,8 +151,8 @@ func Test_readMetadata(t *testing.T) {
 			args: args{path: filepath.Join(testDir, taglessFile)},
 			want: files.NewTrackMetadata().WithErrorCauses([]string{
 				"",
-				"file is not long enough to contain ID3V1 metadata",
-				files.ErrMissingTrackNumber.Error(),
+				"no ID3V1 metadata found",
+				"no ID3V2 metadata found",
 			}),
 		},
 		"only id3v1 metadata": {
@@ -164,7 +164,7 @@ func Test_readMetadata(t *testing.T) {
 				[]string{"", "Other", ""}).WithYears([]string{
 				"", "2013", ""}).WithTrackNumbers(
 				[]int{0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses(
-				[]string{"", "", files.ErrMissingTrackNumber.Error()}),
+				[]string{"", "", "no ID3V2 metadata found"}),
 		},
 		"only id3v2 metadata": {
 			args: args{path: filepath.Join(testDir, id3v2OnlyFile)},
@@ -176,7 +176,7 @@ func Test_readMetadata(t *testing.T) {
 				[]string{"", "", "2022"}).WithTrackNumbers(
 				[]int{0, 0, 2}).WithMusicCDIdentifier(
 				[]byte{0}).WithPrimarySource(files.ID3V2).WithErrorCauses(
-				[]string{"", noID3V1Metadata, ""}),
+				[]string{"", "no ID3V1 metadata found", ""}),
 		},
 		"all metadata": {
 			args: args{path: filepath.Join(testDir, completeFile)},

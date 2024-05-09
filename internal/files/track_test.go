@@ -872,8 +872,17 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 			t: files.NewEmptyTrack().WithMetadata(
 				files.NewTrackMetadata().WithErrorCauses([]string{"", "oops", "oops"}),
 			),
-			want: []string{"differences cannot be determined: " +
-				"there was an error reading metadata"},
+			want: []string{"differences cannot be determined: track metadata may be corrupted"},
+		},
+		"track with no metadata": {
+			t: files.NewEmptyTrack().WithMetadata(
+				files.NewTrackMetadata().WithErrorCauses([]string{
+					"",
+					files.ErrNoID3V1MetadataFound.Error(),
+					files.ErrNoID3V2MetadataFound.Error(),
+				}),
+			),
+			want: []string{"differences cannot be determined: the track file contains no metadata"},
 		},
 		"track with metadata differences": {
 			t: problematicTrack,
@@ -900,7 +909,8 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 
 func TestTrack_UpdateMetadata(t *testing.T) {
 	// unfortunately, we cannot use a memory-mapped filesystem here, as the
-	// updating of ID3V2 tags is hardcoded to use the os file system.
+	// library used for updating ID3V2 tags is hardcoded to use the os file
+	// system.
 	const fnName = "Track.UpdateMetadata()"
 	testDir := "updateMetadata"
 	if err := cmd_toolkit.Mkdir(testDir); err != nil {

@@ -549,3 +549,23 @@ func Test_updateID3V2Metadata(t *testing.T) {
 		})
 	}
 }
+
+func TestIsTagAbsent(t *testing.T) {
+	tagWithContent := id3v2.NewEmptyTag()
+	tagWithContent.AddTextFrame("TFOO", id3v2.EncodingISO, "foo")
+	tests := map[string]struct {
+		tag  *id3v2.Tag
+		want bool
+	}{
+		"nil":          {tag: nil, want: true},
+		"empty":        {tag: id3v2.NewEmptyTag(), want: true},
+		"with a frame": {tag: tagWithContent, want: false},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := files.IsTagAbsent(tt.tag); got != tt.want {
+				t.Errorf("IsTagAbsent() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

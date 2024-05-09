@@ -73,7 +73,18 @@ func readID3V2Tag(path string) (*id3v2.Tag, error) {
 	if err != nil {
 		return nil, err
 	}
-	return id3v2.ParseReader(file, id3v2.Options{Parse: true, ParseFrames: nil})
+	tag, err := id3v2.ParseReader(file, id3v2.Options{Parse: true, ParseFrames: nil})
+	if IsTagAbsent(tag) {
+		return tag, ErrNoID3V2MetadataFound
+	}
+	return tag, err
+}
+
+func IsTagAbsent(tag *id3v2.Tag) bool {
+	if tag == nil {
+		return true
+	}
+	return tag.Count() == 0
 }
 
 func RawReadID3V2Metadata(path string) (d *Id3v2Metadata) {
@@ -127,6 +138,7 @@ func NormalizeGenre(s string) string {
 var (
 	ErrMalformedTrackNumber = fmt.Errorf("track number first character is not a digit")
 	ErrMissingTrackNumber   = fmt.Errorf("track number is zero length")
+	ErrNoID3V2MetadataFound = fmt.Errorf("no ID3V2 metadata found")
 )
 
 func ToTrackNumber(s string) (i int, err error) {

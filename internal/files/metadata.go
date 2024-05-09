@@ -229,24 +229,24 @@ func NewTrackMetadata() *TrackMetadata {
 }
 
 func ReadRawMetadata(path string) *TrackMetadata {
-	v1, id3v1Err := InternalReadID3V1Metadata(path, FileReader)
-	d := RawReadID3V2Metadata(path)
+	id3v1Metadata, id3v1Err := InternalReadID3V1Metadata(path, FileReader)
+	id3v2Metadata := RawReadID3V2Metadata(path)
 	tM := NewTrackMetadata()
 	switch {
-	case id3v1Err != nil && d.err != nil:
+	case id3v1Err != nil && id3v2Metadata.err != nil:
 		tM.errorCause[ID3V1] = id3v1Err.Error()
-		tM.errorCause[ID3V2] = d.err.Error()
+		tM.errorCause[ID3V2] = id3v2Metadata.err.Error()
 	case id3v1Err != nil:
 		tM.errorCause[ID3V1] = id3v1Err.Error()
-		tM.SetID3v2Values(d)
+		tM.SetID3v2Values(id3v2Metadata)
 		tM.primarySource = ID3V2
-	case d.err != nil:
-		tM.errorCause[ID3V2] = d.err.Error()
-		tM.SetID3v1Values(v1)
+	case id3v2Metadata.err != nil:
+		tM.errorCause[ID3V2] = id3v2Metadata.err.Error()
+		tM.SetID3v1Values(id3v1Metadata)
 		tM.primarySource = ID3V1
 	default:
-		tM.SetID3v2Values(d)
-		tM.SetID3v1Values(v1)
+		tM.SetID3v2Values(id3v2Metadata)
+		tM.SetID3v1Values(id3v1Metadata)
 		tM.primarySource = ID3V2
 	}
 	return tM
