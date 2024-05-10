@@ -196,6 +196,7 @@ func (cs *CheckSettings) PerformChecks(o output.Bus, artists []*files.Artist,
 		numberingConcernsFound := cs.PerformNumberingAnalysis(concernedArtists)
 		fileConcernsFound := cs.PerformFileAnalysis(o, concernedArtists, ss)
 		for _, artist := range concernedArtists {
+			artist.Rollup()
 			artist.ToConsole(o)
 		}
 		cs.MaybeReportCleanResults(o, emptyConcernsFound, numberingConcernsFound,

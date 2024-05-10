@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"mp3repair/internal/files"
+	"reflect"
 	"slices"
 
 	"github.com/majohn-r/output"
@@ -168,6 +169,26 @@ func (cAl *ConcernedAlbum) Lookup(track *files.Track) *ConcernedTrack {
 	return cT
 }
 
+func (cAl *ConcernedAlbum) Rollup() bool {
+	if len(cAl.tracks) <= 1 {
+		return false
+	}
+	if !cAl.IsConcerned() {
+		return false
+	}
+	initialConcerns := cAl.tracks[0].concerns
+	for _, cT := range cAl.tracks[1:] {
+		if !reflect.DeepEqual(initialConcerns, cT.concerns) {
+			return false
+		}
+	}
+	mergeConcerns(cAl.concerns, initialConcerns, "for all tracks:")
+	for _, cT := range cAl.tracks {
+		cT.Concerns = NewConcerns()
+	}
+	return true
+}
+
 func (cAl *ConcernedAlbum) ToConsole(o output.Bus) {
 	if cAl.IsConcerned() {
 		o.WriteConsole("  Album %q\n", cAl.name())
@@ -258,6 +279,29 @@ func (cAr *ConcernedArtist) name() string {
 	return cAr.backing.Name()
 }
 
+func (cAr *ConcernedArtist) Rollup() bool {
+	if !cAr.IsConcerned() {
+		return false
+	}
+	for _, cAl := range cAr.albums {
+		cAl.Rollup()
+	}
+	if len(cAr.albums) <= 1 {
+		return false
+	}
+	initialConcerns := cAr.albums[0].concerns
+	for _, cAl := range cAr.albums[1:] {
+		if !reflect.DeepEqual(initialConcerns, cAl.concerns) {
+			return false
+		}
+	}
+	mergeConcerns(cAr.concerns, initialConcerns, "for all albums:")
+	for _, cAl := range cAr.albums {
+		cAl.Concerns = NewConcerns()
+	}
+	return true
+}
+
 func (cAr *ConcernedArtist) ToConsole(o output.Bus) {
 	if cAr.IsConcerned() {
 		o.WriteConsole("Artist %q\n", cAr.name())
@@ -274,6 +318,14 @@ func (cAr *ConcernedArtist) ToConsole(o output.Bus) {
 			if cAl := m[name]; cAl != nil {
 				cAl.ToConsole(o)
 			}
+		}
+	}
+}
+
+func mergeConcerns(initial, addition map[ConcernType][]string, prefix string) {
+	for concern, issues := range addition {
+		for _, issue := range issues {
+			initial[concern] = append(initial[concern], fmt.Sprintf("%s %s", prefix, issue))
 		}
 	}
 }

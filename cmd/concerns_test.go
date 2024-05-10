@@ -639,3 +639,131 @@ func TestPrepareConcernedArtists(t *testing.T) {
 		})
 	}
 }
+
+func TestConcernedArtist_Rollup(t *testing.T) {
+	unconcernedArtist := cmd.NewConcernedArtist(files.NewArtist("artist name", "artist"))
+	concernedArtist := cmd.NewConcernedArtist(files.NewArtist("artist name", "artist"))
+	if concernedArtist != nil {
+		concernedArtist.AddConcern(cmd.EmptyConcern, "no albums found")
+	}
+	artist1 := files.NewArtist("artist name", "artist")
+	album1 := files.NewAlbum("album1", artist1, "album1")
+	album2 := files.NewAlbum("album2", artist1, "album2")
+	artist1.AddAlbum(album1)
+	artist1.AddAlbum(album2)
+	concernedArtistHeterogenousAlbums := cmd.NewConcernedArtist(artist1)
+	if concernedArtistHeterogenousAlbums != nil {
+		concernedArtistHeterogenousAlbums.Albums()[0].AddConcern(cmd.EmptyConcern, "no tracks found")
+	}
+	artist2 := files.NewArtist("artist name", "artist")
+	album2a := files.NewAlbum("album1", artist2, "album1")
+	album2b := files.NewAlbum("album2", artist2, "album2")
+	artist2.AddAlbum(album2a)
+	artist2.AddAlbum(album2b)
+	concernedArtistIdenticalAlbums := cmd.NewConcernedArtist(artist2)
+	if concernedArtistIdenticalAlbums != nil {
+		for _, cAl := range concernedArtistIdenticalAlbums.Albums() {
+			cAl.AddConcern(cmd.EmptyConcern, "no tracks")
+		}
+	}
+	tests := map[string]struct {
+		cAr  *cmd.ConcernedArtist
+		want bool
+	}{
+		"unconcerned": {
+			cAr:  unconcernedArtist,
+			want: false,
+		},
+		"concerned, no albums": {
+			cAr:  concernedArtist,
+			want: false,
+		},
+		"concerned, mixed album concerns": {
+			cAr:  concernedArtistHeterogenousAlbums,
+			want: false,
+		},
+		"concerned, same album concerns": {
+			cAr:  concernedArtistIdenticalAlbums,
+			want: true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := tt.cAr.Rollup(); got != tt.want {
+				t.Errorf("ConcernedArtist.Rollup() got %t want %t", got, tt.want)
+			}
+			if tt.want {
+				if !tt.cAr.Concerns.IsConcerned() {
+					t.Errorf("ConcernedArtist.Rollup() after rollup has no concerns")
+				}
+				for _, cAl := range tt.cAr.Albums() {
+					if cAl.Concerns.IsConcerned() {
+						t.Errorf("ConcernedArtist.Rollup() after rollup, album has concerns")
+					}
+				}
+			}
+		})
+	}
+}
+
+func TestConcernedAlbum_Rollup(t *testing.T) {
+	albumNoTracks := cmd.NewConcernedAlbum(files.NewAlbum("album", nil, "album"))
+	album1 := files.NewAlbum("album1", nil, "album1")
+	album1.AddTrack(files.NewEmptyTrack())
+	album1.AddTrack(files.NewEmptyTrack())
+	albumWithTracksNoConcerns := cmd.NewConcernedAlbum(album1)
+	album2 := files.NewAlbum("album2", nil, "album2")
+	album2.AddTrack(files.NewEmptyTrack())
+	album2.AddTrack(files.NewEmptyTrack())
+	albumWithMixedConcerns := cmd.NewConcernedAlbum(album2)
+	if albumWithMixedConcerns != nil {
+		albumWithMixedConcerns.Tracks()[0].AddConcern(cmd.FilesConcern, "no metadata")
+	}
+	album3 := files.NewAlbum("album3", nil, "album3")
+	album3.AddTrack(files.NewEmptyTrack())
+	album3.AddTrack(files.NewEmptyTrack())
+	albumWithIdenticalConcerns := cmd.NewConcernedAlbum(album3)
+	if albumWithIdenticalConcerns != nil {
+		for _, cT := range albumWithIdenticalConcerns.Tracks() {
+			cT.AddConcern(cmd.FilesConcern, "no metadata")
+		}
+	}
+	tests := map[string]struct {
+		cAl  *cmd.ConcernedAlbum
+		want bool
+	}{
+		"no tracks": {
+			cAl:  albumNoTracks,
+			want: false,
+		},
+		"tracks, no concerns": {
+			cAl:  albumWithTracksNoConcerns,
+			want: false,
+		},
+		"tracks, mixed concerns": {
+			cAl:  albumWithMixedConcerns,
+			want: false,
+		},
+		"tracks, same concerns": {
+			cAl:  albumWithIdenticalConcerns,
+			want: true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := tt.cAl.Rollup(); got != tt.want {
+				t.Errorf("ConcernedAlbum.Rollup() = %v, want %v", got, tt.want)
+			}
+			if tt.want {
+				if !tt.cAl.Concerns.IsConcerned() {
+					t.Errorf("ConcernedAlbum.Rollup() after rollup has no concerns")
+				}
+				for _, cT := range tt.cAl.Tracks() {
+					if cT.Concerns.IsConcerned() {
+						t.Errorf("ConcernedAlbum.Rollup() after rollup, track has concerns")
+					}
+				}
+			}
+		})
+	}
+}

@@ -674,26 +674,7 @@ func TestCheckSettings_PerformChecks(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"Artist \"my artist 0\"\n" +
-					"  Album \"my album 00\"\n" +
-					"    Track \"my track 001\"\n" +
-					"    * [files]" +
-					" differences cannot be determined: metadata has not been read\n" +
-					"    Track \"my track 002\"\n" +
-					"    * [files]" +
-					" differences cannot be determined: metadata has not been read\n" +
-					"    Track \"my track 003\"\n" +
-					"    * [files]" +
-					" differences cannot be determined: metadata has not been read\n" +
-					"  Album \"my album 01\"\n" +
-					"    Track \"my track 011\"\n" +
-					"    * [files]" +
-					" differences cannot be determined: metadata has not been read\n" +
-					"    Track \"my track 012\"\n" +
-					"    * [files]" +
-					" differences cannot be determined: metadata has not been read\n" +
-					"    Track \"my track 013\"\n" +
-					"    * [files]" +
-					" differences cannot be determined: metadata has not been read\n" +
+					"* [files] for all albums: for all tracks: differences cannot be determined: metadata has not been read\n" +
 					"Empty Folder Analysis: no empty folders found.\n" +
 					"Numbering Analysis: no missing or duplicate tracks found.\n",
 			},
