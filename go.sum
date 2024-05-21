@@ -10,8 +10,8 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/fastly/go-utils v0.0.0-20180712184237-d95a45783239/go.mod h1:Gdwt2ce0yfBxPvZrHkprdPPTTS3N5rwmLE8T22KBXlw=
-github.com/fatih/color v1.16.0 h1:zmkK9Ngbjj+K0yRhTVONQh1p/HknKYSlNT+vZCzyokM=
-github.com/fatih/color v1.16.0/go.mod h1:fL2Sau1YI5c0pdGEVCbKQbLXB6edEj1ZgiY4NijnWvE=
+github.com/fatih/color v1.17.0 h1:GlRw1BRJxkpqUCBKzKOw098ed57fEsKeNjpTe3cSjK4=
+github.com/fatih/color v1.17.0/go.mod h1:YZ7TlrGPkiz6ku9fK3TLD/pl3CpsiFyu8N92HLgmosI=
 github.com/inconshreveable/mousetrap v1.1.0 h1:wN+x4NVGpMsO7ErUn/mUI3vEoE6Jt13X2s0bqwp9tc8=
 github.com/inconshreveable/mousetrap v1.1.0/go.mod h1:vpF70FUmC8bwa3OWnCshd2FqLfsEA9PFc4w1p2J65bw=
 github.com/jehiah/go-strftime v0.0.0-20171201141054-1d33003b3869/go.mod h1:cJ6Cj7dQo+O6GJNiMx+Pa94qKj+TG8ONdKHgMNIyyag=
@@ -28,10 +28,10 @@ github.com/lestrrat-go/strftime v0.0.0-20180220091553-9948d03c6207/go.mod h1:RMl
 github.com/lestrrat-go/strftime v1.0.6 h1:CFGsDEt1pOpFNU+TJB0nhz9jl+K0hZSLE205AhTIGQQ=
 github.com/lestrrat-go/strftime v1.0.6/go.mod h1:f7jQKgV5nnJpYgdEasS+/y7EsTb8ykN2z68n3TtcTaw=
 github.com/lestrrat/go-envload v0.0.0-20180220120943-6ed08b54a570/go.mod h1:BLt8L9ld7wVsvEWQbuLrUZnCMnUmLZ+CGDzKtclrTlE=
-github.com/majohn-r/cmd-toolkit v0.10.0 h1:X5e9fHt/bhxKf/CsyBpjjKdZ1/9r6mywuMxOGp0FXAQ=
-github.com/majohn-r/cmd-toolkit v0.10.0/go.mod h1:ueY1u99W3XBjyi6nvPkL5aJf+9IS9LO8mcmGAeE04OY=
-github.com/majohn-r/output v0.3.3 h1:VCLa4Fj+7LK4ZHAm8rxPkEWyX8ObrIe4vAZe0Ls9x3E=
-github.com/majohn-r/output v0.3.3/go.mod h1:xkEssTltAV8NHXItLFWK91FGnLWLF1Er5PPkUOMVzJI=
+github.com/majohn-r/cmd-toolkit v0.11.0 h1:nIc481nNH6KZMzFgkK/dwMstShFIMyPdWxzrYFvjZ7Y=
+github.com/majohn-r/cmd-toolkit v0.11.0/go.mod h1:gNqv5k64Ty0oUnJCrZO8CCfjHv7ctqTzH+HBg5F5FiU=
+github.com/majohn-r/output v0.3.4 h1:9veZ95TFuyFtcfF7CPICMqOKrmHWGjQZ2b3jc06IPdk=
+github.com/majohn-r/output v0.3.4/go.mod h1:n29IgF34qyTJeXnb6/OX1GDV/a+jiHdP4z78jT+RWmE=
 github.com/mattn/go-colorable v0.1.13 h1:fFA4WZxdEF4tXPZVKMLwD8oUnCTTo08duU7wxecdEvA=
 github.com/mattn/go-colorable v0.1.13/go.mod h1:7S9/ev0klgBDR4GtXTXX8a3vIGJpMovkB8vQcUbaXHg=
 github.com/mattn/go-isatty v0.0.16/go.mod h1:kYGgaQfpe5nmfYZH+SKPsOc2e4SrIfOl2e/yFXSvRLM=

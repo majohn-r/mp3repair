@@ -5,8 +5,8 @@ go 1.22
 require (
 	github.com/bogem/id3v2/v2 v2.1.4
 	github.com/cheggaaa/pb/v3 v3.1.5
-	github.com/majohn-r/cmd-toolkit v0.10.0
-	github.com/majohn-r/output v0.3.3
+	github.com/majohn-r/cmd-toolkit v0.11.0
+	github.com/majohn-r/output v0.3.4
 	github.com/mattn/go-isatty v0.0.20
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.0
@@ -16,7 +16,7 @@ require (
 
 require (
 	github.com/VividCortex/ewma v1.2.0 // indirect
-	github.com/fatih/color v1.16.0 // indirect
+	github.com/fatih/color v1.17.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/lestrrat-go/strftime v1.0.6 // indirect
