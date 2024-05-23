@@ -22,66 +22,66 @@ type testFlagProducer struct {
 }
 
 func (tfp testFlagProducer) Changed(name string) bool {
-	if flag, ok := tfp.flags[name]; ok {
+	if flag, found := tfp.flags[name]; found {
 		return flag.changed
 	} else {
 		return false
 	}
 }
 
-func (tfp testFlagProducer) GetBool(name string) (b bool, err error) {
-	if flag, ok := tfp.flags[name]; ok {
+func (tfp testFlagProducer) GetBool(name string) (b bool, flagErr error) {
+	if flag, found := tfp.flags[name]; found {
 		if flag.valueKind == cmd.BoolType {
 			if value, ok := flag.value.(bool); ok {
 				b = value
 			} else {
-				err = fmt.Errorf(
+				flagErr = fmt.Errorf(
 					"code error: value for %q name is supposed to be bool, but it isn't",
 					name)
 			}
 		} else {
-			err = fmt.Errorf("flag %q is not marked boolean", name)
+			flagErr = fmt.Errorf("flag %q is not marked boolean", name)
 		}
 	} else {
-		err = fmt.Errorf("flag %q does not exist", name)
+		flagErr = fmt.Errorf("flag %q does not exist", name)
 	}
 	return
 }
 
-func (tfp testFlagProducer) GetInt(name string) (i int, err error) {
-	if flag, ok := tfp.flags[name]; ok {
+func (tfp testFlagProducer) GetInt(name string) (i int, flagErr error) {
+	if flag, found := tfp.flags[name]; found {
 		if flag.valueKind == cmd.IntType {
 			if value, ok := flag.value.(int); ok {
 				i = value
 			} else {
-				err = fmt.Errorf(
+				flagErr = fmt.Errorf(
 					"code error: value for %q name is supposed to be int, but it isn't",
 					name)
 			}
 		} else {
-			err = fmt.Errorf("flag %q is not marked int", name)
+			flagErr = fmt.Errorf("flag %q is not marked int", name)
 		}
 	} else {
-		err = fmt.Errorf("flag %q does not exist", name)
+		flagErr = fmt.Errorf("flag %q does not exist", name)
 	}
 	return
 }
 
-func (tfp testFlagProducer) GetString(name string) (s string, err error) {
-	if flag, ok := tfp.flags[name]; ok {
+func (tfp testFlagProducer) GetString(name string) (s string, flagErr error) {
+	if flag, found := tfp.flags[name]; found {
 		if flag.valueKind == cmd.StringType {
 			if value, ok := flag.value.(string); ok {
 				s = value
 			} else {
-				err = fmt.Errorf(
+				flagErr = fmt.Errorf(
 					"code error: value for %q name is supposed to be string, but it isn't",
 					name)
 			}
 		} else {
-			err = fmt.Errorf("flag %q is not marked string", name)
+			flagErr = fmt.Errorf("flag %q is not marked string", name)
 		}
 	} else {
-		err = fmt.Errorf("flag %q does not exist", name)
+		flagErr = fmt.Errorf("flag %q does not exist", name)
 	}
 	return
 }
@@ -554,7 +554,7 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 						tt.wantUsage)
 				}
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("FlagDetails.AddFlag() %s", difference)
 				}
@@ -878,7 +878,7 @@ func TestAddFlags(t *testing.T) {
 				cmd.AddFlags(o, c, tt.args.flags, tt.args.defs)
 			}
 			for _, name := range tt.wantNames {
-				if _, ok := tt.args.flags.flags[name]; !ok {
+				if _, found := tt.args.flags.flags[name]; !found {
 					t.Errorf("AddFlags() did not register %q", name)
 				}
 			}
@@ -886,7 +886,7 @@ func TestAddFlags(t *testing.T) {
 				t.Errorf("AddFlags() got %d registered flags, expected %d", got,
 					len(tt.wantNames))
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("GetBool() %s", difference)
 				}
@@ -968,9 +968,9 @@ func TestGetBool(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			gotVal, gotUserSet, err := cmd.GetBool(o, tt.args.results, tt.args.flagName)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetBool() error = %v, wantErr %v", err, tt.wantErr)
+			gotVal, gotUserSet, gotErr := cmd.GetBool(o, tt.args.results, tt.args.flagName)
+			if (gotErr != nil) != tt.wantErr {
+				t.Errorf("GetBool() error = %v, wantErr %v", gotErr, tt.wantErr)
 				return
 			}
 			if gotVal != tt.wantVal {
@@ -979,7 +979,7 @@ func TestGetBool(t *testing.T) {
 			if gotUserSet != tt.wantUserSet {
 				t.Errorf("GetBool() gotUserSet = %v, want %v", gotUserSet, tt.wantUserSet)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("AddFlags() %s", difference)
 				}
@@ -1062,9 +1062,9 @@ func TestGetInt(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			gotVal, gotUserSet, err := cmd.GetInt(o, tt.args.results, tt.args.flagName)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetInt() error = %v, wantErr %v", err, tt.wantErr)
+			gotVal, gotUserSet, gotErr := cmd.GetInt(o, tt.args.results, tt.args.flagName)
+			if (gotErr != nil) != tt.wantErr {
+				t.Errorf("GetInt() error = %v, wantErr %v", gotErr, tt.wantErr)
 				return
 			}
 			if gotVal != tt.wantVal {
@@ -1073,7 +1073,7 @@ func TestGetInt(t *testing.T) {
 			if gotUserSet != tt.wantUserSet {
 				t.Errorf("GetInt() gotUserSet = %v, want %v", gotUserSet, tt.wantUserSet)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("GetInt() %s", difference)
 				}
@@ -1156,9 +1156,9 @@ func TestGetString(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			gotVal, gotUserSet, err := cmd.GetString(o, tt.args.results, tt.args.flagName)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetString() error = %v, wantErr %v", err, tt.wantErr)
+			gotVal, gotUserSet, gotErr := cmd.GetString(o, tt.args.results, tt.args.flagName)
+			if (gotErr != nil) != tt.wantErr {
+				t.Errorf("GetString() error = %v, wantErr %v", gotErr, tt.wantErr)
 				return
 			}
 			if gotVal != tt.wantVal {
@@ -1167,7 +1167,7 @@ func TestGetString(t *testing.T) {
 			if gotUserSet != tt.wantUserSet {
 				t.Errorf("GetString() gotUserSet = %v, want %v", gotUserSet, tt.wantUserSet)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("GetString() %s", difference)
 				}
@@ -1204,7 +1204,7 @@ func TestProcessFlagErrors(t *testing.T) {
 			if gotOk := cmd.ProcessFlagErrors(o, tt.args.eSlice); gotOk != tt.wantOk {
 				t.Errorf("ProcessFlagErrors() = %v, want %v", gotOk, tt.wantOk)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("ProcessFlagErrors() %s", difference)
 				}

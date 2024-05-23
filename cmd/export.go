@@ -102,8 +102,8 @@ func ExportRun(cmd *cobra.Command, _ []string) error {
 	values, eSlice := ReadFlags(cmd.Flags(), ExportFlags)
 	exitError := NewExitProgrammingError(ExportCommand)
 	if ProcessFlagErrors(o, eSlice) {
-		settings, ok := ProcessExportFlags(o, values)
-		if ok {
+		settings, flagsOk := ProcessExportFlags(o, values)
+		if flagsOk {
 			LogCommandStart(o, ExportCommand, map[string]any{
 				exportDefaultsAsFlag:  settings.defaultsEnabled,
 				"defaults-user-set":   settings.defaultsSet,
@@ -116,26 +116,24 @@ func ExportRun(cmd *cobra.Command, _ []string) error {
 	return ToErrorInterface(exitError)
 }
 
-func ProcessExportFlags(o output.Bus, values map[string]*FlagValue) (*ExportFlagSettings,
-	bool) {
-	var err error
+func ProcessExportFlags(o output.Bus, values map[string]*FlagValue) (*ExportFlagSettings, bool) {
+	var flagErr error
 	result := &ExportFlagSettings{}
-	ok := true // optimistic
-	result.defaultsEnabled, result.defaultsSet, err = GetBool(o, values, ExportFlagDefaults)
-	if err != nil {
-		ok = false
+	flagsOk := true // optimistic
+	result.defaultsEnabled, result.defaultsSet, flagErr = GetBool(o, values, ExportFlagDefaults)
+	if flagErr != nil {
+		flagsOk = false
 	}
-	result.overwriteEnabled, result.overwriteSet, err = GetBool(o, values,
-		ExportFlagOverwrite)
-	if err != nil {
-		ok = false
+	result.overwriteEnabled, result.overwriteSet, flagErr = GetBool(o, values, ExportFlagOverwrite)
+	if flagErr != nil {
+		flagsOk = false
 	}
-	return result, ok
+	return result, flagsOk
 }
 
 func CreateFile(o output.Bus, f string, content []byte) bool {
-	if err := WriteFile(f, content, cmd_toolkit.StdFilePermissions); err != nil {
-		cmd_toolkit.ReportFileCreationFailure(o, ExportCommand, f, err)
+	if fileErr := WriteFile(f, content, cmd_toolkit.StdFilePermissions); fileErr != nil {
+		cmd_toolkit.ReportFileCreationFailure(o, ExportCommand, f, fileErr)
 		return false
 	}
 	o.WriteCanonicalConsole("File %q has been written", f)
@@ -170,10 +168,10 @@ func (efs *ExportFlagSettings) OverwriteFile(o output.Bus, f string, payload []b
 		return NewExitUserError(ExportCommand)
 	}
 	backup := f + "-backup"
-	if err := Rename(f, backup); err != nil {
-		o.WriteCanonicalError("The file %q cannot be renamed to %q: %v", f, backup, err)
+	if fileErr := Rename(f, backup); fileErr != nil {
+		o.WriteCanonicalError("The file %q cannot be renamed to %q: %v", f, backup, fileErr)
 		o.Log(output.Error, "rename failed", map[string]any{
-			"error": err,
+			"error": fileErr,
 			"old":   f,
 			"new":   backup,
 		})

@@ -81,10 +81,10 @@ func PostRepairWork(o output.Bus, ss *SearchSettings, allArtists []*files.Artist
 }
 
 func RemoveBackupDirectory(o output.Bus, dir string) bool {
-	if err := RemoveAll(dir); err != nil {
+	if fileErr := RemoveAll(dir); fileErr != nil {
 		o.Log(output.Error, "cannot delete directory", map[string]any{
 			"directory": dir,
-			"error":     err,
+			"error":     fileErr,
 		})
 		return false
 	}

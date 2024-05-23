@@ -17,17 +17,10 @@ func TestMarkDirty(t *testing.T) {
 	}()
 	const fnName = "MarkDirty()"
 	emptyDir := "empty"
-	if err := cmd_toolkit.Mkdir(emptyDir); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, emptyDir, err)
-	}
+	cmd_toolkit.Mkdir(emptyDir)
 	filledDir := "filled"
-	if err := cmd_toolkit.Mkdir(filledDir); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, filledDir, err)
-	}
-	if err := createFile(filledDir, files.DirtyFileName); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName,
-			filepath.Join(filledDir, files.DirtyFileName), err)
-	}
+	cmd_toolkit.Mkdir(filledDir)
+	createFile(filledDir, files.DirtyFileName)
 	type args struct {
 		cmd string
 	}
@@ -56,7 +49,7 @@ func TestMarkDirty(t *testing.T) {
 			o := output.NewRecorder()
 			cmd_toolkit.SetApplicationPath(tt.appPath)
 			files.MarkDirty(o)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("%s %s", fnName, difference)
 				}
@@ -69,9 +62,7 @@ func TestDirty(t *testing.T) {
 	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
 	const fnName = "Dirty()"
 	testDir := "dirty"
-	if err := cmd_toolkit.Mkdir(testDir); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
-	}
+	cmd_toolkit.Mkdir(testDir)
 	oldAppPath := cmd_toolkit.SetApplicationPath(testDir)
 	defer func() {
 		cmd_toolkit.AssignFileSystem(originalFileSystem)
@@ -86,9 +77,9 @@ func TestDirty(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			if tt.want {
-				if err := createFileWithContent(testDir, files.DirtyFileName,
-					[]byte("dirty")); err != nil {
-					t.Errorf("%s error creating %q: %v", fnName, files.DirtyFileName, err)
+				if fileErr := createFileWithContent(testDir, files.DirtyFileName,
+					[]byte("dirty")); fileErr != nil {
+					t.Errorf("%s error creating %q: %v", fnName, files.DirtyFileName, fileErr)
 				}
 			} else {
 				cmd_toolkit.FileSystem().Remove(filepath.Join(testDir, files.DirtyFileName))
@@ -107,27 +98,15 @@ func TestClearDirty(t *testing.T) {
 	}()
 	const fnName = "ClearDirty()"
 	testDir := "clearDirty"
-	if err := cmd_toolkit.Mkdir(testDir); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
-	}
+	cmd_toolkit.Mkdir(testDir)
 	oldAppPath := cmd_toolkit.ApplicationPath()
-	if err := createFileWithContent(testDir, files.DirtyFileName,
-		[]byte("dirty")); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, files.DirtyFileName, err)
-	}
+	createFileWithContent(testDir, files.DirtyFileName, []byte("dirty"))
 	// create another file structure with a dirty file that is open for reading
 	uncleanable := "clearDirty2"
-	if err := cmd_toolkit.Mkdir(uncleanable); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, uncleanable, err)
-	}
-	if err := createFileWithContent(uncleanable, files.DirtyFileName,
-		[]byte("dirty")); err != nil {
-		t.Errorf("%s error creating second %q: %v", fnName, files.DirtyFileName, err)
-	}
-	f, err := cmd_toolkit.FileSystem().Open(filepath.Join(uncleanable, files.DirtyFileName))
-	if err != nil {
-		t.Errorf("%s error opening second %q: %v", fnName, files.DirtyFileName, err)
-	}
+	cmd_toolkit.Mkdir(uncleanable)
+	createFileWithContent(uncleanable, files.DirtyFileName, []byte("dirty"))
+	// open file locks file from being deleted
+	f, _ := cmd_toolkit.FileSystem().Open(filepath.Join(uncleanable, files.DirtyFileName))
 	defer func() {
 		cmd_toolkit.SetApplicationPath(oldAppPath)
 		f.Close()
@@ -154,7 +133,7 @@ func TestClearDirty(t *testing.T) {
 			cmd_toolkit.SetApplicationPath(tt.initialDirtyFolder)
 			o := output.NewRecorder()
 			files.ClearDirty(o)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("%s %s", fnName, difference)
 				}

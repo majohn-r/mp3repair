@@ -154,9 +154,9 @@ func (f *FlagDetails) AddFlag(o output.Bus, c ConfigSource, flags flagConsumer,
 			reportDefaultTypeError(o, flagName, "string", f.defaultValue)
 			return
 		}
-		newDefault, err := c.StringDefault(flagName, statedDefault)
-		if err != nil {
-			cmd_toolkit.ReportInvalidConfigurationData(o, sectionName, err)
+		newDefault, malformedDefault := c.StringDefault(flagName, statedDefault)
+		if malformedDefault != nil {
+			cmd_toolkit.ReportInvalidConfigurationData(o, sectionName, malformedDefault)
 			return
 		}
 		usage := cmd_toolkit.DecorateStringFlagUsage(f.usage, newDefault)
@@ -172,9 +172,9 @@ func (f *FlagDetails) AddFlag(o output.Bus, c ConfigSource, flags flagConsumer,
 			reportDefaultTypeError(o, flagName, "bool", f.defaultValue)
 			return
 		}
-		newDefault, err := c.BoolDefault(flagName, statedDefault)
-		if err != nil {
-			cmd_toolkit.ReportInvalidConfigurationData(o, sectionName, err)
+		newDefault, malformedDefault := c.BoolDefault(flagName, statedDefault)
+		if malformedDefault != nil {
+			cmd_toolkit.ReportInvalidConfigurationData(o, sectionName, malformedDefault)
 			return
 		}
 		usage := cmd_toolkit.DecorateBoolFlagUsage(f.usage, newDefault)
@@ -190,9 +190,9 @@ func (f *FlagDetails) AddFlag(o output.Bus, c ConfigSource, flags flagConsumer,
 			reportDefaultTypeError(o, flagName, "*cmd_toolkit.IntBounds", f.defaultValue)
 			return
 		}
-		newDefault, err := c.IntDefault(flagName, bounds)
-		if err != nil {
-			cmd_toolkit.ReportInvalidConfigurationData(o, sectionName, err)
+		newDefault, malformedDefault := c.IntDefault(flagName, bounds)
+		if malformedDefault != nil {
+			cmd_toolkit.ReportInvalidConfigurationData(o, sectionName, malformedDefault)
 			return
 		}
 		usage := cmd_toolkit.DecorateIntFlagUsage(f.usage, newDefault)
@@ -259,7 +259,6 @@ func ReadFlags(producer FlagProducer, defs *SectionFlags) (map[string]*FlagValue
 	}
 	slices.Sort(sortedNames)
 	for _, name := range sortedNames {
-		var err error
 		details := defs.flags[name]
 		if details == nil {
 			e = append(e, fmt.Errorf("no details for flag %q", name))
@@ -269,31 +268,31 @@ func ReadFlags(producer FlagProducer, defs *SectionFlags) (map[string]*FlagValue
 			explicitlySet: producer.Changed(name),
 			valueType:     details.expectedType,
 		}
+		var flagError error
 		switch details.expectedType {
 		case BoolType:
-			val.value, err = producer.GetBool(name)
+			val.value, flagError = producer.GetBool(name)
 		case StringType:
-			val.value, err = producer.GetString(name)
+			val.value, flagError = producer.GetString(name)
 		case IntType:
-			val.value, err = producer.GetInt(name)
+			val.value, flagError = producer.GetInt(name)
 		default:
-			err = fmt.Errorf("unknown type for flag --%s", name)
+			flagError = fmt.Errorf("unknown type for flag --%s", name)
 		}
-		switch err {
+		switch flagError {
 		case nil:
 			m[name] = val
 		default:
-			e = append(e, err)
+			e = append(e, flagError)
 		}
 	}
 	return m, e
 }
 
-func GetBool(o output.Bus, results map[string]*FlagValue,
-	flagName string) (val, userSet bool, e error) {
-	fv, err := extractFlagValue(o, results, flagName)
-	if err != nil {
-		e = err
+func GetBool(o output.Bus, results map[string]*FlagValue, flagName string) (val, userSet bool, e error) {
+	fv, flagNotFound := extractFlagValue(o, results, flagName)
+	if flagNotFound != nil {
+		e = flagNotFound
 		return
 	}
 	if fv == nil {
@@ -320,11 +319,10 @@ func GetBool(o output.Bus, results map[string]*FlagValue,
 	return
 }
 
-func GetInt(o output.Bus, results map[string]*FlagValue,
-	flagName string) (val int, userSet bool, e error) {
-	fv, err := extractFlagValue(o, results, flagName)
-	if err != nil {
-		e = err
+func GetInt(o output.Bus, results map[string]*FlagValue, flagName string) (val int, userSet bool, e error) {
+	fv, flagNotFound := extractFlagValue(o, results, flagName)
+	if flagNotFound != nil {
+		e = flagNotFound
 		return
 	}
 	if fv == nil {
@@ -351,11 +349,10 @@ func GetInt(o output.Bus, results map[string]*FlagValue,
 	return
 }
 
-func GetString(o output.Bus, results map[string]*FlagValue,
-	flagName string) (val string, userSet bool, e error) {
-	fv, err := extractFlagValue(o, results, flagName)
-	if err != nil {
-		e = err
+func GetString(o output.Bus, results map[string]*FlagValue, flagName string) (val string, userSet bool, e error) {
+	fv, flagNotFound := extractFlagValue(o, results, flagName)
+	if flagNotFound != nil {
+		e = flagNotFound
 		return
 	}
 	if fv == nil {
@@ -382,8 +379,7 @@ func GetString(o output.Bus, results map[string]*FlagValue,
 	return
 }
 
-func extractFlagValue(o output.Bus, results map[string]*FlagValue,
-	flagName string) (fv *FlagValue, e error) {
+func extractFlagValue(o output.Bus, results map[string]*FlagValue, flagName string) (fv *FlagValue, e error) {
 	if results == nil {
 		e = fmt.Errorf("nil results")
 		o.WriteCanonicalError("an internal error occurred: no flag values exist")
@@ -392,8 +388,8 @@ func extractFlagValue(o output.Bus, results map[string]*FlagValue,
 		})
 		return
 	}
-	value, ok := results[flagName]
-	if !ok {
+	value, found := results[flagName]
+	if !found {
 		e = fmt.Errorf("flag not found")
 		o.WriteCanonicalError("an internal error occurred: flag %q is not found", flagName)
 		o.Log(output.Error, "internal error", map[string]any{

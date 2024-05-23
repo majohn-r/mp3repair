@@ -56,7 +56,7 @@ func TestRemoveBackupDirectory(t *testing.T) {
 			if got := cmd.RemoveBackupDirectory(o, tt.dir); got != tt.want {
 				t.Errorf("RemoveBackupDirectory() = %v, want %v", got, tt.want)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("RemoveBackupDirectory() %s", difference)
 				}
@@ -202,7 +202,7 @@ func TestPostRepairWork(t *testing.T) {
 			cmd.DirExists = tt.dirExists
 			o := output.NewRecorder()
 			cmd.PostRepairWork(o, tt.args.ss, tt.args.allArtists, tt.args.loaded)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("PostRepairWork() %s", difference)
 				}
@@ -258,7 +258,7 @@ func TestPostRepairRun(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.Bus = o // cook getBus()
 			cmd.PostRepairRun(tt.args.cmd, tt.args.in1)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("PostRepairRun() %s", difference)
 				}
@@ -304,7 +304,7 @@ func TestPostRepairHelp(t *testing.T) {
 			command := commandUnderTest
 			enableCommandRecording(o, command)
 			command.Help()
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("postRepair Help() %s", difference)
 				}
@@ -347,7 +347,7 @@ func TestPostRepairUsage(t *testing.T) {
 			command := commandUnderTest
 			enableCommandRecording(o, command)
 			command.Usage()
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("postRepair Usage() %s", difference)
 				}

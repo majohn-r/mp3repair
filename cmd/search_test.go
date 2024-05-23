@@ -113,17 +113,15 @@ func TestEvaluateFilter(t *testing.T) {
 			gotFilter, gotOk, gotRegexOk := cmd.EvaluateFilter(o, tt.args.values,
 				tt.args.flagName, tt.args.nameAsFlag)
 			if !reflect.DeepEqual(gotFilter, tt.wantFilter) {
-				t.Errorf("EvaluateFilter() gotFilter = %v, want %v", gotFilter,
-					tt.wantFilter)
+				t.Errorf("EvaluateFilter() gotFilter = %v, want %v", gotFilter, tt.wantFilter)
 			}
 			if gotOk != tt.wantOk {
 				t.Errorf("EvaluateFilter() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
 			if gotRegexOk != tt.wantRegexOk {
-				t.Errorf("EvaluateFilter() gotRegexOk = %v, want %v", gotRegexOk,
-					tt.wantRegexOk)
+				t.Errorf("EvaluateFilter() gotRegexOk = %v, want %v", gotRegexOk, tt.wantRegexOk)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("EvaluateFilter() %s", difference)
 				}
@@ -248,7 +246,7 @@ func TestEvaluateTopDir(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("EvaluateTopDir() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("EvaluateTopDir() %s", difference)
 				}
@@ -421,13 +419,12 @@ func TestProcessSearchFlags(t *testing.T) {
 			o := output.NewRecorder()
 			gotSettings, gotOk := cmd.ProcessSearchFlags(o, tt.values)
 			if !reflect.DeepEqual(gotSettings, tt.wantSettings) {
-				t.Errorf("ProcessSearchFlags() gotSettings = %v, want %v", gotSettings,
-					tt.wantSettings)
+				t.Errorf("ProcessSearchFlags() gotSettings = %v, want %v", gotSettings, tt.wantSettings)
 			}
 			if gotOk != tt.wantOk {
 				t.Errorf("ProcessSearchFlags() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("ProcessSearchFlags() %s", difference)
 				}
@@ -492,13 +489,12 @@ func TestEvaluateSearchFlags(t *testing.T) {
 			o := output.NewRecorder()
 			gotSettings, gotOk := cmd.EvaluateSearchFlags(o, tt.producer)
 			if !reflect.DeepEqual(gotSettings, tt.wantSettings) {
-				t.Errorf("EvaluateSearchFlags() gotSettings = %v, want %v", gotSettings,
-					tt.wantSettings)
+				t.Errorf("EvaluateSearchFlags() gotSettings = %v, want %v", gotSettings, tt.wantSettings)
 			}
 			if gotOk != tt.wantOk {
 				t.Errorf("EvaluateSearchFlags() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("EvaluateSearchFlags() %s", difference)
 				}
@@ -574,7 +570,7 @@ func TestEvaluateFileExtensions(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("EvaluateFileExtensions() got1 = %v, want %v", got1, tt.want1)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("EvaluateFileExtensions() %s", difference)
 				}
@@ -653,7 +649,7 @@ func TestSearchSettingsLoad(t *testing.T) {
 	testTrack := files.NewTrack(testAlbum, album1Content3.name, "lovely music", 1)
 	testAlbum.AddTrack(testTrack)
 	cmd.ReadDirectory = func(_ output.Bus, dir string) ([]fs.FileInfo, bool) {
-		if tf, ok := testFiles[dir]; ok {
+		if tf, found := testFiles[dir]; found {
 			entries := []fs.FileInfo{}
 			for _, f := range tf.files {
 				entries = append(entries, f)
@@ -701,7 +697,7 @@ func TestSearchSettingsLoad(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("SearchSettings.Load() got1 = %v, want %v", got1, tt.want1)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("SearchSettings.Load() %s", difference)
 				}
@@ -814,7 +810,7 @@ func TestSearchSettingsFilter(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("SearchSettings.Filter() got1 = %v, want %v", got1, tt.want1)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("SearchSettings.Filter() %s", difference)
 				}

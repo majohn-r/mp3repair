@@ -17,7 +17,7 @@ const (
 func MarkDirty(o output.Bus) {
 	fs := cmd_toolkit.FileSystem()
 	f := dirtyPath()
-	if _, err := fs.Stat(f); err != nil && errors.Is(err, os.ErrNotExist) {
+	if _, fileErr := fs.Stat(f); fileErr != nil && errors.Is(fileErr, os.ErrNotExist) {
 		// ignore error - if the file didn't exist a moment ago, there is no
 		// reason to assume that the file cannot be written to
 		afero.WriteFile(fs, f, []byte("dirty"), cmd_toolkit.StdFilePermissions)

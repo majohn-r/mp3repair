@@ -80,15 +80,15 @@ func InitGlobals() {
 	initLock.Lock()
 	defer initLock.Unlock()
 	if !Initialized {
-		ok := false
 		Bus = NewDefaultBus(cmd_toolkit.ProductionLogger)
-		if _, err := cmd_toolkit.AppName(); err != nil {
+		if _, appNameInitErr := cmd_toolkit.AppName(); appNameInitErr != nil {
 			SetAppName(appName)
 		}
+		configOk := false
 		if InitLogging(Bus) && InitApplicationPath(Bus) {
-			InternalConfig, ok = ReadConfigurationFile(Bus)
+			InternalConfig, configOk = ReadConfigurationFile(Bus)
 		}
-		if !ok {
+		if !configOk {
 			Exit(1)
 		}
 		Initialized = true
@@ -101,13 +101,13 @@ func CookCommandLineArguments(o output.Bus, inputArgs []string) []string {
 		return args
 	}
 	for _, arg := range inputArgs[1:] {
-		cookedArg, err := DereferenceEnvVar(arg)
-		if err != nil {
+		cookedArg, dereferenceErr := DereferenceEnvVar(arg)
+		if dereferenceErr != nil {
 			o.WriteCanonicalError("An error was found in processng argument %q: %v",
-				arg, err)
+				arg, dereferenceErr)
 			o.Log(output.Error, "Invalid argument value", map[string]any{
 				"argument": arg,
-				"error":    err,
+				"error":    dereferenceErr,
 			})
 			continue
 		}

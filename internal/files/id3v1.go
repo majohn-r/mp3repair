@@ -542,9 +542,9 @@ func (im *Id3v1Metadata) WriteString(s string, f id3v1Field) {
 func repairName(s string) string {
 	bs := make([]byte, 0, 2*len(s))
 	for _, r := range s {
-		b, ok := runeByteMapping[r]
+		b, mappingFound := runeByteMapping[r]
 		switch {
-		case ok:
+		case mappingFound:
 			bs = append(bs, b...)
 		default:
 			bs = append(bs, byte(r))
@@ -593,10 +593,10 @@ func (im *Id3v1Metadata) readInt(f id3v1Field) int {
 	return int(im.data[f.startOffset])
 }
 
-func (im *Id3v1Metadata) Track() (i int, ok bool) {
+func (im *Id3v1Metadata) Track() (trackNumber int, trackNumberValid bool) {
 	if im.readInt(zeroByteField) == 0 {
-		i = im.readInt(trackField)
-		ok = true
+		trackNumber = im.readInt(trackField)
+		trackNumberValid = true
 	}
 	return
 }
@@ -615,8 +615,8 @@ func (im *Id3v1Metadata) SetTrack(t int) (b bool) {
 }
 
 func (im *Id3v1Metadata) Genre() (string, bool) {
-	s, ok := GenreMap[im.readInt(genreField)]
-	return s, ok
+	genre, genreFound := GenreMap[im.readInt(genreField)]
+	return genre, genreFound
 }
 
 func InitGenreIndices() {
@@ -629,8 +629,8 @@ func InitGenreIndices() {
 
 func (im *Id3v1Metadata) SetGenre(s string) {
 	InitGenreIndices()
-	index, ok := GenreIndicesMap[strings.ToLower(s)]
-	if !ok {
+	index, found := GenreIndicesMap[strings.ToLower(s)]
+	if !found {
 		im.writeInt(GenreIndicesMap["other"], genreField)
 		return
 	}
@@ -645,18 +645,18 @@ func Trim(s string) string {
 }
 
 func ReadID3v1Metadata(path string) ([]string, error) {
-	v1, err := InternalReadID3V1Metadata(path, FileReader)
-	if err != nil {
-		return nil, err
+	v1, readErr := InternalReadID3V1Metadata(path, FileReader)
+	if readErr != nil {
+		return nil, readErr
 	}
 	output := make([]string, 0, 5)
 	output = append(output, fmt.Sprintf("Artist: %q", v1.Artist()),
 		fmt.Sprintf("Album: %q", v1.Album()), fmt.Sprintf("Title: %q", v1.Title()))
-	if track, ok := v1.Track(); ok {
+	if track, trackNumberValid := v1.Track(); trackNumberValid {
 		output = append(output, fmt.Sprintf("Track: %d", track))
 	}
 	output = append(output, fmt.Sprintf("Year: %q", v1.Year()))
-	if genre, ok := v1.Genre(); ok {
+	if genre, genreFound := v1.Genre(); genreFound {
 		output = append(output, fmt.Sprintf("Genre: %q", genre))
 	}
 	if comment := v1.Comment(); comment != "" {
@@ -670,9 +670,9 @@ func FileReader(f afero.File, b []byte) (int, error) {
 }
 
 func InternalReadID3V1Metadata(path string, readFunc func(f afero.File, b []byte) (int, error)) (*Id3v1Metadata, error) {
-	file, err := cmd_toolkit.FileSystem().Open(path)
-	if err != nil {
-		return nil, err
+	file, fileErr := cmd_toolkit.FileSystem().Open(path)
+	if fileErr != nil {
+		return nil, fileErr
 	}
 	defer file.Close()
 	fstat, _ := file.Stat()
@@ -681,9 +681,9 @@ func InternalReadID3V1Metadata(path string, readFunc func(f afero.File, b []byte
 	}
 	file.Seek(-id3v1Length, io.SeekEnd)
 	v1 := NewID3v1Metadata()
-	r, err := readFunc(file, v1.data)
-	if err != nil {
-		return nil, err
+	r, readErr := readFunc(file, v1.data)
+	if readErr != nil {
+		return nil, readErr
 	}
 	if r < id3v1Length {
 		return nil,
@@ -703,10 +703,10 @@ func WriteToFile(f afero.File, b []byte) (int, error) {
 	return f.Write(b)
 }
 
-func updateID3V1Metadata(tM *TrackMetadata, path string, sT SourceType) (err error) {
+func updateID3V1Metadata(tM *TrackMetadata, path string, sT SourceType) (fileErr error) {
 	if tM.requiresEdit[sT] {
 		var v1 *Id3v1Metadata
-		if v1, err = InternalReadID3V1Metadata(path, FileReader); err == nil {
+		if v1, fileErr = InternalReadID3V1Metadata(path, FileReader); fileErr == nil {
 			albumTitle := tM.correctedAlbumName[sT]
 			if albumTitle != "" {
 				v1.SetAlbum(albumTitle)
@@ -731,23 +731,23 @@ func updateID3V1Metadata(tM *TrackMetadata, path string, sT SourceType) (err err
 			if year != "" {
 				v1.SetYear(year)
 			}
-			err = v1.Write(path)
+			fileErr = v1.Write(path)
 		}
 	}
 	return
 }
 
 func (im *Id3v1Metadata) InternalWrite(path string,
-	writeFunc func(f afero.File, b []byte) (int, error)) (err error) {
+	writeFunc func(f afero.File, b []byte) (int, error)) (fileErr error) {
 	fS := cmd_toolkit.FileSystem()
 	var src afero.File
-	if src, err = fS.Open(path); err == nil {
+	if src, fileErr = fS.Open(path); fileErr == nil {
 		defer src.Close()
 		var stat fs.FileInfo
-		if stat, err = src.Stat(); err == nil {
+		if stat, fileErr = src.Stat(); fileErr == nil {
 			tmpPath := path + "-id3v1"
 			var tmpFile afero.File
-			if tmpFile, err = fS.OpenFile(tmpPath, os.O_RDWR|os.O_CREATE, stat.Mode()); err == nil {
+			if tmpFile, fileErr = fS.OpenFile(tmpPath, os.O_RDWR|os.O_CREATE, stat.Mode()); fileErr == nil {
 				defer tmpFile.Close()
 				// borrowed this piece of logic from id3v2 tag.Save() method
 				tempfileShouldBeRemoved := true
@@ -756,24 +756,24 @@ func (im *Id3v1Metadata) InternalWrite(path string,
 						fS.Remove(tmpPath)
 					}
 				}()
-				if _, err = io.Copy(tmpFile, src); err == nil {
+				if _, fileErr = io.Copy(tmpFile, src); fileErr == nil {
 					src.Close()
 					fileInfo, _ := fS.Stat(tmpPath)
 					if fileInfo != nil && fileInfo.Size() < id3v1Length {
-						err = fmt.Errorf("file %q is too short", tmpPath)
+						fileErr = fmt.Errorf("file %q is too short", tmpPath)
 						return
 					}
-					if _, err = tmpFile.Seek(-id3v1Length, io.SeekEnd); err == nil {
+					if _, fileErr = tmpFile.Seek(-id3v1Length, io.SeekEnd); fileErr == nil {
 						var n int
-						if n, err = writeFunc(tmpFile, im.data); err == nil {
+						if n, fileErr = writeFunc(tmpFile, im.data); fileErr == nil {
 							tmpFile.Close()
 							if n != id3v1Length {
-								err = fmt.Errorf(
+								fileErr = fmt.Errorf(
 									"wrote %d bytes to %q, expected to write %d bytes", n,
 									tmpPath, id3v1Length)
 								return
 							}
-							if err = fS.Rename(tmpPath, path); err == nil {
+							if fileErr = fS.Rename(tmpPath, path); fileErr == nil {
 								tempfileShouldBeRemoved = false
 							}
 						}
@@ -788,9 +788,9 @@ func (im *Id3v1Metadata) InternalWrite(path string,
 func Id3v1NameDiffers(cS *ComparableStrings) bool {
 	bs := make([]byte, 0, 2*len(cS.External()))
 	for _, r := range strings.ToLower(cS.External()) {
-		b, ok := runeByteMapping[r]
+		b, mappingFound := runeByteMapping[r]
 		switch {
-		case ok:
+		case mappingFound:
 			bs = append(bs, b...)
 		default:
 			bs = append(bs, byte(r))
@@ -822,7 +822,7 @@ func Id3v1NameDiffers(cS *ComparableStrings) bool {
 
 func Id3v1GenreDiffers(cS *ComparableStrings) bool {
 	InitGenreIndices()
-	if _, ok := GenreIndicesMap[strings.ToLower(cS.External())]; !ok {
+	if _, genreFound := GenreIndicesMap[strings.ToLower(cS.External())]; !genreFound {
 		// the external genre does not map to a known id3v1 genre but "Other"
 		// always matches the external name
 		if cS.Metadata() == "Other" {

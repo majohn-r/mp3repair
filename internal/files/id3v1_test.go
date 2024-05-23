@@ -832,18 +832,14 @@ func TestIntTypeernalReadId3V1Metadata(t *testing.T) {
 	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
 	const fnName = "internalReadId3V1Metadata()"
 	testDir := "id3v1read"
-	if err := cmd_toolkit.Mkdir(testDir); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
-	}
+	cmd_toolkit.Mkdir(testDir)
 	defer func() {
 		cmd_toolkit.AssignFileSystem(originalFileSystem)
 	}()
 	shortFile := "short.mp3"
-	if err := createFileWithContent(testDir, shortFile, []byte{0, 1, 2}); err != nil {
-		t.Errorf("%s error creating %q: %v", testDir, shortFile, err)
-	}
+	createFileWithContent(testDir, shortFile, []byte{0, 1, 2})
 	badFile := "bad.mp3"
-	if err := createFileWithContent(testDir, badFile, []byte{
+	createFileWithContent(testDir, badFile, []byte{
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -856,9 +852,7 @@ func TestIntTypeernalReadId3V1Metadata(t *testing.T) {
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-	}); err != nil {
-		t.Errorf("%s error creating %q: %v", testDir, badFile, err)
-	}
+	})
 	goodFile := "good.mp3"
 	payload := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -874,9 +868,7 @@ func TestIntTypeernalReadId3V1Metadata(t *testing.T) {
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 	}
 	payload = append(payload, id3v1DataSet1...)
-	if err := createFileWithContent(testDir, goodFile, payload); err != nil {
-		t.Errorf("%s error creating %q: %v", testDir, goodFile, err)
-	}
+	createFileWithContent(testDir, goodFile, payload)
 	type args struct {
 		path     string
 		readFunc func(f afero.File, b []byte) (int, error)
@@ -929,9 +921,9 @@ func TestIntTypeernalReadId3V1Metadata(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := files.InternalReadID3V1Metadata(tt.args.path, tt.args.readFunc)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
+			got, gotErr := files.InternalReadID3V1Metadata(tt.args.path, tt.args.readFunc)
+			if (gotErr != nil) != tt.wantErr {
+				t.Errorf("%s error = %v, wantErr %v", fnName, gotErr, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -948,9 +940,7 @@ func Test_readId3v1Metadata(t *testing.T) {
 	}()
 	const fnName = "readId3v1Metadata()"
 	testDir := "id3v1read"
-	if err := cmd_toolkit.Mkdir(testDir); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
-	}
+	cmd_toolkit.Mkdir(testDir)
 	goodFile := "good.mp3"
 	payload := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -966,9 +956,7 @@ func Test_readId3v1Metadata(t *testing.T) {
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 	}
 	payload = append(payload, id3v1DataSet1...)
-	if err := createFileWithContent(testDir, goodFile, payload); err != nil {
-		t.Errorf("%s error creating %q: %v", testDir, goodFile, err)
-	}
+	createFileWithContent(testDir, goodFile, payload)
 	type args struct {
 		path string
 	}
@@ -994,9 +982,9 @@ func Test_readId3v1Metadata(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := files.ReadID3v1Metadata(tt.args.path)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
+			got, gotErr := files.ReadID3v1Metadata(tt.args.path)
+			if (gotErr != nil) != tt.wantErr {
+				t.Errorf("%s error = %v, wantErr %v", fnName, gotErr, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -1013,13 +1001,9 @@ func TestId3v1MetadataIntTypeernalWrite(t *testing.T) {
 	}()
 	const fnName = "Id3v1Metadata.internalWrite()"
 	testDir := "id3v1write"
-	if err := cmd_toolkit.Mkdir(testDir); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
-	}
+	cmd_toolkit.Mkdir(testDir)
 	shortFile := "short.mp3"
-	if err := createFileWithContent(testDir, shortFile, []byte{0, 1, 2}); err != nil {
-		t.Errorf("%s error creating %q: %v", testDir, shortFile, err)
-	}
+	createFileWithContent(testDir, shortFile, []byte{0, 1, 2})
 	goodFile := "good.mp3"
 	payload := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -1035,9 +1019,7 @@ func TestId3v1MetadataIntTypeernalWrite(t *testing.T) {
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 	}
 	payload = append(payload, id3v1DataSet1...)
-	if err := createFileWithContent(testDir, goodFile, payload); err != nil {
-		t.Errorf("%s error creating %q: %v", testDir, goodFile, err)
-	}
+	createFileWithContent(testDir, goodFile, payload)
 	type args struct {
 		oldPath   string
 		writeFunc func(f afero.File, b []byte) (int, error)
@@ -1113,12 +1095,11 @@ func TestId3v1MetadataIntTypeernalWrite(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			var err error
-			if err = tt.v1.InternalWrite(tt.args.oldPath,
-				tt.args.writeFunc); (err != nil) != tt.wantErr {
-				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
+			var gotErr error
+			if gotErr = tt.v1.InternalWrite(tt.args.oldPath, tt.args.writeFunc); (gotErr != nil) != tt.wantErr {
+				t.Errorf("%s error = %v, wantErr %v", fnName, gotErr, tt.wantErr)
 			}
-			if err == nil && tt.wantErr == false {
+			if gotErr == nil && tt.wantErr == false {
 				got, _ := afero.ReadFile(cmd_toolkit.FileSystem(), tt.args.oldPath)
 				if !reflect.DeepEqual(got, tt.wantData) {
 					t.Errorf("%s got %v want %v", fnName, got, tt.wantData)
@@ -1135,9 +1116,7 @@ func TestId3v1Metadata_write(t *testing.T) {
 	}()
 	const fnName = "Id3v1Metadata.write()"
 	testDir := "id3v1write"
-	if err := cmd_toolkit.Mkdir(testDir); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
-	}
+	cmd_toolkit.Mkdir(testDir)
 	goodFile := "good.mp3"
 	payload := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -1153,9 +1132,7 @@ func TestId3v1Metadata_write(t *testing.T) {
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 	}
 	payload = append(payload, id3v1DataSet1...)
-	if err := createFileWithContent(testDir, goodFile, payload); err != nil {
-		t.Errorf("%s error creating %q: %v", testDir, goodFile, err)
-	}
+	createFileWithContent(testDir, goodFile, payload)
 	type args struct {
 		path string
 	}
@@ -1204,11 +1181,11 @@ func TestId3v1Metadata_write(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			var err error
-			if err = tt.v1.Write(tt.args.path); (err != nil) != tt.wantErr {
-				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
+			var gotErr error
+			if gotErr = tt.v1.Write(tt.args.path); (gotErr != nil) != tt.wantErr {
+				t.Errorf("%s error = %v, wantErr %v", fnName, gotErr, tt.wantErr)
 			}
-			if err == nil && tt.wantErr == false {
+			if gotErr == nil && tt.wantErr == false {
 				got, _ := afero.ReadFile(cmd_toolkit.FileSystem(), tt.args.path)
 				if !reflect.DeepEqual(got, tt.wantData) {
 					t.Errorf("%s got %v want %v", fnName, got, tt.wantData)

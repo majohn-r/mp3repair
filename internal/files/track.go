@@ -447,8 +447,8 @@ func ProcessArtistMetadata(o output.Bus, artists []*Artist) {
 				}
 			}
 		}
-		canonicalName, ok := CanonicalChoice(recordedArtistNames)
-		if !ok {
+		canonicalName, choiceSelected := CanonicalChoice(recordedArtistNames)
+		if !choiceSelected {
 			reportAmbiguousChoices(o, "artist name", artist.Name(), recordedArtistNames)
 			logAmbiguousValue(o, map[string]any{
 				"field":      "artist name",
@@ -500,9 +500,9 @@ func ProcessAlbumMetadata(o output.Bus, artists []*Artist) {
 				recordedMCDIs[mcdiKey]++
 				recordedMCDIFrames[mcdiKey] = t.metadata.CanonicalMusicCDIdentifier()
 			}
-			canonicalGenre, ok := CanonicalChoice(recordedGenres)
+			canonicalGenre, genreSelected := CanonicalChoice(recordedGenres)
 			switch {
-			case ok:
+			case genreSelected:
 				al.canonicalGenre = canonicalGenre
 			default:
 				reportAmbiguousChoices(o, "genre",
@@ -514,9 +514,9 @@ func ProcessAlbumMetadata(o output.Bus, artists []*Artist) {
 					"artistName": ar.Name(),
 				})
 			}
-			canonicalYear, ok := CanonicalChoice(recordedYears)
+			canonicalYear, yearSelected := CanonicalChoice(recordedYears)
 			switch {
-			case ok:
+			case yearSelected:
 				al.canonicalYear = canonicalYear
 			default:
 				reportAmbiguousChoices(o, "year",
@@ -528,9 +528,9 @@ func ProcessAlbumMetadata(o output.Bus, artists []*Artist) {
 					"artistName": ar.Name(),
 				})
 			}
-			canonicalAlbumTitle, ok := CanonicalChoice(recordedAlbumTitles)
+			canonicalAlbumTitle, albumTitleSelected := CanonicalChoice(recordedAlbumTitles)
 			switch {
-			case ok:
+			case albumTitleSelected:
 				if canonicalAlbumTitle != "" {
 					al.canonicalTitle = canonicalAlbumTitle
 				}
@@ -544,9 +544,9 @@ func ProcessAlbumMetadata(o output.Bus, artists []*Artist) {
 					"artistName": ar.Name(),
 				})
 			}
-			canonicalMCDI, ok := CanonicalChoice(recordedMCDIs)
+			canonicalMCDI, MCDISelected := CanonicalChoice(recordedMCDIs)
 			switch {
-			case ok:
+			case MCDISelected:
 				al.musicCDIdentifier = recordedMCDIFrames[canonicalMCDI]
 			default:
 				reportAmbiguousChoices(o, "MCDI frame",
@@ -581,9 +581,9 @@ func encodeChoices(m map[string]int) string {
 	return fmt.Sprintf("{%s}", strings.Join(values, ", "))
 }
 
-func CanonicalChoice(m map[string]int) (s string, ok bool) {
+func CanonicalChoice(m map[string]int) (value string, selected bool) {
 	if len(m) == 0 {
-		ok = true
+		selected = true
 		return
 	}
 	total := 0
@@ -595,8 +595,8 @@ func CanonicalChoice(m map[string]int) (s string, ok bool) {
 	// look for the one entry that equals or exceeds the majority vote
 	for k, v := range m {
 		if v >= majority {
-			s = k
-			ok = true
+			value = k
+			selected = true
 			return
 		}
 	}
@@ -719,14 +719,14 @@ func (t *Track) ID3V2Diagnostics() (version byte, encoding string, frames []stri
 
 // Details returns relevant details about the track
 func (t *Track) Details() (map[string]string, error) {
-	_, _, _, frames, err := ReadID3V2Metadata(t.fullPath)
-	if err != nil {
-		return nil, err
+	_, _, _, frames, readErr := ReadID3V2Metadata(t.fullPath)
+	if readErr != nil {
+		return nil, readErr
 	}
 	m := map[string]string{}
 	// only include known frames
 	for _, frame := range frames {
-		if value, ok := frameDescriptions[frame.name]; ok {
+		if value, descriptionFound := frameDescriptions[frame.name]; descriptionFound {
 			m[value] = frame.value
 		}
 	}

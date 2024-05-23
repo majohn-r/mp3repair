@@ -201,7 +201,7 @@ func TestRunMain(t *testing.T) {
 			}
 			o := output.NewRecorder()
 			cmd.RunMain(o, tt.args.cmd, tt.args.start)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("RunMain() %s", difference)
 				}
@@ -257,11 +257,10 @@ func TestCookCommandLineArguments(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.DereferenceEnvVar = tt.dereferenceEnvVar
-			if got := cmd.CookCommandLineArguments(o, tt.inputArgs); !reflect.DeepEqual(
-				got, tt.want) {
+			if got := cmd.CookCommandLineArguments(o, tt.inputArgs); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("CookCommandLineArguments() = %v, want %v", got, tt.want)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("CookCommandLineArguments() %s", difference)
 				}
@@ -502,7 +501,7 @@ func Test_InitGlobals(t *testing.T) {
 				t.Errorf("InitGlobals: flag indicator got %q want %q", got,
 					tt.wantFlagIndicator)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("InitGlobals() %s", difference)
 				}
@@ -554,7 +553,7 @@ func TestRootUsage(t *testing.T) {
 			command := cloneCommand(cmd.RootCmd)
 			enableCommandRecording(o, command)
 			command.Usage()
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("root Usage() %s", difference)
 				}

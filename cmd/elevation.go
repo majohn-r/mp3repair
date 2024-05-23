@@ -16,10 +16,10 @@ const (
 )
 
 func environmentPermits() bool {
-	if value, ok := LookupEnv(adminPermissionVar); ok {
+	if value, varDefined := LookupEnv(adminPermissionVar); varDefined {
 		// interpret value as bool
-		boolValue, err := strconv.ParseBool(value)
-		if err == nil {
+		boolValue, parseErr := strconv.ParseBool(value)
+		if parseErr == nil {
 			return boolValue
 		}
 		fmt.Printf("Value %q of environment variable %q is neither true nor false\n", value, adminPermissionVar)
@@ -80,7 +80,7 @@ func (ec *ElevationControl) canElevate() bool {
 	if ec.redirected() {
 		return false // redirection will be lost, so, no
 	}
-	return ec.adminPermitted // ok, obey the environment variable then
+	return ec.adminPermitted // do what the environment variable says
 }
 
 func (ec *ElevationControl) ConfigureExit() {
@@ -119,7 +119,7 @@ func runElevated() (status bool) {
 	// https://github.com/majohn-r/mp3repair/issues/157 if ShellExecute returns
 	// no error, assume the user accepted admin privileges and return true
 	// status
-	if err := ShellExecute(0, verbPtr, exePtr, argPtr, cwdPtr, showCmd); err == nil {
+	if refusedErr := ShellExecute(0, verbPtr, exePtr, argPtr, cwdPtr, showCmd); refusedErr == nil {
 		status = true
 	}
 	return

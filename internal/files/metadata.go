@@ -268,11 +268,11 @@ func (tM *TrackMetadata) SetID3v1Values(v1 *Id3v1Metadata) {
 	tM.albumName[index] = v1.Album()
 	tM.artistName[index] = v1.Artist()
 	tM.trackName[index] = v1.Title()
-	if genre, ok := v1.Genre(); ok {
+	if genre, genreFound := v1.Genre(); genreFound {
 		tM.genre[index] = genre
 	}
 	tM.year[index] = v1.Year()
-	if track, ok := v1.Track(); ok {
+	if track, trackValid := v1.Track(); trackValid {
 		tM.trackNumber[index] = track
 	}
 }
@@ -448,8 +448,8 @@ func (tM *TrackMetadata) CanonicalArtistNameMatches(artistName string) bool {
 
 func updateMetadata(tM *TrackMetadata, path string) (e []error) {
 	for _, source := range sourceTypes {
-		if err := metadataUpdaters[source](tM, path, source); err != nil {
-			e = append(e, err)
+		if updateErr := metadataUpdaters[source](tM, path, source); updateErr != nil {
+			e = append(e, updateErr)
 		}
 	}
 	return

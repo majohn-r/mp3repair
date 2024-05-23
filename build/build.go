@@ -216,7 +216,7 @@ func loadProductData() {
 				rawPD.name = value.Name
 				rawPD.description = value.Description
 			case "firstYear":
-				if i, err := strconv.Atoi(value.Value); err == nil {
+				if i, conversionErr := strconv.Atoi(value.Value); conversionErr == nil {
 					rawPD.firstYear = i
 				}
 			case "timestamp":
@@ -228,7 +228,7 @@ func loadProductData() {
 					var major int
 					var minor int
 					var patch int
-					if count, err := fmt.Sscanf(value.Value, "%d.%d.%d", &major, &minor, &patch); count == 3 && err == nil {
+					if count, scanErr := fmt.Sscanf(value.Value, "%d.%d.%d", &major, &minor, &patch); count == 3 && scanErr == nil {
 						rawPD.majorLevel = major
 						rawPD.minorLevel = minor
 						rawPD.patchLevel = patch

@@ -119,17 +119,17 @@ func TestToErrInterface(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			err := ToErrorInterface(tt.e)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ToErrInterface() error = %v, wantErr %v", err, tt.wantErr)
+			gotErr := ToErrorInterface(tt.e)
+			if (gotErr != nil) != tt.wantErr {
+				t.Errorf("ToErrInterface() error = %v, wantErr %v", gotErr, tt.wantErr)
 			}
-			if err == nil {
-				if _, ok := err.(*ExitError); ok {
+			if gotErr == nil {
+				if _, ok := gotErr.(*ExitError); ok {
 					t.Errorf("ToErrInterface() returned nil that is *ExitError")
 				}
 			} else {
-				if !reflect.DeepEqual(err, tt.e) {
-					t.Errorf("ToErrInterface() got %v want %v", err, tt.e)
+				if !reflect.DeepEqual(gotErr, tt.e) {
+					t.Errorf("ToErrInterface() got %v want %v", gotErr, tt.e)
 				}
 			}
 		})

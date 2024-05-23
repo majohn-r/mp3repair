@@ -116,18 +116,16 @@ func Test_parseTrackName(t *testing.T) {
 				tt.args.name, tt.args.album, tt.args.ext)
 			if tt.wantValid {
 				if gotCommonName != tt.wantCommonName {
-					t.Errorf("%s gotCommonName = %q, want %q", fnName, gotCommonName,
-						tt.wantCommonName)
+					t.Errorf("%s gotCommonName = %q, want %q", fnName, gotCommonName, tt.wantCommonName)
 				}
 				if gotTrackNumber != tt.wantTrackNumber {
-					t.Errorf("%s gotTrackNumber = %d, want %d", fnName, gotTrackNumber,
-						tt.wantTrackNumber)
+					t.Errorf("%s gotTrackNumber = %d, want %d", fnName, gotTrackNumber, tt.wantTrackNumber)
 				}
 			}
 			if gotValid != tt.wantValid {
 				t.Errorf("%s gotValid = %v, want %v", fnName, gotValid, tt.wantValid)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("%s %s", fnName, difference)
 				}
@@ -220,14 +218,10 @@ func TestTrack_CopyFile(t *testing.T) {
 	}()
 	const fnName = "Track.CopyFile()"
 	topDir := "copies"
-	if err := cmd_toolkit.Mkdir(topDir); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, topDir, err)
-	}
+	cmd_toolkit.Mkdir(topDir)
 	srcName := "source.mp3"
 	srcPath := filepath.Join(topDir, srcName)
-	if err := createFile(topDir, srcName); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, srcPath, err)
-	}
+	createFile(topDir, srcName)
 	type args struct {
 		destination string
 	}
@@ -249,8 +243,8 @@ func TestTrack_CopyFile(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if err := tt.t.CopyFile(tt.args.destination); (err != nil) != tt.wantErr {
-				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
+			if gotErr := tt.t.CopyFile(tt.args.destination); (gotErr != nil) != tt.wantErr {
+				t.Errorf("%s error = %v, wantErr %v", fnName, gotErr, tt.wantErr)
 			}
 		})
 	}
@@ -481,9 +475,7 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 	}
 	content := createID3v2TaggedData(audio, frames)
 	goodFileName := "goodFile.mp3"
-	if err := createFileWithContent(".", goodFileName, content); err != nil {
-		t.Errorf("%s failed to create ./goodFile.mp3: %v", fnName, err)
-	}
+	createFileWithContent(".", goodFileName, content)
 	tests := map[string]struct {
 		t           *files.Track
 		wantEnc     string
@@ -515,9 +507,9 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			gotVersion, gotEnc, gotF, err := tt.t.ID3V2Diagnostics()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
+			gotVersion, gotEnc, gotF, gotErr := tt.t.ID3V2Diagnostics()
+			if (gotErr != nil) != tt.wantErr {
+				t.Errorf("%s error = %v, wantErr %v", fnName, gotErr, tt.wantErr)
 				return
 			}
 			if gotEnc != tt.wantEnc {
@@ -540,16 +532,12 @@ func TestTrack_ID3V1Diagnostics(t *testing.T) {
 	}()
 	const fnName = "Track.ID3V1Diagnostics()"
 	testDir := "id3v1Diagnostics"
-	if err := cmd_toolkit.Mkdir(testDir); err != nil {
-		t.Errorf("%s cannot create %q: %v", fnName, testDir, err)
-	}
+	cmd_toolkit.Mkdir(testDir)
 	// three files: one good, one too small, one with an invalid tag
 	smallFile := "01 small.mp3"
-	if err := createFileWithContent(testDir, smallFile, []byte{0, 1, 2}); err != nil {
-		t.Errorf("%s cannot create %q: %v", fnName, smallFile, err)
-	}
+	createFileWithContent(testDir, smallFile, []byte{0, 1, 2})
 	invalidFile := "02 invalid.mp3"
-	if err := createFileWithContent(testDir, invalidFile, []byte{
+	createFileWithContent(testDir, invalidFile, []byte{
 		'd', 'A', 'G', // 'd' for defective!
 		'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f',
 		'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
@@ -563,11 +551,9 @@ func TestTrack_ID3V1Diagnostics(t *testing.T) {
 		0,
 		29,
 		12,
-	}); err != nil {
-		t.Errorf("%s cannot create %q: %v", fnName, invalidFile, err)
-	}
+	})
 	goodFile := "02 good.mp3"
-	if err := createFileWithContent(testDir, goodFile, []byte{
+	createFileWithContent(testDir, goodFile, []byte{
 		'T', 'A', 'G',
 		'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f',
 		'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
@@ -581,9 +567,7 @@ func TestTrack_ID3V1Diagnostics(t *testing.T) {
 		0,
 		29,
 		12,
-	}); err != nil {
-		t.Errorf("%s cannot create %q: %v", fnName, goodFile, err)
-	}
+	})
 	tests := map[string]struct {
 		t       *files.Track
 		want    []string
@@ -612,9 +596,9 @@ func TestTrack_ID3V1Diagnostics(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := tt.t.ID3V1Diagnostics()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
+			got, gotErr := tt.t.ID3V1Diagnostics()
+			if (gotErr != nil) != tt.wantErr {
+				t.Errorf("%s error = %v, wantErr %v", fnName, gotErr, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -639,7 +623,7 @@ func createID3V1TaggedData(m map[string]any) []byte {
 	v1 := files.NewID3v1Metadata()
 	v1.WriteString("TAG", files.TagField)
 	for _, tagName := range recognizedTagNames {
-		if value, ok := m[tagName]; ok {
+		if value, tagNameFound := m[tagName]; tagNameFound {
 			switch tagName {
 			case "artist":
 				v1.SetArtist(value.(string))
@@ -662,7 +646,7 @@ func createID3V1TaggedData(m map[string]any) []byte {
 func createConsistentlyTaggedData(audio []byte, m map[string]any) []byte {
 	var frames = map[string]string{}
 	for _, tagName := range recognizedTagNames {
-		if value, ok := m[tagName]; ok {
+		if value, tagNameFound := m[tagName]; tagNameFound {
 			switch tagName {
 			case "track":
 				frames[nameToID3V2TagName[tagName]] = fmt.Sprintf("%d", value.(int))
@@ -683,9 +667,7 @@ func TestTrack_loadMetadata(t *testing.T) {
 	}()
 	const fnName = "track.loadMetadata()"
 	testDir := "loadMetadata"
-	if err := cmd_toolkit.Mkdir(testDir); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
-	}
+	cmd_toolkit.Mkdir(testDir)
 	artistName := "A great artist"
 	albumName := "A really good album"
 	trackName := "A brilliant track"
@@ -701,9 +683,7 @@ func TestTrack_loadMetadata(t *testing.T) {
 		"track":  track,
 	})
 	fileName := "05 A brilliant track.mp3"
-	if err := createFileWithContent(testDir, fileName, payload); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, fileName, err)
-	}
+	createFileWithContent(testDir, fileName, payload)
 	tests := map[string]struct {
 		t    *files.Track
 		want *files.TrackMetadata
@@ -745,24 +725,18 @@ func TestReadMetadata(t *testing.T) {
 	const fnName = "ReadMetadata()"
 	// 5 artists, 20 albums each, 50 tracks apiece ... total: 5,000 tracks
 	testDir := "ReadMetadata"
-	if err := cmd_toolkit.Mkdir(testDir); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
-	}
+	cmd_toolkit.Mkdir(testDir)
 	var artists []*files.Artist
 	for k := 0; k < 5; k++ {
 		artistName := fmt.Sprintf("artist %d", k)
 		artistPath := filepath.Join(testDir, artistName)
-		if err := cmd_toolkit.Mkdir(artistPath); err != nil {
-			t.Errorf("%s error creating %q: %v", fnName, artistPath, err)
-		}
+		cmd_toolkit.Mkdir(artistPath)
 		artist := files.NewArtist(artistName, artistPath)
 		artists = append(artists, artist)
 		for m := 0; m < 20; m++ {
 			albumName := fmt.Sprintf("album %d-%d", k, m)
 			albumPath := filepath.Join(artistPath, albumName)
-			if err := cmd_toolkit.Mkdir(albumPath); err != nil {
-				t.Errorf("%s error creating %q: %v", fnName, albumPath, err)
-			}
+			cmd_toolkit.Mkdir(albumPath)
 			album := files.NewAlbum(albumName, artist, albumName)
 			artist.AddAlbum(album)
 			for n := 0; n < 50; n++ {
@@ -780,10 +754,7 @@ func TestReadMetadata(t *testing.T) {
 					"track":  n + 1,
 				}
 				content := createConsistentlyTaggedData([]byte{0, 1, 2, 3, 4, 5, 6, byte(k), byte(m), byte(n)}, metadata)
-				if err := createFileWithContent(albumPath, trackFileName,
-					content); err != nil {
-					t.Errorf("%s error creating %q: %v", fnName, trackName, err)
-				}
+				createFileWithContent(albumPath, trackFileName, content)
 				album.AddTrack(track)
 			}
 		}
@@ -804,7 +775,7 @@ func TestReadMetadata(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			files.ReadMetadata(o, tt.args.artists)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("%s %s", fnName, difference)
 				}
@@ -913,9 +884,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 	// system.
 	const fnName = "Track.UpdateMetadata()"
 	testDir := "updateMetadata"
-	if err := cmd_toolkit.Mkdir(testDir); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, testDir, err)
-	}
+	cmd_toolkit.Mkdir(testDir)
 	defer func() {
 		os.RemoveAll(testDir)
 	}()
@@ -928,9 +897,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 		"year":   "1900",
 		"track":  1,
 	})
-	if err := createFileWithContent(testDir, trackName, trackContents); err != nil {
-		t.Errorf("%s error creating %q: %v", fnName, trackName, err)
-	}
+	createFileWithContent(testDir, trackName, trackContents)
 	track := files.NewEmptyTrack().WithFullPath(
 		filepath.Join(testDir, trackName)).WithName(
 		strings.TrimSuffix(trackName, ".mp3")).WithNumber(2).WithAlbum(
@@ -1072,7 +1039,7 @@ func Test_processArtistMetadata(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			files.ProcessArtistMetadata(o, tt.args.artists)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("%s %s", fnName, difference)
 				}
@@ -1212,7 +1179,7 @@ func Test_processAlbumMetadata(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			files.ProcessAlbumMetadata(o, tt.args.artists)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("%s %s", fnName, difference)
 				}
@@ -1257,7 +1224,7 @@ func TestTrack_reportMetadataErrors(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.args.t.ReportMetadataErrors(o)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("%s %s", fnName, difference)
 				}
@@ -1294,9 +1261,7 @@ func TestTrack_Details(t *testing.T) {
 	}
 	content := createID3v2TaggedData(audio, frames)
 	goodFileName := "goodFile.mp3"
-	if err := createFileWithContent(".", goodFileName, content); err != nil {
-		t.Errorf("%s failed to create ./%s: %v", fnName, goodFileName, err)
-	}
+	createFileWithContent(".", goodFileName, content)
 	tests := map[string]struct {
 		t       *files.Track
 		want    map[string]string
@@ -1320,9 +1285,9 @@ func TestTrack_Details(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := tt.t.Details()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
+			got, gotErr := tt.t.Details()
+			if (gotErr != nil) != tt.wantErr {
+				t.Errorf("%s error = %v, wantErr %v", fnName, gotErr, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
@@ -1336,9 +1301,8 @@ type sampleWriter struct {
 	name string
 }
 
-func (sw *sampleWriter) Write(p []byte) (n int, err error) {
-	n = len(p)
-	return
+func (sw *sampleWriter) Write(p []byte) (int, error) {
+	return len(p), nil
 }
 
 type sampleBus struct {
@@ -1408,13 +1372,13 @@ func createFileWithContent(dir, name string, content []byte) error {
 }
 
 // createNamedFile creates a specified name with the specified content.
-func createNamedFile(fileName string, content []byte) (err error) {
+func createNamedFile(fileName string, content []byte) (fileErr error) {
 	fs := cmd_toolkit.FileSystem()
-	_, err = fs.Stat(fileName)
-	if err == nil {
-		err = fmt.Errorf("file %q already exists", fileName)
-	} else if errors.Is(err, afero.ErrFileNotFound) {
-		err = afero.WriteFile(fs, fileName, content, cmd_toolkit.StdFilePermissions)
+	_, fileErr = fs.Stat(fileName)
+	if fileErr == nil {
+		fileErr = fmt.Errorf("file %q already exists", fileName)
+	} else if errors.Is(fileErr, afero.ErrFileNotFound) {
+		fileErr = afero.WriteFile(fs, fileName, content, cmd_toolkit.StdFilePermissions)
 	}
 	return
 }

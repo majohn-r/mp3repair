@@ -52,7 +52,7 @@ func TestProcessRepairFlags(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("ProcessRepairFlags() got1 = %v, want %v", got1, tt.want1)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("ProcessRepairFlags() %s", difference)
 				}
@@ -129,7 +129,7 @@ func TestEnsureBackupDirectoryExists(t *testing.T) {
 				t.Errorf("EnsureBackupDirectoryExists() gotExists = %v, want %v",
 					gotExists, tt.wantExists)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("EnsureBackupDirectoryExists() %s", difference)
 				}
@@ -223,7 +223,7 @@ func TestAttemptCopy(t *testing.T) {
 				tt.wantBackedUp {
 				t.Errorf("AttemptCopy() = %v, want %v", gotBackedUp, tt.wantBackedUp)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("AttemptCopy() %s", difference)
 				}
@@ -310,7 +310,7 @@ func TestProcessUpdateResult(t *testing.T) {
 			if got := markedDirty; got != tt.wantDirty {
 				t.Errorf("ProcessUpdateResult() got %t want %t", got, tt.wantDirty)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("ProcessUpdateResult() %s", difference)
 				}
@@ -592,7 +592,7 @@ func TestBackupAndFix(t *testing.T) {
 			if got := cmd.BackupAndFix(o, tt.concernedArtists); !compareExitErrors(got, tt.wantStatus) {
 				t.Errorf("BackupAndFix() got %s want %s", got, tt.wantStatus)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("BackupAndFix() %s", difference)
 				}
@@ -689,7 +689,7 @@ func TestReportRepairsNeeded(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.ReportRepairsNeeded(o, tt.concernedArtists)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("ReportRepairsNeeded() %s", difference)
 				}
@@ -1439,7 +1439,7 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 			if got := tt.rs.RepairArtists(o, tt.artists); !compareExitErrors(got, tt.wantStatus) {
 				t.Errorf("RepairSettings.RepairArtists() got %s want %s", got, tt.wantStatus)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("RepairSettings.RepairArtists() %s", difference)
 				}
@@ -1493,7 +1493,7 @@ func TestRepairSettings_ProcessArtists(t *testing.T) {
 				o, tt.args.allArtists, tt.args.loaded, tt.args.ss); !compareExitErrors(got, tt.wantStatus) {
 				t.Errorf("RepairSettings.ProcessArtists() got %s want %s", got, tt.wantStatus)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("RepairSettings.ProcessArtists() %s", difference)
 				}
@@ -1557,7 +1557,7 @@ func TestRepairRun(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.Bus = o // cook getBus()
 			cmd.RepairRun(tt.cmd, tt.in1)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("RepairRun() %s", difference)
 				}
@@ -1619,7 +1619,7 @@ func TestRepairHelp(t *testing.T) {
 			command := commandUnderTest
 			enableCommandRecording(o, command)
 			command.Help()
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("repair Help() %s", difference)
 				}

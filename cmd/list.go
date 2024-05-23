@@ -99,7 +99,7 @@ func ListRun(cmd *cobra.Command, _ []string) error {
 	values, eSlice := ReadFlags(producer, ListFlags)
 	searchSettings, searchFlagsOk := EvaluateSearchFlags(o, producer)
 	if ProcessFlagErrors(o, eSlice) && searchFlagsOk {
-		if ls, ok := ProcessListFlags(o, values); ok {
+		if ls, flagsOk := ProcessListFlags(o, values); flagsOk {
 			details := map[string]any{
 				ListAlbumsFlag:       ls.albums,
 				"albums-user-set":    ls.albumsUserSet,
@@ -390,8 +390,8 @@ func (ls *ListSettings) AnnotateTrackName(track *files.Track) string {
 func (ls *ListSettings) ListTrackDetails(o output.Bus, track *files.Track, tab int) {
 	if ls.details {
 		// go get information from track and display it
-		m, err := track.Details()
-		ShowDetails(o, track, m, err, tab)
+		m, readErr := track.Details()
+		ShowDetails(o, track, m, readErr, tab)
 	}
 }
 
@@ -425,18 +425,17 @@ func ShowDetails(o output.Bus, track *files.Track, details map[string]string,
 
 func (ls *ListSettings) ListTrackDiagnostics(o output.Bus, track *files.Track, tab int) {
 	if ls.diagnostic {
-		version, encoding, frames, err := track.ID3V2Diagnostics()
-		ShowID3V2Diagnostics(o, track, version, encoding, frames, err, tab)
-		tags, err := track.ID3V1Diagnostics()
-		ShowID3V1Diagnostics(o, track, tags, err, tab)
+		version, encoding, frames, ID3V2readErr := track.ID3V2Diagnostics()
+		ShowID3V2Diagnostics(o, track, version, encoding, frames, ID3V2readErr, tab)
+		tags, ID3V1readErr := track.ID3V1Diagnostics()
+		ShowID3V1Diagnostics(o, track, tags, ID3V1readErr, tab)
 	}
 }
 
 // split out for testing!
-func ShowID3V1Diagnostics(o output.Bus, track *files.Track, tags []string, err error,
-	tab int) {
-	if err != nil {
-		track.ReportMetadataReadError(o, files.ID3V1, err.Error())
+func ShowID3V1Diagnostics(o output.Bus, track *files.Track, tags []string, readErr error, tab int) {
+	if readErr != nil {
+		track.ReportMetadataReadError(o, files.ID3V1, readErr.Error())
 		return
 	}
 	for _, s := range tags {
@@ -445,10 +444,9 @@ func ShowID3V1Diagnostics(o output.Bus, track *files.Track, tags []string, err e
 }
 
 // split out for testing!
-func ShowID3V2Diagnostics(o output.Bus, track *files.Track, version byte, encoding string,
-	frames []string, err error, tab int) {
-	if err != nil {
-		track.ReportMetadataReadError(o, files.ID3V2, err.Error())
+func ShowID3V2Diagnostics(o output.Bus, track *files.Track, version byte, encoding string, frames []string, readErr error, tab int) {
+	if readErr != nil {
+		track.ReportMetadataReadError(o, files.ID3V2, readErr.Error())
 		return
 	}
 	o.WriteConsole("%*sID3V2 Version: %v\n", tab, "", version)
@@ -605,38 +603,33 @@ func (ls *ListSettings) HasWorkToDo(o output.Bus) bool {
 
 func ProcessListFlags(o output.Bus, values map[string]*FlagValue) (*ListSettings, bool) {
 	settings := &ListSettings{}
-	ok := true // optimistic
-	var err error
-	if settings.albums, settings.albumsUserSet, err = GetBool(o, values,
-		ListAlbums); err != nil {
-		ok = false
+	flagsOk := true // optimistic
+	var flagErr error
+	if settings.albums, settings.albumsUserSet, flagErr = GetBool(o, values, ListAlbums); flagErr != nil {
+		flagsOk = false
 	}
-	if settings.annotate, _, err = GetBool(o, values, ListAnnotate); err != nil {
-		ok = false
+	if settings.annotate, _, flagErr = GetBool(o, values, ListAnnotate); flagErr != nil {
+		flagsOk = false
 	}
-	if settings.artists, settings.artistsUserSet, err = GetBool(o, values,
-		ListArtists); err != nil {
-		ok = false
+	if settings.artists, settings.artistsUserSet, flagErr = GetBool(o, values, ListArtists); flagErr != nil {
+		flagsOk = false
 	}
-	if settings.details, _, err = GetBool(o, values, ListDetails); err != nil {
-		ok = false
+	if settings.details, _, flagErr = GetBool(o, values, ListDetails); flagErr != nil {
+		flagsOk = false
 	}
-	if settings.diagnostic, _, err = GetBool(o, values, ListDiagnostic); err != nil {
-		ok = false
+	if settings.diagnostic, _, flagErr = GetBool(o, values, ListDiagnostic); flagErr != nil {
+		flagsOk = false
 	}
-	if settings.sortByNumber, settings.sortByNumberUserSet, err = GetBool(o, values,
-		ListSortByNumber); err != nil {
-		ok = false
+	if settings.sortByNumber, settings.sortByNumberUserSet, flagErr = GetBool(o, values, ListSortByNumber); flagErr != nil {
+		flagsOk = false
 	}
-	if settings.sortByTitle, settings.sortByTitleUserSet, err = GetBool(o, values,
-		ListSortByTitle); err != nil {
-		ok = false
+	if settings.sortByTitle, settings.sortByTitleUserSet, flagErr = GetBool(o, values, ListSortByTitle); flagErr != nil {
+		flagsOk = false
 	}
-	if settings.tracks, settings.tracksUserSet, err = GetBool(o, values,
-		ListTracks); err != nil {
-		ok = false
+	if settings.tracks, settings.tracksUserSet, flagErr = GetBool(o, values, ListTracks); flagErr != nil {
+		flagsOk = false
 	}
-	return settings, ok
+	return settings, flagsOk
 }
 
 func init() {

@@ -69,15 +69,15 @@ func NewId3v2Metadata() *Id3v2Metadata {
 }
 
 func readID3V2Tag(path string) (*id3v2.Tag, error) {
-	file, err := cmd_toolkit.FileSystem().Open(path)
-	if err != nil {
-		return nil, err
+	file, readError := cmd_toolkit.FileSystem().Open(path)
+	if readError != nil {
+		return nil, readError
 	}
-	tag, err := id3v2.ParseReader(file, id3v2.Options{Parse: true, ParseFrames: nil})
+	tag, parseError := id3v2.ParseReader(file, id3v2.Options{Parse: true, ParseFrames: nil})
 	if IsTagAbsent(tag) {
 		return tag, ErrNoID3V2MetadataFound
 	}
-	return tag, err
+	return tag, parseError
 }
 
 func IsTagAbsent(tag *id3v2.Tag) bool {
@@ -89,15 +89,15 @@ func IsTagAbsent(tag *id3v2.Tag) bool {
 
 func RawReadID3V2Metadata(path string) (d *Id3v2Metadata) {
 	d = &Id3v2Metadata{}
-	tag, err := readID3V2Tag(path)
-	if err != nil {
-		d.err = err
+	tag, readErr := readID3V2Tag(path)
+	if readErr != nil {
+		d.err = readErr
 		return
 	}
 	defer tag.Close()
-	trackNumber, err := ToTrackNumber(tag.GetTextFrame(trackFrame).Text)
-	if err != nil {
-		d.err = err
+	trackNumber, trackErr := ToTrackNumber(tag.GetTextFrame(trackFrame).Text)
+	if trackErr != nil {
+		d.err = trackErr
 		return
 	}
 	d.albumName = RemoveLeadingBOMs(tag.Album())
@@ -122,7 +122,7 @@ func RawReadID3V2Metadata(path string) (d *Id3v2Metadata) {
 func NormalizeGenre(s string) string {
 	var i int
 	var value string
-	if n, err := fmt.Sscanf(s, "(%d)%s", &i, &value); n == 2 && err == nil {
+	if n, scanErr := fmt.Sscanf(s, "(%d)%s", &i, &value); n == 2 && scanErr == nil {
 		// discard value
 		if splits := strings.SplitAfter(s, ")"); len(splits) >= 2 {
 			value = splits[1]
@@ -141,11 +141,10 @@ var (
 	ErrNoID3V2MetadataFound = fmt.Errorf("no ID3V2 metadata found")
 )
 
-func ToTrackNumber(s string) (i int, err error) {
+func ToTrackNumber(s string) (int, error) {
 	s = RemoveLeadingBOMs(s)
 	if s == "" {
-		err = ErrMissingTrackNumber
-		return
+		return 0, ErrMissingTrackNumber
 	}
 	// this is more complicated than I wanted, because some mp3 rippers produce
 	// track numbers like "12/14", meaning 12th track of 14
@@ -161,17 +160,14 @@ func ToTrackNumber(s string) (i int, err error) {
 			// found something other than a digit
 			switch j {
 			case 0: // never saw a digit
-				err = ErrMalformedTrackNumber
-				return
+				return 0, ErrMalformedTrackNumber
 			default: // did read at least one digit
-				i = n
-				return
+				return n, nil
 			}
 		}
 	}
 	// normal path, whole string was digits
-	i = n
-	return
+	return n, nil
 }
 
 // depending on encoding, frame values may begin with a BOM (byte order mark)
@@ -206,9 +202,9 @@ func UpdateID3V2Metadata(tM *TrackMetadata, path string, sT SourceType) error {
 	if !tM.requiresEdit[sT] {
 		return nil
 	}
-	tag, err := readID3V2Tag(path)
-	if err != nil {
-		return err
+	tag, readErr := readID3V2Tag(path)
+	if readErr != nil {
+		return readErr
 	}
 	defer tag.Close()
 	tag.SetDefaultEncoding(id3v2.EncodingUTF8)
@@ -269,11 +265,10 @@ func (itf *Id3v2TrackFrame) String() string {
 	return fmt.Sprintf("%s = %q", itf.name, itf.value)
 }
 
-func ReadID3V2Metadata(path string) (version byte, encoding string,
-	frameStrings []string, rawFrames []*Id3v2TrackFrame, e error) {
-	tag, err := readID3V2Tag(path)
-	if err != nil {
-		e = err
+func ReadID3V2Metadata(path string) (version byte, encoding string, frameStrings []string, rawFrames []*Id3v2TrackFrame, e error) {
+	tag, readErr := readID3V2Tag(path)
+	if readErr != nil {
+		e = readErr
 		return
 	}
 	defer tag.Close()

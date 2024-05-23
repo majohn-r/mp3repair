@@ -95,20 +95,13 @@ func Test_readMetadata(t *testing.T) {
 	}()
 	const fnName = "readMetadata()"
 	testDir := "readMetadata"
-	if err := cmd_toolkit.Mkdir(testDir); err != nil {
-		t.Errorf("%s cannot create %q: %v", fnName, testDir, err)
-	}
+	cmd_toolkit.Mkdir(testDir)
 	taglessFile := "01 tagless.mp3"
-	if err := createFile(testDir, taglessFile); err != nil {
-		t.Errorf("%s cannot create %q: %v", fnName, taglessFile, err)
-	}
+	createFile(testDir, taglessFile)
 	id3v1OnlyFile := "02 id3v1.mp3"
 	payloadID3v1Only := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	payloadID3v1Only = append(payloadID3v1Only, id3v1DataSet1...)
-	if err := createFileWithContent(testDir, id3v1OnlyFile,
-		payloadID3v1Only); err != nil {
-		t.Errorf("%s cannot create %q: %v", fnName, id3v1OnlyFile, err)
-	}
+	createFileWithContent(testDir, id3v1OnlyFile, payloadID3v1Only)
 	id3v2OnlyFile := "03 id3v2.mp3"
 	frames := map[string]string{
 		"TYER": "2022",
@@ -121,17 +114,11 @@ func Test_readMetadata(t *testing.T) {
 		"TLEN": "1000",
 	}
 	payloadID3v2Only := createID3v2TaggedData([]byte{}, frames)
-	if err := createFileWithContent(testDir, id3v2OnlyFile,
-		payloadID3v2Only); err != nil {
-		t.Errorf("%s cannot create %q: %v", fnName, id3v2OnlyFile, err)
-	}
+	createFileWithContent(testDir, id3v2OnlyFile, payloadID3v2Only)
 	completeFile := "04 complete.mp3"
 	payloadComplete := payloadID3v2Only
 	payloadComplete = append(payloadComplete, payloadID3v1Only...)
-	if err := createFileWithContent(testDir, completeFile,
-		payloadComplete); err != nil {
-		t.Errorf("%s cannot create %q: %v", fnName, completeFile, err)
-	}
+	createFileWithContent(testDir, completeFile, payloadComplete)
 	type args struct {
 		path string
 	}

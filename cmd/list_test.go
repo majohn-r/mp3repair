@@ -120,7 +120,7 @@ func TestProcessListFlags(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("ProcessListFlags() got1 = %v, want %v", got1, tt.want1)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("ProcessListFlags() %s", difference)
 				}
@@ -290,7 +290,7 @@ func TestListSettingsHasWorkToDo(t *testing.T) {
 			if got := tt.ls.HasWorkToDo(o); got != tt.want {
 				t.Errorf("ListSettings.HasWorkToDo() = %v, want %v", got, tt.want)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("ListSettings.HasWorkToDo() %s", difference)
 				}
@@ -551,7 +551,7 @@ func TestListSettingsTracksSortable(t *testing.T) {
 						tt.lsFinal)
 				}
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("ListSettings.TracksSortable() %s", difference)
 				}
@@ -636,9 +636,8 @@ func TestShowID3V1Diagnostics(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			cmd.ShowID3V1Diagnostics(o, tt.args.track, tt.args.tags, tt.args.err,
-				tt.args.tab)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			cmd.ShowID3V1Diagnostics(o, tt.args.track, tt.args.tags, tt.args.err, tt.args.tab)
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("ShowID3V1Diagnostics() %s", difference)
 				}
@@ -708,7 +707,7 @@ func TestShowID3V2Diagnostics(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.ShowID3V2Diagnostics(o, tt.args.track, tt.args.version, tt.args.encoding,
 				tt.args.frames, tt.args.err, tt.args.tab)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("ShowID3V2Diagnostics() %s", difference)
 				}
@@ -753,7 +752,7 @@ func TestListSettingsListTrackDiagnostics(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.ls.ListTrackDiagnostics(o, tt.args.track, tt.args.tab)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("ListSettings.ListTrackDiagnostics() %s", difference)
 				}
@@ -810,7 +809,7 @@ func TestShowDetails(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.ShowDetails(o, tt.args.track, tt.args.details, tt.args.detailsError,
 				tt.args.tab)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("ShowDetails() %s", difference)
 				}
@@ -850,7 +849,7 @@ func TestListSettingsListTrackDetails(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.ls.ListTrackDetails(o, tt.args.track, tt.args.tab)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("ListSettings.ListTrackDetails() %s", difference)
 				}
@@ -988,7 +987,7 @@ func TestListSettingsListTracksByName(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.ls.ListTracksByName(o, tt.args.tracks, tt.args.tab)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("ListSettings.ListTracksByName() %s", difference)
 				}
@@ -1040,7 +1039,7 @@ func TestListSettingsListTracksByNumber(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.ls.ListTracksByNumber(o, tt.args.tracks, tt.args.tab)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("ListSettings.ListTracksByNumber() %s", difference)
 				}
@@ -1136,7 +1135,7 @@ func TestListSettingsListTracks(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.ls.ListTracks(o, tt.args.tracks, tt.args.tab)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("ListSettings.ListTracks() %s", difference)
 				}
@@ -1336,7 +1335,7 @@ Album: "Live Rhymin' [Bonus Tracks]" by "Paul Simon"
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.ls.ListAlbums(o, tt.args.albums, tt.args.tab)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("ListSettings.ListAlbums() %s", difference)
 				}
@@ -1566,7 +1565,7 @@ func TestListSettingsListArtists(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.ls.ListArtists(o, tt.artists)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("ListSettings.ListArtists() %s", difference)
 				}
@@ -1803,7 +1802,7 @@ func Test_ListRun(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.Bus = o // cook getBus()
 			cmd.ListRun(tt.cmd, tt.in1)
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("ListRun() %s", difference)
 				}
@@ -1885,7 +1884,7 @@ func TestListSettingsProcessArtists(t *testing.T) {
 				t.Errorf("ListSettings.ProcessArtists() got %s want %s", got,
 					tt.wantStatus)
 			}
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("ListSettings.ProcessArtists() %s", difference)
 				}
@@ -1973,7 +1972,7 @@ func TestListHelp(t *testing.T) {
 			command := commandUnderTest
 			enableCommandRecording(o, command)
 			command.Help()
-			if differences, ok := o.Verify(tt.WantedRecording); !ok {
+			if differences, verified := o.Verify(tt.WantedRecording); !verified {
 				for _, difference := range differences {
 					t.Errorf("list Help() %s", difference)
 				}

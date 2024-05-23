@@ -112,8 +112,8 @@ func ResetDBExec(cmd *cobra.Command, _ []string) error {
 	o := getBus()
 	values, eSlice := ReadFlags(cmd.Flags(), ResetDatabaseFlags)
 	if ProcessFlagErrors(o, eSlice) {
-		rdbs, ok := ProcessResetDBFlags(o, values)
-		if ok {
+		rdbs, flagsOk := ProcessResetDBFlags(o, values)
+		if flagsOk {
 			LogCommandStart(o, resetDBCommandName, map[string]any{
 				resetDBTimeoutFlag:     rdbs.timeout,
 				resetDBServiceFlag:     rdbs.service,
@@ -217,28 +217,24 @@ type ServiceRep interface {
 	Query() (svc.Status, error)
 }
 
-func openService(manager ServiceManager, serviceName string) (rep ServiceRep, err error) {
+func openService(manager ServiceManager, serviceName string) (ServiceRep, error) {
 	if manager == nil || reflect.ValueOf(manager).IsNil() {
-		err = fmt.Errorf("nil manager")
-		return
+		return nil, fmt.Errorf("nil manager")
 	}
-	rep, err = manager.OpenService(serviceName)
-	return
+	return manager.OpenService(serviceName)
 }
 
-func (rdbs *ResetDBSettings) StopService(o output.Bus) (ok bool, e *ExitError) {
-	var manager ServiceManager
-	var err error
-	if manager, err = Connect(); err != nil {
-		e = NewExitSystemError(resetDBCommandName)
+func (rdbs *ResetDBSettings) StopService(o output.Bus) (bool, *ExitError) {
+	if manager, connectErr := Connect(); connectErr != nil {
+		e := NewExitSystemError(resetDBCommandName)
 		o.WriteCanonicalError("An attempt to connect with the service manager failed; error"+
-			" is '%v'", err)
+			" is '%v'", connectErr)
 		OutputSystemErrorCause(o)
-		o.Log(output.Error, "service manager connect failed", map[string]any{"error": err})
-		return
+		o.Log(output.Error, "service manager connect failed", map[string]any{"error": connectErr})
+		return false, e
+	} else {
+		return rdbs.HandleService(o, manager)
 	}
-	ok, e = rdbs.HandleService(o, manager)
-	return
 }
 
 func OutputSystemErrorCause(o output.Bus) {
@@ -300,13 +296,13 @@ func ListServices(o output.Bus, manager ServiceManager, services []string) {
 	slices.Sort(services)
 	m := map[string][]string{}
 	for _, serviceName := range services {
-		s, err := openService(manager, serviceName)
-		switch err {
+		service, serviceErr := openService(manager, serviceName)
+		switch serviceErr {
 		case nil:
-			AddServiceState(m, s, serviceName)
-			closeService(s)
+			AddServiceState(m, service, serviceName)
+			closeService(service)
 		default:
-			e := err.Error()
+			e := serviceErr.Error()
 			m[e] = append(m[e], serviceName)
 		}
 	}
@@ -324,24 +320,22 @@ func ListServices(o output.Bus, manager ServiceManager, services []string) {
 }
 
 func AddServiceState(m map[string][]string, s ServiceRep, serviceName string) {
-	status, err := runQuery(s)
-	switch err {
+	status, queryErr := runQuery(s)
+	switch queryErr {
 	case nil:
 		key := stateToStatus[status.State]
 		m[key] = append(m[key], serviceName)
 	default:
-		e := err.Error()
+		e := queryErr.Error()
 		m[e] = append(m[e], serviceName)
 	}
 }
 
-func runQuery(s ServiceRep) (status svc.Status, err error) {
+func runQuery(s ServiceRep) (svc.Status, error) {
 	if reflect.ValueOf(s).IsNil() {
-		status, err = svc.Status{}, fmt.Errorf("no service")
-		return
+		return svc.Status{}, fmt.Errorf("no service")
 	}
-	status, err = s.Query()
-	return
+	return s.Query()
 }
 
 func closeService(s ServiceRep) {
@@ -356,12 +350,12 @@ func (rdbs *ResetDBSettings) StopFoundService(o output.Bus, manager ServiceManag
 		_ = manager.Disconnect()
 		closeService(service)
 	}()
-	status, err := runQuery(service)
-	if err != nil {
+	status, svcErr := runQuery(service)
+	if svcErr != nil {
 		e = NewExitSystemError(resetDBCommandName)
 		o.WriteCanonicalError("An error occurred while trying to stop service %q: %v",
-			rdbs.service, err)
-		rdbs.ReportServiceQueryError(o, err)
+			rdbs.service, svcErr)
+		rdbs.ReportServiceQueryError(o, svcErr)
 		return
 	}
 	if status.State == svc.Stopped {
@@ -369,8 +363,8 @@ func (rdbs *ResetDBSettings) StopFoundService(o output.Bus, manager ServiceManag
 		ok = true
 		return
 	}
-	status, err = service.Control(svc.Stop)
-	if err == nil {
+	status, svcErr = service.Control(svc.Stop)
+	if svcErr == nil {
 		if status.State == svc.Stopped {
 			rdbs.ReportServiceStopped(o)
 			ok = true
@@ -381,19 +375,19 @@ func (rdbs *ResetDBSettings) StopFoundService(o output.Bus, manager ServiceManag
 		return
 	}
 	e = NewExitSystemError(resetDBCommandName)
-	o.WriteCanonicalError("The service %q cannot be stopped: %v", rdbs.service, err)
+	o.WriteCanonicalError("The service %q cannot be stopped: %v", rdbs.service, svcErr)
 	o.Log(output.Error, "service problem", map[string]any{
 		"service": rdbs.service,
 		"trigger": "Stop",
-		"error":   err,
+		"error":   svcErr,
 	})
 	return
 }
 
-func (rdbs *ResetDBSettings) ReportServiceQueryError(o output.Bus, err error) {
+func (rdbs *ResetDBSettings) ReportServiceQueryError(o output.Bus, svcErr error) {
 	o.Log(output.Error, "service query error", map[string]any{
 		"service": rdbs.service,
-		"error":   err,
+		"error":   svcErr,
 	})
 }
 
@@ -417,12 +411,12 @@ func (rdbs *ResetDBSettings) WaitForStop(o output.Bus, s ServiceRep, expiration 
 			return false, NewExitSystemError(resetDBCommandName)
 		}
 		time.Sleep(checkInterval)
-		status, err := runQuery(s)
-		if err != nil {
+		status, svcErr := runQuery(s)
+		if svcErr != nil {
 			o.WriteCanonicalError(
 				"An error occurred while attempting to stop the service %q: %v",
-				rdbs.service, err)
-			rdbs.ReportServiceQueryError(o, err)
+				rdbs.service, svcErr)
+			rdbs.ReportServiceQueryError(o, svcErr)
 			return false, NewExitSystemError(resetDBCommandName)
 		}
 		if status.State == svc.Stopped {
@@ -445,8 +439,8 @@ func (rdbs *ResetDBSettings) DeleteMetadataFiles(o output.Bus, stopped bool) *Ex
 		}
 	}
 	// either stopped or service errors are ignored
-	metadataFiles, ok := ReadDirectory(o, rdbs.metadataDir)
-	if !ok {
+	metadataFiles, filesOk := ReadDirectory(o, rdbs.metadataDir)
+	if !filesOk {
 		return nil
 	}
 	pathsToDelete := rdbs.FilterMetadataFiles(metadataFiles)
@@ -480,10 +474,10 @@ func (rdbs *ResetDBSettings) DeleteFiles(o output.Bus, paths []string) (e *ExitE
 	}
 	var count int
 	for _, path := range paths {
-		err := Remove(path)
+		fileErr := Remove(path)
 		switch {
-		case err != nil:
-			cmd_toolkit.LogFileDeletionFailure(o, path, err)
+		case fileErr != nil:
+			cmd_toolkit.LogFileDeletionFailure(o, path, fileErr)
 			e = NewExitSystemError(resetDBCommandName)
 		default:
 			count++
@@ -496,34 +490,34 @@ func (rdbs *ResetDBSettings) DeleteFiles(o output.Bus, paths []string) (e *ExitE
 }
 
 func ProcessResetDBFlags(o output.Bus, values map[string]*FlagValue) (*ResetDBSettings, bool) {
-	var err error
+	var flagErr error
 	result := &ResetDBSettings{}
-	ok := true // optimistic
-	result.timeout, _, err = GetInt(o, values, resetDBTimeout)
-	if err != nil {
-		ok = false
+	flagsOk := true // optimistic
+	result.timeout, _, flagErr = GetInt(o, values, resetDBTimeout)
+	if flagErr != nil {
+		flagsOk = false
 	}
-	result.service, _, err = GetString(o, values, resetDBService)
-	if err != nil {
-		ok = false
+	result.service, _, flagErr = GetString(o, values, resetDBService)
+	if flagErr != nil {
+		flagsOk = false
 	}
-	result.metadataDir, _, err = GetString(o, values, resetDBMetadataDir)
-	if err != nil {
-		ok = false
+	result.metadataDir, _, flagErr = GetString(o, values, resetDBMetadataDir)
+	if flagErr != nil {
+		flagsOk = false
 	}
-	result.extension, _, err = GetString(o, values, resetDBExtension)
-	if err != nil {
-		ok = false
+	result.extension, _, flagErr = GetString(o, values, resetDBExtension)
+	if flagErr != nil {
+		flagsOk = false
 	}
-	result.force, _, err = GetBool(o, values, resetDBForce)
-	if err != nil {
-		ok = false
+	result.force, _, flagErr = GetBool(o, values, resetDBForce)
+	if flagErr != nil {
+		flagsOk = false
 	}
-	result.ignoreServiceErrors, _, err = GetBool(o, values, resetDBIgnoreServiceErrors)
-	if err != nil {
-		ok = false
+	result.ignoreServiceErrors, _, flagErr = GetBool(o, values, resetDBIgnoreServiceErrors)
+	if flagErr != nil {
+		flagsOk = false
 	}
-	return result, ok
+	return result, flagsOk
 }
 
 func init() {

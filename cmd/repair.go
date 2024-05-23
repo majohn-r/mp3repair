@@ -59,7 +59,7 @@ func RepairRun(cmd *cobra.Command, _ []string) error {
 	values, eSlice := ReadFlags(producer, RepairFlags)
 	searchSettings, searchFlagsOk := EvaluateSearchFlags(o, producer)
 	if ProcessFlagErrors(o, eSlice) && searchFlagsOk {
-		if rs, ok := ProcessRepairFlags(o, values); ok {
+		if rs, flagsOk := ProcessRepairFlags(o, values); flagsOk {
 			details := map[string]any{repairDryRunFlag: rs.dryRun}
 			for k, v := range searchSettings.Values() {
 				details[k] = v
@@ -187,7 +187,8 @@ func nothingToDo(o output.Bus) {
 	o.WriteCanonicalConsole("No repairable track defects were found.")
 }
 
-func BackupAndFix(o output.Bus, concernedArtists []*ConcernedArtist) (e *ExitError) {
+func BackupAndFix(o output.Bus, concernedArtists []*ConcernedArtist) *ExitError {
+	var e *ExitError
 	for _, cAr := range concernedArtists {
 		if !cAr.IsConcerned() {
 			continue
@@ -217,14 +218,14 @@ func BackupAndFix(o output.Bus, concernedArtists []*ConcernedArtist) (e *ExitErr
 			}
 		}
 	}
-	return
+	return e
 }
 
-func ProcessUpdateResult(o output.Bus, t *files.Track, err []error) (e *ExitError) {
-	if len(err) != 0 {
+func ProcessUpdateResult(o output.Bus, t *files.Track, updateErrs []error) *ExitError {
+	if len(updateErrs) != 0 {
 		o.WriteCanonicalError("An error occurred repairing track %q", t)
-		errorStrings := make([]string, 0, len(err))
-		for _, e2 := range err {
+		errorStrings := make([]string, 0, len(updateErrs))
+		for _, e2 := range updateErrs {
 			errorStrings = append(errorStrings, fmt.Sprintf("%q", e2.Error()))
 		}
 		o.Log(output.Error, "cannot edit track", map[string]any{
@@ -233,12 +234,11 @@ func ProcessUpdateResult(o output.Bus, t *files.Track, err []error) (e *ExitErro
 			"fileName":  t.FileName(),
 			"error":     fmt.Sprintf("[%s]", strings.Join(errorStrings, ", ")),
 		})
-		e = NewExitSystemError(repairCommandName)
-		return
+		return NewExitSystemError(repairCommandName)
 	}
 	o.WriteConsole("%q repaired.\n", t)
 	MarkDirty(o)
-	return
+	return nil
 }
 
 func AttemptCopy(o output.Bus, t *files.Track, path string) (backedUp bool) {
@@ -252,20 +252,20 @@ func AttemptCopy(o output.Bus, t *files.Track, path string) (backedUp bool) {
 			"file":    backupFile,
 		})
 	default:
-		err := CopyFile(t.Path(), backupFile)
-		switch err {
+		copyErr := CopyFile(t.Path(), backupFile)
+		switch copyErr {
 		case nil:
 			o.WriteCanonicalConsole("The track file %q has been backed up to %q", t,
 				backupFile)
 			backedUp = true
 		default:
 			o.WriteCanonicalError(
-				"The track file %q could not be backed up due to error %v", t, err)
+				"The track file %q could not be backed up due to error %v", t, copyErr)
 			o.Log(output.Error, "error copying file", map[string]any{
 				"command":     repairCommandName,
 				"source":      t.Path(),
 				"destination": backupFile,
-				"error":       err,
+				"error":       copyErr,
 			})
 		}
 	}
@@ -279,16 +279,16 @@ func EnsureBackupDirectoryExists(o output.Bus, cAl *ConcernedAlbum) (path string
 	path = cAl.backing.BackupDirectory()
 	exists = true
 	if !DirExists(path) {
-		if err := Mkdir(path); err != nil {
+		if fileErr := Mkdir(path); fileErr != nil {
 			exists = false
-			o.WriteCanonicalError("The directory %q cannot be created: %v", path, err)
+			o.WriteCanonicalError("The directory %q cannot be created: %v", path, fileErr)
 			o.WriteCanonicalError(
 				"The track files in the directory %q will not be repaired",
 				cAl.backing.Path())
 			o.Log(output.Error, "cannot create directory", map[string]any{
 				"command":   repairCommandName,
 				"directory": path,
-				"error":     err,
+				"error":     fileErr,
 			})
 		}
 	}
@@ -297,12 +297,12 @@ func EnsureBackupDirectoryExists(o output.Bus, cAl *ConcernedAlbum) (path string
 
 func ProcessRepairFlags(o output.Bus, values map[string]*FlagValue) (*RepairSettings, bool) {
 	rs := &RepairSettings{}
-	ok := true // optimistic
-	var err error
-	if rs.dryRun, _, err = GetBool(o, values, repairDryRun); err != nil {
-		ok = false
+	flagsOk := true // optimistic
+	var flagErr error
+	if rs.dryRun, _, flagErr = GetBool(o, values, repairDryRun); flagErr != nil {
+		flagsOk = false
 	}
-	return rs, ok
+	return rs, flagsOk
 }
 
 func init() {

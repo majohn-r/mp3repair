@@ -79,14 +79,9 @@ func Test_rawReadID3V2Metadata(t *testing.T) {
 		"TLEN": "1000",
 	}
 	content := createID3v2TaggedData(payload, frames)
-	if err := createFileWithContent(".", "goodFile.mp3", content); err != nil {
-		t.Errorf("%s failed to create ./goodFile.mp3: %v", fnName, err)
-	}
+	createFileWithContent(".", "goodFile.mp3", content)
 	frames["TRCK"] = "oops"
-	if err := createFileWithContent(".", "badFile.mp3",
-		createID3v2TaggedData(payload, frames)); err != nil {
-		t.Errorf("%s failed to create ./badFile.mp3: %v", fnName, err)
-	}
+	createFileWithContent(".", "badFile.mp3", createID3v2TaggedData(payload, frames))
 	type args struct {
 		path string
 	}
@@ -193,12 +188,12 @@ func Test_toTrackNumber(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			gotI, err := files.ToTrackNumber(tt.args.s)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
+			gotI, gotErr := files.ToTrackNumber(tt.args.s)
+			if (gotErr != nil) != tt.wantErr {
+				t.Errorf("%s error = %v, wantErr %v", fnName, gotErr, tt.wantErr)
 				return
 			}
-			if err == nil && gotI != tt.wantI {
+			if gotErr == nil && gotI != tt.wantI {
 				t.Errorf("%s = %d, want %d", fnName, gotI, tt.wantI)
 			}
 		})
@@ -219,11 +214,9 @@ func (u unspecifiedFrame) UniqueIdentifier() string {
 	return ""
 }
 
-func (u unspecifiedFrame) WriteTo(w io.Writer) (n int64, err error) {
-	var count int
-	count, err = w.Write([]byte(u.content))
-	n = int64(count)
-	return
+func (u unspecifiedFrame) WriteTo(w io.Writer) (int64, error) {
+	count, fileErr := w.Write([]byte(u.content))
+	return int64(count), fileErr
 }
 
 func Test_selectUnknownFrame(t *testing.T) {
@@ -305,9 +298,7 @@ func Test_readID3V2Metadata(t *testing.T) {
 	}
 	content := createID3v2TaggedData(payload, frames)
 	goodFileName := "goodFile.mp3"
-	if err := createFileWithContent(".", goodFileName, content); err != nil {
-		t.Errorf("%s failed to create %s: %v", fnName, goodFileName, err)
-	}
+	createFileWithContent(".", goodFileName, content)
 	type args struct {
 		path string
 	}
@@ -340,9 +331,9 @@ func Test_readID3V2Metadata(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			// ignoring raw frames ...
-			gotVersion, gotEnc, gotF, _, err := files.ReadID3V2Metadata(tt.args.path)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("%s error = %v, wantErr %v", fnName, err, tt.wantErr)
+			gotVersion, gotEnc, gotF, _, gotErr := files.ReadID3V2Metadata(tt.args.path)
+			if (gotErr != nil) != tt.wantErr {
+				t.Errorf("%s error = %v, wantErr %v", fnName, gotErr, tt.wantErr)
 				return
 			}
 			if gotVersion != tt.wantVersion {
@@ -543,8 +534,8 @@ func Test_updateID3V2Metadata(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if err := files.UpdateID3V2Metadata(tt.args.tM, tt.args.path, tt.args.sT); (err != nil) != tt.wantErr {
-				t.Errorf("UpdateID3V2Metadata() error = %v, wantErr %v", err, tt.wantErr)
+			if gotErr := files.UpdateID3V2Metadata(tt.args.tM, tt.args.path, tt.args.sT); (gotErr != nil) != tt.wantErr {
+				t.Errorf("UpdateID3V2Metadata() error = %v, wantErr %v", gotErr, tt.wantErr)
 			}
 		})
 	}

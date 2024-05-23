@@ -115,7 +115,7 @@ func CheckRun(cmd *cobra.Command, _ []string) error {
 	values, eSlice := ReadFlags(producer, CheckFlags)
 	searchSettings, searchFlagsOk := EvaluateSearchFlags(o, producer)
 	if ProcessFlagErrors(o, eSlice) && searchFlagsOk {
-		if cs, ok := ProcessCheckFlags(o, values); ok {
+		if cs, flagsOk := ProcessCheckFlags(o, values); flagsOk {
 			details := map[string]any{
 				CheckEmptyFlag:       cs.empty,
 				"empty-user-set":     cs.emptyUserSet,
@@ -232,8 +232,7 @@ func (cs *CheckSettings) PerformFileAnalysis(o output.Bus,
 				for _, album := range artist.Albums() {
 					for _, track := range album.Tracks() {
 						concerns := track.ReportMetadataProblems()
-						if found := RecordFileConcerns(concernedArtists, track,
-							concerns); found {
+						if found := RecordFileConcerns(concernedArtists, track, concerns); found {
 							foundConcerns = true
 						}
 					}
@@ -414,21 +413,18 @@ func (cs *CheckSettings) HasWorkToDo(o output.Bus) bool {
 
 func ProcessCheckFlags(o output.Bus, values map[string]*FlagValue) (*CheckSettings, bool) {
 	settings := &CheckSettings{}
-	ok := true // optimistic
-	var err error
-	if settings.empty, settings.emptyUserSet, err = GetBool(o, values,
-		CheckEmpty); err != nil {
-		ok = false
+	flagsOk := true // optimistic
+	var flagErr error
+	if settings.empty, settings.emptyUserSet, flagErr = GetBool(o, values, CheckEmpty); flagErr != nil {
+		flagsOk = false
 	}
-	if settings.files, settings.filesUserSet, err = GetBool(o, values,
-		CheckFiles); err != nil {
-		ok = false
+	if settings.files, settings.filesUserSet, flagErr = GetBool(o, values, CheckFiles); flagErr != nil {
+		flagsOk = false
 	}
-	if settings.numbering, settings.numberingUserSet, err = GetBool(o, values,
-		CheckNumbering); err != nil {
-		ok = false
+	if settings.numbering, settings.numberingUserSet, flagErr = GetBool(o, values, CheckNumbering); flagErr != nil {
+		flagsOk = false
 	}
-	return settings, ok
+	return settings, flagsOk
 }
 
 func init() {

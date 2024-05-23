@@ -27,7 +27,7 @@ var concernNames = map[ConcernType]string{
 }
 
 func ConcernName(i ConcernType) string {
-	if s, ok := concernNames[i]; ok {
+	if s, found := concernNames[i]; found {
 		return s
 	}
 	return fmt.Sprintf("concern %d", i)
@@ -163,8 +163,8 @@ func (cAl *ConcernedAlbum) name() string {
 
 func (cAl *ConcernedAlbum) Lookup(track *files.Track) *ConcernedTrack {
 	var cT *ConcernedTrack
-	if found, ok := cAl.trackMap[track.FileName()]; ok {
-		cT = found
+	if track, found := cAl.trackMap[track.FileName()]; found {
+		cT = track
 	}
 	return cT
 }
@@ -269,7 +269,7 @@ func (cAr *ConcernedArtist) IsConcerned() bool {
 
 func (cAr *ConcernedArtist) Lookup(track *files.Track) *ConcernedTrack {
 	albumKey := track.AlbumName()
-	if cAl, ok := cAr.albumMap[albumKey]; ok {
+	if cAl, found := cAr.albumMap[albumKey]; found {
 		return cAl.Lookup(track)
 	}
 	return nil
