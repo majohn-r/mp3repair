@@ -201,11 +201,7 @@ func TestRunMain(t *testing.T) {
 			}
 			o := output.NewRecorder()
 			cmd.RunMain(o, tt.args.cmd, tt.args.start)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("RunMain() %s", difference)
-				}
-			}
+			o.Report(t, "RunMain()", tt.WantedRecording)
 		})
 	}
 }
@@ -257,14 +253,11 @@ func TestCookCommandLineArguments(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.DereferenceEnvVar = tt.dereferenceEnvVar
-			if got := cmd.CookCommandLineArguments(o, tt.inputArgs); !reflect.DeepEqual(got, tt.want) {
+			got := cmd.CookCommandLineArguments(o, tt.inputArgs)
+			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("CookCommandLineArguments() = %v, want %v", got, tt.want)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("CookCommandLineArguments() %s", difference)
-				}
-			}
+			o.Report(t, "CookCommandLineArguments()", tt.WantedRecording)
 		})
 	}
 }
@@ -485,8 +478,7 @@ func Test_InitGlobals(t *testing.T) {
 				t.Errorf("InitGlobals: _c got %v want %v", got, tt.wantConfig)
 			}
 			if got := ExitFunctionCalled; got != tt.wantExitFuncCalled {
-				t.Errorf("InitGlobals: exit called got %t want %t", got,
-					tt.wantExitFuncCalled)
+				t.Errorf("InitGlobals: exit called got %t want %t", got, tt.wantExitFuncCalled)
 			}
 			if got := exitCodeRecorded; got != tt.wantExitValue {
 				t.Errorf("InitGlobals: exit code got %d want %d", got, tt.wantExitValue)
@@ -498,14 +490,9 @@ func Test_InitGlobals(t *testing.T) {
 				t.Errorf("InitGlobals: version got %q want %q", got, tt.wantVersion)
 			}
 			if got := flagIndicatorRecorded; got != tt.wantFlagIndicator {
-				t.Errorf("InitGlobals: flag indicator got %q want %q", got,
-					tt.wantFlagIndicator)
+				t.Errorf("InitGlobals: flag indicator got %q want %q", got, tt.wantFlagIndicator)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("InitGlobals() %s", difference)
-				}
-			}
+			o.Report(t, "InitGlobals()", tt.WantedRecording)
 		})
 	}
 }
@@ -553,11 +540,7 @@ func TestRootUsage(t *testing.T) {
 			command := cloneCommand(cmd.RootCmd)
 			enableCommandRecording(o, command)
 			command.Usage()
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("root Usage() %s", difference)
-				}
-			}
+			o.Report(t, "root Usage()", tt.WantedRecording)
 		})
 	}
 }

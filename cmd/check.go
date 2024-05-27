@@ -205,6 +205,7 @@ func (cs *CheckSettings) PerformChecks(o output.Bus, artists []*files.Artist,
 	return
 }
 
+// TODO: wrap boolean arguments into a struct
 func (cs *CheckSettings) MaybeReportCleanResults(o output.Bus, emptyConcerns,
 	numberingConcerns, fileConcerns bool) {
 	if !emptyConcerns && cs.empty {

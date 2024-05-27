@@ -352,6 +352,7 @@ func (ss *SearchSettings) Filter(o output.Bus, originalArtists []*files.Artist) 
 	return filteredArtists, hasArtists
 }
 
+// TODO: drop bool from results - consumers can calculate it themselves
 func (ss *SearchSettings) Load(o output.Bus) ([]*files.Artist, bool) {
 	artistFiles, dirRead := ReadDirectory(o, ss.topDirectory)
 	artists := make([]*files.Artist, 0, len(artistFiles))

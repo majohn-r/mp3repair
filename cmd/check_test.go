@@ -79,11 +79,7 @@ func TestProcessCheckFlags(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("ProcessCheckFlags() got1 = %v, want %v", got1, tt.want1)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ProcessCheckFlags() %s", difference)
-				}
-			}
+			o.Report(t, "ProcessCheckFlags()", tt.WantedRecording)
 		})
 	}
 }
@@ -264,11 +260,7 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 			if got := tt.cs.HasWorkToDo(o); got != tt.want {
 				t.Errorf("CheckSettings.HasWorkToDo() = %v, want %v", got, tt.want)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("CheckSettings.HasWorkToDo() %s", difference)
-				}
-			}
+			o.Report(t, "CheckSettings.HasWorkToDo()", tt.WantedRecording)
 		})
 	}
 }
@@ -566,15 +558,11 @@ func TestCheckSettings_PerformFileAnalysis(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			if got := tt.cs.PerformFileAnalysis(o, tt.args.checkedArtists,
-				tt.args.ss); got != tt.want {
+			got := tt.cs.PerformFileAnalysis(o, tt.args.checkedArtists, tt.args.ss)
+			if got != tt.want {
 				t.Errorf("CheckSettings.PerformFileAnalysis() = %v, want %v", got, tt.want)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("CheckSettings.PerformFileAnalysis() %s", difference)
-				}
-			}
+			o.Report(t, "CheckSettings.PerformFileAnalysis()", tt.WantedRecording)
 		})
 	}
 }
@@ -619,11 +607,7 @@ func TestCheckSettings_MaybeReportCleanResults(t *testing.T) {
 			o := output.NewRecorder()
 			tt.cs.MaybeReportCleanResults(o, tt.args.emptyConcerns, tt.args.numberingConcerns,
 				tt.args.fileConcerns)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("CheckSettings.MaybeReportCleanResults() %s", difference)
-				}
-			}
+			o.Report(t, "CheckSettings.MaybeReportCleanResults()", tt.WantedRecording)
 		})
 	}
 }
@@ -683,15 +667,11 @@ func TestCheckSettings_PerformChecks(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			if got := tt.cs.PerformChecks(o, tt.args.artists, tt.args.artistsLoaded,
-				tt.args.ss); !compareExitErrors(got, tt.wantStatus) {
+			got := tt.cs.PerformChecks(o, tt.args.artists, tt.args.artistsLoaded, tt.args.ss)
+			if !compareExitErrors(got, tt.wantStatus) {
 				t.Errorf("CheckSettings.PerformChecks() got %s want %s", got, tt.wantStatus)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("CheckSettings.PerformChecks() %s", difference)
-				}
-			}
+			o.Report(t, "CheckSettings.PerformChecks()", tt.WantedRecording)
 		})
 	}
 }
@@ -756,11 +736,7 @@ func TestCheckSettings_MaybeDoWork(t *testing.T) {
 			if got := tt.cs.MaybeDoWork(o, tt.ss); !compareExitErrors(got, tt.wantStatus) {
 				t.Errorf("CheckSettings.MaybeDoWork() got %s want %s", got, tt.wantStatus)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("CheckSettings.MaybeDoWork() %s", difference)
-				}
-			}
+			o.Report(t, "CheckSettings.MaybeDoWork()", tt.WantedRecording)
 		})
 	}
 }
@@ -838,11 +814,7 @@ func TestCheckRun(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.Bus = o // cook getBus()
 			cmd.CheckRun(tt.args.cmd, tt.args.in1)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("CheckRun() %s", difference)
-				}
-			}
+			o.Report(t, "CheckRun()", tt.WantedRecording)
 		})
 	}
 }
@@ -906,11 +878,7 @@ func TestCheckHelp(t *testing.T) {
 			command := commandUnderTest
 			enableCommandRecording(o, command)
 			command.Help()
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("check Help() %s", difference)
-				}
-			}
+			o.Report(t, "check Help()", tt.WantedRecording)
 		})
 	}
 }
@@ -968,11 +936,7 @@ func TestCheckUsage(t *testing.T) {
 			command := commandUnderTest
 			enableCommandRecording(o, command)
 			command.Usage()
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("check Usage() %s", difference)
-				}
-			}
+			o.Report(t, "check Usage()", tt.WantedRecording)
 		})
 	}
 }

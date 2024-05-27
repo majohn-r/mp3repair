@@ -542,23 +542,16 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 			if tt.checkDetails {
 				details := tt.args.flags.flags[tt.args.flagName]
 				if got := details.shorthand; got != tt.wantShorthand {
-					t.Errorf("FlagDetails.AddFlag() saved shorthand got = %q, want %q", got,
-						tt.wantShorthand)
+					t.Errorf("FlagDetails.AddFlag() saved shorthand got = %q, want %q", got, tt.wantShorthand)
 				}
 				if got := details.value; got != tt.wantValue {
-					t.Errorf("FlagDetails.AddFlag() saved value got = %v, want %v", got,
-						tt.wantValue)
+					t.Errorf("FlagDetails.AddFlag() saved value got = %v, want %v", got, tt.wantValue)
 				}
 				if got := details.usage; got != tt.wantUsage {
-					t.Errorf("FlagDetails.AddFlag() saved usage got = %q, want %q", got,
-						tt.wantUsage)
+					t.Errorf("FlagDetails.AddFlag() saved usage got = %q, want %q", got, tt.wantUsage)
 				}
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("FlagDetails.AddFlag() %s", difference)
-				}
-			}
+			o.Report(t, "FlagDetails.AddFlag()", tt.WantedRecording)
 		})
 	}
 }
@@ -883,14 +876,9 @@ func TestAddFlags(t *testing.T) {
 				}
 			}
 			if got := len(tt.args.flags.flags); got != len(tt.wantNames) {
-				t.Errorf("AddFlags() got %d registered flags, expected %d", got,
-					len(tt.wantNames))
+				t.Errorf("AddFlags() got %d registered flags, expected %d", got, len(tt.wantNames))
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("GetBool() %s", difference)
-				}
-			}
+			o.Report(t, "GetBool()", tt.WantedRecording)
 		})
 	}
 }
@@ -979,11 +967,7 @@ func TestGetBool(t *testing.T) {
 			if gotUserSet != tt.wantUserSet {
 				t.Errorf("GetBool() gotUserSet = %v, want %v", gotUserSet, tt.wantUserSet)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("AddFlags() %s", difference)
-				}
-			}
+			o.Report(t, "AddFlags()", tt.WantedRecording)
 		})
 	}
 }
@@ -1073,11 +1057,7 @@ func TestGetInt(t *testing.T) {
 			if gotUserSet != tt.wantUserSet {
 				t.Errorf("GetInt() gotUserSet = %v, want %v", gotUserSet, tt.wantUserSet)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("GetInt() %s", difference)
-				}
-			}
+			o.Report(t, "GetInt()", tt.WantedRecording)
 		})
 	}
 }
@@ -1167,11 +1147,7 @@ func TestGetString(t *testing.T) {
 			if gotUserSet != tt.wantUserSet {
 				t.Errorf("GetString() gotUserSet = %v, want %v", gotUserSet, tt.wantUserSet)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("GetString() %s", difference)
-				}
-			}
+			o.Report(t, "GetString()", tt.WantedRecording)
 		})
 	}
 }
@@ -1204,11 +1180,7 @@ func TestProcessFlagErrors(t *testing.T) {
 			if gotOk := cmd.ProcessFlagErrors(o, tt.args.eSlice); gotOk != tt.wantOk {
 				t.Errorf("ProcessFlagErrors() = %v, want %v", gotOk, tt.wantOk)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ProcessFlagErrors() %s", difference)
-				}
-			}
+			o.Report(t, "ProcessFlagErrors()", tt.WantedRecording)
 		})
 	}
 }

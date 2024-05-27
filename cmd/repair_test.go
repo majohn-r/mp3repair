@@ -52,11 +52,7 @@ func TestProcessRepairFlags(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("ProcessRepairFlags() got1 = %v, want %v", got1, tt.want1)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ProcessRepairFlags() %s", difference)
-				}
-			}
+			o.Report(t, "ProcessRepairFlags()", tt.WantedRecording)
 		})
 	}
 }
@@ -122,18 +118,12 @@ func TestEnsureBackupDirectoryExists(t *testing.T) {
 			o := output.NewRecorder()
 			gotPath, gotExists := cmd.EnsureBackupDirectoryExists(o, tt.cAl)
 			if gotPath != tt.wantPath {
-				t.Errorf("EnsureBackupDirectoryExists() gotPath = %v, want %v", gotPath,
-					tt.wantPath)
+				t.Errorf("EnsureBackupDirectoryExists() gotPath = %v, want %v", gotPath, tt.wantPath)
 			}
 			if gotExists != tt.wantExists {
-				t.Errorf("EnsureBackupDirectoryExists() gotExists = %v, want %v",
-					gotExists, tt.wantExists)
+				t.Errorf("EnsureBackupDirectoryExists() gotExists = %v, want %v", gotExists, tt.wantExists)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("EnsureBackupDirectoryExists() %s", difference)
-				}
-			}
+			o.Report(t, "EnsureBackupDirectoryExists()", tt.WantedRecording)
 		})
 	}
 }
@@ -219,15 +209,11 @@ func TestAttemptCopy(t *testing.T) {
 			cmd.PlainFileExists = tt.plainFileExists
 			cmd.CopyFile = tt.copyFile
 			o := output.NewRecorder()
-			if gotBackedUp := cmd.AttemptCopy(o, tt.args.t, tt.args.path); gotBackedUp !=
-				tt.wantBackedUp {
+			gotBackedUp := cmd.AttemptCopy(o, tt.args.t, tt.args.path)
+			if gotBackedUp != tt.wantBackedUp {
 				t.Errorf("AttemptCopy() = %v, want %v", gotBackedUp, tt.wantBackedUp)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("AttemptCopy() %s", difference)
-				}
-			}
+			o.Report(t, "AttemptCopy()", tt.WantedRecording)
 		})
 	}
 }
@@ -310,11 +296,7 @@ func TestProcessUpdateResult(t *testing.T) {
 			if got := markedDirty; got != tt.wantDirty {
 				t.Errorf("ProcessUpdateResult() got %t want %t", got, tt.wantDirty)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ProcessUpdateResult() %s", difference)
-				}
-			}
+			o.Report(t, "ProcessUpdateResult()", tt.WantedRecording)
 		})
 	}
 }
@@ -592,11 +574,7 @@ func TestBackupAndFix(t *testing.T) {
 			if got := cmd.BackupAndFix(o, tt.concernedArtists); !compareExitErrors(got, tt.wantStatus) {
 				t.Errorf("BackupAndFix() got %s want %s", got, tt.wantStatus)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("BackupAndFix() %s", difference)
-				}
-			}
+			o.Report(t, "BackupAndFix()", tt.WantedRecording)
 		})
 	}
 }
@@ -689,11 +667,7 @@ func TestReportRepairsNeeded(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.ReportRepairsNeeded(o, tt.concernedArtists)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ReportRepairsNeeded() %s", difference)
-				}
-			}
+			o.Report(t, "ReportRepairsNeeded()", tt.WantedRecording)
 		})
 	}
 }
@@ -1436,14 +1410,11 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			if got := tt.rs.RepairArtists(o, tt.artists); !compareExitErrors(got, tt.wantStatus) {
+			got := tt.rs.RepairArtists(o, tt.artists)
+			if !compareExitErrors(got, tt.wantStatus) {
 				t.Errorf("RepairSettings.RepairArtists() got %s want %s", got, tt.wantStatus)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("RepairSettings.RepairArtists() %s", difference)
-				}
-			}
+			o.Report(t, "RepairSettings.RepairArtists()", tt.WantedRecording)
 		})
 	}
 }
@@ -1489,15 +1460,11 @@ func TestRepairSettings_ProcessArtists(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			if got := tt.rs.ProcessArtists(
-				o, tt.args.allArtists, tt.args.loaded, tt.args.ss); !compareExitErrors(got, tt.wantStatus) {
+			got := tt.rs.ProcessArtists(o, tt.args.allArtists, tt.args.loaded, tt.args.ss)
+			if !compareExitErrors(got, tt.wantStatus) {
 				t.Errorf("RepairSettings.ProcessArtists() got %s want %s", got, tt.wantStatus)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("RepairSettings.ProcessArtists() %s", difference)
-				}
-			}
+			o.Report(t, "RepairSettings.ProcessArtists()", tt.WantedRecording)
 		})
 	}
 }
@@ -1557,11 +1524,7 @@ func TestRepairRun(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.Bus = o // cook getBus()
 			cmd.RepairRun(tt.cmd, tt.in1)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("RepairRun() %s", difference)
-				}
-			}
+			o.Report(t, "RepairRun()", tt.WantedRecording)
 		})
 	}
 }
@@ -1619,11 +1582,7 @@ func TestRepairHelp(t *testing.T) {
 			command := commandUnderTest
 			enableCommandRecording(o, command)
 			command.Help()
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("repair Help() %s", difference)
-				}
-			}
+			o.Report(t, "repair Help()", tt.WantedRecording)
 		})
 	}
 }

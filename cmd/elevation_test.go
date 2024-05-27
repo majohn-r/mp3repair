@@ -1136,11 +1136,7 @@ func TestElevationControl_Log(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.ec.Log(o, output.Info)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ElevationControl.Log() %s", difference)
-				}
-			}
+			o.Report(t, "ElevationControl.Log()", tt.WantedRecording)
 		})
 	}
 }

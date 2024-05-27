@@ -92,11 +92,7 @@ func TestProcessResetDBFlags(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("ProcessResetDBFlags() got1 = %v, want %v", got1, tt.want1)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ProcessResetDBFlags() %s", difference)
-				}
-			}
+			o.Report(t, "ProcessResetDBFlags()", tt.WantedRecording)
 		})
 	}
 }
@@ -202,20 +198,14 @@ func TestResetDBSettings_WaitForStop(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			gotOk, gotStatus := tt.rdbs.WaitForStop(o, tt.args.s, tt.args.expiration,
-				tt.args.checkInterval)
+			gotOk, gotStatus := tt.rdbs.WaitForStop(o, tt.args.s, tt.args.expiration, tt.args.checkInterval)
 			if gotOk != tt.wantOk {
 				t.Errorf("ResetDBSettings.WaitForStop() = %t, want %t", gotOk, tt.wantOk)
 			}
 			if !compareExitErrors(gotStatus, tt.wantStatus) {
-				t.Errorf("ResetDBSettings.WaitForStop() = %s, want %s", gotStatus,
-					tt.wantStatus)
+				t.Errorf("ResetDBSettings.WaitForStop() = %s, want %s", gotStatus, tt.wantStatus)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ResetDBSettings.WaitForStop() %s", difference)
-				}
-			}
+			o.Report(t, "ResetDBSettings.WaitForStop()", tt.WantedRecording)
 		})
 	}
 }
@@ -354,18 +344,12 @@ func TestResetDBSettings_StopFoundService(t *testing.T) {
 			gotOk, gotStatus := tt.rdbs.StopFoundService(o, tt.args.manager,
 				tt.args.service)
 			if gotOk != tt.wantOk {
-				t.Errorf("ResetDBSettings.StopFoundService() = %v, want %v", gotOk,
-					tt.wantOk)
+				t.Errorf("ResetDBSettings.StopFoundService() = %v, want %v", gotOk, tt.wantOk)
 			}
 			if !compareExitErrors(gotStatus, tt.wantStatus) {
-				t.Errorf("ResetDBSettings.StopFoundService() = %v, want %v", gotStatus,
-					tt.wantStatus)
+				t.Errorf("ResetDBSettings.StopFoundService() = %v, want %v", gotStatus, tt.wantStatus)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ResetDBSettings.WaitForStop() %s", difference)
-				}
-			}
+			o.Report(t, "ResetDBSettings.WaitForStop()", tt.WantedRecording)
 		})
 	}
 }
@@ -446,11 +430,7 @@ func Test_listServices(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.ListServices(o, tt.args.manager, tt.args.services)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ListServices() %s", difference)
-				}
-			}
+			o.Report(t, "ListServices()", tt.WantedRecording)
 		})
 	}
 }
@@ -524,11 +504,7 @@ func TestResetDBSettings_HandleService(t *testing.T) {
 			if !compareExitErrors(gotStatus, tt.wantStatus) {
 				t.Errorf("ResetDBSettings.HandleService() = %v, want %v", gotStatus, tt.wantStatus)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ResetDBSettings.HandleService() %s", difference)
-				}
-			}
+			o.Report(t, "ResetDBSettings.HandleService()", tt.WantedRecording)
 		})
 	}
 }
@@ -600,11 +576,7 @@ func TestResetDBSettings_StopService(t *testing.T) {
 			if !compareExitErrors(gotStatus, tt.wantStatus) {
 				t.Errorf("ResetDBSettings.StopService() = %v, want %v", gotStatus, tt.wantStatus)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ResetDBSettings.StopService() %s", difference)
-				}
-			}
+			o.Report(t, "ResetDBSettings.StopService()", tt.WantedRecording)
 		})
 	}
 }
@@ -663,11 +635,7 @@ func TestResetDBSettings_DeleteFiles(t *testing.T) {
 			if got := tt.rdbs.DeleteFiles(o, tt.paths); !compareExitErrors(got, tt.want) {
 				t.Errorf("ResetDBSettings.DeleteFiles() %s want %s", got, tt.want)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ResetDBSettings.DeleteFiles() %s", difference)
-				}
-			}
+			o.Report(t, "ResetDBSettings.DeleteFiles()", tt.WantedRecording)
 		})
 	}
 }
@@ -807,11 +775,7 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 			if got := tt.rdbs.DeleteMetadataFiles(o, tt.stopped); !compareExitErrors(got, tt.want) {
 				t.Errorf("ResetDBSettings.DeleteMetadataFiles() %s want %s", got, tt.want)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ResetDBSettings.DeleteMetadataFiles() %s", difference)
-				}
-			}
+			o.Report(t, "ResetDBSettings.DeleteMetadataFiles()", tt.WantedRecording)
 		})
 	}
 }
@@ -907,11 +871,7 @@ func TestResetDBSettings_ResetService(t *testing.T) {
 			if got := tt.rdbs.ResetService(o); !compareExitErrors(got, tt.want) {
 				t.Errorf("ResetDBSettings.ResetService() got %s want %s", got, tt.want)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ResetDBSettings.ResetService() %s", difference)
-				}
-			}
+			o.Report(t, "ResetDBSettings.ResetService()", tt.WantedRecording)
 		})
 	}
 }
@@ -988,11 +948,7 @@ func TestResetDBExec(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.Bus = o
 			cmd.ResetDBExec(tt.cmd, tt.in1)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ResetDBExec() %s", difference)
-				}
-			}
+			o.Report(t, "ResetDBExec()", tt.WantedRecording)
 		})
 	}
 }
@@ -1069,11 +1025,7 @@ func TestResetDatabaseHelp(t *testing.T) {
 			command := commandUnderTest
 			enableCommandRecording(o, command)
 			command.Help()
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("resetDatabase Help() %s", difference)
-				}
-			}
+			o.Report(t, "resetDatabase Help()", tt.WantedRecording)
 		})
 	}
 }
@@ -1278,11 +1230,7 @@ func TestOutputSystemErrorCause(t *testing.T) {
 			cmd.IsElevated = tt.isElevated
 			o := output.NewRecorder()
 			cmd.OutputSystemErrorCause(o)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("OutputSystemErrorCause() %s", difference)
-				}
-			}
+			o.Report(t, "OutputSystemErrorCause()", tt.WantedRecording)
 		})
 	}
 }

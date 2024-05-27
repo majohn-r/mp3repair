@@ -125,11 +125,7 @@ func Test_parseTrackName(t *testing.T) {
 			if gotValid != tt.wantValid {
 				t.Errorf("%s gotValid = %v, want %v", fnName, gotValid, tt.wantValid)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("%s %s", fnName, difference)
-				}
-			}
+			o.Report(t, fnName, tt.WantedRecording)
 		})
 	}
 }
@@ -775,19 +771,14 @@ func TestReadMetadata(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			files.ReadMetadata(o, tt.args.artists)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("%s %s", fnName, difference)
-				}
-			}
+			o.Report(t, fnName, tt.WantedRecording)
 			for _, artist := range tt.args.artists {
 				for _, album := range artist.Albums() {
 					for _, track := range album.Tracks() {
 						if track.NeedsMetadata() {
 							t.Errorf("%s track %q has no metadata", fnName, track.Path())
 						} else if track.HasMetadataError() {
-							t.Errorf("%s track %q is defective: %v", fnName,
-								track.Path(), track.GetMetadata().ErrorCauses())
+							t.Errorf("%s track %q is defective: %v", fnName, track.Path(), track.GetMetadata().ErrorCauses())
 						}
 					}
 				}
@@ -1039,11 +1030,7 @@ func Test_processArtistMetadata(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			files.ProcessArtistMetadata(o, tt.args.artists)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("%s %s", fnName, difference)
-				}
-			}
+			o.Report(t, fnName, tt.WantedRecording)
 		})
 	}
 }
@@ -1179,11 +1166,7 @@ func Test_processAlbumMetadata(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			files.ProcessAlbumMetadata(o, tt.args.artists)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("%s %s", fnName, difference)
-				}
-			}
+			o.Report(t, fnName, tt.WantedRecording)
 		})
 	}
 }
@@ -1224,11 +1207,7 @@ func TestTrack_reportMetadataErrors(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.args.t.ReportMetadataErrors(o)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("%s %s", fnName, difference)
-				}
-			}
+			o.Report(t, fnName, tt.WantedRecording)
 		})
 	}
 }

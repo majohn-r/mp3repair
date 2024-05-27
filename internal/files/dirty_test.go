@@ -49,11 +49,7 @@ func TestMarkDirty(t *testing.T) {
 			o := output.NewRecorder()
 			cmd_toolkit.SetApplicationPath(tt.appPath)
 			files.MarkDirty(o)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("%s %s", fnName, difference)
-				}
-			}
+			o.Report(t, fnName, tt.WantedRecording)
 		})
 	}
 }
@@ -133,11 +129,7 @@ func TestClearDirty(t *testing.T) {
 			cmd_toolkit.SetApplicationPath(tt.initialDirtyFolder)
 			o := output.NewRecorder()
 			files.ClearDirty(o)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("%s %s", fnName, difference)
-				}
-			}
+			o.Report(t, fnName, tt.WantedRecording)
 		})
 	}
 }

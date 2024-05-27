@@ -120,11 +120,7 @@ func TestProcessListFlags(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("ProcessListFlags() got1 = %v, want %v", got1, tt.want1)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ProcessListFlags() %s", difference)
-				}
-			}
+			o.Report(t, "ProcessListFlags()", tt.WantedRecording)
 		})
 	}
 }
@@ -290,11 +286,7 @@ func TestListSettingsHasWorkToDo(t *testing.T) {
 			if got := tt.ls.HasWorkToDo(o); got != tt.want {
 				t.Errorf("ListSettings.HasWorkToDo() = %v, want %v", got, tt.want)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ListSettings.HasWorkToDo() %s", difference)
-				}
-			}
+			o.Report(t, "ListSettings.HasWorkToDo()", tt.WantedRecording)
 		})
 	}
 }
@@ -547,15 +539,10 @@ func TestListSettingsTracksSortable(t *testing.T) {
 			}
 			if tt.want {
 				if *tt.ls != *tt.lsFinal {
-					t.Errorf("ListSettings.TracksSortable() ls = %v, want %v", tt.ls,
-						tt.lsFinal)
+					t.Errorf("ListSettings.TracksSortable() ls = %v, want %v", tt.ls, tt.lsFinal)
 				}
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ListSettings.TracksSortable() %s", difference)
-				}
-			}
+			o.Report(t, "ListSettings.TracksSortable()", tt.WantedRecording)
 		})
 	}
 }
@@ -637,11 +624,7 @@ func TestShowID3V1Diagnostics(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.ShowID3V1Diagnostics(o, tt.args.track, tt.args.tags, tt.args.err, tt.args.tab)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ShowID3V1Diagnostics() %s", difference)
-				}
-			}
+			o.Report(t, "ShowID3V1Diagnostics()", tt.WantedRecording)
 		})
 	}
 }
@@ -707,11 +690,7 @@ func TestShowID3V2Diagnostics(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.ShowID3V2Diagnostics(o, tt.args.track, tt.args.version, tt.args.encoding,
 				tt.args.frames, tt.args.err, tt.args.tab)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ShowID3V2Diagnostics() %s", difference)
-				}
-			}
+			o.Report(t, "ShowID3V2Diagnostics()", tt.WantedRecording)
 		})
 	}
 }
@@ -752,11 +731,7 @@ func TestListSettingsListTrackDiagnostics(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.ls.ListTrackDiagnostics(o, tt.args.track, tt.args.tab)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ListSettings.ListTrackDiagnostics() %s", difference)
-				}
-			}
+			o.Report(t, "ListSettings.ListTrackDiagnostics()", tt.WantedRecording)
 		})
 	}
 }
@@ -807,13 +782,8 @@ func TestShowDetails(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			cmd.ShowDetails(o, tt.args.track, tt.args.details, tt.args.detailsError,
-				tt.args.tab)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ShowDetails() %s", difference)
-				}
-			}
+			cmd.ShowDetails(o, tt.args.track, tt.args.details, tt.args.detailsError, tt.args.tab)
+			o.Report(t, "ShowDetails()", tt.WantedRecording)
 		})
 	}
 }
@@ -849,11 +819,7 @@ func TestListSettingsListTrackDetails(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.ls.ListTrackDetails(o, tt.args.track, tt.args.tab)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ListSettings.ListTrackDetails() %s", difference)
-				}
-			}
+			o.Report(t, "ListSettings.ListTrackDetails()", tt.WantedRecording)
 		})
 	}
 }
@@ -987,11 +953,7 @@ func TestListSettingsListTracksByName(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.ls.ListTracksByName(o, tt.args.tracks, tt.args.tab)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ListSettings.ListTracksByName() %s", difference)
-				}
-			}
+			o.Report(t, "ListSettings.ListTracksByName()", tt.WantedRecording)
 		})
 	}
 }
@@ -1039,11 +1001,7 @@ func TestListSettingsListTracksByNumber(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.ls.ListTracksByNumber(o, tt.args.tracks, tt.args.tab)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ListSettings.ListTracksByNumber() %s", difference)
-				}
-			}
+			o.Report(t, "ListSettings.ListTracksByNumber()", tt.WantedRecording)
 		})
 	}
 }
@@ -1135,11 +1093,7 @@ func TestListSettingsListTracks(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.ls.ListTracks(o, tt.args.tracks, tt.args.tab)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ListSettings.ListTracks() %s", difference)
-				}
-			}
+			o.Report(t, "ListSettings.ListTracks()", tt.WantedRecording)
 		})
 	}
 }
@@ -1335,11 +1289,7 @@ Album: "Live Rhymin' [Bonus Tracks]" by "Paul Simon"
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.ls.ListAlbums(o, tt.args.albums, tt.args.tab)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ListSettings.ListAlbums() %s", difference)
-				}
-			}
+			o.Report(t, "ListSettings.ListAlbums()", tt.WantedRecording)
 		})
 	}
 }
@@ -1565,11 +1515,7 @@ func TestListSettingsListArtists(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			tt.ls.ListArtists(o, tt.artists)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ListSettings.ListArtists() %s", difference)
-				}
-			}
+			o.Report(t, "ListSettings.ListArtists()", tt.WantedRecording)
 		})
 	}
 }
@@ -1802,11 +1748,7 @@ func Test_ListRun(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.Bus = o // cook getBus()
 			cmd.ListRun(tt.cmd, tt.in1)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ListRun() %s", difference)
-				}
-			}
+			o.Report(t, "ListRun()", tt.WantedRecording)
 		})
 	}
 }
@@ -1879,16 +1821,11 @@ func TestListSettingsProcessArtists(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			if got := tt.ls.ProcessArtists(o, tt.args.allArtists, tt.args.loaded,
-				tt.args.searchSettings); !compareExitErrors(got, tt.wantStatus) {
-				t.Errorf("ListSettings.ProcessArtists() got %s want %s", got,
-					tt.wantStatus)
+			got := tt.ls.ProcessArtists(o, tt.args.allArtists, tt.args.loaded, tt.args.searchSettings)
+			if !compareExitErrors(got, tt.wantStatus) {
+				t.Errorf("ListSettings.ProcessArtists() got %s want %s", got, tt.wantStatus)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ListSettings.ProcessArtists() %s", difference)
-				}
-			}
+			o.Report(t, "ListSettings.ProcessArtists()", tt.WantedRecording)
 		})
 	}
 }
@@ -1972,11 +1909,7 @@ func TestListHelp(t *testing.T) {
 			command := commandUnderTest
 			enableCommandRecording(o, command)
 			command.Help()
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("list Help() %s", difference)
-				}
-			}
+			o.Report(t, "list Help()", tt.WantedRecording)
 		})
 	}
 }

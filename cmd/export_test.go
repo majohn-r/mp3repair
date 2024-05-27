@@ -70,14 +70,9 @@ func TestExportFlagSettingsCanWriteDefaults(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			if gotCanWrite := tt.efs.CanWriteDefaults(o); gotCanWrite != tt.wantCanWrite {
-				t.Errorf("ExportFlagSettings.CanWriteDefaults() = %v, want %v",
-					gotCanWrite, tt.wantCanWrite)
+				t.Errorf("ExportFlagSettings.CanWriteDefaults() = %v, want %v", gotCanWrite, tt.wantCanWrite)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ExportFlagSettings.CanWriteDefaults() %s", difference)
-				}
-			}
+			o.Report(t, "ExportFlagSettings.CanWriteDefaults()", tt.WantedRecording)
 		})
 	}
 }
@@ -146,16 +141,11 @@ func TestExportFlagSettingsCanOverwriteFile(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			if gotCanOverwrite := tt.efs.CanOverwriteFile(o,
-				tt.args.f); gotCanOverwrite != tt.wantCanOverwrite {
-				t.Errorf("ExportFlagSettings.CanOverwriteFile() = %v, want %v",
-					gotCanOverwrite, tt.wantCanOverwrite)
+			gotCanOverwrite := tt.efs.CanOverwriteFile(o, tt.args.f)
+			if gotCanOverwrite != tt.wantCanOverwrite {
+				t.Errorf("ExportFlagSettings.CanOverwriteFile() = %v, want %v", gotCanOverwrite, tt.wantCanOverwrite)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ExportFlagSettings.CanOverwriteFile() %s", difference)
-				}
-			}
+			o.Report(t, "ExportFlagSettings.CanOverwriteFile()", tt.WantedRecording)
 		})
 	}
 }
@@ -208,11 +198,7 @@ func TestCreateFile(t *testing.T) {
 			if got := cmd.CreateFile(o, tt.args.f, tt.args.content); got != tt.want {
 				t.Errorf("CreateFile() = %v, want %v", got, tt.want)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("CreateFile() %s", difference)
-				}
-			}
+			o.Report(t, "CreateFile()", tt.WantedRecording)
 		})
 	}
 }
@@ -309,16 +295,11 @@ func TestExportFlagSettingsOverwriteFile(t *testing.T) {
 			cmd.WriteFile = tt.writeFile
 			cmd.Rename = tt.rename
 			cmd.Remove = tt.remove
-			if got := tt.efs.OverwriteFile(o, tt.args.f,
-				tt.args.payload); !compareExitErrors(got, tt.wantStatus) {
-				t.Errorf("ExportFlagSettings.OverwriteFile() got %s want %s", got,
-					tt.wantStatus)
+			got := tt.efs.OverwriteFile(o, tt.args.f, tt.args.payload)
+			if !compareExitErrors(got, tt.wantStatus) {
+				t.Errorf("ExportFlagSettings.OverwriteFile() got %s want %s", got, tt.wantStatus)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ExportFlagSettings.OverwriteFile() %s", difference)
-				}
-			}
+			o.Report(t, "ExportFlagSettings.OverwriteFile()", tt.WantedRecording)
 		})
 	}
 }
@@ -420,14 +401,9 @@ func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
 			cmd.Rename = tt.rename
 			cmd.ApplicationPath = tt.applicationPath
 			if got := tt.efs.ExportDefaultConfiguration(o); !compareExitErrors(got, tt.wantStatus) {
-				t.Errorf("ExportFlagSettings.ExportDefaultConfiguration() got %s want %s",
-					got, tt.wantStatus)
+				t.Errorf("ExportFlagSettings.ExportDefaultConfiguration() got %s want %s", got, tt.wantStatus)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ExportFlagSettings.ExportDefaultConfiguration() %s", difference)
-				}
-			}
+			o.Report(t, "ExportFlagSettings.ExportDefaultConfiguration()", tt.WantedRecording)
 		})
 	}
 }
@@ -520,11 +496,7 @@ func TestProcessExportFlags(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("ProcessExportFlags() got1 = %v, want %v", got1, tt.want1)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ProcessExportFlags() %s", difference)
-				}
-			}
+			o.Report(t, "ProcessExportFlags()", tt.WantedRecording)
 		})
 	}
 }
@@ -612,11 +584,7 @@ func TestExportRun(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.Bus = o // this is what getBus() should return when ExportRun calls it
 			cmd.ExportRun(tt.cmd, []string{})
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ExportRun() %s", difference)
-				}
-			}
+			o.Report(t, "ExportRun()", tt.WantedRecording)
 		})
 	}
 }
@@ -653,11 +621,7 @@ func TestExportHelp(t *testing.T) {
 			command := cmd.ExportCmd
 			enableCommandRecording(o, command)
 			command.Help()
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("export Help() %s", difference)
-				}
-			}
+			o.Report(t, "export Help()", tt.WantedRecording)
 		})
 	}
 }

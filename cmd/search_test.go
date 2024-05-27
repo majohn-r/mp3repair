@@ -110,8 +110,7 @@ func TestEvaluateFilter(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			gotFilter, gotOk, gotRegexOk := cmd.EvaluateFilter(o, tt.args.values,
-				tt.args.flagName, tt.args.nameAsFlag)
+			gotFilter, gotOk, gotRegexOk := cmd.EvaluateFilter(o, tt.args.values, tt.args.flagName, tt.args.nameAsFlag)
 			if !reflect.DeepEqual(gotFilter, tt.wantFilter) {
 				t.Errorf("EvaluateFilter() gotFilter = %v, want %v", gotFilter, tt.wantFilter)
 			}
@@ -121,11 +120,7 @@ func TestEvaluateFilter(t *testing.T) {
 			if gotRegexOk != tt.wantRegexOk {
 				t.Errorf("EvaluateFilter() gotRegexOk = %v, want %v", gotRegexOk, tt.wantRegexOk)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("EvaluateFilter() %s", difference)
-				}
-			}
+			o.Report(t, "EvaluateFilter()", tt.WantedRecording)
 		})
 	}
 }
@@ -246,11 +241,7 @@ func TestEvaluateTopDir(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("EvaluateTopDir() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("EvaluateTopDir() %s", difference)
-				}
-			}
+			o.Report(t, "EvaluateTopDir()", tt.WantedRecording)
 		})
 	}
 }
@@ -424,11 +415,7 @@ func TestProcessSearchFlags(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("ProcessSearchFlags() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("ProcessSearchFlags() %s", difference)
-				}
-			}
+			o.Report(t, "ProcessSearchFlags()", tt.WantedRecording)
 		})
 	}
 }
@@ -494,11 +481,7 @@ func TestEvaluateSearchFlags(t *testing.T) {
 			if gotOk != tt.wantOk {
 				t.Errorf("EvaluateSearchFlags() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("EvaluateSearchFlags() %s", difference)
-				}
-			}
+			o.Report(t, "EvaluateSearchFlags()", tt.WantedRecording)
 		})
 	}
 }
@@ -570,11 +553,7 @@ func TestEvaluateFileExtensions(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("EvaluateFileExtensions() got1 = %v, want %v", got1, tt.want1)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("EvaluateFileExtensions() %s", difference)
-				}
-			}
+			o.Report(t, "EvaluateFileExtensions()", tt.WantedRecording)
 		})
 	}
 }
@@ -697,11 +676,7 @@ func TestSearchSettingsLoad(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("SearchSettings.Load() got1 = %v, want %v", got1, tt.want1)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("SearchSettings.Load() %s", difference)
-				}
-			}
+			o.Report(t, "SearchSettings.Load()", tt.WantedRecording)
 		})
 	}
 }
@@ -810,11 +785,7 @@ func TestSearchSettingsFilter(t *testing.T) {
 			if got1 != tt.want1 {
 				t.Errorf("SearchSettings.Filter() got1 = %v, want %v", got1, tt.want1)
 			}
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("SearchSettings.Filter() %s", difference)
-				}
-			}
+			o.Report(t, "SearchSettings.Filter()", tt.WantedRecording)
 		})
 	}
 }

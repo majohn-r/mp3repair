@@ -84,16 +84,11 @@ func TestAboutRun(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.BusGetter = func() output.Bus { return o }
-			cmd.LogCommandStart = func(bus output.Bus, cmdName string,
-				args map[string]any) {
+			cmd.LogCommandStart = func(bus output.Bus, cmdName string, args map[string]any) {
 				bus.Log(output.Info, "executing command", map[string]any{"command": "about"})
 			}
 			cmd.AboutRun(tt.args.in0, tt.args.in1)
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("AboutRun() %s", difference)
-				}
-			}
+			o.Report(t, "AboutRun()", tt.WantedRecording)
 		})
 	}
 }
@@ -145,11 +140,7 @@ func TestAboutHelp(t *testing.T) {
 			command := cmd.AboutCmd
 			enableCommandRecording(o, command)
 			command.Help()
-			if differences, verified := o.Verify(tt.WantedRecording); !verified {
-				for _, difference := range differences {
-					t.Errorf("about Help() %s", difference)
-				}
-			}
+			o.Report(t, "about Help()", tt.WantedRecording)
 		})
 	}
 }
