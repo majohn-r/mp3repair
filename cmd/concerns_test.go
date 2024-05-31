@@ -274,12 +274,13 @@ func TestConcerns_ToConsole(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			cI := cmd.NewConcerns()
 			o := output.NewRecorder()
+			o.IncrementTab(uint8(tt.tab))
 			for k, v := range tt.concerns {
 				for _, s := range v {
 					cI.AddConcern(k, s)
 				}
 			}
-			cI.ToConsole(o, tt.tab)
+			cI.ToConsole(o)
 			o.Report(t, "Concerns.ToConsole()", tt.WantedRecording)
 		})
 	}
@@ -317,6 +318,7 @@ func TestConcernedTrack_ToConsole(t *testing.T) {
 				}
 			}
 			o := output.NewRecorder()
+			o.IncrementTab(4)
 			tt.cT.ToConsole(o)
 			o.Report(t, "ConcernedTrack.ToConsole()", tt.WantedRecording)
 		})
@@ -371,6 +373,7 @@ func TestConcernedAlbum_ToConsole(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
+			o.IncrementTab(2)
 			tt.cAl.ToConsole(o)
 			o.Report(t, "ConcernedAlbum.ToConsole()", tt.WantedRecording)
 		})

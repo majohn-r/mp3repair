@@ -49,6 +49,7 @@ func AboutRun(_ *cobra.Command, _ []string) error {
 	return nil
 }
 
+// TODO: Better name: AcquireAboutData
 func GatherOutput(o output.Bus) []string {
 	goVersion, buildDependencies := InterpretBuildData()
 	// 9: 1 each for
@@ -84,6 +85,7 @@ func GatherOutput(o output.Bus) []string {
 	return lines
 }
 
+// TODO: put values in a struct
 func InitializeAbout(version, creation string) {
 	Version = version
 	Creation = creation

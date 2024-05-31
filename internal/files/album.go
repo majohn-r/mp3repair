@@ -24,6 +24,7 @@ func NewEmptyAlbum() *Album {
 	return &Album{}
 }
 
+// TODO: better name: 'Artist'
 func (a *Album) GetArtist() *Artist {
 	return a.artist
 }
@@ -83,6 +84,7 @@ func (a *Album) Copy(ar *Artist, includeTracks bool) *Album {
 }
 
 // NewAlbum creates a new Album instance
+// TODO: put values in struct
 func NewAlbum(s string, ar *Artist, p string) *Album {
 	return &Album{title: s, artist: ar, path: p, canonicalTitle: s}
 }

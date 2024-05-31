@@ -265,6 +265,7 @@ func (itf *Id3v2TrackFrame) String() string {
 	return fmt.Sprintf("%s = %q", itf.name, itf.value)
 }
 
+// TODO: return a struct
 func ReadID3V2Metadata(path string) (version byte, encoding string, frameStrings []string, rawFrames []*Id3v2TrackFrame, e error) {
 	tag, readErr := readID3V2Tag(path)
 	if readErr != nil {

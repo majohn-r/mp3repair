@@ -80,6 +80,7 @@ func PostRepairWork(o output.Bus, ss *SearchSettings, allArtists []*files.Artist
 	return
 }
 
+// TODO: better name: RemoveTrackBackupDirectory
 func RemoveBackupDirectory(o output.Bus, dir string) bool {
 	if fileErr := RemoveAll(dir); fileErr != nil {
 		o.Log(output.Error, "cannot delete directory", map[string]any{

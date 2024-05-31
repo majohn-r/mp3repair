@@ -131,6 +131,7 @@ func ProcessExportFlags(o output.Bus, values map[string]*FlagValue) (*ExportFlag
 	return result, flagsOk
 }
 
+// TODO: Better name: CreateConfigurationFile
 func CreateFile(o output.Bus, f string, content []byte) bool {
 	if fileErr := WriteFile(f, content, cmd_toolkit.StdFilePermissions); fileErr != nil {
 		cmd_toolkit.ReportFileCreationFailure(o, ExportCommand, f, fileErr)
@@ -163,6 +164,7 @@ func (efs *ExportFlagSettings) ExportDefaultConfiguration(o output.Bus) *ExitErr
 	return nil
 }
 
+// TODO: better name OverwriteConfigurationFile
 func (efs *ExportFlagSettings) OverwriteFile(o output.Bus, f string, payload []byte) *ExitError {
 	if !efs.CanOverwriteFile(o, f) {
 		return NewExitUserError(ExportCommand)
@@ -184,6 +186,7 @@ func (efs *ExportFlagSettings) OverwriteFile(o output.Bus, f string, payload []b
 	return nil
 }
 
+// TODO: better name: CanOverwriteConfigurationFile
 func (efs *ExportFlagSettings) CanOverwriteFile(o output.Bus, f string) bool {
 	if !efs.overwriteEnabled {
 		o.WriteCanonicalError("The file %q exists and cannot be overwritten", f)
@@ -205,6 +208,7 @@ func (efs *ExportFlagSettings) CanOverwriteFile(o output.Bus, f string) bool {
 	return true
 }
 
+// TODO: better name: CanWriteConfigurationFile
 func (efs *ExportFlagSettings) CanWriteDefaults(o output.Bus) bool {
 	if !efs.defaultsEnabled {
 		o.WriteCanonicalError("default configuration settings will not be exported")

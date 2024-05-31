@@ -298,6 +298,42 @@ func TestListSettingsTracksSortable(t *testing.T) {
 		lsFinal *cmd.ListSettings
 		output.WantedRecording
 	}{
+		// https://github.com/majohn-r/mp3repair/issues/170
+		"-lrt --byTitle": {
+			ls:      cmd.NewListSettings().WithArtists(true).WithAlbums(true).WithTracks(true).WithSortByTitle(true).WithSortByTitleUserSet(true),
+			want:    true,
+			lsFinal: cmd.NewListSettings().WithArtists(true).WithAlbums(true).WithTracks(true).WithSortByTitle(true).WithSortByTitleUserSet(true),
+		},
+		// https://github.com/majohn-r/mp3repair/issues/170
+		"-lrt --byNumber": {
+			ls:      cmd.NewListSettings().WithArtists(true).WithAlbums(true).WithTracks(true).WithSortByNumber(true).WithSortByNumberUserSet(true),
+			want:    true,
+			lsFinal: cmd.NewListSettings().WithArtists(true).WithAlbums(true).WithTracks(true).WithSortByNumber(true).WithSortByNumberUserSet(true),
+		},
+		// https://github.com/majohn-r/mp3repair/issues/170
+		"-lt --byTitle": {
+			ls:      cmd.NewListSettings().WithAlbums(true).WithTracks(true).WithSortByTitle(true).WithSortByTitleUserSet(true),
+			want:    true,
+			lsFinal: cmd.NewListSettings().WithAlbums(true).WithTracks(true).WithSortByTitle(true).WithSortByTitleUserSet(true),
+		},
+		// https://github.com/majohn-r/mp3repair/issues/170
+		"-lt --byNumber": {
+			ls:      cmd.NewListSettings().WithAlbums(true).WithTracks(true).WithSortByNumber(true).WithSortByNumberUserSet(true),
+			want:    true,
+			lsFinal: cmd.NewListSettings().WithAlbums(true).WithTracks(true).WithSortByNumber(true).WithSortByNumberUserSet(true),
+		},
+		// https://github.com/majohn-r/mp3repair/issues/170
+		"-rt --byTitle": {
+			ls:      cmd.NewListSettings().WithArtists(true).WithTracks(true).WithSortByTitle(true).WithSortByTitleUserSet(true),
+			want:    true,
+			lsFinal: cmd.NewListSettings().WithArtists(true).WithTracks(true).WithSortByTitle(true).WithSortByTitleUserSet(true),
+		},
+		// https://github.com/majohn-r/mp3repair/issues/170
+		"-t --byTitle": {
+			ls:      cmd.NewListSettings().WithTracks(true).WithSortByTitle(true).WithSortByTitleUserSet(true),
+			want:    true,
+			lsFinal: cmd.NewListSettings().WithTracks(true).WithSortByTitle(true).WithSortByTitleUserSet(true),
+		},
 		"tracks listed, both options set, neither explicitly": {
 			ls: cmd.NewListSettings().WithTracks(true).WithSortByNumber(
 				true).WithSortByTitle(true),
@@ -580,7 +616,6 @@ func TestShowID3V1Diagnostics(t *testing.T) {
 		track *files.Track
 		tags  []string
 		err   error
-		tab   int
 	}
 	tests := map[string]struct {
 		args
@@ -590,7 +625,6 @@ func TestShowID3V1Diagnostics(t *testing.T) {
 			args: args{
 				track: sampleTrack,
 				err:   fmt.Errorf("could not read track"),
-				tab:   2,
 			},
 			WantedRecording: output.WantedRecording{
 				Log: "level='error'" +
@@ -609,7 +643,6 @@ func TestShowID3V1Diagnostics(t *testing.T) {
 					"track=track 10",
 					"number=10",
 				},
-				tab: 2,
 			},
 			WantedRecording: output.WantedRecording{
 				Console: "" +
@@ -623,7 +656,8 @@ func TestShowID3V1Diagnostics(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			cmd.ShowID3V1Diagnostics(o, tt.args.track, tt.args.tags, tt.args.err, tt.args.tab)
+			o.IncrementTab(2)
+			cmd.ShowID3V1Diagnostics(o, tt.args.track, tt.args.tags, tt.args.err)
 			o.Report(t, "ShowID3V1Diagnostics()", tt.WantedRecording)
 		})
 	}
@@ -636,7 +670,6 @@ func TestShowID3V2Diagnostics(t *testing.T) {
 		encoding string
 		frames   []string
 		err      error
-		tab      int
 	}
 	tests := map[string]struct {
 		args
@@ -660,7 +693,6 @@ func TestShowID3V2Diagnostics(t *testing.T) {
 				track:    sampleTrack,
 				version:  1,
 				encoding: "UTF-8",
-				tab:      2,
 			},
 			WantedRecording: output.WantedRecording{
 				Console: "" +
@@ -674,7 +706,6 @@ func TestShowID3V2Diagnostics(t *testing.T) {
 				version:  1,
 				encoding: "UTF-8",
 				frames:   []string{"FRAME1", "FRAME2"},
-				tab:      2,
 			},
 			WantedRecording: output.WantedRecording{
 				Console: "" +
@@ -688,26 +719,23 @@ func TestShowID3V2Diagnostics(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
+			o.IncrementTab(2)
 			cmd.ShowID3V2Diagnostics(o, tt.args.track, tt.args.version, tt.args.encoding,
-				tt.args.frames, tt.args.err, tt.args.tab)
+				tt.args.frames, tt.args.err)
 			o.Report(t, "ShowID3V2Diagnostics()", tt.WantedRecording)
 		})
 	}
 }
 
 func TestListSettingsListTrackDiagnostics(t *testing.T) {
-	type args struct {
-		track *files.Track
-		tab   int
-	}
 	tests := map[string]struct {
-		ls *cmd.ListSettings
-		args
+		ls    *cmd.ListSettings
+		track *files.Track
 		output.WantedRecording
 	}{
 		"permitted": {
-			ls:   cmd.NewListSettings().WithDiagnostic(true),
-			args: args{track: sampleTrack, tab: 2},
+			ls:    cmd.NewListSettings().WithDiagnostic(true),
+			track: sampleTrack,
 			WantedRecording: output.WantedRecording{
 				Log: "level='error'" +
 					" error='open music\\my artist\\my album\\10 track 10.mp3: The system" +
@@ -730,7 +758,7 @@ func TestListSettingsListTrackDiagnostics(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			tt.ls.ListTrackDiagnostics(o, tt.args.track, tt.args.tab)
+			tt.ls.ListTrackDiagnostics(o, tt.track)
 			o.Report(t, "ListSettings.ListTrackDiagnostics()", tt.WantedRecording)
 		})
 	}
@@ -741,7 +769,6 @@ func TestShowDetails(t *testing.T) {
 		track        *files.Track
 		details      map[string]string
 		detailsError error
-		tab          int
 	}
 	tests := map[string]struct {
 		args
@@ -769,7 +796,6 @@ func TestShowDetails(t *testing.T) {
 					"composer": "some German",
 					"producer": "A True Genius",
 				},
-				tab: 2,
 			},
 			WantedRecording: output.WantedRecording{
 				Console: "" +
@@ -782,26 +808,23 @@ func TestShowDetails(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			cmd.ShowDetails(o, tt.args.track, tt.args.details, tt.args.detailsError, tt.args.tab)
+			o.IncrementTab(2)
+			cmd.ShowDetails(o, tt.args.track, tt.args.details, tt.args.detailsError)
 			o.Report(t, "ShowDetails()", tt.WantedRecording)
 		})
 	}
 }
 
 func TestListSettingsListTrackDetails(t *testing.T) {
-	type args struct {
-		track *files.Track
-		tab   int
-	}
 	tests := map[string]struct {
-		ls *cmd.ListSettings
-		args
+		ls    *cmd.ListSettings
+		track *files.Track
 		output.WantedRecording
 	}{
 		"not wanted": {ls: cmd.NewListSettings().WithDetails(false)},
 		"wanted": {
-			ls:   cmd.NewListSettings().WithDetails(true),
-			args: args{track: sampleTrack, tab: 2},
+			ls:    cmd.NewListSettings().WithDetails(true),
+			track: sampleTrack,
 			WantedRecording: output.WantedRecording{
 				Error: "The details are not available for track \"track 10\" on album" +
 					" \"my album\" by artist \"my artist\":" +
@@ -818,7 +841,7 @@ func TestListSettingsListTrackDetails(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			tt.ls.ListTrackDetails(o, tt.args.track, tt.args.tab)
+			tt.ls.ListTrackDetails(o, tt.track)
 			o.Report(t, "ListSettings.ListTrackDetails()", tt.WantedRecording)
 		})
 	}
@@ -871,22 +894,21 @@ func generateTracks(count int) []*files.Track {
 }
 
 func TestListSettingsListTracksByName(t *testing.T) {
-	type args struct {
-		tracks []*files.Track
-		tab    int
-	}
 	tests := map[string]struct {
-		ls *cmd.ListSettings
-		args
+		ls     *cmd.ListSettings
+		tracks []*files.Track
+		tab    uint8
 		output.WantedRecording
 	}{
 		"no tracks": {
-			ls:   cmd.NewListSettings(),
-			args: args{tracks: nil, tab: 2},
+			ls:     cmd.NewListSettings(),
+			tracks: nil,
+			tab:    2,
 		},
 		"multiple tracks": {
-			ls:   cmd.NewListSettings().WithAnnotate(true),
-			args: args{tracks: generateTracks(25), tab: 0},
+			ls:     cmd.NewListSettings().WithAnnotate(true),
+			tracks: generateTracks(25),
+			tab:    0,
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"\"my track 001\" on \"my album 00\" by \"my artist 0\"\n" +
@@ -918,26 +940,24 @@ func TestListSettingsListTracksByName(t *testing.T) {
 		},
 		"https://github.com/majohn-r/mp3repair/issues/147": {
 			ls: cmd.NewListSettings().WithAnnotate(true),
-			args: args{
-				tracks: []*files.Track{
-					files.NewEmptyTrack().WithName("Old Brown Shoe").WithAlbum(
-						files.NewEmptyAlbum().WithTitle("Anthology 3 [Disc 2]").WithArtist(
-							files.NewEmptyArtist().WithFileName("The Beatles"))),
-					files.NewEmptyTrack().WithName("Old Brown Shoe").WithAlbum(
-						files.NewEmptyAlbum().WithTitle("Live In Japan [Disc 1]").WithArtist(
-							files.NewEmptyArtist().WithFileName("George Harrison & Eric Clapton"))),
-					files.NewEmptyTrack().WithName("Old Brown Shoe").WithAlbum(
-						files.NewEmptyAlbum().WithTitle("Past Masters, Vol. 2").WithArtist(
-							files.NewEmptyArtist().WithFileName("The Beatles"))),
-					files.NewEmptyTrack().WithName("Old Brown Shoe").WithAlbum(
-						files.NewEmptyAlbum().WithTitle("Songs From The Material World - A Tribute To George Harrison").WithArtist(
-							files.NewEmptyArtist().WithFileName("Various Artists"))),
-					files.NewEmptyTrack().WithName("Old Brown Shoe (Take 2)").WithAlbum(
-						files.NewEmptyAlbum().WithTitle("Abbey Road- Sessions [Disc 2]").WithArtist(
-							files.NewEmptyArtist().WithFileName("The Beatles"))),
-				},
-				tab: 0,
+			tracks: []*files.Track{
+				files.NewEmptyTrack().WithName("Old Brown Shoe").WithAlbum(
+					files.NewEmptyAlbum().WithTitle("Anthology 3 [Disc 2]").WithArtist(
+						files.NewEmptyArtist().WithFileName("The Beatles"))),
+				files.NewEmptyTrack().WithName("Old Brown Shoe").WithAlbum(
+					files.NewEmptyAlbum().WithTitle("Live In Japan [Disc 1]").WithArtist(
+						files.NewEmptyArtist().WithFileName("George Harrison & Eric Clapton"))),
+				files.NewEmptyTrack().WithName("Old Brown Shoe").WithAlbum(
+					files.NewEmptyAlbum().WithTitle("Past Masters, Vol. 2").WithArtist(
+						files.NewEmptyArtist().WithFileName("The Beatles"))),
+				files.NewEmptyTrack().WithName("Old Brown Shoe").WithAlbum(
+					files.NewEmptyAlbum().WithTitle("Songs From The Material World - A Tribute To George Harrison").WithArtist(
+						files.NewEmptyArtist().WithFileName("Various Artists"))),
+				files.NewEmptyTrack().WithName("Old Brown Shoe (Take 2)").WithAlbum(
+					files.NewEmptyAlbum().WithTitle("Abbey Road- Sessions [Disc 2]").WithArtist(
+						files.NewEmptyArtist().WithFileName("The Beatles"))),
 			},
+			tab: 0,
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					`"Old Brown Shoe" on "Anthology 3 [Disc 2]" by "The Beatles"
@@ -952,29 +972,27 @@ func TestListSettingsListTracksByName(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			tt.ls.ListTracksByName(o, tt.args.tracks, tt.args.tab)
+			o.IncrementTab(uint8(tt.tab))
+			tt.ls.ListTracksByName(o, tt.tracks)
 			o.Report(t, "ListSettings.ListTracksByName()", tt.WantedRecording)
 		})
 	}
 }
 
 func TestListSettingsListTracksByNumber(t *testing.T) {
-	type args struct {
-		tracks []*files.Track
-		tab    int
-	}
 	tests := map[string]struct {
-		ls *cmd.ListSettings
-		args
+		ls     *cmd.ListSettings
+		tracks []*files.Track
+		tab    uint8
 		output.WantedRecording
 	}{
 		"no tracks": {
-			ls:   cmd.NewListSettings(),
-			args: args{},
+			ls: cmd.NewListSettings(),
 		},
 		"lots of tracks": {
-			ls:   cmd.NewListSettings(),
-			args: args{tracks: generateTracks(17), tab: 2},
+			ls:     cmd.NewListSettings(),
+			tracks: generateTracks(17),
+			tab:    2,
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"   1. my track 001\n" +
@@ -1000,33 +1018,31 @@ func TestListSettingsListTracksByNumber(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			tt.ls.ListTracksByNumber(o, tt.args.tracks, tt.args.tab)
+			o.IncrementTab(tt.tab)
+			tt.ls.ListTracksByNumber(o, tt.tracks)
 			o.Report(t, "ListSettings.ListTracksByNumber()", tt.WantedRecording)
 		})
 	}
 }
 
 func TestListSettingsListTracks(t *testing.T) {
-	type args struct {
-		tracks []*files.Track
-		tab    int
-	}
 	tests := map[string]struct {
-		ls *cmd.ListSettings
-		args
+		ls     *cmd.ListSettings
+		tracks []*files.Track
+		tab    uint8
 		output.WantedRecording
 	}{
 		"no tracks": {
-			ls:   cmd.NewListSettings().WithTracks(true),
-			args: args{},
+			ls: cmd.NewListSettings().WithTracks(true),
 		},
 		"do not list tracks": {
-			ls:   cmd.NewListSettings().WithTracks(false).WithSortByNumber(true),
-			args: args{tracks: generateTracks(99)},
+			ls:     cmd.NewListSettings().WithTracks(false).WithSortByNumber(true),
+			tracks: generateTracks(99),
 		},
 		"list tracks by number": {
-			ls:   cmd.NewListSettings().WithTracks(true).WithSortByNumber(true),
-			args: args{tracks: generateTracks(25), tab: 2},
+			ls:     cmd.NewListSettings().WithTracks(true).WithSortByNumber(true),
+			tracks: generateTracks(25),
+			tab:    2,
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"   1. my track 001\n" +
@@ -1057,8 +1073,9 @@ func TestListSettingsListTracks(t *testing.T) {
 			},
 		},
 		"list tracks by name": {
-			ls:   cmd.NewListSettings().WithTracks(true).WithSortByTitle(true),
-			args: args{tracks: generateTracks(25), tab: 2},
+			ls:     cmd.NewListSettings().WithTracks(true).WithSortByTitle(true),
+			tracks: generateTracks(25),
+			tab:    2,
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"  my track 001\n" +
@@ -1092,7 +1109,8 @@ func TestListSettingsListTracks(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			tt.ls.ListTracks(o, tt.args.tracks, tt.args.tab)
+			o.IncrementTab(tt.tab)
+			tt.ls.ListTracks(o, tt.tracks)
 			o.Report(t, "ListSettings.ListTracks()", tt.WantedRecording)
 		})
 	}
@@ -1163,25 +1181,21 @@ func generateAlbums(albumCount, trackCount int) []*files.Album {
 }
 
 func TestListSettingsListAlbums(t *testing.T) {
-	type args struct {
-		albums []*files.Album
-		tab    int
-	}
 	tests := map[string]struct {
-		ls *cmd.ListSettings
-		args
+		ls     *cmd.ListSettings
+		albums []*files.Album
+		tab    uint8
 		output.WantedRecording
 	}{
 		"no albums": {
-			ls:   cmd.NewListSettings(),
-			args: args{albums: nil, tab: 0},
+			ls:     cmd.NewListSettings(),
+			albums: nil,
+			tab:    0,
 		},
 		"list albums without tracks": {
-			ls: cmd.NewListSettings().WithAlbums(true),
-			args: args{
-				albums: generateAlbums(3, 3),
-				tab:    2,
-			},
+			ls:     cmd.NewListSettings().WithAlbums(true),
+			albums: generateAlbums(3, 3),
+			tab:    2,
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"  Album: my album 00\n" +
@@ -1192,10 +1206,8 @@ func TestListSettingsListAlbums(t *testing.T) {
 		"list tracks only": {
 			ls: cmd.NewListSettings().WithArtists(true).WithTracks(true).WithAnnotate(
 				true).WithSortByTitle(true),
-			args: args{
-				albums: generateAlbums(2, 2),
-				tab:    2,
-			},
+			albums: generateAlbums(2, 2),
+			tab:    2,
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"  \"my track 001\" on \"my album 00\"\n" +
@@ -1207,10 +1219,8 @@ func TestListSettingsListAlbums(t *testing.T) {
 		"list albums and tracks": {
 			ls: cmd.NewListSettings().WithAlbums(true).WithTracks(true).WithAnnotate(
 				true).WithSortByNumber(true),
-			args: args{
-				albums: generateAlbums(3, 3),
-				tab:    0,
-			},
+			albums: generateAlbums(3, 3),
+			tab:    0,
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"Album: \"my album 00\" by \"my artist 0\"\n" +
@@ -1229,41 +1239,39 @@ func TestListSettingsListAlbums(t *testing.T) {
 		},
 		"https://github.com/majohn-r/mp3repair/issues/147": {
 			ls: cmd.NewListSettings().WithAlbums(true).WithAnnotate(true),
-			args: args{
-				albums: []*files.Album{
-					files.NewEmptyAlbum().WithTitle("Live Rhymin' [Bonus Tracks]").WithArtist(
-						files.NewEmptyArtist().WithFileName("Paul Simon")),
-					files.NewEmptyAlbum().WithTitle("Live In Paris & Toronto [Disc 2]").WithArtist(
-						files.NewEmptyArtist().WithFileName("Loreena McKennitt")),
-					files.NewEmptyAlbum().WithTitle("Live In Paris & Toronto [Disc 1]").WithArtist(
-						files.NewEmptyArtist().WithFileName("Loreena McKennitt")),
-					files.NewEmptyAlbum().WithTitle("Live In Japan [Disc 2]").WithArtist(
-						files.NewEmptyArtist().WithFileName("George Harrison & Eric Clapton")),
-					files.NewEmptyAlbum().WithTitle("Live In Japan [Disc 1]").WithArtist(
-						files.NewEmptyArtist().WithFileName("George Harrison & Eric Clapton")),
-					files.NewEmptyAlbum().WithTitle("Live From New York City, 1967").WithArtist(
-						files.NewEmptyArtist().WithFileName("Simon & Garfunkel")),
-					files.NewEmptyAlbum().WithTitle("Live At The Circle Room").WithArtist(
-						files.NewEmptyArtist().WithFileName("Nat King Cole")),
-					files.NewEmptyAlbum().WithTitle("Live At The BBC [Disc 2]").WithArtist(
-						files.NewEmptyArtist().WithFileName("The Beatles")),
-					files.NewEmptyAlbum().WithTitle("Live At The BBC [Disc 1]").WithArtist(
-						files.NewEmptyArtist().WithFileName("The Beatles")),
-					files.NewEmptyAlbum().WithTitle("Live 1975-85 [Disc 3]").WithArtist(
-						files.NewEmptyArtist().WithFileName("Bruce Springsteen & The E Street Band")),
-					files.NewEmptyAlbum().WithTitle("Live 1975-85 [Disc 2]").WithArtist(
-						files.NewEmptyArtist().WithFileName("Bruce Springsteen & The E Street Band")),
-					files.NewEmptyAlbum().WithTitle("Live 1975-85 [Disc 1]").WithArtist(
-						files.NewEmptyArtist().WithFileName("Bruce Springsteen & The E Street Band")),
-					files.NewEmptyAlbum().WithTitle("Live").WithArtist(
-						files.NewEmptyArtist().WithFileName("Roger Whittaker")),
-					files.NewEmptyAlbum().WithTitle("Live").WithArtist(
-						files.NewEmptyArtist().WithFileName("Blondie")),
-					files.NewEmptyAlbum().WithTitle("Live").WithArtist(
-						files.NewEmptyArtist().WithFileName("Big Bad Voodoo Daddy")),
-				},
-				tab: 0,
+			albums: []*files.Album{
+				files.NewEmptyAlbum().WithTitle("Live Rhymin' [Bonus Tracks]").WithArtist(
+					files.NewEmptyArtist().WithFileName("Paul Simon")),
+				files.NewEmptyAlbum().WithTitle("Live In Paris & Toronto [Disc 2]").WithArtist(
+					files.NewEmptyArtist().WithFileName("Loreena McKennitt")),
+				files.NewEmptyAlbum().WithTitle("Live In Paris & Toronto [Disc 1]").WithArtist(
+					files.NewEmptyArtist().WithFileName("Loreena McKennitt")),
+				files.NewEmptyAlbum().WithTitle("Live In Japan [Disc 2]").WithArtist(
+					files.NewEmptyArtist().WithFileName("George Harrison & Eric Clapton")),
+				files.NewEmptyAlbum().WithTitle("Live In Japan [Disc 1]").WithArtist(
+					files.NewEmptyArtist().WithFileName("George Harrison & Eric Clapton")),
+				files.NewEmptyAlbum().WithTitle("Live From New York City, 1967").WithArtist(
+					files.NewEmptyArtist().WithFileName("Simon & Garfunkel")),
+				files.NewEmptyAlbum().WithTitle("Live At The Circle Room").WithArtist(
+					files.NewEmptyArtist().WithFileName("Nat King Cole")),
+				files.NewEmptyAlbum().WithTitle("Live At The BBC [Disc 2]").WithArtist(
+					files.NewEmptyArtist().WithFileName("The Beatles")),
+				files.NewEmptyAlbum().WithTitle("Live At The BBC [Disc 1]").WithArtist(
+					files.NewEmptyArtist().WithFileName("The Beatles")),
+				files.NewEmptyAlbum().WithTitle("Live 1975-85 [Disc 3]").WithArtist(
+					files.NewEmptyArtist().WithFileName("Bruce Springsteen & The E Street Band")),
+				files.NewEmptyAlbum().WithTitle("Live 1975-85 [Disc 2]").WithArtist(
+					files.NewEmptyArtist().WithFileName("Bruce Springsteen & The E Street Band")),
+				files.NewEmptyAlbum().WithTitle("Live 1975-85 [Disc 1]").WithArtist(
+					files.NewEmptyArtist().WithFileName("Bruce Springsteen & The E Street Band")),
+				files.NewEmptyAlbum().WithTitle("Live").WithArtist(
+					files.NewEmptyArtist().WithFileName("Roger Whittaker")),
+				files.NewEmptyAlbum().WithTitle("Live").WithArtist(
+					files.NewEmptyArtist().WithFileName("Blondie")),
+				files.NewEmptyAlbum().WithTitle("Live").WithArtist(
+					files.NewEmptyArtist().WithFileName("Big Bad Voodoo Daddy")),
 			},
+			tab: 0,
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					`Album: "Live" by "Big Bad Voodoo Daddy"
@@ -1288,7 +1296,8 @@ Album: "Live Rhymin' [Bonus Tracks]" by "Paul Simon"
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			tt.ls.ListAlbums(o, tt.args.albums, tt.args.tab)
+			o.IncrementTab(tt.tab)
+			tt.ls.ListAlbums(o, tt.albums)
 			o.Report(t, "ListSettings.ListAlbums()", tt.WantedRecording)
 		})
 	}

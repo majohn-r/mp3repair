@@ -187,6 +187,7 @@ func nothingToDo(o output.Bus) {
 	o.WriteCanonicalConsole("No repairable track defects were found.")
 }
 
+// TODO: Better name: BackupAndRepairTracks
 func BackupAndFix(o output.Bus, concernedArtists []*ConcernedArtist) *ExitError {
 	var e *ExitError
 	for _, cAr := range concernedArtists {
@@ -221,6 +222,7 @@ func BackupAndFix(o output.Bus, concernedArtists []*ConcernedArtist) *ExitError 
 	return e
 }
 
+// TODO: Better name: ProcessTrackRepairResults
 func ProcessUpdateResult(o output.Bus, t *files.Track, updateErrs []error) *ExitError {
 	if len(updateErrs) != 0 {
 		o.WriteCanonicalError("An error occurred repairing track %q", t)
@@ -241,6 +243,7 @@ func ProcessUpdateResult(o output.Bus, t *files.Track, updateErrs []error) *Exit
 	return nil
 }
 
+// TODO: better name: TryTrackBackup
 func AttemptCopy(o output.Bus, t *files.Track, path string) (backedUp bool) {
 	backupFile := filepath.Join(path, fmt.Sprintf("%d.mp3", t.Number()))
 	switch {
@@ -275,6 +278,7 @@ func AttemptCopy(o output.Bus, t *files.Track, path string) (backedUp bool) {
 	return
 }
 
+// TODO: Better name: EnsureTrackBackupDirectoryExists
 func EnsureBackupDirectoryExists(o output.Bus, cAl *ConcernedAlbum) (path string, exists bool) {
 	path = cAl.backing.BackupDirectory()
 	exists = true

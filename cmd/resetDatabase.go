@@ -107,6 +107,7 @@ changes, unless the ` + resetDBForceFlag + ` flag is set.`,
 	}
 )
 
+// TODO: for consistency, rename 'ResetDBRun'
 func ResetDBExec(cmd *cobra.Command, _ []string) error {
 	exitError := NewExitSystemError(resetDBCommandName)
 	o := getBus()
@@ -252,6 +253,7 @@ func listServices(manager ServiceManager) ([]string, error) {
 	return manager.ListServices()
 }
 
+// TODO: better name, such as "DisableService"
 func (rdbs *ResetDBSettings) HandleService(o output.Bus, manager ServiceManager) (ok bool,
 	e *ExitError) {
 	service, serviceError := openService(manager, rdbs.service)
@@ -426,6 +428,7 @@ func (rdbs *ResetDBSettings) WaitForStop(o output.Bus, s ServiceRep, expiration 
 	}
 }
 
+// TODO: better name: CleanUpMetadata
 func (rdbs *ResetDBSettings) DeleteMetadataFiles(o output.Bus, stopped bool) *ExitError {
 	if !stopped {
 		if !rdbs.ignoreServiceErrors {
@@ -468,6 +471,7 @@ func (rdbs *ResetDBSettings) FilterMetadataFiles(entries []fs.FileInfo) []string
 	return paths
 }
 
+// TODO: better name: DeleteMetadataFiles
 func (rdbs *ResetDBSettings) DeleteFiles(o output.Bus, paths []string) (e *ExitError) {
 	if len(paths) == 0 {
 		return

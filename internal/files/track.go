@@ -51,6 +51,7 @@ type Track struct {
 	number int
 }
 
+// TODO: better name: Metadata?
 func (t *Track) GetMetadata() *TrackMetadata {
 	return t.metadata
 }
@@ -424,6 +425,7 @@ func ReadMetadata(o output.Bus, artists []*Artist) {
 	reportAllTrackErrors(o, artists)
 }
 
+// TODO: better name: ProgressWriter
 func GetBestWriter(o output.Bus) io.Writer {
 	// preferred: error output, then console output, then no output at all
 	switch {
@@ -642,6 +644,8 @@ func WaitForFilesClosed() {
 	}
 }
 
+// TODO: put values in a struct
+// TODO: return a struct
 func ParseTrackName(o output.Bus, name string, album *Album,
 	ext string) (commonName string, trackNumber int, valid bool) {
 	if !trackNameRegex.MatchString(name) {

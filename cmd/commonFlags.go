@@ -145,6 +145,7 @@ func reportDefaultTypeError(o output.Bus, flag, expected string, value any) {
 	})
 }
 
+// TODO: arguments should be encapsulated in a struct
 func (f *FlagDetails) AddFlag(o output.Bus, c ConfigSource, flags flagConsumer,
 	sectionName, flagName string) {
 	switch f.expectedType {
@@ -289,6 +290,7 @@ func ReadFlags(producer FlagProducer, defs *SectionFlags) (map[string]*FlagValue
 	return m, e
 }
 
+// TODO: have return value be a struct
 func GetBool(o output.Bus, results map[string]*FlagValue, flagName string) (val, userSet bool, e error) {
 	fv, flagNotFound := extractFlagValue(o, results, flagName)
 	if flagNotFound != nil {
@@ -319,6 +321,7 @@ func GetBool(o output.Bus, results map[string]*FlagValue, flagName string) (val,
 	return
 }
 
+// TODO: have return value be a struct
 func GetInt(o output.Bus, results map[string]*FlagValue, flagName string) (val int, userSet bool, e error) {
 	fv, flagNotFound := extractFlagValue(o, results, flagName)
 	if flagNotFound != nil {
@@ -349,6 +352,7 @@ func GetInt(o output.Bus, results map[string]*FlagValue, flagName string) (val i
 	return
 }
 
+// TODO: have return value be a struct
 func GetString(o output.Bus, results map[string]*FlagValue, flagName string) (val string, userSet bool, e error) {
 	fv, flagNotFound := extractFlagValue(o, results, flagName)
 	if flagNotFound != nil {

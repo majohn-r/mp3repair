@@ -244,6 +244,7 @@ func (cs *CheckSettings) PerformFileAnalysis(o output.Bus,
 	return foundConcerns
 }
 
+// TODO: better name: RecordTrackFileConcerns
 func RecordFileConcerns(concernedArtists []*ConcernedArtist, track *files.Track,
 	concerns []string) (foundConcerns bool) {
 	if len(concerns) > 0 {
@@ -336,6 +337,8 @@ func GenerateNumberingConcerns(m map[int][]string, maxTrack int) []string {
 	return concerns
 }
 
+// TODO: better name "GenerateMissingTrackNumbers"
+// TODO: put values in a struct
 func GenerateMissingNumbers(low, high int) string {
 	if low == high {
 		return fmt.Sprintf("%d", low)

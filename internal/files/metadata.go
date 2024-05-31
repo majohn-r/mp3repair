@@ -338,6 +338,7 @@ func NewComparableStrings() *ComparableStrings {
 	return &ComparableStrings{}
 }
 
+// TODO: better name: TrackNumberDiffers
 func (tM *TrackMetadata) TrackDiffers(track int) (differs bool) {
 	for _, sT := range sourceTypes {
 		if tM.errorCause[sT] == "" && tM.trackNumber[sT] != track {

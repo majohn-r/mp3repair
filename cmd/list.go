@@ -221,6 +221,7 @@ func (ls *ListSettings) WithTracksUserSet(b bool) *ListSettings {
 	return ls
 }
 
+// TODO: better name: ListArtists
 func (ls *ListSettings) ProcessArtists(o output.Bus, allArtists []*files.Artist,
 	loaded bool, searchSettings *SearchSettings) (err *ExitError) {
 	err = NewExitUserError(ListCommand)
@@ -233,6 +234,7 @@ func (ls *ListSettings) ProcessArtists(o output.Bus, allArtists []*files.Artist,
 	return err
 }
 
+// TODO: better name: ListFilteredArtists
 func (ls *ListSettings) ListArtists(o output.Bus, artists []*files.Artist) {
 	if ls.artists {
 		m := map[string]*files.Artist{}
@@ -246,7 +248,9 @@ func (ls *ListSettings) ListArtists(o output.Bus, artists []*files.Artist) {
 			o.WriteConsole("Artist: %s\n", s)
 			artist := m[s]
 			if artist != nil {
-				ls.ListAlbums(o, artist.Albums(), 2)
+				o.IncrementTab(2)
+				ls.ListAlbums(o, artist.Albums())
+				o.DecrementTab(2)
 			}
 		}
 		return
@@ -259,7 +263,7 @@ func (ls *ListSettings) ListArtists(o output.Bus, artists []*files.Artist) {
 	for _, a := range artists {
 		albums = append(albums, a.Albums()...)
 	}
-	ls.ListAlbums(o, albums, 0)
+	ls.ListAlbums(o, albums)
 }
 
 type AlbumSlice []*files.Album
@@ -279,12 +283,14 @@ func (as AlbumSlice) Swap(i, j int) {
 	as[i], as[j] = as[j], as[i]
 }
 
-func (ls *ListSettings) ListAlbums(o output.Bus, albums []*files.Album, tab int) {
+func (ls *ListSettings) ListAlbums(o output.Bus, albums []*files.Album) {
 	if ls.albums {
 		sort.Sort(AlbumSlice(albums))
 		for _, album := range albums {
-			o.WriteConsole("%*sAlbum: %s\n", tab, "", ls.AnnotateAlbumName(album))
-			ls.ListTracks(o, album.Tracks(), tab+2)
+			o.WriteConsole("Album: %s\n", ls.AnnotateAlbumName(album))
+			o.IncrementTab(2)
+			ls.ListTracks(o, album.Tracks())
+			o.DecrementTab(2)
 		}
 		return
 	}
@@ -296,7 +302,7 @@ func (ls *ListSettings) ListAlbums(o output.Bus, albums []*files.Album, tab int)
 	for _, album := range albums {
 		tracks = append(tracks, album.Tracks()...)
 	}
-	ls.ListTracks(o, tracks, tab)
+	ls.ListTracks(o, tracks)
 }
 
 func (ls *ListSettings) AnnotateAlbumName(album *files.Album) string {
@@ -309,20 +315,20 @@ func (ls *ListSettings) AnnotateAlbumName(album *files.Album) string {
 	}
 }
 
-func (ls *ListSettings) ListTracks(o output.Bus, tracks []*files.Track, tab int) {
+func (ls *ListSettings) ListTracks(o output.Bus, tracks []*files.Track) {
 	if !ls.tracks {
 		return
 	}
 	if ls.sortByNumber {
-		ls.ListTracksByNumber(o, tracks, tab)
+		ls.ListTracksByNumber(o, tracks)
 		return
 	}
 	if ls.sortByTitle {
-		ls.ListTracksByName(o, tracks, tab)
+		ls.ListTracksByName(o, tracks)
 	}
 }
 
-func (ls *ListSettings) ListTracksByNumber(o output.Bus, tracks []*files.Track, tab int) {
+func (ls *ListSettings) ListTracksByNumber(o output.Bus, tracks []*files.Track) {
 	m := map[int]*files.Track{}
 	numbers := make([]int, 0, len(tracks))
 	for _, track := range tracks {
@@ -333,9 +339,11 @@ func (ls *ListSettings) ListTracksByNumber(o output.Bus, tracks []*files.Track, 
 	for _, n := range numbers {
 		track := m[n]
 		if track != nil {
-			o.WriteConsole("%*s%2d. %s\n", tab, "", n, track.CommonName())
-			ls.ListTrackDetails(o, track, tab+2)
-			ls.ListTrackDiagnostics(o, track, tab+2)
+			o.WriteConsole("%2d. %s\n", n, track.CommonName())
+			o.IncrementTab(2)
+			ls.ListTrackDetails(o, track)
+			ls.ListTrackDiagnostics(o, track)
+			o.DecrementTab(2)
 		}
 	}
 }
@@ -362,12 +370,14 @@ func (ts TrackSlice) Swap(i, j int) {
 	ts[i], ts[j] = ts[j], ts[i]
 }
 
-func (ls *ListSettings) ListTracksByName(o output.Bus, tracks []*files.Track, tab int) {
+func (ls *ListSettings) ListTracksByName(o output.Bus, tracks []*files.Track) {
 	sort.Sort(TrackSlice(tracks))
 	for _, track := range tracks {
-		o.WriteConsole("%*s%s\n", tab, "", ls.AnnotateTrackName(track))
-		ls.ListTrackDetails(o, track, tab+2)
-		ls.ListTrackDiagnostics(o, track, tab+2)
+		o.WriteConsole("%s\n", ls.AnnotateTrackName(track))
+		o.IncrementTab(2)
+		ls.ListTrackDetails(o, track)
+		ls.ListTrackDiagnostics(o, track)
+		o.DecrementTab(2)
 	}
 }
 
@@ -387,17 +397,17 @@ func (ls *ListSettings) AnnotateTrackName(track *files.Track) string {
 	return strings.Join(trackNameParts, " ")
 }
 
-func (ls *ListSettings) ListTrackDetails(o output.Bus, track *files.Track, tab int) {
+func (ls *ListSettings) ListTrackDetails(o output.Bus, track *files.Track) {
 	if ls.details {
 		// go get information from track and display it
 		m, readErr := track.Details()
-		ShowDetails(o, track, m, readErr, tab)
+		ShowDetails(o, track, m, readErr)
 	}
 }
 
 // split out for testing!
-func ShowDetails(o output.Bus, track *files.Track, details map[string]string,
-	detailsError error, tab int) {
+// TODO: put values in a struct
+func ShowDetails(o output.Bus, track *files.Track, details map[string]string, detailsError error) {
 	if detailsError != nil {
 		o.Log(output.Error, "cannot get details", map[string]any{
 			"error": detailsError,
@@ -417,42 +427,46 @@ func ShowDetails(o output.Bus, track *files.Track, details map[string]string,
 		keys = append(keys, k)
 	}
 	sort.Strings(keys)
-	o.WriteConsole("%*sDetails:\n", tab, "")
+	o.WriteConsole("Details:\n")
+	o.IncrementTab(2)
 	for _, k := range keys {
-		o.WriteConsole("%*s%s = %q\n", tab+2, "", k, details[k])
+		o.WriteConsole("%s = %q\n", k, details[k])
 	}
+	o.DecrementTab(2)
 }
 
-func (ls *ListSettings) ListTrackDiagnostics(o output.Bus, track *files.Track, tab int) {
+func (ls *ListSettings) ListTrackDiagnostics(o output.Bus, track *files.Track) {
 	if ls.diagnostic {
 		version, encoding, frames, ID3V2readErr := track.ID3V2Diagnostics()
-		ShowID3V2Diagnostics(o, track, version, encoding, frames, ID3V2readErr, tab)
+		ShowID3V2Diagnostics(o, track, version, encoding, frames, ID3V2readErr)
 		tags, ID3V1readErr := track.ID3V1Diagnostics()
-		ShowID3V1Diagnostics(o, track, tags, ID3V1readErr, tab)
+		ShowID3V1Diagnostics(o, track, tags, ID3V1readErr)
 	}
 }
 
 // split out for testing!
-func ShowID3V1Diagnostics(o output.Bus, track *files.Track, tags []string, readErr error, tab int) {
+// TODO: put values in a struct
+func ShowID3V1Diagnostics(o output.Bus, track *files.Track, tags []string, readErr error) {
 	if readErr != nil {
 		track.ReportMetadataReadError(o, files.ID3V1, readErr.Error())
 		return
 	}
 	for _, s := range tags {
-		o.WriteConsole("%*sID3V1 %s\n", tab, "", s)
+		o.WriteConsole("ID3V1 %s\n", s)
 	}
 }
 
 // split out for testing!
-func ShowID3V2Diagnostics(o output.Bus, track *files.Track, version byte, encoding string, frames []string, readErr error, tab int) {
+// TODO: put values in a struct
+func ShowID3V2Diagnostics(o output.Bus, track *files.Track, version byte, encoding string, frames []string, readErr error) {
 	if readErr != nil {
 		track.ReportMetadataReadError(o, files.ID3V2, readErr.Error())
 		return
 	}
-	o.WriteConsole("%*sID3V2 Version: %v\n", tab, "", version)
-	o.WriteConsole("%*sID3V2 Encoding: %q\n", tab, "", encoding)
+	o.WriteConsole("ID3V2 Version: %v\n", version)
+	o.WriteConsole("ID3V2 Encoding: %q\n", encoding)
 	for _, frame := range frames {
-		o.WriteConsole("%*sID3V2 %s\n", tab, "", frame)
+		o.WriteConsole("ID3V2 %s\n", frame)
 	}
 }
 
@@ -538,6 +552,8 @@ func (ls *ListSettings) TracksSortable(o output.Bus) bool {
 				ListSortByNumber:    ls.sortByNumber,
 				ListSortByTitleFlag: ls.sortByTitle,
 			})
+			return true
+		default: // https://github.com/majohn-r/mp3repair/issues/170
 			return true
 		}
 	}

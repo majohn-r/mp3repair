@@ -54,17 +54,17 @@ func (c Concerns) IsConcerned() bool {
 	return false
 }
 
-func (c Concerns) ToConsole(o output.Bus, tab int) {
+func (c Concerns) ToConsole(o output.Bus) {
 	if c.IsConcerned() {
 		cStrings := make([]string, 0, len(c.concerns))
 		for key, value := range c.concerns {
 			for _, s := range value {
-				cStrings = append(cStrings, fmt.Sprintf("* [%s] %s", ConcernName(key), s))
+				cStrings = append(cStrings, fmt.Sprintf("* [%s] %s\n", ConcernName(key), s))
 			}
 		}
 		slices.Sort(cStrings)
 		for _, s := range cStrings {
-			o.WriteConsole("%*s%s\n", tab, "", s)
+			o.WriteConsole(s)
 		}
 	}
 }
@@ -98,8 +98,8 @@ func (cT *ConcernedTrack) name() string {
 
 func (cT *ConcernedTrack) ToConsole(o output.Bus) {
 	if cT.IsConcerned() {
-		o.WriteConsole("    Track %q\n", cT.name())
-		cT.Concerns.ToConsole(o, 4)
+		o.WriteConsole("Track %q\n", cT.name())
+		cT.Concerns.ToConsole(o)
 	}
 }
 
@@ -191,8 +191,8 @@ func (cAl *ConcernedAlbum) Rollup() bool {
 
 func (cAl *ConcernedAlbum) ToConsole(o output.Bus) {
 	if cAl.IsConcerned() {
-		o.WriteConsole("  Album %q\n", cAl.name())
-		cAl.Concerns.ToConsole(o, 2)
+		o.WriteConsole("Album %q\n", cAl.name())
+		cAl.Concerns.ToConsole(o)
 		m := map[string]*ConcernedTrack{}
 		names := make([]string, 0, len(cAl.tracks))
 		for _, cT := range cAl.tracks {
@@ -201,11 +201,13 @@ func (cAl *ConcernedAlbum) ToConsole(o output.Bus) {
 			names = append(names, trackName)
 		}
 		slices.Sort(names)
+		o.IncrementTab(2)
 		for _, name := range names {
 			if cT := m[name]; cT != nil {
 				cT.ToConsole(o)
 			}
 		}
+		o.DecrementTab(2)
 	}
 }
 
@@ -305,7 +307,7 @@ func (cAr *ConcernedArtist) Rollup() bool {
 func (cAr *ConcernedArtist) ToConsole(o output.Bus) {
 	if cAr.IsConcerned() {
 		o.WriteConsole("Artist %q\n", cAr.name())
-		cAr.Concerns.ToConsole(o, 0)
+		cAr.Concerns.ToConsole(o)
 		m := map[string]*ConcernedAlbum{}
 		names := make([]string, 0, len(cAr.albums))
 		for _, cT := range cAr.albums {
@@ -314,11 +316,13 @@ func (cAr *ConcernedArtist) ToConsole(o output.Bus) {
 			names = append(names, albumName)
 		}
 		slices.Sort(names)
+		o.IncrementTab(2)
 		for _, name := range names {
 			if cAl := m[name]; cAl != nil {
 				cAl.ToConsole(o)
 			}
 		}
+		o.DecrementTab(2)
 	}
 }
 
@@ -330,6 +334,7 @@ func mergeConcerns(initial, addition map[ConcernType][]string, prefix string) {
 	}
 }
 
+// TODO: better name: 'CreateConcernedArtists'
 func PrepareConcernedArtists(artists []*files.Artist) []*ConcernedArtist {
 	concernedArtists := make([]*ConcernedArtist, 0, len(artists))
 	for _, artist := range artists {

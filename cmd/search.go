@@ -271,6 +271,7 @@ func EvaluateTopDir(o output.Bus, values map[string]*FlagValue) (dir string, top
 	return
 }
 
+// TODO: put values in a struct
 func EvaluateFilter(o output.Bus, values map[string]*FlagValue, flagName, nameAsFlag string) (filter *regexp.Regexp, filterOk, regexOk bool) {
 	regexOk = true
 	rawValue, userSet, flagErr := GetString(o, values, flagName)
@@ -310,6 +311,7 @@ func EvaluateFilter(o output.Bus, values map[string]*FlagValue, flagName, nameAs
 	return
 }
 
+// TODO: does not need to return boolean indicating that filtered artists is empty
 func (ss *SearchSettings) Filter(o output.Bus, originalArtists []*files.Artist) ([]*files.Artist, bool) {
 	filteredArtists := make([]*files.Artist, 0, len(originalArtists))
 	for _, originalArtist := range originalArtists {

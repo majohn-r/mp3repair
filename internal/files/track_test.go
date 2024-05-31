@@ -1308,6 +1308,11 @@ func (sb *sampleBus) IsConsoleTTY() bool {
 func (sb *sampleBus) IsErrorTTY() bool {
 	return sb.errorTTY
 }
+func (sb *sampleBus) IncrementTab(_ uint8) {}
+func (sb *sampleBus) DecrementTab(_ uint8) {}
+func (sb *sampleBus) Tab() uint8 {
+	return 0
+}
 
 func Test_getBestWriter(t *testing.T) {
 	errorWriter := &sampleWriter{name: "error"}
