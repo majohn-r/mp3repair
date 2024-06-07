@@ -91,16 +91,20 @@ func Test_rawReadID3V2Metadata(t *testing.T) {
 	}{
 		"bad test": {
 			args:  args{path: "./noSuchFile!.mp3"},
-			wantD: files.NewId3v2Metadata().WithErr(fmt.Errorf("foo")),
+			wantD: &files.Id3v2Metadata{Err: fmt.Errorf("foo")},
 		},
 		"good test": {
 			args: args{path: "./goodFile.mp3"},
-			wantD: files.NewId3v2Metadata().WithAlbumName("unknown album").WithArtistName(
-				"unknown artist").WithTrackName("unknown track").WithTrackNumber(2),
+			wantD: &files.Id3v2Metadata{
+				AlbumTitle:  "unknown album",
+				ArtistName:  "unknown artist",
+				TrackName:   "unknown track",
+				TrackNumber: 2,
+			},
 		},
 		"bad data test": {
 			args:  args{path: "./badFile.mp3"},
-			wantD: files.NewId3v2Metadata().WithErr(files.ErrMalformedTrackNumber),
+			wantD: &files.Id3v2Metadata{Err: files.ErrMalformedTrackNumber},
 		},
 	}
 	for name, tt := range tests {
@@ -261,7 +265,7 @@ func TestID3V2TrackFrameStringType(t *testing.T) {
 		want string
 	}{
 		"usual": {
-			f:    files.NewId3v2TrackFrame().WithName("T1").WithValue("V1"),
+			f:    &files.Id3v2TrackFrame{Name: "T1", Value: "V1"},
 			want: "T1 = \"V1\"",
 		},
 	}
@@ -304,17 +308,17 @@ func Test_readID3V2Metadata(t *testing.T) {
 	}
 	tests := map[string]struct {
 		args
-		wantVersion byte
-		wantEnc     string
-		wantF       []string
-		wantErr     bool
+		wantVersion      byte
+		wantEncoding     string
+		wantFrameStrings []string
+		wantErr          bool
 	}{
 		"error case": {args: args{path: "./no such file"}, wantErr: true},
 		"good case": {
-			args:        args{path: filepath.Join(".", goodFileName)},
-			wantEnc:     "ISO-8859-1",
-			wantVersion: 3,
-			wantF: []string{
+			args:         args{path: filepath.Join(".", goodFileName)},
+			wantEncoding: "ISO-8859-1",
+			wantVersion:  3,
+			wantFrameStrings: []string{
 				`Fake = "<<[]byte{0x0, 0x75, 0x6d, 0x6d, 0x6d}>>"`,
 				`T??? = "who knows?"`,
 				`TALB = "unknown album"`,
@@ -331,19 +335,21 @@ func Test_readID3V2Metadata(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			// ignoring raw frames ...
-			gotVersion, gotEnc, gotF, _, gotErr := files.ReadID3V2Metadata(tt.args.path)
+			gotInfo, gotErr := files.ReadID3V2Metadata(tt.args.path)
 			if (gotErr != nil) != tt.wantErr {
 				t.Errorf("%s error = %v, wantErr %v", fnName, gotErr, tt.wantErr)
 				return
 			}
-			if gotVersion != tt.wantVersion {
-				t.Errorf("%s gotVersion = %v, want %v", fnName, gotVersion, tt.wantVersion)
-			}
-			if gotEnc != tt.wantEnc {
-				t.Errorf("%s gotEnc = %v, want %v", fnName, gotEnc, tt.wantEnc)
-			}
-			if !reflect.DeepEqual(gotF, tt.wantF) {
-				t.Errorf("%s gotF = %v, want %v", fnName, gotF, tt.wantF)
+			if gotErr == nil {
+				if gotInfo.Version != tt.wantVersion {
+					t.Errorf("%s gotInfo.Version = %v, want %v", fnName, gotInfo.Version, tt.wantVersion)
+				}
+				if gotInfo.Encoding != tt.wantEncoding {
+					t.Errorf("%s gotInfo.Encoding = %v, want %v", fnName, gotInfo.Encoding, tt.wantEncoding)
+				}
+				if !reflect.DeepEqual(gotInfo.FrameStrings, tt.wantFrameStrings) {
+					t.Errorf("%s gotInfo.FrameStrings = %v, want %v", fnName, gotInfo.FrameStrings, tt.wantFrameStrings)
+				}
 			}
 		})
 	}

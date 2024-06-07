@@ -19,74 +19,24 @@ const (
 )
 
 type FlagDetails struct {
-	abbreviatedName string
-	usage           string
-	expectedType    ValueType
-	defaultValue    any
-}
-
-func NewFlagDetails() *FlagDetails {
-	return &FlagDetails{}
+	AbbreviatedName string
+	Usage           string
+	ExpectedType    ValueType
+	DefaultValue    any
 }
 
 func (fD *FlagDetails) Copy() *FlagDetails {
-	fDNew := NewFlagDetails()
-	fDNew.abbreviatedName = fD.abbreviatedName
-	fDNew.usage = fD.usage
-	fDNew.expectedType = fD.expectedType
-	fDNew.defaultValue = fD.defaultValue
+	fDNew := &FlagDetails{}
+	fDNew.AbbreviatedName = fD.AbbreviatedName
+	fDNew.Usage = fD.Usage
+	fDNew.ExpectedType = fD.ExpectedType
+	fDNew.DefaultValue = fD.DefaultValue
 	return fDNew
 }
 
-func (fD *FlagDetails) DefaultValue() any {
-	return fD.defaultValue
-}
-
-func (fD *FlagDetails) WithAbbreviatedName(s string) *FlagDetails {
-	fD.abbreviatedName = s
-	return fD
-}
-
-func (fD *FlagDetails) WithUsage(s string) *FlagDetails {
-	fD.usage = s
-	return fD
-}
-
-func (fD *FlagDetails) WithExpectedType(t ValueType) *FlagDetails {
-	fD.expectedType = t
-	return fD
-}
-
-func (fD *FlagDetails) WithDefaultValue(a any) *FlagDetails {
-	fD.defaultValue = a
-	return fD
-}
-
 type SectionFlags struct {
-	sectionName string
-	flags       map[string]*FlagDetails // keys are flag names
-}
-
-func NewSectionFlags() *SectionFlags {
-	return &SectionFlags{}
-}
-
-func (sF *SectionFlags) SectionName() string {
-	return sF.sectionName
-}
-
-func (sF *SectionFlags) Flags() map[string]*FlagDetails {
-	return sF.flags
-}
-
-func (sF *SectionFlags) WithSectionName(s string) *SectionFlags {
-	sF.sectionName = s
-	return sF
-}
-
-func (sF *SectionFlags) WithFlags(m map[string]*FlagDetails) *SectionFlags {
-	sF.flags = m
-	return sF
+	SectionName string
+	Details     map[string]*FlagDetails // keys are flag names
 }
 
 type flagConsumer interface {
@@ -107,26 +57,29 @@ type ConfigSource interface {
 func AddFlags(o output.Bus, c *cmd_toolkit.Configuration, flags flagConsumer,
 	defs ...*SectionFlags) {
 	for _, def := range defs {
-		config := c.SubConfiguration(def.sectionName)
+		config := c.SubConfiguration(def.SectionName)
 		// sort names for deterministic test output
-		sortedNames := make([]string, 0, len(def.flags))
-		for name := range def.flags {
+		sortedNames := make([]string, 0, len(def.Details))
+		for name := range def.Details {
 			sortedNames = append(sortedNames, name)
 		}
 		slices.Sort(sortedNames)
 		for _, name := range sortedNames {
-			details := def.flags[name]
+			details := def.Details[name]
 			switch details {
 			case nil:
 				o.WriteCanonicalError(
 					"an internal error occurred: there are no details for flag %q", name)
 				o.Log(output.Error, "internal error", map[string]any{
-					"section": def.sectionName,
+					"section": def.SectionName,
 					"flag":    name,
 					"error":   "no details present",
 				})
 			default:
-				details.AddFlag(o, config, flags, def.sectionName, name)
+				details.AddFlag(o, config, flags, Flag{
+					Section: def.SectionName,
+					Name:    name,
+				})
 			}
 		}
 	}
@@ -145,102 +98,85 @@ func reportDefaultTypeError(o output.Bus, flag, expected string, value any) {
 	})
 }
 
-// TODO: arguments should be encapsulated in a struct
-func (f *FlagDetails) AddFlag(o output.Bus, c ConfigSource, flags flagConsumer,
-	sectionName, flagName string) {
-	switch f.expectedType {
+type Flag struct {
+	Section string
+	Name    string
+}
+
+func (f *FlagDetails) AddFlag(o output.Bus, c ConfigSource, flags flagConsumer, flag Flag) {
+	switch f.ExpectedType {
 	case StringType:
-		statedDefault, _ok := f.defaultValue.(string)
+		statedDefault, _ok := f.DefaultValue.(string)
 		if !_ok {
-			reportDefaultTypeError(o, flagName, "string", f.defaultValue)
+			reportDefaultTypeError(o, flag.Name, "string", f.DefaultValue)
 			return
 		}
-		newDefault, malformedDefault := c.StringDefault(flagName, statedDefault)
+		newDefault, malformedDefault := c.StringDefault(flag.Name, statedDefault)
 		if malformedDefault != nil {
-			cmd_toolkit.ReportInvalidConfigurationData(o, sectionName, malformedDefault)
+			cmd_toolkit.ReportInvalidConfigurationData(o, flag.Section, malformedDefault)
 			return
 		}
-		usage := cmd_toolkit.DecorateStringFlagUsage(f.usage, newDefault)
-		switch f.abbreviatedName {
+		usage := cmd_toolkit.DecorateStringFlagUsage(f.Usage, newDefault)
+		switch f.AbbreviatedName {
 		case "":
-			flags.String(flagName, newDefault, usage)
+			flags.String(flag.Name, newDefault, usage)
 		default:
-			flags.StringP(flagName, f.abbreviatedName, newDefault, usage)
+			flags.StringP(flag.Name, f.AbbreviatedName, newDefault, usage)
 		}
 	case BoolType:
-		statedDefault, _ok := f.defaultValue.(bool)
+		statedDefault, _ok := f.DefaultValue.(bool)
 		if !_ok {
-			reportDefaultTypeError(o, flagName, "bool", f.defaultValue)
+			reportDefaultTypeError(o, flag.Name, "bool", f.DefaultValue)
 			return
 		}
-		newDefault, malformedDefault := c.BoolDefault(flagName, statedDefault)
+		newDefault, malformedDefault := c.BoolDefault(flag.Name, statedDefault)
 		if malformedDefault != nil {
-			cmd_toolkit.ReportInvalidConfigurationData(o, sectionName, malformedDefault)
+			cmd_toolkit.ReportInvalidConfigurationData(o, flag.Section, malformedDefault)
 			return
 		}
-		usage := cmd_toolkit.DecorateBoolFlagUsage(f.usage, newDefault)
-		switch f.abbreviatedName {
+		usage := cmd_toolkit.DecorateBoolFlagUsage(f.Usage, newDefault)
+		switch f.AbbreviatedName {
 		case "":
-			flags.Bool(flagName, newDefault, usage)
+			flags.Bool(flag.Name, newDefault, usage)
 		default:
-			flags.BoolP(flagName, f.abbreviatedName, newDefault, usage)
+			flags.BoolP(flag.Name, f.AbbreviatedName, newDefault, usage)
 		}
 	case IntType:
-		bounds, _ok := f.defaultValue.(*cmd_toolkit.IntBounds)
+		bounds, _ok := f.DefaultValue.(*cmd_toolkit.IntBounds)
 		if !_ok {
-			reportDefaultTypeError(o, flagName, "*cmd_toolkit.IntBounds", f.defaultValue)
+			reportDefaultTypeError(o, flag.Name, "*cmd_toolkit.IntBounds", f.DefaultValue)
 			return
 		}
-		newDefault, malformedDefault := c.IntDefault(flagName, bounds)
+		newDefault, malformedDefault := c.IntDefault(flag.Name, bounds)
 		if malformedDefault != nil {
-			cmd_toolkit.ReportInvalidConfigurationData(o, sectionName, malformedDefault)
+			cmd_toolkit.ReportInvalidConfigurationData(o, flag.Section, malformedDefault)
 			return
 		}
-		usage := cmd_toolkit.DecorateIntFlagUsage(f.usage, newDefault)
-		switch f.abbreviatedName {
+		usage := cmd_toolkit.DecorateIntFlagUsage(f.Usage, newDefault)
+		switch f.AbbreviatedName {
 		case "":
-			flags.Int(flagName, newDefault, usage)
+			flags.Int(flag.Name, newDefault, usage)
 		default:
-			flags.IntP(flagName, f.abbreviatedName, newDefault, usage)
+			flags.IntP(flag.Name, f.AbbreviatedName, newDefault, usage)
 		}
 	default:
 		o.WriteCanonicalError(
 			"An internal error occurred: unspecified flag type; section %q, flag %q",
-			sectionName, flagName)
+			flag.Section, flag.Name)
 		o.Log(output.Error, "internal error", map[string]any{
-			"section":        sectionName,
-			"flag":           flagName,
-			"specified-type": f.expectedType,
-			"default":        f.defaultValue,
-			"default-type":   reflect.TypeOf(f.defaultValue),
+			"section":        flag.Section,
+			"flag":           flag.Name,
+			"specified-type": f.ExpectedType,
+			"default":        f.DefaultValue,
+			"default-type":   reflect.TypeOf(f.DefaultValue),
 			"error":          "unspecified flag type",
 		})
 	}
 }
 
 type FlagValue struct {
-	explicitlySet bool
-	valueType     ValueType
-	value         any
-}
-
-func NewFlagValue() *FlagValue {
-	return &FlagValue{}
-}
-
-func (fV *FlagValue) WithExplicitlySet(b bool) *FlagValue {
-	fV.explicitlySet = b
-	return fV
-}
-
-func (fV *FlagValue) WithValueType(t ValueType) *FlagValue {
-	fV.valueType = t
-	return fV
-}
-
-func (fV *FlagValue) WithValue(a any) *FlagValue {
-	fV.value = a
-	return fV
+	UserSet bool
+	Value   any
 }
 
 type FlagProducer interface {
@@ -254,29 +190,28 @@ func ReadFlags(producer FlagProducer, defs *SectionFlags) (map[string]*FlagValue
 	m := map[string]*FlagValue{}
 	e := []error{}
 	// sort names for deterministic output in unit tests
-	sortedNames := make([]string, 0, len(defs.flags))
-	for name := range defs.flags {
+	sortedNames := make([]string, 0, len(defs.Details))
+	for name := range defs.Details {
 		sortedNames = append(sortedNames, name)
 	}
 	slices.Sort(sortedNames)
 	for _, name := range sortedNames {
-		details := defs.flags[name]
+		details := defs.Details[name]
 		if details == nil {
 			e = append(e, fmt.Errorf("no details for flag %q", name))
 			continue
 		}
 		val := &FlagValue{
-			explicitlySet: producer.Changed(name),
-			valueType:     details.expectedType,
+			UserSet: producer.Changed(name),
 		}
 		var flagError error
-		switch details.expectedType {
+		switch details.ExpectedType {
 		case BoolType:
-			val.value, flagError = producer.GetBool(name)
+			val.Value, flagError = producer.GetBool(name)
 		case StringType:
-			val.value, flagError = producer.GetString(name)
+			val.Value, flagError = producer.GetString(name)
 		case IntType:
-			val.value, flagError = producer.GetInt(name)
+			val.Value, flagError = producer.GetInt(name)
 		default:
 			flagError = fmt.Errorf("unknown type for flag --%s", name)
 		}
@@ -290,97 +225,103 @@ func ReadFlags(producer FlagProducer, defs *SectionFlags) (map[string]*FlagValue
 	return m, e
 }
 
-// TODO: have return value be a struct
-func GetBool(o output.Bus, results map[string]*FlagValue, flagName string) (val, userSet bool, e error) {
+type BoolValue struct {
+	Value   bool
+	UserSet bool
+}
+
+func GetBool(o output.Bus, results map[string]*FlagValue, flagName string) (BoolValue, error) {
 	fv, flagNotFound := extractFlagValue(o, results, flagName)
 	if flagNotFound != nil {
-		e = flagNotFound
-		return
+		return BoolValue{}, flagNotFound
 	}
 	if fv == nil {
-		e = fmt.Errorf("no data associated with flag")
+		e := fmt.Errorf("no data associated with flag")
 		o.WriteCanonicalError("an internal error occurred: flag %q has no data", flagName)
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
 			"error": e})
-		return
+		return BoolValue{}, e
 	}
-	v, ok := fv.value.(bool)
+	v, ok := fv.Value.(bool)
 	if !ok {
-		e = fmt.Errorf("flag value not boolean")
+		e := fmt.Errorf("flag value not boolean")
 		o.WriteCanonicalError("an internal error occurred: flag %q is not boolean (%v)",
-			flagName, fv.value)
+			flagName, fv.Value)
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
-			"value": fv.value,
+			"value": fv.Value,
 			"error": e})
-		return
+		return BoolValue{}, e
 	}
-	val = v
-	userSet = fv.explicitlySet
-	return
+	return BoolValue{
+		Value:   v,
+		UserSet: fv.UserSet,
+	}, nil
 }
 
-// TODO: have return value be a struct
-func GetInt(o output.Bus, results map[string]*FlagValue, flagName string) (val int, userSet bool, e error) {
+type IntValue struct {
+	Value   int
+	UserSet bool
+}
+
+func GetInt(o output.Bus, results map[string]*FlagValue, flagName string) (IntValue, error) {
 	fv, flagNotFound := extractFlagValue(o, results, flagName)
 	if flagNotFound != nil {
-		e = flagNotFound
-		return
+		return IntValue{}, flagNotFound
 	}
 	if fv == nil {
-		e = fmt.Errorf("no data associated with flag")
+		e := fmt.Errorf("no data associated with flag")
 		o.WriteCanonicalError("an internal error occurred: flag %q has no data", flagName)
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
 			"error": e})
-		return
+		return IntValue{}, e
 	}
-	v, ok := fv.value.(int)
+	v, ok := fv.Value.(int)
 	if !ok {
-		e = fmt.Errorf("flag value not int")
+		e := fmt.Errorf("flag value not int")
 		o.WriteCanonicalError("an internal error occurred: flag %q is not an integer (%v)",
-			flagName, fv.value)
+			flagName, fv.Value)
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
-			"value": fv.value,
+			"value": fv.Value,
 			"error": e})
-		return
+		return IntValue{}, e
 	}
-	val = v
-	userSet = fv.explicitlySet
-	return
+	return IntValue{Value: v, UserSet: fv.UserSet}, nil
 }
 
-// TODO: have return value be a struct
-func GetString(o output.Bus, results map[string]*FlagValue, flagName string) (val string, userSet bool, e error) {
+type StringValue struct {
+	Value   string
+	UserSet bool
+}
+
+func GetString(o output.Bus, results map[string]*FlagValue, flagName string) (StringValue, error) {
 	fv, flagNotFound := extractFlagValue(o, results, flagName)
 	if flagNotFound != nil {
-		e = flagNotFound
-		return
+		return StringValue{}, flagNotFound
 	}
 	if fv == nil {
-		e = fmt.Errorf("no data associated with flag")
+		e := fmt.Errorf("no data associated with flag")
 		o.WriteCanonicalError("an internal error occurred: flag %q has no data", flagName)
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
 			"error": e})
-		return
+		return StringValue{}, e
 	}
-	v, ok := fv.value.(string)
+	v, ok := fv.Value.(string)
 	if !ok {
-		e = fmt.Errorf("flag value not string")
+		e := fmt.Errorf("flag value not string")
 		o.WriteCanonicalError("an internal error occurred: flag %q is not a string (%v)",
-			flagName, fv.value)
+			flagName, fv.Value)
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
-			"value": fv.value,
+			"value": fv.Value,
 			"error": e})
-		return
+		return StringValue{}, e
 	}
-	val = v
-	userSet = fv.explicitlySet
-	return
+	return StringValue{Value: v, UserSet: fv.UserSet}, nil
 }
 
 func extractFlagValue(o output.Bus, results map[string]*FlagValue, flagName string) (fv *FlagValue, e error) {

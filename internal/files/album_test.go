@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	"github.com/bogem/id3v2/v2"
 )
 
 func TestAlbum_RecordingArtistName(t *testing.T) {
@@ -17,10 +19,16 @@ func TestAlbum_RecordingArtistName(t *testing.T) {
 		want string
 	}{
 		"with recording artist": {
-			a:    files.NewAlbum("album1", files.NewArtist("artist1", ""), ""),
+			a: files.AlbumMaker{
+				Title:  "album1",
+				Artist: files.NewArtist("artist1", ""),
+			}.NewAlbum(),
 			want: "artist1",
 		},
-		"no recording artist": {a: files.NewAlbum("album1", nil, ""), want: ""},
+		"no recording artist": {
+			a:    files.AlbumMaker{Title: "album1"}.NewAlbum(),
+			want: "",
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -32,22 +40,40 @@ func TestAlbum_RecordingArtistName(t *testing.T) {
 }
 
 func TestAlbum_Copy(t *testing.T) {
-	complexAlbum := files.NewAlbum("my album", files.NewArtist("my artist",
-		"Music/my artist"), "Music/my artist/my album").WithCanonicalGenre(
-		"rap").WithCanonicalTitle("my special album").WithCanonicalYear(
-		"1993").WithMusicCDIdentifier([]byte{0, 1, 2})
+	complexAlbum := &files.Album{
+		Title:             "my album",
+		RecordingArtist:   files.NewArtist("my artist", "Music/my artist"),
+		FilePath:          "Music/my artist/my album",
+		CanonicalGenre:    "rap",
+		CanonicalTitle:    "my special album",
+		CanonicalYear:     "1993",
+		MusicCDIdentifier: id3v2.UnknownFrame{Body: []byte{0, 1, 2}},
+	}
 	for k := 1; k <= 10; k++ {
-		track := files.NewTrack(complexAlbum, fmt.Sprintf("%d track %d.mp3", k, k),
-			fmt.Sprintf("track %d.mp3", k), k)
+		track := files.TrackMaker{
+			Album:      complexAlbum,
+			FileName:   fmt.Sprintf("%d track %d.mp3", k, k),
+			SimpleName: fmt.Sprintf("track %d", k),
+			Number:     k,
+		}.NewTrack()
 		complexAlbum.AddTrack(track)
 	}
-	complexAlbum2 := files.NewAlbum("my album", files.NewArtist("my artist",
-		"Music/my artist"), "Music/my artist/my album").WithCanonicalGenre(
-		"rap").WithCanonicalTitle("my special album").WithCanonicalYear(
-		"1993").WithMusicCDIdentifier([]byte{0, 1, 2})
+	complexAlbum2 := &files.Album{
+		Title:             "my album",
+		RecordingArtist:   files.NewArtist("my artist", "Music/my artist"),
+		FilePath:          "Music/my artist/my album",
+		CanonicalGenre:    "rap",
+		CanonicalTitle:    "my special album",
+		CanonicalYear:     "1993",
+		MusicCDIdentifier: id3v2.UnknownFrame{Body: []byte{0, 1, 2}},
+	}
 	for k := 1; k <= 10; k++ {
-		track := files.NewTrack(complexAlbum2, fmt.Sprintf("%d track %d.mp3", k, k),
-			fmt.Sprintf("track %d.mp3", k), k)
+		track := files.TrackMaker{
+			Album:      complexAlbum2,
+			FileName:   fmt.Sprintf("%d track %d.mp3", k, k),
+			SimpleName: fmt.Sprintf("track %d", k),
+			Number:     k,
+		}.NewTrack()
 		complexAlbum2.AddTrack(track)
 	}
 	type args struct {
@@ -60,19 +86,25 @@ func TestAlbum_Copy(t *testing.T) {
 		want *files.Album
 	}{
 		"simple test": {
-			a: files.NewAlbum("album name", files.NewArtist("artist", "Music/artist"),
-				"Music/artist/album name"),
+			a: files.AlbumMaker{
+				Title:  "album name",
+				Artist: files.NewArtist("artist", "Music/artist"),
+				Path:   "Music/artist/album name",
+			}.NewAlbum(),
 			args: args{
 				ar:            files.NewArtist("artist", "Music/artist"),
 				includeTracks: true,
 			},
-			want: files.NewAlbum("album name", files.NewArtist("artist", "Music/artist"),
-				"Music/artist/album name"),
+			want: files.AlbumMaker{
+				Title:  "album name",
+				Artist: files.NewArtist("artist", "Music/artist"),
+				Path:   "Music/artist/album name",
+			}.NewAlbum(),
 		},
 		"complex test": {
 			a: complexAlbum,
 			args: args{
-				ar:            complexAlbum.GetArtist().Copy(),
+				ar:            complexAlbum.RecordingArtist.Copy(),
 				includeTracks: true,
 			},
 			want: complexAlbum2,
@@ -94,7 +126,7 @@ func TestAlbum_BackupDirectory(t *testing.T) {
 		want string
 	}{
 		"simple": {
-			a:    files.NewAlbum("album", nil, "artist/album"),
+			a:    files.AlbumMaker{Title: "album", Path: "artist/album"}.NewAlbum(),
 			want: "artist\\album\\pre-repair-backup",
 		},
 	}
@@ -160,7 +192,11 @@ func TestNewAlbumFromFile(t *testing.T) {
 				file: &testFile{name: "simple file"},
 				ar:   testArtist,
 			},
-			want: files.NewAlbum("simple file", testArtist, filepath.Join(testArtist.Path(), "simple file")),
+			want: files.AlbumMaker{
+				Title:  "simple file",
+				Artist: testArtist,
+				Path:   filepath.Join(testArtist.FilePath, "simple file"),
+			}.NewAlbum(),
 		},
 	}
 	for name, tt := range tests {
@@ -179,11 +215,13 @@ func TestAlbum_HasTracks(t *testing.T) {
 		want bool
 	}{
 		"empty": {
-			a:    files.NewEmptyAlbum(),
+			a:    &files.Album{},
 			want: false,
 		},
 		"with tracks": {
-			a:    files.NewEmptyAlbum().WithTracks([]*files.Track{{}}),
+			a: &files.Album{
+				Tracks: []*files.Track{{}},
+			},
 			want: true,
 		},
 	}

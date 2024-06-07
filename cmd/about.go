@@ -45,12 +45,11 @@ var (
 func AboutRun(_ *cobra.Command, _ []string) error {
 	o := BusGetter()
 	LogCommandStart(o, aboutCommand, map[string]any{})
-	o.WriteConsole(strings.Join(cmd_toolkit.FlowerBox(GatherOutput(o)), "\n"))
+	o.WriteConsole(strings.Join(cmd_toolkit.FlowerBox(AcquireAboutData(o)), "\n"))
 	return nil
 }
 
-// TODO: Better name: AcquireAboutData
-func GatherOutput(o output.Bus) []string {
+func AcquireAboutData(o output.Bus) []string {
 	goVersion, buildDependencies := InterpretBuildData()
 	// 9: 1 each for
 	// - app name
@@ -85,10 +84,14 @@ func GatherOutput(o output.Bus) []string {
 	return lines
 }
 
-// TODO: put values in a struct
-func InitializeAbout(version, creation string) {
-	Version = version
-	Creation = creation
+type AboutMaker struct {
+	SoftwareVersion string
+	CreationDate    string
+}
+
+func (maker AboutMaker) InitializeAbout() {
+	Version = maker.SoftwareVersion
+	Creation = maker.CreationDate
 	InitBuildData(Version, Creation)
 	cmd_toolkit.SetFirstYear(firstYear)
 }

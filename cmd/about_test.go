@@ -93,16 +93,20 @@ func TestAboutRun(t *testing.T) {
 	}
 }
 
-func TestInitializeAbout(t *testing.T) {
+func TestAboutMakerInitializeAbout(t *testing.T) {
 	tests := map[string]struct {
-		version  string
-		creation string
+		maker cmd.AboutMaker
 	}{
-		"good": {version: "0.1.1", creation: "2006-01-02T15:04:05Z07:00"},
+		"good": {
+			maker: cmd.AboutMaker{
+				SoftwareVersion: "0.1.1",
+				CreationDate:    "2006-01-02T15:04:05Z07:00",
+			},
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			cmd.InitializeAbout(tt.version, tt.creation)
+			tt.maker.InitializeAbout()
 		})
 	}
 }
@@ -145,7 +149,7 @@ func TestAboutHelp(t *testing.T) {
 	}
 }
 
-func TestOutputAbout(t *testing.T) {
+func TestAcquireAboutData(t *testing.T) {
 	originalInterpretBuildData := cmd.InterpretBuildData
 	originalLogPath := cmd.LogPath
 	originalVersion := cmd.Version
@@ -293,8 +297,8 @@ func TestOutputAbout(t *testing.T) {
 					return "false", true
 				}
 			}
-			if got := cmd.GatherOutput(output.NewNilBus()); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GatherAbout() got %v, want %v", got, tt.want)
+			if got := cmd.AcquireAboutData(output.NewNilBus()); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("AcquireAboutData() got %v, want %v", got, tt.want)
 			}
 		})
 	}

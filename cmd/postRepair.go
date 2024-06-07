@@ -36,25 +36,24 @@ func PostRepairRun(cmd *cobra.Command, _ []string) error {
 	if searchFlagsOk {
 		// do some work here!
 		LogCommandStart(o, postRepairCommandName, ss.Values())
-		allArtists, loaded := ss.Load(o)
-		exitError = PostRepairWork(o, ss, allArtists, loaded)
+		allArtists := ss.Load(o)
+		exitError = PostRepairWork(o, ss, allArtists)
 	}
 	return ToErrorInterface(exitError)
 }
 
-func PostRepairWork(o output.Bus, ss *SearchSettings, allArtists []*files.Artist,
-	loaded bool) (e *ExitError) {
+func PostRepairWork(o output.Bus, ss *SearchSettings, allArtists []*files.Artist) (e *ExitError) {
 	e = NewExitUserError(postRepairCommandName)
-	if loaded {
-		if filteredArtists, filtered := ss.Filter(o, allArtists); filtered {
+	if len(allArtists) != 0 {
+		if filteredArtists := ss.Filter(o, allArtists); len(filteredArtists) != 0 {
 			e = nil
 			dirCount := 0
 			for _, artist := range filteredArtists {
-				dirCount += len(artist.Albums())
+				dirCount += len(artist.Albums)
 			}
 			dirs := make([]string, 0, dirCount)
 			for _, artist := range filteredArtists {
-				for _, album := range artist.Albums() {
+				for _, album := range artist.Albums {
 					dir := album.BackupDirectory()
 					if DirExists(dir) {
 						dirs = append(dirs, dir)
@@ -66,7 +65,7 @@ func PostRepairWork(o output.Bus, ss *SearchSettings, allArtists []*files.Artist
 				sort.Strings(dirs)
 				dirsDeleted := 0
 				for _, dir := range dirs {
-					switch RemoveBackupDirectory(o, dir) {
+					switch RemoveTrackBackupDirectory(o, dir) {
 					case true:
 						dirsDeleted++
 					default:
@@ -80,8 +79,7 @@ func PostRepairWork(o output.Bus, ss *SearchSettings, allArtists []*files.Artist
 	return
 }
 
-// TODO: better name: RemoveTrackBackupDirectory
-func RemoveBackupDirectory(o output.Bus, dir string) bool {
+func RemoveTrackBackupDirectory(o output.Bus, dir string) bool {
 	if fileErr := RemoveAll(dir); fileErr != nil {
 		o.Log(output.Error, "cannot delete directory", map[string]any{
 			"directory": dir,

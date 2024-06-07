@@ -40,61 +40,43 @@ var (
 			"  Overwrite a pre-existing defaults.yaml file",
 		RunE: ExportRun,
 	}
-	ExportFlags = NewSectionFlags().WithSectionName(ExportCommand).WithFlags(
-		map[string]*FlagDetails{
-			ExportFlagDefaults: NewFlagDetails().WithAbbreviatedName("d").WithUsage(
-				"write default program configuration data").WithExpectedType(
-				BoolType).WithDefaultValue(false),
-			ExportFlagOverwrite: NewFlagDetails().WithAbbreviatedName("o").WithUsage(
-				"overwrite existing file").WithExpectedType(BoolType).WithDefaultValue(false),
+	ExportFlags = &SectionFlags{
+		SectionName: ExportCommand,
+		Details: map[string]*FlagDetails{
+			ExportFlagDefaults: {
+				AbbreviatedName: "d",
+				Usage:           "write default program configuration data",
+				ExpectedType:    BoolType,
+				DefaultValue:    false,
+			},
+			ExportFlagOverwrite: {
+				AbbreviatedName: "o",
+				Usage:           "overwrite existing file",
+				ExpectedType:    BoolType,
+				DefaultValue:    false,
+			},
 		},
-	)
+	}
 	defaultConfigurationSettings = map[string]map[string]any{}
 )
 
 func addDefaults(sf *SectionFlags) {
 	payload := map[string]any{}
-	for flag, details := range sf.Flags() {
-		bounded, ok := details.DefaultValue().(*cmd_toolkit.IntBounds)
+	for flag, details := range sf.Details {
+		bounded, ok := details.DefaultValue.(*cmd_toolkit.IntBounds)
 		switch ok {
 		case true:
 			payload[flag] = bounded.Default()
 		case false:
-			payload[flag] = details.DefaultValue()
+			payload[flag] = details.DefaultValue
 		}
 	}
-	defaultConfigurationSettings[sf.SectionName()] = payload
+	defaultConfigurationSettings[sf.SectionName] = payload
 }
 
-type ExportFlagSettings struct {
-	defaultsEnabled  bool
-	defaultsSet      bool
-	overwriteEnabled bool
-	overwriteSet     bool
-}
-
-func NewExportFlagSettings() *ExportFlagSettings {
-	return &ExportFlagSettings{}
-}
-
-func (efs *ExportFlagSettings) WithDefaultsEnabled(b bool) *ExportFlagSettings {
-	efs.defaultsEnabled = b
-	return efs
-}
-
-func (efs *ExportFlagSettings) WithDefaultsSet(b bool) *ExportFlagSettings {
-	efs.defaultsSet = b
-	return efs
-}
-
-func (efs *ExportFlagSettings) WithOverwriteEnabled(b bool) *ExportFlagSettings {
-	efs.overwriteEnabled = b
-	return efs
-}
-
-func (efs *ExportFlagSettings) WithOverwriteSet(b bool) *ExportFlagSettings {
-	efs.overwriteSet = b
-	return efs
+type ExportSettings struct {
+	DefaultsEnabled  BoolValue
+	OverwriteEnabled BoolValue
 }
 
 func ExportRun(cmd *cobra.Command, _ []string) error {
@@ -105,10 +87,10 @@ func ExportRun(cmd *cobra.Command, _ []string) error {
 		settings, flagsOk := ProcessExportFlags(o, values)
 		if flagsOk {
 			LogCommandStart(o, ExportCommand, map[string]any{
-				exportDefaultsAsFlag:  settings.defaultsEnabled,
-				"defaults-user-set":   settings.defaultsSet,
-				exportOverwriteAsFlag: settings.overwriteEnabled,
-				"overwrite-user-set":  settings.overwriteSet,
+				exportDefaultsAsFlag:  settings.DefaultsEnabled.Value,
+				"defaults-user-set":   settings.DefaultsEnabled.UserSet,
+				exportOverwriteAsFlag: settings.OverwriteEnabled.Value,
+				"overwrite-user-set":  settings.OverwriteEnabled.UserSet,
 			})
 			exitError = settings.ExportDefaultConfiguration(o)
 		}
@@ -116,23 +98,22 @@ func ExportRun(cmd *cobra.Command, _ []string) error {
 	return ToErrorInterface(exitError)
 }
 
-func ProcessExportFlags(o output.Bus, values map[string]*FlagValue) (*ExportFlagSettings, bool) {
+func ProcessExportFlags(o output.Bus, values map[string]*FlagValue) (*ExportSettings, bool) {
 	var flagErr error
-	result := &ExportFlagSettings{}
+	result := &ExportSettings{}
 	flagsOk := true // optimistic
-	result.defaultsEnabled, result.defaultsSet, flagErr = GetBool(o, values, ExportFlagDefaults)
+	result.DefaultsEnabled, flagErr = GetBool(o, values, ExportFlagDefaults)
 	if flagErr != nil {
 		flagsOk = false
 	}
-	result.overwriteEnabled, result.overwriteSet, flagErr = GetBool(o, values, ExportFlagOverwrite)
+	result.OverwriteEnabled, flagErr = GetBool(o, values, ExportFlagOverwrite)
 	if flagErr != nil {
 		flagsOk = false
 	}
 	return result, flagsOk
 }
 
-// TODO: Better name: CreateConfigurationFile
-func CreateFile(o output.Bus, f string, content []byte) bool {
+func CreateConfigurationFile(o output.Bus, f string, content []byte) bool {
 	if fileErr := WriteFile(f, content, cmd_toolkit.StdFilePermissions); fileErr != nil {
 		cmd_toolkit.ReportFileCreationFailure(o, ExportCommand, f, fileErr)
 		return false
@@ -147,8 +128,8 @@ func configFile() (path string, exists bool) {
 	return
 }
 
-func (efs *ExportFlagSettings) ExportDefaultConfiguration(o output.Bus) *ExitError {
-	if !efs.CanWriteDefaults(o) {
+func (es *ExportSettings) ExportDefaultConfiguration(o output.Bus) *ExitError {
+	if !es.CanWriteConfigurationFile(o) {
 		return NewExitUserError(ExportCommand)
 	}
 	// ignoring error return, as we're not marshalling structs, where mischief
@@ -156,17 +137,16 @@ func (efs *ExportFlagSettings) ExportDefaultConfiguration(o output.Bus) *ExitErr
 	payload, _ := yaml.Marshal(defaultConfigurationSettings)
 	f, exists := configFile()
 	if exists {
-		return efs.OverwriteFile(o, f, payload)
+		return es.OverwriteConfigurationFile(o, f, payload)
 	}
-	if !CreateFile(o, f, payload) {
+	if !CreateConfigurationFile(o, f, payload) {
 		return NewExitSystemError(ExportCommand)
 	}
 	return nil
 }
 
-// TODO: better name OverwriteConfigurationFile
-func (efs *ExportFlagSettings) OverwriteFile(o output.Bus, f string, payload []byte) *ExitError {
-	if !efs.CanOverwriteFile(o, f) {
+func (es *ExportSettings) OverwriteConfigurationFile(o output.Bus, f string, payload []byte) *ExitError {
+	if !es.CanOverwriteConfigurationFile(o, f) {
 		return NewExitUserError(ExportCommand)
 	}
 	backup := f + "-backup"
@@ -179,24 +159,23 @@ func (efs *ExportFlagSettings) OverwriteFile(o output.Bus, f string, payload []b
 		})
 		return NewExitSystemError(ExportCommand)
 	}
-	if !CreateFile(o, f, payload) {
+	if !CreateConfigurationFile(o, f, payload) {
 		return NewExitSystemError(ExportCommand)
 	}
 	Remove(backup)
 	return nil
 }
 
-// TODO: better name: CanOverwriteConfigurationFile
-func (efs *ExportFlagSettings) CanOverwriteFile(o output.Bus, f string) bool {
-	if !efs.overwriteEnabled {
+func (es *ExportSettings) CanOverwriteConfigurationFile(o output.Bus, f string) bool {
+	if !es.OverwriteEnabled.Value {
 		o.WriteCanonicalError("The file %q exists and cannot be overwritten", f)
 		o.Log(output.Error, "overwrite is not permitted", map[string]any{
 			exportOverwriteAsFlag: false,
 			"fileName":            f,
-			"user-set":            efs.overwriteSet,
+			"user-set":            es.OverwriteEnabled.UserSet,
 		})
 		switch {
-		case efs.overwriteSet:
+		case es.OverwriteEnabled.UserSet:
 			o.WriteCanonicalError("Why?\nYou explicitly set %s false", exportOverwriteAsFlag)
 		default:
 			o.WriteCanonicalError(
@@ -208,16 +187,15 @@ func (efs *ExportFlagSettings) CanOverwriteFile(o output.Bus, f string) bool {
 	return true
 }
 
-// TODO: better name: CanWriteConfigurationFile
-func (efs *ExportFlagSettings) CanWriteDefaults(o output.Bus) bool {
-	if !efs.defaultsEnabled {
+func (es *ExportSettings) CanWriteConfigurationFile(o output.Bus) bool {
+	if !es.DefaultsEnabled.Value {
 		o.WriteCanonicalError("default configuration settings will not be exported")
 		o.Log(output.Error, "export defaults disabled", map[string]any{
 			exportDefaultsAsFlag: false,
-			"user-set":           efs.defaultsSet,
+			"user-set":           es.DefaultsEnabled.UserSet,
 		})
 		switch {
-		case efs.defaultsSet:
+		case es.DefaultsEnabled.UserSet:
 			o.WriteCanonicalError("Why?\nYou explicitly set %s false", exportDefaultsAsFlag)
 		default:
 			o.WriteCanonicalError("Why?\nAs currently configured, exporting default" +

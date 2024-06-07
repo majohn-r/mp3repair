@@ -233,15 +233,15 @@ func ReadRawMetadata(path string) *TrackMetadata {
 	id3v2Metadata := RawReadID3V2Metadata(path)
 	tM := NewTrackMetadata()
 	switch {
-	case id3v1Err != nil && id3v2Metadata.err != nil:
+	case id3v1Err != nil && id3v2Metadata.Err != nil:
 		tM.errorCause[ID3V1] = id3v1Err.Error()
-		tM.errorCause[ID3V2] = id3v2Metadata.err.Error()
+		tM.errorCause[ID3V2] = id3v2Metadata.Err.Error()
 	case id3v1Err != nil:
 		tM.errorCause[ID3V1] = id3v1Err.Error()
 		tM.SetID3v2Values(id3v2Metadata)
 		tM.primarySource = ID3V2
-	case id3v2Metadata.err != nil:
-		tM.errorCause[ID3V2] = id3v2Metadata.err.Error()
+	case id3v2Metadata.Err != nil:
+		tM.errorCause[ID3V2] = id3v2Metadata.Err.Error()
 		tM.SetID3v1Values(id3v1Metadata)
 		tM.primarySource = ID3V1
 	default:
@@ -254,13 +254,13 @@ func ReadRawMetadata(path string) *TrackMetadata {
 
 func (tM *TrackMetadata) SetID3v2Values(d *Id3v2Metadata) {
 	i := ID3V2
-	tM.albumName[i] = d.albumName
-	tM.artistName[i] = d.artistName
-	tM.trackName[i] = d.trackName
-	tM.genre[i] = d.genre
-	tM.year[i] = d.year
-	tM.trackNumber[i] = d.trackNumber
-	tM.musicCDIdentifier = d.musicCDIdentifier
+	tM.albumName[i] = d.AlbumTitle
+	tM.artistName[i] = d.ArtistName
+	tM.trackName[i] = d.TrackName
+	tM.genre[i] = d.Genre
+	tM.year[i] = d.Year
+	tM.trackNumber[i] = d.TrackNumber
+	tM.musicCDIdentifier = d.MusicCDIdentifier
 }
 
 func (tM *TrackMetadata) SetID3v1Values(v1 *Id3v1Metadata) {
@@ -338,8 +338,7 @@ func NewComparableStrings() *ComparableStrings {
 	return &ComparableStrings{}
 }
 
-// TODO: better name: TrackNumberDiffers
-func (tM *TrackMetadata) TrackDiffers(track int) (differs bool) {
+func (tM *TrackMetadata) TrackNumberDiffers(track int) (differs bool) {
 	for _, sT := range sourceTypes {
 		if tM.errorCause[sT] == "" && tM.trackNumber[sT] != track {
 			differs = true

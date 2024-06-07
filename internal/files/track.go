@@ -40,104 +40,56 @@ var (
 
 // Track encapsulates data about a track in an album.
 type Track struct {
-	album *Album
+	Album *Album
 	// full path to the file associated with the track, including the file itself
-	fullPath string
+	FilePath string
 	// read from the file only when needed; file i/o is expensive
-	metadata *TrackMetadata
-	// name of the track, without the track number or file extension, e.g., "First Track"
-	name string
+	Metadata *TrackMetadata
+	// name of the track, without its number or file extension, e.g., "First Track"
+	SimpleName string
 	// number of the track
-	number int
-}
-
-// TODO: better name: Metadata?
-func (t *Track) GetMetadata() *TrackMetadata {
-	return t.metadata
-}
-
-func (t *Track) Album() *Album {
-	return t.album
-}
-
-func (t *Track) WithNumber(i int) *Track {
-	t.number = i
-	return t
-}
-
-func (t *Track) WithAlbum(a *Album) *Track {
-	t.album = a
-	return t
-}
-
-func (t *Track) WithFullPath(s string) *Track {
-	t.fullPath = s
-	return t
-}
-
-func (t *Track) WithMetadata(tm *TrackMetadata) *Track {
-	t.metadata = tm
-	return t
-}
-
-func (t *Track) WithName(s string) *Track {
-	t.name = s
-	return t
-}
-
-func NewEmptyTrack() *Track {
-	return &Track{}
+	Number int
 }
 
 // String returns the track's full path (implementation of Stringer interface).
 func (t *Track) String() string {
-	return t.fullPath
-}
-
-// Path returns the track's full path.
-func (t *Track) Path() string {
-	return t.fullPath
+	return t.FilePath
 }
 
 // Directory returns the directory containing the track file - in other words,
 // its Album directory
 func (t *Track) Directory() string {
-	return filepath.Dir(t.fullPath)
+	return filepath.Dir(t.FilePath)
 }
 
 // FileName returns the track's full file name, minus its containing directory.
 func (t *Track) FileName() string {
-	return filepath.Base(t.fullPath)
-}
-
-// CommonName returns the name of the track without its extension and track
-// number.
-func (t *Track) CommonName() string {
-	return t.name
-}
-
-// Number returns the track's number as defined by its filename.
-func (t *Track) Number() int {
-	return t.number
+	return filepath.Base(t.FilePath)
 }
 
 func (t *Track) Copy(a *Album) *Track {
 	return &Track{
-		fullPath: t.fullPath,
-		name:     t.name,
-		number:   t.number,
-		metadata: t.metadata,
-		album:    a, // do not use source track's album!
+		FilePath:   t.FilePath,
+		SimpleName: t.SimpleName,
+		Number:     t.Number,
+		Metadata:   t.Metadata,
+		Album:      a, // do not use source track's album!
 	}
 }
 
-// NewTrack creates a new instance of Track without (expensive) metadata.
-func NewTrack(a *Album, fullName, simpleName string, trackNumber int) *Track {
+type TrackMaker struct {
+	Album      *Album
+	FileName   string // just the name of the track file, no parent directories
+	SimpleName string // the track's name minus its extension and track number
+	Number     int
+}
+
+func (ti TrackMaker) NewTrack() *Track {
 	return &Track{
-		fullPath: a.subDirectory(fullName),
-		name:     simpleName,
-		number:   trackNumber,
-		album:    a,
+		FilePath:   ti.Album.subDirectory(ti.FileName),
+		SimpleName: ti.SimpleName,
+		Number:     ti.Number,
+		Album:      ti.Album,
 	}
 }
 
@@ -157,18 +109,18 @@ func (ts Tracks) Len() int {
 func (ts Tracks) Less(i, j int) bool {
 	track1 := ts[i]
 	track2 := ts[j]
-	album1 := track1.album
-	album2 := track2.album
+	album1 := track1.Album
+	album2 := track2.Album
 	artist1 := album1.RecordingArtistName()
 	artist2 := album2.RecordingArtistName()
 	// compare artist name first
 	if artist1 == artist2 {
 		// artist names are the same ... try the album name next
-		if album1.Name() == album2.Name() {
+		if album1.Title == album2.Title {
 			// and album names are the same ... go by track number
-			return track1.number < track2.number
+			return track1.Number < track2.Number
 		}
-		return album1.Name() < album2.Name()
+		return album1.Title < album2.Title
 	}
 	return artist1 < artist2
 }
@@ -179,15 +131,15 @@ func (ts Tracks) Swap(i, j int) {
 }
 
 func (t *Track) NeedsMetadata() bool {
-	return t.metadata == nil
+	return t.Metadata == nil
 }
 
 func (t *Track) HasMetadataError() bool {
-	return t.metadata != nil && len(t.metadata.ErrorCauses()) != 0
+	return t.Metadata != nil && len(t.Metadata.ErrorCauses()) != 0
 }
 
 func (t *Track) SetMetadata(tM *TrackMetadata) {
-	t.metadata = tM
+	t.Metadata = tM
 }
 
 // MetadataState contains information about metadata problems
@@ -270,11 +222,11 @@ func (m MetadataState) HasYearConflict() bool {
 // ReconcileMetadata determines whether there are problems with the track's
 // metadata.
 func (t *Track) ReconcileMetadata() MetadataState {
-	if t.metadata == nil {
+	if t.Metadata == nil {
 		return MetadataState{noMetadata: true}
 	}
 	mS := MetadataState{}
-	metadataErrors := t.metadata.ErrorCauses()
+	metadataErrors := t.Metadata.ErrorCauses()
 	if len(metadataErrors) != 0 {
 		for _, e := range metadataErrors {
 			switch e {
@@ -288,17 +240,17 @@ func (t *Track) ReconcileMetadata() MetadataState {
 			return mS
 		}
 	}
-	if !t.metadata.IsValid() {
+	if !t.Metadata.IsValid() {
 		mS.corruptMetadata = true
 		return mS
 	}
-	mS.numberingConflict = t.metadata.TrackDiffers(t.number)
-	mS.trackNameConflict = t.metadata.TrackTitleDiffers(t.name)
-	mS.albumNameConflict = t.metadata.AlbumTitleDiffers(t.album.canonicalTitle)
-	mS.artistNameConflict = t.metadata.ArtistNameDiffers(t.album.artist.canonicalName)
-	mS.genreConflict = t.metadata.GenreDiffers(t.album.canonicalGenre)
-	mS.yearConflict = t.metadata.YearDiffers(t.album.canonicalYear)
-	mS.mcdiConflict = t.metadata.MCDIDiffers(t.album.musicCDIdentifier)
+	mS.numberingConflict = t.Metadata.TrackNumberDiffers(t.Number)
+	mS.trackNameConflict = t.Metadata.TrackTitleDiffers(t.SimpleName)
+	mS.albumNameConflict = t.Metadata.AlbumTitleDiffers(t.Album.CanonicalTitle)
+	mS.artistNameConflict = t.Metadata.ArtistNameDiffers(t.Album.RecordingArtist.CanonicalName)
+	mS.genreConflict = t.Metadata.GenreDiffers(t.Album.CanonicalGenre)
+	mS.yearConflict = t.Metadata.YearDiffers(t.Album.CanonicalYear)
+	mS.mcdiConflict = t.Metadata.MCDIDiffers(t.Album.MusicCDIdentifier)
 	return mS
 }
 
@@ -330,36 +282,36 @@ func (t *Track) ReportMetadataProblems() []string {
 	diffs := make([]string, 0, 7)
 	if s.HasNumberingConflict() {
 		diffs = append(diffs,
-			fmt.Sprintf("metadata does not agree with track number %d", t.number))
+			fmt.Sprintf("metadata does not agree with track number %d", t.Number))
 	}
 	if s.HasTrackNameConflict() {
 		diffs = append(diffs,
-			fmt.Sprintf("metadata does not agree with track name %q", t.name))
+			fmt.Sprintf("metadata does not agree with track name %q", t.SimpleName))
 	}
 	if s.HasAlbumNameConflict() {
 		diffs = append(diffs,
 			fmt.Sprintf("metadata does not agree with album name %q",
-				t.album.canonicalTitle))
+				t.Album.CanonicalTitle))
 	}
 	if s.HasArtistNameConflict() {
 		diffs = append(diffs,
 			fmt.Sprintf("metadata does not agree with artist name %q",
-				t.album.artist.canonicalName))
+				t.Album.RecordingArtist.CanonicalName))
 	}
 	if s.HasGenreConflict() {
 		diffs = append(diffs,
 			fmt.Sprintf("metadata does not agree with album genre %q",
-				t.album.canonicalGenre))
+				t.Album.CanonicalGenre))
 	}
 	if s.HasYearConflict() {
 		diffs = append(diffs,
 			fmt.Sprintf("metadata does not agree with album year %q",
-				t.album.canonicalYear))
+				t.Album.CanonicalYear))
 	}
 	if s.HasMCDIConflict() {
 		diffs = append(diffs,
 			fmt.Sprintf("metadata does not agree with the MCDI frame %q",
-				string(t.album.musicCDIdentifier.Body)))
+				string(t.Album.MusicCDIdentifier.Body)))
 	}
 	sort.Strings(diffs)
 	return diffs
@@ -372,7 +324,7 @@ func (t *Track) UpdateMetadata() (e []error) {
 		e = append(e, ErrNoEditNeeded)
 		return
 	}
-	e = append(e, updateMetadata(t.metadata, t.fullPath)...)
+	e = append(e, updateMetadata(t.Metadata, t.FilePath)...)
 	return
 }
 
@@ -389,7 +341,7 @@ func (t *Track) LoadMetadata(bar *pb.ProgressBar) {
 				bar.Increment()
 				<-openFiles // read to release a slot
 			}()
-			t.SetMetadata(ReadRawMetadata(t.fullPath))
+			t.SetMetadata(ReadRawMetadata(t.FilePath))
 		}()
 	}
 }
@@ -399,8 +351,8 @@ func ReadMetadata(o output.Bus, artists []*Artist) {
 	// count the tracks
 	count := 0
 	for _, artist := range artists {
-		for _, album := range artist.Albums() {
-			count += len(album.Tracks())
+		for _, album := range artist.Albums {
+			count += len(album.Tracks)
 		}
 	}
 	o.WriteCanonicalError("Reading track metadata")
@@ -410,10 +362,10 @@ func ReadMetadata(o output.Bus, artists []*Artist) {
 	t := `{{with string . "prefix"}}{{.}} {{end}}{{counters . }} {{bar . }}` +
 		` {{percent . }} {{speed . "%s tracks per second"}}{{with string . "suffix"}}` +
 		` {{.}}{{end}}`
-	bar := pb.New(count).SetWriter(GetBestWriter(o)).SetTemplateString(t).Start()
+	bar := pb.New(count).SetWriter(ProgressWriter(o)).SetTemplateString(t).Start()
 	for _, artist := range artists {
-		for _, album := range artist.Albums() {
-			for _, track := range album.Tracks() {
+		for _, album := range artist.Albums {
+			for _, track := range album.Tracks {
 				track.LoadMetadata(bar)
 			}
 		}
@@ -425,8 +377,7 @@ func ReadMetadata(o output.Bus, artists []*Artist) {
 	reportAllTrackErrors(o, artists)
 }
 
-// TODO: better name: ProgressWriter
-func GetBestWriter(o output.Bus) io.Writer {
+func ProgressWriter(o output.Bus) io.Writer {
 	// preferred: error output, then console output, then no output at all
 	switch {
 	case o.IsErrorTTY():
@@ -441,26 +392,26 @@ func GetBestWriter(o output.Bus) io.Writer {
 func ProcessArtistMetadata(o output.Bus, artists []*Artist) {
 	for _, artist := range artists {
 		recordedArtistNames := make(map[string]int)
-		for _, album := range artist.Albums() {
-			for _, track := range album.Tracks() {
-				if track.metadata != nil && track.metadata.IsValid() &&
-					track.metadata.CanonicalArtistNameMatches(artist.fileName) {
-					recordedArtistNames[track.metadata.CanonicalArtist()]++
+		for _, album := range artist.Albums {
+			for _, track := range album.Tracks {
+				if track.Metadata != nil && track.Metadata.IsValid() &&
+					track.Metadata.CanonicalArtistNameMatches(artist.Name) {
+					recordedArtistNames[track.Metadata.CanonicalArtist()]++
 				}
 			}
 		}
 		canonicalName, choiceSelected := CanonicalChoice(recordedArtistNames)
 		if !choiceSelected {
-			reportAmbiguousChoices(o, "artist name", artist.Name(), recordedArtistNames)
+			reportAmbiguousChoices(o, "artist name", artist.Name, recordedArtistNames)
 			logAmbiguousValue(o, map[string]any{
 				"field":      "artist name",
 				"settings":   recordedArtistNames,
-				"artistName": artist.Name(),
+				"artistName": artist.Name,
 			})
 			continue
 		}
 		if canonicalName != "" {
-			artist.canonicalName = canonicalName
+			artist.CanonicalName = canonicalName
 		}
 	}
 }
@@ -478,86 +429,86 @@ func logAmbiguousValue(o output.Bus, m map[string]any) {
 
 func ProcessAlbumMetadata(o output.Bus, artists []*Artist) {
 	for _, ar := range artists {
-		for _, al := range ar.Albums() {
+		for _, al := range ar.Albums {
 			recordedMCDIs := make(map[string]int)
 			recordedMCDIFrames := make(map[string]id3v2.UnknownFrame)
 			recordedGenres := make(map[string]int)
 			recordedYears := make(map[string]int)
 			recordedAlbumTitles := make(map[string]int)
-			for _, t := range al.Tracks() {
-				if t.metadata == nil || !t.metadata.IsValid() {
+			for _, t := range al.Tracks {
+				if t.Metadata == nil || !t.Metadata.IsValid() {
 					continue
 				}
-				genre := strings.ToLower(t.metadata.CanonicalGenre())
+				genre := strings.ToLower(t.Metadata.CanonicalGenre())
 				if genre != "" && !strings.HasPrefix(genre, "unknown") {
-					recordedGenres[t.metadata.CanonicalGenre()]++
+					recordedGenres[t.Metadata.CanonicalGenre()]++
 				}
-				if t.metadata.CanonicalYear() != "" {
-					recordedYears[t.metadata.CanonicalYear()]++
+				if t.Metadata.CanonicalYear() != "" {
+					recordedYears[t.Metadata.CanonicalYear()]++
 				}
-				if t.metadata.CanonicalAlbumTitleMatches(al.title) {
-					recordedAlbumTitles[t.metadata.CanonicalAlbum()]++
+				if t.Metadata.CanonicalAlbumTitleMatches(al.Title) {
+					recordedAlbumTitles[t.Metadata.CanonicalAlbum()]++
 				}
-				mcdiKey := string(t.metadata.CanonicalMusicCDIdentifier().Body)
+				mcdiKey := string(t.Metadata.CanonicalMusicCDIdentifier().Body)
 				recordedMCDIs[mcdiKey]++
-				recordedMCDIFrames[mcdiKey] = t.metadata.CanonicalMusicCDIdentifier()
+				recordedMCDIFrames[mcdiKey] = t.Metadata.CanonicalMusicCDIdentifier()
 			}
 			canonicalGenre, genreSelected := CanonicalChoice(recordedGenres)
 			switch {
 			case genreSelected:
-				al.canonicalGenre = canonicalGenre
+				al.CanonicalGenre = canonicalGenre
 			default:
 				reportAmbiguousChoices(o, "genre",
-					fmt.Sprintf("%s by %s", al.Name(), ar.Name()), recordedGenres)
+					fmt.Sprintf("%s by %s", al.Title, ar.Name), recordedGenres)
 				logAmbiguousValue(o, map[string]any{
 					"field":      "genre",
 					"settings":   recordedGenres,
-					"albumName":  al.Name(),
-					"artistName": ar.Name(),
+					"albumName":  al.Title,
+					"artistName": ar.Name,
 				})
 			}
 			canonicalYear, yearSelected := CanonicalChoice(recordedYears)
 			switch {
 			case yearSelected:
-				al.canonicalYear = canonicalYear
+				al.CanonicalYear = canonicalYear
 			default:
 				reportAmbiguousChoices(o, "year",
-					fmt.Sprintf("%s by %s", al.Name(), ar.Name()), recordedYears)
+					fmt.Sprintf("%s by %s", al.Title, ar.Name), recordedYears)
 				logAmbiguousValue(o, map[string]any{
 					"field":      "year",
 					"settings":   recordedYears,
-					"albumName":  al.Name(),
-					"artistName": ar.Name(),
+					"albumName":  al.Title,
+					"artistName": ar.Name,
 				})
 			}
 			canonicalAlbumTitle, albumTitleSelected := CanonicalChoice(recordedAlbumTitles)
 			switch {
 			case albumTitleSelected:
 				if canonicalAlbumTitle != "" {
-					al.canonicalTitle = canonicalAlbumTitle
+					al.CanonicalTitle = canonicalAlbumTitle
 				}
 			default:
 				reportAmbiguousChoices(o, "album title",
-					fmt.Sprintf("%s by %s", al.Name(), ar.Name()), recordedAlbumTitles)
+					fmt.Sprintf("%s by %s", al.Title, ar.Name), recordedAlbumTitles)
 				logAmbiguousValue(o, map[string]any{
 					"field":      "album title",
 					"settings":   recordedAlbumTitles,
-					"albumName":  al.Name(),
-					"artistName": ar.Name(),
+					"albumName":  al.Title,
+					"artistName": ar.Name,
 				})
 			}
 			canonicalMCDI, MCDISelected := CanonicalChoice(recordedMCDIs)
 			switch {
 			case MCDISelected:
-				al.musicCDIdentifier = recordedMCDIFrames[canonicalMCDI]
+				al.MusicCDIdentifier = recordedMCDIFrames[canonicalMCDI]
 			default:
 				reportAmbiguousChoices(o, "MCDI frame",
-					fmt.Sprintf("%s by %s", al.Name(), ar.Name()), recordedMCDIs)
+					fmt.Sprintf("%s by %s", al.Title, ar.Name), recordedMCDIs)
 				logAmbiguousValue(o, map[string]any{
 					"field":      "mcdi frame",
 					"settings":   recordedMCDIs,
-					"albumName":  al.Name(),
-					"artistName": ar.Name(),
+					"albumName":  al.Title,
+					"artistName": ar.Name,
 				})
 			}
 		}
@@ -618,8 +569,8 @@ func (t *Track) ReportMetadataReadError(o output.Bus, sT SourceType, e string) {
 
 func reportAllTrackErrors(o output.Bus, artists []*Artist) {
 	for _, ar := range artists {
-		for _, al := range ar.Albums() {
-			for _, t := range al.Tracks() {
+		for _, al := range ar.Albums {
+			for _, t := range al.Tracks {
 				t.ReportMetadataErrors(o)
 			}
 		}
@@ -629,7 +580,7 @@ func reportAllTrackErrors(o output.Bus, artists []*Artist) {
 func (t *Track) ReportMetadataErrors(o output.Bus) {
 	if t.HasMetadataError() {
 		for _, sT := range []SourceType{ID3V1, ID3V2} {
-			if metadata := t.metadata; metadata != nil {
+			if metadata := t.Metadata; metadata != nil {
 				if e := metadata.errorCause[sT]; e != "" {
 					t.ReportMetadataReadError(o, sT, e)
 				}
@@ -644,94 +595,101 @@ func WaitForFilesClosed() {
 	}
 }
 
-// TODO: put values in a struct
-// TODO: return a struct
-func ParseTrackName(o output.Bus, name string, album *Album,
-	ext string) (commonName string, trackNumber int, valid bool) {
-	if !trackNameRegex.MatchString(name) {
+type TrackNameParser struct {
+	FileName  string
+	Album     *Album
+	Extension string
+}
+
+type ParsedTrackName struct {
+	SimpleName string
+	Number     int
+}
+
+func (parser TrackNameParser) Parse(o output.Bus) (*ParsedTrackName, bool) {
+	if !trackNameRegex.MatchString(parser.FileName) {
 		o.Log(output.Error, "the track name cannot be parsed", map[string]any{
-			"trackName":  name,
-			"albumName":  album.title,
-			"artistName": album.RecordingArtistName(),
+			"trackName":  parser.FileName,
+			"albumName":  parser.Album.Title,
+			"artistName": parser.Album.RecordingArtistName(),
 		})
 		o.WriteCanonicalError("The track %q on album %q by artist %q cannot be parsed",
-			name, album.title, album.RecordingArtistName())
-		return
+			parser.FileName, parser.Album.Title, parser.Album.RecordingArtistName())
+		return nil, false
 	}
+	name := &ParsedTrackName{}
 	wantDigit := true
-	runes := []rune(name)
+	runes := []rune(parser.FileName)
 	for i, r := range runes {
 		if !wantDigit {
-			commonName = strings.TrimSuffix(string(runes[i:]), ext)
+			name.SimpleName = strings.TrimSuffix(string(runes[i:]), parser.Extension)
 			break
 		}
 		switch {
 		case r >= '0' && r <= '9':
-			trackNumber *= 10
-			trackNumber += int(r - '0')
+			name.Number *= 10
+			name.Number += int(r - '0')
 		default:
 			wantDigit = false
 		}
 	}
-	valid = true
-	return
+	return name, true
 }
 
 // AlbumPath returns the path of the track's album.
 func (t *Track) AlbumPath() string {
-	if t.album == nil {
+	if t.Album == nil {
 		return ""
 	}
-	return t.album.Path()
+	return t.Album.FilePath
 }
 
 // AlbumName returns the name of the track's album.
 func (t *Track) AlbumName() string {
-	if t.album == nil {
+	if t.Album == nil {
 		return ""
 	}
-	return t.album.title
+	return t.Album.Title
 }
 
 // RecordingArtist returns the name of the artist on whose album this track
 // appears.
 func (t *Track) RecordingArtist() string {
-	if t.album == nil {
+	if t.Album == nil {
 		return ""
 	}
-	return t.album.RecordingArtistName()
+	return t.Album.RecordingArtistName()
 }
 
 // CopyFile copies the track file to a specified destination path.
 func (t *Track) CopyFile(destination string) error {
-	return cmd_toolkit.CopyFile(t.fullPath, destination)
+	return cmd_toolkit.CopyFile(t.FilePath, destination)
 }
 
 // ID3V1Diagnostics returns the ID3V1 tag contents, if any; a missing ID3V1 tag
 // (e.g., the input file is too short to have an ID3V1 tag), or an invalid ID3V1
 // tag (IsValid() is false), returns a non-nil error
 func (t *Track) ID3V1Diagnostics() ([]string, error) {
-	return ReadID3v1Metadata(t.fullPath)
+	return ReadID3v1Metadata(t.FilePath)
 }
 
 // ID3V2Diagnostics returns ID3V2 tag data - the ID3V2 version, its encoding,
 // and a slice of all the frames in the tag.
-func (t *Track) ID3V2Diagnostics() (version byte, encoding string, frames []string, e error) {
-	version, encoding, frames, _, e = ReadID3V2Metadata(t.fullPath)
-	return
+func (t *Track) ID3V2Diagnostics() (*ID3V2Info, error) {
+	return ReadID3V2Metadata(t.FilePath)
 }
 
 // Details returns relevant details about the track
 func (t *Track) Details() (map[string]string, error) {
-	_, _, _, frames, readErr := ReadID3V2Metadata(t.fullPath)
+	info, readErr := ReadID3V2Metadata(t.FilePath)
 	if readErr != nil {
 		return nil, readErr
 	}
 	m := map[string]string{}
 	// only include known frames
-	for _, frame := range frames {
-		if value, descriptionFound := frameDescriptions[frame.name]; descriptionFound {
-			m[value] = frame.value
+	for _, frame := range info.RawFrames {
+		if value, descriptionFound := frameDescriptions[frame.Name]; descriptionFound {
+			m[value] = frame.Value
 		}
 	}
 	return m, nil

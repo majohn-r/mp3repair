@@ -15,7 +15,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func TestRemoveBackupDirectory(t *testing.T) {
+func TestRemoveTrackBackupDirectory(t *testing.T) {
 	originalRemoveAll := cmd.RemoveAll
 	defer func() {
 		cmd.RemoveAll = originalRemoveAll
@@ -53,10 +53,10 @@ func TestRemoveBackupDirectory(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			cmd.RemoveAll = tt.removeAll
 			o := output.NewRecorder()
-			if got := cmd.RemoveBackupDirectory(o, tt.dir); got != tt.want {
-				t.Errorf("RemoveBackupDirectory() = %v, want %v", got, tt.want)
+			if got := cmd.RemoveTrackBackupDirectory(o, tt.dir); got != tt.want {
+				t.Errorf("RemoveTrackBackupDirectory() = %v, want %v", got, tt.want)
 			}
-			o.Report(t, "RemoveBackupDirectory()", tt.WantedRecording)
+			o.Report(t, "RemoveTrackBackupDirectory()", tt.WantedRecording)
 		})
 	}
 }
@@ -71,7 +71,6 @@ func TestPostRepairWork(t *testing.T) {
 	type args struct {
 		ss         *cmd.SearchSettings
 		allArtists []*files.Artist
-		loaded     bool
 	}
 	tests := map[string]struct {
 		removeAll func(dir string) error
@@ -82,34 +81,19 @@ func TestPostRepairWork(t *testing.T) {
 		"no load": {args: args{}},
 		"no artists": {
 			args: args{
-				ss:         cmd.NewSearchSettings(),
+				ss:         &cmd.SearchSettings{},
 				allArtists: []*files.Artist{},
-				loaded:     true,
-			},
-			WantedRecording: output.WantedRecording{
-				Error: "" +
-					"No mp3 files remain after filtering.\n" +
-					"Why?\n" +
-					"After applying --artistFilter=<nil>, --albumFilter=<nil>, and" +
-					" --trackFilter=<nil>, no files remained.\n" +
-					"What to do:\n" +
-					"Use less restrictive filter settings.\n",
-				Log: "" +
-					"level='error'" +
-					" --albumFilter='<nil>'" +
-					" --artistFilter='<nil>'" +
-					" --trackFilter='<nil>'" +
-					" msg='no files remain after filtering'\n",
 			},
 		},
 		"artists with no work to do": {
 			dirExists: func(dir string) bool { return false },
 			args: args{
-				ss: cmd.NewSearchSettings().WithArtistFilter(
-					regexp.MustCompile(".*")).WithAlbumFilter(
-					regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
+				ss: &cmd.SearchSettings{
+					ArtistFilter: regexp.MustCompile(".*"),
+					AlbumFilter:  regexp.MustCompile(".*"),
+					TrackFilter:  regexp.MustCompile(".*"),
+				},
 				allArtists: generateArtists(2, 3, 4),
-				loaded:     true,
 			},
 			WantedRecording: output.WantedRecording{
 				Console: "Backup directories to delete: 0.\n",
@@ -119,11 +103,12 @@ func TestPostRepairWork(t *testing.T) {
 			dirExists: func(dir string) bool { return true },
 			removeAll: func(dir string) error { return nil },
 			args: args{
-				ss: cmd.NewSearchSettings().WithArtistFilter(
-					regexp.MustCompile(".*")).WithAlbumFilter(
-					regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
+				ss: &cmd.SearchSettings{
+					ArtistFilter: regexp.MustCompile(".*"),
+					AlbumFilter:  regexp.MustCompile(".*"),
+					TrackFilter:  regexp.MustCompile(".*"),
+				},
 				allArtists: generateArtists(2, 3, 4),
-				loaded:     true,
 			},
 			WantedRecording: output.WantedRecording{
 				Console: "" +
@@ -154,11 +139,12 @@ func TestPostRepairWork(t *testing.T) {
 			dirExists: func(dir string) bool { return true },
 			removeAll: func(dir string) error { return fmt.Errorf("nope") },
 			args: args{
-				ss: cmd.NewSearchSettings().WithArtistFilter(
-					regexp.MustCompile(".*")).WithAlbumFilter(
-					regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
+				ss: &cmd.SearchSettings{
+					ArtistFilter: regexp.MustCompile(".*"),
+					AlbumFilter:  regexp.MustCompile(".*"),
+					TrackFilter:  regexp.MustCompile(".*"),
+				},
 				allArtists: generateArtists(2, 3, 4),
-				loaded:     true,
 			},
 			WantedRecording: output.WantedRecording{
 				Console: "" +
@@ -197,7 +183,7 @@ func TestPostRepairWork(t *testing.T) {
 			cmd.RemoveAll = tt.removeAll
 			cmd.DirExists = tt.dirExists
 			o := output.NewRecorder()
-			cmd.PostRepairWork(o, tt.args.ss, tt.args.allArtists, tt.args.loaded)
+			cmd.PostRepairWork(o, tt.args.ss, tt.args.allArtists)
 			o.Report(t, "PostRepairWork()", tt.WantedRecording)
 		})
 	}

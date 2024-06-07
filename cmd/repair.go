@@ -43,13 +43,16 @@ var (
 			"the backup folders.",
 		RunE: RepairRun,
 	}
-	RepairFlags = NewSectionFlags().WithSectionName(repairCommandName).WithFlags(
-		map[string]*FlagDetails{
-			"dryRun": NewFlagDetails().WithUsage(
-				"output what would have been repaired, but make no repairs",
-			).WithExpectedType(BoolType).WithDefaultValue(false),
+	RepairFlags = &SectionFlags{
+		SectionName: repairCommandName,
+		Details: map[string]*FlagDetails{
+			"dryRun": {
+				Usage:        "output what would have been repaired, but make no repairs",
+				ExpectedType: BoolType,
+				DefaultValue: false,
+			},
 		},
-	)
+	}
 )
 
 func RepairRun(cmd *cobra.Command, _ []string) error {
@@ -60,36 +63,26 @@ func RepairRun(cmd *cobra.Command, _ []string) error {
 	searchSettings, searchFlagsOk := EvaluateSearchFlags(o, producer)
 	if ProcessFlagErrors(o, eSlice) && searchFlagsOk {
 		if rs, flagsOk := ProcessRepairFlags(o, values); flagsOk {
-			details := map[string]any{repairDryRunFlag: rs.dryRun}
+			details := map[string]any{repairDryRunFlag: rs.DryRun.Value}
 			for k, v := range searchSettings.Values() {
 				details[k] = v
 			}
 			LogCommandStart(o, repairCommandName, details)
-			allArtists, loaded := searchSettings.Load(o)
-			exitError = rs.ProcessArtists(o, allArtists, loaded, searchSettings)
+			allArtists := searchSettings.Load(o)
+			exitError = rs.ProcessArtists(o, allArtists, searchSettings)
 		}
 	}
 	return ToErrorInterface(exitError)
 }
 
 type RepairSettings struct {
-	dryRun bool
+	DryRun BoolValue
 }
 
-func NewRepairSettings() *RepairSettings {
-	return &RepairSettings{}
-}
-
-func (rs *RepairSettings) WithDryRun(b bool) *RepairSettings {
-	rs.dryRun = b
-	return rs
-}
-
-func (rs *RepairSettings) ProcessArtists(o output.Bus, allArtists []*files.Artist,
-	loaded bool, ss *SearchSettings) (e *ExitError) {
+func (rs *RepairSettings) ProcessArtists(o output.Bus, allArtists []*files.Artist, ss *SearchSettings) (e *ExitError) {
 	e = NewExitUserError(repairCommandName)
-	if loaded {
-		if filteredArtists, filtered := ss.Filter(o, allArtists); filtered {
+	if len(allArtists) != 0 {
+		if filteredArtists := ss.Filter(o, allArtists); len(filteredArtists) != 0 {
 			e = rs.RepairArtists(o, filteredArtists)
 		}
 	}
@@ -98,9 +91,9 @@ func (rs *RepairSettings) ProcessArtists(o output.Bus, allArtists []*files.Artis
 
 func (rs *RepairSettings) RepairArtists(o output.Bus, artists []*files.Artist) *ExitError {
 	ReadMetadata(o, artists) // read all track metadata
-	concernedArtists := PrepareConcernedArtists(artists)
+	concernedArtists := CreateConcernedArtists(artists)
 	count := FindConflictedTracks(concernedArtists)
-	if rs.dryRun {
+	if rs.DryRun.Value {
 		ReportRepairsNeeded(o, concernedArtists)
 		return nil
 	}
@@ -108,7 +101,7 @@ func (rs *RepairSettings) RepairArtists(o output.Bus, artists []*files.Artist) *
 		nothingToDo(o)
 		return nil
 	}
-	return BackupAndFix(o, concernedArtists)
+	return BackupAndRepairTracks(o, concernedArtists)
 }
 
 func FindConflictedTracks(concernedArtists []*ConcernedArtist) int {
@@ -187,8 +180,7 @@ func nothingToDo(o output.Bus) {
 	o.WriteCanonicalConsole("No repairable track defects were found.")
 }
 
-// TODO: Better name: BackupAndRepairTracks
-func BackupAndFix(o output.Bus, concernedArtists []*ConcernedArtist) *ExitError {
+func BackupAndRepairTracks(o output.Bus, concernedArtists []*ConcernedArtist) *ExitError {
 	var e *ExitError
 	for _, cAr := range concernedArtists {
 		if !cAr.IsConcerned() {
@@ -198,7 +190,7 @@ func BackupAndFix(o output.Bus, concernedArtists []*ConcernedArtist) *ExitError 
 			if !cAl.IsConcerned() {
 				continue
 			}
-			path, exists := EnsureBackupDirectoryExists(o, cAl)
+			path, exists := EnsureTrackBackupDirectoryExists(o, cAl)
 			if !exists {
 				e = NewExitSystemError(repairCommandName)
 				continue
@@ -208,12 +200,12 @@ func BackupAndFix(o output.Bus, concernedArtists []*ConcernedArtist) *ExitError 
 					continue
 				}
 				t := cT.backing
-				if !AttemptCopy(o, t, path) {
+				if !TryTrackBackup(o, t, path) {
 					e = NewExitSystemError(repairCommandName)
 					continue
 				}
 				err := t.UpdateMetadata()
-				if e2 := ProcessUpdateResult(o, t, err); e2 != nil {
+				if e2 := ProcessTrackRepairResults(o, t, err); e2 != nil {
 					e = e2
 				}
 			}
@@ -222,8 +214,7 @@ func BackupAndFix(o output.Bus, concernedArtists []*ConcernedArtist) *ExitError 
 	return e
 }
 
-// TODO: Better name: ProcessTrackRepairResults
-func ProcessUpdateResult(o output.Bus, t *files.Track, updateErrs []error) *ExitError {
+func ProcessTrackRepairResults(o output.Bus, t *files.Track, updateErrs []error) *ExitError {
 	if len(updateErrs) != 0 {
 		o.WriteCanonicalError("An error occurred repairing track %q", t)
 		errorStrings := make([]string, 0, len(updateErrs))
@@ -243,9 +234,8 @@ func ProcessUpdateResult(o output.Bus, t *files.Track, updateErrs []error) *Exit
 	return nil
 }
 
-// TODO: better name: TryTrackBackup
-func AttemptCopy(o output.Bus, t *files.Track, path string) (backedUp bool) {
-	backupFile := filepath.Join(path, fmt.Sprintf("%d.mp3", t.Number()))
+func TryTrackBackup(o output.Bus, t *files.Track, path string) (backedUp bool) {
+	backupFile := filepath.Join(path, fmt.Sprintf("%d.mp3", t.Number))
 	switch {
 	case PlainFileExists(backupFile):
 		o.WriteCanonicalError("The backup file for track file %q, %q, already exists", t,
@@ -255,7 +245,7 @@ func AttemptCopy(o output.Bus, t *files.Track, path string) (backedUp bool) {
 			"file":    backupFile,
 		})
 	default:
-		copyErr := CopyFile(t.Path(), backupFile)
+		copyErr := CopyFile(t.FilePath, backupFile)
 		switch copyErr {
 		case nil:
 			o.WriteCanonicalConsole("The track file %q has been backed up to %q", t,
@@ -266,7 +256,7 @@ func AttemptCopy(o output.Bus, t *files.Track, path string) (backedUp bool) {
 				"The track file %q could not be backed up due to error %v", t, copyErr)
 			o.Log(output.Error, "error copying file", map[string]any{
 				"command":     repairCommandName,
-				"source":      t.Path(),
+				"source":      t.FilePath,
 				"destination": backupFile,
 				"error":       copyErr,
 			})
@@ -278,8 +268,7 @@ func AttemptCopy(o output.Bus, t *files.Track, path string) (backedUp bool) {
 	return
 }
 
-// TODO: Better name: EnsureTrackBackupDirectoryExists
-func EnsureBackupDirectoryExists(o output.Bus, cAl *ConcernedAlbum) (path string, exists bool) {
+func EnsureTrackBackupDirectoryExists(o output.Bus, cAl *ConcernedAlbum) (path string, exists bool) {
 	path = cAl.backing.BackupDirectory()
 	exists = true
 	if !DirExists(path) {
@@ -288,7 +277,7 @@ func EnsureBackupDirectoryExists(o output.Bus, cAl *ConcernedAlbum) (path string
 			o.WriteCanonicalError("The directory %q cannot be created: %v", path, fileErr)
 			o.WriteCanonicalError(
 				"The track files in the directory %q will not be repaired",
-				cAl.backing.Path())
+				cAl.backing.FilePath)
 			o.Log(output.Error, "cannot create directory", map[string]any{
 				"command":   repairCommandName,
 				"directory": path,
@@ -303,7 +292,7 @@ func ProcessRepairFlags(o output.Bus, values map[string]*FlagValue) (*RepairSett
 	rs := &RepairSettings{}
 	flagsOk := true // optimistic
 	var flagErr error
-	if rs.dryRun, _, flagErr = GetBool(o, values, repairDryRun); flagErr != nil {
+	if rs.DryRun, flagErr = GetBool(o, values, repairDryRun); flagErr != nil {
 		flagsOk = false
 	}
 	return rs, flagsOk

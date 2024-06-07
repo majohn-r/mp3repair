@@ -20,7 +20,10 @@ func main() {
 	elevationControl := cmd.NewElevationControl()
 	if !elevationControl.WillRunElevated() {
 		elevationControl.ConfigureExit()
-		cmd.InitializeAbout(version, creation)
+		cmd.AboutMaker{
+			SoftwareVersion: version,
+			CreationDate:    creation,
+		}.InitializeAbout()
 		executor()
 	}
 }

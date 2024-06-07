@@ -25,7 +25,7 @@ func TestProcessRepairFlags(t *testing.T) {
 	}{
 		"bad value": {
 			values: map[string]*cmd.FlagValue{},
-			want:   cmd.NewRepairSettings(),
+			want:   &cmd.RepairSettings{},
 			want1:  false,
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"dryRun\" is not found.\n",
@@ -37,8 +37,8 @@ func TestProcessRepairFlags(t *testing.T) {
 			},
 		},
 		"good value": {
-			values: map[string]*cmd.FlagValue{"dryRun": cmd.NewFlagValue().WithValue(true)},
-			want:   cmd.NewRepairSettings().WithDryRun(true),
+			values: map[string]*cmd.FlagValue{"dryRun": {Value: true}},
+			want:   &cmd.RepairSettings{DryRun: cmd.BoolValue{Value: true}},
 			want1:  true,
 		},
 	}
@@ -57,7 +57,7 @@ func TestProcessRepairFlags(t *testing.T) {
 	}
 }
 
-func TestEnsureBackupDirectoryExists(t *testing.T) {
+func TestEnsureTrackBackupDirectoryExists(t *testing.T) {
 	originalDirExists := cmd.DirExists
 	originalMkdir := cmd.Mkdir
 	defer func() {
@@ -116,19 +116,19 @@ func TestEnsureBackupDirectoryExists(t *testing.T) {
 			cmd.DirExists = tt.dirExists
 			cmd.Mkdir = tt.mkdir
 			o := output.NewRecorder()
-			gotPath, gotExists := cmd.EnsureBackupDirectoryExists(o, tt.cAl)
+			gotPath, gotExists := cmd.EnsureTrackBackupDirectoryExists(o, tt.cAl)
 			if gotPath != tt.wantPath {
-				t.Errorf("EnsureBackupDirectoryExists() gotPath = %v, want %v", gotPath, tt.wantPath)
+				t.Errorf("EnsureTrackBackupDirectoryExists() gotPath = %v, want %v", gotPath, tt.wantPath)
 			}
 			if gotExists != tt.wantExists {
-				t.Errorf("EnsureBackupDirectoryExists() gotExists = %v, want %v", gotExists, tt.wantExists)
+				t.Errorf("EnsureTrackBackupDirectoryExists() gotExists = %v, want %v", gotExists, tt.wantExists)
 			}
-			o.Report(t, "EnsureBackupDirectoryExists()", tt.WantedRecording)
+			o.Report(t, "EnsureTrackBackupDirectoryExists()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestAttemptCopy(t *testing.T) {
+func TestTryTrackBackup(t *testing.T) {
 	originalPlainFileExists := cmd.PlainFileExists
 	originalCopyFile := cmd.CopyFile
 	defer func() {
@@ -209,16 +209,16 @@ func TestAttemptCopy(t *testing.T) {
 			cmd.PlainFileExists = tt.plainFileExists
 			cmd.CopyFile = tt.copyFile
 			o := output.NewRecorder()
-			gotBackedUp := cmd.AttemptCopy(o, tt.args.t, tt.args.path)
+			gotBackedUp := cmd.TryTrackBackup(o, tt.args.t, tt.args.path)
 			if gotBackedUp != tt.wantBackedUp {
-				t.Errorf("AttemptCopy() = %v, want %v", gotBackedUp, tt.wantBackedUp)
+				t.Errorf("TryTrackBackup() = %v, want %v", gotBackedUp, tt.wantBackedUp)
 			}
-			o.Report(t, "AttemptCopy()", tt.WantedRecording)
+			o.Report(t, "TryTrackBackup()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestProcessUpdateResult(t *testing.T) {
+func TestProcessTrackRepairResults(t *testing.T) {
 	originalMarkDirty := cmd.MarkDirty
 	defer func() {
 		cmd.MarkDirty = originalMarkDirty
@@ -290,19 +290,19 @@ func TestProcessUpdateResult(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			markedDirty = false
-			if got := cmd.ProcessUpdateResult(o, tt.args.t, tt.args.err); !compareExitErrors(got, tt.wantStatus) {
-				t.Errorf("ProcessUpdateResult() got %s want %s", got, tt.wantStatus)
+			if got := cmd.ProcessTrackRepairResults(o, tt.args.t, tt.args.err); !compareExitErrors(got, tt.wantStatus) {
+				t.Errorf("ProcessTrackRepairResults() got %s want %s", got, tt.wantStatus)
 			}
 			if got := markedDirty; got != tt.wantDirty {
-				t.Errorf("ProcessUpdateResult() got %t want %t", got, tt.wantDirty)
+				t.Errorf("ProcessTrackRepairResults() got %t want %t", got, tt.wantDirty)
 			}
-			o.Report(t, "ProcessUpdateResult()", tt.WantedRecording)
+			o.Report(t, "ProcessTrackRepairResults()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestBackupAndFix(t *testing.T) {
-	concernedArtists := cmd.PrepareConcernedArtists(generateArtists(2, 3, 4))
+func TestBackupAndRepairTracks(t *testing.T) {
+	concernedArtists := cmd.CreateConcernedArtists(generateArtists(2, 3, 4))
 	skipArtist := true
 	skipAlbum := true
 	skipTrack := true
@@ -571,16 +571,16 @@ func TestBackupAndFix(t *testing.T) {
 			cmd.PlainFileExists = tt.plainFileExists
 			cmd.CopyFile = tt.copyFile
 			o := output.NewRecorder()
-			if got := cmd.BackupAndFix(o, tt.concernedArtists); !compareExitErrors(got, tt.wantStatus) {
-				t.Errorf("BackupAndFix() got %s want %s", got, tt.wantStatus)
+			if got := cmd.BackupAndRepairTracks(o, tt.concernedArtists); !compareExitErrors(got, tt.wantStatus) {
+				t.Errorf("BackupAndRepairTracks() got %s want %s", got, tt.wantStatus)
 			}
-			o.Report(t, "BackupAndFix()", tt.WantedRecording)
+			o.Report(t, "BackupAndRepairTracks()", tt.WantedRecording)
 		})
 	}
 }
 
 func TestReportRepairsNeeded(t *testing.T) {
-	dirty := cmd.PrepareConcernedArtists(generateArtists(2, 3, 4))
+	dirty := cmd.CreateConcernedArtists(generateArtists(2, 3, 4))
 	for _, cAr := range dirty {
 		for _, cAl := range cAr.Albums() {
 			for _, cT := range cAl.Tracks() {
@@ -588,7 +588,7 @@ func TestReportRepairsNeeded(t *testing.T) {
 			}
 		}
 	}
-	clean := cmd.PrepareConcernedArtists(generateArtists(2, 3, 4))
+	clean := cmd.CreateConcernedArtists(generateArtists(2, 3, 4))
 	tests := map[string]struct {
 		concernedArtists []*cmd.ConcernedArtist
 		output.WantedRecording
@@ -673,7 +673,7 @@ func TestReportRepairsNeeded(t *testing.T) {
 }
 
 func TestFindConflictedTracks(t *testing.T) {
-	dirty := cmd.PrepareConcernedArtists(generateArtists(2, 3, 4))
+	dirty := cmd.CreateConcernedArtists(generateArtists(2, 3, 4))
 	for _, cAr := range dirty {
 		for _, cAl := range cAr.Albums() {
 			for _, cT := range cAl.Tracks() {
@@ -689,7 +689,7 @@ func TestFindConflictedTracks(t *testing.T) {
 			}
 		}
 	}
-	clean := cmd.PrepareConcernedArtists(generateArtists(2, 3, 4))
+	clean := cmd.CreateConcernedArtists(generateArtists(2, 3, 4))
 	tests := map[string]struct {
 		concernedArtists []*cmd.ConcernedArtist
 		want             int
@@ -726,8 +726,8 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 	cmd.MarkDirty = func(_ output.Bus) {}
 	dirty := generateArtists(2, 3, 4)
 	for _, aR := range dirty {
-		for _, aL := range aR.Albums() {
-			for _, t := range aL.Tracks() {
+		for _, aL := range aR.Albums {
+			for _, t := range aL.Tracks {
 				t.SetMetadata(files.NewTrackMetadata().WithMusicCDIdentifier(
 					[]byte{1, 2, 3}).WithTrackNumbers([]int{0, 99, 99}).WithPrimarySource(
 					files.ID3V1))
@@ -741,7 +741,7 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 		output.WantedRecording
 	}{
 		"clean dry run": {
-			rs:         cmd.NewRepairSettings().WithDryRun(true),
+			rs:         &cmd.RepairSettings{DryRun: cmd.BoolValue{Value: true}},
 			artists:    generateArtists(2, 3, 4),
 			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
@@ -749,7 +749,7 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 			},
 		},
 		"dirty dry run": {
-			rs:         cmd.NewRepairSettings().WithDryRun(true),
+			rs:         &cmd.RepairSettings{DryRun: cmd.BoolValue{Value: true}},
 			artists:    dirty,
 			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
@@ -1030,7 +1030,7 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 			},
 		},
 		"clean repair": {
-			rs:         cmd.NewRepairSettings().WithDryRun(false),
+			rs:         &cmd.RepairSettings{DryRun: cmd.BoolValue{Value: false}},
 			artists:    generateArtists(2, 3, 4),
 			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
@@ -1038,7 +1038,7 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 			},
 		},
 		"dirty repair": {
-			rs:         cmd.NewRepairSettings().WithDryRun(false),
+			rs:         &cmd.RepairSettings{DryRun: cmd.BoolValue{Value: false}},
 			artists:    dirty,
 			wantStatus: cmd.NewExitSystemError("repair"),
 			WantedRecording: output.WantedRecording{
@@ -1427,7 +1427,6 @@ func TestRepairSettings_ProcessArtists(t *testing.T) {
 	cmd.ReadMetadata = func(_ output.Bus, _ []*files.Artist) {}
 	type args struct {
 		allArtists []*files.Artist
-		loaded     bool
 		ss         *cmd.SearchSettings
 	}
 	tests := map[string]struct {
@@ -1437,19 +1436,19 @@ func TestRepairSettings_ProcessArtists(t *testing.T) {
 		output.WantedRecording
 	}{
 		"nothing to do": {
-			rs:         cmd.NewRepairSettings().WithDryRun(true),
+			rs:         &cmd.RepairSettings{DryRun: cmd.BoolValue{Value: true}},
 			args:       args{},
 			wantStatus: cmd.NewExitUserError("repair"),
 		},
 		"clean artists": {
-			rs: cmd.NewRepairSettings().WithDryRun(true),
+			rs: &cmd.RepairSettings{DryRun: cmd.BoolValue{Value: true}},
 			args: args{
 				allArtists: generateArtists(2, 3, 4),
-				loaded:     true,
-				ss: cmd.NewSearchSettings().WithArtistFilter(
-					regexp.MustCompile(".*")).WithAlbumFilter(
-					regexp.MustCompile(".*")).WithTrackFilter(
-					regexp.MustCompile(".*")),
+				ss: &cmd.SearchSettings{
+					ArtistFilter: regexp.MustCompile(".*"),
+					AlbumFilter:  regexp.MustCompile(".*"),
+					TrackFilter:  regexp.MustCompile(".*"),
+				},
 			},
 			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
@@ -1460,7 +1459,7 @@ func TestRepairSettings_ProcessArtists(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			got := tt.rs.ProcessArtists(o, tt.args.allArtists, tt.args.loaded, tt.args.ss)
+			got := tt.rs.ProcessArtists(o, tt.args.allArtists, tt.args.ss)
 			if !compareExitErrors(got, tt.wantStatus) {
 				t.Errorf("RepairSettings.ProcessArtists() got %s want %s", got, tt.wantStatus)
 			}
@@ -1478,13 +1477,16 @@ func TestRepairRun(t *testing.T) {
 		cmd.SearchFlags = originalSearchFlags
 	}()
 	cmd.SearchFlags = safeSearchFlags
-	repairFlags := cmd.NewSectionFlags().WithSectionName("repair").WithFlags(
-		map[string]*cmd.FlagDetails{
-			"dryRun": cmd.NewFlagDetails().WithUsage(
-				"output what would have been repaired, but make no" +
-					" repairs").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+	repairFlags := &cmd.SectionFlags{
+		SectionName: "repair",
+		Details: map[string]*cmd.FlagDetails{
+			"dryRun": {
+				Usage:        "output what would have been repaired, but make no" + " repairs",
+				ExpectedType: cmd.BoolType,
+				DefaultValue: false,
+			},
 		},
-	)
+	}
 	command := &cobra.Command{}
 	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), command.Flags(),
 		repairFlags, cmd.SearchFlags)

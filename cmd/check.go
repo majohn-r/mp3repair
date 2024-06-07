@@ -92,20 +92,29 @@ var (
 			"  reports errors in the track numbers of mp3 files",
 		RunE: CheckRun,
 	}
-	CheckFlags = NewSectionFlags().WithSectionName(CheckCommand).WithFlags(
-		map[string]*FlagDetails{
-			CheckEmpty: NewFlagDetails().WithAbbreviatedName(CheckEmptyAbbr).WithUsage(
-				"report empty album and artist directories").WithExpectedType(
-				BoolType).WithDefaultValue(false),
-			CheckFiles: NewFlagDetails().WithAbbreviatedName(CheckFilesAbbr).WithUsage(
-				"report metadata/file inconsistencies").WithExpectedType(
-				BoolType).WithDefaultValue(false),
-			CheckNumbering: NewFlagDetails().WithAbbreviatedName(
-				CheckNumberingAbbr).WithUsage(
-				"report missing track numbers and duplicated track numbering",
-			).WithExpectedType(BoolType).WithDefaultValue(false),
+	CheckFlags = &SectionFlags{
+		SectionName: CheckCommand,
+		Details: map[string]*FlagDetails{
+			CheckEmpty: {
+				AbbreviatedName: CheckEmptyAbbr,
+				Usage:           "report empty album and artist directories",
+				ExpectedType:    BoolType,
+				DefaultValue:    false,
+			},
+			CheckFiles: {
+				AbbreviatedName: CheckFilesAbbr,
+				Usage:           "report metadata/file inconsistencies",
+				ExpectedType:    BoolType,
+				DefaultValue:    false,
+			},
+			CheckNumbering: {
+				AbbreviatedName: CheckNumberingAbbr,
+				Usage:           "report missing track numbers and duplicated track numbering",
+				ExpectedType:    BoolType,
+				DefaultValue:    false,
+			},
 		},
-	)
+	}
 )
 
 func CheckRun(cmd *cobra.Command, _ []string) error {
@@ -117,12 +126,12 @@ func CheckRun(cmd *cobra.Command, _ []string) error {
 	if ProcessFlagErrors(o, eSlice) && searchFlagsOk {
 		if cs, flagsOk := ProcessCheckFlags(o, values); flagsOk {
 			details := map[string]any{
-				CheckEmptyFlag:       cs.empty,
-				"empty-user-set":     cs.emptyUserSet,
-				CheckFilesFlag:       cs.files,
-				"files-user-set":     cs.filesUserSet,
-				CheckNumberingFlag:   cs.numbering,
-				"numbering-user-set": cs.numberingUserSet,
+				CheckEmptyFlag:       cs.Empty.Value,
+				"empty-user-set":     cs.Empty.UserSet,
+				CheckFilesFlag:       cs.Files.Value,
+				"files-user-set":     cs.Files.UserSet,
+				CheckNumberingFlag:   cs.Numbering.Value,
+				"numbering-user-set": cs.Numbering.UserSet,
 			}
 			for k, v := range searchSettings.Values() {
 				details[k] = v
@@ -135,86 +144,51 @@ func CheckRun(cmd *cobra.Command, _ []string) error {
 }
 
 type CheckSettings struct {
-	empty            bool
-	emptyUserSet     bool
-	files            bool
-	filesUserSet     bool
-	numbering        bool
-	numberingUserSet bool
-}
-
-func NewCheckSettings() *CheckSettings {
-	return &CheckSettings{}
-}
-
-func (cs *CheckSettings) WithEmpty(b bool) *CheckSettings {
-	cs.empty = b
-	return cs
-}
-
-func (cs *CheckSettings) WithEmptyUserSet(b bool) *CheckSettings {
-	cs.emptyUserSet = b
-	return cs
-}
-
-func (cs *CheckSettings) WithFiles(b bool) *CheckSettings {
-	cs.files = b
-	return cs
-}
-
-func (cs *CheckSettings) WithFilesUserSet(b bool) *CheckSettings {
-	cs.filesUserSet = b
-	return cs
-}
-
-func (cs *CheckSettings) WithNumbering(b bool) *CheckSettings {
-	cs.numbering = b
-	return cs
-}
-
-func (cs *CheckSettings) WithNumberingUserSet(b bool) *CheckSettings {
-	cs.numberingUserSet = b
-	return cs
+	Empty     BoolValue
+	Files     BoolValue
+	Numbering BoolValue
 }
 
 func (cs *CheckSettings) MaybeDoWork(o output.Bus, ss *SearchSettings) (err *ExitError) {
 	err = NewExitUserError(CheckCommand)
 	if cs.HasWorkToDo(o) {
-		allArtists, loaded := ss.Load(o)
-		err = cs.PerformChecks(o, allArtists, loaded, ss)
+		err = cs.PerformChecks(o, ss.Load(o), ss)
 	}
 	return
 }
 
-func (cs *CheckSettings) PerformChecks(o output.Bus, artists []*files.Artist,
-	artistsLoaded bool, ss *SearchSettings) (err *ExitError) {
+func (cs *CheckSettings) PerformChecks(o output.Bus, artists []*files.Artist, ss *SearchSettings) (err *ExitError) {
 	err = NewExitUserError(CheckCommand)
-	if artistsLoaded && len(artists) > 0 {
+	if len(artists) != 0 {
 		err = nil
-		concernedArtists := PrepareConcernedArtists(artists)
-		emptyConcernsFound := cs.PerformEmptyAnalysis(concernedArtists)
-		numberingConcernsFound := cs.PerformNumberingAnalysis(concernedArtists)
-		fileConcernsFound := cs.PerformFileAnalysis(o, concernedArtists, ss)
+		requests := CheckReportRequests{}
+		concernedArtists := CreateConcernedArtists(artists)
+		requests.ReportEmptyCheckResults = cs.PerformEmptyAnalysis(concernedArtists)
+		requests.ReportNumberingCheckResults = cs.PerformNumberingAnalysis(concernedArtists)
+		requests.ReportFilesCheckResults = cs.PerformFileAnalysis(o, concernedArtists, ss)
 		for _, artist := range concernedArtists {
 			artist.Rollup()
 			artist.ToConsole(o)
 		}
-		cs.MaybeReportCleanResults(o, emptyConcernsFound, numberingConcernsFound,
-			fileConcernsFound)
+		cs.MaybeReportCleanResults(o, requests)
 	}
 	return
 }
 
-// TODO: wrap boolean arguments into a struct
-func (cs *CheckSettings) MaybeReportCleanResults(o output.Bus, emptyConcerns,
-	numberingConcerns, fileConcerns bool) {
-	if !emptyConcerns && cs.empty {
+type CheckReportRequests struct {
+	ReportEmptyCheckResults     bool
+	ReportFilesCheckResults     bool
+	ReportNumberingCheckResults bool
+}
+
+func (cs *CheckSettings) MaybeReportCleanResults(o output.Bus, requests CheckReportRequests) {
+	if !requests.ReportEmptyCheckResults && cs.Empty.Value {
 		o.WriteCanonicalConsole("Empty Folder Analysis: no empty folders found")
 	}
-	if !numberingConcerns && cs.numbering {
+	if !requests.ReportNumberingCheckResults && cs.Numbering.Value {
 		o.WriteCanonicalConsole("Numbering Analysis: no missing or duplicate tracks found")
 	}
-	if !fileConcerns && cs.files {
+	if !requests.ReportFilesCheckResults && cs.Files.Value {
 		o.WriteCanonicalConsole("File Analysis: no inconsistencies found")
 	}
 }
@@ -222,18 +196,18 @@ func (cs *CheckSettings) MaybeReportCleanResults(o output.Bus, emptyConcerns,
 func (cs *CheckSettings) PerformFileAnalysis(o output.Bus,
 	concernedArtists []*ConcernedArtist, ss *SearchSettings) bool {
 	foundConcerns := false
-	if cs.files {
+	if cs.Files.Value {
 		artists := make([]*files.Artist, 0, len(concernedArtists))
 		for _, cAr := range concernedArtists {
 			artists = append(artists, cAr.Artist())
 		}
-		if filteredArtists, filtered := ss.Filter(o, artists); filtered {
+		if filteredArtists := ss.Filter(o, artists); len(filteredArtists) != 0 {
 			ReadMetadata(o, filteredArtists)
 			for _, artist := range filteredArtists {
-				for _, album := range artist.Albums() {
-					for _, track := range album.Tracks() {
+				for _, album := range artist.Albums {
+					for _, track := range album.Tracks {
 						concerns := track.ReportMetadataProblems()
-						if found := RecordFileConcerns(concernedArtists, track, concerns); found {
+						if found := RecordTrackFileConcerns(concernedArtists, track, concerns); found {
 							foundConcerns = true
 						}
 					}
@@ -244,12 +218,10 @@ func (cs *CheckSettings) PerformFileAnalysis(o output.Bus,
 	return foundConcerns
 }
 
-// TODO: better name: RecordTrackFileConcerns
-func RecordFileConcerns(concernedArtists []*ConcernedArtist, track *files.Track,
-	concerns []string) (foundConcerns bool) {
+func RecordTrackFileConcerns(artists []*ConcernedArtist, track *files.Track, concerns []string) (foundConcerns bool) {
 	if len(concerns) > 0 {
 		foundConcerns = true
-		for _, cAr := range concernedArtists {
+		for _, cAr := range artists {
 			if cT := cAr.Lookup(track); cT != nil {
 				for _, s := range concerns {
 					cT.AddConcern(FilesConcern, s)
@@ -264,14 +236,14 @@ func RecordFileConcerns(concernedArtists []*ConcernedArtist, track *files.Track,
 func (cs *CheckSettings) PerformNumberingAnalysis(
 	concernedArtists []*ConcernedArtist) bool {
 	foundConcerns := false
-	if cs.numbering {
+	if cs.Numbering.Value {
 		for _, cAr := range concernedArtists {
 			for _, cAl := range cAr.Albums() {
 				trackMap := map[int][]string{}
 				maxTrack := len(cAl.Tracks())
 				for _, cT := range cAl.Tracks() {
 					track := cT.Track()
-					trackNumber := track.Number()
+					trackNumber := track.Number
 					trackMap[trackNumber] = append(trackMap[trackNumber], cT.name())
 					if trackNumber > maxTrack {
 						maxTrack = trackNumber
@@ -316,17 +288,23 @@ func GenerateNumberingConcerns(m map[int][]string, maxTrack int) []string {
 	if len(numbers) != 0 {
 		if numbers[0] > 1 {
 			missingNumbers = append(missingNumbers,
-				GenerateMissingNumbers(1, numbers[0]-1))
+				NumberGap{Value1: 1, Value2: numbers[0] - 1}.GenerateMissingTrackNumbers())
 		}
 		for k := 0; k < len(numbers)-1; k++ {
 			if numbers[k+1]-numbers[k] != 1 {
 				missingNumbers = append(missingNumbers,
-					GenerateMissingNumbers(numbers[k]+1, numbers[k+1]-1))
+					NumberGap{
+						Value1: numbers[k] + 1,
+						Value2: numbers[k+1] - 1,
+					}.GenerateMissingTrackNumbers())
 			}
 		}
 		if numbers[len(numbers)-1] != maxTrack {
 			missingNumbers = append(missingNumbers,
-				GenerateMissingNumbers(numbers[len(numbers)-1]+1, maxTrack))
+				NumberGap{
+					Value1: numbers[len(numbers)-1] + 1,
+					Value2: maxTrack,
+				}.GenerateMissingTrackNumbers())
 		}
 	}
 	if len(missingNumbers) != 0 {
@@ -337,18 +315,21 @@ func GenerateNumberingConcerns(m map[int][]string, maxTrack int) []string {
 	return concerns
 }
 
-// TODO: better name "GenerateMissingTrackNumbers"
-// TODO: put values in a struct
-func GenerateMissingNumbers(low, high int) string {
-	if low == high {
-		return fmt.Sprintf("%d", low)
+type NumberGap struct {
+	Value1 int
+	Value2 int
+}
+
+func (gap NumberGap) GenerateMissingTrackNumbers() string {
+	if gap.Value1 == gap.Value2 {
+		return fmt.Sprintf("%d", gap.Value1)
 	}
-	return fmt.Sprintf("%d-%d", low, high)
+	return fmt.Sprintf("%d-%d", min(gap.Value1, gap.Value2), max(gap.Value1, gap.Value2))
 }
 
 func (cs *CheckSettings) PerformEmptyAnalysis(concernedArtists []*ConcernedArtist) bool {
 	emptyFoldersFound := false
-	if cs.empty {
+	if cs.Empty.Value {
 		for _, concernedArtist := range concernedArtists {
 			if !concernedArtist.Artist().HasAlbums() {
 				concernedArtist.AddConcern(EmptyConcern, "no albums found")
@@ -367,28 +348,28 @@ func (cs *CheckSettings) PerformEmptyAnalysis(concernedArtists []*ConcernedArtis
 }
 
 func (cs *CheckSettings) HasWorkToDo(o output.Bus) bool {
-	if cs.empty || cs.files || cs.numbering {
+	if cs.Empty.Value || cs.Files.Value || cs.Numbering.Value {
 		return true
 	}
-	userPartiallyAtFault := cs.emptyUserSet || cs.filesUserSet || cs.numberingUserSet
+	userPartiallyAtFault := cs.Empty.UserSet || cs.Files.UserSet || cs.Numbering.UserSet
 	o.WriteCanonicalError("No checks will be executed.\nWhy?\n")
 	switch userPartiallyAtFault {
 	case true:
 		flagsUserSet := make([]string, 0, 3)
 		flagsFromConfig := make([]string, 0, 3)
-		switch cs.emptyUserSet {
+		switch cs.Empty.UserSet {
 		case true:
 			flagsUserSet = append(flagsUserSet, CheckEmptyFlag)
 		case false:
 			flagsFromConfig = append(flagsFromConfig, CheckEmptyFlag)
 		}
-		switch cs.filesUserSet {
+		switch cs.Files.UserSet {
 		case true:
 			flagsUserSet = append(flagsUserSet, CheckFilesFlag)
 		case false:
 			flagsFromConfig = append(flagsFromConfig, CheckFilesFlag)
 		}
-		switch cs.numberingUserSet {
+		switch cs.Numbering.UserSet {
 		case true:
 			flagsUserSet = append(flagsUserSet, CheckNumberingFlag)
 		case false:
@@ -419,13 +400,13 @@ func ProcessCheckFlags(o output.Bus, values map[string]*FlagValue) (*CheckSettin
 	settings := &CheckSettings{}
 	flagsOk := true // optimistic
 	var flagErr error
-	if settings.empty, settings.emptyUserSet, flagErr = GetBool(o, values, CheckEmpty); flagErr != nil {
+	if settings.Empty, flagErr = GetBool(o, values, CheckEmpty); flagErr != nil {
 		flagsOk = false
 	}
-	if settings.files, settings.filesUserSet, flagErr = GetBool(o, values, CheckFiles); flagErr != nil {
+	if settings.Files, flagErr = GetBool(o, values, CheckFiles); flagErr != nil {
 		flagsOk = false
 	}
-	if settings.numbering, settings.numberingUserSet, flagErr = GetBool(o, values, CheckNumbering); flagErr != nil {
+	if settings.Numbering, flagErr = GetBool(o, values, CheckNumbering); flagErr != nil {
 		flagsOk = false
 	}
 	return settings, flagsOk

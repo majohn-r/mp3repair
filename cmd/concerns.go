@@ -93,7 +93,7 @@ func (cT *ConcernedTrack) IsConcerned() bool {
 }
 
 func (cT *ConcernedTrack) name() string {
-	return cT.backing.CommonName()
+	return cT.backing.SimpleName
 }
 
 func (cT *ConcernedTrack) ToConsole(o output.Bus) {
@@ -120,11 +120,11 @@ func NewConcernedAlbum(album *files.Album) *ConcernedAlbum {
 	}
 	cAl := &ConcernedAlbum{
 		Concerns: NewConcerns(),
-		tracks:   make([]*ConcernedTrack, 0, len(album.Tracks())),
+		tracks:   make([]*ConcernedTrack, 0, len(album.Tracks)),
 		backing:  album,
 		trackMap: map[string]*ConcernedTrack{},
 	}
-	for _, track := range album.Tracks() {
+	for _, track := range album.Tracks {
 		cAl.AddTrack(track)
 	}
 	return cAl
@@ -158,7 +158,7 @@ func (cAl *ConcernedAlbum) IsConcerned() bool {
 }
 
 func (cAl *ConcernedAlbum) name() string {
-	return cAl.backing.Name()
+	return cAl.backing.Title
 }
 
 func (cAl *ConcernedAlbum) Lookup(track *files.Track) *ConcernedTrack {
@@ -228,11 +228,11 @@ func NewConcernedArtist(artist *files.Artist) *ConcernedArtist {
 	}
 	cAr := &ConcernedArtist{
 		Concerns: NewConcerns(),
-		albums:   make([]*ConcernedAlbum, 0, len(artist.Albums())),
+		albums:   make([]*ConcernedAlbum, 0, len(artist.Albums)),
 		backing:  artist,
 		albumMap: map[string]*ConcernedAlbum{},
 	}
-	for _, album := range artist.Albums() {
+	for _, album := range artist.Albums {
 		cAr.AddAlbum(album)
 	}
 	return cAr
@@ -278,7 +278,7 @@ func (cAr *ConcernedArtist) Lookup(track *files.Track) *ConcernedTrack {
 }
 
 func (cAr *ConcernedArtist) name() string {
-	return cAr.backing.Name()
+	return cAr.backing.Name
 }
 
 func (cAr *ConcernedArtist) Rollup() bool {
@@ -334,8 +334,7 @@ func mergeConcerns(initial, addition map[ConcernType][]string, prefix string) {
 	}
 }
 
-// TODO: better name: 'CreateConcernedArtists'
-func PrepareConcernedArtists(artists []*files.Artist) []*ConcernedArtist {
+func CreateConcernedArtists(artists []*files.Artist) []*ConcernedArtist {
 	concernedArtists := make([]*ConcernedArtist, 0, len(artists))
 	for _, artist := range artists {
 		if cAr := NewConcernedArtist(artist); cAr != nil {

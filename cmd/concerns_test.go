@@ -144,9 +144,9 @@ func TestNewConcernedAlbum(t *testing.T) {
 							"NewConcernedAlbum() created with wrong album: got %v, want %v",
 							got.Album(), tt.album)
 					}
-					if len(got.Tracks()) != len(tt.album.Tracks()) {
+					if len(got.Tracks()) != len(tt.album.Tracks) {
 						t.Errorf("NewConcernedAlbum() created with %d tracks, want %d",
-							len(got.Tracks()), len(tt.album.Tracks()))
+							len(got.Tracks()), len(tt.album.Tracks))
 					}
 					got.AddConcern(cmd.NumberingConcern, "missing track 1")
 					if !got.IsConcerned() {
@@ -197,9 +197,9 @@ func TestNewConcernedArtist(t *testing.T) {
 						t.Errorf("NewConcernedArtist() created with wrong artist:"+
 							" got %v, want %v", got.Artist(), tt.artist)
 					}
-					if len(got.Albums()) != len(tt.artist.Albums()) {
+					if len(got.Albums()) != len(tt.artist.Albums) {
 						t.Errorf("NewConcernedArtist() created with %d albums, want %d",
-							len(got.Albums()), len(tt.artist.Albums()))
+							len(got.Albums()), len(tt.artist.Albums))
 					}
 					got.AddConcern(cmd.EmptyConcern, "no albums!")
 					if !got.IsConcerned() {
@@ -541,7 +541,7 @@ func TestConcernedArtist_ToConsole(t *testing.T) {
 	}
 }
 
-func TestPrepareConcernedArtists(t *testing.T) {
+func TestCreateConcernedArtists(t *testing.T) {
 	tests := map[string]struct {
 		artists    []*files.Artist
 		want       int
@@ -558,8 +558,8 @@ func TestPrepareConcernedArtists(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := cmd.PrepareConcernedArtists(tt.artists); len(got) != tt.want {
-				t.Errorf("PrepareConcernedArtists() = %d, want %v", len(got), tt.want)
+			if got := cmd.CreateConcernedArtists(tt.artists); len(got) != tt.want {
+				t.Errorf("CreateConcernedArtists() = %d, want %v", len(got), tt.want)
 			} else {
 				albums := 0
 				tracks := 0
@@ -574,7 +574,7 @@ func TestPrepareConcernedArtists(t *testing.T) {
 					}
 				}
 				if albums != tt.wantAlbums {
-					t.Errorf("PrepareConcernedArtists() = %d albums, want %v", albums,
+					t.Errorf("CreateConcernedArtists() = %d albums, want %v", albums,
 						tt.wantAlbums)
 				}
 				if tracks != tt.wantTracks {
@@ -598,10 +598,10 @@ func TestPrepareConcernedArtists(t *testing.T) {
 				copiedTracks := []*files.Track{}
 				for _, artist := range tt.artists {
 					copiedAr := artist.Copy()
-					for _, album := range artist.Albums() {
+					for _, album := range artist.Albums {
 						copiedAl := album.Copy(copiedAr, false)
 						copiedAr.AddAlbum(copiedAl)
-						for _, track := range album.Tracks() {
+						for _, track := range album.Tracks {
 							copiedTr := track.Copy(copiedAl)
 							copiedAl.AddTrack(copiedTr)
 							copiedTracks = append(copiedTracks, copiedTr)
@@ -634,8 +634,16 @@ func TestConcernedArtist_Rollup(t *testing.T) {
 		concernedArtist.AddConcern(cmd.EmptyConcern, "no albums found")
 	}
 	artist1 := files.NewArtist("artist name", "artist")
-	album1 := files.NewAlbum("album1", artist1, "album1")
-	album2 := files.NewAlbum("album2", artist1, "album2")
+	album1 := files.AlbumMaker{
+		Title:  "album1",
+		Artist: artist1,
+		Path:   "album1",
+	}.NewAlbum()
+	album2 := files.AlbumMaker{
+		Title:  "album2",
+		Artist: artist1,
+		Path:   "album2",
+	}.NewAlbum()
 	artist1.AddAlbum(album1)
 	artist1.AddAlbum(album2)
 	concernedArtistHeterogenousAlbums := cmd.NewConcernedArtist(artist1)
@@ -643,8 +651,16 @@ func TestConcernedArtist_Rollup(t *testing.T) {
 		concernedArtistHeterogenousAlbums.Albums()[0].AddConcern(cmd.EmptyConcern, "no tracks found")
 	}
 	artist2 := files.NewArtist("artist name", "artist")
-	album2a := files.NewAlbum("album1", artist2, "album1")
-	album2b := files.NewAlbum("album2", artist2, "album2")
+	album2a := files.AlbumMaker{
+		Title:  "album1",
+		Artist: artist2,
+		Path:   "album1",
+	}.NewAlbum()
+	album2b := files.AlbumMaker{
+		Title:  "album2",
+		Artist: artist2,
+		Path:   "album2",
+	}.NewAlbum()
 	artist2.AddAlbum(album2a)
 	artist2.AddAlbum(album2b)
 	concernedArtistIdenticalAlbums := cmd.NewConcernedArtist(artist2)
@@ -694,21 +710,24 @@ func TestConcernedArtist_Rollup(t *testing.T) {
 }
 
 func TestConcernedAlbum_Rollup(t *testing.T) {
-	albumNoTracks := cmd.NewConcernedAlbum(files.NewAlbum("album", nil, "album"))
-	album1 := files.NewAlbum("album1", nil, "album1")
-	album1.AddTrack(files.NewEmptyTrack())
-	album1.AddTrack(files.NewEmptyTrack())
+	albumNoTracks := cmd.NewConcernedAlbum(files.AlbumMaker{
+		Title: "album",
+		Path:  "album",
+	}.NewAlbum())
+	album1 := files.AlbumMaker{Title: "album1", Path: "album1"}.NewAlbum()
+	album1.AddTrack(&files.Track{})
+	album1.AddTrack(&files.Track{})
 	albumWithTracksNoConcerns := cmd.NewConcernedAlbum(album1)
-	album2 := files.NewAlbum("album2", nil, "album2")
-	album2.AddTrack(files.NewEmptyTrack())
-	album2.AddTrack(files.NewEmptyTrack())
+	album2 := files.AlbumMaker{Title: "album2", Path: "album2"}.NewAlbum()
+	album2.AddTrack(&files.Track{})
+	album2.AddTrack(&files.Track{})
 	albumWithMixedConcerns := cmd.NewConcernedAlbum(album2)
 	if albumWithMixedConcerns != nil {
 		albumWithMixedConcerns.Tracks()[0].AddConcern(cmd.FilesConcern, "no metadata")
 	}
-	album3 := files.NewAlbum("album3", nil, "album3")
-	album3.AddTrack(files.NewEmptyTrack())
-	album3.AddTrack(files.NewEmptyTrack())
+	album3 := files.AlbumMaker{Title: "album3", Path: "album3"}.NewAlbum()
+	album3.AddTrack(&files.Track{})
+	album3.AddTrack(&files.Track{})
 	albumWithIdenticalConcerns := cmd.NewConcernedAlbum(album3)
 	if albumWithIdenticalConcerns != nil {
 		for _, cT := range albumWithIdenticalConcerns.Tracks() {

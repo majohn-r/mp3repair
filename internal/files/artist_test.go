@@ -9,10 +9,16 @@ import (
 )
 
 func TestArtist_Copy(t *testing.T) {
-	complexArtist := files.NewArtist(
-		"artist's name", "Music/artist's name").WithCanonicalName("Actually, Fred")
-	complexArtist2 := files.NewArtist(
-		"artist's name", "Music/artist's name").WithCanonicalName("Actually, Fred")
+	complexArtist := &files.Artist{
+		Name:          "artist's name",
+		FilePath:      "Music/artist's name",
+		CanonicalName: "Actually, Fred",
+	}
+	complexArtist2 := &files.Artist{
+		Name:          "artist's name",
+		FilePath:      "Music/artist's name",
+		CanonicalName: "Actually, Fred",
+	}
 	tests := map[string]struct {
 		a    *files.Artist
 		want *files.Artist
@@ -67,9 +73,9 @@ func TestArtist_HasAlbums(t *testing.T) {
 		a    *files.Artist
 		want bool
 	}{
-		"empty": {a: files.NewEmptyArtist(), want: false},
+		"empty": {a: &files.Artist{}, want: false},
 		"with albums": {
-			a:    files.NewEmptyArtist().WithAlbums([]*files.Album{{}}),
+			a:    &files.Artist{Albums: []*files.Album{{}}},
 			want: true,
 		},
 	}

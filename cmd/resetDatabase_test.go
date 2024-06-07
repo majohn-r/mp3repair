@@ -30,7 +30,7 @@ func TestProcessResetDBFlags(t *testing.T) {
 	}{
 		"massive errors": {
 			values: nil,
-			want:   cmd.NewResetDBSettings(),
+			want:   &cmd.ResetDBSettings{},
 			want1:  false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -63,22 +63,21 @@ func TestProcessResetDBFlags(t *testing.T) {
 		},
 		"good results": {
 			values: map[string]*cmd.FlagValue{
-				"extension": cmd.NewFlagValue().WithValueType(
-					cmd.StringType).WithValue(".foo"),
-				"force": cmd.NewFlagValue().WithValueType(
-					cmd.BoolType).WithValue(true),
-				"ignoreServiceErrors": cmd.NewFlagValue().WithValueType(
-					cmd.BoolType).WithValue(true),
-				"metadataDir": cmd.NewFlagValue().WithValueType(
-					cmd.StringType).WithValue("metadata"),
-				"service": cmd.NewFlagValue().WithValueType(
-					cmd.StringType).WithValue("music service"),
-				"timeout": cmd.NewFlagValue().WithValueType(
-					cmd.IntType).WithValue(5),
+				"extension":           {Value: ".foo"},
+				"force":               {Value: true},
+				"ignoreServiceErrors": {Value: true},
+				"metadataDir":         {Value: "metadata"},
+				"service":             {Value: "music service"},
+				"timeout":             {Value: 5},
 			},
-			want: cmd.NewResetDBSettings().WithExtension(".foo").WithForce(
-				true).WithIgnoreServiceErrors(true).WithMetadataDir(
-				"metadata").WithService("music service").WithTimeout(5),
+			want: &cmd.ResetDBSettings{
+				Extension:           cmd.StringValue{Value: ".foo"},
+				Force:               cmd.BoolValue{Value: true},
+				IgnoreServiceErrors: cmd.BoolValue{Value: true},
+				MetadataDir:         cmd.StringValue{Value: "metadata"},
+				Service:             cmd.StringValue{Value: "music service"},
+				Timeout:             cmd.IntValue{Value: 5},
+			},
 			want1: true,
 		},
 	}
@@ -141,8 +140,10 @@ func TestResetDBSettings_WaitForStop(t *testing.T) {
 		output.WantedRecording
 	}{
 		"already timed out": {
-			rdbs: cmd.NewResetDBSettings().WithService(
-				"my service").WithTimeout(10),
+			rdbs: &cmd.ResetDBSettings{
+				Service: cmd.StringValue{Value: "my service"},
+				Timeout: cmd.IntValue{Value: 10},
+			},
 			args:       args{expiration: time.Now().Add(time.Duration(-1) * time.Second)},
 			wantStatus: cmd.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
@@ -158,7 +159,10 @@ func TestResetDBSettings_WaitForStop(t *testing.T) {
 			},
 		},
 		"query error": {
-			rdbs: cmd.NewResetDBSettings().WithService("my service").WithTimeout(10),
+			rdbs: &cmd.ResetDBSettings{
+				Service: cmd.StringValue{Value: "my service"},
+				Timeout: cmd.IntValue{Value: 10},
+			},
 			args: args{
 				s:             newTestService(),
 				expiration:    time.Now().Add(time.Duration(1) * time.Second),
@@ -176,7 +180,10 @@ func TestResetDBSettings_WaitForStop(t *testing.T) {
 			},
 		},
 		"stops correctly": {
-			rdbs: cmd.NewResetDBSettings().WithService("my service").WithTimeout(10),
+			rdbs: &cmd.ResetDBSettings{
+				Service: cmd.StringValue{Value: "my service"},
+				Timeout: cmd.IntValue{Value: 10},
+			},
 			args: args{
 				s: newTestService(
 					svc.Status{State: svc.Running},
@@ -253,7 +260,10 @@ func TestResetDBSettings_StopFoundService(t *testing.T) {
 		output.WantedRecording
 	}{
 		"defective service": {
-			rdbs: cmd.NewResetDBSettings().WithService("my service").WithTimeout(10),
+			rdbs: &cmd.ResetDBSettings{
+				Service: cmd.StringValue{Value: "my service"},
+				Timeout: cmd.IntValue{Value: 10},
+			},
 			args: args{
 				manager: newTestManager(nil, nil),
 				service: newTestService(),
@@ -270,7 +280,10 @@ func TestResetDBSettings_StopFoundService(t *testing.T) {
 			},
 		},
 		"already stopped": {
-			rdbs: cmd.NewResetDBSettings().WithService("my service").WithTimeout(10),
+			rdbs: &cmd.ResetDBSettings{
+				Service: cmd.StringValue{Value: "my service"},
+				Timeout: cmd.IntValue{Value: 10},
+			},
 			args: args{
 				manager: newTestManager(nil, nil),
 				service: newTestService(svc.Status{State: svc.Stopped}),
@@ -285,7 +298,10 @@ func TestResetDBSettings_StopFoundService(t *testing.T) {
 			},
 		},
 		"stopped easily": {
-			rdbs: cmd.NewResetDBSettings().WithService("my service").WithTimeout(10),
+			rdbs: &cmd.ResetDBSettings{
+				Service: cmd.StringValue{Value: "my service"},
+				Timeout: cmd.IntValue{Value: 10},
+			},
 			args: args{
 				manager: newTestManager(nil, nil),
 				service: newTestService(
@@ -302,7 +318,10 @@ func TestResetDBSettings_StopFoundService(t *testing.T) {
 			},
 		},
 		"stopped with a little more difficulty": {
-			rdbs: cmd.NewResetDBSettings().WithService("my service").WithTimeout(10),
+			rdbs: &cmd.ResetDBSettings{
+				Service: cmd.StringValue{Value: "my service"},
+				Timeout: cmd.IntValue{Value: 10},
+			},
 			args: args{
 				manager: newTestManager(nil, nil),
 				service: newTestService(
@@ -320,7 +339,10 @@ func TestResetDBSettings_StopFoundService(t *testing.T) {
 			},
 		},
 		"cannot be stopped": {
-			rdbs: cmd.NewResetDBSettings().WithService("my service").WithTimeout(10),
+			rdbs: &cmd.ResetDBSettings{
+				Service: cmd.StringValue{Value: "my service"},
+				Timeout: cmd.IntValue{Value: 10},
+			},
 			args: args{
 				manager: newTestManager(nil, nil),
 				service: newTestService(svc.Status{State: svc.Paused}),
@@ -435,7 +457,7 @@ func Test_listServices(t *testing.T) {
 	}
 }
 
-func TestResetDBSettings_HandleService(t *testing.T) {
+func TestResetDBSettings_DisableService(t *testing.T) {
 	tests := map[string]struct {
 		rdbs       *cmd.ResetDBSettings
 		manager    cmd.ServiceManager
@@ -444,7 +466,10 @@ func TestResetDBSettings_HandleService(t *testing.T) {
 		output.WantedRecording
 	}{
 		"defective manager #1": {
-			rdbs:       cmd.NewResetDBSettings().WithService("my service").WithTimeout(1),
+			rdbs: &cmd.ResetDBSettings{
+				Service: cmd.StringValue{Value: "my service"},
+				Timeout: cmd.IntValue{Value: 1},
+			},
 			manager:    newTestManager(nil, []string{"my service"}),
 			wantStatus: cmd.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
@@ -462,7 +487,10 @@ func TestResetDBSettings_HandleService(t *testing.T) {
 			},
 		},
 		"defective manager #2": {
-			rdbs:       cmd.NewResetDBSettings().WithService("my service").WithTimeout(1),
+			rdbs: &cmd.ResetDBSettings{
+				Service: cmd.StringValue{Value: "my service"},
+				Timeout: cmd.IntValue{Value: 1},
+			},
 			manager:    newTestManager(nil, nil),
 			wantStatus: cmd.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
@@ -480,7 +508,10 @@ func TestResetDBSettings_HandleService(t *testing.T) {
 			},
 		},
 		"defective manager #3": {
-			rdbs:       cmd.NewResetDBSettings().WithService("my service").WithTimeout(1),
+			rdbs: &cmd.ResetDBSettings{
+				Service: cmd.StringValue{Value: "my service"},
+				Timeout: cmd.IntValue{Value: 1},
+			},
 			manager:    newTestManager(map[string]*mgr.Service{"my service": nil}, nil),
 			wantStatus: cmd.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
@@ -497,14 +528,14 @@ func TestResetDBSettings_HandleService(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			gotOk, gotStatus := tt.rdbs.HandleService(o, tt.manager)
+			gotOk, gotStatus := tt.rdbs.DisableService(o, tt.manager)
 			if gotOk != tt.wantOk {
-				t.Errorf("ResetDBSettings.HandleService() = %v, want %v", gotOk, tt.wantOk)
+				t.Errorf("ResetDBSettings.DisableService() = %v, want %v", gotOk, tt.wantOk)
 			}
 			if !compareExitErrors(gotStatus, tt.wantStatus) {
-				t.Errorf("ResetDBSettings.HandleService() = %v, want %v", gotStatus, tt.wantStatus)
+				t.Errorf("ResetDBSettings.DisableService() = %v, want %v", gotStatus, tt.wantStatus)
 			}
-			o.Report(t, "ResetDBSettings.HandleService()", tt.WantedRecording)
+			o.Report(t, "ResetDBSettings.DisableService()", tt.WantedRecording)
 		})
 	}
 }
@@ -528,7 +559,10 @@ func TestResetDBSettings_StopService(t *testing.T) {
 			connect: func() (*mgr.Mgr, error) {
 				return nil, fmt.Errorf("no manager available")
 			},
-			rdbs:       cmd.NewResetDBSettings().WithService("my service").WithTimeout(1),
+			rdbs: &cmd.ResetDBSettings{
+				Service: cmd.StringValue{Value: "my service"},
+				Timeout: cmd.IntValue{Value: 1},
+			},
 			wantStatus: cmd.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -548,7 +582,10 @@ func TestResetDBSettings_StopService(t *testing.T) {
 			connect: func() (*mgr.Mgr, error) {
 				return nil, nil
 			},
-			rdbs:       cmd.NewResetDBSettings().WithService("my service").WithTimeout(1),
+			rdbs: &cmd.ResetDBSettings{
+				Service: cmd.StringValue{Value: "my service"},
+				Timeout: cmd.IntValue{Value: 1},
+			},
 			wantStatus: cmd.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Error: "The service \"my service\" cannot be opened: nil manager.\n",
@@ -581,7 +618,7 @@ func TestResetDBSettings_StopService(t *testing.T) {
 	}
 }
 
-func TestResetDBSettings_DeleteFiles(t *testing.T) {
+func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 	originalRemove := cmd.Remove
 	defer func() {
 		cmd.Remove = originalRemove
@@ -594,13 +631,13 @@ func TestResetDBSettings_DeleteFiles(t *testing.T) {
 		output.WantedRecording
 	}{
 		"no files": {
-			rdbs:  cmd.NewResetDBSettings().WithMetadataDir("metadata/dir"),
+			rdbs:  &cmd.ResetDBSettings{MetadataDir: cmd.StringValue{Value: "metadata/dir"}},
 			paths: nil,
 			want:  nil,
 		},
 		"undeletable files": {
 			remove: func(_ string) error { return fmt.Errorf("cannot remove file") },
-			rdbs:   cmd.NewResetDBSettings().WithMetadataDir("metadata/dir"),
+			rdbs:   &cmd.ResetDBSettings{MetadataDir: cmd.StringValue{Value: "metadata/dir"}},
 			paths:  []string{"file1", "file2"},
 			want:   cmd.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
@@ -619,7 +656,7 @@ func TestResetDBSettings_DeleteFiles(t *testing.T) {
 		},
 		"deletable files": {
 			remove: func(_ string) error { return nil },
-			rdbs:   cmd.NewResetDBSettings().WithMetadataDir("metadata/dir"),
+			rdbs:   &cmd.ResetDBSettings{MetadataDir: cmd.StringValue{Value: "metadata/dir"}},
 			paths:  []string{"file1", "file2"},
 			want:   nil,
 			WantedRecording: output.WantedRecording{
@@ -632,10 +669,10 @@ func TestResetDBSettings_DeleteFiles(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			cmd.Remove = tt.remove
 			o := output.NewRecorder()
-			if got := tt.rdbs.DeleteFiles(o, tt.paths); !compareExitErrors(got, tt.want) {
-				t.Errorf("ResetDBSettings.DeleteFiles() %s want %s", got, tt.want)
+			if got := tt.rdbs.DeleteMetadataFiles(o, tt.paths); !compareExitErrors(got, tt.want) {
+				t.Errorf("ResetDBSettings.DeleteMetadataFiles() %s want %s", got, tt.want)
 			}
-			o.Report(t, "ResetDBSettings.DeleteFiles()", tt.WantedRecording)
+			o.Report(t, "ResetDBSettings.DeleteMetadataFiles()", tt.WantedRecording)
 		})
 	}
 }
@@ -654,8 +691,10 @@ func TestResetDBSettings_FilterMetadataFiles(t *testing.T) {
 		"no entries": {want: []string{}},
 		"mixed entries": {
 			plainFileExists: func(s string) bool { return !strings.Contains(s, "dir.") },
-			rdbs: cmd.NewResetDBSettings().WithMetadataDir(
-				"metadata").WithExtension(".db"),
+			rdbs: &cmd.ResetDBSettings{
+				MetadataDir: cmd.StringValue{Value: "metadata"},
+				Extension:   cmd.StringValue{Value: ".db"},
+			},
 			entries: []fs.FileInfo{
 				newTestFile("dir. foo.db", nil),
 				newTestFile("foo.db", nil),
@@ -675,7 +714,7 @@ func TestResetDBSettings_FilterMetadataFiles(t *testing.T) {
 	}
 }
 
-func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
+func TestResetDBSettings_CleanUpMetadata(t *testing.T) {
 	originalReadDirectory := cmd.ReadDirectory
 	originalPlainFileExists := cmd.PlainFileExists
 	originalRemove := cmd.Remove
@@ -694,8 +733,10 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 		output.WantedRecording
 	}{
 		"did not stop, cannot ignore it": {
-			rdbs: cmd.NewResetDBSettings().WithService(
-				"musicService").WithIgnoreServiceErrors(false),
+			rdbs: &cmd.ResetDBSettings{
+				Service:             cmd.StringValue{Value: "musicService"},
+				IgnoreServiceErrors: cmd.BoolValue{Value: false},
+			},
 			stopped: false,
 			want:    cmd.NewExitUserError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
@@ -712,7 +753,7 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 			readDirectory: func(_ output.Bus, _ string) ([]fs.FileInfo, bool) {
 				return nil, true
 			},
-			rdbs:    cmd.NewResetDBSettings().WithMetadataDir("metadata"),
+			rdbs:    &cmd.ResetDBSettings{MetadataDir: cmd.StringValue{Value: "metadata"}},
 			stopped: true,
 			want:    nil,
 			WantedRecording: output.WantedRecording{
@@ -728,8 +769,10 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 			readDirectory: func(_ output.Bus, _ string) ([]fs.FileInfo, bool) {
 				return nil, true
 			},
-			rdbs: cmd.NewResetDBSettings().WithMetadataDir(
-				"metadata").WithIgnoreServiceErrors(true),
+			rdbs: &cmd.ResetDBSettings{
+				MetadataDir:         cmd.StringValue{Value: "metadata"},
+				IgnoreServiceErrors: cmd.BoolValue{Value: true},
+			},
 			stopped: false,
 			want:    nil,
 			WantedRecording: output.WantedRecording{
@@ -745,8 +788,10 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 			readDirectory: func(_ output.Bus, _ string) ([]fs.FileInfo, bool) {
 				return nil, false
 			},
-			rdbs: cmd.NewResetDBSettings().WithMetadataDir(
-				"metadata").WithIgnoreServiceErrors(true),
+			rdbs: &cmd.ResetDBSettings{
+				MetadataDir:         cmd.StringValue{Value: "metadata"},
+				IgnoreServiceErrors: cmd.BoolValue{Value: true},
+			},
 			stopped:         false,
 			want:            nil,
 			WantedRecording: output.WantedRecording{},
@@ -757,8 +802,10 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 			},
 			plainFileExists: func(_ string) bool { return true },
 			remove:          func(_ string) error { return nil },
-			rdbs: cmd.NewResetDBSettings().WithMetadataDir(
-				"metadata").WithExtension(".db"),
+			rdbs: &cmd.ResetDBSettings{
+				MetadataDir: cmd.StringValue{Value: "metadata"},
+				Extension:   cmd.StringValue{Value: ".db"},
+			},
 			stopped: true,
 			want:    nil,
 			WantedRecording: output.WantedRecording{
@@ -772,10 +819,10 @@ func TestResetDBSettings_DeleteMetadataFiles(t *testing.T) {
 			cmd.PlainFileExists = tt.plainFileExists
 			cmd.Remove = tt.remove
 			o := output.NewRecorder()
-			if got := tt.rdbs.DeleteMetadataFiles(o, tt.stopped); !compareExitErrors(got, tt.want) {
-				t.Errorf("ResetDBSettings.DeleteMetadataFiles() %s want %s", got, tt.want)
+			if got := tt.rdbs.CleanUpMetadata(o, tt.stopped); !compareExitErrors(got, tt.want) {
+				t.Errorf("ResetDBSettings.CleanUpMetadata() %s want %s", got, tt.want)
 			}
-			o.Report(t, "ResetDBSettings.DeleteMetadataFiles()", tt.WantedRecording)
+			o.Report(t, "ResetDBSettings.CleanUpMetadata()", tt.WantedRecording)
 		})
 	}
 }
@@ -802,7 +849,7 @@ func TestResetDBSettings_ResetService(t *testing.T) {
 	}{
 		"not dirty, no force": {
 			dirty: func() bool { return false },
-			rdbs:  cmd.NewResetDBSettings().WithForce(false),
+			rdbs:  &cmd.ResetDBSettings{Force: cmd.BoolValue{Value: false}},
 			want:  cmd.NewExitUserError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -817,7 +864,7 @@ func TestResetDBSettings_ResetService(t *testing.T) {
 		},
 		"not dirty, force": {
 			dirty: func() bool { return false },
-			rdbs:  cmd.NewResetDBSettings().WithForce(true),
+			rdbs:  &cmd.ResetDBSettings{Force: cmd.BoolValue{Value: true}},
 			want:  cmd.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -841,7 +888,7 @@ func TestResetDBSettings_ResetService(t *testing.T) {
 		},
 		"dirty, not force": {
 			dirty: func() bool { return true },
-			rdbs:  cmd.NewResetDBSettings(),
+			rdbs:  &cmd.ResetDBSettings{},
 			want:  cmd.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -876,7 +923,7 @@ func TestResetDBSettings_ResetService(t *testing.T) {
 	}
 }
 
-func TestResetDBExec(t *testing.T) {
+func TestResetDBRun(t *testing.T) {
 	cmd.InitGlobals()
 	originalBus := cmd.Bus
 	originalDirty := cmd.Dirty
@@ -885,32 +932,44 @@ func TestResetDBExec(t *testing.T) {
 		cmd.Dirty = originalDirty
 	}()
 	cmd.Dirty = func() bool { return false }
-	flags := cmd.NewSectionFlags().WithSectionName("resetDatabase").WithFlags(
-		map[string]*cmd.FlagDetails{
-			"timeout": cmd.NewFlagDetails().WithAbbreviatedName(
-				"t").WithUsage(fmt.Sprintf(
-				"timeout in seconds (minimum %d, maximum %d) for stopping the media player"+
-					" service", 1, 60)).WithExpectedType(cmd.IntType).WithDefaultValue(
-				cmd_toolkit.NewIntBounds(1, 10, 60)),
-			"service": cmd.NewFlagDetails().WithUsage(
-				"name of the media player service").WithExpectedType(
-				cmd.StringType).WithDefaultValue("WMPNetworkSVC"),
-			"metadataDir": cmd.NewFlagDetails().WithUsage(
-				"directory where the media player service metadata files are" +
-					" stored").WithExpectedType(cmd.StringType).WithDefaultValue(
-				filepath.Join("AppData", "Local", "Microsoft", "Media Player")),
-			"extension": cmd.NewFlagDetails().WithUsage(
-				"extension for metadata files").WithExpectedType(
-				cmd.StringType).WithDefaultValue(".wmdb"),
-			"force": cmd.NewFlagDetails().WithAbbreviatedName(
-				"f").WithUsage("if set, force a database reset").WithExpectedType(
-				cmd.BoolType).WithDefaultValue(false),
-			"ignoreServiceErrors": cmd.NewFlagDetails().WithAbbreviatedName(
-				"i").WithUsage(
-				"if set, ignore service errors and delete the media player service metadata" +
-					" files").WithExpectedType(cmd.BoolType).WithDefaultValue(false),
+	flags := &cmd.SectionFlags{
+		SectionName: "resetDatabase",
+		Details: map[string]*cmd.FlagDetails{
+			"timeout": {
+				AbbreviatedName: "t",
+				Usage:           fmt.Sprintf("timeout in seconds (minimum %d, maximum %d) for stopping the media player service", 1, 60),
+				ExpectedType:    cmd.IntType,
+				DefaultValue:    cmd_toolkit.NewIntBounds(1, 10, 60),
+			},
+			"service": {
+				Usage:        "name of the media player service",
+				ExpectedType: cmd.StringType,
+				DefaultValue: "WMPNetworkSVC",
+			},
+			"metadataDir": {
+				Usage:        "directory where the media player service metadata files are" + " stored",
+				ExpectedType: cmd.StringType,
+				DefaultValue: filepath.Join("AppData", "Local", "Microsoft", "Media Player"),
+			},
+			"extension": {
+				Usage:        "extension for metadata files",
+				ExpectedType: cmd.StringType,
+				DefaultValue: ".wmdb",
+			},
+			"force": {
+				AbbreviatedName: "f",
+				Usage:           "if set, force a database reset",
+				ExpectedType:    cmd.BoolType,
+				DefaultValue:    false,
+			},
+			"ignoreServiceErrors": {
+				AbbreviatedName: "i",
+				Usage:           "if set, ignore service errors and delete the media player service metadata files",
+				ExpectedType:    cmd.BoolType,
+				DefaultValue:    false,
+			},
 		},
-	)
+	}
 	myCommand := &cobra.Command{}
 	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), myCommand.Flags(),
 		flags)
@@ -935,6 +994,7 @@ func TestResetDBExec(t *testing.T) {
 					"level='info'" +
 					" --extension='.wmdb'" +
 					" --force='false'" +
+					" --ignoreServiceErrors='false'" +
 					" --metadataDir='AppData\\Local\\Microsoft\\Media Player'" +
 					" --service='WMPNetworkSVC'" +
 					" --timeout='10'" +
@@ -947,8 +1007,8 @@ func TestResetDBExec(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.Bus = o
-			cmd.ResetDBExec(tt.cmd, tt.in1)
-			o.Report(t, "ResetDBExec()", tt.WantedRecording)
+			cmd.ResetDBRun(tt.cmd, tt.in1)
+			o.Report(t, "ResetDBRun()", tt.WantedRecording)
 		})
 	}
 }
@@ -956,16 +1016,16 @@ func TestResetDBExec(t *testing.T) {
 func TestResetDatabaseHelp(t *testing.T) {
 	commandUnderTest := cloneCommand(cmd.ResetDatabaseCmd)
 	flagMap := map[string]*cmd.FlagDetails{}
-	for k, v := range cmd.ResetDatabaseFlags.Flags() {
+	for k, v := range cmd.ResetDatabaseFlags.Details {
 		switch k {
 		case "metadataDir":
-			flagMap[k] = v.Copy().WithDefaultValue(
-				"[USERPROFILE]/AppData/Local/Microsoft/Media Player")
+			flagMap[k] = v.Copy()
+			flagMap[k].DefaultValue = "[USERPROFILE]/AppData/Local/Microsoft/Media Player"
 		default:
 			flagMap[k] = v
 		}
 	}
-	flagCopy := cmd.NewSectionFlags().WithSectionName("resetDatabase").WithFlags(flagMap)
+	flagCopy := &cmd.SectionFlags{SectionName: "resetDatabase", Details: flagMap}
 	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), flagCopy)
 	tests := map[string]struct {

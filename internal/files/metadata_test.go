@@ -21,7 +21,7 @@ const (
 	zeroBytes = "zero length"
 )
 
-func Test_trackMetadata_setId3v1Values(t *testing.T) {
+func TestTrackMetadata_setId3v1Values(t *testing.T) {
 	const fnName = "trackMetadata.setId3v1Values()"
 	type args struct {
 		v1 *files.Id3v1Metadata
@@ -52,7 +52,7 @@ func Test_trackMetadata_setId3v1Values(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_setId3v2Values(t *testing.T) {
+func TestTrackMetadata_setId3v2Values(t *testing.T) {
 	const fnName = "trackMetadata.setId3v1Values()"
 	type args struct {
 		d *files.Id3v2Metadata
@@ -65,9 +65,15 @@ func Test_trackMetadata_setId3v2Values(t *testing.T) {
 		"complete test": {
 			tM: files.NewTrackMetadata(),
 			args: args{
-				d: files.NewId3v2Metadata().WithAlbumName("Great album").WithArtistName(
-					"Great artist").WithTrackName("Great track").WithGenre("Pop").WithYear(
-					"2022").WithTrackNumber(1).WithMusicCDIdentifier([]byte{0, 2, 4}),
+				d: &files.Id3v2Metadata{
+					AlbumTitle:        "Great album",
+					ArtistName:        "Great artist",
+					TrackName:         "Great track",
+					Genre:             "Pop",
+					Year:              "2022",
+					TrackNumber:       1,
+					MusicCDIdentifier: id3v2.UnknownFrame{Body: []byte{0, 2, 4}},
+				},
 			},
 			wantTM: files.NewTrackMetadata().WithAlbumNames(
 				[]string{"", "", "Great album"}).WithArtistNames(
@@ -88,13 +94,12 @@ func Test_trackMetadata_setId3v2Values(t *testing.T) {
 	}
 }
 
-func Test_readMetadata(t *testing.T) {
+func TestReadRawMetadata(t *testing.T) {
 	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
 	defer func() {
 		cmd_toolkit.AssignFileSystem(originalFileSystem)
 	}()
-	const fnName = "readMetadata()"
-	testDir := "readMetadata"
+	testDir := "ReadRawMetadata"
 	cmd_toolkit.Mkdir(testDir)
 	taglessFile := "01 tagless.mp3"
 	createFile(testDir, taglessFile)
@@ -130,8 +135,8 @@ func Test_readMetadata(t *testing.T) {
 			args: args{path: filepath.Join(testDir, "no such file.mp3")},
 			want: files.NewTrackMetadata().WithErrorCauses([]string{
 				"",
-				"open readMetadata\\no such file.mp3: file does not exist",
-				"open readMetadata\\no such file.mp3: file does not exist",
+				"open ReadRawMetadata\\no such file.mp3: file does not exist",
+				"open ReadRawMetadata\\no such file.mp3: file does not exist",
 			}),
 		},
 		"no metadata": {
@@ -180,13 +185,13 @@ func Test_readMetadata(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			if got := files.ReadRawMetadata(tt.args.path); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
+				t.Errorf("%s = %v, want %v", "ReadRawMetadata()", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_trackMetadata_isValid(t *testing.T) {
+func TestTrackMetadata_isValid(t *testing.T) {
 	const fnName = "trackMetadata.isValid()"
 	tests := map[string]struct {
 		tM   *files.TrackMetadata
@@ -246,7 +251,7 @@ func Test_trackMetadata_isValid(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_canonicalArtist(t *testing.T) {
+func TestTrackMetadata_canonicalArtist(t *testing.T) {
 	const fnName = "trackMetadata.CanonicalArtist()"
 	tests := map[string]struct {
 		tM   *files.TrackMetadata
@@ -294,7 +299,7 @@ func Test_trackMetadata_canonicalArtist(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_canonicalAlbum(t *testing.T) {
+func TestTrackMetadata_canonicalAlbum(t *testing.T) {
 	const fnName = "trackMetadata.CanonicalAlbum()"
 	tests := map[string]struct {
 		tM   *files.TrackMetadata
@@ -343,7 +348,7 @@ func Test_trackMetadata_canonicalAlbum(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_canonicalGenre(t *testing.T) {
+func TestTrackMetadata_canonicalGenre(t *testing.T) {
 	const fnName = "trackMetadata.CanonicalGenre()"
 	tests := map[string]struct {
 		tM   *files.TrackMetadata
@@ -391,7 +396,7 @@ func Test_trackMetadata_canonicalGenre(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_canonicalYear(t *testing.T) {
+func TestTrackMetadata_canonicalYear(t *testing.T) {
 	const fnName = "trackMetadata.CanonicalYear()"
 	tests := map[string]struct {
 		tM   *files.TrackMetadata
@@ -439,7 +444,7 @@ func Test_trackMetadata_canonicalYear(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
+func TestTrackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
 	const fnName = "trackMetadata.CanonicalMusicCDIdentifier()"
 	tests := map[string]struct {
 		tM   *files.TrackMetadata
@@ -489,7 +494,7 @@ func Test_trackMetadata_canonicalMusicCDIdentifier(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_errors(t *testing.T) {
+func TestTrackMetadata_errors(t *testing.T) {
 	const fnName = "trackMetadata.errors()"
 	tests := map[string]struct {
 		tM   *files.TrackMetadata
@@ -551,30 +556,26 @@ func Test_trackMetadata_errors(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_TrackDiffers(t *testing.T) {
-	const fnName = "trackMetadata.TrackDiffers()"
-	type args struct {
-		track int
-	}
+func TestTrackMetadata_TrackNumberDiffers(t *testing.T) {
 	tests := map[string]struct {
-		tM *files.TrackMetadata
-		args
+		tM     *files.TrackMetadata
+		track  int
 		want   bool
 		wantTM *files.TrackMetadata
 	}{
 		"after read failure": {
 			tM: files.NewTrackMetadata().WithErrorCauses(
 				[]string{"", cannotOpenFile, cannotOpenFile}),
-			args: args{track: 20},
-			want: false,
+			track: 20,
+			want:  false,
 			wantTM: files.NewTrackMetadata().WithErrorCauses(
 				[]string{"", cannotOpenFile, cannotOpenFile}),
 		},
 		"after reading no metadata": {
 			tM: files.NewTrackMetadata().WithErrorCauses(
 				[]string{"", negativeSeek, zeroBytes}),
-			args: args{track: 20},
-			want: false,
+			track: 20,
+			want:  false,
 			wantTM: files.NewTrackMetadata().WithErrorCauses(
 				[]string{"", negativeSeek, zeroBytes}),
 		},
@@ -587,8 +588,8 @@ func Test_trackMetadata_TrackDiffers(t *testing.T) {
 				[]string{"", "2013", ""}).WithTrackNumbers([]int{
 				0, 29, 0}).WithPrimarySource(files.ID3V1).WithErrorCauses([]string{
 				"", "", zeroBytes}),
-			args: args{track: 20},
-			want: true,
+			track: 20,
+			want:  true,
 			wantTM: files.NewTrackMetadata().WithAlbumNames([]string{
 				"", "On Air: Live At The BBC, Volum", ""}).WithArtistNames([]string{
 				"", "The Beatles", ""}).WithTrackNames([]string{
@@ -609,8 +610,8 @@ func Test_trackMetadata_TrackDiffers(t *testing.T) {
 				[]string{"", "", "2022"}).WithTrackNumbers([]int{
 				0, 0, 2}).WithMusicCDIdentifier([]byte{0}).WithPrimarySource(
 				files.ID3V2).WithErrorCauses([]string{"", noID3V1Metadata, ""}),
-			args: args{track: 20},
-			want: true,
+			track: 20,
+			want:  true,
 			wantTM: files.NewTrackMetadata().WithAlbumNames([]string{
 				"", "", "unknown album"}).WithArtistNames([]string{
 				"", "", "unknown artist"}).WithTrackNames([]string{
@@ -631,8 +632,8 @@ func Test_trackMetadata_TrackDiffers(t *testing.T) {
 				[]string{"", "Other", "dance music"}).WithYears([]string{
 				"", "2013", "2022"}).WithTrackNumbers([]int{0, 29, 2}).WithMusicCDIdentifier(
 				[]byte{0}).WithPrimarySource(files.ID3V2),
-			args: args{track: 20},
-			want: true,
+			track: 20,
+			want:  true,
 			wantTM: files.NewTrackMetadata().WithAlbumNames([]string{
 				"", "On Air: Live At The BBC, Volum", "unknown album"}).WithArtistNames(
 				[]string{"", "The Beatles", "unknown artist"}).WithTrackNames([]string{
@@ -647,17 +648,17 @@ func Test_trackMetadata_TrackDiffers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tM.TrackDiffers(tt.args.track); got != tt.want {
-				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
+			if got := tt.tM.TrackNumberDiffers(tt.track); got != tt.want {
+				t.Errorf("%s = %v, want %v", "trackMetadata.TrackDiffers()", got, tt.want)
 			}
 			if !reflect.DeepEqual(tt.tM, tt.wantTM) {
-				t.Errorf("%s got TM %v, want TM %v", fnName, tt.tM, tt.wantTM)
+				t.Errorf("%s got TM %v, want TM %v", "trackMetadata.TrackDiffers()", tt.tM, tt.wantTM)
 			}
 		})
 	}
 }
 
-func Test_trackMetadata_TrackTitleDiffers(t *testing.T) {
+func TestTrackMetadata_TrackTitleDiffers(t *testing.T) {
 	const fnName = "trackMetadata.TrackTitleDiffers()"
 	type args struct {
 		title string
@@ -779,7 +780,7 @@ func Test_trackMetadata_TrackTitleDiffers(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_AlbumTitleDiffers(t *testing.T) {
+func TestTrackMetadata_AlbumTitleDiffers(t *testing.T) {
 	const fnName = "trackMetadata.AlbumTitleDiffers()"
 	type args struct {
 		albumTitle string
@@ -882,7 +883,7 @@ func Test_trackMetadata_AlbumTitleDiffers(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_ArtistNameDiffers(t *testing.T) {
+func TestTrackMetadata_ArtistNameDiffers(t *testing.T) {
 	const fnName = "trackMetadata.ArtistNameDiffers()"
 	type args struct {
 		artistName string
@@ -985,7 +986,7 @@ func Test_trackMetadata_ArtistNameDiffers(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_GenreDiffers(t *testing.T) {
+func TestTrackMetadata_GenreDiffers(t *testing.T) {
 	const fnName = "trackMetadata.GenreDiffers()"
 	type args struct {
 		genre string
@@ -1087,7 +1088,7 @@ func Test_trackMetadata_GenreDiffers(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_YearDiffers(t *testing.T) {
+func TestTrackMetadata_YearDiffers(t *testing.T) {
 	const fnName = "trackMetadata.YearDiffers()"
 	type args struct {
 		year string
@@ -1210,7 +1211,7 @@ func Test_trackMetadata_YearDiffers(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_MCDIDiffers(t *testing.T) {
+func TestTrackMetadata_MCDIDiffers(t *testing.T) {
 	const fnName = "trackMetadata.MCDIDiffers()"
 	type args struct {
 		f id3v2.UnknownFrame
@@ -1310,7 +1311,7 @@ func Test_trackMetadata_MCDIDiffers(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_CanonicalAlbumTitleMatches(t *testing.T) {
+func TestTrackMetadata_CanonicalAlbumTitleMatches(t *testing.T) {
 	const fnName = "trackMetadata.CanonicalAlbumTitleMatches()"
 	type args struct {
 		albumTitle string
@@ -1403,7 +1404,7 @@ func Test_trackMetadata_CanonicalAlbumTitleMatches(t *testing.T) {
 	}
 }
 
-func Test_trackMetadata_CanonicalArtistNameMatches(t *testing.T) {
+func TestTrackMetadata_CanonicalArtistNameMatches(t *testing.T) {
 	const fnName = "trackMetadata.CanonicalArtistNameMatches()"
 	type args struct {
 		artistName string

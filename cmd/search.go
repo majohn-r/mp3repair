@@ -49,72 +49,54 @@ For more (too much, often, you are warned) information, do a web search for
 
 var (
 	// SearchFlags is a common set of flags that many commands need to use
-	SearchFlags = NewSectionFlags().WithSectionName("search").WithFlags(
-		map[string]*FlagDetails{
-			SearchAlbumFilter: NewFlagDetails().WithUsage(
-				"regular expression specifying which albums to select").WithExpectedType(
-				StringType).WithDefaultValue(".*"),
-			SearchArtistFilter: NewFlagDetails().WithUsage(
-				"regular expression specifying which artists to select").WithExpectedType(
-				StringType).WithDefaultValue(".*"),
-			SearchTrackFilter: NewFlagDetails().WithUsage(
-				"regular expression specifying which tracks to select").WithExpectedType(
-				StringType).WithDefaultValue(".*"),
-			SearchTopDir: NewFlagDetails().WithUsage(
-				"top directory specifying where to find mp3 files").WithExpectedType(
-				StringType).WithDefaultValue(filepath.Join("%HOMEPATH%", "Music")),
-			SearchFileExtensions: NewFlagDetails().WithUsage(
-				"comma-delimited list of file extensions used by mp3 files").WithExpectedType(
-				StringType).WithDefaultValue(".mp3"),
+	SearchFlags = &SectionFlags{
+		SectionName: "search",
+		Details: map[string]*FlagDetails{
+			SearchAlbumFilter: {
+				Usage:        "regular expression specifying which albums to select",
+				ExpectedType: StringType,
+				DefaultValue: ".*",
+			},
+			SearchArtistFilter: {
+				Usage:        "regular expression specifying which artists to select",
+				ExpectedType: StringType,
+				DefaultValue: ".*",
+			},
+			SearchTrackFilter: {
+				Usage:        "regular expression specifying which tracks to select",
+				ExpectedType: StringType,
+				DefaultValue: ".*",
+			},
+			SearchTopDir: {
+				Usage:        "top directory specifying where to find mp3 files",
+				ExpectedType: StringType,
+				DefaultValue: filepath.Join("%HOMEPATH%", "Music"),
+			},
+			SearchFileExtensions: {
+				Usage:        "comma-delimited list of file extensions used by mp3 files",
+				ExpectedType: StringType,
+				DefaultValue: ".mp3",
+			},
 		},
-	)
+	}
 )
 
 type SearchSettings struct {
-	albumFilter    *regexp.Regexp
-	artistFilter   *regexp.Regexp
-	fileExtensions []string
-	topDirectory   string
-	trackFilter    *regexp.Regexp
-}
-
-func NewSearchSettings() *SearchSettings {
-	return &SearchSettings{}
+	ArtistFilter   *regexp.Regexp
+	AlbumFilter    *regexp.Regexp
+	TrackFilter    *regexp.Regexp
+	FileExtensions []string
+	TopDirectory   string
 }
 
 func (ss *SearchSettings) Values() map[string]any {
 	return map[string]any{
-		SearchAlbumFilterFlag:    ss.albumFilter,
-		SearchArtistFilterFlag:   ss.artistFilter,
-		SearchTrackFilterFlag:    ss.trackFilter,
-		SearchTopDirFlag:         ss.topDirectory,
-		SearchFileExtensionsFlag: ss.fileExtensions,
+		SearchAlbumFilterFlag:    ss.AlbumFilter,
+		SearchArtistFilterFlag:   ss.ArtistFilter,
+		SearchTrackFilterFlag:    ss.TrackFilter,
+		SearchTopDirFlag:         ss.TopDirectory,
+		SearchFileExtensionsFlag: ss.FileExtensions,
 	}
-}
-
-func (ss *SearchSettings) WithAlbumFilter(r *regexp.Regexp) *SearchSettings {
-	ss.albumFilter = r
-	return ss
-}
-
-func (ss *SearchSettings) WithArtistFilter(r *regexp.Regexp) *SearchSettings {
-	ss.artistFilter = r
-	return ss
-}
-
-func (ss *SearchSettings) WithFileExtensions(s []string) *SearchSettings {
-	ss.fileExtensions = s
-	return ss
-}
-
-func (ss *SearchSettings) WithTopDirectory(s string) *SearchSettings {
-	ss.topDirectory = s
-	return ss
-}
-
-func (ss *SearchSettings) WithTrackFilter(r *regexp.Regexp) *SearchSettings {
-	ss.trackFilter = r
-	return ss
 }
 
 func EvaluateSearchFlags(o output.Bus, producer FlagProducer) (*SearchSettings, bool) {
@@ -131,32 +113,44 @@ func ProcessSearchFlags(o output.Bus, values map[string]*FlagValue) (settings *S
 	settings = &SearchSettings{}
 	// process the filters first, so we can attempt to guide the user to better
 	// choice(s)
-	albumFilter, albumFilterOk, albumFilterRegexOk := EvaluateFilter(o, values, SearchAlbumFilter, SearchAlbumFilterFlag)
+	albumFilter := EvaluateFilter(o, FilterFlag{
+		Values:             values,
+		FlagName:           SearchAlbumFilter,
+		FlagRepresentation: SearchAlbumFilterFlag,
+	})
 	switch {
-	case albumFilterOk:
-		settings.albumFilter = albumFilter
+	case albumFilter.FilterOk:
+		settings.AlbumFilter = albumFilter.Regex
 	default:
-		if !albumFilterRegexOk {
+		if !albumFilter.RegexOk {
 			regexOk = false
 		}
 		flagsOk = false
 	}
-	artistFilter, artistFilterOk, artistFilterRegexOk := EvaluateFilter(o, values, SearchArtistFilter, SearchArtistFilterFlag)
+	artistFilter := EvaluateFilter(o, FilterFlag{
+		Values:             values,
+		FlagName:           SearchArtistFilter,
+		FlagRepresentation: SearchArtistFilterFlag,
+	})
 	switch {
-	case artistFilterOk:
-		settings.artistFilter = artistFilter
+	case artistFilter.FilterOk:
+		settings.ArtistFilter = artistFilter.Regex
 	default:
-		if !artistFilterRegexOk {
+		if !artistFilter.RegexOk {
 			regexOk = false
 		}
 		flagsOk = false
 	}
-	trackFilter, trackFilterOk, trackFilterRegexOk := EvaluateFilter(o, values, SearchTrackFilter, SearchTrackFilterFlag)
+	trackFilter := EvaluateFilter(o, FilterFlag{
+		Values:             values,
+		FlagName:           SearchTrackFilter,
+		FlagRepresentation: SearchTrackFilterFlag,
+	})
 	switch {
-	case trackFilterOk:
-		settings.trackFilter = trackFilter
+	case trackFilter.FilterOk:
+		settings.TrackFilter = trackFilter.Regex
 	default:
-		if !trackFilterRegexOk {
+		if !trackFilter.RegexOk {
 			regexOk = false
 		}
 		flagsOk = false
@@ -168,14 +162,14 @@ func ProcessSearchFlags(o output.Bus, values map[string]*FlagValue) (settings *S
 	topDir, topDirFilterOk := EvaluateTopDir(o, values)
 	switch {
 	case topDirFilterOk:
-		settings.topDirectory = topDir
+		settings.TopDirectory = topDir
 	default:
 		flagsOk = false
 	}
 	extensions, extensionsFilterOk := EvaluateFileExtensions(o, values)
 	switch {
 	case extensionsFilterOk:
-		settings.fileExtensions = extensions
+		settings.FileExtensions = extensions
 	default:
 		flagsOk = false
 	}
@@ -183,11 +177,11 @@ func ProcessSearchFlags(o output.Bus, values map[string]*FlagValue) (settings *S
 }
 
 func EvaluateFileExtensions(o output.Bus, values map[string]*FlagValue) ([]string, bool) {
-	rawValue, _, flagErr := GetString(o, values, SearchFileExtensions)
+	rawValue, flagErr := GetString(o, values, SearchFileExtensions)
 	if flagErr != nil {
 		return []string{}, false
 	}
-	candidates := strings.Split(rawValue, ",")
+	candidates := strings.Split(rawValue.Value, ",")
 	failedCandidates := []string{}
 	extensions := []string{}
 	extensionsValid := true
@@ -208,28 +202,28 @@ func EvaluateFileExtensions(o output.Bus, values map[string]*FlagValue) ([]strin
 		o.WriteCanonicalError("What to do:\nProvide appropriate extensions.")
 		o.Log(output.Error, "invalid file extensions", map[string]any{
 			"rejected":               failedCandidates,
-			SearchFileExtensionsFlag: rawValue,
+			SearchFileExtensionsFlag: rawValue.Value,
 		})
 	}
 	return extensions, extensionsValid
 }
 
 func EvaluateTopDir(o output.Bus, values map[string]*FlagValue) (dir string, topDirValid bool) {
-	rawValue, userSet, flagErr := GetString(o, values, SearchTopDir)
+	rawValue, flagErr := GetString(o, values, SearchTopDir)
 	if flagErr != nil {
 		return
 	}
-	file, fileErr := cmd_toolkit.FileSystem().Stat(rawValue)
+	file, fileErr := cmd_toolkit.FileSystem().Stat(rawValue.Value)
 	if fileErr != nil {
 		o.WriteCanonicalError("The %s value, %q, cannot be used", SearchTopDirFlag,
-			rawValue)
+			rawValue.Value)
 		o.Log(output.Error, "invalid directory", map[string]any{
 			"error":          fileErr,
-			SearchTopDirFlag: rawValue,
-			"user-set":       userSet,
+			SearchTopDirFlag: rawValue.Value,
+			"user-set":       rawValue.UserSet,
 		})
 		o.WriteCanonicalError("Why?")
-		switch userSet {
+		switch rawValue.UserSet {
 		case true:
 			o.WriteCanonicalError("The value you specified is not a readable file.")
 			o.WriteCanonicalError(
@@ -245,13 +239,13 @@ func EvaluateTopDir(o output.Bus, values map[string]*FlagValue) (dir string, top
 	}
 	if !file.IsDir() {
 		o.WriteCanonicalError("The %s value, %q, cannot be used", SearchTopDirFlag,
-			rawValue)
+			rawValue.Value)
 		o.Log(output.Error, "the file is not a directory", map[string]any{
-			SearchTopDirFlag: rawValue,
-			"user-set":       userSet,
+			SearchTopDirFlag: rawValue.Value,
+			"user-set":       rawValue.UserSet,
 		})
 		o.WriteCanonicalError("Why?")
-		switch userSet {
+		switch rawValue.UserSet {
 		case true:
 			o.WriteCanonicalError(
 				"The value you specified is not the name of a directory.")
@@ -266,63 +260,73 @@ func EvaluateTopDir(o output.Bus, values map[string]*FlagValue) (dir string, top
 		}
 		return
 	}
-	dir = rawValue
+	dir = rawValue.Value
 	topDirValid = true
 	return
 }
 
-// TODO: put values in a struct
-func EvaluateFilter(o output.Bus, values map[string]*FlagValue, flagName, nameAsFlag string) (filter *regexp.Regexp, filterOk, regexOk bool) {
-	regexOk = true
-	rawValue, userSet, flagErr := GetString(o, values, flagName)
+type FilterFlag struct {
+	Values             map[string]*FlagValue
+	FlagName           string
+	FlagRepresentation string
+}
+
+type EvaluatedFilter struct {
+	Regex    *regexp.Regexp
+	FilterOk bool
+	RegexOk  bool
+}
+
+func EvaluateFilter(o output.Bus, filtering FilterFlag) EvaluatedFilter {
+	result := EvaluatedFilter{RegexOk: true}
+	rawValue, flagErr := GetString(o, filtering.Values, filtering.FlagName)
 	if flagErr != nil {
-		return
+		return result
 	}
-	f, regexErr := regexp.Compile(rawValue)
+	f, regexErr := regexp.Compile(rawValue.Value)
 	if regexErr != nil {
 		o.Log(output.Error, "the filter cannot be parsed as a regular expression",
 			map[string]any{
-				nameAsFlag: rawValue,
-				"user-set": userSet,
-				"error":    regexErr,
+				filtering.FlagRepresentation: rawValue.Value,
+				"user-set":                   rawValue.UserSet,
+				"error":                      regexErr,
 			})
-		o.WriteCanonicalError("the %s value %q cannot be used", nameAsFlag, rawValue)
+		o.WriteCanonicalError("the %s value %q cannot be used", filtering.FlagRepresentation, rawValue.Value)
 		switch {
-		case userSet:
+		case rawValue.UserSet:
 			o.WriteCanonicalError("Why?\n"+
 				"The value of %s that you specified is not a valid regular expression: %v.",
-				nameAsFlag, regexErr)
+				filtering.FlagRepresentation, regexErr)
 			o.WriteCanonicalError("What to do:\n"+
 				"Either try a different setting,"+
-				" or omit setting %s and try the default value.", nameAsFlag)
+				" or omit setting %s and try the default value.", filtering.FlagRepresentation)
 		default:
 			o.WriteCanonicalError("Why?\n"+
 				"The configured default value of %s is not a valid regular expression: %v.",
-				nameAsFlag, regexErr)
+				filtering.FlagRepresentation, regexErr)
 			o.WriteCanonicalError("What to do:\n"+
 				"Either edit the defaults.yaml file containing the settings,"+
-				" or explicitly set %s to a better value.", nameAsFlag)
+				" or explicitly set %s to a better value.", filtering.FlagRepresentation)
 		}
-		regexOk = false
-		return
+		result.RegexOk = false
+		return result
 	}
-	filter = f
-	filterOk = true
-	return
+	result.Regex = f
+	result.FilterOk = true
+	return result
 }
 
-// TODO: does not need to return boolean indicating that filtered artists is empty
-func (ss *SearchSettings) Filter(o output.Bus, originalArtists []*files.Artist) ([]*files.Artist, bool) {
+func (ss *SearchSettings) Filter(o output.Bus, originalArtists []*files.Artist) []*files.Artist {
 	filteredArtists := make([]*files.Artist, 0, len(originalArtists))
 	for _, originalArtist := range originalArtists {
-		if ss.artistFilter.MatchString(originalArtist.Name()) && originalArtist.HasAlbums() {
+		if ss.ArtistFilter.MatchString(originalArtist.Name) && originalArtist.HasAlbums() {
 			filteredArtist := originalArtist.Copy()
-			for _, originalAlbum := range originalArtist.Albums() {
-				if ss.albumFilter.MatchString(originalAlbum.Name()) &&
+			for _, originalAlbum := range originalArtist.Albums {
+				if ss.AlbumFilter.MatchString(originalAlbum.Title) &&
 					originalAlbum.HasTracks() {
 					filteredAlbum := originalAlbum.Copy(filteredArtist, false)
-					for _, originalTrack := range originalAlbum.Tracks() {
-						if ss.trackFilter.MatchString(originalTrack.CommonName()) {
+					for _, originalTrack := range originalAlbum.Tracks {
+						if ss.TrackFilter.MatchString(originalTrack.SimpleName) {
 							filteredTrack := originalTrack.Copy(filteredAlbum)
 							filteredAlbum.AddTrack(filteredTrack)
 						}
@@ -337,55 +341,52 @@ func (ss *SearchSettings) Filter(o output.Bus, originalArtists []*files.Artist) 
 			}
 		}
 	}
-	hasArtists := len(filteredArtists) > 0
-	if !hasArtists {
+	if len(filteredArtists) == 0 {
 		o.WriteCanonicalError("No mp3 files remain after filtering.")
 		o.WriteCanonicalError("Why?")
 		o.WriteCanonicalError("After applying %s=%q, %s=%q, and %s=%q, no files remained",
-			SearchArtistFilterFlag, ss.artistFilter, SearchAlbumFilterFlag, ss.albumFilter,
-			SearchTrackFilterFlag, ss.trackFilter)
+			SearchArtistFilterFlag, ss.ArtistFilter, SearchAlbumFilterFlag, ss.AlbumFilter,
+			SearchTrackFilterFlag, ss.TrackFilter)
 		o.WriteCanonicalError("What to do:\nUse less restrictive filter settings.")
 		o.Log(output.Error, "no files remain after filtering", map[string]any{
-			SearchArtistFilterFlag: ss.artistFilter,
-			SearchAlbumFilterFlag:  ss.albumFilter,
-			SearchTrackFilterFlag:  ss.trackFilter,
+			SearchArtistFilterFlag: ss.ArtistFilter,
+			SearchAlbumFilterFlag:  ss.AlbumFilter,
+			SearchTrackFilterFlag:  ss.TrackFilter,
 		})
 	}
-	return filteredArtists, hasArtists
+	return filteredArtists
 }
 
-// TODO: drop bool from results - consumers can calculate it themselves
-func (ss *SearchSettings) Load(o output.Bus) ([]*files.Artist, bool) {
-	artistFiles, dirRead := ReadDirectory(o, ss.topDirectory)
+func (ss *SearchSettings) Load(o output.Bus) []*files.Artist {
+	artistFiles, dirRead := ReadDirectory(o, ss.TopDirectory)
 	artists := make([]*files.Artist, 0, len(artistFiles))
 	if dirRead {
 		for _, artistFile := range artistFiles {
 			if artistFile.IsDir() {
-				artist := files.NewArtistFromFile(artistFile, ss.topDirectory)
+				artist := files.NewArtistFromFile(artistFile, ss.TopDirectory)
 				ss.addAlbums(o, artist)
 				artists = append(artists, artist)
 			}
 		}
 	}
-	hasArtists := len(artists) > 0
-	if !hasArtists {
+	if len(artists) == 0 {
 		o.WriteCanonicalError(
 			"No mp3 files could be found using the specified parameters.")
 		o.WriteCanonicalError("Why?")
 		o.WriteCanonicalError("There were no directories found in %q (the %s value)",
-			ss.topDirectory, SearchTopDirFlag)
+			ss.TopDirectory, SearchTopDirFlag)
 		o.WriteCanonicalError("What to do:\n"+
 			"Set %s to the path of a directory that contains artist directories",
 			SearchTopDirFlag)
 		o.Log(output.Error, "cannot find any artist directories", map[string]any{
-			SearchTopDirFlag: ss.topDirectory,
+			SearchTopDirFlag: ss.TopDirectory,
 		})
 	}
-	return artists, hasArtists
+	return artists
 }
 
 func (ss *SearchSettings) addAlbums(o output.Bus, artist *files.Artist) {
-	if albumFiles, artistDirRead := ReadDirectory(o, artist.Path()); artistDirRead {
+	if albumFiles, artistDirRead := ReadDirectory(o, artist.FilePath); artistDirRead {
 		for _, albumFile := range albumFiles {
 			if albumFile.IsDir() {
 				album := files.NewAlbumFromFile(albumFile, artist)
@@ -397,13 +398,21 @@ func (ss *SearchSettings) addAlbums(o output.Bus, artist *files.Artist) {
 }
 
 func (ss *SearchSettings) addTracks(o output.Bus, album *files.Album) {
-	if trackFiles, filesAvailable := ReadDirectory(o, album.Path()); filesAvailable {
+	if trackFiles, filesAvailable := ReadDirectory(o, album.FilePath); filesAvailable {
 		for _, trackFile := range trackFiles {
 			if extension, isTrack := ss.isValidTrackFile(trackFile); isTrack {
-				if simpleName, trackNumber, valid := files.ParseTrackName(o,
-					trackFile.Name(), album, extension); valid {
-					album.AddTrack(files.NewTrack(album, trackFile.Name(), simpleName,
-						trackNumber))
+				parsedName, valid := files.TrackNameParser{
+					FileName:  trackFile.Name(),
+					Album:     album,
+					Extension: extension,
+				}.Parse(o)
+				if valid {
+					album.AddTrack(files.TrackMaker{
+						Album:      album,
+						FileName:   trackFile.Name(),
+						SimpleName: parsedName.SimpleName,
+						Number:     parsedName.Number,
+					}.NewTrack())
 				}
 			}
 		}
@@ -414,7 +423,7 @@ func (ss *SearchSettings) addTracks(o output.Bus, album *files.Album) {
 func (ss *SearchSettings) isValidTrackFile(file fs.FileInfo) (string, bool) {
 	extension := filepath.Ext(file.Name())
 	if !file.IsDir() {
-		for _, expectedExtension := range ss.fileExtensions {
+		for _, expectedExtension := range ss.FileExtensions {
 			if expectedExtension == extension {
 				return extension, true
 			}

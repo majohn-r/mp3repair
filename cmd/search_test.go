@@ -16,25 +16,21 @@ import (
 )
 
 func TestEvaluateFilter(t *testing.T) {
-	type args struct {
-		values     map[string]*cmd.FlagValue
-		flagName   string
-		nameAsFlag string
-	}
 	tests := map[string]struct {
-		args
+		filtering   cmd.FilterFlag
+		want        cmd.EvaluatedFilter
 		wantFilter  *regexp.Regexp
 		wantOk      bool
 		wantRegexOk bool
 		output.WantedRecording
 	}{
 		"missing flag": {
-			args: args{
-				values:     map[string]*cmd.FlagValue{},
-				flagName:   "albumFilter",
-				nameAsFlag: "--albumFilter",
+			filtering: cmd.FilterFlag{
+				Values:             map[string]*cmd.FlagValue{},
+				FlagName:           "albumFilter",
+				FlagRepresentation: "--albumFilter",
 			},
-			wantRegexOk: true, // not a bad regex, right?
+			want: cmd.EvaluatedFilter{RegexOk: true},
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"albumFilter\" is not found.\n",
 				Log: "level='error'" +
@@ -44,14 +40,14 @@ func TestEvaluateFilter(t *testing.T) {
 			},
 		},
 		"bad regex, user-supplied": {
-			args: args{
-				values: map[string]*cmd.FlagValue{
-					"albumFilter": cmd.NewFlagValue().WithExplicitlySet(
-						true).WithValueType(cmd.StringType).WithValue("[9-0]"),
+			filtering: cmd.FilterFlag{
+				Values: map[string]*cmd.FlagValue{
+					"albumFilter": {UserSet: true, Value: "[9-0]"},
 				},
-				flagName:   "albumFilter",
-				nameAsFlag: "--albumFilter",
+				FlagName:           "albumFilter",
+				FlagRepresentation: "--albumFilter",
 			},
+			want: cmd.EvaluatedFilter{},
 			WantedRecording: output.WantedRecording{
 				Error: "The --albumFilter value \"[9-0]\" cannot be used.\n" +
 					"Why?\n" +
@@ -69,14 +65,14 @@ func TestEvaluateFilter(t *testing.T) {
 			},
 		},
 		"bad regex, as configured": {
-			args: args{
-				values: map[string]*cmd.FlagValue{
-					"albumFilter": cmd.NewFlagValue().WithExplicitlySet(
-						false).WithValueType(cmd.StringType).WithValue("[9-0]"),
+			filtering: cmd.FilterFlag{
+				Values: map[string]*cmd.FlagValue{
+					"albumFilter": {UserSet: false, Value: "[9-0]"},
 				},
-				flagName:   "albumFilter",
-				nameAsFlag: "--albumFilter",
+				FlagName:           "albumFilter",
+				FlagRepresentation: "--albumFilter",
 			},
+			want: cmd.EvaluatedFilter{},
 			WantedRecording: output.WantedRecording{
 				Error: "The --albumFilter value \"[9-0]\" cannot be used.\n" +
 					"Why?\n" +
@@ -94,31 +90,26 @@ func TestEvaluateFilter(t *testing.T) {
 			},
 		},
 		"good regex": {
-			args: args{
-				values: map[string]*cmd.FlagValue{
-					"albumFilter": cmd.NewFlagValue().WithExplicitlySet(
-						true).WithValueType(cmd.StringType).WithValue(`\d`),
+			filtering: cmd.FilterFlag{
+				Values: map[string]*cmd.FlagValue{
+					"albumFilter": {UserSet: true, Value: `\d`},
 				},
-				flagName:   "albumFilter",
-				nameAsFlag: "--albumFilter",
+				FlagName:           "albumFilter",
+				FlagRepresentation: "--albumFilter",
 			},
-			wantFilter:  regexp.MustCompile(`\d`),
-			wantOk:      true,
-			wantRegexOk: true,
+			want: cmd.EvaluatedFilter{
+				Regex:    regexp.MustCompile(`\d`),
+				FilterOk: true,
+				RegexOk:  true,
+			},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			gotFilter, gotOk, gotRegexOk := cmd.EvaluateFilter(o, tt.args.values, tt.args.flagName, tt.args.nameAsFlag)
-			if !reflect.DeepEqual(gotFilter, tt.wantFilter) {
-				t.Errorf("EvaluateFilter() gotFilter = %v, want %v", gotFilter, tt.wantFilter)
-			}
-			if gotOk != tt.wantOk {
-				t.Errorf("EvaluateFilter() gotOk = %v, want %v", gotOk, tt.wantOk)
-			}
-			if gotRegexOk != tt.wantRegexOk {
-				t.Errorf("EvaluateFilter() gotRegexOk = %v, want %v", gotRegexOk, tt.wantRegexOk)
+			got := cmd.EvaluateFilter(o, tt.filtering)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("EvaluateFilter() got = %v, want %v", got, tt.want)
 			}
 			o.Report(t, "EvaluateFilter()", tt.WantedRecording)
 		})
@@ -152,8 +143,7 @@ func TestEvaluateTopDir(t *testing.T) {
 		},
 		"non-existent file, user set": {
 			values: map[string]*cmd.FlagValue{
-				"topDir": cmd.NewFlagValue().WithExplicitlySet(true).WithValueType(
-					cmd.StringType).WithValue("no such directory"),
+				"topDir": {UserSet: true, Value: "no such directory"},
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "The --topDir value, \"no such directory\", cannot be used.\n" +
@@ -170,8 +160,7 @@ func TestEvaluateTopDir(t *testing.T) {
 		},
 		"non-existent file, as configured": {
 			values: map[string]*cmd.FlagValue{
-				"topDir": cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(
-					cmd.StringType).WithValue("no such directory"),
+				"topDir": {UserSet: false, Value: "no such directory"},
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "The --topDir value, \"no such directory\", cannot be used.\n" +
@@ -189,8 +178,7 @@ func TestEvaluateTopDir(t *testing.T) {
 		},
 		"non-existent directory, user set": {
 			values: map[string]*cmd.FlagValue{
-				"topDir": cmd.NewFlagValue().WithExplicitlySet(true).WithValueType(
-					cmd.StringType).WithValue(badDir),
+				"topDir": {UserSet: true, Value: badDir},
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "The --topDir value, \"music\\\\moreMusic\", cannot be used.\n" +
@@ -206,8 +194,7 @@ func TestEvaluateTopDir(t *testing.T) {
 		},
 		"non-existent directory, as configured": {
 			values: map[string]*cmd.FlagValue{
-				"topDir": cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(
-					cmd.StringType).WithValue(badDir),
+				"topDir": {UserSet: false, Value: badDir},
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "The --topDir value, \"music\\\\moreMusic\", cannot be used.\n" +
@@ -224,8 +211,7 @@ func TestEvaluateTopDir(t *testing.T) {
 		},
 		"valid directory": {
 			values: map[string]*cmd.FlagValue{
-				"topDir": cmd.NewFlagValue().WithExplicitlySet(false).WithValueType(
-					cmd.StringType).WithValue(goodDir),
+				"topDir": {UserSet: false, Value: goodDir},
 			},
 			wantDir: goodDir,
 			wantOk:  true,
@@ -255,7 +241,7 @@ func TestProcessSearchFlags(t *testing.T) {
 	}{
 		"no data": {
 			values:       map[string]*cmd.FlagValue{},
-			wantSettings: cmd.NewSearchSettings(),
+			wantSettings: &cmd.SearchSettings{},
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"albumFilter\" is not found.\n" +
 					"An internal error occurred: flag \"artistFilter\" is not found.\n" +
@@ -286,18 +272,13 @@ func TestProcessSearchFlags(t *testing.T) {
 		},
 		"bad data": {
 			values: map[string]*cmd.FlagValue{
-				"albumFilter": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(
-					"[2"),
-				"artistFilter": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(
-					"[1-0]"),
-				"trackFilter": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(
-					"0++"),
-				"topDir": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(
-					"no such dir"),
-				"extensions": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(
-					"foo,bar"),
+				"albumFilter":  {Value: "[2"},
+				"artistFilter": {Value: "[1-0]"},
+				"trackFilter":  {Value: "0++"},
+				"topDir":       {Value: "no such dir"},
+				"extensions":   {Value: "foo,bar"},
 			},
-			wantSettings: cmd.NewSearchSettings(),
+			wantSettings: &cmd.SearchSettings{},
 			WantedRecording: output.WantedRecording{
 				Error: "The --albumFilter value \"[2\" cannot be used.\n" +
 					"Why?\n" +
@@ -386,22 +367,19 @@ func TestProcessSearchFlags(t *testing.T) {
 		},
 		"good data": {
 			values: map[string]*cmd.FlagValue{
-				"albumFilter": cmd.NewFlagValue().WithValueType(
-					cmd.StringType).WithValue("[23]"),
-				"artistFilter": cmd.NewFlagValue().WithValueType(
-					cmd.StringType).WithValue("[0-7]"),
-				"trackFilter": cmd.NewFlagValue().WithValueType(
-					cmd.StringType).WithValue("0+"),
-				"topDir": cmd.NewFlagValue().WithValueType(
-					cmd.StringType).WithValue("."),
-				"extensions": cmd.NewFlagValue().WithValueType(
-					cmd.StringType).WithValue(".mp3"),
+				"albumFilter":  {Value: "[23]"},
+				"artistFilter": {Value: "[0-7]"},
+				"trackFilter":  {Value: "0+"},
+				"topDir":       {Value: "."},
+				"extensions":   {Value: ".mp3"},
 			},
-			wantSettings: cmd.NewSearchSettings().WithAlbumFilter(
-				regexp.MustCompile("[23]")).WithArtistFilter(
-				regexp.MustCompile("[0-7]")).WithTrackFilter(
-				regexp.MustCompile("0+")).WithTopDirectory(".").WithFileExtensions(
-				[]string{".mp3"}),
+			wantSettings: &cmd.SearchSettings{
+				ArtistFilter:   regexp.MustCompile("[0-7]"),
+				AlbumFilter:    regexp.MustCompile("[23]"),
+				TrackFilter:    regexp.MustCompile("0+"),
+				FileExtensions: []string{".mp3"},
+				TopDirectory:   ".",
+			},
 			wantOk: true,
 		},
 	}
@@ -429,7 +407,7 @@ func TestEvaluateSearchFlags(t *testing.T) {
 	}{
 		"errors": {
 			producer:     testFlagProducer{},
-			wantSettings: cmd.NewSearchSettings(),
+			wantSettings: &cmd.SearchSettings{},
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"albumFilter\" does not exist.\n" +
 					"An internal error occurred: flag \"artistFilter\" does not exist.\n" +
@@ -463,11 +441,13 @@ func TestEvaluateSearchFlags(t *testing.T) {
 					"extensions":   {value: ".mp3", valueKind: cmd.StringType},
 				},
 			},
-			wantSettings: cmd.NewSearchSettings().WithAlbumFilter(
-				regexp.MustCompile(`\d+`)).WithArtistFilter(
-				regexp.MustCompile("Beatles")).WithTrackFilter(
-				regexp.MustCompile("Sadie")).WithTopDirectory(".").WithFileExtensions(
-				[]string{".mp3"}),
+			wantSettings: &cmd.SearchSettings{
+				ArtistFilter:   regexp.MustCompile("Beatles"),
+				AlbumFilter:    regexp.MustCompile(`\d+`),
+				TrackFilter:    regexp.MustCompile("Sadie"),
+				FileExtensions: []string{".mp3"},
+				TopDirectory:   ".",
+			},
 			wantOk: true,
 		},
 	}
@@ -506,28 +486,19 @@ func TestEvaluateFileExtensions(t *testing.T) {
 			},
 		},
 		"one extension": {
-			values: map[string]*cmd.FlagValue{
-				"extensions": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(
-					".mp3"),
-			},
-			want:  []string{".mp3"},
-			want1: true,
+			values: map[string]*cmd.FlagValue{"extensions": {Value: ".mp3"}},
+			want:   []string{".mp3"},
+			want1:  true,
 		},
 		"two extensions": {
-			values: map[string]*cmd.FlagValue{
-				"extensions": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(
-					".mp3,.mpthree"),
-			},
-			want:  []string{".mp3", ".mpthree"},
-			want1: true,
+			values: map[string]*cmd.FlagValue{"extensions": {Value: ".mp3,.mpthree"}},
+			want:   []string{".mp3", ".mpthree"},
+			want1:  true,
 		},
 		"bad extensions": {
-			values: map[string]*cmd.FlagValue{
-				"extensions": cmd.NewFlagValue().WithValueType(cmd.StringType).WithValue(
-					".mp3,,foo,."),
-			},
-			want:  []string{".mp3"},
-			want1: false,
+			values: map[string]*cmd.FlagValue{"extensions": {Value: ".mp3,,foo,."}},
+			want:   []string{".mp3"},
+			want1:  false,
 			WantedRecording: output.WantedRecording{
 				Error: "The extension \"\" cannot be used.\n" +
 					"The extension \"foo\" cannot be used.\n" +
@@ -625,7 +596,12 @@ func TestSearchSettingsLoad(t *testing.T) {
 	testArtist := files.NewArtistFromFile(artist1, topDir.name)
 	testAlbum := files.NewAlbumFromFile(album1, testArtist)
 	testArtist.AddAlbum(testAlbum)
-	testTrack := files.NewTrack(testAlbum, album1Content3.name, "lovely music", 1)
+	testTrack := files.TrackMaker{
+		Album:      testAlbum,
+		FileName:   album1Content3.name,
+		SimpleName: "lovely music",
+		Number:     1,
+	}.NewTrack()
 	testAlbum.AddTrack(testTrack)
 	cmd.ReadDirectory = func(_ output.Bus, dir string) ([]fs.FileInfo, bool) {
 		if tf, found := testFiles[dir]; found {
@@ -638,15 +614,13 @@ func TestSearchSettingsLoad(t *testing.T) {
 		return []fs.FileInfo{}, false
 	}
 	tests := map[string]struct {
-		ss    *cmd.SearchSettings
-		want  []*files.Artist
-		want1 bool
+		ss   *cmd.SearchSettings
+		want []*files.Artist
 		output.WantedRecording
 	}{
 		"topDir read error": {
-			ss:    cmd.NewSearchSettings().WithTopDirectory("td"),
-			want:  []*files.Artist{},
-			want1: false,
+			ss:   &cmd.SearchSettings{TopDirectory: "td"},
+			want: []*files.Artist{},
 			WantedRecording: output.WantedRecording{
 				Error: "No mp3 files could be found using the specified parameters.\n" +
 					"Why?\n" +
@@ -660,21 +634,19 @@ func TestSearchSettingsLoad(t *testing.T) {
 			},
 		},
 		"good read": {
-			ss: cmd.NewSearchSettings().WithTopDirectory("music").WithFileExtensions(
-				[]string{".mp3"}),
-			want:  []*files.Artist{testArtist},
-			want1: true,
+			ss: &cmd.SearchSettings{
+				FileExtensions: []string{".mp3"},
+				TopDirectory:   "music",
+			},
+			want: []*files.Artist{testArtist},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			got, got1 := tt.ss.Load(o)
+			got := tt.ss.Load(o)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("SearchSettings.Load() got = %v, want %v", got, tt.want)
-			}
-			if got1 != tt.want1 {
-				t.Errorf("SearchSettings.Load() got1 = %v, want %v", got1, tt.want1)
 			}
 			o.Report(t, "SearchSettings.Load()", tt.WantedRecording)
 		})
@@ -683,31 +655,91 @@ func TestSearchSettingsLoad(t *testing.T) {
 
 func TestSearchSettingsFilter(t *testing.T) {
 	artist1 := files.NewArtist("A", filepath.Join("music", "A"))
-	albumA1 := files.NewAlbum("A1", artist1, filepath.Join(artist1.Path(), "A1"))
-	trackA11 := files.NewTrack(albumA1, "1 A11.mp3", "A11", 1)
+	albumA1 := files.AlbumMaker{
+		Title:  "A1",
+		Artist: artist1,
+		Path:   filepath.Join(artist1.FilePath, "A1"),
+	}.NewAlbum()
+	trackA11 := files.TrackMaker{
+		Album:      albumA1,
+		FileName:   "1 A11.mp3",
+		SimpleName: "A11",
+		Number:     1,
+	}.NewTrack()
 	albumA1.AddTrack(trackA11)
-	trackA12 := files.NewTrack(albumA1, "2 B12.mp3", "B12", 1)
+	trackA12 := files.TrackMaker{
+		Album:      albumA1,
+		FileName:   "2 B12.mp3",
+		SimpleName: "B12",
+		Number:     1,
+	}.NewTrack()
 	albumA1.AddTrack(trackA12)
 	artist1.AddAlbum(albumA1)
-	albumA2 := files.NewAlbum("B1", artist1, filepath.Join(artist1.Path(), "B1"))
-	trackA21 := files.NewTrack(albumA2, "1 A21.mp3", "A21", 1)
+	albumA2 := files.AlbumMaker{
+		Title:  "B1",
+		Artist: artist1,
+		Path:   filepath.Join(artist1.FilePath, "B1"),
+	}.NewAlbum()
+	trackA21 := files.TrackMaker{
+		Album:      albumA2,
+		FileName:   "1 A21.mp3",
+		SimpleName: "A21",
+		Number:     1,
+	}.NewTrack()
 	albumA2.AddTrack(trackA21)
-	trackA22 := files.NewTrack(albumA2, "2 B22.mp3", "B22", 1)
+	trackA22 := files.TrackMaker{
+		Album:      albumA2,
+		FileName:   "2 B22.mp3",
+		SimpleName: "B22",
+		Number:     1,
+	}.NewTrack()
 	albumA2.AddTrack(trackA22)
 	artist1.AddAlbum(albumA2)
 	// add empty album
-	artist1.AddAlbum(files.NewAlbum("A2", artist1, filepath.Join(artist1.Path(), "A2")))
+	artist1.AddAlbum(files.AlbumMaker{
+		Title:  "A2",
+		Artist: artist1,
+		Path:   filepath.Join(artist1.FilePath, "A2"),
+	}.NewAlbum())
 	artist2 := files.NewArtist("B", filepath.Join("music", "B"))
-	albumB1 := files.NewAlbum("B1", artist2, filepath.Join(artist2.Path(), "B1"))
-	trackB11 := files.NewTrack(albumB1, "1 A11a.mp3", "A11a", 1)
+	albumB1 := files.AlbumMaker{
+		Title:  "B1",
+		Artist: artist2,
+		Path:   filepath.Join(artist2.FilePath, "B1"),
+	}.NewAlbum()
+	trackB11 := files.TrackMaker{
+		Album:      albumB1,
+		FileName:   "1 A11a.mp3",
+		SimpleName: "A11a",
+		Number:     1,
+	}.NewTrack()
 	albumB1.AddTrack(trackB11)
-	trackB12 := files.NewTrack(albumB1, "2 B12a.mp3", "B12a", 1)
+	trackB12 := files.TrackMaker{
+		Album:      albumB1,
+		FileName:   "2 B12a.mp3",
+		SimpleName: "B12a",
+		Number:     1,
+	}.NewTrack()
 	albumB1.AddTrack(trackB12)
 	artist2.AddAlbum(albumB1)
-	albumB2 := files.NewAlbum("B2", artist2, filepath.Join(artist2.Path(), "B2"))
-	trackB21 := files.NewTrack(albumB2, "1 A21a.mp3", "A21a", 1)
+	albumB2 := files.AlbumMaker{
+		Title:  "B2",
+		Artist: artist2,
+		Path:   filepath.Join(artist2.FilePath, "B2"),
+	}.NewAlbum()
+	trackB21 := files.TrackMaker{
+		Album:      albumB2,
+		FileName:   "1 A21a.mp3",
+		SimpleName: "A21a",
+		Number:     1,
+	}.NewTrack()
 	albumB2.AddTrack(trackB21)
-	trackB22 := files.NewTrack(albumB2, "2 B22a.mp3", "B22a", 1)
+	trackB22 := files.TrackMaker{
+		Album:      albumB2,
+		FileName:   "2 B22a.mp3",
+		SimpleName: "B22a",
+		Number:     1,
+	}.NewTrack()
 	albumB2.AddTrack(trackB22)
 	artist2.AddAlbum(albumB2)
 	// create empty artist
@@ -721,16 +753,16 @@ func TestSearchSettingsFilter(t *testing.T) {
 		ss              *cmd.SearchSettings
 		originalArtists []*files.Artist
 		want            []*files.Artist
-		want1           bool
 		output.WantedRecording
 	}{
 		"nothing to filter": {
-			ss: cmd.NewSearchSettings().WithArtistFilter(
-				regexp.MustCompile(".*")).WithAlbumFilter(
-				regexp.MustCompile(".*")).WithTrackFilter(regexp.MustCompile(".*")),
+			ss: &cmd.SearchSettings{
+				ArtistFilter: regexp.MustCompile(".*"),
+				AlbumFilter:  regexp.MustCompile(".*"),
+				TrackFilter:  regexp.MustCompile(".*"),
+			},
 			originalArtists: []*files.Artist{},
 			want:            []*files.Artist{},
-			want1:           false,
 			WantedRecording: output.WantedRecording{
 				Error: "No mp3 files remain after filtering.\n" +
 					"Why?\n" +
@@ -746,12 +778,13 @@ func TestSearchSettingsFilter(t *testing.T) {
 			},
 		},
 		"filter out everything": {
-			ss: cmd.NewSearchSettings().WithArtistFilter(
-				regexp.MustCompile("^$")).WithAlbumFilter(
-				regexp.MustCompile("^$")).WithTrackFilter(regexp.MustCompile("^$")),
+			ss: &cmd.SearchSettings{
+				ArtistFilter: regexp.MustCompile("^$"),
+				AlbumFilter:  regexp.MustCompile("^$"),
+				TrackFilter:  regexp.MustCompile("^$"),
+			},
 			originalArtists: []*files.Artist{artist1, artist2, artist3},
 			want:            []*files.Artist{},
-			want1:           false,
 			WantedRecording: output.WantedRecording{
 				Error: "No mp3 files remain after filtering.\n" +
 					"Why?\n" +
@@ -767,23 +800,21 @@ func TestSearchSettingsFilter(t *testing.T) {
 			},
 		},
 		"filter out selectively": {
-			ss: cmd.NewSearchSettings().WithArtistFilter(
-				regexp.MustCompile("^A")).WithAlbumFilter(
-				regexp.MustCompile("^A")).WithTrackFilter(regexp.MustCompile("^A")),
+			ss: &cmd.SearchSettings{
+				ArtistFilter: regexp.MustCompile("^A"),
+				AlbumFilter:  regexp.MustCompile("^A"),
+				TrackFilter:  regexp.MustCompile("^A"),
+			},
 			originalArtists: []*files.Artist{artist1, artist2, artist3},
 			want:            []*files.Artist{filteredArtist1},
-			want1:           true,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			got, got1 := tt.ss.Filter(o, tt.originalArtists)
+			got := tt.ss.Filter(o, tt.originalArtists)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("SearchSettings.Filter() got = %v, want %v", got, tt.want)
-			}
-			if got1 != tt.want1 {
-				t.Errorf("SearchSettings.Filter() got1 = %v, want %v", got1, tt.want1)
 			}
 			o.Report(t, "SearchSettings.Filter()", tt.WantedRecording)
 		})

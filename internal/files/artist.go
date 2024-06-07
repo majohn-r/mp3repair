@@ -8,30 +8,11 @@ import (
 // Artist encapsulates information about a recording artist (a solo performer, a
 // duo, a band, etc.)
 type Artist struct {
-	albums   []*Album
-	fileName string
-	path     string
+	Albums   []*Album
+	Name     string
+	FilePath string
 	// artist name as recorded in the metadata for each track in each album
-	canonicalName string
-}
-
-func (a *Artist) WithAlbums(albums []*Album) *Artist {
-	a.albums = albums
-	return a
-}
-
-func (a *Artist) WithFileName(s string) *Artist {
-	a.fileName = s
-	return a
-}
-
-func (a *Artist) WithCanonicalName(s string) *Artist {
-	a.canonicalName = s
-	return a
-}
-
-func NewEmptyArtist() *Artist {
-	return &Artist{}
+	CanonicalName string
 }
 
 func NewArtistFromFile(f fs.FileInfo, dir string) *Artist {
@@ -40,40 +21,26 @@ func NewArtistFromFile(f fs.FileInfo, dir string) *Artist {
 }
 
 func (a *Artist) Copy() *Artist {
-	a2 := NewArtist(a.fileName, a.Path())
-	a2.canonicalName = a.canonicalName
+	a2 := NewArtist(a.Name, a.FilePath)
+	a2.CanonicalName = a.CanonicalName
 	return a2
 }
 
 // NewArtist creates a new instance of Artist
 func NewArtist(n, p string) *Artist {
-	return &Artist{fileName: n, path: p, canonicalName: n}
-}
-
-func (a *Artist) Path() string {
-	return a.path
-}
-
-// Name returns the artist's name
-func (a *Artist) Name() string {
-	return a.fileName
+	return &Artist{Name: n, FilePath: p, CanonicalName: n}
 }
 
 func (a *Artist) subDirectory(s string) string {
-	return filepath.Join(a.path, s)
+	return filepath.Join(a.FilePath, s)
 }
 
 // AddAlbum adds an album to the artist's slice of albums
 func (a *Artist) AddAlbum(album *Album) {
-	a.albums = append(a.albums, album)
-}
-
-// Albums returns the slice of this artist's albums
-func (a *Artist) Albums() []*Album {
-	return a.albums
+	a.Albums = append(a.Albums, album)
 }
 
 // HasAlbums returns true if there any albums associated with the artist
 func (a *Artist) HasAlbums() bool {
-	return len(a.albums) != 0
+	return len(a.Albums) != 0
 }
