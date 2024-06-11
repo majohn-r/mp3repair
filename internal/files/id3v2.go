@@ -154,8 +154,8 @@ func SelectUnknownFrame(mcdiFramers []id3v2.Framer) id3v2.UnknownFrame {
 	return id3v2.UnknownFrame{Body: []byte{0}}
 }
 
-func UpdateID3V2Metadata(tM *TrackMetadata, path string, sT SourceType) error {
-	if !tM.requiresEdit[sT] {
+func UpdateID3V2Metadata(tM *TrackMetadataV1, path string) error {
+	if !tM.requiresEdit[ID3V2] {
 		return nil
 	}
 	tag, readErr := readID3V2Tag(path)
@@ -164,27 +164,27 @@ func UpdateID3V2Metadata(tM *TrackMetadata, path string, sT SourceType) error {
 	}
 	defer tag.Close()
 	tag.SetDefaultEncoding(id3v2.EncodingUTF8)
-	album := tM.correctedAlbumName[sT]
+	album := tM.correctedAlbumName[ID3V2]
 	if album != "" {
 		tag.SetAlbum(album)
 	}
-	artist := tM.correctedArtistName[sT]
+	artist := tM.correctedArtistName[ID3V2]
 	if artist != "" {
 		tag.SetArtist(artist)
 	}
-	title := tM.correctedTrackName[sT]
+	title := tM.correctedTrackName[ID3V2]
 	if title != "" {
 		tag.SetTitle(title)
 	}
-	track := tM.correctedTrackNumber[sT]
+	track := tM.correctedTrackNumber[ID3V2]
 	if track != 0 {
 		tag.AddTextFrame("TRCK", tag.DefaultEncoding(), fmt.Sprintf("%d", track))
 	}
-	genre := tM.correctedGenre[sT]
+	genre := tM.correctedGenre[ID3V2]
 	if genre != "" {
 		tag.SetGenre(genre)
 	}
-	year := tM.correctedYear[sT]
+	year := tM.correctedYear[ID3V2]
 	if year != "" {
 		tag.SetYear(year)
 	}
@@ -192,6 +192,43 @@ func UpdateID3V2Metadata(tM *TrackMetadata, path string, sT SourceType) error {
 	if len(mcdi.Body) != 0 {
 		tag.DeleteFrames(mcdiFrame)
 		tag.AddFrame(mcdiFrame, mcdi)
+	}
+	return tag.Save()
+}
+
+func updateID3V2TrackMetadata(tm *TrackMetadata, path string) error {
+	const src = ID3V2
+	if !tm.EditRequired(src) {
+		return nil
+	}
+	tag, readErr := readID3V2Tag(path)
+	if readErr != nil {
+		return readErr
+	}
+	defer tag.Close()
+	tag.SetDefaultEncoding(id3v2.EncodingUTF8)
+	if artistName := tm.ArtistName(src).Correction(); artistName != "" {
+		tag.SetArtist(artistName)
+	}
+	if albumName := tm.AlbumName(src).Correction(); albumName != "" {
+		tag.SetAlbum(albumName)
+	}
+	if albumGenre := tm.AlbumGenre(src).Correction(); albumGenre != "" {
+		tag.SetGenre(albumGenre)
+	}
+	if albumYear := tm.AlbumYear(src).Correction(); albumYear != "" {
+		tag.SetYear(albumYear)
+	}
+	if trackName := tm.TrackName(src).Correction(); trackName != "" {
+		tag.SetTitle(trackName)
+	}
+	if trackNumber := tm.TrackNumber(src).Correction(); trackNumber != 0 {
+		tag.AddTextFrame("TRCK", tag.DefaultEncoding(), fmt.Sprintf("%d", trackNumber))
+	}
+	cdIdentifier := tm.CDIdentifier().Correction()
+	if len(cdIdentifier.Body) != 0 {
+		tag.DeleteFrames(mcdiFrame)
+		tag.AddFrame(mcdiFrame, cdIdentifier)
 	}
 	return tag.Save()
 }

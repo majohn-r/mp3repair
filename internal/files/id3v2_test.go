@@ -525,22 +525,21 @@ func Test_id3v2GenreDiffers(t *testing.T) {
 
 func Test_updateID3V2Metadata(t *testing.T) {
 	type args struct {
-		tM   *files.TrackMetadata
+		tM   *files.TrackMetadataV1
 		path string
-		sT   files.SourceType
 	}
 	tests := map[string]struct {
 		args
 		wantErr bool
 	}{
 		"no need for edit": {
-			args:    args{tM: files.NewTrackMetadata()}, // empty struct implicitly does not need an edit
+			args:    args{tM: files.NewTrackMetadataV1()}, // empty struct implicitly does not need an edit
 			wantErr: false,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if gotErr := files.UpdateID3V2Metadata(tt.args.tM, tt.args.path, tt.args.sT); (gotErr != nil) != tt.wantErr {
+			if gotErr := files.UpdateID3V2Metadata(tt.args.tM, tt.args.path); (gotErr != nil) != tt.wantErr {
 				t.Errorf("UpdateID3V2Metadata() error = %v, wantErr %v", gotErr, tt.wantErr)
 			}
 		})

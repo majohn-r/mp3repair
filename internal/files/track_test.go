@@ -655,14 +655,14 @@ func TestTrackLoadMetadata(t *testing.T) {
 	createFileWithContent(testDir, fileName, payload)
 	tests := map[string]struct {
 		t    *files.Track
-		want *files.TrackMetadata
+		want *files.TrackMetadataV1
 	}{
 		"no read needed": {
-			t:    &files.Track{Metadata: &files.TrackMetadata{}},
-			want: &files.TrackMetadata{}},
+			t:    &files.Track{Metadata: &files.TrackMetadataV1{}},
+			want: &files.TrackMetadataV1{}},
 		"read file": {
 			t: &files.Track{FilePath: filepath.Join(testDir, fileName)},
-			want: files.NewTrackMetadata().WithAlbumNames([]string{
+			want: files.NewTrackMetadataV1().WithAlbumNames([]string{
 				"", albumName, albumName}).WithArtistNames([]string{
 				"", artistName, artistName}).WithTrackNames([]string{
 				"", trackName, trackName}).WithGenres([]string{
@@ -779,7 +779,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 		CanonicalTitle:  "problematic:album",
 	}
 	src := files.ID3V2
-	metadata := files.NewTrackMetadata().WithPrimarySource(src).WithMusicCDIdentifier(
+	metadata := files.NewTrackMetadataV1().WithPrimarySource(src).WithMusicCDIdentifier(
 		[]byte{1, 3, 5})
 	metadata.SetAlbumName(src, "unknown album")
 	metadata.SetArtistName(src, "unknown artist")
@@ -805,7 +805,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 		CanonicalTitle:  "good album",
 	}
 	src2 := files.ID3V1
-	metadata2 := files.NewTrackMetadata().WithPrimarySource(src2)
+	metadata2 := files.NewTrackMetadataV1().WithPrimarySource(src2)
 	metadata2.SetAlbumName(src2, "good album")
 	metadata2.SetArtistName(src2, "good artist")
 	metadata2.SetErrorCause(files.ID3V2, "no id3v2 metadata, how odd")
@@ -831,14 +831,14 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 			want: []string{"differences cannot be determined: metadata has not been read"},
 		},
 		"track with error": {
-			t: &files.Track{Metadata: files.NewTrackMetadata().WithErrorCauses(
+			t: &files.Track{Metadata: files.NewTrackMetadataV1().WithErrorCauses(
 				[]string{"", "oops", "oops"}),
 			},
 			want: []string{"differences cannot be determined: track metadata may be corrupted"},
 		},
 		"track with no metadata": {
 			t: &files.Track{
-				Metadata: files.NewTrackMetadata().WithErrorCauses([]string{
+				Metadata: files.NewTrackMetadataV1().WithErrorCauses([]string{
 					"",
 					files.ErrNoID3V1MetadataFound.Error(),
 					files.ErrNoID3V2MetadataFound.Error(),
@@ -906,7 +906,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 				CanonicalName: "fine artist",
 			},
 		},
-		Metadata: files.NewTrackMetadata().WithAlbumNames([]string{
+		Metadata: files.NewTrackMetadataV1().WithAlbumNames([]string{
 			"", "unknown album", "unknown album"}).WithArtistNames([]string{
 			"", "unknown artist", "unknown artist"}).WithTrackNames([]string{
 			"", "unknown title", "unknown title"}).WithGenres([]string{
@@ -929,7 +929,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 				CanonicalName: "fine artist",
 			},
 		},
-		Metadata: files.NewTrackMetadata().WithAlbumNames([]string{
+		Metadata: files.NewTrackMetadataV1().WithAlbumNames([]string{
 			"", "unknown album", "unknown album"}).WithArtistNames([]string{
 			"", "unknown artist", "unknown artist"}).WithTrackNames([]string{
 			"", "unknown title", "unknown title"}).WithGenres([]string{
@@ -937,7 +937,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 			[]string{"", "1900", "1900"}).WithTrackNumbers(
 			[]int{0, 1, 1}).WithPrimarySource(files.ID3V2),
 	}
-	editedTm := files.NewTrackMetadata().WithAlbumNames([]string{
+	editedTm := files.NewTrackMetadataV1().WithAlbumNames([]string{
 		"", "fine album", "fine album"}).WithArtistNames([]string{
 		"", "fine artist", "fine artist"}).WithTrackNames([]string{
 		"", "edit this track", "edit this track"}).WithGenres([]string{
@@ -947,7 +947,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 	tests := map[string]struct {
 		t      *files.Track
 		wantE  []string
-		wantTm *files.TrackMetadata
+		wantTm *files.TrackMetadataV1
 	}{
 		"error checking": {
 			t: deletedTrack,
@@ -989,7 +989,7 @@ func Test_processArtistMetadata(t *testing.T) {
 	artist1.AddAlbum(album1)
 	for k := 1; k <= 10; k++ {
 		src := files.ID3V2
-		tM := files.NewTrackMetadata().WithPrimarySource(src)
+		tM := files.NewTrackMetadataV1().WithPrimarySource(src)
 		tM.SetArtistName(src, "artist:name")
 		track := files.TrackMaker{
 			Album:      album1,
@@ -1005,7 +1005,7 @@ func Test_processArtistMetadata(t *testing.T) {
 	artist2.AddAlbum(album2)
 	for k := 1; k <= 10; k++ {
 		src := files.ID3V2
-		tM := files.NewTrackMetadata().WithPrimarySource(src)
+		tM := files.NewTrackMetadataV1().WithPrimarySource(src)
 		tM.SetArtistName(src, "unknown artist")
 		track := files.TrackMaker{
 			Album:      album2,
@@ -1021,7 +1021,7 @@ func Test_processArtistMetadata(t *testing.T) {
 	artist3.AddAlbum(album3)
 	for k := 1; k <= 10; k++ {
 		src := files.ID3V2
-		tM := files.NewTrackMetadata().WithPrimarySource(src)
+		tM := files.NewTrackMetadataV1().WithPrimarySource(src)
 		if k%2 == 0 {
 			tM.SetArtistName(src, "artist:name")
 		} else {
@@ -1077,7 +1077,7 @@ func Test_processAlbumMetadata(t *testing.T) {
 	artists1 = append(artists1, artist1)
 	album1 := files.AlbumMaker{Title: "good-album", Artist: artist1}.NewAlbum()
 	artist1.AddAlbum(album1)
-	tm := files.NewTrackMetadata().WithPrimarySource(src)
+	tm := files.NewTrackMetadataV1().WithPrimarySource(src)
 	tm.SetAlbumName(src, "good:album")
 	tm.SetGenre(src, "pop")
 	tm.SetYear(src, "2022")
@@ -1098,7 +1098,7 @@ func Test_processAlbumMetadata(t *testing.T) {
 		Artist: artist2,
 	}.NewAlbum()
 	artist2.AddAlbum(album2)
-	tm2a := files.NewTrackMetadata().WithPrimarySource(src)
+	tm2a := files.NewTrackMetadataV1().WithPrimarySource(src)
 	tm2a.SetAlbumName(src, "unknown album")
 	tm2a.SetGenre(src, "unknown")
 	tm2a.SetYear(src, "")
@@ -1110,7 +1110,7 @@ func Test_processAlbumMetadata(t *testing.T) {
 	}.NewTrack()
 	track2a.Metadata = tm2a
 	album2.AddTrack(track2a)
-	tm2b := files.NewTrackMetadata().WithPrimarySource(src)
+	tm2b := files.NewTrackMetadataV1().WithPrimarySource(src)
 	tm2b.SetAlbumName(src, "another good:album")
 	tm2b.SetGenre(src, "pop")
 	tm2b.SetYear(src, "2022")
@@ -1122,7 +1122,7 @@ func Test_processAlbumMetadata(t *testing.T) {
 	}.NewTrack()
 	track2b.Metadata = tm2b
 	album2.AddTrack(track2b)
-	tm2c := files.NewTrackMetadata().WithPrimarySource(src)
+	tm2c := files.NewTrackMetadataV1().WithPrimarySource(src)
 	tm2c.SetAlbumName(src, "another good:album")
 	tm2c.SetGenre(src, "pop")
 	tm2c.SetYear(src, "2022")
@@ -1143,7 +1143,7 @@ func Test_processAlbumMetadata(t *testing.T) {
 		Artist: artist3,
 	}.NewAlbum()
 	artist3.AddAlbum(album3)
-	tm3a := files.NewTrackMetadata().WithPrimarySource(src).WithMusicCDIdentifier(
+	tm3a := files.NewTrackMetadataV1().WithPrimarySource(src).WithMusicCDIdentifier(
 		[]byte{1, 2, 3})
 	tm3a.SetAlbumName(src, "problematic:album")
 	tm3a.SetGenre(src, "rock")
@@ -1156,7 +1156,7 @@ func Test_processAlbumMetadata(t *testing.T) {
 	}.NewTrack()
 	track3a.Metadata = tm3a
 	album3.AddTrack(track3a)
-	tm3b := files.NewTrackMetadata().WithPrimarySource(src).WithMusicCDIdentifier(
+	tm3b := files.NewTrackMetadataV1().WithPrimarySource(src).WithMusicCDIdentifier(
 		[]byte{1, 2, 3, 4})
 	tm3b.SetAlbumName(src, "problematic:Album")
 	tm3b.SetGenre(src, "pop")
@@ -1169,7 +1169,7 @@ func Test_processAlbumMetadata(t *testing.T) {
 	}.NewTrack()
 	track3b.Metadata = tm3b
 	album3.AddTrack(track3b)
-	tm3c := files.NewTrackMetadata().WithPrimarySource(src).WithMusicCDIdentifier(
+	tm3c := files.NewTrackMetadataV1().WithPrimarySource(src).WithMusicCDIdentifier(
 		[]byte{1, 2, 3, 4, 5})
 	tm3c.SetAlbumName(src, "Problematic:album")
 	tm3c.SetGenre(src, "folk")
@@ -1271,7 +1271,7 @@ func TestTrack_reportMetadataErrors(t *testing.T) {
 				t: &files.Track{
 					SimpleName: "silly track",
 					FilePath:   "Music\\silly artist\\silly album\\01 silly track.mp3",
-					Metadata: files.NewTrackMetadata().WithErrorCauses(
+					Metadata: files.NewTrackMetadataV1().WithErrorCauses(
 						[]string{"", "id3v1 error!", "id3v2 error!"}),
 					Album: &files.Album{
 						Title:           "silly album",

@@ -703,31 +703,31 @@ func WriteToFile(f afero.File, b []byte) (int, error) {
 	return f.Write(b)
 }
 
-func updateID3V1Metadata(tM *TrackMetadata, path string, sT SourceType) (fileErr error) {
-	if tM.requiresEdit[sT] {
+func updateID3V1Metadata(tM *TrackMetadataV1, path string) (fileErr error) {
+	if tM.requiresEdit[ID3V1] {
 		var v1 *Id3v1Metadata
 		if v1, fileErr = InternalReadID3V1Metadata(path, FileReader); fileErr == nil {
-			albumTitle := tM.correctedAlbumName[sT]
+			albumTitle := tM.correctedAlbumName[ID3V1]
 			if albumTitle != "" {
 				v1.SetAlbum(albumTitle)
 			}
-			artistName := tM.correctedArtistName[sT]
+			artistName := tM.correctedArtistName[ID3V1]
 			if artistName != "" {
 				v1.SetArtist(artistName)
 			}
-			trackTitle := tM.correctedTrackName[sT]
+			trackTitle := tM.correctedTrackName[ID3V1]
 			if trackTitle != "" {
 				v1.SetTitle(trackTitle)
 			}
-			trackNumber := tM.correctedTrackNumber[sT]
+			trackNumber := tM.correctedTrackNumber[ID3V1]
 			if trackNumber != 0 {
 				_ = v1.SetTrack(trackNumber)
 			}
-			genre := tM.correctedGenre[sT]
+			genre := tM.correctedGenre[ID3V1]
 			if genre != "" {
 				v1.SetGenre(genre)
 			}
-			year := tM.correctedYear[sT]
+			year := tM.correctedYear[ID3V1]
 			if year != "" {
 				v1.SetYear(year)
 			}
@@ -735,6 +735,38 @@ func updateID3V1Metadata(tM *TrackMetadata, path string, sT SourceType) (fileErr
 		}
 	}
 	return
+}
+
+func updateID3V1TrackMetadata(tm *TrackMetadata, path string) error {
+	const src = ID3V1
+	if !tm.EditRequired(src) {
+		return nil
+	}
+	var v1 *Id3v1Metadata
+	var fileErr error
+	v1, fileErr = InternalReadID3V1Metadata(path, FileReader)
+	if fileErr != nil {
+		return fileErr
+	}
+	if artistName := tm.ArtistName(src).Correction(); artistName != "" {
+		v1.SetArtist(artistName)
+	}
+	if albumName := tm.AlbumName(src).Correction(); albumName != "" {
+		v1.SetAlbum(albumName)
+	}
+	if albumGenre := tm.AlbumGenre(src).Correction(); albumGenre != "" {
+		v1.SetGenre(albumGenre)
+	}
+	if albumYear := tm.AlbumYear(src).Correction(); albumYear != "" {
+		v1.SetYear(albumYear)
+	}
+	if trackName := tm.TrackName(src).Correction(); trackName != "" {
+		v1.SetTitle(trackName)
+	}
+	if trackNumber := tm.TrackNumber(src).Correction(); trackNumber != 0 {
+		_ = v1.SetTrack(trackNumber)
+	}
+	return v1.Write(path)
 }
 
 func (im *Id3v1Metadata) InternalWrite(path string,

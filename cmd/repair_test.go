@@ -678,7 +678,7 @@ func TestFindConflictedTracks(t *testing.T) {
 		for _, cAl := range cAr.Albums() {
 			for _, cT := range cAl.Tracks() {
 				t := cT.Track()
-				t.SetMetadata(files.NewTrackMetadata().WithAlbumNames(
+				t.SetMetadata(files.NewTrackMetadataV1().WithAlbumNames(
 					[]string{"", "some other album", "some other album"}).WithArtistNames(
 					[]string{"", "some other artist", "some other artist"}).WithGenres(
 					[]string{"", "pop emo", "pop emo"}).WithMusicCDIdentifier(
@@ -728,7 +728,7 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 	for _, aR := range dirty {
 		for _, aL := range aR.Albums {
 			for _, t := range aL.Tracks {
-				t.SetMetadata(files.NewTrackMetadata().WithMusicCDIdentifier(
+				t.SetMetadata(files.NewTrackMetadataV1().WithMusicCDIdentifier(
 					[]byte{1, 2, 3}).WithTrackNumbers([]int{0, 99, 99}).WithPrimarySource(
 					files.ID3V1))
 			}

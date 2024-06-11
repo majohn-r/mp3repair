@@ -44,7 +44,7 @@ type Track struct {
 	// full path to the file associated with the track, including the file itself
 	FilePath string
 	// read from the file only when needed; file i/o is expensive
-	Metadata *TrackMetadata
+	Metadata *TrackMetadataV1
 	// name of the track, without its number or file extension, e.g., "First Track"
 	SimpleName string
 	// number of the track
@@ -138,7 +138,7 @@ func (t *Track) HasMetadataError() bool {
 	return t.Metadata != nil && len(t.Metadata.ErrorCauses()) != 0
 }
 
-func (t *Track) SetMetadata(tM *TrackMetadata) {
+func (t *Track) SetMetadata(tM *TrackMetadataV1) {
 	t.Metadata = tM
 }
 
