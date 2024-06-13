@@ -19,7 +19,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-func TestParseTrackName(t *testing.T) {
+func TestTrackNameParserParse(t *testing.T) {
 	tests := map[string]struct {
 		parser         files.TrackNameParser
 		wantParsedName *files.ParsedTrackName
@@ -122,19 +122,18 @@ func TestParseTrackName(t *testing.T) {
 			gotParsedName, gotValid := tt.parser.Parse(o)
 			if tt.wantValid {
 				if !reflect.DeepEqual(gotParsedName, tt.wantParsedName) {
-					t.Errorf("ParseTrackName() gotParsedName = %v, want %v", gotParsedName, tt.wantParsedName)
+					t.Errorf("TrackNameParser.Parse() gotParsedName = %v, want %v", gotParsedName, tt.wantParsedName)
 				}
 			}
 			if gotValid != tt.wantValid {
-				t.Errorf("ParseTrackName() gotValid = %v, want %v", gotValid, tt.wantValid)
+				t.Errorf("TrackNameParser.Parse() gotValid = %v, want %v", gotValid, tt.wantValid)
 			}
-			o.Report(t, "ParseTrackName()", tt.WantedRecording)
+			o.Report(t, "TrackNameParser.Parse()", tt.WantedRecording)
 		})
 	}
 }
 
-func Test_sortTracks(t *testing.T) {
-	const fnName = "sortTracks()"
+func TestTracksSort(t *testing.T) {
 	tests := map[string]struct {
 		tracks []*files.Track
 	}{
@@ -193,18 +192,16 @@ func Test_sortTracks(t *testing.T) {
 				artist1 := album1.RecordingArtistName()
 				artist2 := album2.RecordingArtistName()
 				if artist1 > artist2 {
-					t.Errorf("%s track[%d] artist name %q comes after"+
-						" track[%d] artist name %q", fnName, i-1, artist1, i, artist2)
+					t.Errorf("Tracks.Sort() track[%d] artist name %q comes after track[%d] artist name %q",
+						i-1, artist1, i, artist2)
 				} else if artist1 == artist2 {
 					if album1.Title > album2.Title {
-						t.Errorf("%s track[%d] album name %q comes after"+
-							" track[%d] album name %q", fnName, i-1, album1.Title, i,
-							album2.Title)
+						t.Errorf("Tracks.Sort() track[%d] album name %q comes after track[%d] album name %q",
+							i-1, album1.Title, i, album2.Title)
 					} else if album1.Title == album2.Title {
 						if track1.Number > track2.Number {
-							t.Errorf("%s track[%d] track %d comes after"+
-								" track[%d] track %d", fnName, i-1, track1.Number, i,
-								track2.Number)
+							t.Errorf("Tracks.Sort() track[%d] track %d comes after track[%d] track %d",
+								i-1, track1.Number, i, track2.Number)
 						}
 					}
 				}
@@ -214,7 +211,6 @@ func Test_sortTracks(t *testing.T) {
 }
 
 func TestTrack_AlbumPath(t *testing.T) {
-	const fnName = "Track.AlbumPath()"
 	tests := map[string]struct {
 		t    *files.Track
 		want string
@@ -227,7 +223,7 @@ func TestTrack_AlbumPath(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			if got := tt.t.AlbumPath(); got != tt.want {
-				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
+				t.Errorf("Track.AlbumPath() = %q, want %q", got, tt.want)
 			}
 		})
 	}
@@ -238,42 +234,37 @@ func TestTrack_CopyFile(t *testing.T) {
 	defer func() {
 		cmd_toolkit.AssignFileSystem(originalFileSystem)
 	}()
-	const fnName = "Track.CopyFile()"
 	topDir := "copies"
 	cmd_toolkit.Mkdir(topDir)
 	srcName := "source.mp3"
 	srcPath := filepath.Join(topDir, srcName)
 	createFile(topDir, srcName)
-	type args struct {
-		destination string
-	}
 	tests := map[string]struct {
-		t *files.Track
-		args
-		wantErr bool
+		t           *files.Track
+		destination string
+		wantErr     bool
 	}{
 		"error case": {
-			t:       &files.Track{FilePath: "no such file"},
-			args:    args{destination: filepath.Join(topDir, "destination.mp3")},
-			wantErr: true,
+			t:           &files.Track{FilePath: "no such file"},
+			destination: filepath.Join(topDir, "destination.mp3"),
+			wantErr:     true,
 		},
 		"good case": {
-			t:       &files.Track{FilePath: srcPath},
-			args:    args{destination: filepath.Join(topDir, "destination.mp3")},
-			wantErr: false,
+			t:           &files.Track{FilePath: srcPath},
+			destination: filepath.Join(topDir, "destination.mp3"),
+			wantErr:     false,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if gotErr := tt.t.CopyFile(tt.args.destination); (gotErr != nil) != tt.wantErr {
-				t.Errorf("%s error = %v, wantErr %v", fnName, gotErr, tt.wantErr)
+			if gotErr := tt.t.CopyFile(tt.destination); (gotErr != nil) != tt.wantErr {
+				t.Errorf("Track.CopyFile() error = %v, wantErr %v", gotErr, tt.wantErr)
 			}
 		})
 	}
 }
 
-func TestTrackStringType(t *testing.T) {
-	const fnName = "Track.String()"
+func TestTrackString(t *testing.T) {
 	tests := map[string]struct {
 		t    *files.Track
 		want string
@@ -286,7 +277,7 @@ func TestTrackStringType(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			if got := tt.t.String(); got != tt.want {
-				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
+				t.Errorf("Track.String() = %q, want %q", got, tt.want)
 			}
 		})
 	}
@@ -312,7 +303,6 @@ func TestTrack_AlbumName(t *testing.T) {
 }
 
 func TestTrack_RecordingArtist(t *testing.T) {
-	const fnName = "Track.RecordingArtist()"
 	tests := map[string]struct {
 		t    *files.Track
 		want string
@@ -328,14 +318,13 @@ func TestTrack_RecordingArtist(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			if got := tt.t.RecordingArtist(); got != tt.want {
-				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
+				t.Errorf("Track.RecordingArtist() = %q, want %q", got, tt.want)
 			}
 		})
 	}
 }
 
 func TestTrack_Directory(t *testing.T) {
-	const fnName = "Track.Directory()"
 	tests := map[string]struct {
 		t    *files.Track
 		want string
@@ -348,14 +337,13 @@ func TestTrack_Directory(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			if got := tt.t.Directory(); got != tt.want {
-				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
+				t.Errorf("Track.Directory() = %q, want %q", got, tt.want)
 			}
 		})
 	}
 }
 
 func TestTrack_FileName(t *testing.T) {
-	const fnName = "Track.FileName()"
 	tests := map[string]struct {
 		t    *files.Track
 		want string
@@ -368,52 +356,61 @@ func TestTrack_FileName(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			if got := tt.t.FileName(); got != tt.want {
-				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
+				t.Errorf("Track.FileName() = %q, want %q", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_pickKey(t *testing.T) {
-	const fnName = "pickKey()"
-	type args struct {
-		m map[string]int
-	}
+func TestCanonicalChoice(t *testing.T) {
 	tests := map[string]struct {
-		args
+		m      map[string]int
 		wantS  string
 		wantOk bool
 	}{
 		"unanimous choice": {
-			args:   args{m: map[string]int{"pop": 2}},
+			m:      map[string]int{"pop": 2},
 			wantS:  "pop",
 			wantOk: true,
 		},
 		"majority for even size": {
-			args:   args{m: map[string]int{"pop": 3, "": 1}},
+			m: map[string]int{
+				"pop": 3,
+				"":    1,
+			},
 			wantS:  "pop",
 			wantOk: true,
 		},
 		"majority for odd size": {
-			args:   args{m: map[string]int{"pop": 2, "": 1}},
+			m: map[string]int{
+				"pop": 2,
+				"":    1,
+			},
 			wantS:  "pop",
 			wantOk: true,
 		},
 		"no majority even size": {
-			args: args{m: map[string]int{"pop": 1, "alt-rock": 1}},
+			m: map[string]int{
+				"pop":      1,
+				"alt-rock": 1,
+			},
 		},
 		"no majority odd size": {
-			args: args{m: map[string]int{"pop": 2, "alt-rock": 2, "folk": 1}},
+			m: map[string]int{
+				"pop":      2,
+				"alt-rock": 2,
+				"folk":     1,
+			},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			gotS, gotOk := files.CanonicalChoice(tt.args.m)
+			gotS, gotOk := files.CanonicalChoice(tt.m)
 			if gotS != tt.wantS {
-				t.Errorf("%s gotS = %v, want %v", fnName, gotS, tt.wantS)
+				t.Errorf("CanonicalChoice gotS = %v, want %v", gotS, tt.wantS)
 			}
 			if gotOk != tt.wantOk {
-				t.Errorf("%s gotOk = %v, want %v", fnName, gotOk, tt.wantOk)
+				t.Errorf("CanonicalChoice gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
 		})
 	}
@@ -424,7 +421,6 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 	defer func() {
 		cmd_toolkit.AssignFileSystem(originalFileSystem)
 	}()
-	const fnName = "Track.ID3V2Diagnostics()"
 	audio := make([]byte, 0)
 	for k := 0; k < 256; k++ {
 		audio = append(audio, byte(k))
@@ -477,18 +473,21 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			gotInfo, gotErr := tt.t.ID3V2Diagnostics()
 			if (gotErr != nil) != tt.wantErr {
-				t.Errorf("%s error = %v, wantErr %v", fnName, gotErr, tt.wantErr)
+				t.Errorf("Track.ID3V2Diagnostics() error = %v, wantErr %v", gotErr, tt.wantErr)
 				return
 			}
 			if gotErr == nil {
 				if gotInfo.Encoding != tt.wantEncoding {
-					t.Errorf("%s gotInfo.Encoding = %q, want %q", fnName, gotInfo.Encoding, tt.wantEncoding)
+					t.Errorf("Track.ID3V2Diagnostics() gotInfo.Encoding = %q, want %q",
+						gotInfo.Encoding, tt.wantEncoding)
 				}
 				if gotInfo.Version != tt.wantVersion {
-					t.Errorf("%s gotInfo.Version = %d, want %d", fnName, gotInfo.Version, tt.wantVersion)
+					t.Errorf("Track.ID3V2Diagnostics() gotInfo.Version = %d, want %d",
+						gotInfo.Version, tt.wantVersion)
 				}
 				if !reflect.DeepEqual(gotInfo.FrameStrings, tt.wantFrameStrings) {
-					t.Errorf("%s gotInfo.FrameStrings = %v, want %v", fnName, gotInfo.FrameStrings, tt.wantFrameStrings)
+					t.Errorf("Track.ID3V2Diagnostics() gotInfo.FrameStrings = %v, want %v",
+						gotInfo.FrameStrings, tt.wantFrameStrings)
 				}
 			}
 		})
@@ -500,7 +499,6 @@ func TestTrack_ID3V1Diagnostics(t *testing.T) {
 	defer func() {
 		cmd_toolkit.AssignFileSystem(originalFileSystem)
 	}()
-	const fnName = "Track.ID3V1Diagnostics()"
 	testDir := "id3v1Diagnostics"
 	cmd_toolkit.Mkdir(testDir)
 	// three files: one good, one too small, one with an invalid tag
@@ -568,11 +566,11 @@ func TestTrack_ID3V1Diagnostics(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got, gotErr := tt.t.ID3V1Diagnostics()
 			if (gotErr != nil) != tt.wantErr {
-				t.Errorf("%s error = %v, wantErr %v", fnName, gotErr, tt.wantErr)
+				t.Errorf("Track.ID3V1Diagnostics() error = %v, wantErr %v", gotErr, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
+				t.Errorf("Track.ID3V1Diagnostics() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -653,22 +651,27 @@ func TestTrackLoadMetadata(t *testing.T) {
 	})
 	fileName := "05 A brilliant track.mp3"
 	createFileWithContent(testDir, fileName, payload)
+	postReadTm := files.NewTrackMetadata()
+	for _, src := range []files.SourceType{files.ID3V1, files.ID3V2} {
+		postReadTm.SetArtistName(src, artistName)
+		postReadTm.SetAlbumName(src, albumName)
+		postReadTm.SetAlbumGenre(src, genre)
+		postReadTm.SetAlbumYear(src, year)
+		postReadTm.SetTrackName(src, trackName)
+		postReadTm.SetTrackNumber(src, track)
+	}
+	postReadTm.SetCDIdentifier([]byte{0})
+	postReadTm.SetCanonicalSource(files.ID3V2)
 	tests := map[string]struct {
 		t    *files.Track
-		want *files.TrackMetadataV1
+		want *files.TrackMetadata
 	}{
 		"no read needed": {
-			t:    &files.Track{Metadata: &files.TrackMetadataV1{}},
-			want: &files.TrackMetadataV1{}},
+			t:    &files.Track{Metadata: files.NewTrackMetadata()},
+			want: files.NewTrackMetadata()},
 		"read file": {
-			t: &files.Track{FilePath: filepath.Join(testDir, fileName)},
-			want: files.NewTrackMetadataV1().WithAlbumNames([]string{
-				"", albumName, albumName}).WithArtistNames([]string{
-				"", artistName, artistName}).WithTrackNames([]string{
-				"", trackName, trackName}).WithGenres([]string{
-				"", genre, genre}).WithYears([]string{"", year, year}).WithTrackNumbers(
-				[]int{0, track, track}).WithMusicCDIdentifier(
-				[]byte{0}).WithPrimarySource(files.ID3V2),
+			t:    &files.Track{FilePath: filepath.Join(testDir, fileName)},
+			want: postReadTm,
 		},
 	}
 	for name, tt := range tests {
@@ -680,7 +683,7 @@ func TestTrackLoadMetadata(t *testing.T) {
 			files.WaitForFilesClosed()
 			bar.Finish()
 			if !reflect.DeepEqual(tt.t.Metadata, tt.want) {
-				t.Errorf("track.LoadMetadata() got %#v want %#v", tt.t.Metadata, tt.want)
+				t.Errorf("Track.LoadMetadata() got %#v want %#v", tt.t.Metadata, tt.want)
 			}
 		})
 	}
@@ -691,7 +694,6 @@ func TestReadMetadata(t *testing.T) {
 	defer func() {
 		cmd_toolkit.AssignFileSystem(originalFileSystem)
 	}()
-	const fnName = "ReadMetadata()"
 	// 5 artists, 20 albums each, 50 tracks apiece ... total: 5,000 tracks
 	testDir := "ReadMetadata"
 	cmd_toolkit.Mkdir(testDir)
@@ -736,30 +738,29 @@ func TestReadMetadata(t *testing.T) {
 			}
 		}
 	}
-	type args struct {
-		artists []*files.Artist
-	}
 	tests := map[string]struct {
-		args
+		artists []*files.Artist
 		output.WantedRecording
 	}{
 		"thorough test": {
-			args:            args{artists: artists},
+			artists:         artists,
 			WantedRecording: output.WantedRecording{Error: "Reading track metadata.\n"},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			files.ReadMetadata(o, tt.args.artists)
-			o.Report(t, fnName, tt.WantedRecording)
-			for _, artist := range tt.args.artists {
+			files.ReadMetadata(o, tt.artists)
+			o.Report(t, "ReadMetadata()", tt.WantedRecording)
+			for _, artist := range tt.artists {
 				for _, album := range artist.Albums {
 					for _, track := range album.Tracks {
 						if track.NeedsMetadata() {
-							t.Errorf("%s track %q has no metadata", fnName, track.FilePath)
+							t.Errorf("ReadMetadata() track %q has no metadata",
+								track.FilePath)
 						} else if track.HasMetadataError() {
-							t.Errorf("%s track %q is defective: %v", fnName, track.FilePath, track.Metadata.ErrorCauses())
+							t.Errorf("ReadMetadata() track %q is defective: %v",
+								track.FilePath, track.Metadata.ErrorCauses())
 						}
 					}
 				}
@@ -769,7 +770,6 @@ func TestReadMetadata(t *testing.T) {
 }
 
 func TestTrack_ReportMetadataProblems(t *testing.T) {
-	const fnName = "Track.ReportMetadataProblems()"
 	problematicArtist := files.NewArtist("problematic:artist", "")
 	problematicAlbum := &files.Album{
 		Title:           "problematic:album",
@@ -779,14 +779,15 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 		CanonicalTitle:  "problematic:album",
 	}
 	src := files.ID3V2
-	metadata := files.NewTrackMetadataV1().WithPrimarySource(src).WithMusicCDIdentifier(
-		[]byte{1, 3, 5})
-	metadata.SetAlbumName(src, "unknown album")
+	metadata := files.NewTrackMetadata()
+	metadata.SetCanonicalSource(src)
+	metadata.SetCDIdentifier([]byte{1, 3, 5})
 	metadata.SetArtistName(src, "unknown artist")
-	metadata.SetGenre(src, "unknown")
+	metadata.SetAlbumName(src, "unknown album")
+	metadata.SetAlbumGenre(src, "unknown")
+	metadata.SetAlbumYear(src, "2001")
 	metadata.SetTrackName(src, "unknown title")
 	metadata.SetTrackNumber(src, 2)
-	metadata.SetYear(src, "2001")
 	problematicTrack := files.TrackMaker{
 		Album:      problematicAlbum,
 		FileName:   "03 bad track.mp3",
@@ -805,14 +806,15 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 		CanonicalTitle:  "good album",
 	}
 	src2 := files.ID3V1
-	metadata2 := files.NewTrackMetadataV1().WithPrimarySource(src2)
-	metadata2.SetAlbumName(src2, "good album")
+	metadata2 := files.NewTrackMetadata()
+	metadata2.SetCanonicalSource(src2)
 	metadata2.SetArtistName(src2, "good artist")
-	metadata2.SetErrorCause(files.ID3V2, "no id3v2 metadata, how odd")
-	metadata2.SetGenre(src2, "Classic Rock")
+	metadata2.SetAlbumName(src2, "good album")
+	metadata2.SetAlbumGenre(src2, "Classic Rock")
+	metadata2.SetAlbumYear(src2, "1999")
 	metadata2.SetTrackName(src2, "good track")
 	metadata2.SetTrackNumber(src2, 3)
-	metadata2.SetYear(src2, "1999")
+	metadata2.SetErrorCause(files.ID3V2, "no id3v2 metadata, how odd")
 	goodTrack := files.TrackMaker{
 		Album:      goodAlbum,
 		FileName:   "03 good track.mp3",
@@ -822,6 +824,12 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	goodTrack.Metadata = metadata2
 	goodAlbum.AddTrack(goodTrack)
 	goodArtist.AddAlbum(goodAlbum)
+	errorMetadata := files.NewTrackMetadata()
+	errorMetadata.SetErrorCause(files.ID3V1, "oops")
+	errorMetadata.SetErrorCause(files.ID3V2, "oops")
+	noMetadata := files.NewTrackMetadata()
+	noMetadata.SetErrorCause(files.ID3V1, files.ErrNoID3V1MetadataFound.Error())
+	noMetadata.SetErrorCause(files.ID3V2, files.ErrNoID3V2MetadataFound.Error())
 	tests := map[string]struct {
 		t    *files.Track
 		want []string
@@ -831,19 +839,11 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 			want: []string{"differences cannot be determined: metadata has not been read"},
 		},
 		"track with error": {
-			t: &files.Track{Metadata: files.NewTrackMetadataV1().WithErrorCauses(
-				[]string{"", "oops", "oops"}),
-			},
+			t:    &files.Track{Metadata: errorMetadata},
 			want: []string{"differences cannot be determined: track metadata may be corrupted"},
 		},
 		"track with no metadata": {
-			t: &files.Track{
-				Metadata: files.NewTrackMetadataV1().WithErrorCauses([]string{
-					"",
-					files.ErrNoID3V1MetadataFound.Error(),
-					files.ErrNoID3V2MetadataFound.Error(),
-				}),
-			},
+			t:    &files.Track{Metadata: noMetadata},
 			want: []string{"differences cannot be determined: the track file contains no metadata"},
 		},
 		"track with metadata differences": {
@@ -863,7 +863,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			if got := tt.t.ReportMetadataProblems(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
+				t.Errorf("Track.ReportMetadataProblems() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -873,7 +873,6 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 	// unfortunately, we cannot use a memory-mapped filesystem here, as the
 	// library used for updating ID3V2 tags is hardcoded to use the os file
 	// system.
-	const fnName = "Track.UpdateMetadata()"
 	testDir := "updateMetadata"
 	cmd_toolkit.Mkdir(testDir)
 	defer func() {
@@ -889,6 +888,16 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 		"track":  1,
 	})
 	createFileWithContent(testDir, trackName, trackContents)
+	expectedMetadata := files.NewTrackMetadata()
+	for _, src := range []files.SourceType{files.ID3V1, files.ID3V2} {
+		expectedMetadata.SetArtistName(src, "unknown artist")
+		expectedMetadata.SetAlbumName(src, "unknown album")
+		expectedMetadata.SetAlbumGenre(src, "unknown")
+		expectedMetadata.SetAlbumYear(src, "1900")
+		expectedMetadata.SetTrackName(src, "unknown title")
+		expectedMetadata.SetTrackNumber(src, 1)
+	}
+	expectedMetadata.SetCanonicalSource(files.ID3V2)
 	track := &files.Track{
 		FilePath:   filepath.Join(testDir, trackName),
 		SimpleName: strings.TrimSuffix(trackName, ".mp3"),
@@ -906,13 +915,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 				CanonicalName: "fine artist",
 			},
 		},
-		Metadata: files.NewTrackMetadataV1().WithAlbumNames([]string{
-			"", "unknown album", "unknown album"}).WithArtistNames([]string{
-			"", "unknown artist", "unknown artist"}).WithTrackNames([]string{
-			"", "unknown title", "unknown title"}).WithGenres([]string{
-			"", "unknown", "unknown"}).WithYears(
-			[]string{"", "1900", "1900"}).WithTrackNumbers(
-			[]int{0, 1, 1}).WithPrimarySource(files.ID3V2),
+		Metadata: expectedMetadata,
 	}
 	deletedTrack := &files.Track{
 		FilePath:   filepath.Join(testDir, "no such file"),
@@ -929,25 +932,23 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 				CanonicalName: "fine artist",
 			},
 		},
-		Metadata: files.NewTrackMetadataV1().WithAlbumNames([]string{
-			"", "unknown album", "unknown album"}).WithArtistNames([]string{
-			"", "unknown artist", "unknown artist"}).WithTrackNames([]string{
-			"", "unknown title", "unknown title"}).WithGenres([]string{
-			"", "unknown", "unknown"}).WithYears(
-			[]string{"", "1900", "1900"}).WithTrackNumbers(
-			[]int{0, 1, 1}).WithPrimarySource(files.ID3V2),
+		Metadata: expectedMetadata,
 	}
-	editedTm := files.NewTrackMetadataV1().WithAlbumNames([]string{
-		"", "fine album", "fine album"}).WithArtistNames([]string{
-		"", "fine artist", "fine artist"}).WithTrackNames([]string{
-		"", "edit this track", "edit this track"}).WithGenres([]string{
-		"", "Classic Rock", "Classic Rock"}).WithYears([]string{
-		"", "2022", "2022"}).WithTrackNumbers([]int{0, 2, 2}).WithMusicCDIdentifier(
-		[]byte("fine album")).WithPrimarySource(files.ID3V2)
+	editedTm := files.NewTrackMetadata()
+	for _, src := range []files.SourceType{files.ID3V1, files.ID3V2} {
+		editedTm.SetArtistName(src, "fine artist")
+		editedTm.SetAlbumName(src, "fine album")
+		editedTm.SetAlbumGenre(src, "Classic Rock")
+		editedTm.SetAlbumYear(src, "2022")
+		editedTm.SetTrackName(src, "edit this track")
+		editedTm.SetTrackNumber(src, 2)
+	}
+	editedTm.SetCDIdentifier([]byte("fine album"))
+	editedTm.SetCanonicalSource(files.ID3V2)
 	tests := map[string]struct {
 		t      *files.Track
 		wantE  []string
-		wantTm *files.TrackMetadataV1
+		wantTm *files.TrackMetadata
 	}{
 		"error checking": {
 			t: deletedTrack,
@@ -970,34 +971,34 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 				eStrings = append(eStrings, e.Error())
 			}
 			if !reflect.DeepEqual(eStrings, tt.wantE) {
-				t.Errorf("%s = %v, want %v", fnName, eStrings, tt.wantE)
+				t.Errorf("Track.UpdateMetadata() = %v, want %v", eStrings, tt.wantE)
 			} else if len(gotE) == 0 && tt.t.Metadata != nil {
 				// verify file was correctly rewritten
-				gotTm := files.ReadRawMetadata(tt.t.FilePath)
+				gotTm := files.InitializeMetadata(tt.t.FilePath)
 				if !reflect.DeepEqual(gotTm, tt.wantTm) {
-					t.Errorf("%s read %#v, want %#v", fnName, gotTm, tt.wantTm)
+					t.Errorf("Track.UpdateMetadata() read %#v, want %#v", gotTm, tt.wantTm)
 				}
 			}
 		})
 	}
 }
 
-func Test_processArtistMetadata(t *testing.T) {
-	const fnName = "processArtistMetadata()"
+func TestProcessArtistMetadata(t *testing.T) {
 	artist1 := files.NewArtist("artist_name", "")
 	album1 := files.AlbumMaker{Title: "album1", Artist: artist1}.NewAlbum()
 	artist1.AddAlbum(album1)
 	for k := 1; k <= 10; k++ {
 		src := files.ID3V2
-		tM := files.NewTrackMetadataV1().WithPrimarySource(src)
-		tM.SetArtistName(src, "artist:name")
+		tm := files.NewTrackMetadata()
+		tm.SetCanonicalSource(src)
+		tm.SetArtistName(src, "artist:name")
 		track := files.TrackMaker{
 			Album:      album1,
 			FileName:   fmt.Sprintf("%02d track%d.mp3", k, k),
 			SimpleName: fmt.Sprintf("track%d", k),
 			Number:     k,
 		}.NewTrack()
-		track.Metadata = tM
+		track.Metadata = tm
 		album1.AddTrack(track)
 	}
 	artist2 := files.NewArtist("artist_name", "")
@@ -1005,15 +1006,16 @@ func Test_processArtistMetadata(t *testing.T) {
 	artist2.AddAlbum(album2)
 	for k := 1; k <= 10; k++ {
 		src := files.ID3V2
-		tM := files.NewTrackMetadataV1().WithPrimarySource(src)
-		tM.SetArtistName(src, "unknown artist")
+		tm := files.NewTrackMetadata()
+		tm.SetCanonicalSource(src)
+		tm.SetArtistName(src, "unknown artist")
 		track := files.TrackMaker{
 			Album:      album2,
 			FileName:   fmt.Sprintf("%02d track%d.mp3", k, k),
 			SimpleName: fmt.Sprintf("track%d", k),
 			Number:     k,
 		}.NewTrack()
-		track.Metadata = tM
+		track.Metadata = tm
 		album2.AddTrack(track)
 	}
 	artist3 := files.NewArtist("artist_name", "")
@@ -1021,11 +1023,12 @@ func Test_processArtistMetadata(t *testing.T) {
 	artist3.AddAlbum(album3)
 	for k := 1; k <= 10; k++ {
 		src := files.ID3V2
-		tM := files.NewTrackMetadataV1().WithPrimarySource(src)
+		tm := files.NewTrackMetadata()
+		tm.SetCanonicalSource(src)
 		if k%2 == 0 {
-			tM.SetArtistName(src, "artist:name")
+			tm.SetArtistName(src, "artist:name")
 		} else {
-			tM.SetArtistName(src, "artist_name")
+			tm.SetArtistName(src, "artist_name")
 		}
 		track := files.TrackMaker{
 			Album:      album3,
@@ -1033,20 +1036,17 @@ func Test_processArtistMetadata(t *testing.T) {
 			SimpleName: fmt.Sprintf("track%d", k),
 			Number:     k,
 		}.NewTrack()
-		track.Metadata = tM
+		track.Metadata = tm
 		album3.AddTrack(track)
 	}
-	type args struct {
-		artists []*files.Artist
-	}
 	tests := map[string]struct {
-		args
+		artists []*files.Artist
 		output.WantedRecording
 	}{
-		"unanimous choice": {args: args{artists: []*files.Artist{artist1}}},
-		"unknown choice":   {args: args{artists: []*files.Artist{artist2}}},
+		"unanimous choice": {artists: []*files.Artist{artist1}},
+		"unknown choice":   {artists: []*files.Artist{artist2}},
 		"ambiguous choice": {
-			args: args{artists: []*files.Artist{artist3}},
+			artists: []*files.Artist{artist3},
 			WantedRecording: output.WantedRecording{
 				Error: "There are multiple artist name fields for \"artist_name\"," +
 					" and there is no unambiguously preferred choice; candidates are" +
@@ -1062,14 +1062,13 @@ func Test_processArtistMetadata(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			files.ProcessArtistMetadata(o, tt.args.artists)
-			o.Report(t, fnName, tt.WantedRecording)
+			files.ProcessArtistMetadata(o, tt.artists)
+			o.Report(t, "ProcessArtistMetadata()", tt.WantedRecording)
 		})
 	}
 }
 
-func Test_processAlbumMetadata(t *testing.T) {
-	const fnName = "processAlbumMetadata()"
+func TestProcessAlbumMetadata(t *testing.T) {
 	// ordinary test data
 	src := files.ID3V2
 	var artists1 []*files.Artist
@@ -1077,10 +1076,11 @@ func Test_processAlbumMetadata(t *testing.T) {
 	artists1 = append(artists1, artist1)
 	album1 := files.AlbumMaker{Title: "good-album", Artist: artist1}.NewAlbum()
 	artist1.AddAlbum(album1)
-	tm := files.NewTrackMetadataV1().WithPrimarySource(src)
+	tm := files.NewTrackMetadata()
+	tm.SetCanonicalSource(src)
 	tm.SetAlbumName(src, "good:album")
-	tm.SetGenre(src, "pop")
-	tm.SetYear(src, "2022")
+	tm.SetAlbumGenre(src, "pop")
+	tm.SetAlbumYear(src, "2022")
 	track1 := files.TrackMaker{
 		Album:      album1,
 		FileName:   "01 track1.mp3",
@@ -1098,10 +1098,11 @@ func Test_processAlbumMetadata(t *testing.T) {
 		Artist: artist2,
 	}.NewAlbum()
 	artist2.AddAlbum(album2)
-	tm2a := files.NewTrackMetadataV1().WithPrimarySource(src)
+	tm2a := files.NewTrackMetadata()
+	tm2a.SetCanonicalSource(src)
 	tm2a.SetAlbumName(src, "unknown album")
-	tm2a.SetGenre(src, "unknown")
-	tm2a.SetYear(src, "")
+	tm2a.SetAlbumGenre(src, "unknown")
+	tm2a.SetAlbumYear(src, "")
 	track2a := files.TrackMaker{
 		Album:      album2,
 		FileName:   "01 track1.mp3",
@@ -1110,10 +1111,11 @@ func Test_processAlbumMetadata(t *testing.T) {
 	}.NewTrack()
 	track2a.Metadata = tm2a
 	album2.AddTrack(track2a)
-	tm2b := files.NewTrackMetadataV1().WithPrimarySource(src)
+	tm2b := files.NewTrackMetadata()
+	tm2b.SetCanonicalSource(src)
 	tm2b.SetAlbumName(src, "another good:album")
-	tm2b.SetGenre(src, "pop")
-	tm2b.SetYear(src, "2022")
+	tm2b.SetAlbumGenre(src, "pop")
+	tm2b.SetAlbumYear(src, "2022")
 	track2b := files.TrackMaker{
 		Album:      album1,
 		FileName:   "02 track2.mp3",
@@ -1122,10 +1124,11 @@ func Test_processAlbumMetadata(t *testing.T) {
 	}.NewTrack()
 	track2b.Metadata = tm2b
 	album2.AddTrack(track2b)
-	tm2c := files.NewTrackMetadataV1().WithPrimarySource(src)
+	tm2c := files.NewTrackMetadata()
+	tm2c.SetCanonicalSource(src)
 	tm2c.SetAlbumName(src, "another good:album")
-	tm2c.SetGenre(src, "pop")
-	tm2c.SetYear(src, "2022")
+	tm2c.SetAlbumGenre(src, "pop")
+	tm2c.SetAlbumYear(src, "2022")
 	track2c := files.TrackMaker{
 		Album:      album1,
 		FileName:   "03 track3.mp3",
@@ -1143,11 +1146,12 @@ func Test_processAlbumMetadata(t *testing.T) {
 		Artist: artist3,
 	}.NewAlbum()
 	artist3.AddAlbum(album3)
-	tm3a := files.NewTrackMetadataV1().WithPrimarySource(src).WithMusicCDIdentifier(
-		[]byte{1, 2, 3})
+	tm3a := files.NewTrackMetadata()
+	tm3a.SetCanonicalSource(src)
+	tm3a.SetCDIdentifier([]byte{1, 2, 3})
 	tm3a.SetAlbumName(src, "problematic:album")
-	tm3a.SetGenre(src, "rock")
-	tm3a.SetYear(src, "2023")
+	tm3a.SetAlbumGenre(src, "rock")
+	tm3a.SetAlbumYear(src, "2023")
 	track3a := files.TrackMaker{
 		Album:      album2,
 		FileName:   "01 track1.mp3",
@@ -1156,11 +1160,12 @@ func Test_processAlbumMetadata(t *testing.T) {
 	}.NewTrack()
 	track3a.Metadata = tm3a
 	album3.AddTrack(track3a)
-	tm3b := files.NewTrackMetadataV1().WithPrimarySource(src).WithMusicCDIdentifier(
-		[]byte{1, 2, 3, 4})
+	tm3b := files.NewTrackMetadata()
+	tm3b.SetCanonicalSource(src)
+	tm3b.SetCDIdentifier([]byte{1, 2, 3, 4})
 	tm3b.SetAlbumName(src, "problematic:Album")
-	tm3b.SetGenre(src, "pop")
-	tm3b.SetYear(src, "2022")
+	tm3b.SetAlbumGenre(src, "pop")
+	tm3b.SetAlbumYear(src, "2022")
 	track3b := files.TrackMaker{
 		Album:      album1,
 		FileName:   "02 track2.mp3",
@@ -1169,11 +1174,12 @@ func Test_processAlbumMetadata(t *testing.T) {
 	}.NewTrack()
 	track3b.Metadata = tm3b
 	album3.AddTrack(track3b)
-	tm3c := files.NewTrackMetadataV1().WithPrimarySource(src).WithMusicCDIdentifier(
-		[]byte{1, 2, 3, 4, 5})
+	tm3c := files.NewTrackMetadata()
+	tm3c.SetCanonicalSource(src)
+	tm3c.SetCDIdentifier([]byte{1, 2, 3, 4, 5})
 	tm3c.SetAlbumName(src, "Problematic:album")
-	tm3c.SetGenre(src, "folk")
-	tm3c.SetYear(src, "2021")
+	tm3c.SetAlbumGenre(src, "folk")
+	tm3c.SetAlbumYear(src, "2021")
 	track3c := files.TrackMaker{
 		Album:      album1,
 		FileName:   "03 track3.mp3",
@@ -1190,17 +1196,14 @@ func Test_processAlbumMetadata(t *testing.T) {
 		Number:     4,
 	}.NewTrack()
 	album3.AddTrack(track4)
-	type args struct {
-		artists []*files.Artist
-	}
 	tests := map[string]struct {
-		args
+		artists []*files.Artist
 		output.WantedRecording
 	}{
-		"ordinary test":    {args: args{artists: artists1}},
-		"typical use case": {args: args{artists: artists2}},
+		"ordinary test":    {artists: artists1},
+		"typical use case": {artists: artists2},
 		"errors": {
-			args: args{artists: artists3},
+			artists: artists3,
 			WantedRecording: output.WantedRecording{
 				Error: "There are multiple genre fields for \"problematic_album by" +
 					" problematic artist\", and there is no unambiguously preferred choice;" +
@@ -1251,32 +1254,28 @@ func Test_processAlbumMetadata(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			files.ProcessAlbumMetadata(o, tt.args.artists)
-			o.Report(t, fnName, tt.WantedRecording)
+			files.ProcessAlbumMetadata(o, tt.artists)
+			o.Report(t, "ProcessAlbumMetadata()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestTrack_reportMetadataErrors(t *testing.T) {
-	const fnName = "Track.reportMetadataErrors()"
-	type args struct {
-		t *files.Track
-	}
+func TestTrack_ReportMetadataErrors(t *testing.T) {
+	tm := files.NewTrackMetadata()
+	tm.SetErrorCause(files.ID3V1, "id3v1 error!")
+	tm.SetErrorCause(files.ID3V2, "id3v2 error!")
 	tests := map[string]struct {
-		args
+		t *files.Track
 		output.WantedRecording
 	}{
 		"error handling": {
-			args: args{
-				t: &files.Track{
-					SimpleName: "silly track",
-					FilePath:   "Music\\silly artist\\silly album\\01 silly track.mp3",
-					Metadata: files.NewTrackMetadataV1().WithErrorCauses(
-						[]string{"", "id3v1 error!", "id3v2 error!"}),
-					Album: &files.Album{
-						Title:           "silly album",
-						RecordingArtist: &files.Artist{Name: "silly artist"},
-					},
+			t: &files.Track{
+				SimpleName: "silly track",
+				FilePath:   "Music\\silly artist\\silly album\\01 silly track.mp3",
+				Metadata:   tm,
+				Album: &files.Album{
+					Title:           "silly album",
+					RecordingArtist: &files.Artist{Name: "silly artist"},
 				},
 			},
 			WantedRecording: output.WantedRecording{
@@ -1296,8 +1295,8 @@ func TestTrack_reportMetadataErrors(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			tt.args.t.ReportMetadataErrors(o)
-			o.Report(t, fnName, tt.WantedRecording)
+			tt.t.ReportMetadataErrors(o)
+			o.Report(t, "Track.ReportMetadataErrors()", tt.WantedRecording)
 		})
 	}
 }
@@ -1307,7 +1306,6 @@ func TestTrack_Details(t *testing.T) {
 	defer func() {
 		cmd_toolkit.AssignFileSystem(originalFileSystem)
 	}()
-	const fnName = "Track.Details()"
 	audio := make([]byte, 0)
 	for k := 0; k < 256; k++ {
 		audio = append(audio, byte(k))
@@ -1356,11 +1354,11 @@ func TestTrack_Details(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			got, gotErr := tt.t.Details()
 			if (gotErr != nil) != tt.wantErr {
-				t.Errorf("%s error = %v, wantErr %v", fnName, gotErr, tt.wantErr)
+				t.Errorf("Track.Details() error = %v, wantErr %v", gotErr, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("%s = %v, want %v", fnName, got, tt.want)
+				t.Errorf("Track.Details() = %v, want %v", got, tt.want)
 			}
 		})
 	}

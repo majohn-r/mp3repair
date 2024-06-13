@@ -154,48 +154,6 @@ func SelectUnknownFrame(mcdiFramers []id3v2.Framer) id3v2.UnknownFrame {
 	return id3v2.UnknownFrame{Body: []byte{0}}
 }
 
-func UpdateID3V2Metadata(tM *TrackMetadataV1, path string) error {
-	if !tM.requiresEdit[ID3V2] {
-		return nil
-	}
-	tag, readErr := readID3V2Tag(path)
-	if readErr != nil {
-		return readErr
-	}
-	defer tag.Close()
-	tag.SetDefaultEncoding(id3v2.EncodingUTF8)
-	album := tM.correctedAlbumName[ID3V2]
-	if album != "" {
-		tag.SetAlbum(album)
-	}
-	artist := tM.correctedArtistName[ID3V2]
-	if artist != "" {
-		tag.SetArtist(artist)
-	}
-	title := tM.correctedTrackName[ID3V2]
-	if title != "" {
-		tag.SetTitle(title)
-	}
-	track := tM.correctedTrackNumber[ID3V2]
-	if track != 0 {
-		tag.AddTextFrame("TRCK", tag.DefaultEncoding(), fmt.Sprintf("%d", track))
-	}
-	genre := tM.correctedGenre[ID3V2]
-	if genre != "" {
-		tag.SetGenre(genre)
-	}
-	year := tM.correctedYear[ID3V2]
-	if year != "" {
-		tag.SetYear(year)
-	}
-	mcdi := tM.correctedMusicCDIdentifier
-	if len(mcdi.Body) != 0 {
-		tag.DeleteFrames(mcdiFrame)
-		tag.AddFrame(mcdiFrame, mcdi)
-	}
-	return tag.Save()
-}
-
 func updateID3V2TrackMetadata(tm *TrackMetadata, path string) error {
 	const src = ID3V2
 	if !tm.EditRequired(src) {
@@ -311,8 +269,8 @@ func FramerSliceAsString(f []id3v2.Framer) string {
 }
 
 func Id3v2NameDiffers(cS *ComparableStrings) bool {
-	externalName := strings.ToLower(cS.External())
-	metadataName := strings.ToLower(cS.Metadata())
+	externalName := strings.ToLower(cS.External)
+	metadataName := strings.ToLower(cS.Metadata)
 	// strip off trailing space from the metadata value
 	for strings.HasSuffix(metadataName, " ") {
 		metadataName = metadataName[:len(metadataName)-1]
@@ -340,5 +298,5 @@ func Id3v2NameDiffers(cS *ComparableStrings) bool {
 
 func Id3v2GenreDiffers(cS *ComparableStrings) bool {
 	// differs unless exact match. Period.
-	return cS.External() != cS.Metadata()
+	return cS.External != cS.Metadata
 }

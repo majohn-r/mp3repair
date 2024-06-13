@@ -75,8 +75,8 @@ func addDefaults(sf *SectionFlags) {
 }
 
 type ExportSettings struct {
-	DefaultsEnabled  BoolValue
-	OverwriteEnabled BoolValue
+	DefaultsEnabled  CommandFlag[bool]
+	OverwriteEnabled CommandFlag[bool]
 }
 
 func ExportRun(cmd *cobra.Command, _ []string) error {
@@ -98,7 +98,7 @@ func ExportRun(cmd *cobra.Command, _ []string) error {
 	return ToErrorInterface(exitError)
 }
 
-func ProcessExportFlags(o output.Bus, values map[string]*FlagValue) (*ExportSettings, bool) {
+func ProcessExportFlags(o output.Bus, values map[string]*CommandFlag[any]) (*ExportSettings, bool) {
 	var flagErr error
 	result := &ExportSettings{}
 	flagsOk := true // optimistic

@@ -107,7 +107,7 @@ func EvaluateSearchFlags(o output.Bus, producer FlagProducer) (*SearchSettings, 
 	return &SearchSettings{}, false
 }
 
-func ProcessSearchFlags(o output.Bus, values map[string]*FlagValue) (settings *SearchSettings, flagsOk bool) {
+func ProcessSearchFlags(o output.Bus, values map[string]*CommandFlag[any]) (settings *SearchSettings, flagsOk bool) {
 	flagsOk = true // optimistic
 	regexOk := true
 	settings = &SearchSettings{}
@@ -176,7 +176,7 @@ func ProcessSearchFlags(o output.Bus, values map[string]*FlagValue) (settings *S
 	return
 }
 
-func EvaluateFileExtensions(o output.Bus, values map[string]*FlagValue) ([]string, bool) {
+func EvaluateFileExtensions(o output.Bus, values map[string]*CommandFlag[any]) ([]string, bool) {
 	rawValue, flagErr := GetString(o, values, SearchFileExtensions)
 	if flagErr != nil {
 		return []string{}, false
@@ -208,7 +208,7 @@ func EvaluateFileExtensions(o output.Bus, values map[string]*FlagValue) ([]strin
 	return extensions, extensionsValid
 }
 
-func EvaluateTopDir(o output.Bus, values map[string]*FlagValue) (dir string, topDirValid bool) {
+func EvaluateTopDir(o output.Bus, values map[string]*CommandFlag[any]) (dir string, topDirValid bool) {
 	rawValue, flagErr := GetString(o, values, SearchTopDir)
 	if flagErr != nil {
 		return
@@ -266,7 +266,7 @@ func EvaluateTopDir(o output.Bus, values map[string]*FlagValue) (dir string, top
 }
 
 type FilterFlag struct {
-	Values             map[string]*FlagValue
+	Values             map[string]*CommandFlag[any]
 	FlagName           string
 	FlagRepresentation string
 }

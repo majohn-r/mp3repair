@@ -26,7 +26,7 @@ func TestEvaluateFilter(t *testing.T) {
 	}{
 		"missing flag": {
 			filtering: cmd.FilterFlag{
-				Values:             map[string]*cmd.FlagValue{},
+				Values:             map[string]*cmd.CommandFlag[any]{},
 				FlagName:           "albumFilter",
 				FlagRepresentation: "--albumFilter",
 			},
@@ -41,7 +41,7 @@ func TestEvaluateFilter(t *testing.T) {
 		},
 		"bad regex, user-supplied": {
 			filtering: cmd.FilterFlag{
-				Values: map[string]*cmd.FlagValue{
+				Values: map[string]*cmd.CommandFlag[any]{
 					"albumFilter": {UserSet: true, Value: "[9-0]"},
 				},
 				FlagName:           "albumFilter",
@@ -66,7 +66,7 @@ func TestEvaluateFilter(t *testing.T) {
 		},
 		"bad regex, as configured": {
 			filtering: cmd.FilterFlag{
-				Values: map[string]*cmd.FlagValue{
+				Values: map[string]*cmd.CommandFlag[any]{
 					"albumFilter": {UserSet: false, Value: "[9-0]"},
 				},
 				FlagName:           "albumFilter",
@@ -91,7 +91,7 @@ func TestEvaluateFilter(t *testing.T) {
 		},
 		"good regex": {
 			filtering: cmd.FilterFlag{
-				Values: map[string]*cmd.FlagValue{
+				Values: map[string]*cmd.CommandFlag[any]{
 					"albumFilter": {UserSet: true, Value: `\d`},
 				},
 				FlagName:           "albumFilter",
@@ -126,13 +126,13 @@ func TestEvaluateTopDir(t *testing.T) {
 	cmd_toolkit.FileSystem().Mkdir(goodDir, cmd_toolkit.StdDirPermissions)
 	afero.WriteFile(cmd_toolkit.FileSystem(), badDir, []byte("data"), cmd_toolkit.StdFilePermissions)
 	tests := map[string]struct {
-		values  map[string]*cmd.FlagValue
+		values  map[string]*cmd.CommandFlag[any]
 		wantDir string
 		wantOk  bool
 		output.WantedRecording
 	}{
 		"missing flag": {
-			values: map[string]*cmd.FlagValue{},
+			values: map[string]*cmd.CommandFlag[any]{},
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"topDir\" is not found.\n",
 				Log: "level='error'" +
@@ -142,7 +142,7 @@ func TestEvaluateTopDir(t *testing.T) {
 			},
 		},
 		"non-existent file, user set": {
-			values: map[string]*cmd.FlagValue{
+			values: map[string]*cmd.CommandFlag[any]{
 				"topDir": {UserSet: true, Value: "no such directory"},
 			},
 			WantedRecording: output.WantedRecording{
@@ -159,7 +159,7 @@ func TestEvaluateTopDir(t *testing.T) {
 			},
 		},
 		"non-existent file, as configured": {
-			values: map[string]*cmd.FlagValue{
+			values: map[string]*cmd.CommandFlag[any]{
 				"topDir": {UserSet: false, Value: "no such directory"},
 			},
 			WantedRecording: output.WantedRecording{
@@ -177,7 +177,7 @@ func TestEvaluateTopDir(t *testing.T) {
 			},
 		},
 		"non-existent directory, user set": {
-			values: map[string]*cmd.FlagValue{
+			values: map[string]*cmd.CommandFlag[any]{
 				"topDir": {UserSet: true, Value: badDir},
 			},
 			WantedRecording: output.WantedRecording{
@@ -193,7 +193,7 @@ func TestEvaluateTopDir(t *testing.T) {
 			},
 		},
 		"non-existent directory, as configured": {
-			values: map[string]*cmd.FlagValue{
+			values: map[string]*cmd.CommandFlag[any]{
 				"topDir": {UserSet: false, Value: badDir},
 			},
 			WantedRecording: output.WantedRecording{
@@ -210,7 +210,7 @@ func TestEvaluateTopDir(t *testing.T) {
 			},
 		},
 		"valid directory": {
-			values: map[string]*cmd.FlagValue{
+			values: map[string]*cmd.CommandFlag[any]{
 				"topDir": {UserSet: false, Value: goodDir},
 			},
 			wantDir: goodDir,
@@ -234,13 +234,13 @@ func TestEvaluateTopDir(t *testing.T) {
 
 func TestProcessSearchFlags(t *testing.T) {
 	tests := map[string]struct {
-		values       map[string]*cmd.FlagValue
+		values       map[string]*cmd.CommandFlag[any]
 		wantSettings *cmd.SearchSettings
 		wantOk       bool
 		output.WantedRecording
 	}{
 		"no data": {
-			values:       map[string]*cmd.FlagValue{},
+			values:       map[string]*cmd.CommandFlag[any]{},
 			wantSettings: &cmd.SearchSettings{},
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"albumFilter\" is not found.\n" +
@@ -271,7 +271,7 @@ func TestProcessSearchFlags(t *testing.T) {
 			},
 		},
 		"bad data": {
-			values: map[string]*cmd.FlagValue{
+			values: map[string]*cmd.CommandFlag[any]{
 				"albumFilter":  {Value: "[2"},
 				"artistFilter": {Value: "[1-0]"},
 				"trackFilter":  {Value: "0++"},
@@ -366,7 +366,7 @@ func TestProcessSearchFlags(t *testing.T) {
 			},
 		},
 		"good data": {
-			values: map[string]*cmd.FlagValue{
+			values: map[string]*cmd.CommandFlag[any]{
 				"albumFilter":  {Value: "[23]"},
 				"artistFilter": {Value: "[0-7]"},
 				"trackFilter":  {Value: "0+"},
@@ -468,13 +468,13 @@ func TestEvaluateSearchFlags(t *testing.T) {
 
 func TestEvaluateFileExtensions(t *testing.T) {
 	tests := map[string]struct {
-		values map[string]*cmd.FlagValue
+		values map[string]*cmd.CommandFlag[any]
 		want   []string
 		want1  bool
 		output.WantedRecording
 	}{
 		"no data": {
-			values: map[string]*cmd.FlagValue{},
+			values: map[string]*cmd.CommandFlag[any]{},
 			want:   []string{},
 			want1:  false,
 			WantedRecording: output.WantedRecording{
@@ -486,17 +486,17 @@ func TestEvaluateFileExtensions(t *testing.T) {
 			},
 		},
 		"one extension": {
-			values: map[string]*cmd.FlagValue{"extensions": {Value: ".mp3"}},
+			values: map[string]*cmd.CommandFlag[any]{"extensions": {Value: ".mp3"}},
 			want:   []string{".mp3"},
 			want1:  true,
 		},
 		"two extensions": {
-			values: map[string]*cmd.FlagValue{"extensions": {Value: ".mp3,.mpthree"}},
+			values: map[string]*cmd.CommandFlag[any]{"extensions": {Value: ".mp3,.mpthree"}},
 			want:   []string{".mp3", ".mpthree"},
 			want1:  true,
 		},
 		"bad extensions": {
-			values: map[string]*cmd.FlagValue{"extensions": {Value: ".mp3,,foo,."}},
+			values: map[string]*cmd.CommandFlag[any]{"extensions": {Value: ".mp3,,foo,."}},
 			want:   []string{".mp3"},
 			want1:  false,
 			WantedRecording: output.WantedRecording{

@@ -157,14 +157,14 @@ func ListRun(cmd *cobra.Command, _ []string) error {
 }
 
 type ListSettings struct {
-	Albums       BoolValue
-	Annotate     BoolValue
-	Artists      BoolValue
-	Details      BoolValue
-	Diagnostic   BoolValue
-	SortByNumber BoolValue
-	SortByTitle  BoolValue
-	Tracks       BoolValue
+	Albums       CommandFlag[bool]
+	Annotate     CommandFlag[bool]
+	Artists      CommandFlag[bool]
+	Details      CommandFlag[bool]
+	Diagnostic   CommandFlag[bool]
+	SortByNumber CommandFlag[bool]
+	SortByTitle  CommandFlag[bool]
+	Tracks       CommandFlag[bool]
 }
 
 func (ls *ListSettings) ListArtists(o output.Bus, allArtists []*files.Artist, ss *SearchSettings) (err *ExitError) {
@@ -559,7 +559,7 @@ func (ls *ListSettings) HasWorkToDo(o output.Bus) bool {
 	return false
 }
 
-func ProcessListFlags(o output.Bus, values map[string]*FlagValue) (*ListSettings, bool) {
+func ProcessListFlags(o output.Bus, values map[string]*CommandFlag[any]) (*ListSettings, bool) {
 	settings := &ListSettings{}
 	flagsOk := true // optimistic
 	var flagErr error

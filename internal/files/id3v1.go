@@ -703,40 +703,6 @@ func WriteToFile(f afero.File, b []byte) (int, error) {
 	return f.Write(b)
 }
 
-func updateID3V1Metadata(tM *TrackMetadataV1, path string) (fileErr error) {
-	if tM.requiresEdit[ID3V1] {
-		var v1 *Id3v1Metadata
-		if v1, fileErr = InternalReadID3V1Metadata(path, FileReader); fileErr == nil {
-			albumTitle := tM.correctedAlbumName[ID3V1]
-			if albumTitle != "" {
-				v1.SetAlbum(albumTitle)
-			}
-			artistName := tM.correctedArtistName[ID3V1]
-			if artistName != "" {
-				v1.SetArtist(artistName)
-			}
-			trackTitle := tM.correctedTrackName[ID3V1]
-			if trackTitle != "" {
-				v1.SetTitle(trackTitle)
-			}
-			trackNumber := tM.correctedTrackNumber[ID3V1]
-			if trackNumber != 0 {
-				_ = v1.SetTrack(trackNumber)
-			}
-			genre := tM.correctedGenre[ID3V1]
-			if genre != "" {
-				v1.SetGenre(genre)
-			}
-			year := tM.correctedYear[ID3V1]
-			if year != "" {
-				v1.SetYear(year)
-			}
-			fileErr = v1.Write(path)
-		}
-	}
-	return
-}
-
 func updateID3V1TrackMetadata(tm *TrackMetadata, path string) error {
 	const src = ID3V1
 	if !tm.EditRequired(src) {
@@ -818,8 +784,8 @@ func (im *Id3v1Metadata) InternalWrite(path string,
 }
 
 func Id3v1NameDiffers(cS *ComparableStrings) bool {
-	bs := make([]byte, 0, 2*len(cS.External()))
-	for _, r := range strings.ToLower(cS.External()) {
+	bs := make([]byte, 0, 2*len(cS.External))
+	for _, r := range strings.ToLower(cS.External) {
 		b, mappingFound := runeByteMapping[r]
 		switch {
 		case mappingFound:
@@ -834,7 +800,7 @@ func Id3v1NameDiffers(cS *ComparableStrings) bool {
 	for bs[len(bs)-1] == ' ' {
 		bs = bs[:len(bs)-1]
 	}
-	metadataRunes := []rune(strings.ToLower(cS.Metadata()))
+	metadataRunes := []rune(strings.ToLower(cS.Metadata))
 	externalRunes := []rune(string(bs))
 	if len(metadataRunes) != len(externalRunes) {
 		return true
@@ -854,13 +820,13 @@ func Id3v1NameDiffers(cS *ComparableStrings) bool {
 
 func Id3v1GenreDiffers(cS *ComparableStrings) bool {
 	InitGenreIndices()
-	if _, genreFound := GenreIndicesMap[strings.ToLower(cS.External())]; !genreFound {
+	if _, genreFound := GenreIndicesMap[strings.ToLower(cS.External)]; !genreFound {
 		// the external genre does not map to a known id3v1 genre but "Other"
 		// always matches the external name
-		if cS.Metadata() == "Other" {
+		if cS.Metadata == "Other" {
 			return false
 		}
 	}
 	// external name is a known id3v1 genre, or metadata name is not "Other"
-	return cS.External() != cS.Metadata()
+	return cS.External != cS.Metadata
 }

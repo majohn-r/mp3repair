@@ -76,7 +76,7 @@ func RepairRun(cmd *cobra.Command, _ []string) error {
 }
 
 type RepairSettings struct {
-	DryRun BoolValue
+	DryRun CommandFlag[bool]
 }
 
 func (rs *RepairSettings) ProcessArtists(o output.Bus, allArtists []*files.Artist, ss *SearchSettings) (e *ExitError) {
@@ -288,7 +288,7 @@ func EnsureTrackBackupDirectoryExists(o output.Bus, cAl *ConcernedAlbum) (path s
 	return
 }
 
-func ProcessRepairFlags(o output.Bus, values map[string]*FlagValue) (*RepairSettings, bool) {
+func ProcessRepairFlags(o output.Bus, values map[string]*CommandFlag[any]) (*RepairSettings, bool) {
 	rs := &RepairSettings{}
 	flagsOk := true // optimistic
 	var flagErr error

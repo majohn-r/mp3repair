@@ -15,23 +15,17 @@ func TestMarkDirty(t *testing.T) {
 	defer func() {
 		cmd_toolkit.AssignFileSystem(originalFileSystem)
 	}()
-	const fnName = "MarkDirty()"
 	emptyDir := "empty"
 	cmd_toolkit.Mkdir(emptyDir)
 	filledDir := "filled"
 	cmd_toolkit.Mkdir(filledDir)
 	createFile(filledDir, files.DirtyFileName)
-	type args struct {
-		cmd string
-	}
 	tests := map[string]struct {
 		appPath string
-		args
 		output.WantedRecording
 	}{
 		"typical first use": {
 			appPath: emptyDir,
-			args:    args{cmd: "calling command"},
 			WantedRecording: output.WantedRecording{
 				Log: "" +
 					"level='info'" +
@@ -39,24 +33,20 @@ func TestMarkDirty(t *testing.T) {
 					" msg='metadata dirty file written'\n",
 			},
 		},
-		"typical second use": {
-			appPath: filledDir,
-			args:    args{cmd: "calling command"},
-		},
+		"typical second use": {appPath: filledDir},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			cmd_toolkit.SetApplicationPath(tt.appPath)
 			files.MarkDirty(o)
-			o.Report(t, fnName, tt.WantedRecording)
+			o.Report(t, "MarkDirty()", tt.WantedRecording)
 		})
 	}
 }
 
 func TestDirty(t *testing.T) {
 	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
-	const fnName = "Dirty()"
 	testDir := "dirty"
 	cmd_toolkit.Mkdir(testDir)
 	oldAppPath := cmd_toolkit.SetApplicationPath(testDir)
@@ -75,13 +65,13 @@ func TestDirty(t *testing.T) {
 			if tt.want {
 				if fileErr := createFileWithContent(testDir, files.DirtyFileName,
 					[]byte("dirty")); fileErr != nil {
-					t.Errorf("%s error creating %q: %v", fnName, files.DirtyFileName, fileErr)
+					t.Errorf("Dirty() error creating %q: %v", files.DirtyFileName, fileErr)
 				}
 			} else {
 				cmd_toolkit.FileSystem().Remove(filepath.Join(testDir, files.DirtyFileName))
 			}
 			if gotDirty := files.Dirty(); gotDirty != tt.want {
-				t.Errorf("%s = %t, want %t", fnName, gotDirty, tt.want)
+				t.Errorf("Dirty() = %t, want %t", gotDirty, tt.want)
 			}
 		})
 	}
@@ -92,7 +82,6 @@ func TestClearDirty(t *testing.T) {
 	defer func() {
 		cmd_toolkit.AssignFileSystem(originalFileSystem)
 	}()
-	const fnName = "ClearDirty()"
 	testDir := "clearDirty"
 	cmd_toolkit.Mkdir(testDir)
 	oldAppPath := cmd_toolkit.ApplicationPath()
@@ -129,7 +118,7 @@ func TestClearDirty(t *testing.T) {
 			cmd_toolkit.SetApplicationPath(tt.initialDirtyFolder)
 			o := output.NewRecorder()
 			files.ClearDirty(o)
-			o.Report(t, fnName, tt.WantedRecording)
+			o.Report(t, "ClearDirty()", tt.WantedRecording)
 		})
 	}
 }

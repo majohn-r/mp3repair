@@ -13,7 +13,6 @@ import (
 )
 
 func TestAlbum_RecordingArtistName(t *testing.T) {
-	const fnName = "Album.RecordingArtistName()"
 	tests := map[string]struct {
 		a    *files.Album
 		want string
@@ -33,7 +32,7 @@ func TestAlbum_RecordingArtistName(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			if got := tt.a.RecordingArtistName(); got != tt.want {
-				t.Errorf("%s = %q, want %q", fnName, got, tt.want)
+				t.Errorf("Album.RecordingArtistName() = %q, want %q", got, tt.want)
 			}
 		})
 	}

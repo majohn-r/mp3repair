@@ -144,9 +144,9 @@ func CheckRun(cmd *cobra.Command, _ []string) error {
 }
 
 type CheckSettings struct {
-	Empty     BoolValue
-	Files     BoolValue
-	Numbering BoolValue
+	Empty     CommandFlag[bool]
+	Files     CommandFlag[bool]
+	Numbering CommandFlag[bool]
 }
 
 func (cs *CheckSettings) MaybeDoWork(o output.Bus, ss *SearchSettings) (err *ExitError) {
@@ -396,7 +396,7 @@ func (cs *CheckSettings) HasWorkToDo(o output.Bus) bool {
 	return false
 }
 
-func ProcessCheckFlags(o output.Bus, values map[string]*FlagValue) (*CheckSettings, bool) {
+func ProcessCheckFlags(o output.Bus, values map[string]*CommandFlag[any]) (*CheckSettings, bool) {
 	settings := &CheckSettings{}
 	flagsOk := true // optimistic
 	var flagErr error

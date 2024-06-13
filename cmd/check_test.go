@@ -19,13 +19,13 @@ import (
 
 func TestProcessCheckFlags(t *testing.T) {
 	tests := map[string]struct {
-		values map[string]*cmd.FlagValue
+		values map[string]*cmd.CommandFlag[any]
 		want   *cmd.CheckSettings
 		want1  bool
 		output.WantedRecording
 	}{
 		"no data": {
-			values: map[string]*cmd.FlagValue{},
+			values: map[string]*cmd.CommandFlag[any]{},
 			want:   &cmd.CheckSettings{},
 			want1:  false,
 			WantedRecording: output.WantedRecording{
@@ -49,7 +49,7 @@ func TestProcessCheckFlags(t *testing.T) {
 			},
 		},
 		"out of the box": {
-			values: map[string]*cmd.FlagValue{
+			values: map[string]*cmd.CommandFlag[any]{
 				"empty":     {Value: false},
 				"files":     {Value: false},
 				"numbering": {Value: false},
@@ -58,15 +58,15 @@ func TestProcessCheckFlags(t *testing.T) {
 			want1: true,
 		},
 		"overridden": {
-			values: map[string]*cmd.FlagValue{
+			values: map[string]*cmd.CommandFlag[any]{
 				"empty":     {Value: true, UserSet: true},
 				"files":     {Value: true, UserSet: true},
 				"numbering": {Value: true, UserSet: true},
 			},
 			want: &cmd.CheckSettings{
-				Empty:     cmd.BoolValue{Value: true, UserSet: true},
-				Files:     cmd.BoolValue{Value: true, UserSet: true},
-				Numbering: cmd.BoolValue{Value: true, UserSet: true},
+				Empty:     cmd.CommandFlag[bool]{Value: true, UserSet: true},
+				Files:     cmd.CommandFlag[bool]{Value: true, UserSet: true},
+				Numbering: cmd.CommandFlag[bool]{Value: true, UserSet: true},
 			},
 			want1: true,
 		},
@@ -109,7 +109,7 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 			},
 		},
 		"no work, empty configured that way": {
-			cs:   &cmd.CheckSettings{Empty: cmd.BoolValue{UserSet: true}},
+			cs:   &cmd.CheckSettings{Empty: cmd.CommandFlag[bool]{UserSet: true}},
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -126,7 +126,7 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 			},
 		},
 		"no work, files configured that way": {
-			cs:   &cmd.CheckSettings{Files: cmd.BoolValue{UserSet: true}},
+			cs:   &cmd.CheckSettings{Files: cmd.CommandFlag[bool]{UserSet: true}},
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -143,7 +143,7 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 			},
 		},
 		"no work, numbering configured that way": {
-			cs:   &cmd.CheckSettings{Numbering: cmd.BoolValue{UserSet: true}},
+			cs:   &cmd.CheckSettings{Numbering: cmd.CommandFlag[bool]{UserSet: true}},
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -161,8 +161,8 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 		},
 		"no work, empty and files configured that way": {
 			cs: &cmd.CheckSettings{
-				Empty: cmd.BoolValue{UserSet: true},
-				Files: cmd.BoolValue{UserSet: true},
+				Empty: cmd.CommandFlag[bool]{UserSet: true},
+				Files: cmd.CommandFlag[bool]{UserSet: true},
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
@@ -181,8 +181,8 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 		},
 		"no work, empty and numbering configured that way": {
 			cs: &cmd.CheckSettings{
-				Empty:     cmd.BoolValue{UserSet: true},
-				Numbering: cmd.BoolValue{UserSet: true},
+				Empty:     cmd.CommandFlag[bool]{UserSet: true},
+				Numbering: cmd.CommandFlag[bool]{UserSet: true},
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
@@ -201,8 +201,8 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 		},
 		"no work, numbering and files configured that way": {
 			cs: &cmd.CheckSettings{
-				Numbering: cmd.BoolValue{UserSet: true},
-				Files:     cmd.BoolValue{UserSet: true},
+				Numbering: cmd.CommandFlag[bool]{UserSet: true},
+				Files:     cmd.CommandFlag[bool]{UserSet: true},
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
@@ -221,9 +221,9 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 		},
 		"no work, all flags configured that way": {
 			cs: &cmd.CheckSettings{
-				Numbering: cmd.BoolValue{UserSet: true},
-				Files:     cmd.BoolValue{UserSet: true},
-				Empty:     cmd.BoolValue{UserSet: true},
+				Numbering: cmd.CommandFlag[bool]{UserSet: true},
+				Files:     cmd.CommandFlag[bool]{UserSet: true},
+				Empty:     cmd.CommandFlag[bool]{UserSet: true},
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
@@ -240,43 +240,43 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 			},
 		},
 		"check empty": {
-			cs:   &cmd.CheckSettings{Empty: cmd.BoolValue{Value: true}},
+			cs:   &cmd.CheckSettings{Empty: cmd.CommandFlag[bool]{Value: true}},
 			want: true,
 		},
 		"check files": {
-			cs:   &cmd.CheckSettings{Files: cmd.BoolValue{Value: true}},
+			cs:   &cmd.CheckSettings{Files: cmd.CommandFlag[bool]{Value: true}},
 			want: true,
 		},
 		"check numbering": {
-			cs:   &cmd.CheckSettings{Numbering: cmd.BoolValue{Value: true}},
+			cs:   &cmd.CheckSettings{Numbering: cmd.CommandFlag[bool]{Value: true}},
 			want: true,
 		},
 		"check empty and files": {
 			cs: &cmd.CheckSettings{
-				Empty: cmd.BoolValue{Value: true},
-				Files: cmd.BoolValue{Value: true},
+				Empty: cmd.CommandFlag[bool]{Value: true},
+				Files: cmd.CommandFlag[bool]{Value: true},
 			},
 			want: true,
 		},
 		"check empty and numbering": {
 			cs: &cmd.CheckSettings{
-				Empty:     cmd.BoolValue{Value: true},
-				Numbering: cmd.BoolValue{Value: true},
+				Empty:     cmd.CommandFlag[bool]{Value: true},
+				Numbering: cmd.CommandFlag[bool]{Value: true},
 			},
 			want: true,
 		},
 		"check numbering and files": {
 			cs: &cmd.CheckSettings{
-				Numbering: cmd.BoolValue{Value: true},
-				Files:     cmd.BoolValue{Value: true},
+				Numbering: cmd.CommandFlag[bool]{Value: true},
+				Files:     cmd.CommandFlag[bool]{Value: true},
 			},
 			want: true,
 		},
 		"check everything": {
 			cs: &cmd.CheckSettings{
-				Empty:     cmd.BoolValue{Value: true},
-				Files:     cmd.BoolValue{Value: true},
-				Numbering: cmd.BoolValue{Value: true},
+				Empty:     cmd.CommandFlag[bool]{Value: true},
+				Files:     cmd.CommandFlag[bool]{Value: true},
+				Numbering: cmd.CommandFlag[bool]{Value: true},
 			},
 			want: true,
 		},
@@ -298,22 +298,22 @@ func TestCheckSettings_PerformEmptyAnalysis(t *testing.T) {
 		checkedArtists []*cmd.ConcernedArtist
 		want           bool
 	}{
-		"do nothing": {cs: &cmd.CheckSettings{Empty: cmd.BoolValue{Value: false}}},
+		"do nothing": {cs: &cmd.CheckSettings{Empty: cmd.CommandFlag[bool]{Value: false}}},
 		"empty slice": {
-			cs:             &cmd.CheckSettings{Empty: cmd.BoolValue{Value: true}},
+			cs:             &cmd.CheckSettings{Empty: cmd.CommandFlag[bool]{Value: true}},
 			checkedArtists: nil,
 		},
 		"full slice, no problems": {
-			cs:             &cmd.CheckSettings{Empty: cmd.BoolValue{Value: true}},
+			cs:             &cmd.CheckSettings{Empty: cmd.CommandFlag[bool]{Value: true}},
 			checkedArtists: cmd.CreateConcernedArtists(generateArtists(5, 6, 7)),
 		},
 		"empty artists": {
-			cs:             &cmd.CheckSettings{Empty: cmd.BoolValue{Value: true}},
+			cs:             &cmd.CheckSettings{Empty: cmd.CommandFlag[bool]{Value: true}},
 			checkedArtists: cmd.CreateConcernedArtists(generateArtists(1, 0, 10)),
 			want:           true,
 		},
 		"empty albums": {
-			cs:             &cmd.CheckSettings{Empty: cmd.BoolValue{Value: true}},
+			cs:             &cmd.CheckSettings{Empty: cmd.CommandFlag[bool]{Value: true}},
 			checkedArtists: cmd.CreateConcernedArtists(generateArtists(4, 6, 0)),
 			want:           true,
 		},
@@ -443,17 +443,17 @@ func TestCheckSettings_PerformNumberingAnalysis(t *testing.T) {
 		want           bool
 	}{
 		"no analysis": {
-			cs:             &cmd.CheckSettings{Numbering: cmd.BoolValue{Value: false}},
+			cs:             &cmd.CheckSettings{Numbering: cmd.CommandFlag[bool]{Value: false}},
 			checkedArtists: cmd.CreateConcernedArtists(generateArtists(5, 6, 7)),
 			want:           false,
 		},
 		"ok analysis": {
-			cs:             &cmd.CheckSettings{Numbering: cmd.BoolValue{Value: true}},
+			cs:             &cmd.CheckSettings{Numbering: cmd.CommandFlag[bool]{Value: true}},
 			checkedArtists: cmd.CreateConcernedArtists(generateArtists(5, 6, 7)),
 			want:           false,
 		},
 		"missing numbers found": {
-			cs:             &cmd.CheckSettings{Numbering: cmd.BoolValue{Value: true}},
+			cs:             &cmd.CheckSettings{Numbering: cmd.CommandFlag[bool]{Value: true}},
 			checkedArtists: cmd.CreateConcernedArtists(defectiveArtists),
 			want:           true,
 		},
@@ -513,8 +513,8 @@ func TestRecordTrackFileConcerns(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := cmd.RecordTrackFileConcerns(tt.args.checkedArtists,
-				tt.args.track, tt.args.concerns); got != tt.wantFoundConcerns {
+			got := cmd.RecordTrackFileConcerns(tt.args.checkedArtists, tt.args.track, tt.args.concerns)
+			if got != tt.wantFoundConcerns {
 				t.Errorf("RecordTrackFileConcerns() = %v, want %v", got, tt.wantFoundConcerns)
 			}
 			if tt.wantFoundConcerns {
@@ -549,13 +549,13 @@ func TestCheckSettings_PerformFileAnalysis(t *testing.T) {
 		output.WantedRecording
 	}{
 		"not permitted to do anything": {
-			cs:              &cmd.CheckSettings{Files: cmd.BoolValue{Value: false}},
+			cs:              &cmd.CheckSettings{Files: cmd.CommandFlag[bool]{Value: false}},
 			args:            args{},
 			want:            false,
 			WantedRecording: output.WantedRecording{},
 		},
 		"allowed, but nothing to check": {
-			cs: &cmd.CheckSettings{Files: cmd.BoolValue{Value: true}},
+			cs: &cmd.CheckSettings{Files: cmd.CommandFlag[bool]{Value: true}},
 			args: args{
 				checkedArtists: []*cmd.ConcernedArtist{},
 				ss:             &cmd.SearchSettings{},
@@ -574,7 +574,7 @@ func TestCheckSettings_PerformFileAnalysis(t *testing.T) {
 			},
 		},
 		"work to do": {
-			cs: &cmd.CheckSettings{Files: cmd.BoolValue{Value: true}},
+			cs: &cmd.CheckSettings{Files: cmd.CommandFlag[bool]{Value: true}},
 			args: args{
 				checkedArtists: cmd.CreateConcernedArtists(generateArtists(4, 5, 6)),
 				ss: &cmd.SearchSettings{
@@ -612,9 +612,9 @@ func TestCheckSettings_MaybeReportCleanResults(t *testing.T) {
 		},
 		"all concerns found, everything was checked": {
 			cs: &cmd.CheckSettings{
-				Empty:     cmd.BoolValue{Value: true},
-				Numbering: cmd.BoolValue{Value: true},
-				Files:     cmd.BoolValue{Value: true},
+				Empty:     cmd.CommandFlag[bool]{Value: true},
+				Numbering: cmd.CommandFlag[bool]{Value: true},
+				Files:     cmd.CommandFlag[bool]{Value: true},
 			},
 			requests: cmd.CheckReportRequests{
 				ReportEmptyCheckResults:     true,
@@ -625,9 +625,9 @@ func TestCheckSettings_MaybeReportCleanResults(t *testing.T) {
 		},
 		"no concerns found, everything was checked": {
 			cs: &cmd.CheckSettings{
-				Empty:     cmd.BoolValue{Value: true},
-				Numbering: cmd.BoolValue{Value: true},
-				Files:     cmd.BoolValue{Value: true},
+				Empty:     cmd.CommandFlag[bool]{Value: true},
+				Numbering: cmd.CommandFlag[bool]{Value: true},
+				Files:     cmd.CommandFlag[bool]{Value: true},
 			},
 			requests: cmd.CheckReportRequests{
 				ReportEmptyCheckResults:     false,
@@ -675,9 +675,9 @@ func TestCheckSettings_PerformChecks(t *testing.T) {
 		},
 		"artists to check, check everything": {
 			cs: &cmd.CheckSettings{
-				Empty:     cmd.BoolValue{Value: true},
-				Numbering: cmd.BoolValue{Value: true},
-				Files:     cmd.BoolValue{Value: true},
+				Empty:     cmd.CommandFlag[bool]{Value: true},
+				Numbering: cmd.CommandFlag[bool]{Value: true},
+				Files:     cmd.CommandFlag[bool]{Value: true},
 			},
 			args: args{
 				artists: generateArtists(1, 2, 3),
@@ -735,7 +735,7 @@ func TestCheckSettings_MaybeDoWork(t *testing.T) {
 			},
 		},
 		"try a little work": {
-			cs: &cmd.CheckSettings{Empty: cmd.BoolValue{Value: true}},
+			cs: &cmd.CheckSettings{Empty: cmd.CommandFlag[bool]{Value: true}},
 			ss: &cmd.SearchSettings{
 				ArtistFilter:   regexp.MustCompile(".*"),
 				AlbumFilter:    regexp.MustCompile(".*"),

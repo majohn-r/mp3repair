@@ -101,7 +101,7 @@ func TestExitError_status(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			if got := tt.e.Status(); got != tt.want {
-				t.Errorf("ExitError.status() = %v, want %v", got, tt.want)
+				t.Errorf("ExitError.Status() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -121,15 +121,15 @@ func TestToErrInterface(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			gotErr := ToErrorInterface(tt.e)
 			if (gotErr != nil) != tt.wantErr {
-				t.Errorf("ToErrInterface() error = %v, wantErr %v", gotErr, tt.wantErr)
+				t.Errorf("ToErrorInterface() error = %v, wantErr %v", gotErr, tt.wantErr)
 			}
 			if gotErr == nil {
 				if _, ok := gotErr.(*ExitError); ok {
-					t.Errorf("ToErrInterface() returned nil that is *ExitError")
+					t.Errorf("ToErrorInterface() returned nil that is *ExitError")
 				}
 			} else {
 				if !reflect.DeepEqual(gotErr, tt.e) {
-					t.Errorf("ToErrInterface() got %v want %v", gotErr, tt.e)
+					t.Errorf("ToErrorInterface() got %v want %v", gotErr, tt.e)
 				}
 			}
 		})

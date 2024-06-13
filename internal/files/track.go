@@ -44,7 +44,7 @@ type Track struct {
 	// full path to the file associated with the track, including the file itself
 	FilePath string
 	// read from the file only when needed; file i/o is expensive
-	Metadata *TrackMetadataV1
+	Metadata *TrackMetadata
 	// name of the track, without its number or file extension, e.g., "First Track"
 	SimpleName string
 	// number of the track
@@ -138,8 +138,8 @@ func (t *Track) HasMetadataError() bool {
 	return t.Metadata != nil && len(t.Metadata.ErrorCauses()) != 0
 }
 
-func (t *Track) SetMetadata(tM *TrackMetadataV1) {
-	t.Metadata = tM
+func (t *Track) SetMetadata(tm *TrackMetadata) {
+	t.Metadata = tm
 }
 
 // MetadataState contains information about metadata problems
@@ -245,12 +245,12 @@ func (t *Track) ReconcileMetadata() MetadataState {
 		return mS
 	}
 	mS.numberingConflict = t.Metadata.TrackNumberDiffers(t.Number)
-	mS.trackNameConflict = t.Metadata.TrackTitleDiffers(t.SimpleName)
-	mS.albumNameConflict = t.Metadata.AlbumTitleDiffers(t.Album.CanonicalTitle)
+	mS.trackNameConflict = t.Metadata.TrackNameDiffers(t.SimpleName)
+	mS.albumNameConflict = t.Metadata.AlbumNameDiffers(t.Album.CanonicalTitle)
 	mS.artistNameConflict = t.Metadata.ArtistNameDiffers(t.Album.RecordingArtist.CanonicalName)
-	mS.genreConflict = t.Metadata.GenreDiffers(t.Album.CanonicalGenre)
-	mS.yearConflict = t.Metadata.YearDiffers(t.Album.CanonicalYear)
-	mS.mcdiConflict = t.Metadata.MCDIDiffers(t.Album.MusicCDIdentifier)
+	mS.genreConflict = t.Metadata.AlbumGenreDiffers(t.Album.CanonicalGenre)
+	mS.yearConflict = t.Metadata.AlbumYearDiffers(t.Album.CanonicalYear)
+	mS.mcdiConflict = t.Metadata.CDIdentifierDiffers(t.Album.MusicCDIdentifier)
 	return mS
 }
 
@@ -324,7 +324,7 @@ func (t *Track) UpdateMetadata() (e []error) {
 		e = append(e, ErrNoEditNeeded)
 		return
 	}
-	e = append(e, updateMetadata(t.Metadata, t.FilePath)...)
+	e = append(e, t.Metadata.Update(t.FilePath)...)
 	return
 }
 
@@ -341,7 +341,7 @@ func (t *Track) LoadMetadata(bar *pb.ProgressBar) {
 				bar.Increment()
 				<-openFiles // read to release a slot
 			}()
-			t.SetMetadata(ReadRawMetadata(t.FilePath))
+			t.SetMetadata(InitializeMetadata(t.FilePath))
 		}()
 	}
 }
@@ -396,7 +396,7 @@ func ProcessArtistMetadata(o output.Bus, artists []*Artist) {
 			for _, track := range album.Tracks {
 				if track.Metadata != nil && track.Metadata.IsValid() &&
 					track.Metadata.CanonicalArtistNameMatches(artist.Name) {
-					recordedArtistNames[track.Metadata.CanonicalArtist()]++
+					recordedArtistNames[track.Metadata.CanonicalArtistName()]++
 				}
 			}
 		}
@@ -439,19 +439,19 @@ func ProcessAlbumMetadata(o output.Bus, artists []*Artist) {
 				if t.Metadata == nil || !t.Metadata.IsValid() {
 					continue
 				}
-				genre := strings.ToLower(t.Metadata.CanonicalGenre())
+				genre := strings.ToLower(t.Metadata.CanonicalAlbumGenre())
 				if genre != "" && !strings.HasPrefix(genre, "unknown") {
-					recordedGenres[t.Metadata.CanonicalGenre()]++
+					recordedGenres[t.Metadata.CanonicalAlbumGenre()]++
 				}
-				if t.Metadata.CanonicalYear() != "" {
-					recordedYears[t.Metadata.CanonicalYear()]++
+				if t.Metadata.CanonicalAlbumYear() != "" {
+					recordedYears[t.Metadata.CanonicalAlbumYear()]++
 				}
-				if t.Metadata.CanonicalAlbumTitleMatches(al.Title) {
-					recordedAlbumTitles[t.Metadata.CanonicalAlbum()]++
+				if t.Metadata.CanonicalAlbumNameMatches(al.Title) {
+					recordedAlbumTitles[t.Metadata.CanonicalAlbumName()]++
 				}
-				mcdiKey := string(t.Metadata.CanonicalMusicCDIdentifier().Body)
+				mcdiKey := string(t.Metadata.CanonicalCDIdentifier().Body)
 				recordedMCDIs[mcdiKey]++
-				recordedMCDIFrames[mcdiKey] = t.Metadata.CanonicalMusicCDIdentifier()
+				recordedMCDIFrames[mcdiKey] = t.Metadata.CanonicalCDIdentifier()
 			}
 			canonicalGenre, genreSelected := CanonicalChoice(recordedGenres)
 			switch {
@@ -579,10 +579,10 @@ func reportAllTrackErrors(o output.Bus, artists []*Artist) {
 
 func (t *Track) ReportMetadataErrors(o output.Bus) {
 	if t.HasMetadataError() {
-		for _, sT := range []SourceType{ID3V1, ID3V2} {
+		for _, src := range []SourceType{ID3V1, ID3V2} {
 			if metadata := t.Metadata; metadata != nil {
-				if e := metadata.errorCause[sT]; e != "" {
-					t.ReportMetadataReadError(o, sT, e)
+				if e := metadata.ErrorCause(src); e != "" {
+					t.ReportMetadataReadError(o, src, e)
 				}
 			}
 		}

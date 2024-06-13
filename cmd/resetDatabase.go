@@ -139,12 +139,12 @@ func ResetDBRun(cmd *cobra.Command, _ []string) error {
 }
 
 type ResetDBSettings struct {
-	Extension           StringValue
-	Force               BoolValue
-	IgnoreServiceErrors BoolValue
-	MetadataDir         StringValue
-	Service             StringValue
-	Timeout             IntValue
+	Extension           CommandFlag[string]
+	Force               CommandFlag[bool]
+	IgnoreServiceErrors CommandFlag[bool]
+	MetadataDir         CommandFlag[string]
+	Service             CommandFlag[string]
+	Timeout             CommandFlag[int]
 }
 
 func (rdbs *ResetDBSettings) ResetService(o output.Bus) (e *ExitError) {
@@ -466,7 +466,7 @@ func (rdbs *ResetDBSettings) DeleteMetadataFiles(o output.Bus, paths []string) (
 	return
 }
 
-func ProcessResetDBFlags(o output.Bus, values map[string]*FlagValue) (*ResetDBSettings, bool) {
+func ProcessResetDBFlags(o output.Bus, values map[string]*CommandFlag[any]) (*ResetDBSettings, bool) {
 	var flagErr error
 	result := &ResetDBSettings{}
 	flagsOk := true // optimistic

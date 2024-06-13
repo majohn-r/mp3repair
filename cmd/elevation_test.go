@@ -193,7 +193,7 @@ func TestElevationGoverner_CanElevate(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			if got := tt.ec.canElevate(); got != tt.want {
-				t.Errorf("ElevationGoverner.canElevate() = %v, want %v", got, tt.want)
+				t.Errorf("ElevationControl.canElevate() = %v, want %v", got, tt.want)
 			}
 		})
 	}

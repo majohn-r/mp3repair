@@ -93,7 +93,7 @@ func TestReadFlags(t *testing.T) {
 	}
 	tests := map[string]struct {
 		args
-		want  map[string]*cmd.FlagValue
+		want  map[string]*cmd.CommandFlag[any]
 		want1 []string
 	}{
 		"mix of weird flags in producer": {
@@ -119,7 +119,7 @@ func TestReadFlags(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*cmd.FlagValue{
+			want: map[string]*cmd.CommandFlag[any]{
 				"bool":   {UserSet: false, Value: true},
 				"int":    {UserSet: false, Value: 6},
 				"string": {UserSet: false, Value: "foo"},
@@ -161,7 +161,7 @@ func TestReadFlags(t *testing.T) {
 					},
 				},
 			},
-			want: map[string]*cmd.FlagValue{
+			want: map[string]*cmd.CommandFlag[any]{
 				"specifiedBool":     {UserSet: true, Value: true},
 				"specifiedInt":      {UserSet: true, Value: 6},
 				"specifiedString":   {UserSet: true, Value: "foo"},
@@ -177,7 +177,7 @@ func TestReadFlags(t *testing.T) {
 					Details: map[string]*cmd.FlagDetails{"no deets": nil},
 				},
 			},
-			want:  map[string]*cmd.FlagValue{},
+			want:  map[string]*cmd.CommandFlag[any]{},
 			want1: []string{"no details for flag \"no deets\""},
 		},
 	}
@@ -564,27 +564,22 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 }
 
 func TestAddFlags(t *testing.T) {
-	originalSearchFlags := cmd.SearchFlags
-	defer func() {
-		cmd.SearchFlags = originalSearchFlags
-	}()
 	type args struct {
-		flags           *testFlagConsumer
-		defs            *cmd.SectionFlags
-		includeSearches bool
+		flags *testFlagConsumer
+		defs  []*cmd.SectionFlags
 	}
 	tests := map[string]struct {
 		args
-		replaceSearchFlags *cmd.SectionFlags
-		doReplacement      bool
-		wantNames          []string
+		wantNames []string
 		output.WantedRecording
 	}{
 		"empty details with searches": {
 			args: args{
-				flags:           &testFlagConsumer{flags: map[string]*testFlagDatum{}},
-				defs:            &cmd.SectionFlags{},
-				includeSearches: true,
+				flags: &testFlagConsumer{flags: map[string]*testFlagDatum{}},
+				defs: []*cmd.SectionFlags{
+					{},
+					cmd.SearchFlags,
+				},
 			},
 			wantNames: []string{
 				"albumFilter", "artistFilter", "topDir", "trackFilter", "extensions",
@@ -592,40 +587,39 @@ func TestAddFlags(t *testing.T) {
 		},
 		"empty details without searches": {
 			args: args{
-				flags:           &testFlagConsumer{flags: map[string]*testFlagDatum{}},
-				defs:            &cmd.SectionFlags{},
-				includeSearches: false,
+				flags: &testFlagConsumer{flags: map[string]*testFlagDatum{}},
+				defs:  []*cmd.SectionFlags{{}},
 			},
 			wantNames: []string{},
 		},
 		"empty details with bad searches": {
 			args: args{
-				flags:           &testFlagConsumer{flags: map[string]*testFlagDatum{}},
-				defs:            &cmd.SectionFlags{},
-				includeSearches: true,
-			},
-			replaceSearchFlags: &cmd.SectionFlags{
-				SectionName: "common",
-				Details: map[string]*cmd.FlagDetails{
-					"albumFilter": {
-						Usage:        "regular expression specifying which albums to select",
-						ExpectedType: cmd.StringType,
-						DefaultValue: ".*",
-					},
-					"artistFilter": {
-						Usage:        "regular expression specifying which artists to select",
-						ExpectedType: cmd.StringType,
-						DefaultValue: ".*",
-					},
-					"topDir": {
-						Usage:        "top directory specifying where to find mp3 files",
-						ExpectedType: cmd.BoolType,
-						DefaultValue: filepath.Join("%HOMEPATH%", "Music"),
+				flags: &testFlagConsumer{flags: map[string]*testFlagDatum{}},
+				defs: []*cmd.SectionFlags{
+					{},
+					{
+						SectionName: "common",
+						Details: map[string]*cmd.FlagDetails{
+							"albumFilter": {
+								Usage:        "regular expression specifying which albums to select",
+								ExpectedType: cmd.StringType,
+								DefaultValue: ".*",
+							},
+							"artistFilter": {
+								Usage:        "regular expression specifying which artists to select",
+								ExpectedType: cmd.StringType,
+								DefaultValue: ".*",
+							},
+							"topDir": {
+								Usage:        "top directory specifying where to find mp3 files",
+								ExpectedType: cmd.BoolType,
+								DefaultValue: filepath.Join("%HOMEPATH%", "Music"),
+							},
+						},
 					},
 				},
 			},
-			doReplacement: true,
-			wantNames:     []string{"albumFilter", "artistFilter"},
+			wantNames: []string{"albumFilter", "artistFilter"},
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: the type of flag \"topDir\"'s value," +
 					" '%HOMEPATH%\\Music', is 'string', but 'bool' was expected.\n",
@@ -641,16 +635,18 @@ func TestAddFlags(t *testing.T) {
 		"good details with good searches": {
 			args: args{
 				flags: &testFlagConsumer{flags: map[string]*testFlagDatum{}},
-				defs: &cmd.SectionFlags{
-					SectionName: "mySection",
-					Details: map[string]*cmd.FlagDetails{
-						"myFlag": {
-							ExpectedType: cmd.BoolType,
-							DefaultValue: false,
+				defs: []*cmd.SectionFlags{
+					{
+						SectionName: "mySection",
+						Details: map[string]*cmd.FlagDetails{
+							"myFlag": {
+								ExpectedType: cmd.BoolType,
+								DefaultValue: false,
+							},
 						},
 					},
+					cmd.SearchFlags,
 				},
-				includeSearches: true,
 			},
 			wantNames: []string{
 				"myFlag",
@@ -664,55 +660,56 @@ func TestAddFlags(t *testing.T) {
 		"good details without searches": {
 			args: args{
 				flags: &testFlagConsumer{flags: map[string]*testFlagDatum{}},
-				defs: &cmd.SectionFlags{
-					SectionName: "mySection",
-					Details: map[string]*cmd.FlagDetails{
-						"myFlag": {
-							ExpectedType: cmd.BoolType,
-							DefaultValue: false,
+				defs: []*cmd.SectionFlags{
+					{
+						SectionName: "mySection",
+						Details: map[string]*cmd.FlagDetails{
+							"myFlag": {
+								ExpectedType: cmd.BoolType,
+								DefaultValue: false,
+							},
 						},
 					},
 				},
-				includeSearches: false,
 			},
 			wantNames: []string{"myFlag"},
 		},
 		"good details with bad searches": {
 			args: args{
 				flags: &testFlagConsumer{flags: map[string]*testFlagDatum{}},
-				defs: &cmd.SectionFlags{
-					SectionName: "mySection",
-					Details: map[string]*cmd.FlagDetails{
-						"myFlag": {
-							ExpectedType: cmd.BoolType,
-							DefaultValue: false,
+				defs: []*cmd.SectionFlags{
+					{
+						SectionName: "mySection",
+						Details: map[string]*cmd.FlagDetails{
+							"myFlag": {
+								ExpectedType: cmd.BoolType,
+								DefaultValue: false,
+							},
+						},
+					},
+					{
+						SectionName: "common",
+						Details: map[string]*cmd.FlagDetails{
+							"albumFilter": {
+								Usage:        "regular expression specifying which albums to select",
+								ExpectedType: cmd.StringType,
+								DefaultValue: ".*",
+							},
+							"artistFilter": {
+								Usage:        "regular expression specifying which artists to select",
+								ExpectedType: cmd.StringType,
+								DefaultValue: ".*",
+							},
+							"topDir": {
+								Usage:        "top directory specifying where to find mp3 files",
+								ExpectedType: cmd.BoolType,
+								DefaultValue: filepath.Join("%HOMEPATH%", "Music"),
+							},
 						},
 					},
 				},
-				includeSearches: true,
 			},
-			replaceSearchFlags: &cmd.SectionFlags{
-				SectionName: "common",
-				Details: map[string]*cmd.FlagDetails{
-					"albumFilter": {
-						Usage:        "regular expression specifying which albums to select",
-						ExpectedType: cmd.StringType,
-						DefaultValue: ".*",
-					},
-					"artistFilter": {
-						Usage:        "regular expression specifying which artists to select",
-						ExpectedType: cmd.StringType,
-						DefaultValue: ".*",
-					},
-					"topDir": {
-						Usage:        "top directory specifying where to find mp3 files",
-						ExpectedType: cmd.BoolType,
-						DefaultValue: filepath.Join("%HOMEPATH%", "Music"),
-					},
-				},
-			},
-			doReplacement: true,
-			wantNames:     []string{"myFlag", "albumFilter", "artistFilter"},
+			wantNames: []string{"myFlag", "albumFilter", "artistFilter"},
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: the type of flag \"topDir\"'s value," +
 					" '%HOMEPATH%\\Music', is 'string', but 'bool' was expected.\n",
@@ -728,28 +725,30 @@ func TestAddFlags(t *testing.T) {
 		"bad details with good searches": {
 			args: args{
 				flags: &testFlagConsumer{flags: map[string]*testFlagDatum{}},
-				defs: &cmd.SectionFlags{
-					SectionName: "mySection",
-					Details: map[string]*cmd.FlagDetails{
-						"myFlag": {
-							ExpectedType: cmd.BoolType,
-							DefaultValue: false,
-						},
-						"myBadFlag": {
-							ExpectedType: cmd.IntType,
-							DefaultValue: false,
-						},
-						"myBetterFlag": {
-							ExpectedType: cmd.BoolType,
-							DefaultValue: true,
-						},
-						"myWorseFlag": {
-							ExpectedType: cmd.BoolType,
-							DefaultValue: "nope",
+				defs: []*cmd.SectionFlags{
+					{
+						SectionName: "mySection",
+						Details: map[string]*cmd.FlagDetails{
+							"myFlag": {
+								ExpectedType: cmd.BoolType,
+								DefaultValue: false,
+							},
+							"myBadFlag": {
+								ExpectedType: cmd.IntType,
+								DefaultValue: false,
+							},
+							"myBetterFlag": {
+								ExpectedType: cmd.BoolType,
+								DefaultValue: true,
+							},
+							"myWorseFlag": {
+								ExpectedType: cmd.BoolType,
+								DefaultValue: "nope",
+							},
 						},
 					},
+					cmd.SearchFlags,
 				},
-				includeSearches: true,
 			},
 			wantNames: []string{
 				"myFlag",
@@ -784,28 +783,29 @@ func TestAddFlags(t *testing.T) {
 		"bad details without searches": {
 			args: args{
 				flags: &testFlagConsumer{flags: map[string]*testFlagDatum{}},
-				defs: &cmd.SectionFlags{
-					SectionName: "mySection",
-					Details: map[string]*cmd.FlagDetails{
-						"myFlag": {
-							ExpectedType: cmd.BoolType,
-							DefaultValue: false,
-						},
-						"myBadFlag": {
-							ExpectedType: cmd.IntType,
-							DefaultValue: false,
-						},
-						"myBetterFlag": {
-							ExpectedType: cmd.BoolType,
-							DefaultValue: true,
-						},
-						"myWorseFlag": {
-							ExpectedType: cmd.BoolType,
-							DefaultValue: "nope",
+				defs: []*cmd.SectionFlags{
+					{
+						SectionName: "mySection",
+						Details: map[string]*cmd.FlagDetails{
+							"myFlag": {
+								ExpectedType: cmd.BoolType,
+								DefaultValue: false,
+							},
+							"myBadFlag": {
+								ExpectedType: cmd.IntType,
+								DefaultValue: false,
+							},
+							"myBetterFlag": {
+								ExpectedType: cmd.BoolType,
+								DefaultValue: true,
+							},
+							"myWorseFlag": {
+								ExpectedType: cmd.BoolType,
+								DefaultValue: "nope",
+							},
 						},
 					},
 				},
-				includeSearches: false,
 			},
 			wantNames: []string{"myFlag", "myBetterFlag"},
 			WantedRecording: output.WantedRecording{
@@ -832,52 +832,52 @@ func TestAddFlags(t *testing.T) {
 		"bad details with bad searches": {
 			args: args{
 				flags: &testFlagConsumer{flags: map[string]*testFlagDatum{}},
-				defs: &cmd.SectionFlags{
-					SectionName: "mySection",
-					Details: map[string]*cmd.FlagDetails{
-						"myFlag": {
-							ExpectedType: cmd.BoolType,
-							DefaultValue: false,
+				defs: []*cmd.SectionFlags{
+					{
+						SectionName: "mySection",
+						Details: map[string]*cmd.FlagDetails{
+							"myFlag": {
+								ExpectedType: cmd.BoolType,
+								DefaultValue: false,
+							},
+							"myBadFlag": {
+								ExpectedType: cmd.IntType,
+								DefaultValue: false,
+							},
+							"myBetterFlag": {
+								ExpectedType: cmd.BoolType,
+								DefaultValue: true,
+							},
+							"myWorseFlag": {
+								ExpectedType: cmd.BoolType,
+								DefaultValue: "nope",
+							},
+							"myAbsentDetails": nil,
 						},
-						"myBadFlag": {
-							ExpectedType: cmd.IntType,
-							DefaultValue: false,
+					},
+					{
+						SectionName: "common",
+						Details: map[string]*cmd.FlagDetails{
+							"albumFilter": {
+								Usage:        "regular expression specifying which albums to select",
+								ExpectedType: cmd.StringType,
+								DefaultValue: ".*",
+							},
+							"artistFilter": {
+								Usage:        "regular expression specifying which artists to select",
+								ExpectedType: cmd.StringType,
+								DefaultValue: ".*",
+							},
+							"topDir": {
+								Usage:        "top directory specifying where to find mp3 files",
+								ExpectedType: cmd.BoolType,
+								DefaultValue: filepath.Join("%HOMEPATH%", "Music"),
+							},
 						},
-						"myBetterFlag": {
-							ExpectedType: cmd.BoolType,
-							DefaultValue: true,
-						},
-						"myWorseFlag": {
-							ExpectedType: cmd.BoolType,
-							DefaultValue: "nope",
-						},
-						"myAbsentDetails": nil,
 					},
 				},
-				includeSearches: true,
 			},
-			replaceSearchFlags: &cmd.SectionFlags{
-				SectionName: "common",
-				Details: map[string]*cmd.FlagDetails{
-					"albumFilter": {
-						Usage:        "regular expression specifying which albums to select",
-						ExpectedType: cmd.StringType,
-						DefaultValue: ".*",
-					},
-					"artistFilter": {
-						Usage:        "regular expression specifying which artists to select",
-						ExpectedType: cmd.StringType,
-						DefaultValue: ".*",
-					},
-					"topDir": {
-						Usage:        "top directory specifying where to find mp3 files",
-						ExpectedType: cmd.BoolType,
-						DefaultValue: filepath.Join("%HOMEPATH%", "Music"),
-					},
-				},
-			},
-			doReplacement: true,
-			wantNames:     []string{"myFlag", "myBetterFlag", "albumFilter", "artistFilter"},
+			wantNames: []string{"myFlag", "myBetterFlag", "albumFilter", "artistFilter"},
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"An internal error occurred: there are no details for flag" +
@@ -921,16 +921,7 @@ func TestAddFlags(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			c := cmd_toolkit.EmptyConfiguration()
-			if tt.doReplacement {
-				cmd.SearchFlags = tt.replaceSearchFlags
-			} else {
-				cmd.SearchFlags = originalSearchFlags
-			}
-			if tt.args.includeSearches {
-				cmd.AddFlags(o, c, tt.args.flags, tt.args.defs, cmd.SearchFlags)
-			} else {
-				cmd.AddFlags(o, c, tt.args.flags, tt.args.defs)
-			}
+			cmd.AddFlags(o, c, tt.args.flags, tt.args.defs...)
 			for _, name := range tt.wantNames {
 				if _, found := tt.args.flags.flags[name]; !found {
 					t.Errorf("AddFlags() did not register %q", name)
@@ -939,19 +930,19 @@ func TestAddFlags(t *testing.T) {
 			if got := len(tt.args.flags.flags); got != len(tt.wantNames) {
 				t.Errorf("AddFlags() got %d registered flags, expected %d", got, len(tt.wantNames))
 			}
-			o.Report(t, "GetBool()", tt.WantedRecording)
+			o.Report(t, "AddFlags()", tt.WantedRecording)
 		})
 	}
 }
 
 func TestGetBool(t *testing.T) {
 	type args struct {
-		results  map[string]*cmd.FlagValue
+		results  map[string]*cmd.CommandFlag[any]
 		flagName string
 	}
 	tests := map[string]struct {
 		args
-		want    cmd.BoolValue
+		want    cmd.CommandFlag[bool]
 		wantErr bool
 		output.WantedRecording
 	}{
@@ -966,7 +957,7 @@ func TestGetBool(t *testing.T) {
 			},
 		},
 		"no such flag": {
-			args:    args{results: map[string]*cmd.FlagValue{}, flagName: "myFlag"},
+			args:    args{results: map[string]*cmd.CommandFlag[any]{}, flagName: "myFlag"},
 			wantErr: true,
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"myFlag\" is not found.\n",
@@ -978,7 +969,7 @@ func TestGetBool(t *testing.T) {
 		},
 		"flag has no data": {
 			args: args{
-				results:  map[string]*cmd.FlagValue{"myFlag": nil},
+				results:  map[string]*cmd.CommandFlag[any]{"myFlag": nil},
 				flagName: "myFlag"},
 			wantErr: true,
 			WantedRecording: output.WantedRecording{
@@ -991,7 +982,7 @@ func TestGetBool(t *testing.T) {
 		},
 		"flag not bool": {
 			args: args{
-				results:  map[string]*cmd.FlagValue{"myFlag": {Value: 1}},
+				results:  map[string]*cmd.CommandFlag[any]{"myFlag": {Value: 1}},
 				flagName: "myFlag"},
 			wantErr: true,
 			WantedRecording: output.WantedRecording{
@@ -1005,9 +996,9 @@ func TestGetBool(t *testing.T) {
 		},
 		"good boolean": {
 			args: args{
-				results:  map[string]*cmd.FlagValue{"myFlag": {Value: true, UserSet: true}},
+				results:  map[string]*cmd.CommandFlag[any]{"myFlag": {Value: true, UserSet: true}},
 				flagName: "myFlag"},
-			want:    cmd.BoolValue{Value: true, UserSet: true},
+			want:    cmd.CommandFlag[bool]{Value: true, UserSet: true},
 			wantErr: false,
 		},
 	}
@@ -1022,19 +1013,19 @@ func TestGetBool(t *testing.T) {
 			if got != tt.want {
 				t.Errorf("GetBool() gotVal = %v, want %v", got, tt.want)
 			}
-			o.Report(t, "AddFlags()", tt.WantedRecording)
+			o.Report(t, "GetBool()", tt.WantedRecording)
 		})
 	}
 }
 
 func TestGetInt(t *testing.T) {
 	type args struct {
-		results  map[string]*cmd.FlagValue
+		results  map[string]*cmd.CommandFlag[any]
 		flagName string
 	}
 	tests := map[string]struct {
 		args
-		want    cmd.IntValue
+		want    cmd.CommandFlag[int]
 		wantErr bool
 		output.WantedRecording
 	}{
@@ -1049,7 +1040,7 @@ func TestGetInt(t *testing.T) {
 			},
 		},
 		"no such flag": {
-			args:    args{results: map[string]*cmd.FlagValue{}, flagName: "myFlag"},
+			args:    args{results: map[string]*cmd.CommandFlag[any]{}, flagName: "myFlag"},
 			wantErr: true,
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"myFlag\" is not found.\n",
@@ -1061,7 +1052,7 @@ func TestGetInt(t *testing.T) {
 		},
 		"flag has no data": {
 			args: args{
-				results:  map[string]*cmd.FlagValue{"myFlag": nil},
+				results:  map[string]*cmd.CommandFlag[any]{"myFlag": nil},
 				flagName: "myFlag"},
 			wantErr: true,
 			WantedRecording: output.WantedRecording{
@@ -1074,7 +1065,7 @@ func TestGetInt(t *testing.T) {
 		},
 		"flag not int": {
 			args: args{
-				results:  map[string]*cmd.FlagValue{"myFlag": {Value: false}},
+				results:  map[string]*cmd.CommandFlag[any]{"myFlag": {Value: false}},
 				flagName: "myFlag"},
 			wantErr: true,
 			WantedRecording: output.WantedRecording{
@@ -1088,9 +1079,9 @@ func TestGetInt(t *testing.T) {
 		},
 		"good int": {
 			args: args{
-				results:  map[string]*cmd.FlagValue{"myFlag": {Value: 15, UserSet: true}},
+				results:  map[string]*cmd.CommandFlag[any]{"myFlag": {Value: 15, UserSet: true}},
 				flagName: "myFlag"},
-			want:    cmd.IntValue{Value: 15, UserSet: true},
+			want:    cmd.CommandFlag[int]{Value: 15, UserSet: true},
 			wantErr: false,
 		},
 	}
@@ -1112,12 +1103,12 @@ func TestGetInt(t *testing.T) {
 
 func TestGetString(t *testing.T) {
 	type args struct {
-		results  map[string]*cmd.FlagValue
+		results  map[string]*cmd.CommandFlag[any]
 		flagName string
 	}
 	tests := map[string]struct {
 		args
-		want        cmd.StringValue
+		want        cmd.CommandFlag[string]
 		wantUserSet bool
 		wantErr     bool
 		output.WantedRecording
@@ -1133,7 +1124,7 @@ func TestGetString(t *testing.T) {
 			},
 		},
 		"no such flag": {
-			args:    args{results: map[string]*cmd.FlagValue{}, flagName: "myFlag"},
+			args:    args{results: map[string]*cmd.CommandFlag[any]{}, flagName: "myFlag"},
 			wantErr: true,
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"myFlag\" is not found.\n",
@@ -1145,7 +1136,7 @@ func TestGetString(t *testing.T) {
 		},
 		"flag has no data": {
 			args: args{
-				results:  map[string]*cmd.FlagValue{"myFlag": nil},
+				results:  map[string]*cmd.CommandFlag[any]{"myFlag": nil},
 				flagName: "myFlag"},
 			wantErr: true,
 			WantedRecording: output.WantedRecording{
@@ -1158,7 +1149,7 @@ func TestGetString(t *testing.T) {
 		},
 		"flag not string": {
 			args: args{
-				results:  map[string]*cmd.FlagValue{"myFlag": {Value: false}},
+				results:  map[string]*cmd.CommandFlag[any]{"myFlag": {Value: false}},
 				flagName: "myFlag"},
 			wantErr: true,
 			WantedRecording: output.WantedRecording{
@@ -1172,10 +1163,10 @@ func TestGetString(t *testing.T) {
 		},
 		"good string": {
 			args: args{
-				results:  map[string]*cmd.FlagValue{"myFlag": {Value: "foo", UserSet: true}},
+				results:  map[string]*cmd.CommandFlag[any]{"myFlag": {Value: "foo", UserSet: true}},
 				flagName: "myFlag"},
 			wantErr: false,
-			want:    cmd.StringValue{Value: "foo", UserSet: true},
+			want:    cmd.CommandFlag[string]{Value: "foo", UserSet: true},
 		},
 	}
 	for name, tt := range tests {
@@ -1195,18 +1186,15 @@ func TestGetString(t *testing.T) {
 }
 
 func TestProcessFlagErrors(t *testing.T) {
-	type args struct {
-		eSlice []error
-	}
 	tests := map[string]struct {
-		args
+		eSlice []error
 		wantOk bool
 		output.WantedRecording
 	}{
-		"nil errors":   {args: args{eSlice: nil}, wantOk: true},
-		"empty errors": {args: args{eSlice: []error{}}, wantOk: true},
+		"nil errors":   {eSlice: nil, wantOk: true},
+		"empty errors": {eSlice: []error{}, wantOk: true},
 		"errors": {
-			args:   args{eSlice: []error{fmt.Errorf("generic flag error")}},
+			eSlice: []error{fmt.Errorf("generic flag error")},
 			wantOk: false,
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: generic flag error.\n",
@@ -1219,7 +1207,7 @@ func TestProcessFlagErrors(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			if gotOk := cmd.ProcessFlagErrors(o, tt.args.eSlice); gotOk != tt.wantOk {
+			if gotOk := cmd.ProcessFlagErrors(o, tt.eSlice); gotOk != tt.wantOk {
 				t.Errorf("ProcessFlagErrors() = %v, want %v", gotOk, tt.wantOk)
 			}
 			o.Report(t, "ProcessFlagErrors()", tt.WantedRecording)

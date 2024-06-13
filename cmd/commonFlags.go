@@ -174,9 +174,13 @@ func (f *FlagDetails) AddFlag(o output.Bus, c ConfigSource, flags flagConsumer, 
 	}
 }
 
-type FlagValue struct {
+type commandFlagValue interface {
+	string | int | bool | any
+}
+
+type CommandFlag[V commandFlagValue] struct {
+	Value   V
 	UserSet bool
-	Value   any
 }
 
 type FlagProducer interface {
@@ -186,8 +190,8 @@ type FlagProducer interface {
 	GetString(name string) (string, error)
 }
 
-func ReadFlags(producer FlagProducer, defs *SectionFlags) (map[string]*FlagValue, []error) {
-	m := map[string]*FlagValue{}
+func ReadFlags(producer FlagProducer, defs *SectionFlags) (map[string]*CommandFlag[any], []error) {
+	m := map[string]*CommandFlag[any]{}
 	e := []error{}
 	// sort names for deterministic output in unit tests
 	sortedNames := make([]string, 0, len(defs.Details))
@@ -201,7 +205,7 @@ func ReadFlags(producer FlagProducer, defs *SectionFlags) (map[string]*FlagValue
 			e = append(e, fmt.Errorf("no details for flag %q", name))
 			continue
 		}
-		val := &FlagValue{
+		val := &CommandFlag[any]{
 			UserSet: producer.Changed(name),
 		}
 		var flagError error
@@ -225,15 +229,10 @@ func ReadFlags(producer FlagProducer, defs *SectionFlags) (map[string]*FlagValue
 	return m, e
 }
 
-type BoolValue struct {
-	Value   bool
-	UserSet bool
-}
-
-func GetBool(o output.Bus, results map[string]*FlagValue, flagName string) (BoolValue, error) {
+func GetBool(o output.Bus, results map[string]*CommandFlag[any], flagName string) (CommandFlag[bool], error) {
 	fv, flagNotFound := extractFlagValue(o, results, flagName)
 	if flagNotFound != nil {
-		return BoolValue{}, flagNotFound
+		return CommandFlag[bool]{}, flagNotFound
 	}
 	if fv == nil {
 		e := fmt.Errorf("no data associated with flag")
@@ -241,7 +240,7 @@ func GetBool(o output.Bus, results map[string]*FlagValue, flagName string) (Bool
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
 			"error": e})
-		return BoolValue{}, e
+		return CommandFlag[bool]{}, e
 	}
 	v, ok := fv.Value.(bool)
 	if !ok {
@@ -252,23 +251,18 @@ func GetBool(o output.Bus, results map[string]*FlagValue, flagName string) (Bool
 			"flag":  flagName,
 			"value": fv.Value,
 			"error": e})
-		return BoolValue{}, e
+		return CommandFlag[bool]{}, e
 	}
-	return BoolValue{
+	return CommandFlag[bool]{
 		Value:   v,
 		UserSet: fv.UserSet,
 	}, nil
 }
 
-type IntValue struct {
-	Value   int
-	UserSet bool
-}
-
-func GetInt(o output.Bus, results map[string]*FlagValue, flagName string) (IntValue, error) {
+func GetInt(o output.Bus, results map[string]*CommandFlag[any], flagName string) (CommandFlag[int], error) {
 	fv, flagNotFound := extractFlagValue(o, results, flagName)
 	if flagNotFound != nil {
-		return IntValue{}, flagNotFound
+		return CommandFlag[int]{}, flagNotFound
 	}
 	if fv == nil {
 		e := fmt.Errorf("no data associated with flag")
@@ -276,7 +270,7 @@ func GetInt(o output.Bus, results map[string]*FlagValue, flagName string) (IntVa
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
 			"error": e})
-		return IntValue{}, e
+		return CommandFlag[int]{}, e
 	}
 	v, ok := fv.Value.(int)
 	if !ok {
@@ -287,20 +281,15 @@ func GetInt(o output.Bus, results map[string]*FlagValue, flagName string) (IntVa
 			"flag":  flagName,
 			"value": fv.Value,
 			"error": e})
-		return IntValue{}, e
+		return CommandFlag[int]{}, e
 	}
-	return IntValue{Value: v, UserSet: fv.UserSet}, nil
+	return CommandFlag[int]{Value: v, UserSet: fv.UserSet}, nil
 }
 
-type StringValue struct {
-	Value   string
-	UserSet bool
-}
-
-func GetString(o output.Bus, results map[string]*FlagValue, flagName string) (StringValue, error) {
+func GetString(o output.Bus, results map[string]*CommandFlag[any], flagName string) (CommandFlag[string], error) {
 	fv, flagNotFound := extractFlagValue(o, results, flagName)
 	if flagNotFound != nil {
-		return StringValue{}, flagNotFound
+		return CommandFlag[string]{}, flagNotFound
 	}
 	if fv == nil {
 		e := fmt.Errorf("no data associated with flag")
@@ -308,7 +297,7 @@ func GetString(o output.Bus, results map[string]*FlagValue, flagName string) (St
 		o.Log(output.Error, "internal error", map[string]any{
 			"flag":  flagName,
 			"error": e})
-		return StringValue{}, e
+		return CommandFlag[string]{}, e
 	}
 	v, ok := fv.Value.(string)
 	if !ok {
@@ -319,12 +308,12 @@ func GetString(o output.Bus, results map[string]*FlagValue, flagName string) (St
 			"flag":  flagName,
 			"value": fv.Value,
 			"error": e})
-		return StringValue{}, e
+		return CommandFlag[string]{}, e
 	}
-	return StringValue{Value: v, UserSet: fv.UserSet}, nil
+	return CommandFlag[string]{Value: v, UserSet: fv.UserSet}, nil
 }
 
-func extractFlagValue(o output.Bus, results map[string]*FlagValue, flagName string) (fv *FlagValue, e error) {
+func extractFlagValue(o output.Bus, results map[string]*CommandFlag[any], flagName string) (fv *CommandFlag[any], e error) {
 	if results == nil {
 		e = fmt.Errorf("nil results")
 		o.WriteCanonicalError("an internal error occurred: no flag values exist")

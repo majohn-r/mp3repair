@@ -140,8 +140,7 @@ func TestNewConcernedAlbum(t *testing.T) {
 						t.Errorf("NewConcernedAlbum() created with concerns")
 					}
 					if got.Album() != tt.album {
-						t.Errorf(
-							"NewConcernedAlbum() created with wrong album: got %v, want %v",
+						t.Errorf("NewConcernedAlbum() created with wrong album: got %v, want %v",
 							got.Album(), tt.album)
 					}
 					if len(got.Tracks()) != len(tt.album.Tracks) {
@@ -578,7 +577,7 @@ func TestCreateConcernedArtists(t *testing.T) {
 						tt.wantAlbums)
 				}
 				if tracks != tt.wantTracks {
-					t.Errorf("PrepareConcernedArtists() = %d tracks, want %v", tracks,
+					t.Errorf("CreateConcernedArtists() = %d tracks, want %v", tracks,
 						tt.wantTracks)
 				}
 				for _, track := range collectedTracks {
@@ -590,8 +589,7 @@ func TestCreateConcernedArtists(t *testing.T) {
 						}
 					}
 					if !found {
-						t.Errorf(
-							"PrepareConcernedArtists() cannot find track %q on %q by %q",
+						t.Errorf("CreateConcernedArtists() cannot find track %q on %q by %q",
 							track.FileName(), track.AlbumName(), track.RecordingArtist())
 					}
 				}
@@ -617,7 +615,7 @@ func TestCreateConcernedArtists(t *testing.T) {
 						}
 					}
 					if !found {
-						t.Errorf("PrepareConcernedArtists() cannot find copied track %q on"+
+						t.Errorf("CreateConcernedArtists() cannot find copied track %q on"+
 							" %q by %q", track.FileName(), track.AlbumName(),
 							track.RecordingArtist())
 					}

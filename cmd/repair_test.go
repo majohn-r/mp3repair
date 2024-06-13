@@ -18,13 +18,13 @@ import (
 
 func TestProcessRepairFlags(t *testing.T) {
 	tests := map[string]struct {
-		values map[string]*cmd.FlagValue
+		values map[string]*cmd.CommandFlag[any]
 		want   *cmd.RepairSettings
 		want1  bool
 		output.WantedRecording
 	}{
 		"bad value": {
-			values: map[string]*cmd.FlagValue{},
+			values: map[string]*cmd.CommandFlag[any]{},
 			want:   &cmd.RepairSettings{},
 			want1:  false,
 			WantedRecording: output.WantedRecording{
@@ -37,8 +37,8 @@ func TestProcessRepairFlags(t *testing.T) {
 			},
 		},
 		"good value": {
-			values: map[string]*cmd.FlagValue{"dryRun": {Value: true}},
-			want:   &cmd.RepairSettings{DryRun: cmd.BoolValue{Value: true}},
+			values: map[string]*cmd.CommandFlag[any]{"dryRun": {Value: true}},
+			want:   &cmd.RepairSettings{DryRun: cmd.CommandFlag[bool]{Value: true}},
 			want1:  true,
 		},
 	}
@@ -678,14 +678,18 @@ func TestFindConflictedTracks(t *testing.T) {
 		for _, cAl := range cAr.Albums() {
 			for _, cT := range cAl.Tracks() {
 				t := cT.Track()
-				t.SetMetadata(files.NewTrackMetadataV1().WithAlbumNames(
-					[]string{"", "some other album", "some other album"}).WithArtistNames(
-					[]string{"", "some other artist", "some other artist"}).WithGenres(
-					[]string{"", "pop emo", "pop emo"}).WithMusicCDIdentifier(
-					[]byte{1, 2, 3}).WithTrackNames(
-					[]string{"", "some other title", "some other title"}).WithTrackNumbers(
-					[]int{0, 99, 99}).WithYears(
-					[]string{"", "2001", "2001"}).WithPrimarySource(files.ID3V1))
+				tm := files.NewTrackMetadata()
+				for _, src := range []files.SourceType{files.ID3V1, files.ID3V2} {
+					tm.SetArtistName(src, "some other artist")
+					tm.SetAlbumName(src, "some other album")
+					tm.SetAlbumGenre(src, "pop emo")
+					tm.SetAlbumYear(src, "2001")
+					tm.SetTrackName(src, "some other title")
+					tm.SetTrackNumber(src, 99)
+				}
+				tm.SetCDIdentifier([]byte{1, 2, 3})
+				tm.SetCanonicalSource(files.ID3V1)
+				t.SetMetadata(tm)
 			}
 		}
 	}
@@ -728,9 +732,12 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 	for _, aR := range dirty {
 		for _, aL := range aR.Albums {
 			for _, t := range aL.Tracks {
-				t.SetMetadata(files.NewTrackMetadataV1().WithMusicCDIdentifier(
-					[]byte{1, 2, 3}).WithTrackNumbers([]int{0, 99, 99}).WithPrimarySource(
-					files.ID3V1))
+				tm := files.NewTrackMetadata()
+				tm.SetTrackNumber(files.ID3V1, 99)
+				tm.SetTrackNumber(files.ID3V2, 99)
+				tm.SetCDIdentifier([]byte{1, 2, 3})
+				tm.SetCanonicalSource(files.ID3V1)
+				t.SetMetadata(tm)
 			}
 		}
 	}
@@ -741,7 +748,7 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 		output.WantedRecording
 	}{
 		"clean dry run": {
-			rs:         &cmd.RepairSettings{DryRun: cmd.BoolValue{Value: true}},
+			rs:         &cmd.RepairSettings{DryRun: cmd.CommandFlag[bool]{Value: true}},
 			artists:    generateArtists(2, 3, 4),
 			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
@@ -749,7 +756,7 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 			},
 		},
 		"dirty dry run": {
-			rs:         &cmd.RepairSettings{DryRun: cmd.BoolValue{Value: true}},
+			rs:         &cmd.RepairSettings{DryRun: cmd.CommandFlag[bool]{Value: true}},
 			artists:    dirty,
 			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
@@ -1030,7 +1037,7 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 			},
 		},
 		"clean repair": {
-			rs:         &cmd.RepairSettings{DryRun: cmd.BoolValue{Value: false}},
+			rs:         &cmd.RepairSettings{DryRun: cmd.CommandFlag[bool]{Value: false}},
 			artists:    generateArtists(2, 3, 4),
 			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
@@ -1038,7 +1045,7 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 			},
 		},
 		"dirty repair": {
-			rs:         &cmd.RepairSettings{DryRun: cmd.BoolValue{Value: false}},
+			rs:         &cmd.RepairSettings{DryRun: cmd.CommandFlag[bool]{Value: false}},
 			artists:    dirty,
 			wantStatus: cmd.NewExitSystemError("repair"),
 			WantedRecording: output.WantedRecording{
@@ -1436,12 +1443,12 @@ func TestRepairSettings_ProcessArtists(t *testing.T) {
 		output.WantedRecording
 	}{
 		"nothing to do": {
-			rs:         &cmd.RepairSettings{DryRun: cmd.BoolValue{Value: true}},
+			rs:         &cmd.RepairSettings{DryRun: cmd.CommandFlag[bool]{Value: true}},
 			args:       args{},
 			wantStatus: cmd.NewExitUserError("repair"),
 		},
 		"clean artists": {
-			rs: &cmd.RepairSettings{DryRun: cmd.BoolValue{Value: true}},
+			rs: &cmd.RepairSettings{DryRun: cmd.CommandFlag[bool]{Value: true}},
 			args: args{
 				allArtists: generateArtists(2, 3, 4),
 				ss: &cmd.SearchSettings{
