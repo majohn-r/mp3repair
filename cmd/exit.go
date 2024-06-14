@@ -8,7 +8,7 @@ import (
 type errorCode int
 
 const (
-	unknown      errorCode = iota
+	_            errorCode = iota
 	userError              // user did something silly
 	programError           // program code error
 	systemError            // unexpected errors, like file not found

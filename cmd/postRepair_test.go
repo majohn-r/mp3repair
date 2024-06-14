@@ -10,7 +10,7 @@ import (
 	"regexp"
 	"testing"
 
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"
 )
@@ -183,7 +183,7 @@ func TestPostRepairWork(t *testing.T) {
 			cmd.RemoveAll = tt.removeAll
 			cmd.DirExists = tt.dirExists
 			o := output.NewRecorder()
-			cmd.PostRepairWork(o, tt.args.ss, tt.args.allArtists)
+			_ = cmd.PostRepairWork(o, tt.args.ss, tt.args.allArtists)
 			o.Report(t, "PostRepairWork()", tt.WantedRecording)
 		})
 	}
@@ -196,7 +196,7 @@ func TestPostRepairRun(t *testing.T) {
 		cmd.Bus = originalBus
 	}()
 	command := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), command.Flags(),
+	cmd.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), command.Flags(),
 		safeSearchFlags)
 	type args struct {
 		cmd *cobra.Command
@@ -235,7 +235,7 @@ func TestPostRepairRun(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.Bus = o // cook getBus()
-			cmd.PostRepairRun(tt.args.cmd, tt.args.in1)
+			_ = cmd.PostRepairRun(tt.args.cmd, tt.args.in1)
 			o.Report(t, "PostRepairRun()", tt.WantedRecording)
 		})
 	}
@@ -243,7 +243,7 @@ func TestPostRepairRun(t *testing.T) {
 
 func TestPostRepairHelp(t *testing.T) {
 	commandUnderTest := cloneCommand(cmd.PostRepairCmd)
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(),
+	cmd.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), safeSearchFlags)
 	tests := map[string]struct {
 		output.WantedRecording
@@ -277,7 +277,7 @@ func TestPostRepairHelp(t *testing.T) {
 			o := output.NewRecorder()
 			command := commandUnderTest
 			enableCommandRecording(o, command)
-			command.Help()
+			_ = command.Help()
 			o.Report(t, "postRepair Help()", tt.WantedRecording)
 		})
 	}
@@ -285,7 +285,7 @@ func TestPostRepairHelp(t *testing.T) {
 
 func TestPostRepairUsage(t *testing.T) {
 	commandUnderTest := cloneCommand(cmd.PostRepairCmd)
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(),
+	cmd.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), safeSearchFlags)
 	tests := map[string]struct {
 		output.WantedRecording
@@ -316,7 +316,7 @@ func TestPostRepairUsage(t *testing.T) {
 			o := output.NewRecorder()
 			command := commandUnderTest
 			enableCommandRecording(o, command)
-			command.Usage()
+			_ = command.Usage()
 			o.Report(t, "postRepair Usage()", tt.WantedRecording)
 		})
 	}

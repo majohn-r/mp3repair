@@ -11,7 +11,7 @@ type Artist struct {
 	Albums   []*Album
 	Name     string
 	FilePath string
-	// artist name as recorded in the metadata for each track in each album
+	// artist name as recorded in the metadata for each track on each album
 	CanonicalName string
 }
 
@@ -40,7 +40,7 @@ func (a *Artist) AddAlbum(album *Album) {
 	a.Albums = append(a.Albums, album)
 }
 
-// HasAlbums returns true if there any albums associated with the artist
+// HasAlbums returns true if there are any albums associated with the artist
 func (a *Artist) HasAlbums() bool {
 	return len(a.Albums) != 0
 }

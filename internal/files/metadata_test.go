@@ -1,14 +1,13 @@
 package files_test
 
 import (
-	"fmt"
 	"mp3repair/internal/files"
 	"path/filepath"
 	"reflect"
 	"testing"
 
 	"github.com/bogem/id3v2/v2"
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/spf13/afero"
 )
 
@@ -731,18 +730,18 @@ func TestNewTrackMetadata(t *testing.T) {
 }
 
 func TestInitializeMetadata(t *testing.T) {
-	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
 	defer func() {
-		cmd_toolkit.AssignFileSystem(originalFileSystem)
+		cmdtoolkit.AssignFileSystem(originalFileSystem)
 	}()
 	testDir := "InitializeMetadata"
-	cmd_toolkit.Mkdir(testDir)
-	taglessFile := "01 tagless.mp3"
-	createFile(testDir, taglessFile)
+	_ = cmdtoolkit.Mkdir(testDir)
+	untaggedFile := "01 untagged.mp3"
+	_ = createFile(testDir, untaggedFile)
 	id3v1OnlyFile := "02 id3v1.mp3"
 	payloadID3v1Only := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	payloadID3v1Only = append(payloadID3v1Only, id3v1DataSet1...)
-	createFileWithContent(testDir, id3v1OnlyFile, payloadID3v1Only)
+	_ = createFileWithContent(testDir, id3v1OnlyFile, payloadID3v1Only)
 	id3v2OnlyFile := "03 id3v2.mp3"
 	frames := map[string]string{
 		"TYER": "2022",
@@ -755,11 +754,11 @@ func TestInitializeMetadata(t *testing.T) {
 		"TLEN": "1000",
 	}
 	payloadID3v2Only := createID3v2TaggedData([]byte{}, frames)
-	createFileWithContent(testDir, id3v2OnlyFile, payloadID3v2Only)
+	_ = createFileWithContent(testDir, id3v2OnlyFile, payloadID3v2Only)
 	completeFile := "04 complete.mp3"
 	payloadComplete := payloadID3v2Only
 	payloadComplete = append(payloadComplete, payloadID3v1Only...)
-	createFileWithContent(testDir, completeFile, payloadComplete)
+	_ = createFileWithContent(testDir, completeFile, payloadComplete)
 	noSuchFile := "no such file.mp3"
 	missingFileData := files.NewTrackMetadata()
 	missingFileData.SetErrorCause(files.ID3V1, "open "+testDir+"\\"+noSuchFile+": file does not exist")
@@ -770,7 +769,7 @@ func TestInitializeMetadata(t *testing.T) {
 	onlyID3V1Metadata := files.NewTrackMetadata()
 	onlyID3V1Metadata.SetArtistName(files.ID3V1, "The Beatles")
 	onlyID3V1Metadata.SetAlbumName(files.ID3V1, "On Air: Live At The BBC, Volum")
-	onlyID3V1Metadata.SetAlbumGenre(files.ID3V1, "Other")
+	onlyID3V1Metadata.SetAlbumGenre(files.ID3V1, "other")
 	onlyID3V1Metadata.SetAlbumYear(files.ID3V1, "2013")
 	onlyID3V1Metadata.SetTrackName(files.ID3V1, "Ringo - Pop Profile [Interview")
 	onlyID3V1Metadata.SetTrackNumber(files.ID3V1, 29)
@@ -789,7 +788,7 @@ func TestInitializeMetadata(t *testing.T) {
 	allMetadata := files.NewTrackMetadata()
 	allMetadata.SetArtistName(files.ID3V1, "The Beatles")
 	allMetadata.SetAlbumName(files.ID3V1, "On Air: Live At The BBC, Volum")
-	allMetadata.SetAlbumGenre(files.ID3V1, "Other")
+	allMetadata.SetAlbumGenre(files.ID3V1, "other")
 	allMetadata.SetAlbumYear(files.ID3V1, "2013")
 	allMetadata.SetTrackName(files.ID3V1, "Ringo - Pop Profile [Interview")
 	allMetadata.SetTrackNumber(files.ID3V1, 29)
@@ -810,7 +809,7 @@ func TestInitializeMetadata(t *testing.T) {
 			want: missingFileData,
 		},
 		"no metadata": {
-			path: filepath.Join(testDir, taglessFile),
+			path: filepath.Join(testDir, untaggedFile),
 			want: noMetadata,
 		},
 		"only id3v1 metadata": {
@@ -2019,9 +2018,9 @@ func TestTrackMetadata_Update(t *testing.T) {
 	// create a valid file
 	testDir := "Update"
 	defer func() {
-		cmd_toolkit.FileSystem().RemoveAll(testDir)
+		_ = cmdtoolkit.FileSystem().RemoveAll(testDir)
 	}()
-	cmd_toolkit.Mkdir(testDir)
+	_ = cmdtoolkit.Mkdir(testDir)
 	completeFile := "01 complete.mp3"
 	payloadID3v1Only := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}
 	payloadID3v1Only = append(payloadID3v1Only, id3v1DataSet1...)
@@ -2038,35 +2037,32 @@ func TestTrackMetadata_Update(t *testing.T) {
 	payloadID3v2Only := createID3v2TaggedData([]byte{}, frames)
 	payloadComplete := payloadID3v2Only
 	payloadComplete = append(payloadComplete, payloadID3v1Only...)
-	createFileWithContent(testDir, completeFile, payloadComplete)
+	_ = createFileWithContent(testDir, completeFile, payloadComplete)
 	tests := map[string]struct {
-		tm    *files.TrackMetadata
-		path  string
-		wantE []error
+		tm             *files.TrackMetadata
+		path           string
+		wantErrorCount int
 	}{
 		"no data": {
-			tm:    files.NewTrackMetadata(),
-			path:  "",
-			wantE: []error{},
+			tm:             files.NewTrackMetadata(),
+			path:           "",
+			wantErrorCount: 0,
 		},
 		"bad file": {
-			tm:   loadedTm,
-			path: "no such path",
-			wantE: []error{
-				fmt.Errorf("open no such path: The system cannot find the file specified."),
-				fmt.Errorf("open no such path: The system cannot find the file specified."),
-			},
+			tm:             loadedTm,
+			path:           "no such path",
+			wantErrorCount: 2,
 		},
 		"good file": {
-			tm:    loadedTm,
-			path:  filepath.Join(testDir, completeFile),
-			wantE: []error{},
+			tm:             loadedTm,
+			path:           filepath.Join(testDir, completeFile),
+			wantErrorCount: 0,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if gotE := tt.tm.Update(tt.path); len(gotE) != len(tt.wantE) {
-				t.Errorf("TrackMetadata.Update() = %v, want %v", gotE, tt.wantE)
+			if gotE := tt.tm.Update(tt.path); len(gotE) != tt.wantErrorCount {
+				t.Errorf("TrackMetadata.Update() = %v, want %v", gotE, tt.wantErrorCount)
 			}
 		})
 	}

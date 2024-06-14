@@ -1,6 +1,3 @@
-/*
-Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
-*/
 package cmd
 
 import (
@@ -348,7 +345,7 @@ func (ls *ListSettings) ListTrackDetails(o output.Bus, track *files.Track) {
 	}
 }
 
-// split out for testing!
+// ShowDetails outputs track details; this functionality is split out for testing
 func ShowDetails(o output.Bus, track *files.Track, details map[string]string, detailsError error) {
 	if detailsError != nil {
 		o.Log(output.Error, "cannot get details", map[string]any{
@@ -386,7 +383,7 @@ func (ls *ListSettings) ListTrackDiagnostics(o output.Bus, track *files.Track) {
 	}
 }
 
-// split out for testing!
+// ShowID3V1Diagnostics outputs ID3V1 diagnostic data; this function is split out for testing
 func ShowID3V1Diagnostics(o output.Bus, track *files.Track, tags []string, readErr error) {
 	if readErr != nil {
 		track.ReportMetadataReadError(o, files.ID3V1, readErr.Error())
@@ -397,7 +394,8 @@ func ShowID3V1Diagnostics(o output.Bus, track *files.Track, tags []string, readE
 	}
 }
 
-// split out for testing!
+// ShowID3V2Diagnostics outputs ID3V2 diagnostic data; this functionality is split out for
+// testing
 func ShowID3V2Diagnostics(o output.Bus, track *files.Track, info *files.ID3V2Info, readErr error) {
 	if readErr != nil {
 		track.ReportMetadataReadError(o, files.ID3V2, readErr.Error())

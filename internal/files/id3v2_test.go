@@ -10,7 +10,7 @@ import (
 	"testing"
 
 	"github.com/bogem/id3v2/v2"
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/spf13/afero"
 )
 
@@ -59,9 +59,9 @@ func createID3v2TaggedData(audio []byte, frames map[string]string) []byte {
 }
 
 func TestRawReadID3V2Metadata(t *testing.T) {
-	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
 	defer func() {
-		cmd_toolkit.AssignFileSystem(originalFileSystem)
+		cmdtoolkit.AssignFileSystem(originalFileSystem)
 	}()
 	payload := make([]byte, 0)
 	for k := 0; k < 256; k++ {
@@ -78,9 +78,9 @@ func TestRawReadID3V2Metadata(t *testing.T) {
 		"TLEN": "1000",
 	}
 	content := createID3v2TaggedData(payload, frames)
-	createFileWithContent(".", "goodFile.mp3", content)
+	_ = createFileWithContent(".", "goodFile.mp3", content)
 	frames["TRCK"] = "oops"
-	createFileWithContent(".", "badFile.mp3", createID3v2TaggedData(payload, frames))
+	_ = createFileWithContent(".", "badFile.mp3", createID3v2TaggedData(payload, frames))
 	tests := map[string]struct {
 		path  string
 		wantD *files.Id3v2Metadata
@@ -265,9 +265,9 @@ func TestID3V2TrackFrameStringType(t *testing.T) {
 }
 
 func TestReadID3V2Metadata(t *testing.T) {
-	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
 	defer func() {
-		cmd_toolkit.AssignFileSystem(originalFileSystem)
+		cmdtoolkit.AssignFileSystem(originalFileSystem)
 	}()
 	payload := make([]byte, 0)
 	for k := 0; k < 256; k++ {
@@ -283,11 +283,11 @@ func TestReadID3V2Metadata(t *testing.T) {
 		"TPE1": "unknown artist",
 		"TLEN": "1000",
 		"T???": "who knows?",
-		"Fake": "ummm",
+		"Fake": "huh",
 	}
 	content := createID3v2TaggedData(payload, frames)
 	goodFileName := "goodFile.mp3"
-	createFileWithContent(".", goodFileName, content)
+	_ = createFileWithContent(".", goodFileName, content)
 	tests := map[string]struct {
 		path             string
 		wantVersion      byte
@@ -304,7 +304,7 @@ func TestReadID3V2Metadata(t *testing.T) {
 			wantEncoding: "ISO-8859-1",
 			wantVersion:  3,
 			wantFrameStrings: []string{
-				`Fake = "<<[]byte{0x0, 0x75, 0x6d, 0x6d, 0x6d}>>"`,
+				`Fake = "<<[]byte{0x0, 0x68, 0x75, 0x68}>>"`,
 				`T??? = "who knows?"`,
 				`TALB = "unknown album"`,
 				`TCOM = "a couple of idiots"`,
@@ -438,22 +438,211 @@ func TestId3v2NameDiffers(t *testing.T) {
 	}
 }
 
+var lcGenres = map[int]string{
+	0:   "blues",
+	1:   "classic rock",
+	2:   "country",
+	3:   "dance",
+	4:   "disco",
+	5:   "funk",
+	6:   "grunge",
+	7:   "hip-hop",
+	8:   "jazz",
+	9:   "metal",
+	10:  "new age",
+	11:  "oldies",
+	12:  "other",
+	13:  "pop",
+	14:  "r&b",
+	15:  "rap",
+	16:  "reggae",
+	17:  "rock",
+	18:  "techno",
+	19:  "industrial",
+	20:  "alternative",
+	21:  "ska",
+	22:  "death metal",
+	23:  "pranks",
+	24:  "soundtrack",
+	25:  "euro-techno",
+	26:  "ambient",
+	27:  "trip-hop",
+	28:  "vocal",
+	29:  "jazz & funk",
+	30:  "fusion",
+	31:  "trance",
+	32:  "classical",
+	33:  "instrumental",
+	34:  "acid",
+	35:  "house",
+	36:  "game",
+	37:  "sound clip",
+	38:  "gospel",
+	39:  "noise",
+	40:  "alternative rock",
+	41:  "bass",
+	42:  "soul",
+	43:  "punk",
+	44:  "space",
+	45:  "meditative",
+	46:  "instrumental pop",
+	47:  "instrumental rock",
+	48:  "ethnic",
+	49:  "gothic",
+	50:  "darkwave",
+	51:  "techno-industrial",
+	52:  "electronic",
+	53:  "pop-folk",
+	54:  "eurodance",
+	55:  "dream",
+	56:  "southern rock",
+	57:  "comedy",
+	58:  "cult",
+	59:  "gangsta",
+	60:  "top 40",
+	61:  "christian rap",
+	62:  "pop/funk",
+	63:  "jungle music",
+	64:  "native us",
+	65:  "cabaret",
+	66:  "new wave",
+	67:  "psychedelic",
+	68:  "rave",
+	69:  "showtunes",
+	70:  "trailer",
+	71:  "lo-fi",
+	72:  "tribal",
+	73:  "acid punk",
+	74:  "acid jazz",
+	75:  "polka",
+	76:  "retro",
+	77:  "musical",
+	78:  "rock ’n’ roll",
+	79:  "hard rock",
+	80:  "folk",
+	81:  "folk-rock",
+	82:  "national folk",
+	83:  "swing",
+	84:  "fast fusion",
+	85:  "bebop",
+	86:  "latin",
+	87:  "revival",
+	88:  "celtic",
+	89:  "bluegrass",
+	90:  "avantgarde",
+	91:  "gothic rock",
+	92:  "progressive rock",
+	93:  "psychedelic rock",
+	94:  "symphonic rock",
+	95:  "slow rock",
+	96:  "big band",
+	97:  "chorus",
+	98:  "easy listening",
+	99:  "acoustic",
+	100: "humour",
+	101: "speech",
+	102: "chanson",
+	103: "opera",
+	104: "chamber music",
+	105: "sonata",
+	106: "symphony",
+	107: "booty bass",
+	108: "primus",
+	109: "porn groove",
+	110: "satire",
+	111: "slow jam",
+	112: "club",
+	113: "tango",
+	114: "samba",
+	115: "folklore",
+	116: "ballad",
+	117: "power ballad",
+	118: "rhythmic soul",
+	119: "freestyle",
+	120: "duet",
+	121: "punk rock",
+	122: "drum solo",
+	123: "a cappella",
+	124: "euro-house",
+	125: "dance hall",
+	126: "goa music",
+	127: "drum & bass",
+	128: "club-house",
+	129: "hardcore techno",
+	130: "terror",
+	131: "indie",
+	132: "britpop",
+	133: "negerpunk",
+	134: "polsk punk",
+	135: "beat",
+	136: "christian gangsta rap",
+	137: "heavy metal",
+	138: "black metal",
+	139: "crossover",
+	140: "contemporary christian",
+	141: "christian rock",
+	142: "merengue",
+	143: "salsa",
+	144: "thrash metal",
+	145: "anime",
+	146: "jpop",
+	147: "synthpop",
+	148: "abstract",
+	149: "art rock",
+	150: "baroque",
+	151: "bhangra",
+	152: "big beat",
+	153: "breakbeat",
+	154: "chillout",
+	155: "downtempo",
+	156: "dub",
+	157: "ebm",
+	158: "eclectic",
+	159: "electro",
+	160: "electroclash",
+	161: "emo",
+	162: "experimental",
+	163: "garage",
+	164: "global",
+	165: "idm",
+	166: "illbient",
+	167: "industro-goth",
+	168: "jam band",
+	169: "krautrock",
+	170: "leftfield",
+	171: "lounge",
+	172: "math rock",
+	173: "new romantic",
+	174: "nu-breakz",
+	175: "post-punk",
+	176: "post-rock",
+	177: "psytrance",
+	178: "shoegaze",
+	179: "space rock",
+	180: "trop rock",
+	181: "world music",
+	182: "neoclassical",
+	183: "audiobook",
+	184: "audio theatre",
+	185: "neue deutsche welle",
+	186: "podcast",
+	187: "indie-rock",
+	188: "g-funk",
+	189: "dubstep",
+	190: "garage rock",
+	191: "psybient",
+}
+
 func TestNormalizeGenre(t *testing.T) {
 	type test struct {
 		g    string
 		want string
 	}
 	tests := map[string]test{}
-	for k, v := range files.GenreMap {
+	for k, v := range lcGenres {
 		tests[v] = test{
 			g:    fmt.Sprintf("(%d)%s", k, v),
 			want: v,
-		}
-		if v == "Rhythm and Blues" {
-			tests["R&B"] = test{
-				g:    fmt.Sprintf("(%d)R&B", k),
-				want: v,
-			}
 		}
 	}
 	tests["prog rock"] = test{

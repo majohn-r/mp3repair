@@ -5,21 +5,21 @@ import (
 	"path/filepath"
 	"testing"
 
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"github.com/spf13/afero"
 )
 
 func TestMarkDirty(t *testing.T) {
-	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
 	defer func() {
-		cmd_toolkit.AssignFileSystem(originalFileSystem)
+		cmdtoolkit.AssignFileSystem(originalFileSystem)
 	}()
 	emptyDir := "empty"
-	cmd_toolkit.Mkdir(emptyDir)
+	_ = cmdtoolkit.Mkdir(emptyDir)
 	filledDir := "filled"
-	cmd_toolkit.Mkdir(filledDir)
-	createFile(filledDir, files.DirtyFileName)
+	_ = cmdtoolkit.Mkdir(filledDir)
+	_ = createFile(filledDir, files.DirtyFileName)
 	tests := map[string]struct {
 		appPath string
 		output.WantedRecording
@@ -38,7 +38,7 @@ func TestMarkDirty(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			cmd_toolkit.SetApplicationPath(tt.appPath)
+			cmdtoolkit.SetApplicationPath(tt.appPath)
 			files.MarkDirty(o)
 			o.Report(t, "MarkDirty()", tt.WantedRecording)
 		})
@@ -46,13 +46,13 @@ func TestMarkDirty(t *testing.T) {
 }
 
 func TestDirty(t *testing.T) {
-	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
 	testDir := "dirty"
-	cmd_toolkit.Mkdir(testDir)
-	oldAppPath := cmd_toolkit.SetApplicationPath(testDir)
+	_ = cmdtoolkit.Mkdir(testDir)
+	oldAppPath := cmdtoolkit.SetApplicationPath(testDir)
 	defer func() {
-		cmd_toolkit.AssignFileSystem(originalFileSystem)
-		cmd_toolkit.SetApplicationPath(oldAppPath)
+		_ = cmdtoolkit.AssignFileSystem(originalFileSystem)
+		_ = cmdtoolkit.SetApplicationPath(oldAppPath)
 	}()
 	tests := map[string]struct {
 		want bool
@@ -68,7 +68,7 @@ func TestDirty(t *testing.T) {
 					t.Errorf("Dirty() error creating %q: %v", files.DirtyFileName, fileErr)
 				}
 			} else {
-				cmd_toolkit.FileSystem().Remove(filepath.Join(testDir, files.DirtyFileName))
+				_ = cmdtoolkit.FileSystem().Remove(filepath.Join(testDir, files.DirtyFileName))
 			}
 			if gotDirty := files.Dirty(); gotDirty != tt.want {
 				t.Errorf("Dirty() = %t, want %t", gotDirty, tt.want)
@@ -78,23 +78,23 @@ func TestDirty(t *testing.T) {
 }
 
 func TestClearDirty(t *testing.T) {
-	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
 	defer func() {
-		cmd_toolkit.AssignFileSystem(originalFileSystem)
+		cmdtoolkit.AssignFileSystem(originalFileSystem)
 	}()
 	testDir := "clearDirty"
-	cmd_toolkit.Mkdir(testDir)
-	oldAppPath := cmd_toolkit.ApplicationPath()
-	createFileWithContent(testDir, files.DirtyFileName, []byte("dirty"))
+	_ = cmdtoolkit.Mkdir(testDir)
+	oldAppPath := cmdtoolkit.ApplicationPath()
+	_ = createFileWithContent(testDir, files.DirtyFileName, []byte("dirty"))
 	// create another file structure with a dirty file that is open for reading
-	uncleanable := "clearDirty2"
-	cmd_toolkit.Mkdir(uncleanable)
-	createFileWithContent(uncleanable, files.DirtyFileName, []byte("dirty"))
+	permanentlyDirtyDirectory := "clearDirty2"
+	_ = cmdtoolkit.Mkdir(permanentlyDirtyDirectory)
+	_ = createFileWithContent(permanentlyDirtyDirectory, files.DirtyFileName, []byte("dirty"))
 	// open file locks file from being deleted
-	f, _ := cmd_toolkit.FileSystem().Open(filepath.Join(uncleanable, files.DirtyFileName))
+	f, _ := cmdtoolkit.FileSystem().Open(filepath.Join(permanentlyDirtyDirectory, files.DirtyFileName))
 	defer func() {
-		cmd_toolkit.SetApplicationPath(oldAppPath)
-		f.Close()
+		cmdtoolkit.SetApplicationPath(oldAppPath)
+		_ = f.Close()
 	}()
 	tests := map[string]struct {
 		initialDirtyFolder string
@@ -115,7 +115,7 @@ func TestClearDirty(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			cmd_toolkit.SetApplicationPath(tt.initialDirtyFolder)
+			cmdtoolkit.SetApplicationPath(tt.initialDirtyFolder)
 			o := output.NewRecorder()
 			files.ClearDirty(o)
 			o.Report(t, "ClearDirty()", tt.WantedRecording)

@@ -14,7 +14,7 @@ import (
 
 	"github.com/bogem/id3v2/v2"
 	"github.com/cheggaaa/pb/v3"
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"github.com/spf13/afero"
 )
@@ -230,15 +230,15 @@ func TestTrack_AlbumPath(t *testing.T) {
 }
 
 func TestTrack_CopyFile(t *testing.T) {
-	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
 	defer func() {
-		cmd_toolkit.AssignFileSystem(originalFileSystem)
+		cmdtoolkit.AssignFileSystem(originalFileSystem)
 	}()
 	topDir := "copies"
-	cmd_toolkit.Mkdir(topDir)
+	_ = cmdtoolkit.Mkdir(topDir)
 	srcName := "source.mp3"
 	srcPath := filepath.Join(topDir, srcName)
-	createFile(topDir, srcName)
+	_ = createFile(topDir, srcName)
 	tests := map[string]struct {
 		t           *files.Track
 		destination string
@@ -417,9 +417,9 @@ func TestCanonicalChoice(t *testing.T) {
 }
 
 func TestTrack_ID3V2Diagnostics(t *testing.T) {
-	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
 	defer func() {
-		cmd_toolkit.AssignFileSystem(originalFileSystem)
+		cmdtoolkit.AssignFileSystem(originalFileSystem)
 	}()
 	audio := make([]byte, 0)
 	for k := 0; k < 256; k++ {
@@ -435,11 +435,11 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 		"TPE1": "unknown artist",
 		"TLEN": "1000",
 		"T???": "who knows?",
-		"Fake": "ummm",
+		"Fake": "huh",
 	}
 	content := createID3v2TaggedData(audio, frames)
 	goodFileName := "goodFile.mp3"
-	createFileWithContent(".", goodFileName, content)
+	_ = createFileWithContent(".", goodFileName, content)
 	tests := map[string]struct {
 		t                *files.Track
 		wantEncoding     string
@@ -456,7 +456,7 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 			wantEncoding: "ISO-8859-1",
 			wantVersion:  3,
 			wantFrameStrings: []string{
-				"Fake = \"<<[]byte{0x0, 0x75, 0x6d, 0x6d, 0x6d}>>\"",
+				"Fake = \"<<[]byte{0x0, 0x68, 0x75, 0x68}>>\"",
 				"T??? = \"who knows?\"",
 				"TALB = \"unknown album\"",
 				"TCOM = \"a couple of idiots\"",
@@ -495,17 +495,17 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 }
 
 func TestTrack_ID3V1Diagnostics(t *testing.T) {
-	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
 	defer func() {
-		cmd_toolkit.AssignFileSystem(originalFileSystem)
+		cmdtoolkit.AssignFileSystem(originalFileSystem)
 	}()
 	testDir := "id3v1Diagnostics"
-	cmd_toolkit.Mkdir(testDir)
+	_ = cmdtoolkit.Mkdir(testDir)
 	// three files: one good, one too small, one with an invalid tag
 	smallFile := "01 small.mp3"
-	createFileWithContent(testDir, smallFile, []byte{0, 1, 2})
+	_ = createFileWithContent(testDir, smallFile, []byte{0, 1, 2})
 	invalidFile := "02 invalid.mp3"
-	createFileWithContent(testDir, invalidFile, []byte{
+	_ = createFileWithContent(testDir, invalidFile, []byte{
 		'd', 'A', 'G', // 'd' for defective!
 		'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f',
 		'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
@@ -521,7 +521,7 @@ func TestTrack_ID3V1Diagnostics(t *testing.T) {
 		12,
 	})
 	goodFile := "02 good.mp3"
-	createFileWithContent(testDir, goodFile, []byte{
+	_ = createFileWithContent(testDir, goodFile, []byte{
 		'T', 'A', 'G',
 		'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r', 'o', 'f',
 		'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i', 'e', 'w',
@@ -557,7 +557,7 @@ func TestTrack_ID3V1Diagnostics(t *testing.T) {
 				"Title: \"Ringo - Pop Profile [Interview\"",
 				"Track: 29",
 				"Year: \"2013\"",
-				"Genre: \"Other\"",
+				"Genre: \"other\"",
 				"Comment: \"silly\"",
 			},
 		},
@@ -629,16 +629,16 @@ func createConsistentlyTaggedData(audio []byte, m map[string]any) []byte {
 }
 
 func TestTrackLoadMetadata(t *testing.T) {
-	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
 	defer func() {
-		cmd_toolkit.AssignFileSystem(originalFileSystem)
+		cmdtoolkit.AssignFileSystem(originalFileSystem)
 	}()
 	testDir := "loadMetadata"
-	cmd_toolkit.Mkdir(testDir)
+	_ = cmdtoolkit.Mkdir(testDir)
 	artistName := "A great artist"
 	albumName := "A really good album"
 	trackName := "A brilliant track"
-	genre := "Classic Rock"
+	genre := "classic rock"
 	year := "2022"
 	track := 5
 	payload := createConsistentlyTaggedData([]byte{0, 1, 2}, map[string]any{
@@ -650,7 +650,7 @@ func TestTrackLoadMetadata(t *testing.T) {
 		"track":  track,
 	})
 	fileName := "05 A brilliant track.mp3"
-	createFileWithContent(testDir, fileName, payload)
+	_ = createFileWithContent(testDir, fileName, payload)
 	postReadTm := files.NewTrackMetadata()
 	for _, src := range []files.SourceType{files.ID3V1, files.ID3V2} {
 		postReadTm.SetArtistName(src, artistName)
@@ -690,24 +690,24 @@ func TestTrackLoadMetadata(t *testing.T) {
 }
 
 func TestReadMetadata(t *testing.T) {
-	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
 	defer func() {
-		cmd_toolkit.AssignFileSystem(originalFileSystem)
+		cmdtoolkit.AssignFileSystem(originalFileSystem)
 	}()
 	// 5 artists, 20 albums each, 50 tracks apiece ... total: 5,000 tracks
 	testDir := "ReadMetadata"
-	cmd_toolkit.Mkdir(testDir)
+	_ = cmdtoolkit.Mkdir(testDir)
 	var artists []*files.Artist
 	for k := 0; k < 5; k++ {
 		artistName := fmt.Sprintf("artist %d", k)
 		artistPath := filepath.Join(testDir, artistName)
-		cmd_toolkit.Mkdir(artistPath)
+		_ = cmdtoolkit.Mkdir(artistPath)
 		artist := files.NewArtist(artistName, artistPath)
 		artists = append(artists, artist)
 		for m := 0; m < 20; m++ {
 			albumName := fmt.Sprintf("album %d-%d", k, m)
 			albumPath := filepath.Join(artistPath, albumName)
-			cmd_toolkit.Mkdir(albumPath)
+			_ = cmdtoolkit.Mkdir(albumPath)
 			album := files.AlbumMaker{
 				Title:  albumName,
 				Artist: artist,
@@ -733,7 +733,7 @@ func TestReadMetadata(t *testing.T) {
 					"track":  n + 1,
 				}
 				content := createConsistentlyTaggedData([]byte{0, 1, 2, 3, 4, 5, 6, byte(k), byte(m), byte(n)}, metadata)
-				createFileWithContent(albumPath, trackFileName, content)
+				_ = createFileWithContent(albumPath, trackFileName, content)
 				album.AddTrack(track)
 			}
 		}
@@ -874,9 +874,9 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 	// library used for updating ID3V2 tags is hardcoded to use the os file
 	// system.
 	testDir := "updateMetadata"
-	cmd_toolkit.Mkdir(testDir)
+	_ = cmdtoolkit.Mkdir(testDir)
 	defer func() {
-		os.RemoveAll(testDir)
+		_ = os.RemoveAll(testDir)
 	}()
 	trackName := "edit this track.mp3"
 	trackContents := createConsistentlyTaggedData([]byte(trackName), map[string]any{
@@ -887,7 +887,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 		"year":   "1900",
 		"track":  1,
 	})
-	createFileWithContent(testDir, trackName, trackContents)
+	_ = createFileWithContent(testDir, trackName, trackContents)
 	expectedMetadata := files.NewTrackMetadata()
 	for _, src := range []files.SourceType{files.ID3V1, files.ID3V2} {
 		expectedMetadata.SetArtistName(src, "unknown artist")
@@ -904,7 +904,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 		Number:     2,
 		Album: &files.Album{
 			Title:          "fine album",
-			CanonicalGenre: "Classic Rock",
+			CanonicalGenre: "classic rock",
 			CanonicalYear:  "2022",
 			CanonicalTitle: "fine album",
 			MusicCDIdentifier: id3v2.UnknownFrame{
@@ -923,7 +923,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 		Number:     2,
 		Album: &files.Album{
 			Title:             "fine album",
-			CanonicalGenre:    "Classic Rock",
+			CanonicalGenre:    "classic rock",
 			CanonicalYear:     "2022",
 			CanonicalTitle:    "fine album",
 			MusicCDIdentifier: id3v2.UnknownFrame{Body: []byte("fine album")},
@@ -938,7 +938,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 	for _, src := range []files.SourceType{files.ID3V1, files.ID3V2} {
 		editedTm.SetArtistName(src, "fine artist")
 		editedTm.SetAlbumName(src, "fine album")
-		editedTm.SetAlbumGenre(src, "Classic Rock")
+		editedTm.SetAlbumGenre(src, "classic rock")
 		editedTm.SetAlbumYear(src, "2022")
 		editedTm.SetTrackName(src, "edit this track")
 		editedTm.SetTrackNumber(src, 2)
@@ -1302,9 +1302,9 @@ func TestTrack_ReportMetadataErrors(t *testing.T) {
 }
 
 func TestTrack_Details(t *testing.T) {
-	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
 	defer func() {
-		cmd_toolkit.AssignFileSystem(originalFileSystem)
+		cmdtoolkit.AssignFileSystem(originalFileSystem)
 	}()
 	audio := make([]byte, 0)
 	for k := 0; k < 256; k++ {
@@ -1328,7 +1328,7 @@ func TestTrack_Details(t *testing.T) {
 	}
 	content := createID3v2TaggedData(audio, frames)
 	goodFileName := "goodFile.mp3"
-	createFileWithContent(".", goodFileName, content)
+	_ = createFileWithContent(".", goodFileName, content)
 	tests := map[string]struct {
 		t       *files.Track
 		want    map[string]string
@@ -1380,25 +1380,25 @@ type sampleBus struct {
 }
 
 func (sB *sampleBus) Log(_ output.Level, _ string, _ map[string]any) {}
-func (sb *sampleBus) WriteCanonicalConsole(_ string, _ ...any)       {}
-func (sb *sampleBus) WriteConsole(_ string, _ ...any)                {}
-func (sb *sampleBus) WriteCanonicalError(_ string, _ ...any)         {}
-func (sb *sampleBus) WriteError(_ string, _ ...any)                  {}
-func (sb *sampleBus) ConsoleWriter() io.Writer {
-	return sb.consoleWriter
+func (sB *sampleBus) WriteCanonicalConsole(_ string, _ ...any)       {}
+func (sB *sampleBus) WriteConsole(_ string, _ ...any)                {}
+func (sB *sampleBus) WriteCanonicalError(_ string, _ ...any)         {}
+func (sB *sampleBus) WriteError(_ string, _ ...any)                  {}
+func (sB *sampleBus) ConsoleWriter() io.Writer {
+	return sB.consoleWriter
 }
-func (sb *sampleBus) ErrorWriter() io.Writer {
-	return sb.errorWriter
+func (sB *sampleBus) ErrorWriter() io.Writer {
+	return sB.errorWriter
 }
-func (sb *sampleBus) IsConsoleTTY() bool {
-	return sb.consoleTTY
+func (sB *sampleBus) IsConsoleTTY() bool {
+	return sB.consoleTTY
 }
-func (sb *sampleBus) IsErrorTTY() bool {
-	return sb.errorTTY
+func (sB *sampleBus) IsErrorTTY() bool {
+	return sB.errorTTY
 }
-func (sb *sampleBus) IncrementTab(_ uint8) {}
-func (sb *sampleBus) DecrementTab(_ uint8) {}
-func (sb *sampleBus) Tab() uint8 {
+func (sB *sampleBus) IncrementTab(_ uint8) {}
+func (sB *sampleBus) DecrementTab(_ uint8) {}
+func (sB *sampleBus) Tab() uint8 {
 	return 0
 }
 
@@ -1445,12 +1445,12 @@ func createFileWithContent(dir, name string, content []byte) error {
 
 // createNamedFile creates a specified name with the specified content.
 func createNamedFile(fileName string, content []byte) (fileErr error) {
-	fs := cmd_toolkit.FileSystem()
+	fs := cmdtoolkit.FileSystem()
 	_, fileErr = fs.Stat(fileName)
 	if fileErr == nil {
 		fileErr = fmt.Errorf("file %q already exists", fileName)
 	} else if errors.Is(fileErr, afero.ErrFileNotFound) {
-		fileErr = afero.WriteFile(fs, fileName, content, cmd_toolkit.StdFilePermissions)
+		fileErr = afero.WriteFile(fs, fileName, content, cmdtoolkit.StdFilePermissions)
 	}
 	return
 }

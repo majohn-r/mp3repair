@@ -1,13 +1,11 @@
-/*
-Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
-*/
 package cmd
 
 import (
 	"fmt"
+	"runtime/debug"
 	"strings"
 
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"
 )
@@ -20,9 +18,9 @@ const (
 )
 
 var (
-	// semantic version
+	// Version is the application's semantic version
 	Version = "unknown version!"
-	// build timestamp in RFC3339 format (2006-01-02T15:04:05Z07:00)
+	// Creation is the application's build timestamp in RFC3339 format (2006-01-02T15:04:05Z07:00)
 	Creation string
 	// AboutCmd represents the about command
 	AboutCmd = &cobra.Command{
@@ -40,17 +38,19 @@ var (
 * The full path of the application configuration file and whether it exists`,
 		RunE: AboutRun,
 	}
+	CachedGoVersion         string
+	CachedBuildDependencies []string
 )
 
 func AboutRun(_ *cobra.Command, _ []string) error {
 	o := BusGetter()
 	LogCommandStart(o, aboutCommand, map[string]any{})
-	o.WriteConsole(strings.Join(cmd_toolkit.FlowerBox(AcquireAboutData(o)), "\n"))
+	o.WriteConsole(strings.Join(cmdtoolkit.FlowerBox(AcquireAboutData(o)), "\n"))
 	return nil
 }
 
 func AcquireAboutData(o output.Bus) []string {
-	goVersion, buildDependencies := InterpretBuildData()
+	CachedGoVersion, CachedBuildDependencies = InterpretBuildData(debug.ReadBuildInfo)
 	// 9: 1 each for
 	// - app name
 	// - copyright
@@ -59,13 +59,13 @@ func AcquireAboutData(o output.Bus) []string {
 	// - log file location
 	// - configuration file status
 	// - and up to 3 for elevation status
-	lines := make([]string, 0, 9+len(buildDependencies))
+	lines := make([]string, 0, 9+len(CachedBuildDependencies))
 	lines = append(lines,
-		cmd_toolkit.DecoratedAppName(appName, Version, Creation),
-		cmd_toolkit.Copyright(o, firstYear, Creation, author),
-		cmd_toolkit.BuildInformationHeader(),
-		cmd_toolkit.FormatGoVersion(goVersion))
-	lines = append(lines, cmd_toolkit.FormatBuildDependencies(buildDependencies)...)
+		cmdtoolkit.DecoratedAppName(appName, Version, Creation),
+		cmdtoolkit.Copyright(o, firstYear, Creation, author),
+		"Build Information",
+		cmdtoolkit.FormatGoVersion(CachedGoVersion))
+	lines = append(lines, cmdtoolkit.FormatBuildDependencies(CachedBuildDependencies)...)
 	lines = append(lines, fmt.Sprintf("Log files are written to %s", LogPath()))
 	path, exists := configFile()
 	switch {
@@ -92,8 +92,6 @@ type AboutMaker struct {
 func (maker AboutMaker) InitializeAbout() {
 	Version = maker.SoftwareVersion
 	Creation = maker.CreationDate
-	InitBuildData(Version, Creation)
-	cmd_toolkit.SetFirstYear(firstYear)
 }
 
 func init() {

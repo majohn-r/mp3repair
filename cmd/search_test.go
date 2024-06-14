@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"github.com/spf13/afero"
 )
@@ -117,14 +117,14 @@ func TestEvaluateFilter(t *testing.T) {
 }
 
 func TestEvaluateTopDir(t *testing.T) {
-	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
 	defer func() {
-		cmd_toolkit.AssignFileSystem(originalFileSystem)
+		cmdtoolkit.AssignFileSystem(originalFileSystem)
 	}()
 	goodDir := "music"
 	badDir := filepath.Join(goodDir, "moreMusic")
-	cmd_toolkit.FileSystem().Mkdir(goodDir, cmd_toolkit.StdDirPermissions)
-	afero.WriteFile(cmd_toolkit.FileSystem(), badDir, []byte("data"), cmd_toolkit.StdFilePermissions)
+	_ = cmdtoolkit.FileSystem().Mkdir(goodDir, cmdtoolkit.StdDirPermissions)
+	_ = afero.WriteFile(cmdtoolkit.FileSystem(), badDir, []byte("data"), cmdtoolkit.StdFilePermissions)
 	tests := map[string]struct {
 		values  map[string]*cmd.CommandFlag[any]
 		wantDir string
@@ -491,8 +491,8 @@ func TestEvaluateFileExtensions(t *testing.T) {
 			want1:  true,
 		},
 		"two extensions": {
-			values: map[string]*cmd.CommandFlag[any]{"extensions": {Value: ".mp3,.mpthree"}},
-			want:   []string{".mp3", ".mpthree"},
+			values: map[string]*cmd.CommandFlag[any]{"extensions": {Value: ".mp3,.mPThree"}},
+			want:   []string{".mp3", ".mPThree"},
 			want1:  true,
 		},
 		"bad extensions": {
@@ -605,7 +605,7 @@ func TestSearchSettingsLoad(t *testing.T) {
 	testAlbum.AddTrack(testTrack)
 	cmd.ReadDirectory = func(_ output.Bus, dir string) ([]fs.FileInfo, bool) {
 		if tf, found := testFiles[dir]; found {
-			entries := []fs.FileInfo{}
+			var entries []fs.FileInfo
 			for _, f := range tf.files {
 				entries = append(entries, f)
 			}

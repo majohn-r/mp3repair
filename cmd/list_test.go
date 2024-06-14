@@ -13,7 +13,7 @@ import (
 	"sort"
 	"testing"
 
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"
 )
@@ -1158,7 +1158,7 @@ func TestListSettingsListTracksByName(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			o.IncrementTab(uint8(tt.tab))
+			o.IncrementTab(tt.tab)
 			tt.ls.ListTracksByName(o, tt.tracks)
 			o.Report(t, "ListSettings.ListTracksByName()", tt.WantedRecording)
 		})
@@ -1360,7 +1360,7 @@ func TestListSettingsAnnotateAlbumName(t *testing.T) {
 }
 
 func generateArtists(artistCount, albumCount, trackCount int) []*files.Artist {
-	artists := []*files.Artist{}
+	artists := make([]*files.Artist, 0)
 	for r := 0; r < artistCount; r++ {
 		artistName := fmt.Sprintf("my artist %d", r)
 		artist := files.NewArtist(artistName, filepath.Join("Music", artistName))
@@ -1872,7 +1872,7 @@ func Test_ListRun(t *testing.T) {
 		},
 	}
 	testCmd := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), testCmd.Flags(),
+	cmd.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), testCmd.Flags(),
 		testListFlags, cmd.SearchFlags)
 
 	testListFlags2 := &cmd.SectionFlags{
@@ -1924,7 +1924,7 @@ func Test_ListRun(t *testing.T) {
 		},
 	}
 	testCmd2 := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), testCmd2.Flags(),
+	cmd.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), testCmd2.Flags(),
 		testListFlags2, cmd.SearchFlags)
 
 	testListFlags3 := &cmd.SectionFlags{
@@ -1976,7 +1976,7 @@ func Test_ListRun(t *testing.T) {
 		},
 	}
 	testCmd3 := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), testCmd3.Flags(),
+	cmd.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), testCmd3.Flags(),
 		testListFlags3, cmd.SearchFlags)
 
 	tests := map[string]struct {
@@ -2101,7 +2101,7 @@ func Test_ListRun(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.Bus = o // cook getBus()
-			cmd.ListRun(tt.cmd, tt.in1)
+			_ = cmd.ListRun(tt.cmd, tt.in1)
 			o.Report(t, "ListRun()", tt.WantedRecording)
 		})
 	}
@@ -2180,7 +2180,7 @@ func TestListHelp(t *testing.T) {
 	}()
 	cmd.SearchFlags = safeSearchFlags
 	commandUnderTest := cloneCommand(cmd.ListCmd)
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(),
+	cmd.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), cmd.ListFlags, cmd.SearchFlags)
 	tests := map[string]struct {
 		output.WantedRecording
@@ -2251,7 +2251,7 @@ func TestListHelp(t *testing.T) {
 			o := output.NewRecorder()
 			command := commandUnderTest
 			enableCommandRecording(o, command)
-			command.Help()
+			_ = command.Help()
 			o.Report(t, "list Help()", tt.WantedRecording)
 		})
 	}

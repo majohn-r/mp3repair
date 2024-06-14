@@ -1,6 +1,3 @@
-/*
-Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
-*/
 package cmd
 
 import (
@@ -15,14 +12,14 @@ import (
 
 // Details:
 
-// An mp3 file usually contains ID3V1 metadata (gory details: https://id3.org/ID3v1),
+// A mp3 file usually contains ID3V1 metadata (gory details: https://id3.org/ID3v1),
 // ID3V2 metadata (gory details: https://id3.org/id3v2.3.0), often both, in addition to
 // the audio data. The integrity check reads each mp3 file's metadata and does the
 // following:
 
 // * Verify that the file name begins with the track number encoded in the TRCK (track
 //   number/position in set) ID3V2 frame and the ID3V1 track field, and that the rest of
-//   the file name matches the value encoded in the TIT2 (title/songname/content
+//   the file name matches the value encoded in the TIT2 (title/song name/content
 //   description) ID3V2 frame and the ID3V1 song title field.
 // * Verify that the containing album directory's name matches the TALB (album/movie/
 //   show title) ID3V2 frame and the ID3V1 album field, and that all mp3 files in the
@@ -53,7 +50,7 @@ import (
 
 //   The ID3V1 format is older (more primitive) than the ID3V2 format, and the check code
 //   takes into account:
-//   - ID3V1 fields can not encode multi-byte characters; similar 8-bit characters are
+//   - ID3V1 fields can not encode multibyte characters; similar 8-bit characters are
 //     used as needed.
 //   - ID3V2 frames are variable-length; corresponding ID3V1 fields are fixed-length.
 //   - ID3V1 encodes genre as a numeric code that indexes a table of genre names; ID3V2
@@ -264,7 +261,7 @@ func (cs *CheckSettings) PerformNumberingAnalysis(
 
 func GenerateNumberingConcerns(m map[int][]string, maxTrack int) []string {
 	concerns := make([]string, 0, len(m)+1)
-	numbers := []int{}
+	var numbers []int
 	// find duplicates
 	for k, v := range m {
 		if len(v) != 0 {
@@ -284,7 +281,7 @@ func GenerateNumberingConcerns(m map[int][]string, maxTrack int) []string {
 	}
 	// find missing track numbers
 	slices.Sort(numbers)
-	missingNumbers := []string{}
+	var missingNumbers []string
 	if len(numbers) != 0 {
 		if numbers[0] > 1 {
 			missingNumbers = append(missingNumbers,
@@ -385,7 +382,7 @@ func (cs *CheckSettings) HasWorkToDo(o output.Bus) bool {
 				strings.Join(flagsFromConfig, " and "),
 				strings.Join(flagsUserSet, " and "))
 		}
-	case false:
+	default:
 		o.WriteCanonicalError("The flags %s, %s, and %s are all configured false",
 			CheckEmptyFlag, CheckFilesFlag, CheckNumberingFlag)
 	}

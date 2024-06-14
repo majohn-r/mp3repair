@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"slices"
 
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
@@ -50,34 +50,34 @@ type flagConsumer interface {
 
 type ConfigSource interface {
 	BoolDefault(string, bool) (bool, error)
-	IntDefault(string, *cmd_toolkit.IntBounds) (int, error)
+	IntDefault(string, *cmdtoolkit.IntBounds) (int, error)
 	StringDefault(string, string) (string, error)
 }
 
-func AddFlags(o output.Bus, c *cmd_toolkit.Configuration, flags flagConsumer,
-	defs ...*SectionFlags) {
-	for _, def := range defs {
-		config := c.SubConfiguration(def.SectionName)
+func AddFlags(o output.Bus, c *cmdtoolkit.Configuration, flags flagConsumer,
+	sections ...*SectionFlags) {
+	for _, section := range sections {
+		config := c.SubConfiguration(section.SectionName)
 		// sort names for deterministic test output
-		sortedNames := make([]string, 0, len(def.Details))
-		for name := range def.Details {
+		sortedNames := make([]string, 0, len(section.Details))
+		for name := range section.Details {
 			sortedNames = append(sortedNames, name)
 		}
 		slices.Sort(sortedNames)
 		for _, name := range sortedNames {
-			details := def.Details[name]
+			details := section.Details[name]
 			switch details {
 			case nil:
 				o.WriteCanonicalError(
 					"an internal error occurred: there are no details for flag %q", name)
 				o.Log(output.Error, "internal error", map[string]any{
-					"section": def.SectionName,
+					"section": section.SectionName,
 					"flag":    name,
 					"error":   "no details present",
 				})
 			default:
 				details.AddFlag(o, config, flags, Flag{
-					Section: def.SectionName,
+					Section: section.SectionName,
 					Name:    name,
 				})
 			}
@@ -103,61 +103,61 @@ type Flag struct {
 	Name    string
 }
 
-func (f *FlagDetails) AddFlag(o output.Bus, c ConfigSource, flags flagConsumer, flag Flag) {
-	switch f.ExpectedType {
+func (fD *FlagDetails) AddFlag(o output.Bus, c ConfigSource, flags flagConsumer, flag Flag) {
+	switch fD.ExpectedType {
 	case StringType:
-		statedDefault, _ok := f.DefaultValue.(string)
+		statedDefault, _ok := fD.DefaultValue.(string)
 		if !_ok {
-			reportDefaultTypeError(o, flag.Name, "string", f.DefaultValue)
+			reportDefaultTypeError(o, flag.Name, "string", fD.DefaultValue)
 			return
 		}
 		newDefault, malformedDefault := c.StringDefault(flag.Name, statedDefault)
 		if malformedDefault != nil {
-			cmd_toolkit.ReportInvalidConfigurationData(o, flag.Section, malformedDefault)
+			cmdtoolkit.ReportInvalidConfigurationData(o, flag.Section, malformedDefault)
 			return
 		}
-		usage := cmd_toolkit.DecorateStringFlagUsage(f.Usage, newDefault)
-		switch f.AbbreviatedName {
+		usage := cmdtoolkit.DecorateStringFlagUsage(fD.Usage, newDefault)
+		switch fD.AbbreviatedName {
 		case "":
 			flags.String(flag.Name, newDefault, usage)
 		default:
-			flags.StringP(flag.Name, f.AbbreviatedName, newDefault, usage)
+			flags.StringP(flag.Name, fD.AbbreviatedName, newDefault, usage)
 		}
 	case BoolType:
-		statedDefault, _ok := f.DefaultValue.(bool)
+		statedDefault, _ok := fD.DefaultValue.(bool)
 		if !_ok {
-			reportDefaultTypeError(o, flag.Name, "bool", f.DefaultValue)
+			reportDefaultTypeError(o, flag.Name, "bool", fD.DefaultValue)
 			return
 		}
 		newDefault, malformedDefault := c.BoolDefault(flag.Name, statedDefault)
 		if malformedDefault != nil {
-			cmd_toolkit.ReportInvalidConfigurationData(o, flag.Section, malformedDefault)
+			cmdtoolkit.ReportInvalidConfigurationData(o, flag.Section, malformedDefault)
 			return
 		}
-		usage := cmd_toolkit.DecorateBoolFlagUsage(f.Usage, newDefault)
-		switch f.AbbreviatedName {
+		usage := cmdtoolkit.DecorateBoolFlagUsage(fD.Usage, newDefault)
+		switch fD.AbbreviatedName {
 		case "":
 			flags.Bool(flag.Name, newDefault, usage)
 		default:
-			flags.BoolP(flag.Name, f.AbbreviatedName, newDefault, usage)
+			flags.BoolP(flag.Name, fD.AbbreviatedName, newDefault, usage)
 		}
 	case IntType:
-		bounds, _ok := f.DefaultValue.(*cmd_toolkit.IntBounds)
+		bounds, _ok := fD.DefaultValue.(*cmdtoolkit.IntBounds)
 		if !_ok {
-			reportDefaultTypeError(o, flag.Name, "*cmd_toolkit.IntBounds", f.DefaultValue)
+			reportDefaultTypeError(o, flag.Name, "*cmd_toolkit.IntBounds", fD.DefaultValue)
 			return
 		}
 		newDefault, malformedDefault := c.IntDefault(flag.Name, bounds)
 		if malformedDefault != nil {
-			cmd_toolkit.ReportInvalidConfigurationData(o, flag.Section, malformedDefault)
+			cmdtoolkit.ReportInvalidConfigurationData(o, flag.Section, malformedDefault)
 			return
 		}
-		usage := cmd_toolkit.DecorateIntFlagUsage(f.Usage, newDefault)
-		switch f.AbbreviatedName {
+		usage := cmdtoolkit.DecorateIntFlagUsage(fD.Usage, newDefault)
+		switch fD.AbbreviatedName {
 		case "":
 			flags.Int(flag.Name, newDefault, usage)
 		default:
-			flags.IntP(flag.Name, f.AbbreviatedName, newDefault, usage)
+			flags.IntP(flag.Name, fD.AbbreviatedName, newDefault, usage)
 		}
 	default:
 		o.WriteCanonicalError(
@@ -166,9 +166,9 @@ func (f *FlagDetails) AddFlag(o output.Bus, c ConfigSource, flags flagConsumer, 
 		o.Log(output.Error, "internal error", map[string]any{
 			"section":        flag.Section,
 			"flag":           flag.Name,
-			"specified-type": f.ExpectedType,
-			"default":        f.DefaultValue,
-			"default-type":   reflect.TypeOf(f.DefaultValue),
+			"specified-type": fD.ExpectedType,
+			"default":        fD.DefaultValue,
+			"default-type":   reflect.TypeOf(fD.DefaultValue),
 			"error":          "unspecified flag type",
 		})
 	}
@@ -190,17 +190,17 @@ type FlagProducer interface {
 	GetString(name string) (string, error)
 }
 
-func ReadFlags(producer FlagProducer, defs *SectionFlags) (map[string]*CommandFlag[any], []error) {
+func ReadFlags(producer FlagProducer, sections *SectionFlags) (map[string]*CommandFlag[any], []error) {
 	m := map[string]*CommandFlag[any]{}
-	e := []error{}
+	var e []error
 	// sort names for deterministic output in unit tests
-	sortedNames := make([]string, 0, len(defs.Details))
-	for name := range defs.Details {
+	sortedNames := make([]string, 0, len(sections.Details))
+	for name := range sections.Details {
 		sortedNames = append(sortedNames, name)
 	}
 	slices.Sort(sortedNames)
 	for _, name := range sortedNames {
-		details := defs.Details[name]
+		details := sections.Details[name]
 		if details == nil {
 			e = append(e, fmt.Errorf("no details for flag %q", name))
 			continue

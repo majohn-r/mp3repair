@@ -90,7 +90,7 @@ func (ec *ElevationControl) ConfigureExit() {
 			fmt.Printf("Exiting with exit code %d\n", code)
 			var name string
 			fmt.Printf("Press enter to close the window...\n")
-			Scanf("%s", &name)
+			_, _ = Scanf("%s", &name)
 			originalExit(code)
 		}
 	}

@@ -234,7 +234,7 @@ func TestConcerns_ToConsole(t *testing.T) {
 		output.WantedRecording
 	}{
 		"no concerns": {tab: 0, concerns: nil, WantedRecording: output.WantedRecording{}},
-		"lots of concerns, untabbed": {
+		"lots of concerns, no indent": {
 			tab: 0,
 			concerns: map[cmd.ConcernType][]string{
 				cmd.EmptyConcern:     {"no albums", "no tracks"},
@@ -562,7 +562,7 @@ func TestCreateConcernedArtists(t *testing.T) {
 			} else {
 				albums := 0
 				tracks := 0
-				collectedTracks := []*files.Track{}
+				var collectedTracks []*files.Track
 				for _, artist := range got {
 					albums += len(artist.Albums())
 					for _, album := range artist.Albums() {
@@ -593,7 +593,7 @@ func TestCreateConcernedArtists(t *testing.T) {
 							track.FileName(), track.AlbumName(), track.RecordingArtist())
 					}
 				}
-				copiedTracks := []*files.Track{}
+				var copiedTracks []*files.Track
 				for _, artist := range tt.artists {
 					copiedAr := artist.Copy()
 					for _, album := range artist.Albums {
@@ -644,9 +644,9 @@ func TestConcernedArtist_Rollup(t *testing.T) {
 	}.NewAlbum()
 	artist1.AddAlbum(album1)
 	artist1.AddAlbum(album2)
-	concernedArtistHeterogenousAlbums := cmd.NewConcernedArtist(artist1)
-	if concernedArtistHeterogenousAlbums != nil {
-		concernedArtistHeterogenousAlbums.Albums()[0].AddConcern(cmd.EmptyConcern, "no tracks found")
+	concernedArtistMixedAlbums := cmd.NewConcernedArtist(artist1)
+	if concernedArtistMixedAlbums != nil {
+		concernedArtistMixedAlbums.Albums()[0].AddConcern(cmd.EmptyConcern, "no tracks found")
 	}
 	artist2 := files.NewArtist("artist name", "artist")
 	album2a := files.AlbumMaker{
@@ -680,7 +680,7 @@ func TestConcernedArtist_Rollup(t *testing.T) {
 			want: false,
 		},
 		"concerned, mixed album concerns": {
-			cAr:  concernedArtistHeterogenousAlbums,
+			cAr:  concernedArtistMixedAlbums,
 			want: false,
 		},
 		"concerned, same album concerns": {

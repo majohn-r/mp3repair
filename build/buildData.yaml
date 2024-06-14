@@ -6,6 +6,6 @@
   - function: timestamp
     flag: main.creation
   - function: firstYear
-    value: 2021
+    value: "2021"
   - flag: main.version
     value: 0.37.1

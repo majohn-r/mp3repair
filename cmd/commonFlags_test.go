@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"testing"
 
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
@@ -89,7 +89,7 @@ func (tfp testFlagProducer) GetString(name string) (s string, flagErr error) {
 func TestReadFlags(t *testing.T) {
 	type args struct {
 		producer cmd.FlagProducer
-		defs     *cmd.SectionFlags
+		sections *cmd.SectionFlags
 	}
 	tests := map[string]struct {
 		args
@@ -106,7 +106,7 @@ func TestReadFlags(t *testing.T) {
 					"int":                 {value: 6, valueKind: cmd.IntType},
 					"string":              {value: "foo", valueKind: cmd.StringType},
 				}},
-				defs: &cmd.SectionFlags{
+				sections: &cmd.SectionFlags{
 					SectionName: "whatever",
 					Details: map[string]*cmd.FlagDetails{
 						"misidentifiedBool":   {ExpectedType: cmd.BoolType},
@@ -149,7 +149,7 @@ func TestReadFlags(t *testing.T) {
 					"unspecifiedInt":    {value: 6, valueKind: cmd.IntType},
 					"unspecifiedString": {value: "foo", valueKind: cmd.StringType},
 				}},
-				defs: &cmd.SectionFlags{
+				sections: &cmd.SectionFlags{
 					SectionName: "whatever",
 					Details: map[string]*cmd.FlagDetails{
 						"specifiedBool":     {ExpectedType: cmd.BoolType},
@@ -173,17 +173,17 @@ func TestReadFlags(t *testing.T) {
 		"code error - missing details": {
 			args: args{
 				producer: nil,
-				defs: &cmd.SectionFlags{
-					Details: map[string]*cmd.FlagDetails{"no deets": nil},
+				sections: &cmd.SectionFlags{
+					Details: map[string]*cmd.FlagDetails{"no details": nil},
 				},
 			},
 			want:  map[string]*cmd.CommandFlag[any]{},
-			want1: []string{"no details for flag \"no deets\""},
+			want1: []string{"no details for flag \"no details\""},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, got1 := cmd.ReadFlags(tt.args.producer, tt.args.defs)
+			got, got1 := cmd.ReadFlags(tt.args.producer, tt.args.sections)
 			if len(got) != len(tt.want) {
 				t.Errorf("ReadFlags() got = %d entries, want %d", len(got), len(tt.want))
 			} else {
@@ -261,7 +261,7 @@ func (tcs testConfigSource) BoolDefault(name string, b bool) (bool, error) {
 	}
 }
 
-func (tcs testConfigSource) IntDefault(name string, i *cmd_toolkit.IntBounds) (int, error) {
+func (tcs testConfigSource) IntDefault(name string, _ *cmdtoolkit.IntBounds) (int, error) {
 	if tcs.accept {
 		return 0, nil
 	} else {
@@ -371,7 +371,7 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 			f: &cmd.FlagDetails{
 				Usage:        "a useful int",
 				ExpectedType: cmd.IntType,
-				DefaultValue: cmd_toolkit.NewIntBounds(0, 1, 2),
+				DefaultValue: cmdtoolkit.NewIntBounds(0, 1, 2),
 			},
 			args: args{
 				c:     testConfigSource{accept: false},
@@ -391,7 +391,7 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 			f: &cmd.FlagDetails{
 				Usage:        "a useful int",
 				ExpectedType: cmd.IntType,
-				DefaultValue: cmd_toolkit.NewIntBounds(0, 1, 2),
+				DefaultValue: cmdtoolkit.NewIntBounds(0, 1, 2),
 			},
 			args: args{
 				c:     testConfigSource{accept: true},
@@ -407,7 +407,7 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 				AbbreviatedName: "i",
 				Usage:           "a useful int",
 				ExpectedType:    cmd.IntType,
-				DefaultValue:    cmd_toolkit.NewIntBounds(0, 1, 2),
+				DefaultValue:    cmdtoolkit.NewIntBounds(0, 1, 2),
 			},
 			args: args{
 				c:     testConfigSource{accept: true},
@@ -498,7 +498,7 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 			f: &cmd.FlagDetails{
 				Usage:        "a useful bool",
 				ExpectedType: cmd.BoolType,
-				DefaultValue: cmd_toolkit.NewIntBounds(0, 1, 2),
+				DefaultValue: cmdtoolkit.NewIntBounds(0, 1, 2),
 			},
 			args: args{
 				c:     testConfigSource{accept: true},
@@ -565,8 +565,8 @@ func TestFlagDetails_AddFlag(t *testing.T) {
 
 func TestAddFlags(t *testing.T) {
 	type args struct {
-		flags *testFlagConsumer
-		defs  []*cmd.SectionFlags
+		flags        *testFlagConsumer
+		sectionFlags []*cmd.SectionFlags
 	}
 	tests := map[string]struct {
 		args
@@ -576,7 +576,7 @@ func TestAddFlags(t *testing.T) {
 		"empty details with searches": {
 			args: args{
 				flags: &testFlagConsumer{flags: map[string]*testFlagDatum{}},
-				defs: []*cmd.SectionFlags{
+				sectionFlags: []*cmd.SectionFlags{
 					{},
 					cmd.SearchFlags,
 				},
@@ -587,15 +587,15 @@ func TestAddFlags(t *testing.T) {
 		},
 		"empty details without searches": {
 			args: args{
-				flags: &testFlagConsumer{flags: map[string]*testFlagDatum{}},
-				defs:  []*cmd.SectionFlags{{}},
+				flags:        &testFlagConsumer{flags: map[string]*testFlagDatum{}},
+				sectionFlags: []*cmd.SectionFlags{{}},
 			},
 			wantNames: []string{},
 		},
 		"empty details with bad searches": {
 			args: args{
 				flags: &testFlagConsumer{flags: map[string]*testFlagDatum{}},
-				defs: []*cmd.SectionFlags{
+				sectionFlags: []*cmd.SectionFlags{
 					{},
 					{
 						SectionName: "common",
@@ -635,7 +635,7 @@ func TestAddFlags(t *testing.T) {
 		"good details with good searches": {
 			args: args{
 				flags: &testFlagConsumer{flags: map[string]*testFlagDatum{}},
-				defs: []*cmd.SectionFlags{
+				sectionFlags: []*cmd.SectionFlags{
 					{
 						SectionName: "mySection",
 						Details: map[string]*cmd.FlagDetails{
@@ -660,7 +660,7 @@ func TestAddFlags(t *testing.T) {
 		"good details without searches": {
 			args: args{
 				flags: &testFlagConsumer{flags: map[string]*testFlagDatum{}},
-				defs: []*cmd.SectionFlags{
+				sectionFlags: []*cmd.SectionFlags{
 					{
 						SectionName: "mySection",
 						Details: map[string]*cmd.FlagDetails{
@@ -677,7 +677,7 @@ func TestAddFlags(t *testing.T) {
 		"good details with bad searches": {
 			args: args{
 				flags: &testFlagConsumer{flags: map[string]*testFlagDatum{}},
-				defs: []*cmd.SectionFlags{
+				sectionFlags: []*cmd.SectionFlags{
 					{
 						SectionName: "mySection",
 						Details: map[string]*cmd.FlagDetails{
@@ -725,7 +725,7 @@ func TestAddFlags(t *testing.T) {
 		"bad details with good searches": {
 			args: args{
 				flags: &testFlagConsumer{flags: map[string]*testFlagDatum{}},
-				defs: []*cmd.SectionFlags{
+				sectionFlags: []*cmd.SectionFlags{
 					{
 						SectionName: "mySection",
 						Details: map[string]*cmd.FlagDetails{
@@ -783,7 +783,7 @@ func TestAddFlags(t *testing.T) {
 		"bad details without searches": {
 			args: args{
 				flags: &testFlagConsumer{flags: map[string]*testFlagDatum{}},
-				defs: []*cmd.SectionFlags{
+				sectionFlags: []*cmd.SectionFlags{
 					{
 						SectionName: "mySection",
 						Details: map[string]*cmd.FlagDetails{
@@ -832,7 +832,7 @@ func TestAddFlags(t *testing.T) {
 		"bad details with bad searches": {
 			args: args{
 				flags: &testFlagConsumer{flags: map[string]*testFlagDatum{}},
-				defs: []*cmd.SectionFlags{
+				sectionFlags: []*cmd.SectionFlags{
 					{
 						SectionName: "mySection",
 						Details: map[string]*cmd.FlagDetails{
@@ -920,8 +920,8 @@ func TestAddFlags(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			c := cmd_toolkit.EmptyConfiguration()
-			cmd.AddFlags(o, c, tt.args.flags, tt.args.defs...)
+			c := cmdtoolkit.EmptyConfiguration()
+			cmd.AddFlags(o, c, tt.args.flags, tt.args.sectionFlags...)
 			for _, name := range tt.wantNames {
 				if _, found := tt.args.flags.flags[name]; !found {
 					t.Errorf("AddFlags() did not register %q", name)

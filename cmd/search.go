@@ -1,6 +1,3 @@
-/*
-Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
-*/
 package cmd
 
 import (
@@ -10,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
@@ -182,8 +179,8 @@ func EvaluateFileExtensions(o output.Bus, values map[string]*CommandFlag[any]) (
 		return []string{}, false
 	}
 	candidates := strings.Split(rawValue.Value, ",")
-	failedCandidates := []string{}
-	extensions := []string{}
+	var failedCandidates []string
+	var extensions []string
 	extensionsValid := true
 	for _, candidate := range candidates {
 		switch {
@@ -213,7 +210,7 @@ func EvaluateTopDir(o output.Bus, values map[string]*CommandFlag[any]) (dir stri
 	if flagErr != nil {
 		return
 	}
-	file, fileErr := cmd_toolkit.FileSystem().Stat(rawValue.Value)
+	file, fileErr := cmdtoolkit.FileSystem().Stat(rawValue.Value)
 	if fileErr != nil {
 		o.WriteCanonicalError("The %s value, %q, cannot be used", SearchTopDirFlag,
 			rawValue.Value)

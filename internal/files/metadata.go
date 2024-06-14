@@ -301,8 +301,8 @@ func (tm *TrackMetadata) CanonicalTrackNumber() int {
 	return tm.TrackNumber(tm.canonicalSource).original
 }
 
-// does the track number from metadata differ from the track number acquired
-// from the track's file name? If so, make a note of it
+// TrackNumberDiffers determines whether the track number from metadata differs from the track number acquired
+// from the track's file name, and if so, makes a note of it
 func (tm *TrackMetadata) TrackNumberDiffers(trackNumberFromFileName int) (differs bool) {
 	for _, src := range sourceTypes {
 		if tm.ErrorCause(src) == "" && tm.TrackNumber(src).original != trackNumberFromFileName {
@@ -417,7 +417,7 @@ func InitializeMetadata(path string) *TrackMetadata {
 }
 
 func (tm *TrackMetadata) ErrorCauses() []string {
-	errCauses := []string{}
+	errCauses := make([]string, 0)
 	for _, src := range sourceTypes {
 		if cause := tm.commonMetadata(src).errorCause; cause != "" {
 			errCauses = append(errCauses, cause)

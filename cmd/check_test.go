@@ -12,7 +12,7 @@ import (
 	"regexp"
 	"testing"
 
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"
 )
@@ -343,8 +343,8 @@ func TestNumberGapGenerateMissingTrackNumbers(t *testing.T) {
 		want string
 	}{
 		"equal":    {gap: cmd.NumberGap{Value1: 2, Value2: 2}, want: "2"},
-		"inequal":  {gap: cmd.NumberGap{Value1: 2, Value2: 3}, want: "2-3"},
-		"inequal2": {gap: cmd.NumberGap{Value1: 3, Value2: 2}, want: "2-3"},
+		"unequal":  {gap: cmd.NumberGap{Value1: 2, Value2: 3}, want: "2-3"},
+		"unequal2": {gap: cmd.NumberGap{Value1: 3, Value2: 2}, want: "2-3"},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -411,7 +411,7 @@ func TestGenerateNumberingConcerns(t *testing.T) {
 }
 
 func TestCheckSettings_PerformNumberingAnalysis(t *testing.T) {
-	defectiveArtists := []*files.Artist{}
+	var defectiveArtists []*files.Artist
 	for r := 0; r < 4; r++ {
 		artistName := fmt.Sprintf("my artist %d", r)
 		artist := files.NewArtist(artistName, filepath.Join("Music", artistName))
@@ -480,7 +480,7 @@ func TestCheckSettings_PerformNumberingAnalysis(t *testing.T) {
 
 func TestRecordTrackFileConcerns(t *testing.T) {
 	originalArtists := generateArtists(5, 6, 7)
-	tracks := []*files.Track{}
+	tracks := make([]*files.Track, 0)
 	for _, artist := range originalArtists {
 		copiedArtist := artist.Copy()
 		for _, album := range artist.Albums {
@@ -809,7 +809,7 @@ func TestCheckRun(t *testing.T) {
 		},
 	}
 	command := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), command.Flags(),
+	cmd.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), command.Flags(),
 		checkFlags, cmd.SearchFlags)
 	type args struct {
 		cmd *cobra.Command
@@ -855,7 +855,7 @@ func TestCheckRun(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.Bus = o // cook getBus()
-			cmd.CheckRun(tt.args.cmd, tt.args.in1)
+			_ = cmd.CheckRun(tt.args.cmd, tt.args.in1)
 			o.Report(t, "CheckRun()", tt.WantedRecording)
 		})
 	}
@@ -881,7 +881,7 @@ func TestCheckHelp(t *testing.T) {
 	}()
 	cmd.SearchFlags = safeSearchFlags
 	commandUnderTest := cloneCommand(cmd.CheckCmd)
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(),
+	cmd.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), cmd.CheckFlags, cmd.SearchFlags)
 	tests := map[string]struct {
 		output.WantedRecording
@@ -919,7 +919,7 @@ func TestCheckHelp(t *testing.T) {
 			o := output.NewRecorder()
 			command := commandUnderTest
 			enableCommandRecording(o, command)
-			command.Help()
+			_ = command.Help()
 			o.Report(t, "check Help()", tt.WantedRecording)
 		})
 	}
@@ -932,7 +932,7 @@ func TestCheckUsage(t *testing.T) {
 	}()
 	cmd.SearchFlags = safeSearchFlags
 	commandUnderTest := cloneCommand(cmd.CheckCmd)
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(),
+	cmd.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), cmd.CheckFlags, cmd.SearchFlags)
 	tests := map[string]struct {
 		output.WantedRecording
@@ -977,7 +977,7 @@ func TestCheckUsage(t *testing.T) {
 			o := output.NewRecorder()
 			command := commandUnderTest
 			enableCommandRecording(o, command)
-			command.Usage()
+			_ = command.Usage()
 			o.Report(t, "check Usage()", tt.WantedRecording)
 		})
 	}

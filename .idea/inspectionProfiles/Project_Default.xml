@@ -1,0 +1,9 @@
+<component name="InspectionProjectProfileManager">
+  <profile version="1.0">
+    <option name="myName" value="Project Default" />
+    <inspection_tool class="Annotator" enabled="false" level="ERROR" enabled_by_default="false">
+      <option name="highlightErrorElements" value="false" />
+      <option name="runAnnotators" value="false" />
+    </inspection_tool>
+  </profile>
+</component>

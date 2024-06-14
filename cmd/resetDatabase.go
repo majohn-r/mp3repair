@@ -1,6 +1,3 @@
-/*
-Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
-*/
 package cmd
 
 import (
@@ -12,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"
 	"golang.org/x/sys/windows/svc"
@@ -75,7 +72,7 @@ changes, unless the ` + resetDBForceFlag + ` flag is set.`,
 				AbbreviatedName: resetDBTimeoutAbbr,
 				Usage:           fmt.Sprintf("timeout in seconds (minimum %d, maximum %d) for stopping the media player service", minTimeout, maxTimeout),
 				ExpectedType:    IntType,
-				DefaultValue:    cmd_toolkit.NewIntBounds(minTimeout, defaultTimeout, maxTimeout),
+				DefaultValue:    cmdtoolkit.NewIntBounds(minTimeout, defaultTimeout, maxTimeout),
 			},
 			resetDBService: {
 				Usage:        "name of the media player service",
@@ -122,17 +119,17 @@ func ResetDBRun(cmd *cobra.Command, _ []string) error {
 	o := getBus()
 	values, eSlice := ReadFlags(cmd.Flags(), ResetDatabaseFlags)
 	if ProcessFlagErrors(o, eSlice) {
-		rdbs, flagsOk := ProcessResetDBFlags(o, values)
+		flags, flagsOk := ProcessResetDBFlags(o, values)
 		if flagsOk {
 			LogCommandStart(o, resetDBCommandName, map[string]any{
-				resetDBTimeoutFlag:             rdbs.Timeout.Value,
-				resetDBServiceFlag:             rdbs.Service.Value,
-				resetDBMetadataDirFlag:         rdbs.MetadataDir.Value,
-				resetDBExtensionFlag:           rdbs.Extension.Value,
-				resetDBForceFlag:               rdbs.Force.Value,
-				resetDBIgnoreServiceErrorsFlag: rdbs.IgnoreServiceErrors.Value,
+				resetDBTimeoutFlag:             flags.Timeout.Value,
+				resetDBServiceFlag:             flags.Service.Value,
+				resetDBMetadataDirFlag:         flags.MetadataDir.Value,
+				resetDBExtensionFlag:           flags.Extension.Value,
+				resetDBForceFlag:               flags.Force.Value,
+				resetDBIgnoreServiceErrorsFlag: flags.IgnoreServiceErrors.Value,
 			})
-			exitError = rdbs.ResetService(o)
+			exitError = flags.ResetService(o)
 		}
 	}
 	return ToErrorInterface(exitError)
@@ -147,13 +144,13 @@ type ResetDBSettings struct {
 	Timeout             CommandFlag[int]
 }
 
-func (rdbs *ResetDBSettings) ResetService(o output.Bus) (e *ExitError) {
-	if rdbs.Force.Value || Dirty() {
-		stopped, e2 := rdbs.StopService(o)
+func (rDBSettings *ResetDBSettings) ResetService(o output.Bus) (e *ExitError) {
+	if rDBSettings.Force.Value || Dirty() {
+		stopped, e2 := rDBSettings.StopService(o)
 		if e2 != nil {
 			e = e2
 		}
-		e2 = rdbs.CleanUpMetadata(o, stopped)
+		e2 = rDBSettings.CleanUpMetadata(o, stopped)
 		e = UpdateServiceStatus(e, e2)
 		MaybeClearDirty(o, e)
 		return
@@ -201,7 +198,7 @@ func openService(manager ServiceManager, serviceName string) (ServiceRep, error)
 	return manager.OpenService(serviceName)
 }
 
-func (rdbs *ResetDBSettings) StopService(o output.Bus) (bool, *ExitError) {
+func (rDBSettings *ResetDBSettings) StopService(o output.Bus) (bool, *ExitError) {
 	if manager, connectErr := Connect(); connectErr != nil {
 		e := NewExitSystemError(resetDBCommandName)
 		o.WriteCanonicalError("An attempt to connect with the service manager failed; error"+
@@ -210,7 +207,7 @@ func (rdbs *ResetDBSettings) StopService(o output.Bus) (bool, *ExitError) {
 		o.Log(output.Error, "service manager connect failed", map[string]any{"error": connectErr})
 		return false, e
 	} else {
-		return rdbs.DisableService(o, manager)
+		return rDBSettings.DisableService(o, manager)
 	}
 }
 
@@ -229,15 +226,15 @@ func listServices(manager ServiceManager) ([]string, error) {
 	return manager.ListServices()
 }
 
-func (rdbs *ResetDBSettings) DisableService(o output.Bus, manager ServiceManager) (ok bool,
+func (rDBSettings *ResetDBSettings) DisableService(o output.Bus, manager ServiceManager) (ok bool,
 	e *ExitError) {
-	service, serviceError := openService(manager, rdbs.Service.Value)
+	service, serviceError := openService(manager, rDBSettings.Service.Value)
 	if serviceError != nil {
 		e = NewExitSystemError(resetDBCommandName)
-		o.WriteCanonicalError("The service %q cannot be opened: %v", rdbs.Service.Value,
+		o.WriteCanonicalError("The service %q cannot be opened: %v", rDBSettings.Service.Value,
 			serviceError)
 		o.Log(output.Error, "service problem", map[string]any{
-			"service": rdbs.Service.Value,
+			"service": rDBSettings.Service.Value,
 			"trigger": "OpenService",
 			"error":   serviceError,
 		})
@@ -254,7 +251,7 @@ func (rdbs *ResetDBSettings) DisableService(o output.Bus, manager ServiceManager
 		disconnectManager(manager)
 		return
 	}
-	ok, e = rdbs.StopFoundService(o, manager, service)
+	ok, e = rDBSettings.StopFoundService(o, manager, service)
 	return
 }
 
@@ -290,8 +287,8 @@ func ListServices(o output.Bus, manager ServiceManager, services []string) {
 	slices.Sort(states)
 	for _, state := range states {
 		o.WriteError("  State %q:\n", state)
-		for _, svc := range m[state] {
-			o.WriteError("    %q\n", svc)
+		for _, serviceName := range m[state] {
+			o.WriteError("    %q\n", serviceName)
 		}
 	}
 }
@@ -321,7 +318,7 @@ func closeService(s ServiceRep) {
 	}
 }
 
-func (rdbs *ResetDBSettings) StopFoundService(o output.Bus, manager ServiceManager,
+func (rDBSettings *ResetDBSettings) StopFoundService(o output.Bus, manager ServiceManager,
 	service ServiceRep) (ok bool, e *ExitError) {
 	defer func() {
 		_ = manager.Disconnect()
@@ -331,59 +328,59 @@ func (rdbs *ResetDBSettings) StopFoundService(o output.Bus, manager ServiceManag
 	if svcErr != nil {
 		e = NewExitSystemError(resetDBCommandName)
 		o.WriteCanonicalError("An error occurred while trying to stop service %q: %v",
-			rdbs.Service.Value, svcErr)
-		rdbs.ReportServiceQueryError(o, svcErr)
+			rDBSettings.Service.Value, svcErr)
+		rDBSettings.ReportServiceQueryError(o, svcErr)
 		return
 	}
 	if status.State == svc.Stopped {
-		rdbs.ReportServiceStopped(o)
+		rDBSettings.ReportServiceStopped(o)
 		ok = true
 		return
 	}
 	status, svcErr = service.Control(svc.Stop)
 	if svcErr == nil {
 		if status.State == svc.Stopped {
-			rdbs.ReportServiceStopped(o)
+			rDBSettings.ReportServiceStopped(o)
 			ok = true
 			return
 		}
-		timeout := time.Now().Add(time.Duration(rdbs.Timeout.Value) * time.Second)
-		ok, e = rdbs.WaitForStop(o, service, timeout, 100*time.Millisecond)
+		timeout := time.Now().Add(time.Duration(rDBSettings.Timeout.Value) * time.Second)
+		ok, e = rDBSettings.WaitForStop(o, service, timeout, 100*time.Millisecond)
 		return
 	}
 	e = NewExitSystemError(resetDBCommandName)
-	o.WriteCanonicalError("The service %q cannot be stopped: %v", rdbs.Service.Value, svcErr)
+	o.WriteCanonicalError("The service %q cannot be stopped: %v", rDBSettings.Service.Value, svcErr)
 	o.Log(output.Error, "service problem", map[string]any{
-		"service": rdbs.Service.Value,
+		"service": rDBSettings.Service.Value,
 		"trigger": "Stop",
 		"error":   svcErr,
 	})
 	return
 }
 
-func (rdbs *ResetDBSettings) ReportServiceQueryError(o output.Bus, svcErr error) {
+func (rDBSettings *ResetDBSettings) ReportServiceQueryError(o output.Bus, svcErr error) {
 	o.Log(output.Error, "service query error", map[string]any{
-		"service": rdbs.Service.Value,
+		"service": rDBSettings.Service.Value,
 		"error":   svcErr,
 	})
 }
 
-func (rdbs *ResetDBSettings) ReportServiceStopped(o output.Bus) {
-	o.Log(output.Info, "service stopped", map[string]any{"service": rdbs.Service.Value})
+func (rDBSettings *ResetDBSettings) ReportServiceStopped(o output.Bus) {
+	o.Log(output.Info, "service stopped", map[string]any{"service": rDBSettings.Service.Value})
 }
 
-func (rdbs *ResetDBSettings) WaitForStop(o output.Bus, s ServiceRep, expiration time.Time,
+func (rDBSettings *ResetDBSettings) WaitForStop(o output.Bus, s ServiceRep, expiration time.Time,
 	checkInterval time.Duration) (bool, *ExitError) {
 	for {
 		if expiration.Before(time.Now()) {
 			o.WriteCanonicalError(
 				"The service %q could not be stopped within the %d second timeout",
-				rdbs.Service.Value, rdbs.Timeout.Value)
+				rDBSettings.Service.Value, rDBSettings.Timeout.Value)
 			o.Log(output.Error, "service problem", map[string]any{
-				"service": rdbs.Service.Value,
+				"service": rDBSettings.Service.Value,
 				"trigger": "Stop",
 				"error":   "timed out",
-				"timeout": rdbs.Timeout.Value,
+				"timeout": rDBSettings.Timeout.Value,
 			})
 			return false, NewExitSystemError(resetDBCommandName)
 		}
@@ -392,51 +389,51 @@ func (rdbs *ResetDBSettings) WaitForStop(o output.Bus, s ServiceRep, expiration 
 		if svcErr != nil {
 			o.WriteCanonicalError(
 				"An error occurred while attempting to stop the service %q: %v",
-				rdbs.Service.Value, svcErr)
-			rdbs.ReportServiceQueryError(o, svcErr)
+				rDBSettings.Service.Value, svcErr)
+			rDBSettings.ReportServiceQueryError(o, svcErr)
 			return false, NewExitSystemError(resetDBCommandName)
 		}
 		if status.State == svc.Stopped {
-			rdbs.ReportServiceStopped(o)
+			rDBSettings.ReportServiceStopped(o)
 			return true, nil
 		}
 	}
 }
 
-func (rdbs *ResetDBSettings) CleanUpMetadata(o output.Bus, stopped bool) *ExitError {
+func (rDBSettings *ResetDBSettings) CleanUpMetadata(o output.Bus, stopped bool) *ExitError {
 	if !stopped {
-		if !rdbs.IgnoreServiceErrors.Value {
+		if !rDBSettings.IgnoreServiceErrors.Value {
 			o.WriteCanonicalError("Metadata files will not be deleted")
 			o.WriteCanonicalError(
 				"Why?\nThe music service %q could not be stopped, and %q is false",
-				rdbs.Service.Value, resetDBIgnoreServiceErrorsFlag)
+				rDBSettings.Service.Value, resetDBIgnoreServiceErrorsFlag)
 			o.WriteCanonicalError("What to do:\nRerun this command with %q set to true",
 				resetDBIgnoreServiceErrorsFlag)
 			return NewExitUserError(resetDBCommandName)
 		}
 	}
 	// either stopped or service errors are ignored
-	metadataFiles, filesOk := ReadDirectory(o, rdbs.MetadataDir.Value)
+	metadataFiles, filesOk := ReadDirectory(o, rDBSettings.MetadataDir.Value)
 	if !filesOk {
 		return nil
 	}
-	pathsToDelete := rdbs.FilterMetadataFiles(metadataFiles)
+	pathsToDelete := rDBSettings.FilterMetadataFiles(metadataFiles)
 	if len(pathsToDelete) > 0 {
-		return rdbs.DeleteMetadataFiles(o, pathsToDelete)
+		return rDBSettings.DeleteMetadataFiles(o, pathsToDelete)
 	}
-	o.WriteCanonicalConsole("No metadata files were found in %q", rdbs.MetadataDir.Value)
+	o.WriteCanonicalConsole("No metadata files were found in %q", rDBSettings.MetadataDir.Value)
 	o.Log(output.Info, "no files found", map[string]any{
-		"directory": rdbs.MetadataDir.Value,
-		"extension": rdbs.Extension.Value,
+		"directory": rDBSettings.MetadataDir.Value,
+		"extension": rDBSettings.Extension.Value,
 	})
 	return nil
 }
 
-func (rdbs *ResetDBSettings) FilterMetadataFiles(entries []fs.FileInfo) []string {
-	paths := []string{}
+func (rDBSettings *ResetDBSettings) FilterMetadataFiles(entries []fs.FileInfo) []string {
+	paths := make([]string, 0)
 	for _, file := range entries {
-		if strings.HasSuffix(file.Name(), rdbs.Extension.Value) {
-			path := filepath.Join(rdbs.MetadataDir.Value, file.Name())
+		if strings.HasSuffix(file.Name(), rDBSettings.Extension.Value) {
+			path := filepath.Join(rDBSettings.MetadataDir.Value, file.Name())
 			if PlainFileExists(path) {
 				paths = append(paths, path)
 			}
@@ -445,7 +442,7 @@ func (rdbs *ResetDBSettings) FilterMetadataFiles(entries []fs.FileInfo) []string
 	return paths
 }
 
-func (rdbs *ResetDBSettings) DeleteMetadataFiles(o output.Bus, paths []string) (e *ExitError) {
+func (rDBSettings *ResetDBSettings) DeleteMetadataFiles(o output.Bus, paths []string) (e *ExitError) {
 	if len(paths) == 0 {
 		return
 	}
@@ -454,7 +451,7 @@ func (rdbs *ResetDBSettings) DeleteMetadataFiles(o output.Bus, paths []string) (
 		fileErr := Remove(path)
 		switch {
 		case fileErr != nil:
-			cmd_toolkit.LogFileDeletionFailure(o, path, fileErr)
+			cmdtoolkit.LogFileDeletionFailure(o, path, fileErr)
 			e = NewExitSystemError(resetDBCommandName)
 		default:
 			count++
@@ -462,7 +459,7 @@ func (rdbs *ResetDBSettings) DeleteMetadataFiles(o output.Bus, paths []string) (
 	}
 	o.WriteCanonicalConsole(
 		"%d out of %d metadata files have been deleted from %q", count, len(paths),
-		rdbs.MetadataDir.Value)
+		rDBSettings.MetadataDir.Value)
 	return
 }
 

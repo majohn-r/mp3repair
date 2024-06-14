@@ -8,11 +8,11 @@ import (
 	"os"
 	"strings"
 
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/spf13/afero"
 )
 
-// values per https://id3.org/ID3v1 as of August 16 2022
+// values per https://id3.org/ID3v1 as of August 16, 2022
 const (
 	nameLength = 30
 	// always 'TAG' if present
@@ -52,67 +52,165 @@ type id3v1Field struct {
 	endOffset   int
 }
 
+type BiDirectionalMap[K comparable, V comparable] struct {
+	k2v        map[K]V
+	v2k        map[V]K
+	kNormalize func(K) K
+	vNormalize func(V) V
+}
+
+func NewBiDirectionalMap[K comparable, V comparable](keyNormalize func(K) K, valueNormalize func(V) V) *BiDirectionalMap[K, V] {
+	bdMap := &BiDirectionalMap[K, V]{
+		k2v:        map[K]V{},
+		v2k:        map[V]K{},
+		kNormalize: keyNormalize,
+		vNormalize: valueNormalize,
+	}
+	if keyNormalize == nil {
+		bdMap.kNormalize = func(k K) K {
+			return k
+		}
+	}
+	if valueNormalize == nil {
+		bdMap.vNormalize = func(v V) V {
+			return v
+		}
+	}
+	return bdMap
+}
+
+func (bdMap *BiDirectionalMap[K, V]) LookupKey(key K) (V, bool) {
+	v, found := bdMap.k2v[bdMap.kNormalize(key)]
+	return v, found
+}
+
+func (bdMap *BiDirectionalMap[K, V]) LookupValue(value V) (K, bool) {
+	k, found := bdMap.v2k[bdMap.vNormalize(value)]
+	return k, found
+}
+
+var Genres *BiDirectionalMap[int, string]
+
+func normalizeGenreNames(name string) string {
+	n := strings.ToLower(name)
+	if n == "rhythm and blues" {
+		return "r&b"
+	}
+	return n
+}
+
+func Populate(m map[int]string) (*BiDirectionalMap[int, string], error) {
+	g := NewBiDirectionalMap[int, string](nil, normalizeGenreNames)
+	for k, v := range m {
+		if err := g.AddPair(k, v); err != nil {
+			return nil, err
+		}
+	}
+	return g, nil
+}
+
+func (bdMap *BiDirectionalMap[K, V]) AddPair(k K, v V) error {
+	normalizedV := bdMap.vNormalize(v)
+	normalizedK := bdMap.kNormalize(k)
+	if _, exists := bdMap.v2k[normalizedV]; exists {
+		return fmt.Errorf("value %v exists", normalizedV)
+	}
+	if _, exists := bdMap.k2v[normalizedK]; exists {
+		return fmt.Errorf("key %v exists", normalizedK)
+	}
+	bdMap.k2v[normalizedK] = normalizedV
+	bdMap.v2k[normalizedV] = normalizedK
+	return nil
+}
+
+func (bdMap *BiDirectionalMap[K, V]) KeyMap() map[K]V {
+	return bdMap.k2v
+}
+
+func (bdMap *BiDirectionalMap[K, V]) ValueMap() map[V]K {
+	return bdMap.v2k
+}
+
+func InitGenres() error {
+	if Genres == nil {
+		Genres, _ = Populate(documentedGenres)
+	}
+	return nil
+}
+
+func genreIndex(genreName string) (int, bool) {
+	_ = InitGenres()
+	return Genres.LookupValue(genreName)
+}
+
+func genreName(genreIndex int) (string, bool) {
+	_ = InitGenres()
+	return Genres.LookupKey(genreIndex)
+}
+
 var (
-	// per https://en.wikipedia.org/wiki/List_of_ID3v1_Genres as of August 16 2022
-	GenreMap = map[int]string{
-		0: "Blues",
-		1: "Classic Rock",
-		2: "Country",
-		3: "Dance", 4: "Disco",
-		5:  "Funk",
-		6:  "Grunge",
-		7:  "Hip-Hop",
-		8:  "Jazz",
-		9:  "Metal",
-		10: "New Age",
-		11: "Oldies",
-		12: "Other",
-		13: "Pop",
-		14: "Rhythm and Blues",
-		15: "Rap",
-		16: "Reggae",
-		17: "Rock",
-		18: "Techno",
-		19: "Industrial",
-		20: "Alternative",
-		21: "Ska",
-		22: "Death Metal",
-		23: "Pranks",
-		24: "Soundtrack",
-		25: "Euro-Techno",
-		26: "Ambient",
-		27: "Trip-Hop",
-		28: "Vocal",
-		29: "Jazz & Funk",
-		30: "Fusion",
-		31: "Trance",
-		32: "Classical",
-		33: "Instrumental",
-		34: "Acid",
-		35: "House",
-		36: "Game",
-		37: "Sound clip",
-		38: "Gospel",
-		39: "Noise",
-		40: "Alternative Rock",
-		41: "Bass",
-		42: "Soul",
-		43: "Punk",
-		44: "Space",
-		45: "Meditative",
-		46: "Instrumental Pop",
-		47: "Instrumental Rock",
-		48: "Ethnic",
-		49: "Gothic",
-		50: "Darkwave",
-		51: "Techno-Industrial",
-		52: "Electronic",
-		53: "Pop-Folk",
-		54: "Eurodance",
-		55: "Dream",
-		56: "Southern Rock",
-		57: "Comedy",
-		58: "Cult", 59: "Gangsta",
+	// per https://en.wikipedia.org/wiki/List_of_ID3v1_Genres as of August 16, 2022
+	documentedGenres = map[int]string{
+		0:   "Blues",
+		1:   "Classic Rock",
+		2:   "Country",
+		3:   "Dance",
+		4:   "Disco",
+		5:   "Funk",
+		6:   "Grunge",
+		7:   "Hip-Hop",
+		8:   "Jazz",
+		9:   "Metal",
+		10:  "New Age",
+		11:  "Oldies",
+		12:  "Other",
+		13:  "Pop",
+		14:  "Rhythm and Blues",
+		15:  "Rap",
+		16:  "Reggae",
+		17:  "Rock",
+		18:  "Techno",
+		19:  "Industrial",
+		20:  "Alternative",
+		21:  "Ska",
+		22:  "Death Metal",
+		23:  "Pranks",
+		24:  "Soundtrack",
+		25:  "Euro-Techno",
+		26:  "Ambient",
+		27:  "Trip-Hop",
+		28:  "Vocal",
+		29:  "Jazz & Funk",
+		30:  "Fusion",
+		31:  "Trance",
+		32:  "Classical",
+		33:  "Instrumental",
+		34:  "Acid",
+		35:  "House",
+		36:  "Game",
+		37:  "Sound clip",
+		38:  "Gospel",
+		39:  "Noise",
+		40:  "Alternative Rock",
+		41:  "Bass",
+		42:  "Soul",
+		43:  "Punk",
+		44:  "Space",
+		45:  "Meditative",
+		46:  "Instrumental Pop",
+		47:  "Instrumental Rock",
+		48:  "Ethnic",
+		49:  "Gothic",
+		50:  "Darkwave",
+		51:  "Techno-Industrial",
+		52:  "Electronic",
+		53:  "Pop-Folk",
+		54:  "Eurodance",
+		55:  "Dream",
+		56:  "Southern Rock",
+		57:  "Comedy",
+		58:  "Cult",
+		59:  "Gangsta",
 		60:  "Top 40",
 		61:  "Christian Rap",
 		62:  "Pop/Funk",
@@ -246,8 +344,6 @@ var (
 		190: "Garage Rock",
 		191: "Psybient",
 	}
-	// lazily initialized when needed; keys are all lowercase
-	GenreIndicesMap = map[string]int{}
 	runeByteMapping = map[rune][]byte{
 		'…': {0x85},
 		'¡': {0xA1},
@@ -472,8 +568,9 @@ var (
 		'ž': {'z'},      // Latin Small letter Z with caron
 		'ſ': {'S'},      // Latin Small letter long S
 	}
-	// ID3V1 fields
-	TagField      = initID3v1Field(tagOffset, tagLength)
+	// TagField is the initial field for ID3V1 metadata, and should contain 'TAG'
+	TagField = initID3v1Field(tagOffset, tagLength)
+	// these are the remaining fields making up ID3V1 metadata
 	titleField    = initID3v1Field(titleOffset, titleLength)
 	artistField   = initID3v1Field(artistOffset, artistLength)
 	albumField    = initID3v1Field(albumOffset, albumLength)
@@ -615,23 +712,15 @@ func (im *Id3v1Metadata) SetTrack(t int) (b bool) {
 }
 
 func (im *Id3v1Metadata) Genre() (string, bool) {
-	genre, genreFound := GenreMap[im.readInt(genreField)]
+	genre, genreFound := genreName(im.readInt(genreField))
 	return genre, genreFound
 }
 
-func InitGenreIndices() {
-	if len(GenreIndicesMap) == 0 {
-		for k, v := range GenreMap {
-			GenreIndicesMap[strings.ToLower(v)] = k
-		}
-	}
-}
-
 func (im *Id3v1Metadata) SetGenre(s string) {
-	InitGenreIndices()
-	index, found := GenreIndicesMap[strings.ToLower(s)]
+	index, found := genreIndex(s)
 	if !found {
-		im.writeInt(GenreIndicesMap["other"], genreField)
+		v, _ := genreIndex("other")
+		im.writeInt(v, genreField)
 		return
 	}
 	im.writeInt(index, genreField)
@@ -670,16 +759,18 @@ func FileReader(f afero.File, b []byte) (int, error) {
 }
 
 func InternalReadID3V1Metadata(path string, readFunc func(f afero.File, b []byte) (int, error)) (*Id3v1Metadata, error) {
-	file, fileErr := cmd_toolkit.FileSystem().Open(path)
+	file, fileErr := cmdtoolkit.FileSystem().Open(path)
 	if fileErr != nil {
 		return nil, fileErr
 	}
-	defer file.Close()
-	fstat, _ := file.Stat()
-	if fstat != nil && fstat.Size() < id3v1Length {
+	defer func() {
+		_ = file.Close()
+	}()
+	fileStat, _ := file.Stat()
+	if fileStat != nil && fileStat.Size() < id3v1Length {
 		return nil, ErrNoID3V1MetadataFound
 	}
-	file.Seek(-id3v1Length, io.SeekEnd)
+	_, _ = file.Seek(-id3v1Length, io.SeekEnd)
 	v1 := NewID3v1Metadata()
 	r, readErr := readFunc(file, v1.data)
 	if readErr != nil {
@@ -737,25 +828,29 @@ func updateID3V1TrackMetadata(tm *TrackMetadata, path string) error {
 
 func (im *Id3v1Metadata) InternalWrite(path string,
 	writeFunc func(f afero.File, b []byte) (int, error)) (fileErr error) {
-	fS := cmd_toolkit.FileSystem()
+	fS := cmdtoolkit.FileSystem()
 	var src afero.File
 	if src, fileErr = fS.Open(path); fileErr == nil {
-		defer src.Close()
+		defer func() {
+			_ = src.Close()
+		}()
 		var stat fs.FileInfo
 		if stat, fileErr = src.Stat(); fileErr == nil {
 			tmpPath := path + "-id3v1"
 			var tmpFile afero.File
 			if tmpFile, fileErr = fS.OpenFile(tmpPath, os.O_RDWR|os.O_CREATE, stat.Mode()); fileErr == nil {
-				defer tmpFile.Close()
-				// borrowed this piece of logic from id3v2 tag.Save() method
-				tempfileShouldBeRemoved := true
 				defer func() {
-					if tempfileShouldBeRemoved {
-						fS.Remove(tmpPath)
+					_ = tmpFile.Close()
+				}()
+				// borrowed this piece of logic from id3v2 tag.Save() method
+				tempFileShouldBeRemoved := true
+				defer func() {
+					if tempFileShouldBeRemoved {
+						_ = fS.Remove(tmpPath)
 					}
 				}()
 				if _, fileErr = io.Copy(tmpFile, src); fileErr == nil {
-					src.Close()
+					_ = src.Close()
 					fileInfo, _ := fS.Stat(tmpPath)
 					if fileInfo != nil && fileInfo.Size() < id3v1Length {
 						fileErr = fmt.Errorf("file %q is too short", tmpPath)
@@ -764,7 +859,7 @@ func (im *Id3v1Metadata) InternalWrite(path string,
 					if _, fileErr = tmpFile.Seek(-id3v1Length, io.SeekEnd); fileErr == nil {
 						var n int
 						if n, fileErr = writeFunc(tmpFile, im.data); fileErr == nil {
-							tmpFile.Close()
+							_ = tmpFile.Close()
 							if n != id3v1Length {
 								fileErr = fmt.Errorf(
 									"wrote %d bytes to %q, expected to write %d bytes", n,
@@ -772,7 +867,7 @@ func (im *Id3v1Metadata) InternalWrite(path string,
 								return
 							}
 							if fileErr = fS.Rename(tmpPath, path); fileErr == nil {
-								tempfileShouldBeRemoved = false
+								tempFileShouldBeRemoved = false
 							}
 						}
 					}
@@ -819,14 +914,13 @@ func Id3v1NameDiffers(cS *ComparableStrings) bool {
 }
 
 func Id3v1GenreDiffers(cS *ComparableStrings) bool {
-	InitGenreIndices()
-	if _, genreFound := GenreIndicesMap[strings.ToLower(cS.External)]; !genreFound {
-		// the external genre does not map to a known id3v1 genre but "Other"
+	if _, genreFound := genreIndex(cS.External); !genreFound {
+		// the external genre does not map to a known id3v1 genre but "other"
 		// always matches the external name
-		if cS.Metadata == "Other" {
+		if cS.Metadata == "other" {
 			return false
 		}
 	}
-	// external name is a known id3v1 genre, or metadata name is not "Other"
-	return cS.External != cS.Metadata
+	// external name is a known id3v1 genre, or metadata name is not "other"
+	return !strings.EqualFold(cS.External, cS.Metadata)
 }

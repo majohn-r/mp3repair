@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/spf13/afero"
 )
 
@@ -462,12 +462,12 @@ func TestId3v1MetadataSetYear(t *testing.T) {
 	tests := map[string]struct {
 		v1     *files.Id3v1Metadata
 		s      string
-		wantv1 *files.Id3v1Metadata
+		wantV1 *files.Id3v1Metadata
 	}{
 		"realistic": {
 			v1: NewID3v1MetadataWithData(id3v1DataSet1),
 			s:  "2022",
-			wantv1: NewID3v1MetadataWithData([]byte{
+			wantV1: NewID3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
 				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r',
 				'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i',
@@ -489,8 +489,8 @@ func TestId3v1MetadataSetYear(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			tt.v1.SetYear(tt.s)
-			if !reflect.DeepEqual(tt.v1, tt.wantv1) {
-				t.Errorf("Id3v1Metadata.SetYear() got %v want %v", tt.v1, tt.wantv1)
+			if !reflect.DeepEqual(tt.v1, tt.wantV1) {
+				t.Errorf("Id3v1Metadata.SetYear() got %v want %v", tt.v1, tt.wantV1)
 			}
 		})
 	}
@@ -619,25 +619,25 @@ func TestId3v1MetadataSetTrack(t *testing.T) {
 		v1     *files.Id3v1Metadata
 		t      int
 		want   bool
-		wantv1 *files.Id3v1Metadata
+		wantV1 *files.Id3v1Metadata
 	}{
 		"low": {
 			v1:     NewID3v1MetadataWithData(id3v1DataSet1),
 			t:      0,
 			want:   false,
-			wantv1: NewID3v1MetadataWithData(id3v1DataSet1),
+			wantV1: NewID3v1MetadataWithData(id3v1DataSet1),
 		},
 		"high": {
 			v1:     NewID3v1MetadataWithData(id3v1DataSet1),
 			t:      256,
 			want:   false,
-			wantv1: NewID3v1MetadataWithData(id3v1DataSet1),
+			wantV1: NewID3v1MetadataWithData(id3v1DataSet1),
 		},
 		"ok": {
 			v1:   NewID3v1MetadataWithData(id3v1DataSet1),
 			t:    45,
 			want: true,
-			wantv1: NewID3v1MetadataWithData([]byte{
+			wantV1: NewID3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
 				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r',
 				'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i',
@@ -661,8 +661,8 @@ func TestId3v1MetadataSetTrack(t *testing.T) {
 			if got := tt.v1.SetTrack(tt.t); got != tt.want {
 				t.Errorf("Id3v1Metadata.SetTrack() = %t, want %t", got, tt.want)
 			}
-			if !reflect.DeepEqual(tt.v1, tt.wantv1) {
-				t.Errorf("Id3v1Metadata.SetTrack() got %v want %v", tt.v1, tt.wantv1)
+			if !reflect.DeepEqual(tt.v1, tt.wantV1) {
+				t.Errorf("Id3v1Metadata.SetTrack() got %v want %v", tt.v1, tt.wantV1)
 			}
 		})
 	}
@@ -676,12 +676,12 @@ func TestId3v1MetadataGenre(t *testing.T) {
 	}{
 		"BBC": {
 			v1:     NewID3v1MetadataWithData(id3v1DataSet1),
-			wantS:  "Other",
+			wantS:  "other",
 			wantOk: true,
 		},
 		"White Album": {
 			v1:     NewID3v1MetadataWithData(id3v1DataSet2),
-			wantS:  "Rock",
+			wantS:  "rock",
 			wantOk: true,
 		},
 		"bad zero byte": {
@@ -714,12 +714,12 @@ func TestId3v1MetadataSetGenre(t *testing.T) {
 	tests := map[string]struct {
 		v1     *files.Id3v1Metadata
 		s      string
-		wantv1 *files.Id3v1Metadata
+		wantV1 *files.Id3v1Metadata
 	}{
 		"no such genre": {
 			v1: NewID3v1MetadataWithData(id3v1DataSet1),
 			s:  "Subspace Radio",
-			wantv1: NewID3v1MetadataWithData([]byte{
+			wantV1: NewID3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
 				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r',
 				'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i',
@@ -739,8 +739,8 @@ func TestId3v1MetadataSetGenre(t *testing.T) {
 		},
 		"known genre": {
 			v1: NewID3v1MetadataWithData(id3v1DataSet1),
-			s:  files.GenreMap[37],
-			wantv1: NewID3v1MetadataWithData([]byte{
+			s:  "Sound clip",
+			wantV1: NewID3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
 				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r',
 				'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i',
@@ -762,38 +762,24 @@ func TestId3v1MetadataSetGenre(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			tt.v1.SetGenre(tt.s)
-			if !reflect.DeepEqual(tt.v1, tt.wantv1) {
-				t.Errorf("Id3v1Metadata.SetGenre() got %v want %v", tt.v1, tt.wantv1)
+			if !reflect.DeepEqual(tt.v1, tt.wantV1) {
+				t.Errorf("Id3v1Metadata.SetGenre() got %v want %v", tt.v1, tt.wantV1)
 			}
 		})
 	}
 }
 
-func TestInitGenreIndices(t *testing.T) {
-	files.InitGenreIndices()
-	if len(files.GenreIndicesMap) != len(files.GenreMap) {
-		t.Errorf("InitGenreIndices() size of genreIndicesMap is %d, genreMap is %d",
-			len(files.GenreIndicesMap), len(files.GenreMap))
-	} else {
-		for k, v := range files.GenreMap {
-			if k2 := files.GenreIndicesMap[strings.ToLower(v)]; k2 != k {
-				t.Errorf("InitGenreIndices() index for %q got %d want %d", v, k2, k)
-			}
-		}
-	}
-}
-
 func TestInternalReadId3V1Metadata(t *testing.T) {
-	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
 	testDir := "id3v1read"
-	cmd_toolkit.Mkdir(testDir)
+	_ = cmdtoolkit.Mkdir(testDir)
 	defer func() {
-		cmd_toolkit.AssignFileSystem(originalFileSystem)
+		cmdtoolkit.AssignFileSystem(originalFileSystem)
 	}()
 	shortFile := "short.mp3"
-	createFileWithContent(testDir, shortFile, []byte{0, 1, 2})
+	_ = createFileWithContent(testDir, shortFile, []byte{0, 1, 2})
 	badFile := "bad.mp3"
-	createFileWithContent(testDir, badFile, []byte{
+	_ = createFileWithContent(testDir, badFile, []byte{
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -822,7 +808,7 @@ func TestInternalReadId3V1Metadata(t *testing.T) {
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 	}
 	payload = append(payload, id3v1DataSet1...)
-	createFileWithContent(testDir, goodFile, payload)
+	_ = createFileWithContent(testDir, goodFile, payload)
 	type args struct {
 		path     string
 		readFunc func(f afero.File, b []byte) (int, error)
@@ -888,12 +874,12 @@ func TestInternalReadId3V1Metadata(t *testing.T) {
 }
 
 func TestReadId3v1Metadata(t *testing.T) {
-	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
 	defer func() {
-		cmd_toolkit.AssignFileSystem(originalFileSystem)
+		cmdtoolkit.AssignFileSystem(originalFileSystem)
 	}()
 	testDir := "id3v1read"
-	cmd_toolkit.Mkdir(testDir)
+	_ = cmdtoolkit.Mkdir(testDir)
 	goodFile := "good.mp3"
 	payload := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -909,7 +895,7 @@ func TestReadId3v1Metadata(t *testing.T) {
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 	}
 	payload = append(payload, id3v1DataSet1...)
-	createFileWithContent(testDir, goodFile, payload)
+	_ = createFileWithContent(testDir, goodFile, payload)
 	tests := map[string]struct {
 		path    string
 		want    []string
@@ -925,7 +911,7 @@ func TestReadId3v1Metadata(t *testing.T) {
 				`Title: "Ringo - Pop Profile [Interview"`,
 				"Track: 29",
 				`Year: "2013"`,
-				`Genre: "Other"`,
+				`Genre: "other"`,
 			},
 			wantErr: false,
 		},
@@ -945,14 +931,14 @@ func TestReadId3v1Metadata(t *testing.T) {
 }
 
 func TestId3v1MetadataInternalWrite(t *testing.T) {
-	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
 	defer func() {
-		cmd_toolkit.AssignFileSystem(originalFileSystem)
+		cmdtoolkit.AssignFileSystem(originalFileSystem)
 	}()
 	testDir := "id3v1write"
-	cmd_toolkit.Mkdir(testDir)
+	_ = cmdtoolkit.Mkdir(testDir)
 	shortFile := "short.mp3"
-	createFileWithContent(testDir, shortFile, []byte{0, 1, 2})
+	_ = createFileWithContent(testDir, shortFile, []byte{0, 1, 2})
 	goodFile := "good.mp3"
 	payload := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -968,7 +954,7 @@ func TestId3v1MetadataInternalWrite(t *testing.T) {
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 	}
 	payload = append(payload, id3v1DataSet1...)
-	createFileWithContent(testDir, goodFile, payload)
+	_ = createFileWithContent(testDir, goodFile, payload)
 	type args struct {
 		oldPath   string
 		writeFunc func(f afero.File, b []byte) (int, error)
@@ -1049,7 +1035,7 @@ func TestId3v1MetadataInternalWrite(t *testing.T) {
 				t.Errorf("Id3v1Metadata.InternalWrite() error = %v, wantErr %v", gotErr, tt.wantErr)
 			}
 			if gotErr == nil && tt.wantErr == false {
-				got, _ := afero.ReadFile(cmd_toolkit.FileSystem(), tt.args.oldPath)
+				got, _ := afero.ReadFile(cmdtoolkit.FileSystem(), tt.args.oldPath)
 				if !reflect.DeepEqual(got, tt.wantData) {
 					t.Errorf("Id3v1Metadata.InternalWrite() got %v want %v", got, tt.wantData)
 				}
@@ -1059,12 +1045,12 @@ func TestId3v1MetadataInternalWrite(t *testing.T) {
 }
 
 func TestId3v1MetadataWrite(t *testing.T) {
-	originalFileSystem := cmd_toolkit.AssignFileSystem(afero.NewMemMapFs())
+	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
 	defer func() {
-		cmd_toolkit.AssignFileSystem(originalFileSystem)
+		cmdtoolkit.AssignFileSystem(originalFileSystem)
 	}()
 	testDir := "id3v1write"
-	cmd_toolkit.Mkdir(testDir)
+	_ = cmdtoolkit.Mkdir(testDir)
 	goodFile := "good.mp3"
 	payload := []byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -1080,7 +1066,7 @@ func TestId3v1MetadataWrite(t *testing.T) {
 		0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 	}
 	payload = append(payload, id3v1DataSet1...)
-	createFileWithContent(testDir, goodFile, payload)
+	_ = createFileWithContent(testDir, goodFile, payload)
 	tests := map[string]struct {
 		v1       *files.Id3v1Metadata
 		path     string
@@ -1129,7 +1115,7 @@ func TestId3v1MetadataWrite(t *testing.T) {
 				t.Errorf("Id3v1Metadata.Write() error = %v, wantErr %v", gotErr, tt.wantErr)
 			}
 			if gotErr == nil && tt.wantErr == false {
-				got, _ := afero.ReadFile(cmd_toolkit.FileSystem(), tt.path)
+				got, _ := afero.ReadFile(cmdtoolkit.FileSystem(), tt.path)
 				if !reflect.DeepEqual(got, tt.wantData) {
 					t.Errorf("Id3v1Metadata.Write() got %v want %v", got, tt.wantData)
 				}
@@ -1227,17 +1213,17 @@ func TestId3v1GenreDiffers(t *testing.T) {
 			},
 			want: false,
 		},
-		"no match": {
+		"case does not match": {
 			cS: &files.ComparableStrings{
 				External: "Classic Rock",
 				Metadata: "classic rock",
 			},
-			want: true,
+			want: false,
 		},
 		"other": {
 			cS: &files.ComparableStrings{
 				External: "Prog Rock",
-				Metadata: "Other",
+				Metadata: "other",
 			},
 			want: false,
 		},
@@ -1254,6 +1240,94 @@ func TestId3v1GenreDiffers(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			if got := files.Id3v1GenreDiffers(tt.cS); got != tt.want {
 				t.Errorf("Id3v1GenreDiffers() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestBiDirectionalMap_AddPair(t *testing.T) {
+	tests := map[string]struct {
+		m       *files.BiDirectionalMap[string, string]
+		input   map[string]string
+		wantErr bool
+	}{
+		"redundant key": {
+			m: files.NewBiDirectionalMap[string, string](strings.ToLower, nil),
+			input: map[string]string{
+				"k1": "v1",
+				"K1": "v2",
+			},
+			wantErr: true,
+		},
+		"redundant value": {
+			m: files.NewBiDirectionalMap[string, string](nil, nil),
+			input: map[string]string{
+				"k1": "v1",
+				"k2": "v1",
+			},
+			wantErr: true,
+		},
+		"good": {
+			m: files.NewBiDirectionalMap[string, string](nil, nil),
+			input: map[string]string{
+				"k1": "v1",
+				"k2": "v2",
+			},
+			wantErr: false,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			var got error
+			for k, v := range tt.input {
+				if got = tt.m.AddPair(k, v); got != nil {
+					break
+				}
+			}
+			if (got != nil) != tt.wantErr {
+				t.Errorf("BiDirectionalMap.AddPair() error = %v, wantErr %v", got, tt.wantErr)
+			}
+		})
+	}
+}
+
+func TestPopulate(t *testing.T) {
+	_ = files.InitGenres()
+	tests := map[string]struct {
+		m       map[int]string
+		wantMap *files.BiDirectionalMap[int, string]
+		wantErr bool
+	}{
+		"error": {
+			m: map[int]string{
+				1: "foo",
+				2: "foo",
+			},
+			wantMap: nil,
+			wantErr: true,
+		},
+		"normal": {
+			m:       lcGenres,
+			wantMap: files.Genres,
+			wantErr: false,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, err := files.Populate(tt.m)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Populate() error = %v, wantErr %v", err, tt.wantErr)
+			}
+			switch {
+			case got == nil && tt.wantMap == nil:
+				// good
+			case got == nil || tt.wantMap == nil:
+				t.Errorf("Populate() map = %v, wantMap %v", got, tt.wantMap)
+			default:
+				if !reflect.DeepEqual(got.KeyMap(), tt.wantMap.KeyMap()) ||
+					!reflect.DeepEqual(got.ValueMap(), tt.wantMap.ValueMap()) {
+					t.Errorf("Populate() map = %v, wantMap %v", got, tt.wantMap)
+				}
 			}
 		})
 	}

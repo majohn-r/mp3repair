@@ -1,7 +1,7 @@
 # Maintenance of Windows Executable Icons
 
 This document describes the creation and maintenance of icons for embedding into
-Windows execuatables.
+Windows executables.
 
 ## Creation
 

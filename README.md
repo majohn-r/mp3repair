@@ -74,11 +74,11 @@ including:
 The **check** command provides a means to run various checks on the mp3 files
 and their directories, governed by these command arguments:
 
-Argument Name   | Value   | Default Value | Description
-----------------|---------|---------------|-------------
- **-empty**     | Boolean | false         | Check for empty _artist_ and _album_ directories
- **-gaps**      | Boolean | false         | Check for gaps in the numbered mp3 files in an _album_ directory
- **-integrity** | Boolean | true          | Check for discrepancies between the _tag frames_ in the mp3 files
+| Argument Name  | Value   | Default Value | Description                                                       |
+|----------------|---------|---------------|-------------------------------------------------------------------|
+| **-empty**     | Boolean | false         | Check for empty _artist_ and _album_ directories                  |
+| **-gaps**      | Boolean | false         | Check for gaps in the numbered mp3 files in an _album_ directory  |
+| **-integrity** | Boolean | true          | Check for discrepancies between the _tag frames_ in the mp3 files |
 
 #### check Argument Details
 
@@ -92,7 +92,7 @@ and **mp3repair** considers it empty if it contains no mp3 files.
 
 ##### -gaps
 
-**mp3repair** assumes that the mp3 files in an album directory are numbered as
+**mp3repair** assumes that the mp3 files on an album are numbered as
 tracks, starting with **1** and ending with **N** where **N** is the number of
 mp3 files in the directory. If any mp3 files have an associated track number
 outside the range of **1..N**, **mp3repair** lists them in the output, as well
@@ -107,22 +107,22 @@ check looks for discrepancies between that data and the files:
 - Verify that the track file name begins with the track number encoded in the
   _TRCK_ (track number/position in set) frame of the ID3V2 tag and the track
   field of the ID3V1 tag, and that the rest of the track name matches the value
-  encoded in the _TIT2_ (title/songname/content description) frame of the ID3V2
+  encoded in the _TIT2_ (title/song name/content description) frame of the ID3V2
   tag and the song title field of the ID3v1 tag.
 - Verify that the containing album directory's name matches the _TALB_
   (album/movie/show title) frame of the ID3V2 tag and the album field of the
-  ID3V1 tag, and that all mp3 files in the album use the same album name in
+  ID3V1 tag, and that all mp3 files on the album use the same album name in
   their ID3V2 and ID3V1 tags.
 - Verify that the containing artist directory's name matches the _TPE1_ (lead
   artist/lead performer/soloist/performing group) frame of the ID3V2 tag and the
   artist field of the ID3V1 tag, and that all mp3 files within an artist
   directory use the same artist name in their ID3V2 and ID3V1 tags.
-- Verify that all the mp3 files in an album contain the same _TYER_ (year) frame
+- Verify that all the mp3 files on an album contain the same _TYER_ (year) frame
   of the ID3V2 tag and the year field of the ID3V1 tag.
-- Verify that all the mp3 files in an album contain the same _TCON_ (content
+- Verify that all the mp3 files io an album contain the same _TCON_ (content
   type, aka genre) frame of the ID3V2 tag and the same genre field of the ID3V1
   tag, and that the genres in each tag agree as closely as possible.
-- Verify that all the mp3 files in an album contain the same _MCDI_ (music CD
+- Verify that all the mp3 files on an album contain the same _MCDI_ (music CD
   identifier) frame of the ID3V2 tag; there is no corresponding data in the
   ID3V1 tag.
 
@@ -130,7 +130,7 @@ File names and their corresponding frame values cannot always be identical, as
 some characters in the frame may not be legal file name characters and end up
 being replaced with, typically, punctuation characters. The matching algorithm
 takes those differences into account. The following characters are known to be
-illegal in WIndows file names:
+illegal in Windows file names:
 
 - asterisk (**\***)
 - backward slash (**\\**)
@@ -164,15 +164,15 @@ If true, **mp3repair** writes the command defaults to a file named
 The **list** command provides a means for listing mp3 files. It can list
 artists, albums, and tracks, governed by these command arguments:
 
-Argument Name        | Value   | Default Value | Description
----------------------|---------|---------------|-------------
- **-annotate**       | Boolean | false         | Annotate track and album names
- **-details**        | Boolean | false         | Include details for tracks
- **-diagnostic**     | Boolean | false         | Include diagnostic data for tracks
- **-includeArtists** | Boolean | true          | List album artists
- **-includeAlbums**  | Boolean | true          | List album names
- **-includeTracks**  | Boolean | false         | List track names
- **-sort**           | String  | **numeric**   | How to sort tracks, if listed
+| Argument Name       | Value   | Default Value | Description                        |
+|---------------------|---------|---------------|------------------------------------|
+| **-annotate**       | Boolean | false         | Annotate track and album names     |
+| **-details**        | Boolean | false         | Include details for tracks         |
+| **-diagnostic**     | Boolean | false         | Include diagnostic data for tracks |
+| **-includeArtists** | Boolean | true          | List album artists                 |
+| **-includeAlbums**  | Boolean | true          | List album names                   |
+| **-includeTracks**  | Boolean | false         | List track names                   |
+| **-sort**           | String  | **numeric**   | How to sort tracks, if listed      |
 
 #### list Argument Details
 
@@ -206,10 +206,10 @@ If true, **mp3repair** provides the following details, if available:
 ##### -sort
 
 Allowed values are **numeric** and **alpha**. If **numeric** sorting is
-reqested, track and album listing must both be enabled; otherwise, it makes no
+requested, track and album listing must both be enabled; otherwise, it makes no
 sense.
 
-If any value other than **numeric** or **alpha** is used, **mp3repair** will be
+If any value other than **numeric** or **alpha** is used, **mp3repair** will
 replace it with an appropriate value as follows:
 
 1. If tracks are not listed (**-includeTracks=false**), **mp3repair** ignores
@@ -230,9 +230,9 @@ The **repair** command provides a means to repair tracks whose **MP3** _tags_ do
 not match the track name, album name, or artist name. It has a single command
 argument:
 
-Argument Name | Value   | Default Value | Description
---------------|---------|---------------|-------------
- **-dryRun**  | Boolean | false         | If true, output what the command would repair, but take no action
+| Argument Name | Value   | Default Value | Description                                                       |
+|---------------|---------|---------------|-------------------------------------------------------------------|
+| **-dryRun**   | Boolean | false         | If true, output what the command would repair, but take no action |
 
 ### resetDatabase
 
@@ -258,12 +258,12 @@ command insists that it doesn't need to do anything, simply create a file named
 
 The **resetDatabase** command has the following command arguments:
 
-Argument Name   | Value   | Default Value | Description
-----------------|---------|---------------|-------------
- **-extension** | String  | **.wmdb**     | The extension of the files to delete
- **-metadata**  | String  | **%USERPROFILE%\\AppData\\Local\\Microsoft\\Media Player\\** | The directory where the metadata files are found
- **-service**   | String  | **WMPNetworkSVC** | The name of the media player sharing service, which, if running, needs to be stopped before deleting the metadata files
- **-timeout**   | Numeric | 10            | The time, in seconds, in which the command will attempt to stop the media player sharing service before giving up
+| Argument Name  | Value   | Default Value                                                | Description                                                                                                             |
+|----------------|---------|--------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------|
+| **-extension** | String  | **.wmdb**                                                    | The extension of the files to delete                                                                                    |
+| **-metadata**  | String  | **%USERPROFILE%\\AppData\\Local\\Microsoft\\Media Player\\** | The directory where the metadata files are found                                                                        |
+| **-service**   | String  | **WMPNetworkSVC**                                            | The name of the media player sharing service, which, if running, needs to be stopped before deleting the metadata files |
+| **-timeout**   | Numeric | 10                                                           | The time, in seconds, in which the command will attempt to stop the media player sharing service before giving up       |
 
 #### resetDatabase Argument Details
 
@@ -284,12 +284,12 @@ above.
 These command arguments are common to the **check**, **list**, **postRepair**,
 and **repair** commands:
 
-Argument Name      | Value   | Default Value | Description
--------------------|---------|---------------|-------------
- **-topDir**       | String  | **%HOMEPATH%\\Music** | The directory whose subdirectories are artist names
- **-ext**          | String  | **.mp3**      | The extension used to identify music files
- **-albumFilter**  | String  | **'.\*'**     | Filter for which album directories to process
- **-artistFilter** | String  | **'.\*'**     | Filter for which artist directories to process
+| Argument Name     | Value  | Default Value         | Description                                         |
+|-------------------|--------|-----------------------|-----------------------------------------------------|
+| **-topDir**       | String | **%HOMEPATH%\\Music** | The directory whose subdirectories are artist names |
+| **-ext**          | String | **.mp3**              | The extension used to identify music files          |
+| **-albumFilter**  | String | **'.\*'**             | Filter for which album directories to process       |
+| **-artistFilter** | String | **'.\*'**             | Filter for which artist directories to process      |
 
 ### Specifying Command Line Arguments
 
@@ -302,7 +302,7 @@ following forms:
 - **--argumentName** **argumentValue**
 - **--argumentName=argumentValue**
 
-Boolean (true/false) arguments can be entered in either of the follwing forms if
+Boolean (true/false) arguments can be entered in either of the following forms if
 the argument value is false:
 
 - **-argumentName=false**
@@ -481,11 +481,11 @@ libraries.
 
 MP3 files contain metadata in the form of ID3V2 tags and ID3V1 tags; ID3V1 is
 the older tag format and is severely constrained compared to ID3V2, but it is
-still widely supported and it is common to find MP3 files that contain both.
+still widely supported, and it is common to find MP3 files that contain both.
 While the **mp3repair** program primarily deals with the richer ID3V2 metadata,
 the **check** and **repair** commands will notice when ID3V1 tags are not in
 sync with the files and rewrite them as necessary. Information about the
-**ID3V1** tag formt can be found here:
+**ID3V1** tag format can be found here:
 [https://id3.org/ID3v1](https://id3.org/ID3v1).
 
 ### ID3V2.3.0

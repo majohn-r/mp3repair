@@ -11,13 +11,12 @@ import (
 
 	"github.com/bogem/id3v2/v2"
 	"github.com/cheggaaa/pb/v3"
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
 
 const (
 	rawExtension            = "mp3"
-	defaultFileExtension    = "." + rawExtension
 	defaultTrackNamePattern = "^\\d+[\\s-].+\\." + rawExtension + "$"
 
 	mcdiFrame  = "MCDI"
@@ -38,7 +37,7 @@ var (
 	trackNameRegex  = regexp.MustCompile(defaultTrackNamePattern)
 )
 
-// Track encapsulates data about a track in an album.
+// Track encapsulates data about a track on an album.
 type Track struct {
 	Album *Album
 	// full path to the file associated with the track, including the file itself
@@ -163,33 +162,33 @@ type MetadataState struct {
 }
 
 // HasNumberingConflict returns true if there is a conflict between the track
-// number (as derived from the track's file name) and the value of any of the
+// number (as derived from the track's file name) and the value of the
 // track's track number metadata.
 func (m MetadataState) HasNumberingConflict() bool {
 	return m.numberingConflict
 }
 
 // HasTrackNameConflict returns true if there is a conflict between the track
-// name (as derived from the track's file name) and the value of any of the
+// name (as derived from the track's file name) and the value of the
 // track's track name metadata.
 func (m MetadataState) HasTrackNameConflict() bool {
 	return m.trackNameConflict
 }
 
 // HasAlbumNameConflict returns true if there is a conflict between the name of
-// the album the track is associated with and the value of any of the track's
+// the album the track is associated with and the value of the track's
 // album name metadata.
 func (m MetadataState) HasAlbumNameConflict() bool {
 	return m.albumNameConflict
 }
 
 // HasArtistNameConflict returns true if there is a conflict between the track's
-// recording artist and the value of any of the track's artist name metadata.
+// recording artist and the value of the track's artist name metadata.
 func (m MetadataState) HasArtistNameConflict() bool {
 	return m.artistNameConflict
 }
 
-// HasConflicts returns true if there are any conflicts between the any of the
+// HasConflicts returns true if there are any conflicts between the
 // track's metadata and their corresponding file-based values.
 func (m MetadataState) HasConflicts() bool {
 	return m.numberingConflict ||
@@ -208,13 +207,13 @@ func (m MetadataState) HasMCDIConflict() bool {
 }
 
 // HasGenreConflict returns true if there is conflict between the track's
-// album's genre and the value of any of the track's genre metadata.
+// album's genre and the value of the track's genre metadata.
 func (m MetadataState) HasGenreConflict() bool {
 	return m.genreConflict
 }
 
 // HasYearConflict returns true if there is conflict between the track's album's
-// year and the value of any of the track's year metadata.
+// year and the value of the track's year metadata.
 func (m MetadataState) HasYearConflict() bool {
 	return m.yearConflict
 }
@@ -416,8 +415,7 @@ func ProcessArtistMetadata(o output.Bus, artists []*Artist) {
 	}
 }
 
-func reportAmbiguousChoices(o output.Bus, subject, context string,
-	choices map[string]int) {
+func reportAmbiguousChoices(o output.Bus, subject, context string, choices map[string]int) {
 	o.WriteCanonicalError("There are multiple %s fields for %q,"+
 		" and there is no unambiguously preferred choice; candidates are %v", subject, context,
 		encodeChoices(choices))
@@ -663,7 +661,7 @@ func (t *Track) RecordingArtist() string {
 
 // CopyFile copies the track file to a specified destination path.
 func (t *Track) CopyFile(destination string) error {
-	return cmd_toolkit.CopyFile(t.FilePath, destination)
+	return cmdtoolkit.CopyFile(t.FilePath, destination)
 }
 
 // ID3V1Diagnostics returns the ID3V1 tag contents, if any; a missing ID3V1 tag

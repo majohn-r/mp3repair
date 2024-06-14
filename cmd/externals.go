@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"github.com/mattn/go-isatty"
 	"golang.org/x/sys/windows"
@@ -16,24 +16,21 @@ import (
 )
 
 var (
-	ApplicationPath        = cmd_toolkit.ApplicationPath
-	BuildDependencies      = cmd_toolkit.BuildDependencies
-	CopyFile               = cmd_toolkit.CopyFile
-	DereferenceEnvVar      = cmd_toolkit.DereferenceEnvVar
-	DirExists              = cmd_toolkit.DirExists
-	GoVersion              = cmd_toolkit.GoVersion
-	InitApplicationPath    = cmd_toolkit.InitApplicationPath
-	InitBuildData          = cmd_toolkit.InitBuildData
-	InitLogging            = cmd_toolkit.InitLogging
-	InterpretBuildData     = cmd_toolkit.InterpretBuildData
-	LogCommandStart        = cmd_toolkit.LogCommandStart
-	LogPath                = cmd_toolkit.LogPath
-	Mkdir                  = cmd_toolkit.Mkdir
-	PlainFileExists        = cmd_toolkit.PlainFileExists
-	ReadConfigurationFile  = cmd_toolkit.ReadConfigurationFile
-	ReadDirectory          = cmd_toolkit.ReadDirectory
-	SetAppName             = cmd_toolkit.SetAppName
-	SetFlagIndicator       = cmd_toolkit.SetFlagIndicator
+	ApplicationPath        = cmdtoolkit.ApplicationPath
+	CopyFile               = cmdtoolkit.CopyFile
+	DereferenceEnvVar      = cmdtoolkit.DereferenceEnvVar
+	DirExists              = cmdtoolkit.DirExists
+	InitApplicationPath    = cmdtoolkit.InitApplicationPath
+	InitLogging            = cmdtoolkit.InitLogging
+	InterpretBuildData     = cmdtoolkit.InterpretBuildData
+	LogCommandStart        = cmdtoolkit.LogCommandStart
+	LogPath                = cmdtoolkit.LogPath
+	Mkdir                  = cmdtoolkit.Mkdir
+	PlainFileExists        = cmdtoolkit.PlainFileExists
+	ReadConfigurationFile  = cmdtoolkit.ReadConfigurationFile
+	ReadDirectory          = cmdtoolkit.ReadDirectory
+	SetAppName             = cmdtoolkit.SetAppName
+	SetFlagIndicator       = cmdtoolkit.SetFlagIndicator
 	ClearDirty             = files.ClearDirty
 	Dirty                  = files.Dirty
 	MarkDirty              = files.MarkDirty

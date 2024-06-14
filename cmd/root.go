@@ -1,15 +1,13 @@
-/*
-Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
-*/
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"sync"
 	"time"
 
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"
 )
@@ -57,10 +55,11 @@ the process:
 
 ` + appName + ` ` + resetDBCommandName,
 	}
-	// safe values until properly initialized
+	// Bus is the output bus to be used by commands; initially set to a nil bus for safety
 	Bus            = output.NewNilBus()
-	InternalConfig = cmd_toolkit.EmptyConfiguration()
-	// internals ...
+	InternalConfig = cmdtoolkit.EmptyConfiguration()
+	// BusGetter is a variable that makes it easy for tests to inject a testing Bus, such as an
+	// output.Recorder
 	BusGetter   = getBus
 	initLock    = &sync.RWMutex{}
 	Initialized = false
@@ -71,7 +70,7 @@ func getBus() output.Bus {
 	return Bus
 }
 
-func getConfiguration() *cmd_toolkit.Configuration {
+func getConfiguration() *cmdtoolkit.Configuration {
 	InitGlobals()
 	return InternalConfig
 }
@@ -80,9 +79,9 @@ func InitGlobals() {
 	initLock.Lock()
 	defer initLock.Unlock()
 	if !Initialized {
-		Bus = NewDefaultBus(cmd_toolkit.ProductionLogger)
-		if _, appNameInitErr := cmd_toolkit.AppName(); appNameInitErr != nil {
-			SetAppName(appName)
+		Bus = NewDefaultBus(cmdtoolkit.ProductionLogger)
+		if _, appNameInitErr := cmdtoolkit.AppName(); appNameInitErr != nil {
+			_ = SetAppName(appName)
 		}
 		configOk := false
 		if InitLogging(Bus) && InitApplicationPath(Bus) {
@@ -103,7 +102,7 @@ func CookCommandLineArguments(o output.Bus, inputArgs []string) []string {
 	for _, arg := range inputArgs[1:] {
 		cookedArg, dereferenceErr := DereferenceEnvVar(arg)
 		if dereferenceErr != nil {
-			o.WriteCanonicalError("An error was found in processng argument %q: %v",
+			o.WriteCanonicalError("An error was found in processing argument %q: %v",
 				arg, dereferenceErr)
 			o.Log(output.Error, "Invalid argument value", map[string]any{
 				"argument": arg,
@@ -142,8 +141,8 @@ func RunMain(o output.Bus, cmd CommandExecutor, start time.Time) int {
 	o.Log(output.Info, "execution starts", map[string]any{
 		"version":      Version,
 		"timeStamp":    Creation,
-		"goVersion":    GoVersion(),
-		"dependencies": BuildDependencies(),
+		"goVersion":    CachedGoVersion,
+		"dependencies": CachedBuildDependencies,
 		"args":         cookedArgs,
 	})
 	NewElevationControl().Log(o, output.Info)
@@ -166,7 +165,8 @@ func ObtainExitCode(err error) int {
 	case err == nil:
 		return 0
 	default:
-		if exitError, ok := err.(*ExitError); ok {
+		var exitError *ExitError
+		if errors.As(err, &exitError) {
 			if exitError == nil {
 				return 0
 			}

@@ -11,7 +11,7 @@ import (
 	"regexp"
 	"testing"
 
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"
 )
@@ -145,7 +145,7 @@ func TestTryTrackBackup(t *testing.T) {
 	}
 	tests := map[string]struct {
 		plainFileExists func(path string) bool
-		copyFile        func(src, dest string) error
+		copyFile        func(src, destination string) error
 		args
 		wantBackedUp bool
 		output.WantedRecording
@@ -1495,7 +1495,7 @@ func TestRepairRun(t *testing.T) {
 		},
 	}
 	command := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(), command.Flags(),
+	cmd.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), command.Flags(),
 		repairFlags, cmd.SearchFlags)
 	tests := map[string]struct {
 		cmd *cobra.Command
@@ -1532,7 +1532,7 @@ func TestRepairRun(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.Bus = o // cook getBus()
-			cmd.RepairRun(tt.cmd, tt.in1)
+			_ = cmd.RepairRun(tt.cmd, tt.in1)
 			o.Report(t, "RepairRun()", tt.WantedRecording)
 		})
 	}
@@ -1545,7 +1545,7 @@ func TestRepairHelp(t *testing.T) {
 	}()
 	cmd.SearchFlags = safeSearchFlags
 	commandUnderTest := cloneCommand(cmd.RepairCmd)
-	cmd.AddFlags(output.NewNilBus(), cmd_toolkit.EmptyConfiguration(),
+	cmd.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), cmd.RepairFlags, cmd.SearchFlags)
 	tests := map[string]struct {
 		output.WantedRecording
@@ -1590,7 +1590,7 @@ func TestRepairHelp(t *testing.T) {
 			o := output.NewRecorder()
 			command := commandUnderTest
 			enableCommandRecording(o, command)
-			command.Help()
+			_ = command.Help()
 			o.Report(t, "repair Help()", tt.WantedRecording)
 		})
 	}

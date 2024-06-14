@@ -614,7 +614,7 @@ func TestExportRun(t *testing.T) {
 			cmd.ExportFlags = tt.flags
 			o := output.NewRecorder()
 			cmd.Bus = o // this is what getBus() should return when ExportRun calls it
-			cmd.ExportRun(tt.cmd, []string{})
+			_ = cmd.ExportRun(tt.cmd, []string{})
 			o.Report(t, "ExportRun()", tt.WantedRecording)
 		})
 	}
@@ -651,7 +651,7 @@ func TestExportHelp(t *testing.T) {
 			o := output.NewRecorder()
 			command := cmd.ExportCmd
 			enableCommandRecording(o, command)
-			command.Help()
+			_ = command.Help()
 			o.Report(t, "export Help()", tt.WantedRecording)
 		})
 	}

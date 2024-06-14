@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 )
@@ -124,13 +125,12 @@ func TestToErrInterface(t *testing.T) {
 				t.Errorf("ToErrorInterface() error = %v, wantErr %v", gotErr, tt.wantErr)
 			}
 			if gotErr == nil {
-				if _, ok := gotErr.(*ExitError); ok {
+				var exitError *ExitError
+				if errors.As(gotErr, &exitError) {
 					t.Errorf("ToErrorInterface() returned nil that is *ExitError")
 				}
-			} else {
-				if !reflect.DeepEqual(gotErr, tt.e) {
-					t.Errorf("ToErrorInterface() got %v want %v", gotErr, tt.e)
-				}
+			} else if !reflect.DeepEqual(gotErr, tt.e) {
+				t.Errorf("ToErrorInterface() got %v want %v", gotErr, tt.e)
 			}
 		})
 	}

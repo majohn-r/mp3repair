@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/bogem/id3v2/v2"
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 )
 
 type Id3v2Metadata struct {
@@ -25,7 +25,7 @@ func (im *Id3v2Metadata) HasError() bool {
 }
 
 func readID3V2Tag(path string) (*id3v2.Tag, error) {
-	file, readError := cmd_toolkit.FileSystem().Open(path)
+	file, readError := cmdtoolkit.FileSystem().Open(path)
 	if readError != nil {
 		return nil, readError
 	}
@@ -50,7 +50,9 @@ func RawReadID3V2Metadata(path string) (d *Id3v2Metadata) {
 		d.Err = readErr
 		return
 	}
-	defer tag.Close()
+	defer func() {
+		_ = tag.Close()
+	}()
 	trackNumber, trackErr := ToTrackNumber(tag.GetTextFrame(trackFrame).Text)
 	if trackErr != nil {
 		d.Err = trackErr
@@ -67,23 +69,21 @@ func RawReadID3V2Metadata(path string) (d *Id3v2Metadata) {
 	return
 }
 
-// sometimes an id3v2 genre tries to show some solidarity with the old id3v1
-// genre, by making the genre string "(key)value", where key is the integer
-// index and value is the canonical string for that key, as defined for id3v1.
-// This function also has to take into account that the mapping is imperfect in
-// the case of "Rhythm and Blues", which is abbreviated to "R&B". This function
-// detects these "(key)value" strings, verifies that the value is correct for
-// the specified key, and, if so, returns the plain value without the
-// parenthetical key. Everything else passes through 'as is'.
+// NormalizeGenre handles issues relating to a common practice in mp3 files, where the ID3V2
+// genre field 'recognizes' the older ID3V1 genre field, by its value being written as
+// "(key)value", where 'key' is the integer index (as used by ID3V1) and 'value' is the
+// canonical ID3V1 string for that key. This function detects these "(key)value" strings,
+// verifies that 'value' is correct for the specified key, and, if so, returns the 'value'
+// piece without the parenthetical key. Everything else passes through 'as is'.
 func NormalizeGenre(s string) string {
 	var i int
 	var value string
 	if n, scanErr := fmt.Sscanf(s, "(%d)%s", &i, &value); n == 2 && scanErr == nil {
 		// discard value
 		if splits := strings.SplitAfter(s, ")"); len(splits) >= 2 {
-			value = splits[1]
-			mappedValue := GenreMap[i]
-			if value == mappedValue || (value == "R&B" && mappedValue == "Rhythm and Blues") {
+			value = strings.ToLower(splits[1])
+			mappedValue, _ := genreName(i)
+			if value == mappedValue {
 				return mappedValue
 			}
 		}
@@ -126,7 +126,8 @@ func ToTrackNumber(s string) (int, error) {
 	return n, nil
 }
 
-// depending on encoding, frame values may begin with a BOM (byte order mark)
+// RemoveLeadingBOMs removes leading byte order marks (BOMs); frame values may begin with BOMs,
+// depending on encoding
 func RemoveLeadingBOMs(s string) string {
 	if s == "" {
 		return s
@@ -163,7 +164,9 @@ func updateID3V2TrackMetadata(tm *TrackMetadata, path string) error {
 	if readErr != nil {
 		return readErr
 	}
-	defer tag.Close()
+	defer func() {
+		_ = tag.Close()
+	}()
 	tag.SetDefaultEncoding(id3v2.EncodingUTF8)
 	if artistName := tm.ArtistName(src).Correction(); artistName != "" {
 		tag.SetArtist(artistName)
@@ -219,7 +222,9 @@ func ReadID3V2Metadata(path string) (info *ID3V2Info, e error) {
 		e = readErr
 		return
 	}
-	defer tag.Close()
+	defer func() {
+		_ = tag.Close()
+	}()
 	info.Version = tag.Version()
 	info.Encoding = tag.DefaultEncoding().Name
 	frameMap := tag.AllFrames()

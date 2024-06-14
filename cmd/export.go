@@ -1,13 +1,10 @@
-/*
-Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
-*/
 package cmd
 
 import (
 	"fmt"
 	"path/filepath"
 
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v3"
@@ -63,10 +60,10 @@ var (
 func addDefaults(sf *SectionFlags) {
 	payload := map[string]any{}
 	for flag, details := range sf.Details {
-		bounded, ok := details.DefaultValue.(*cmd_toolkit.IntBounds)
+		bounded, ok := details.DefaultValue.(*cmdtoolkit.IntBounds)
 		switch ok {
 		case true:
-			payload[flag] = bounded.Default()
+			payload[flag] = bounded.DefaultValue
 		case false:
 			payload[flag] = details.DefaultValue
 		}
@@ -114,8 +111,8 @@ func ProcessExportFlags(o output.Bus, values map[string]*CommandFlag[any]) (*Exp
 }
 
 func CreateConfigurationFile(o output.Bus, f string, content []byte) bool {
-	if fileErr := WriteFile(f, content, cmd_toolkit.StdFilePermissions); fileErr != nil {
-		cmd_toolkit.ReportFileCreationFailure(o, ExportCommand, f, fileErr)
+	if fileErr := WriteFile(f, content, cmdtoolkit.StdFilePermissions); fileErr != nil {
+		cmdtoolkit.ReportFileCreationFailure(o, ExportCommand, f, fileErr)
 		return false
 	}
 	o.WriteCanonicalConsole("File %q has been written", f)
@@ -123,7 +120,7 @@ func CreateConfigurationFile(o output.Bus, f string, content []byte) bool {
 }
 
 func configFile() (path string, exists bool) {
-	path = filepath.Join(ApplicationPath(), cmd_toolkit.DefaultConfigFileName())
+	path = filepath.Join(ApplicationPath(), cmdtoolkit.DefaultConfigFileName())
 	exists = PlainFileExists(path)
 	return
 }
@@ -162,7 +159,7 @@ func (es *ExportSettings) OverwriteConfigurationFile(o output.Bus, f string, pay
 	if !CreateConfigurationFile(o, f, payload) {
 		return NewExitSystemError(ExportCommand)
 	}
-	Remove(backup)
+	_ = Remove(backup)
 	return nil
 }
 

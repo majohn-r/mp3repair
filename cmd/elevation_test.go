@@ -151,7 +151,7 @@ func initExamples() {
 	}
 }
 
-func TestElevationGoverner_CanElevate(t *testing.T) {
+func TestElevationControl_CanElevate(t *testing.T) {
 	initExamples()
 	tests := map[string]struct {
 		ec   *ElevationControl

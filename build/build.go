@@ -11,7 +11,7 @@ import (
 
 	"github.com/goyek/goyek/v2"
 	"github.com/josephspurrier/goversioninfo"
-	tools_build "github.com/majohn-r/tools-build"
+	toolsbuild "github.com/majohn-r/tools-build"
 	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
 )
@@ -47,7 +47,7 @@ var (
 				coverageFile,
 				pD.executable,
 			}
-			tools_build.Clean(files)
+			toolsbuild.Clean(files)
 		},
 	})
 
@@ -55,7 +55,7 @@ var (
 		Name:  "coverage",
 		Usage: "run unit tests and produce a coverage report",
 		Action: func(a *goyek.A) {
-			tools_build.GenerateCoverageReport(a, coverageFile)
+			toolsbuild.GenerateCoverageReport(a, coverageFile)
 		},
 	})
 
@@ -63,7 +63,7 @@ var (
 		Name:  "doc",
 		Usage: "generate documentation",
 		Action: func(a *goyek.A) {
-			tools_build.GenerateDocumentation(a, []string{"build"})
+			toolsbuild.GenerateDocumentation(a, []string{"build", ".idea"})
 		},
 	})
 
@@ -71,7 +71,7 @@ var (
 		Name:  "format",
 		Usage: "clean up source code formatting",
 		Action: func(a *goyek.A) {
-			tools_build.Format(a)
+			toolsbuild.FormatSelective(a, []string{".idea"})
 		},
 	})
 
@@ -79,7 +79,7 @@ var (
 		Name:  "lint",
 		Usage: "run the linter on source code",
 		Action: func(a *goyek.A) {
-			tools_build.Lint(a)
+			toolsbuild.Lint(a)
 		},
 	})
 
@@ -87,7 +87,7 @@ var (
 		Name:  "nilaway",
 		Usage: "run nilaway on source code",
 		Action: func(a *goyek.A) {
-			tools_build.NilAway(a)
+			toolsbuild.NilAway(a)
 		},
 	})
 
@@ -95,7 +95,7 @@ var (
 		Name:  "updateDependencies",
 		Usage: "update dependencies",
 		Action: func(a *goyek.A) {
-			tools_build.UpdateDependencies(a)
+			toolsbuild.UpdateDependencies(a)
 		},
 	})
 
@@ -103,7 +103,7 @@ var (
 		Name:  "vulnCheck",
 		Usage: "run vulnerability check on source code",
 		Action: func(a *goyek.A) {
-			tools_build.VulnerabilityCheck(a)
+			toolsbuild.VulnerabilityCheck(a)
 		},
 	})
 
@@ -126,7 +126,7 @@ var (
 		Name:  "tests",
 		Usage: "run unit tests",
 		Action: func(a *goyek.A) {
-			tools_build.UnitTests(a)
+			toolsbuild.UnitTests(a)
 		},
 	})
 )
@@ -150,9 +150,9 @@ func buildExecutable(a *goyek.A) {
 	// logged output shows up when running verbose (-v) or on error
 	a.Logf("configuration: %#v", pD)
 	pD.generateVersionInfo()
-	if tools_build.Generate(a) {
+	if toolsbuild.Generate(a) {
 		fmt.Println("building executable")
-		tools_build.RunCommand(a, fmt.Sprintf("go build -ldflags %q -o %s .", strings.Join(pD.flags, " "), pD.executable))
+		toolsbuild.RunCommand(a, fmt.Sprintf("go build -ldflags %q -o %s .", strings.Join(pD.flags, " "), pD.executable))
 	}
 }
 
@@ -197,7 +197,7 @@ func (pD *productData) generateVersionInfo() {
 	data.VarFileInfo.Translation.LangID = goversioninfo.LngUSEnglish
 	data.VarFileInfo.Translation.CharsetID = goversioninfo.CsUnicode
 	b, _ := json.Marshal(data)
-	fullPath := filepath.Join(tools_build.WorkingDir(), versionInfoFile)
+	fullPath := filepath.Join(toolsbuild.WorkingDir(), versionInfoFile)
 	if fileErr := afero.WriteFile(fileSystem, fullPath, b, 0o644); fileErr != nil {
 		fmt.Printf("error writing %q! %v\n", versionInfoFile, fileErr)
 	}

@@ -6,6 +6,7 @@ package cmd_test
 import (
 	"mp3repair/cmd"
 	"reflect"
+	"runtime/debug"
 	"testing"
 
 	"github.com/majohn-r/output"
@@ -34,7 +35,7 @@ func TestAboutRun(t *testing.T) {
 		cmd.PlainFileExists = originalPlainFileExists
 		cmd.IsElevated = originalIsElevatedFunc
 	}()
-	cmd.InterpretBuildData = func() (string, []string) {
+	cmd.InterpretBuildData = func(func() (*debug.BuildInfo, bool)) (string, []string) {
 		return "go1.22.x", []string{
 			"go.dependency.1 v1.2.3",
 			"go.dependency.2 v1.3.4",
@@ -87,7 +88,7 @@ func TestAboutRun(t *testing.T) {
 			cmd.LogCommandStart = func(bus output.Bus, cmdName string, args map[string]any) {
 				bus.Log(output.Info, "executing command", map[string]any{"command": "about"})
 			}
-			cmd.AboutRun(tt.args.in0, tt.args.in1)
+			_ = cmd.AboutRun(tt.args.in0, tt.args.in1)
 			o.Report(t, "AboutRun()", tt.WantedRecording)
 		})
 	}
@@ -113,7 +114,7 @@ func TestAboutMakerInitializeAbout(t *testing.T) {
 
 func enableCommandRecording(o *output.Recorder, command *cobra.Command) {
 	command.SetErr(o.ErrorWriter())
-	command.SetOutput(o.ConsoleWriter())
+	command.SetOut(o.ConsoleWriter())
 }
 
 func TestAboutHelp(t *testing.T) {
@@ -143,7 +144,7 @@ func TestAboutHelp(t *testing.T) {
 			o := output.NewRecorder()
 			command := cmd.AboutCmd
 			enableCommandRecording(o, command)
-			command.Help()
+			_ = command.Help()
 			o.Report(t, "about Help()", tt.WantedRecording)
 		})
 	}
@@ -174,7 +175,7 @@ func TestAcquireAboutData(t *testing.T) {
 		cmd.IsCygwinTerminal = originalIsCygwinTerminal
 		cmd.LookupEnv = originalLookupEnv
 	}()
-	cmd.InterpretBuildData = func() (string, []string) {
+	cmd.InterpretBuildData = func(func() (*debug.BuildInfo, bool)) (string, []string) {
 		return "go1.22.x", []string{
 			"go.dependency.1 v1.2.3",
 			"go.dependency.2 v1.3.4",

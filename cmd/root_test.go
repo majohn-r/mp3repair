@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	cmd_toolkit "github.com/majohn-r/cmd-toolkit"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"golang.org/x/sys/windows"
 )
@@ -70,6 +70,8 @@ func TestRunMain(t *testing.T) {
 	originalIsTerminal := cmd.IsTerminal
 	originalIsCygwinTerminal := cmd.IsCygwinTerminal
 	originalLookupEnv := cmd.LookupEnv
+	originalCachedGoVersion := cmd.CachedGoVersion
+	originalCachedBuildDependencies := cmd.CachedBuildDependencies
 	defer func() {
 		cmd.Since = originalSince
 		os.Args = originalArgs
@@ -79,6 +81,8 @@ func TestRunMain(t *testing.T) {
 		cmd.IsTerminal = originalIsTerminal
 		cmd.IsCygwinTerminal = originalIsCygwinTerminal
 		cmd.LookupEnv = originalLookupEnv
+		cmd.CachedGoVersion = originalCachedGoVersion
+		cmd.CachedBuildDependencies = originalCachedBuildDependencies
 	}()
 	cmd.IsElevated = func(_ windows.Token) bool { return true }
 	cmd.IsTerminal = func(_ uintptr) bool { return true }
@@ -193,12 +197,8 @@ func TestRunMain(t *testing.T) {
 			os.Args = tt.cmdline
 			cmd.Version = tt.appVersion
 			cmd.Creation = tt.timestamp
-			cmd.GoVersion = func() string {
-				return tt.goVersion
-			}
-			cmd.BuildDependencies = func() []string {
-				return tt.dependencies
-			}
+			cmd.CachedGoVersion = tt.goVersion
+			cmd.CachedBuildDependencies = tt.dependencies
 			o := output.NewRecorder()
 			cmd.RunMain(o, tt.args.cmd, tt.args.start)
 			o.Report(t, "RunMain()", tt.WantedRecording)
@@ -240,7 +240,7 @@ func TestCookCommandLineArguments(t *testing.T) {
 			},
 			want: []string{"foo", "bar"},
 			WantedRecording: output.WantedRecording{
-				Error: "An error was found in processng argument \"%arg%\": dereference" +
+				Error: "An error was found in processing argument \"%arg%\": dereference" +
 					" service dead.\n",
 				Log: "level='error'" +
 					" argument='%arg%'" +
@@ -269,7 +269,6 @@ func Test_InitGlobals(t *testing.T) {
 	originalInitLogging := cmd.InitLogging
 	originalInitApplicationPath := cmd.InitApplicationPath
 	originalReadConfigurationFile := cmd.ReadConfigurationFile
-	originalInitBuildData := cmd.InitBuildData
 	originalSetFlagIndicator := cmd.SetFlagIndicator
 	originalVersion := cmd.Version
 	originalCreation := cmd.Creation
@@ -283,7 +282,6 @@ func Test_InitGlobals(t *testing.T) {
 		cmd.InitLogging = originalInitLogging
 		cmd.InitApplicationPath = originalInitApplicationPath
 		cmd.ReadConfigurationFile = originalReadConfigurationFile
-		cmd.InitBuildData = originalInitBuildData
 		cmd.SetFlagIndicator = originalSetFlagIndicator
 		cmd.Version = originalVersion
 		cmd.Creation = originalCreation
@@ -298,7 +296,7 @@ func Test_InitGlobals(t *testing.T) {
 	defaultCreation := ""
 	defaultVersion := ""
 	defaultFlagIndicator := ""
-	ExitFunctionCalled := defaultExitFunctionCalled
+	ExitFunctionCalled := false
 	exitCodeRecorded := defaultExitCode
 	appNameRecorded := defaultAppName
 	creationRecorded := defaultCreation
@@ -313,9 +311,8 @@ func Test_InitGlobals(t *testing.T) {
 		setAppName            func(string) error
 		initLogging           func(output.Bus) bool
 		initApplicationPath   func(output.Bus) bool
-		readConfigurationFile func(output.Bus) (*cmd_toolkit.Configuration, bool)
-		wantConfig            *cmd_toolkit.Configuration
-		initBuildData         func(string, string)
+		readConfigurationFile func(output.Bus) (*cmdtoolkit.Configuration, bool)
+		wantConfig            *cmdtoolkit.Configuration
 		wantCreation          string
 		wantVersion           string
 		setFlagIndicator      func(string)
@@ -327,7 +324,7 @@ func Test_InitGlobals(t *testing.T) {
 	}{
 		"already initialized": {
 			initialize:    true,
-			wantConfig:    cmd_toolkit.EmptyConfiguration(),
+			wantConfig:    cmdtoolkit.EmptyConfiguration(),
 			wantExitValue: defaultExitCode,
 		},
 		"app name set error": {
@@ -343,7 +340,7 @@ func Test_InitGlobals(t *testing.T) {
 				exitCodeRecorded = c
 				ExitFunctionCalled = true
 			},
-			wantConfig:         cmd_toolkit.EmptyConfiguration(),
+			wantConfig:         cmdtoolkit.EmptyConfiguration(),
 			wantExitFuncCalled: true,
 			wantExitValue:      1,
 		},
@@ -363,7 +360,7 @@ func Test_InitGlobals(t *testing.T) {
 				exitCodeRecorded = c
 				ExitFunctionCalled = true
 			},
-			wantConfig:         cmd_toolkit.EmptyConfiguration(),
+			wantConfig:         cmdtoolkit.EmptyConfiguration(),
 			wantExitFuncCalled: true,
 			wantExitValue:      1,
 		},
@@ -386,7 +383,7 @@ func Test_InitGlobals(t *testing.T) {
 				exitCodeRecorded = c
 				ExitFunctionCalled = true
 			},
-			wantConfig:         cmd_toolkit.EmptyConfiguration(),
+			wantConfig:         cmdtoolkit.EmptyConfiguration(),
 			wantExitFuncCalled: true,
 			wantExitValue:      1,
 		},
@@ -405,7 +402,7 @@ func Test_InitGlobals(t *testing.T) {
 			initApplicationPath: func(output.Bus) bool {
 				return true
 			},
-			readConfigurationFile: func(output.Bus) (*cmd_toolkit.Configuration, bool) {
+			readConfigurationFile: func(output.Bus) (*cmdtoolkit.Configuration, bool) {
 				return nil, false
 			},
 			exitFunc: func(c int) {
@@ -431,20 +428,16 @@ func Test_InitGlobals(t *testing.T) {
 			initApplicationPath: func(output.Bus) bool {
 				return true
 			},
-			readConfigurationFile: func(output.Bus) (*cmd_toolkit.Configuration, bool) {
-				return cmd_toolkit.EmptyConfiguration(), true
+			readConfigurationFile: func(output.Bus) (*cmdtoolkit.Configuration, bool) {
+				return cmdtoolkit.EmptyConfiguration(), true
 			},
-			creationVal:  "created today",
-			wantCreation: "",
-			versionVal:   "v0.1.1",
-			wantVersion:  "",
-			initBuildData: func(v string, c string) {
-				versionRecorded = v
-				creationRecorded = c
-			},
+			creationVal:        "created today",
+			wantCreation:       "",
+			versionVal:         "v0.1.1",
+			wantVersion:        "",
 			setFlagIndicator:   func(s string) { flagIndicatorRecorded = s },
 			wantFlagIndicator:  "",
-			wantConfig:         cmd_toolkit.EmptyConfiguration(),
+			wantConfig:         cmdtoolkit.EmptyConfiguration(),
 			wantExitFuncCalled: false,
 			wantExitValue:      defaultExitCode,
 		},
@@ -452,7 +445,7 @@ func Test_InitGlobals(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o = output.NewRecorder()
-			cmd.InternalConfig = cmd_toolkit.EmptyConfiguration()
+			cmd.InternalConfig = cmdtoolkit.EmptyConfiguration()
 			ExitFunctionCalled = defaultExitFunctionCalled
 			exitCodeRecorded = defaultExitCode
 			appNameRecorded = defaultAppName
@@ -466,7 +459,6 @@ func Test_InitGlobals(t *testing.T) {
 			cmd.InitLogging = tt.initLogging
 			cmd.InitApplicationPath = tt.initApplicationPath
 			cmd.ReadConfigurationFile = tt.readConfigurationFile
-			cmd.InitBuildData = tt.initBuildData
 			cmd.SetFlagIndicator = tt.setFlagIndicator
 			cmd.Creation = tt.creationVal
 			cmd.Version = tt.versionVal
@@ -539,7 +531,7 @@ func TestRootUsage(t *testing.T) {
 			o := output.NewRecorder()
 			command := cloneCommand(cmd.RootCmd)
 			enableCommandRecording(o, command)
-			command.Usage()
+			_ = command.Usage()
 			o.Report(t, "root Usage()", tt.WantedRecording)
 		})
 	}
