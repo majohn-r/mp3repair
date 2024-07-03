@@ -18,9 +18,10 @@ const (
 )
 
 var (
-	// Version is the application's semantic version
-	Version = "unknown version!"
+	// Version is the application's semantic version and  value is injected by the build
+	Version string
 	// Creation is the application's build timestamp in RFC3339 format (2006-01-02T15:04:05Z07:00)
+	// and its value is injected by the build
 	Creation string
 	// AboutCmd represents the about command
 	AboutCmd = &cobra.Command{
@@ -82,16 +83,6 @@ func AcquireAboutData(o output.Bus) []string {
 		}
 	}
 	return lines
-}
-
-type AboutMaker struct {
-	SoftwareVersion string
-	CreationDate    string
-}
-
-func (maker AboutMaker) InitializeAbout() {
-	Version = maker.SoftwareVersion
-	Creation = maker.CreationDate
 }
 
 func init() {

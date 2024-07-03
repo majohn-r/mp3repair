@@ -94,24 +94,6 @@ func TestAboutRun(t *testing.T) {
 	}
 }
 
-func TestAboutMakerInitializeAbout(t *testing.T) {
-	tests := map[string]struct {
-		maker cmd.AboutMaker
-	}{
-		"good": {
-			maker: cmd.AboutMaker{
-				SoftwareVersion: "0.1.1",
-				CreationDate:    "2006-01-02T15:04:05Z07:00",
-			},
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			tt.maker.InitializeAbout()
-		})
-	}
-}
-
 func enableCommandRecording(o *output.Recorder, command *cobra.Command) {
 	command.SetErr(o.ErrorWriter())
 	command.SetOut(o.ConsoleWriter())

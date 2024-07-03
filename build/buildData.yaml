@@ -1,11 +1,5 @@
 ---
-  - function: application
-    value: mp3repair.exe
-    name: mp3repair
-    description: mp3 repair utility
   - function: timestamp
-    flag: main.creation
-  - function: firstYear
-    value: "2021"
-  - flag: main.version
+    flag: mp3repair/cmd.Creation
+  - flag: mp3repair/cmd.Version
     value: 0.37.1
