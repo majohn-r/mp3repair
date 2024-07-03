@@ -80,11 +80,8 @@ func InitGlobals() {
 	defer initLock.Unlock()
 	if !Initialized {
 		Bus = NewDefaultBus(cmdtoolkit.ProductionLogger)
-		if _, appNameInitErr := cmdtoolkit.AppName(); appNameInitErr != nil {
-			_ = SetAppName(appName)
-		}
 		configOk := false
-		if InitLogging(Bus) && InitApplicationPath(Bus) {
+		if InitLogging(Bus, appName) && InitApplicationPath(Bus, appName) {
 			InternalConfig, configOk = ReadConfigurationFile(Bus)
 		}
 		if !configOk {

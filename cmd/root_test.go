@@ -265,7 +265,6 @@ func TestCookCommandLineArguments(t *testing.T) {
 func Test_InitGlobals(t *testing.T) {
 	originalExit := cmd.Exit
 	originalNewDefaultBus := cmd.NewDefaultBus
-	originalSetAppName := cmd.SetAppName
 	originalInitLogging := cmd.InitLogging
 	originalInitApplicationPath := cmd.InitApplicationPath
 	originalReadConfigurationFile := cmd.ReadConfigurationFile
@@ -278,7 +277,6 @@ func Test_InitGlobals(t *testing.T) {
 	defer func() {
 		cmd.Exit = originalExit
 		cmd.NewDefaultBus = originalNewDefaultBus
-		cmd.SetAppName = originalSetAppName
 		cmd.InitLogging = originalInitLogging
 		cmd.InitApplicationPath = originalInitApplicationPath
 		cmd.ReadConfigurationFile = originalReadConfigurationFile
@@ -292,13 +290,11 @@ func Test_InitGlobals(t *testing.T) {
 	o := output.NewRecorder()
 	defaultExitFunctionCalled := false
 	defaultExitCode := -1
-	defaultAppName := ""
 	defaultCreation := ""
 	defaultVersion := ""
 	defaultFlagIndicator := ""
 	ExitFunctionCalled := false
 	exitCodeRecorded := defaultExitCode
-	appNameRecorded := defaultAppName
 	creationRecorded := defaultCreation
 	versionRecorded := defaultVersion
 	flagIndicatorRecorded := defaultFlagIndicator
@@ -308,9 +304,8 @@ func Test_InitGlobals(t *testing.T) {
 		wantExitFuncCalled    bool
 		wantExitValue         int
 		newDefaultBus         func(output.Logger) output.Bus
-		setAppName            func(string) error
-		initLogging           func(output.Bus) bool
-		initApplicationPath   func(output.Bus) bool
+		initLogging           func(output.Bus, string) bool
+		initApplicationPath   func(output.Bus, string) bool
 		readConfigurationFile func(output.Bus) (*cmdtoolkit.Configuration, bool)
 		wantConfig            *cmdtoolkit.Configuration
 		wantCreation          string
@@ -319,7 +314,6 @@ func Test_InitGlobals(t *testing.T) {
 		wantFlagIndicator     string
 		versionVal            string
 		creationVal           string
-		wantAppName           string
 		output.WantedRecording
 	}{
 		"already initialized": {
@@ -327,33 +321,12 @@ func Test_InitGlobals(t *testing.T) {
 			wantConfig:    cmdtoolkit.EmptyConfiguration(),
 			wantExitValue: defaultExitCode,
 		},
-		"app name set error": {
-			initialize: false,
-			newDefaultBus: func(output.Logger) output.Bus {
-				return o
-			},
-			setAppName: func(string) error {
-				return fmt.Errorf("app name could not be set")
-			},
-			initLogging: func(_ output.Bus) bool { return false },
-			exitFunc: func(c int) {
-				exitCodeRecorded = c
-				ExitFunctionCalled = true
-			},
-			wantConfig:         cmdtoolkit.EmptyConfiguration(),
-			wantExitFuncCalled: true,
-			wantExitValue:      1,
-		},
 		"log initialization failure": {
 			initialize: false,
 			newDefaultBus: func(output.Logger) output.Bus {
 				return o
 			},
-			setAppName: func(s string) error {
-				appNameRecorded = s
-				return nil
-			},
-			initLogging: func(output.Bus) bool {
+			initLogging: func(output.Bus, string) bool {
 				return false
 			},
 			exitFunc: func(c int) {
@@ -369,14 +342,10 @@ func Test_InitGlobals(t *testing.T) {
 			newDefaultBus: func(output.Logger) output.Bus {
 				return o
 			},
-			setAppName: func(s string) error {
-				appNameRecorded = s
-				return nil
-			},
-			initLogging: func(output.Bus) bool {
+			initLogging: func(output.Bus, string) bool {
 				return true
 			},
-			initApplicationPath: func(output.Bus) bool {
+			initApplicationPath: func(output.Bus, string) bool {
 				return false
 			},
 			exitFunc: func(c int) {
@@ -392,14 +361,10 @@ func Test_InitGlobals(t *testing.T) {
 			newDefaultBus: func(output.Logger) output.Bus {
 				return o
 			},
-			setAppName: func(s string) error {
-				appNameRecorded = s
-				return nil
-			},
-			initLogging: func(output.Bus) bool {
+			initLogging: func(output.Bus, string) bool {
 				return true
 			},
-			initApplicationPath: func(output.Bus) bool {
+			initApplicationPath: func(output.Bus, string) bool {
 				return true
 			},
 			readConfigurationFile: func(output.Bus) (*cmdtoolkit.Configuration, bool) {
@@ -418,14 +383,10 @@ func Test_InitGlobals(t *testing.T) {
 			newDefaultBus: func(output.Logger) output.Bus {
 				return o
 			},
-			setAppName: func(s string) error {
-				appNameRecorded = s
-				return nil
-			},
-			initLogging: func(output.Bus) bool {
+			initLogging: func(output.Bus, string) bool {
 				return true
 			},
-			initApplicationPath: func(output.Bus) bool {
+			initApplicationPath: func(output.Bus, string) bool {
 				return true
 			},
 			readConfigurationFile: func(output.Bus) (*cmdtoolkit.Configuration, bool) {
@@ -448,14 +409,12 @@ func Test_InitGlobals(t *testing.T) {
 			cmd.InternalConfig = cmdtoolkit.EmptyConfiguration()
 			ExitFunctionCalled = defaultExitFunctionCalled
 			exitCodeRecorded = defaultExitCode
-			appNameRecorded = defaultAppName
 			creationRecorded = defaultCreation
 			versionRecorded = defaultVersion
 			flagIndicatorRecorded = defaultFlagIndicator
 			cmd.Initialized = tt.initialize
 			cmd.Exit = tt.exitFunc
 			cmd.NewDefaultBus = tt.newDefaultBus
-			cmd.SetAppName = tt.setAppName
 			cmd.InitLogging = tt.initLogging
 			cmd.InitApplicationPath = tt.initApplicationPath
 			cmd.ReadConfigurationFile = tt.readConfigurationFile
@@ -463,9 +422,6 @@ func Test_InitGlobals(t *testing.T) {
 			cmd.Creation = tt.creationVal
 			cmd.Version = tt.versionVal
 			cmd.InitGlobals()
-			if got := appNameRecorded; got != tt.wantAppName {
-				t.Errorf("InitGlobals appNameRecorded got %s want %s", got, tt.wantAppName)
-			}
 			if got := cmd.InternalConfig; !reflect.DeepEqual(got, tt.wantConfig) {
 				t.Errorf("InitGlobals: _c got %v want %v", got, tt.wantConfig)
 			}
