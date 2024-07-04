@@ -18,7 +18,7 @@ const (
 )
 
 var (
-	// Version is the application's semantic version and  value is injected by the build
+	// Version is the application's semantic version and its value is injected by the build
 	Version string
 	// Creation is the application's build timestamp in RFC3339 format (2006-01-02T15:04:05Z07:00)
 	// and its value is injected by the build
