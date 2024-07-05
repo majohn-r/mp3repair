@@ -66,28 +66,28 @@ func TestRunMain(t *testing.T) {
 	originalSince := cmd.Since
 	originalVersion := cmd.Version
 	originalCreation := cmd.Creation
-	originalIsElevatedFunc := cmd.IsElevated
-	originalIsTerminal := cmd.IsTerminal
-	originalIsCygwinTerminal := cmd.IsCygwinTerminal
-	originalLookupEnv := cmd.LookupEnv
+	originalIsElevatedFunc := cmdtoolkit.IsElevated
+	originalIsTerminal := cmdtoolkit.IsTerminal
+	originalIsCygwinTerminal := cmdtoolkit.IsCygwinTerminal
 	originalCachedGoVersion := cmd.CachedGoVersion
 	originalCachedBuildDependencies := cmd.CachedBuildDependencies
+	envVarMemento := cmdtoolkit.NewEnvVarMemento(cmd.ElevatedPrivilegesPermissionVar)
 	defer func() {
 		cmd.Since = originalSince
 		os.Args = originalArgs
 		cmd.Version = originalVersion
 		cmd.Creation = originalCreation
-		cmd.IsElevated = originalIsElevatedFunc
-		cmd.IsTerminal = originalIsTerminal
-		cmd.IsCygwinTerminal = originalIsCygwinTerminal
-		cmd.LookupEnv = originalLookupEnv
+		cmdtoolkit.IsElevated = originalIsElevatedFunc
+		cmdtoolkit.IsTerminal = originalIsTerminal
+		cmdtoolkit.IsCygwinTerminal = originalIsCygwinTerminal
 		cmd.CachedGoVersion = originalCachedGoVersion
 		cmd.CachedBuildDependencies = originalCachedBuildDependencies
+		envVarMemento.Restore()
 	}()
-	cmd.IsElevated = func(_ windows.Token) bool { return true }
-	cmd.IsTerminal = func(_ uintptr) bool { return true }
-	cmd.IsCygwinTerminal = func(_ uintptr) bool { return true }
-	cmd.LookupEnv = func(_ string) (string, bool) { return "", false }
+	cmdtoolkit.IsElevated = func(_ windows.Token) bool { return true }
+	cmdtoolkit.IsTerminal = func(_ uintptr) bool { return true }
+	cmdtoolkit.IsCygwinTerminal = func(_ uintptr) bool { return true }
+	_ = os.Unsetenv(cmd.ElevatedPrivilegesPermissionVar)
 	type args struct {
 		cmd   cmd.CommandExecutor
 		start time.Time
@@ -119,6 +119,7 @@ func TestRunMain(t *testing.T) {
 					"level='info'" +
 					" admin_permission='true'" +
 					" elevated='true'" +
+					" environment_variable='MP3REPAIR_RUNS_AS_ADMIN'" +
 					" stderr_redirected='false'" +
 					" stdin_redirected='false'" +
 					" stdout_redirected='false'" +
@@ -149,6 +150,7 @@ func TestRunMain(t *testing.T) {
 					"level='info'" +
 					" admin_permission='true'" +
 					" elevated='true'" +
+					" environment_variable='MP3REPAIR_RUNS_AS_ADMIN'" +
 					" stderr_redirected='false'" +
 					" stdin_redirected='false'" +
 					" stdout_redirected='false'" +
@@ -179,6 +181,7 @@ func TestRunMain(t *testing.T) {
 					"level='info'" +
 					" admin_permission='true'" +
 					" elevated='true'" +
+					" environment_variable='MP3REPAIR_RUNS_AS_ADMIN'" +
 					" stderr_redirected='false'" +
 					" stdin_redirected='false'" +
 					" stdout_redirected='false'" +

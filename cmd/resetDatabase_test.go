@@ -542,12 +542,12 @@ func TestResetDBSettings_DisableService(t *testing.T) {
 
 func TestResetDBSettings_StopService(t *testing.T) {
 	originalConnect := cmd.Connect
-	originalIsElevated := cmd.IsElevated
+	originalIsElevated := cmdtoolkit.IsElevated
 	defer func() {
 		cmd.Connect = originalConnect
-		cmd.IsElevated = originalIsElevated
+		cmdtoolkit.IsElevated = originalIsElevated
 	}()
-	cmd.IsElevated = func(_ windows.Token) bool { return false }
+	cmdtoolkit.IsElevated = func(_ windows.Token) bool { return false }
 	tests := map[string]struct {
 		connect         func() (*mgr.Mgr, error)
 		resetDBSettings *cmd.ResetDBSettings
@@ -831,14 +831,14 @@ func TestResetDBSettings_ResetService(t *testing.T) {
 	originalDirty := cmd.Dirty
 	originalClearDirty := cmd.ClearDirty
 	originalConnect := cmd.Connect
-	originalIsElevated := cmd.IsElevated
+	originalIsElevated := cmdtoolkit.IsElevated
 	defer func() {
 		cmd.Dirty = originalDirty
 		cmd.ClearDirty = originalClearDirty
 		cmd.Connect = originalConnect
-		cmd.IsElevated = originalIsElevated
+		cmdtoolkit.IsElevated = originalIsElevated
 	}()
-	cmd.IsElevated = func(_ windows.Token) bool { return false }
+	cmdtoolkit.IsElevated = func(_ windows.Token) bool { return false }
 	cmd.ClearDirty = func(_ output.Bus) {}
 	cmd.Connect = func() (*mgr.Mgr, error) { return nil, fmt.Errorf("access denied") }
 	tests := map[string]struct {
@@ -1263,9 +1263,9 @@ func TestMaybeClearDirty(t *testing.T) {
 }
 
 func TestOutputSystemErrorCause(t *testing.T) {
-	originalIsElevated := cmd.IsElevated
+	originalIsElevated := cmdtoolkit.IsElevated
 	defer func() {
-		cmd.IsElevated = originalIsElevated
+		cmdtoolkit.IsElevated = originalIsElevated
 	}()
 	tests := map[string]struct {
 		isElevated func(windows.Token) bool
@@ -1287,7 +1287,7 @@ func TestOutputSystemErrorCause(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			cmd.IsElevated = tt.isElevated
+			cmdtoolkit.IsElevated = tt.isElevated
 			o := output.NewRecorder()
 			cmd.OutputSystemErrorCause(o)
 			o.Report(t, "OutputSystemErrorCause()", tt.WantedRecording)

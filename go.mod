@@ -5,9 +5,8 @@ go 1.22
 require (
 	github.com/bogem/id3v2/v2 v2.1.4
 	github.com/cheggaaa/pb/v3 v3.1.5
-	github.com/majohn-r/cmd-toolkit v0.15.0
+	github.com/majohn-r/cmd-toolkit v0.16.1
 	github.com/majohn-r/output v0.5.3
-	github.com/mattn/go-isatty v0.0.20
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/sys v0.22.0
@@ -21,6 +20,7 @@ require (
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/lestrrat-go/strftime v1.0.6 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect

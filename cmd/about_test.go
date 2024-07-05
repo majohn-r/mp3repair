@@ -4,7 +4,9 @@ Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
 package cmd_test
 
 import (
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"mp3repair/cmd"
+	"os"
 	"reflect"
 	"runtime/debug"
 	"testing"
@@ -23,7 +25,7 @@ func TestAboutRun(t *testing.T) {
 	originalCreation := cmd.Creation
 	originalApplicationPath := cmd.ApplicationPath
 	originalPlainFileExists := cmd.PlainFileExists
-	originalIsElevatedFunc := cmd.IsElevated
+	originalIsElevatedFunc := cmdtoolkit.IsElevated
 	defer func() {
 		cmd.BusGetter = originalBusGetter
 		cmd.LogCommandStart = originalLogCommandStart
@@ -33,7 +35,7 @@ func TestAboutRun(t *testing.T) {
 		cmd.Creation = originalCreation
 		cmd.ApplicationPath = originalApplicationPath
 		cmd.PlainFileExists = originalPlainFileExists
-		cmd.IsElevated = originalIsElevatedFunc
+		cmdtoolkit.IsElevated = originalIsElevatedFunc
 	}()
 	cmd.InterpretBuildData = func(func() (*debug.BuildInfo, bool)) (string, []string) {
 		return "go1.22.x", []string{
@@ -51,7 +53,7 @@ func TestAboutRun(t *testing.T) {
 		return "/my/files/apppath"
 	}
 	cmd.PlainFileExists = func(_ string) bool { return true }
-	cmd.IsElevated = func(_ windows.Token) bool {
+	cmdtoolkit.IsElevated = func(_ windows.Token) bool {
 		return true
 	}
 	type args struct {
@@ -139,11 +141,11 @@ func TestAcquireAboutData(t *testing.T) {
 	originalCreation := cmd.Creation
 	originalApplicationPath := cmd.ApplicationPath
 	originalPlainFileExists := cmd.PlainFileExists
-	originalGetCurrentProcessToken := cmd.GetCurrentProcessToken
-	originalIsElevatedFunc := cmd.IsElevated
-	originalIsTerminal := cmd.IsTerminal
-	originalIsCygwinTerminal := cmd.IsCygwinTerminal
-	originalLookupEnv := cmd.LookupEnv
+	originalGetCurrentProcessToken := cmdtoolkit.GetCurrentProcessToken
+	originalIsElevatedFunc := cmdtoolkit.IsElevated
+	originalIsTerminal := cmdtoolkit.IsTerminal
+	originalIsCygwinTerminal := cmdtoolkit.IsCygwinTerminal
+	envVarMemento := cmdtoolkit.NewEnvVarMemento(cmd.ElevatedPrivilegesPermissionVar)
 	defer func() {
 		cmd.InterpretBuildData = originalInterpretBuildData
 		cmd.LogPath = originalLogPath
@@ -151,11 +153,11 @@ func TestAcquireAboutData(t *testing.T) {
 		cmd.Creation = originalCreation
 		cmd.ApplicationPath = originalApplicationPath
 		cmd.PlainFileExists = originalPlainFileExists
-		cmd.GetCurrentProcessToken = originalGetCurrentProcessToken
-		cmd.IsElevated = originalIsElevatedFunc
-		cmd.IsTerminal = originalIsTerminal
-		cmd.IsCygwinTerminal = originalIsCygwinTerminal
-		cmd.LookupEnv = originalLookupEnv
+		cmdtoolkit.GetCurrentProcessToken = originalGetCurrentProcessToken
+		cmdtoolkit.IsElevated = originalIsElevatedFunc
+		cmdtoolkit.IsTerminal = originalIsTerminal
+		cmdtoolkit.IsCygwinTerminal = originalIsCygwinTerminal
+		envVarMemento.Restore()
 	}()
 	cmd.InterpretBuildData = func(func() (*debug.BuildInfo, bool)) (string, []string) {
 		return "go1.22.x", []string{
@@ -172,21 +174,21 @@ func TestAcquireAboutData(t *testing.T) {
 	cmd.ApplicationPath = func() string {
 		return "/my/files/apppath"
 	}
-	cmd.GetCurrentProcessToken = func() (t windows.Token) {
+	cmdtoolkit.GetCurrentProcessToken = func() (t windows.Token) {
 		return
 	}
 	tests := map[string]struct {
 		plainFileExists      func(string) bool
 		forceElevated        bool
 		forceRedirection     bool
-		forceAdminPermission bool
+		forceAdminPermission string
 		want                 []string
 	}{
 		"with existing config file, elevated": {
 			plainFileExists:      func(_ string) bool { return true },
 			forceElevated:        true,
 			forceRedirection:     false,
-			forceAdminPermission: false,
+			forceAdminPermission: "false",
 			want: []string{
 				"mp3repair version 0.40.0, built on Saturday, February 24 2024, 13:14:05 -0500",
 				"Copyright © 2021-2024 Marc Johnson",
@@ -204,7 +206,7 @@ func TestAcquireAboutData(t *testing.T) {
 			plainFileExists:      func(_ string) bool { return false },
 			forceElevated:        false,
 			forceRedirection:     true,
-			forceAdminPermission: true,
+			forceAdminPermission: "true",
 			want: []string{
 				"mp3repair version 0.40.0, built on Saturday, February 24 2024, 13:14:05 -0500",
 				"Copyright © 2021-2024 Marc Johnson",
@@ -223,7 +225,7 @@ func TestAcquireAboutData(t *testing.T) {
 			plainFileExists:      func(_ string) bool { return false },
 			forceElevated:        false,
 			forceRedirection:     true,
-			forceAdminPermission: false,
+			forceAdminPermission: "false",
 			want: []string{
 				"mp3repair version 0.40.0, built on Saturday, February 24 2024, 13:14:05 -0500",
 				"Copyright © 2021-2024 Marc Johnson",
@@ -243,7 +245,7 @@ func TestAcquireAboutData(t *testing.T) {
 			plainFileExists:      func(_ string) bool { return false },
 			forceElevated:        false,
 			forceRedirection:     false,
-			forceAdminPermission: false,
+			forceAdminPermission: "false",
 			want: []string{
 				"mp3repair version 0.40.0, built on Saturday, February 24 2024, 13:14:05 -0500",
 				"Copyright © 2021-2024 Marc Johnson",
@@ -262,24 +264,14 @@ func TestAcquireAboutData(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			cmd.PlainFileExists = tt.plainFileExists
-			cmd.IsElevated = func(_ windows.Token) bool {
+			cmdtoolkit.IsElevated = func(_ windows.Token) bool {
 				return tt.forceElevated
 			}
-			cmd.IsTerminal = func(_ uintptr) bool {
+			cmdtoolkit.IsTerminal = func(_ uintptr) bool {
 				return !tt.forceRedirection
 			}
-			cmd.IsCygwinTerminal = func(_ uintptr) bool {
-				return !tt.forceRedirection
-			}
-			if tt.forceAdminPermission {
-				cmd.LookupEnv = func(_ string) (string, bool) {
-					return "true", true
-				}
-			} else {
-				cmd.LookupEnv = func(_ string) (string, bool) {
-					return "false", true
-				}
-			}
+			cmdtoolkit.IsCygwinTerminal = cmdtoolkit.IsTerminal
+			_ = os.Setenv(cmd.ElevatedPrivilegesPermissionVar, tt.forceAdminPermission)
 			if got := cmd.AcquireAboutData(output.NewNilBus()); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("AcquireAboutData() got %v, want %v", got, tt.want)
 			}

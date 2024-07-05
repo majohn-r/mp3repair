@@ -5,15 +5,19 @@ Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
 package main
 
 import (
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"mp3repair/cmd"
 )
 
 var executor = cmd.Execute
 
 func main() {
-	elevationControl := cmd.NewElevationControl()
+	elevationControl := cmdtoolkit.NewElevationControlWithEnvVar(
+		cmd.ElevatedPrivilegesPermissionVar,
+		cmd.DefaultElevatedPrivilegesPermission,
+	)
 	if !elevationControl.WillRunElevated() {
-		elevationControl.ConfigureExit()
+		cmd.Exit = elevationControl.ConfigureExit(cmd.Exit)
 		executor()
 	}
 }

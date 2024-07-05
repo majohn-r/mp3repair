@@ -75,7 +75,10 @@ func AcquireAboutData(o output.Bus) []string {
 	default:
 		lines = append(lines, fmt.Sprintf("Configuration file %s does not yet exist", path))
 	}
-	elevationData := NewElevationControl().Status(appName)
+	elevationData := cmdtoolkit.NewElevationControlWithEnvVar(
+		ElevatedPrivilegesPermissionVar,
+		DefaultElevatedPrivilegesPermission,
+	).Status(appName)
 	lines = append(lines, elevationData[0])
 	if len(elevationData) > 1 {
 		for _, s := range elevationData[1:] {

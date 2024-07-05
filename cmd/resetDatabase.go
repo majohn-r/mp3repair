@@ -212,7 +212,7 @@ func (rDBSettings *ResetDBSettings) StopService(o output.Bus) (bool, *ExitError)
 }
 
 func OutputSystemErrorCause(o output.Bus) {
-	if !processIsElevated() {
+	if !cmdtoolkit.ProcessIsElevated() {
 		o.WriteCanonicalError("Why?\nThis failure is likely to be due to lack of permissions")
 		o.WriteCanonicalError("What to do:\n" +
 			"If you can, try running this command as an administrator.")

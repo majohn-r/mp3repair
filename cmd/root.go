@@ -12,6 +12,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const (
+	// ElevatedPrivilegesPermissionVar is the name of an environment variable a user can set to
+	// govern whether mp3repair should run with elevated privileges
+	ElevatedPrivilegesPermissionVar = "MP3REPAIR_RUNS_AS_ADMIN"
+	// DefaultElevatedPrivilegesPermission is the setting to use if ElevatedPrivilegesPermissionVar
+	// is not set or is set to a non-boolean value
+	DefaultElevatedPrivilegesPermission = true
+)
+
 var (
 	// RootCmd represents the base command when called without any subcommands
 	RootCmd = &cobra.Command{
@@ -142,7 +151,10 @@ func RunMain(o output.Bus, cmd CommandExecutor, start time.Time) int {
 		"dependencies": CachedBuildDependencies,
 		"args":         cookedArgs,
 	})
-	NewElevationControl().Log(o, output.Info)
+	cmdtoolkit.NewElevationControlWithEnvVar(
+		ElevatedPrivilegesPermissionVar,
+		DefaultElevatedPrivilegesPermission,
+	).Log(o, output.Info)
 	cmd.SetArgs(cookedArgs)
 	err := cmd.Execute()
 	exitCode := ObtainExitCode(err)
