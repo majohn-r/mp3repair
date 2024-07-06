@@ -39,8 +39,12 @@ var (
 * The full path of the application configuration file and whether it exists`,
 		RunE: AboutRun,
 	}
-	CachedGoVersion         string
-	CachedBuildDependencies []string
+	CachedGoVersion           string
+	CachedBuildDependencies   []string
+	MP3RepairElevationControl = cmdtoolkit.NewElevationControlWithEnvVar(
+		ElevatedPrivilegesPermissionVar,
+		DefaultElevatedPrivilegesPermission,
+	)
 )
 
 func AboutRun(_ *cobra.Command, _ []string) error {
@@ -75,10 +79,7 @@ func AcquireAboutData(o output.Bus) []string {
 	default:
 		lines = append(lines, fmt.Sprintf("Configuration file %s does not yet exist", path))
 	}
-	elevationData := cmdtoolkit.NewElevationControlWithEnvVar(
-		ElevatedPrivilegesPermissionVar,
-		DefaultElevatedPrivilegesPermission,
-	).Status(appName)
+	elevationData := MP3RepairElevationControl.Status(appName)
 	lines = append(lines, elevationData[0])
 	if len(elevationData) > 1 {
 		for _, s := range elevationData[1:] {

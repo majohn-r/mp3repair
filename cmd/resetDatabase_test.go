@@ -16,7 +16,6 @@ import (
 	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"
-	"golang.org/x/sys/windows"
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/mgr"
 )
@@ -542,12 +541,12 @@ func TestResetDBSettings_DisableService(t *testing.T) {
 
 func TestResetDBSettings_StopService(t *testing.T) {
 	originalConnect := cmd.Connect
-	originalIsElevated := cmdtoolkit.IsElevated
+	originalProcessIsElevated := cmd.ProcessIsElevated
 	defer func() {
 		cmd.Connect = originalConnect
-		cmdtoolkit.IsElevated = originalIsElevated
+		cmd.ProcessIsElevated = originalProcessIsElevated
 	}()
-	cmdtoolkit.IsElevated = func(_ windows.Token) bool { return false }
+	cmd.ProcessIsElevated = func() bool { return false }
 	tests := map[string]struct {
 		connect         func() (*mgr.Mgr, error)
 		resetDBSettings *cmd.ResetDBSettings
@@ -831,14 +830,14 @@ func TestResetDBSettings_ResetService(t *testing.T) {
 	originalDirty := cmd.Dirty
 	originalClearDirty := cmd.ClearDirty
 	originalConnect := cmd.Connect
-	originalIsElevated := cmdtoolkit.IsElevated
+	originalProcessIsElevated := cmd.ProcessIsElevated
 	defer func() {
 		cmd.Dirty = originalDirty
 		cmd.ClearDirty = originalClearDirty
 		cmd.Connect = originalConnect
-		cmdtoolkit.IsElevated = originalIsElevated
+		cmd.ProcessIsElevated = originalProcessIsElevated
 	}()
-	cmdtoolkit.IsElevated = func(_ windows.Token) bool { return false }
+	cmd.ProcessIsElevated = func() bool { return false }
 	cmd.ClearDirty = func(_ output.Bus) {}
 	cmd.Connect = func() (*mgr.Mgr, error) { return nil, fmt.Errorf("access denied") }
 	tests := map[string]struct {
@@ -1263,19 +1262,19 @@ func TestMaybeClearDirty(t *testing.T) {
 }
 
 func TestOutputSystemErrorCause(t *testing.T) {
-	originalIsElevated := cmdtoolkit.IsElevated
+	originalProcessIsElevated := cmd.ProcessIsElevated
 	defer func() {
-		cmdtoolkit.IsElevated = originalIsElevated
+		cmd.ProcessIsElevated = originalProcessIsElevated
 	}()
 	tests := map[string]struct {
-		isElevated func(windows.Token) bool
+		isElevated func() bool
 		output.WantedRecording
 	}{
 		"elevated": {
-			isElevated: func(_ windows.Token) bool { return true },
+			isElevated: func() bool { return true },
 		},
 		"ordinary": {
-			isElevated: func(_ windows.Token) bool { return false },
+			isElevated: func() bool { return false },
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"Why?\n" +
@@ -1287,7 +1286,7 @@ func TestOutputSystemErrorCause(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			cmdtoolkit.IsElevated = tt.isElevated
+			cmd.ProcessIsElevated = tt.isElevated
 			o := output.NewRecorder()
 			cmd.OutputSystemErrorCause(o)
 			o.Report(t, "OutputSystemErrorCause()", tt.WantedRecording)

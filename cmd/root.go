@@ -151,10 +151,7 @@ func RunMain(o output.Bus, cmd CommandExecutor, start time.Time) int {
 		"dependencies": CachedBuildDependencies,
 		"args":         cookedArgs,
 	})
-	cmdtoolkit.NewElevationControlWithEnvVar(
-		ElevatedPrivilegesPermissionVar,
-		DefaultElevatedPrivilegesPermission,
-	).Log(o, output.Info)
+	MP3RepairElevationControl.Log(o, output.Info)
 	cmd.SetArgs(cookedArgs)
 	err := cmd.Execute()
 	exitCode := ObtainExitCode(err)

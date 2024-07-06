@@ -13,7 +13,6 @@ import (
 
 	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
-	"golang.org/x/sys/windows"
 )
 
 func TestExecute(t *testing.T) {
@@ -66,28 +65,28 @@ func TestRunMain(t *testing.T) {
 	originalSince := cmd.Since
 	originalVersion := cmd.Version
 	originalCreation := cmd.Creation
-	originalIsElevatedFunc := cmdtoolkit.IsElevated
-	originalIsTerminal := cmdtoolkit.IsTerminal
-	originalIsCygwinTerminal := cmdtoolkit.IsCygwinTerminal
 	originalCachedGoVersion := cmd.CachedGoVersion
 	originalCachedBuildDependencies := cmd.CachedBuildDependencies
-	envVarMemento := cmdtoolkit.NewEnvVarMemento(cmd.ElevatedPrivilegesPermissionVar)
+	originalMP3repairElevationControl := cmd.MP3RepairElevationControl
 	defer func() {
 		cmd.Since = originalSince
 		os.Args = originalArgs
 		cmd.Version = originalVersion
 		cmd.Creation = originalCreation
-		cmdtoolkit.IsElevated = originalIsElevatedFunc
-		cmdtoolkit.IsTerminal = originalIsTerminal
-		cmdtoolkit.IsCygwinTerminal = originalIsCygwinTerminal
 		cmd.CachedGoVersion = originalCachedGoVersion
 		cmd.CachedBuildDependencies = originalCachedBuildDependencies
-		envVarMemento.Restore()
+		cmd.MP3RepairElevationControl = originalMP3repairElevationControl
 	}()
-	cmdtoolkit.IsElevated = func(_ windows.Token) bool { return true }
-	cmdtoolkit.IsTerminal = func(_ uintptr) bool { return true }
-	cmdtoolkit.IsCygwinTerminal = func(_ uintptr) bool { return true }
-	_ = os.Unsetenv(cmd.ElevatedPrivilegesPermissionVar)
+	cmd.MP3RepairElevationControl = testingElevationControl{
+		logFields: map[string]any{
+			"elevated":             true,
+			"admin_permission":     true,
+			"stderr_redirected":    false,
+			"stdin_redirected":     false,
+			"stdout_redirected":    false,
+			"environment_variable": cmd.ElevatedPrivilegesPermissionVar,
+		},
+	}
 	type args struct {
 		cmd   cmd.CommandExecutor
 		start time.Time

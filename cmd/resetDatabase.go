@@ -103,7 +103,8 @@ changes, unless the ` + resetDBForceFlag + ` flag is set.`,
 			},
 		},
 	}
-	stateToStatus = map[svc.State]string{
+	ProcessIsElevated = cmdtoolkit.ProcessIsElevated
+	stateToStatus     = map[svc.State]string{
 		svc.Stopped:         "stopped",
 		svc.StartPending:    "start pending",
 		svc.StopPending:     "stop pending",
@@ -212,7 +213,7 @@ func (rDBSettings *ResetDBSettings) StopService(o output.Bus) (bool, *ExitError)
 }
 
 func OutputSystemErrorCause(o output.Bus) {
-	if !cmdtoolkit.ProcessIsElevated() {
+	if !ProcessIsElevated() {
 		o.WriteCanonicalError("Why?\nThis failure is likely to be due to lack of permissions")
 		o.WriteCanonicalError("What to do:\n" +
 			"If you can, try running this command as an administrator.")
