@@ -1,6 +1,3 @@
-/*
-Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
-*/
 package cmd_test
 
 import (
@@ -32,7 +29,6 @@ func (tec testingElevationControl) WillRunElevated() bool { return false }
 
 func TestAboutRun(t *testing.T) {
 	originalBusGetter := cmd.BusGetter
-	originalLogCommandStart := cmd.LogCommandStart
 	originalInterpretBuildData := cmd.InterpretBuildData
 	originalLogPath := cmd.LogPath
 	originalVersion := cmd.Version
@@ -42,7 +38,6 @@ func TestAboutRun(t *testing.T) {
 	originalMP3RepairElevationControl := cmd.MP3RepairElevationControl
 	defer func() {
 		cmd.BusGetter = originalBusGetter
-		cmd.LogCommandStart = originalLogCommandStart
 		cmd.InterpretBuildData = originalInterpretBuildData
 		cmd.LogPath = originalLogPath
 		cmd.Version = originalVersion
@@ -76,21 +71,22 @@ func TestAboutRun(t *testing.T) {
 		output.WantedRecording
 	}{
 		"simple": {
+			args: args{in0: cmd.AboutCmd},
 			WantedRecording: output.WantedRecording{
 				Console: "" +
-					"+-------------------------------------------------------------------------------+\n" +
-					"| mp3repair version 0.40.0, built on Saturday, February 24 2024, 13:14:05 -0500 |\n" +
-					"| Copyright © 2021-2024 Marc Johnson                                            |\n" +
-					"| Build Information                                                             |\n" +
-					"|  - Go version: go1.22.x                                                       |\n" +
-					"|  - Dependency: go.dependency.1 v1.2.3                                         |\n" +
-					"|  - Dependency: go.dependency.2 v1.3.4                                         |\n" +
-					"|  - Dependency: go.dependency.3 v0.1.2                                         |\n" +
-					"| Log files are written to /my/files/tmp/logs/mp3repair                         |\n" +
-					"| Configuration file \\my\\files\\apppath\\defaults.yaml exists                     |\n" +
-					"| mp3repair is running with elevated privileges                                 |\n" +
-					"+-------------------------------------------------------------------------------+\n",
-				Log: "level='info' command='about' msg='executing command'\n",
+					"╭───────────────────────────────────────────────────────────────────────────────╮\n" +
+					"│ mp3repair version 0.40.0, built on Saturday, February 24 2024, 13:14:05 -0500 │\n" +
+					"│ Copyright © 2021-2024 Marc Johnson                                            │\n" +
+					"│ Build Information                                                             │\n" +
+					"│  - Go version: go1.22.x                                                       │\n" +
+					"│  - Dependency: go.dependency.1 v1.2.3                                         │\n" +
+					"│  - Dependency: go.dependency.2 v1.3.4                                         │\n" +
+					"│  - Dependency: go.dependency.3 v0.1.2                                         │\n" +
+					"│ Log files are written to /my/files/tmp/logs/mp3repair                         │\n" +
+					"│ Configuration file \\my\\files\\apppath\\defaults.yaml exists                     │\n" +
+					"│ mp3repair is running with elevated privileges                                 │\n" +
+					"╰───────────────────────────────────────────────────────────────────────────────╯\n",
+				Log: "level='info' command='about' style='1' msg='executing command'\n",
 			},
 		},
 	}
@@ -98,9 +94,6 @@ func TestAboutRun(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			cmd.BusGetter = func() output.Bus { return o }
-			cmd.LogCommandStart = func(bus output.Bus, cmdName string, args map[string]any) {
-				bus.Log(output.Info, "executing command", map[string]any{"command": "about"})
-			}
 			cmd.MP3RepairElevationControl = testingElevationControl{
 				desiredStatus: []string{"mp3repair is running with elevated privileges"},
 			}
@@ -124,16 +117,45 @@ func TestAboutHelp(t *testing.T) {
 				Console: "" +
 					"\"about\" provides the following information about the mp3repair program:\n" +
 					"\n" +
-					"* The program version and build timestamp\n" +
-					"* Copyright information\n" +
-					"* Build information:\n" +
-					"  * The version of go used to compile the code\n" +
-					"  * A list of dependencies and their versions\n" +
-					"* The directory where log files are written\n" +
-					"* The full path of the application configuration file and whether it exists\n" +
+					"• The program version and build timestamp\n" +
+					"• Copyright information\n" +
+					"• Build information:\n" +
+					"  • The version of go used to compile the code\n" +
+					"  • A list of dependencies and their versions\n" +
+					"• The directory where log files are written\n" +
+					"• The full path of the application configuration file and whether it exists\n" +
+					"• Whether mp3repair is running with elevated privileges, and, if not, why not\n" +
 					"\n" +
 					"Usage:\n" +
-					"  mp3repair about\n",
+					"  mp3repair about [--style name]\n" +
+					"\n" +
+					"Examples:\n" +
+					"about --style name\n" +
+					"  Write 'about' information in a box of the named style.\n" +
+					"  Valid names are:\n" +
+					"  ● ascii\n" +
+					"    +------------+\n" +
+					"    | output ... |\n" +
+					"    +------------+\n" +
+					"  ● rounded (default)\n" +
+					"    ╭────────────╮\n" +
+					"    │ output ... │\n" +
+					"    ╰────────────╯\n" +
+					"  ● light\n" +
+					"    ┌────────────┐\n" +
+					"    │ output ... │\n" +
+					"    └────────────┘\n" +
+					"  ● heavy\n" +
+					"    ┏━━━━━━━━━━━━┓\n" +
+					"    ┃ output ... ┃\n" +
+					"    ┗━━━━━━━━━━━━┛\n" +
+					"  ● double\n" +
+					"    ╔════════════╗\n" +
+					"    ║ output ... ║\n" +
+					"    ╚════════════╝\n" +
+					"\n" +
+					"Flags:\n" +
+					"      --style string   specify the output border style (default \"rounded\")\n",
 			},
 		},
 	}

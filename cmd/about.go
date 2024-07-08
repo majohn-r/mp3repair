@@ -11,10 +11,12 @@ import (
 )
 
 const (
-	aboutCommand = "about"
-	appName      = "mp3repair" // the name of the application
-	author       = "Marc Johnson"
-	firstYear    = 2021 // the year when development of this application began
+	aboutCommand   = "about"
+	aboutStyle     = "style"
+	aboutStyleFlag = "--" + aboutStyle
+	appName        = "mp3repair" // the name of the application
+	author         = "Marc Johnson"
+	firstYear      = 2021 // the year when development of this application began
 )
 
 var (
@@ -25,19 +27,54 @@ var (
 	Creation string
 	// AboutCmd represents the about command
 	AboutCmd = &cobra.Command{
-		Use:   aboutCommand,
-		Short: "Provides information about the " + appName + " program",
+		Use:                   aboutCommand + " [" + aboutStyleFlag + " name]",
+		DisableFlagsInUseLine: true,
+		Short:                 "Provides information about the " + appName + " program",
 		Long: fmt.Sprintf("%q", aboutCommand) +
 			` provides the following information about the ` + appName + ` program:
 
-* The program version and build timestamp
-* Copyright information
-* Build information:
-  * The version of go used to compile the code
-  * A list of dependencies and their versions
-* The directory where log files are written
-* The full path of the application configuration file and whether it exists`,
+• The program version and build timestamp
+• Copyright information
+• Build information:
+  • The version of go used to compile the code
+  • A list of dependencies and their versions
+• The directory where log files are written
+• The full path of the application configuration file and whether it exists
+• Whether ` + appName + ` is running with elevated privileges, and, if not, why not`,
+		Example: aboutCommand + " " + aboutStyleFlag + " name\n" +
+			"  Write 'about' information in a box of the named style.\n" +
+			"  Valid names are:\n" +
+			"  ● ascii\n    " + strings.Join(
+			cmdtoolkit.StyledFlowerBox([]string{"output ..."}, cmdtoolkit.ASCIIFlowerBox)[0:3],
+			"\n    ",
+		) +
+			"\n  ● rounded (default)\n    " + strings.Join(
+			cmdtoolkit.StyledFlowerBox([]string{"output ..."}, cmdtoolkit.CurvedFlowerBox)[0:3],
+			"\n    ",
+		) +
+			"\n  ● light\n    " + strings.Join(
+			cmdtoolkit.StyledFlowerBox([]string{"output ..."}, cmdtoolkit.LightLinedFlowerBox)[0:3],
+			"\n    ",
+		) +
+			"\n  ● heavy\n    " + strings.Join(
+			cmdtoolkit.StyledFlowerBox([]string{"output ..."}, cmdtoolkit.HeavyLinedFlowerBox)[0:3],
+			"\n    ",
+		) +
+			"\n  ● double\n    " + strings.Join(
+			cmdtoolkit.StyledFlowerBox([]string{"output ..."}, cmdtoolkit.DoubleLinedFlowerBox)[0:3],
+			"\n    ",
+		),
 		RunE: AboutRun,
+	}
+	aboutFlags = &SectionFlags{
+		SectionName: aboutCommand,
+		Details: map[string]*FlagDetails{
+			aboutStyle: {
+				Usage:        "specify the output border style",
+				ExpectedType: StringType,
+				DefaultValue: "rounded",
+			},
+		},
 	}
 	CachedGoVersion           string
 	CachedBuildDependencies   []string
@@ -47,11 +84,37 @@ var (
 	)
 )
 
-func AboutRun(_ *cobra.Command, _ []string) error {
+func AboutRun(cmd *cobra.Command, _ []string) error {
 	o := BusGetter()
-	LogCommandStart(o, aboutCommand, map[string]any{})
-	o.WriteConsole(strings.Join(cmdtoolkit.FlowerBox(AcquireAboutData(o)), "\n"))
-	return nil
+	values, eSlice := ReadFlags(cmd.Flags(), aboutFlags)
+	exitError := NewExitProgrammingError(ExportCommand)
+	if ProcessFlagErrors(o, eSlice) {
+		flag, err := GetString(o, values, aboutStyle)
+		if err == nil {
+			style := interpretStyle(flag)
+			LogCommandStart(o, aboutCommand, map[string]any{aboutStyle: style})
+			o.WriteConsole(strings.Join(cmdtoolkit.StyledFlowerBox(AcquireAboutData(o), style), "\n"))
+			exitError = nil
+		}
+	}
+	return ToErrorInterface(exitError)
+}
+
+func interpretStyle(flag CommandFlag[string]) cmdtoolkit.FlowerBoxStyle {
+	var style cmdtoolkit.FlowerBoxStyle
+	switch strings.ToLower(flag.Value) {
+	case "ascii":
+		style = cmdtoolkit.ASCIIFlowerBox
+	case "light":
+		style = cmdtoolkit.LightLinedFlowerBox
+	case "heavy":
+		style = cmdtoolkit.HeavyLinedFlowerBox
+	case "double":
+		style = cmdtoolkit.DoubleLinedFlowerBox
+	default:
+		style = cmdtoolkit.CurvedFlowerBox
+	}
+	return style
 }
 
 func AcquireAboutData(o output.Bus) []string {
@@ -91,4 +154,8 @@ func AcquireAboutData(o output.Bus) []string {
 
 func init() {
 	RootCmd.AddCommand(AboutCmd)
+	addDefaults(aboutFlags)
+	o := getBus()
+	c := getConfiguration()
+	AddFlags(o, c, AboutCmd.Flags(), aboutFlags)
 }
