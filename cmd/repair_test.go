@@ -1569,6 +1569,9 @@ func TestRepairHelp(t *testing.T) {
 					"  repair [--dryRun] [--albumFilter regex] [--artistFilter regex]" +
 					" [--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +
 					"\n" +
+					"Examples:\n" +
+					"repair --dryRun\n  Output what would be repaired, but does not perform the stated repairs\n" +
+					"\n" +
 					"Flags:\n" +
 					"      --albumFilter string    " +
 					"regular expression specifying which albums to select (default \".*\")\n" +

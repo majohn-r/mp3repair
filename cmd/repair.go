@@ -38,6 +38,8 @@ var (
 			"file into that backup directory. Use the " + postRepairCommandName +
 			" command to automatically delete\n" +
 			"the backup folders.",
+		Example: repairCommandName + " " + repairDryRunFlag + "\n" +
+			"  Output what would be repaired, but does not perform the stated repairs",
 		RunE: RepairRun,
 	}
 	RepairFlags = &SectionFlags{
