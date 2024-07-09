@@ -39,7 +39,7 @@ type SectionFlags struct {
 	Details     map[string]*FlagDetails // keys are flag names
 }
 
-type flagConsumer interface {
+type FlagConsumer interface {
 	String(name string, value string, usage string) *string
 	StringP(name, shorthand string, value string, usage string) *string
 	Bool(name string, value bool, usage string) *bool
@@ -54,7 +54,7 @@ type ConfigSource interface {
 	StringDefault(string, string) (string, error)
 }
 
-func AddFlags(o output.Bus, c *cmdtoolkit.Configuration, flags flagConsumer,
+func AddFlags(o output.Bus, c *cmdtoolkit.Configuration, flags FlagConsumer,
 	sections ...*SectionFlags) {
 	for _, section := range sections {
 		config := c.SubConfiguration(section.SectionName)
@@ -103,7 +103,7 @@ type Flag struct {
 	Name    string
 }
 
-func (fD *FlagDetails) AddFlag(o output.Bus, c ConfigSource, flags flagConsumer, flag Flag) {
+func (fD *FlagDetails) AddFlag(o output.Bus, c ConfigSource, flags FlagConsumer, flag Flag) {
 	switch fD.ExpectedType {
 	case StringType:
 		statedDefault, _ok := fD.DefaultValue.(string)
@@ -345,8 +345,4 @@ func ProcessFlagErrors(o output.Bus, eSlice []error) bool {
 		return false
 	}
 	return true
-}
-
-func init() {
-	addDefaults(SearchFlags)
 }

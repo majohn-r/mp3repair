@@ -428,3 +428,7 @@ func (ss *SearchSettings) isValidTrackFile(file fs.FileInfo) (string, bool) {
 	}
 	return extension, false
 }
+
+func init() {
+	addDefaults(SearchFlags)
+}

@@ -5,6 +5,7 @@ package cmd_test
 
 import (
 	"fmt"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"io/fs"
 	"mp3repair/cmd"
 	"reflect"
@@ -227,7 +228,7 @@ func TestExportFlagSettingsOverwriteConfigurationFile(t *testing.T) {
 		writeFile  func(string, []byte, fs.FileMode) error
 		rename     func(string, string) error
 		remove     func(string) error
-		wantStatus *cmd.ExitError
+		wantStatus *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"nothing to do": {
@@ -235,7 +236,7 @@ func TestExportFlagSettingsOverwriteConfigurationFile(t *testing.T) {
 				OverwriteEnabled: cmd.CommandFlag[bool]{Value: false},
 			},
 			args:       args{f: "[filename]"},
-			wantStatus: cmd.NewExitUserError("export"),
+			wantStatus: cmdtoolkit.NewExitUserError("export"),
 			WantedRecording: output.WantedRecording{
 				Error: "The file \"[filename]\" exists and cannot be overwritten.\n" +
 					"Why?\n" +
@@ -258,7 +259,7 @@ func TestExportFlagSettingsOverwriteConfigurationFile(t *testing.T) {
 			rename: func(_, _ string) error {
 				return fmt.Errorf("sorry, cannot rename that file")
 			},
-			wantStatus: cmd.NewExitSystemError("export"),
+			wantStatus: cmdtoolkit.NewExitSystemError("export"),
 			WantedRecording: output.WantedRecording{
 				Error: "The file \"[filename]\" cannot be renamed to" +
 					" \"[filename]-backup\": sorry, cannot rename that file.\n",
@@ -278,7 +279,7 @@ func TestExportFlagSettingsOverwriteConfigurationFile(t *testing.T) {
 			writeFile: func(_ string, _ []byte, _ fs.FileMode) error {
 				return fmt.Errorf("disk is full")
 			},
-			wantStatus: cmd.NewExitSystemError("export"),
+			wantStatus: cmdtoolkit.NewExitSystemError("export"),
 			WantedRecording: output.WantedRecording{
 				Error: "The file \"[filename]\" cannot be created: disk is full.\n",
 				Log: "level='error'" +
@@ -337,7 +338,7 @@ func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
 		rename          func(string, string) error
 		remove          func(string) error
 		applicationPath func() string
-		wantStatus      *cmd.ExitError
+		wantStatus      *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"not asking to write": {
@@ -345,7 +346,7 @@ func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
 				OverwriteEnabled: cmd.CommandFlag[bool]{Value: true},
 				DefaultsEnabled:  cmd.CommandFlag[bool]{Value: false},
 			},
-			wantStatus: cmd.NewExitUserError("export"),
+			wantStatus: cmdtoolkit.NewExitUserError("export"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"Default configuration settings will not be exported.\n" +
@@ -372,7 +373,7 @@ func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
 			},
 			plainFileExists: func(_ string) bool { return false },
 			applicationPath: func() string { return "appPath" },
-			wantStatus:      cmd.NewExitSystemError("export"),
+			wantStatus:      cmdtoolkit.NewExitSystemError("export"),
 			WantedRecording: output.WantedRecording{
 				Error: "The file \"appPath\\\\defaults.yaml\" cannot be created:" +
 					" cannot write file, sorry.\n",

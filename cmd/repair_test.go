@@ -238,7 +238,7 @@ func TestProcessTrackRepairResults(t *testing.T) {
 	tests := map[string]struct {
 		args
 		wantDirty  bool
-		wantStatus *cmd.ExitError
+		wantStatus *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"success": {
@@ -253,7 +253,7 @@ func TestProcessTrackRepairResults(t *testing.T) {
 		"single failure": {
 			args:       args{t: track, err: []error{fmt.Errorf("file locked")}},
 			wantDirty:  false,
-			wantStatus: cmd.NewExitSystemError("repair"),
+			wantStatus: cmdtoolkit.NewExitSystemError("repair"),
 			WantedRecording: output.WantedRecording{
 				Error: "An error occurred repairing track" +
 					" \"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\".\n",
@@ -272,7 +272,7 @@ func TestProcessTrackRepairResults(t *testing.T) {
 				err: []error{fmt.Errorf("file locked"), fmt.Errorf("syntax error")},
 			},
 			wantDirty:  false,
-			wantStatus: cmd.NewExitSystemError("repair"),
+			wantStatus: cmdtoolkit.NewExitSystemError("repair"),
 			WantedRecording: output.WantedRecording{
 				Error: "An error occurred repairing track" +
 					" \"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\".\n",
@@ -339,7 +339,7 @@ func TestBackupAndRepairTracks(t *testing.T) {
 		plainFileExists  func(string) bool
 		copyFile         func(string, string) error
 		concernedArtists []*cmd.ConcernedArtist
-		wantStatus       *cmd.ExitError
+		wantStatus       *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"basic test": {
@@ -347,7 +347,7 @@ func TestBackupAndRepairTracks(t *testing.T) {
 			plainFileExists:  func(_ string) bool { return false },
 			copyFile:         func(_, _ string) error { return nil },
 			concernedArtists: concernedArtists,
-			wantStatus:       cmd.NewExitSystemError("repair"),
+			wantStatus:       cmdtoolkit.NewExitSystemError("repair"),
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"The track file" +
@@ -443,7 +443,7 @@ func TestBackupAndRepairTracks(t *testing.T) {
 			plainFileExists:  func(_ string) bool { return false },
 			copyFile:         func(_, _ string) error { return nil },
 			concernedArtists: concernedArtists,
-			wantStatus:       cmd.NewExitSystemError("repair"),
+			wantStatus:       cmdtoolkit.NewExitSystemError("repair"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"The directory" +
@@ -474,7 +474,7 @@ func TestBackupAndRepairTracks(t *testing.T) {
 			plainFileExists:  func(_ string) bool { return false },
 			copyFile:         func(_, _ string) error { return fmt.Errorf("oops") },
 			concernedArtists: concernedArtists,
-			wantStatus:       cmd.NewExitSystemError("repair"),
+			wantStatus:       cmdtoolkit.NewExitSystemError("repair"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"The track file" +
@@ -744,7 +744,7 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 	tests := map[string]struct {
 		rs         *cmd.RepairSettings
 		artists    []*files.Artist
-		wantStatus *cmd.ExitError
+		wantStatus *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"clean dry run": {
@@ -1047,7 +1047,7 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 		"dirty repair": {
 			rs:         &cmd.RepairSettings{DryRun: cmd.CommandFlag[bool]{Value: false}},
 			artists:    dirty,
-			wantStatus: cmd.NewExitSystemError("repair"),
+			wantStatus: cmdtoolkit.NewExitSystemError("repair"),
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"The track file" +
@@ -1439,13 +1439,13 @@ func TestRepairSettings_ProcessArtists(t *testing.T) {
 	tests := map[string]struct {
 		rs *cmd.RepairSettings
 		args
-		wantStatus *cmd.ExitError
+		wantStatus *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"nothing to do": {
 			rs:         &cmd.RepairSettings{DryRun: cmd.CommandFlag[bool]{Value: true}},
 			args:       args{},
-			wantStatus: cmd.NewExitUserError("repair"),
+			wantStatus: cmdtoolkit.NewExitUserError("repair"),
 		},
 		"clean artists": {
 			rs: &cmd.RepairSettings{DryRun: cmd.CommandFlag[bool]{Value: true}},

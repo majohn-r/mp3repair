@@ -664,13 +664,13 @@ func TestCheckSettings_PerformChecks(t *testing.T) {
 	tests := map[string]struct {
 		cs *cmd.CheckSettings
 		args
-		wantStatus *cmd.ExitError
+		wantStatus *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"no artists": {
 			cs:              nil,
 			args:            args{artists: nil, ss: nil},
-			wantStatus:      cmd.NewExitUserError("check"),
+			wantStatus:      cmdtoolkit.NewExitUserError("check"),
 			WantedRecording: output.WantedRecording{},
 		},
 		"artists to check, check everything": {
@@ -713,13 +713,13 @@ func TestCheckSettings_MaybeDoWork(t *testing.T) {
 	tests := map[string]struct {
 		cs         *cmd.CheckSettings
 		ss         *cmd.SearchSettings
-		wantStatus *cmd.ExitError
+		wantStatus *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"nothing to do": {
 			cs:         &cmd.CheckSettings{},
 			ss:         nil,
-			wantStatus: cmd.NewExitUserError("check"),
+			wantStatus: cmdtoolkit.NewExitUserError("check"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"No checks will be executed.\n" +
@@ -743,7 +743,7 @@ func TestCheckSettings_MaybeDoWork(t *testing.T) {
 				FileExtensions: []string{".mp3"},
 				TopDirectory:   filepath.Join(".", "no dir"),
 			},
-			wantStatus: cmd.NewExitUserError("check"),
+			wantStatus: cmdtoolkit.NewExitUserError("check"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"The directory \"no dir\" cannot be read: open no dir: The system" +

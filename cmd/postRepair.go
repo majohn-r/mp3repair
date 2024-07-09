@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"mp3repair/internal/files"
 	"sort"
 
@@ -26,7 +27,7 @@ var (
 )
 
 func PostRepairRun(cmd *cobra.Command, _ []string) error {
-	exitError := NewExitProgrammingError(postRepairCommandName)
+	exitError := cmdtoolkit.NewExitProgrammingError(postRepairCommandName)
 	o := getBus()
 	producer := cmd.Flags()
 	ss, searchFlagsOk := EvaluateSearchFlags(o, producer)
@@ -36,11 +37,11 @@ func PostRepairRun(cmd *cobra.Command, _ []string) error {
 		allArtists := ss.Load(o)
 		exitError = PostRepairWork(o, ss, allArtists)
 	}
-	return ToErrorInterface(exitError)
+	return cmdtoolkit.ToErrorInterface(exitError)
 }
 
-func PostRepairWork(o output.Bus, ss *SearchSettings, allArtists []*files.Artist) (e *ExitError) {
-	e = NewExitUserError(postRepairCommandName)
+func PostRepairWork(o output.Bus, ss *SearchSettings, allArtists []*files.Artist) (e *cmdtoolkit.ExitError) {
+	e = cmdtoolkit.NewExitUserError(postRepairCommandName)
 	if len(allArtists) != 0 {
 		if filteredArtists := ss.Filter(o, allArtists); len(filteredArtists) != 0 {
 			e = nil
@@ -66,7 +67,7 @@ func PostRepairWork(o output.Bus, ss *SearchSettings, allArtists []*files.Artist
 					case true:
 						dirsDeleted++
 					default:
-						e = NewExitSystemError(postRepairCommandName)
+						e = cmdtoolkit.NewExitSystemError(postRepairCommandName)
 					}
 				}
 				o.WriteCanonicalConsole("Backup directories deleted: %d", dirsDeleted)

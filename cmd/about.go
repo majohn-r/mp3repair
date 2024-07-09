@@ -87,7 +87,7 @@ var (
 func AboutRun(cmd *cobra.Command, _ []string) error {
 	o := BusGetter()
 	values, eSlice := ReadFlags(cmd.Flags(), aboutFlags)
-	exitError := NewExitProgrammingError(ExportCommand)
+	exitError := cmdtoolkit.NewExitProgrammingError(ExportCommand)
 	if ProcessFlagErrors(o, eSlice) {
 		flag, err := GetString(o, values, aboutStyle)
 		if err == nil {
@@ -97,7 +97,7 @@ func AboutRun(cmd *cobra.Command, _ []string) error {
 			exitError = nil
 		}
 	}
-	return ToErrorInterface(exitError)
+	return cmdtoolkit.ToErrorInterface(exitError)
 }
 
 func interpretStyle(flag CommandFlag[string]) cmdtoolkit.FlowerBoxStyle {

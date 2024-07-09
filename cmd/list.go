@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"mp3repair/internal/files"
 	"sort"
 	"strings"
@@ -110,7 +111,7 @@ var (
 )
 
 func ListRun(cmd *cobra.Command, _ []string) error {
-	exitError := NewExitProgrammingError(ListCommand)
+	exitError := cmdtoolkit.NewExitProgrammingError(ListCommand)
 	o := getBus()
 	producer := cmd.Flags()
 	values, eSlice := ReadFlags(producer, ListFlags)
@@ -143,14 +144,14 @@ func ListRun(cmd *cobra.Command, _ []string) error {
 					allArtists := searchSettings.Load(o)
 					exitError = ls.ListArtists(o, allArtists, searchSettings)
 				case false:
-					exitError = NewExitUserError(ListCommand)
+					exitError = cmdtoolkit.NewExitUserError(ListCommand)
 				}
 			case false:
-				exitError = NewExitUserError(ListCommand)
+				exitError = cmdtoolkit.NewExitUserError(ListCommand)
 			}
 		}
 	}
-	return ToErrorInterface(exitError)
+	return cmdtoolkit.ToErrorInterface(exitError)
 }
 
 type ListSettings struct {
@@ -164,8 +165,8 @@ type ListSettings struct {
 	Tracks       CommandFlag[bool]
 }
 
-func (ls *ListSettings) ListArtists(o output.Bus, allArtists []*files.Artist, ss *SearchSettings) (err *ExitError) {
-	err = NewExitUserError(ListCommand)
+func (ls *ListSettings) ListArtists(o output.Bus, allArtists []*files.Artist, ss *SearchSettings) (err *cmdtoolkit.ExitError) {
+	err = cmdtoolkit.NewExitUserError(ListCommand)
 	if len(allArtists) != 0 {
 		if filteredArtists := ss.Filter(o, allArtists); len(filteredArtists) != 0 {
 			ls.ListFilteredArtists(o, filteredArtists)

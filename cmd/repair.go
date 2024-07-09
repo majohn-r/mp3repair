@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"mp3repair/internal/files"
 	"path/filepath"
 	"slices"
@@ -55,7 +56,7 @@ var (
 )
 
 func RepairRun(cmd *cobra.Command, _ []string) error {
-	exitError := NewExitProgrammingError(repairCommandName)
+	exitError := cmdtoolkit.NewExitProgrammingError(repairCommandName)
 	o := getBus()
 	producer := cmd.Flags()
 	values, eSlice := ReadFlags(producer, RepairFlags)
@@ -71,15 +72,15 @@ func RepairRun(cmd *cobra.Command, _ []string) error {
 			exitError = rs.ProcessArtists(o, allArtists, searchSettings)
 		}
 	}
-	return ToErrorInterface(exitError)
+	return cmdtoolkit.ToErrorInterface(exitError)
 }
 
 type RepairSettings struct {
 	DryRun CommandFlag[bool]
 }
 
-func (rs *RepairSettings) ProcessArtists(o output.Bus, allArtists []*files.Artist, ss *SearchSettings) (e *ExitError) {
-	e = NewExitUserError(repairCommandName)
+func (rs *RepairSettings) ProcessArtists(o output.Bus, allArtists []*files.Artist, ss *SearchSettings) (e *cmdtoolkit.ExitError) {
+	e = cmdtoolkit.NewExitUserError(repairCommandName)
 	if len(allArtists) != 0 {
 		if filteredArtists := ss.Filter(o, allArtists); len(filteredArtists) != 0 {
 			e = rs.RepairArtists(o, filteredArtists)
@@ -88,7 +89,7 @@ func (rs *RepairSettings) ProcessArtists(o output.Bus, allArtists []*files.Artis
 	return
 }
 
-func (rs *RepairSettings) RepairArtists(o output.Bus, artists []*files.Artist) *ExitError {
+func (rs *RepairSettings) RepairArtists(o output.Bus, artists []*files.Artist) *cmdtoolkit.ExitError {
 	ReadMetadata(o, artists) // read all track metadata
 	concernedArtists := CreateConcernedArtists(artists)
 	count := FindConflictedTracks(concernedArtists)
@@ -179,8 +180,8 @@ func nothingToDo(o output.Bus) {
 	o.WriteCanonicalConsole("No repairable track defects were found.")
 }
 
-func BackupAndRepairTracks(o output.Bus, concernedArtists []*ConcernedArtist) *ExitError {
-	var e *ExitError
+func BackupAndRepairTracks(o output.Bus, concernedArtists []*ConcernedArtist) *cmdtoolkit.ExitError {
+	var e *cmdtoolkit.ExitError
 	for _, cAr := range concernedArtists {
 		if !cAr.IsConcerned() {
 			continue
@@ -191,7 +192,7 @@ func BackupAndRepairTracks(o output.Bus, concernedArtists []*ConcernedArtist) *E
 			}
 			path, exists := EnsureTrackBackupDirectoryExists(o, cAl)
 			if !exists {
-				e = NewExitSystemError(repairCommandName)
+				e = cmdtoolkit.NewExitSystemError(repairCommandName)
 				continue
 			}
 			for _, cT := range cAl.tracks {
@@ -200,7 +201,7 @@ func BackupAndRepairTracks(o output.Bus, concernedArtists []*ConcernedArtist) *E
 				}
 				t := cT.backing
 				if !TryTrackBackup(o, t, path) {
-					e = NewExitSystemError(repairCommandName)
+					e = cmdtoolkit.NewExitSystemError(repairCommandName)
 					continue
 				}
 				err := t.UpdateMetadata()
@@ -213,7 +214,7 @@ func BackupAndRepairTracks(o output.Bus, concernedArtists []*ConcernedArtist) *E
 	return e
 }
 
-func ProcessTrackRepairResults(o output.Bus, t *files.Track, updateErrs []error) *ExitError {
+func ProcessTrackRepairResults(o output.Bus, t *files.Track, updateErrs []error) *cmdtoolkit.ExitError {
 	if len(updateErrs) != 0 {
 		o.WriteCanonicalError("An error occurred repairing track %q", t)
 		errorStrings := make([]string, 0, len(updateErrs))
@@ -226,7 +227,7 @@ func ProcessTrackRepairResults(o output.Bus, t *files.Track, updateErrs []error)
 			"fileName":  t.FileName(),
 			"error":     fmt.Sprintf("[%s]", strings.Join(errorStrings, ", ")),
 		})
-		return NewExitSystemError(repairCommandName)
+		return cmdtoolkit.NewExitSystemError(repairCommandName)
 	}
 	o.WriteConsole("%q repaired.\n", t)
 	MarkDirty(o)

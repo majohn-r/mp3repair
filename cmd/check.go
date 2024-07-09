@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"mp3repair/internal/files"
 	"slices"
 	"strings"
@@ -115,7 +116,7 @@ var (
 )
 
 func CheckRun(cmd *cobra.Command, _ []string) error {
-	exitError := NewExitProgrammingError(CheckCommand)
+	exitError := cmdtoolkit.NewExitProgrammingError(CheckCommand)
 	o := getBus()
 	producer := cmd.Flags()
 	values, eSlice := ReadFlags(producer, CheckFlags)
@@ -137,7 +138,7 @@ func CheckRun(cmd *cobra.Command, _ []string) error {
 			exitError = cs.MaybeDoWork(o, searchSettings)
 		}
 	}
-	return ToErrorInterface(exitError)
+	return cmdtoolkit.ToErrorInterface(exitError)
 }
 
 type CheckSettings struct {
@@ -146,16 +147,16 @@ type CheckSettings struct {
 	Numbering CommandFlag[bool]
 }
 
-func (cs *CheckSettings) MaybeDoWork(o output.Bus, ss *SearchSettings) (err *ExitError) {
-	err = NewExitUserError(CheckCommand)
+func (cs *CheckSettings) MaybeDoWork(o output.Bus, ss *SearchSettings) (err *cmdtoolkit.ExitError) {
+	err = cmdtoolkit.NewExitUserError(CheckCommand)
 	if cs.HasWorkToDo(o) {
 		err = cs.PerformChecks(o, ss.Load(o), ss)
 	}
 	return
 }
 
-func (cs *CheckSettings) PerformChecks(o output.Bus, artists []*files.Artist, ss *SearchSettings) (err *ExitError) {
-	err = NewExitUserError(CheckCommand)
+func (cs *CheckSettings) PerformChecks(o output.Bus, artists []*files.Artist, ss *SearchSettings) (err *cmdtoolkit.ExitError) {
+	err = cmdtoolkit.NewExitUserError(CheckCommand)
 	if len(artists) != 0 {
 		err = nil
 		requests := CheckReportRequests{}

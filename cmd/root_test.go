@@ -496,16 +496,16 @@ func TestRootUsage(t *testing.T) {
 }
 
 func TestObtainExitCode(t *testing.T) {
-	var nilExitError *cmd.ExitError
+	var nilExitError *cmdtoolkit.ExitError
 	tests := map[string]struct {
 		err  error
 		want int
 	}{
 		"nil":               {err: nil, want: 0},
 		"nil ExitError":     {err: nilExitError, want: 0},
-		"user error":        {err: cmd.NewExitUserError("command"), want: 1},
-		"programming error": {err: cmd.NewExitProgrammingError("command"), want: 2},
-		"system error":      {err: cmd.NewExitSystemError("command"), want: 3},
+		"user error":        {err: cmdtoolkit.NewExitUserError("command"), want: 1},
+		"programming error": {err: cmdtoolkit.NewExitProgrammingError("command"), want: 2},
+		"system error":      {err: cmdtoolkit.NewExitSystemError("command"), want: 3},
 		"unexpected":        {err: fmt.Errorf("some error"), want: 1},
 	}
 	for name, tt := range tests {

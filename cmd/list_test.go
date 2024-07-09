@@ -2107,7 +2107,7 @@ func Test_ListRun(t *testing.T) {
 	}
 }
 
-func compareExitErrors(e1, e2 *cmd.ExitError) bool {
+func compareExitErrors(e1, e2 *cmdtoolkit.ExitError) bool {
 	if e1 == nil {
 		return e2 == nil
 	}
@@ -2125,7 +2125,7 @@ func TestListSettingsListArtists(t *testing.T) {
 	tests := map[string]struct {
 		ls *cmd.ListSettings
 		args
-		wantStatus *cmd.ExitError
+		wantStatus *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"no data": {
@@ -2138,7 +2138,7 @@ func TestListSettingsListArtists(t *testing.T) {
 					TrackFilter:  regexp.MustCompile(".*"),
 				},
 			},
-			wantStatus: cmd.NewExitUserError(cmd.ListCommand),
+			wantStatus: cmdtoolkit.NewExitUserError(cmd.ListCommand),
 			// note: no error or log output; that would have been handled by
 			// loading artists resulting in no artists
 		},

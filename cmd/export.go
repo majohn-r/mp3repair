@@ -79,7 +79,7 @@ type ExportSettings struct {
 func ExportRun(cmd *cobra.Command, _ []string) error {
 	o := getBus()
 	values, eSlice := ReadFlags(cmd.Flags(), ExportFlags)
-	exitError := NewExitProgrammingError(ExportCommand)
+	exitError := cmdtoolkit.NewExitProgrammingError(ExportCommand)
 	if ProcessFlagErrors(o, eSlice) {
 		settings, flagsOk := ProcessExportFlags(o, values)
 		if flagsOk {
@@ -92,7 +92,7 @@ func ExportRun(cmd *cobra.Command, _ []string) error {
 			exitError = settings.ExportDefaultConfiguration(o)
 		}
 	}
-	return ToErrorInterface(exitError)
+	return cmdtoolkit.ToErrorInterface(exitError)
 }
 
 func ProcessExportFlags(o output.Bus, values map[string]*CommandFlag[any]) (*ExportSettings, bool) {
@@ -125,9 +125,9 @@ func configFile() (path string, exists bool) {
 	return
 }
 
-func (es *ExportSettings) ExportDefaultConfiguration(o output.Bus) *ExitError {
+func (es *ExportSettings) ExportDefaultConfiguration(o output.Bus) *cmdtoolkit.ExitError {
 	if !es.CanWriteConfigurationFile(o) {
-		return NewExitUserError(ExportCommand)
+		return cmdtoolkit.NewExitUserError(ExportCommand)
 	}
 	// ignoring error return, as we're not marshalling structs, where mischief
 	// can occur
@@ -137,14 +137,14 @@ func (es *ExportSettings) ExportDefaultConfiguration(o output.Bus) *ExitError {
 		return es.OverwriteConfigurationFile(o, f, payload)
 	}
 	if !CreateConfigurationFile(o, f, payload) {
-		return NewExitSystemError(ExportCommand)
+		return cmdtoolkit.NewExitSystemError(ExportCommand)
 	}
 	return nil
 }
 
-func (es *ExportSettings) OverwriteConfigurationFile(o output.Bus, f string, payload []byte) *ExitError {
+func (es *ExportSettings) OverwriteConfigurationFile(o output.Bus, f string, payload []byte) *cmdtoolkit.ExitError {
 	if !es.CanOverwriteConfigurationFile(o, f) {
-		return NewExitUserError(ExportCommand)
+		return cmdtoolkit.NewExitUserError(ExportCommand)
 	}
 	backup := f + "-backup"
 	if fileErr := Rename(f, backup); fileErr != nil {
@@ -154,10 +154,10 @@ func (es *ExportSettings) OverwriteConfigurationFile(o output.Bus, f string, pay
 			"old":   f,
 			"new":   backup,
 		})
-		return NewExitSystemError(ExportCommand)
+		return cmdtoolkit.NewExitSystemError(ExportCommand)
 	}
 	if !CreateConfigurationFile(o, f, payload) {
-		return NewExitSystemError(ExportCommand)
+		return cmdtoolkit.NewExitSystemError(ExportCommand)
 	}
 	_ = Remove(backup)
 	return nil

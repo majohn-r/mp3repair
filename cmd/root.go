@@ -171,7 +171,7 @@ func ObtainExitCode(err error) int {
 	case err == nil:
 		return 0
 	default:
-		var exitError *ExitError
+		var exitError *cmdtoolkit.ExitError
 		if errors.As(err, &exitError) {
 			if exitError == nil {
 				return 0
