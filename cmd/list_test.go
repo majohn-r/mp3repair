@@ -20,13 +20,13 @@ import (
 
 func TestProcessListFlags(t *testing.T) {
 	tests := map[string]struct {
-		values map[string]*cmd.CommandFlag[any]
+		values map[string]*cmdtoolkit.CommandFlag[any]
 		want   *cmd.ListSettings
 		want1  bool
 		output.WantedRecording
 	}{
 		"no data": {
-			values: map[string]*cmd.CommandFlag[any]{},
+			values: map[string]*cmdtoolkit.CommandFlag[any]{},
 			want:   &cmd.ListSettings{},
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"albums\" is not found.\n" +
@@ -72,7 +72,7 @@ func TestProcessListFlags(t *testing.T) {
 			},
 		},
 		"configured": {
-			values: map[string]*cmd.CommandFlag[any]{
+			values: map[string]*cmdtoolkit.CommandFlag[any]{
 				"albums":     {Value: true},
 				"annotate":   {Value: true},
 				"artists":    {Value: true},
@@ -83,19 +83,19 @@ func TestProcessListFlags(t *testing.T) {
 				"tracks":     {Value: true},
 			},
 			want: &cmd.ListSettings{
-				Albums:       cmd.CommandFlag[bool]{Value: true},
-				Annotate:     cmd.CommandFlag[bool]{Value: true},
-				Artists:      cmd.CommandFlag[bool]{Value: true},
-				Details:      cmd.CommandFlag[bool]{Value: true},
-				Diagnostic:   cmd.CommandFlag[bool]{Value: true},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true},
-				SortByTitle:  cmd.CommandFlag[bool]{Value: true},
-				Tracks:       cmd.CommandFlag[bool]{Value: true},
+				Albums:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				Annotate:     cmdtoolkit.CommandFlag[bool]{Value: true},
+				Artists:      cmdtoolkit.CommandFlag[bool]{Value: true},
+				Details:      cmdtoolkit.CommandFlag[bool]{Value: true},
+				Diagnostic:   cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByTitle:  cmdtoolkit.CommandFlag[bool]{Value: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			want1: true,
 		},
 		"user set": {
-			values: map[string]*cmd.CommandFlag[any]{
+			values: map[string]*cmdtoolkit.CommandFlag[any]{
 				"albums":     {Value: false, UserSet: true},
 				"annotate":   {Value: false},
 				"artists":    {Value: false, UserSet: true},
@@ -106,11 +106,11 @@ func TestProcessListFlags(t *testing.T) {
 				"tracks":     {Value: false, UserSet: true},
 			},
 			want: &cmd.ListSettings{
-				Albums:       cmd.CommandFlag[bool]{UserSet: true},
-				Artists:      cmd.CommandFlag[bool]{UserSet: true},
-				SortByNumber: cmd.CommandFlag[bool]{UserSet: true},
-				SortByTitle:  cmd.CommandFlag[bool]{UserSet: true},
-				Tracks:       cmd.CommandFlag[bool]{UserSet: true},
+				Albums:       cmdtoolkit.CommandFlag[bool]{UserSet: true},
+				Artists:      cmdtoolkit.CommandFlag[bool]{UserSet: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{UserSet: true},
+				SortByTitle:  cmdtoolkit.CommandFlag[bool]{UserSet: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{UserSet: true},
 			},
 			want1: true,
 		},
@@ -152,7 +152,7 @@ func TestListSettingsHasWorkToDo(t *testing.T) {
 			},
 		},
 		"none true, tracks explicitly set": {
-			ls: &cmd.ListSettings{Tracks: cmd.CommandFlag[bool]{UserSet: true}},
+			ls: &cmd.ListSettings{Tracks: cmdtoolkit.CommandFlag[bool]{UserSet: true}},
 			WantedRecording: output.WantedRecording{
 				Error: "No listing will be output.\n" +
 					"Why?\n" +
@@ -167,7 +167,7 @@ func TestListSettingsHasWorkToDo(t *testing.T) {
 			},
 		},
 		"none true, artists explicitly set": {
-			ls: &cmd.ListSettings{Artists: cmd.CommandFlag[bool]{UserSet: true}},
+			ls: &cmd.ListSettings{Artists: cmdtoolkit.CommandFlag[bool]{UserSet: true}},
 			WantedRecording: output.WantedRecording{
 				Error: "No listing will be output.\n" +
 					"Why?\n" +
@@ -183,8 +183,8 @@ func TestListSettingsHasWorkToDo(t *testing.T) {
 		},
 		"none true, artists and tracks explicitly set": {
 			ls: &cmd.ListSettings{
-				Artists: cmd.CommandFlag[bool]{UserSet: true},
-				Tracks:  cmd.CommandFlag[bool]{UserSet: true},
+				Artists: cmdtoolkit.CommandFlag[bool]{UserSet: true},
+				Tracks:  cmdtoolkit.CommandFlag[bool]{UserSet: true},
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "No listing will be output.\n" +
@@ -200,7 +200,7 @@ func TestListSettingsHasWorkToDo(t *testing.T) {
 			},
 		},
 		"none true, albums explicitly set": {
-			ls: &cmd.ListSettings{Albums: cmd.CommandFlag[bool]{UserSet: true}},
+			ls: &cmd.ListSettings{Albums: cmdtoolkit.CommandFlag[bool]{UserSet: true}},
 			WantedRecording: output.WantedRecording{
 				Error: "No listing will be output.\n" +
 					"Why?\n" +
@@ -216,8 +216,8 @@ func TestListSettingsHasWorkToDo(t *testing.T) {
 		},
 		"none true, albums and tracks explicitly set": {
 			ls: &cmd.ListSettings{
-				Albums: cmd.CommandFlag[bool]{UserSet: true},
-				Tracks: cmd.CommandFlag[bool]{UserSet: true},
+				Albums: cmdtoolkit.CommandFlag[bool]{UserSet: true},
+				Tracks: cmdtoolkit.CommandFlag[bool]{UserSet: true},
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "No listing will be output.\n" +
@@ -234,8 +234,8 @@ func TestListSettingsHasWorkToDo(t *testing.T) {
 		},
 		"none true, albums and artists explicitly set": {
 			ls: &cmd.ListSettings{
-				Albums:  cmd.CommandFlag[bool]{UserSet: true},
-				Artists: cmd.CommandFlag[bool]{UserSet: true},
+				Albums:  cmdtoolkit.CommandFlag[bool]{UserSet: true},
+				Artists: cmdtoolkit.CommandFlag[bool]{UserSet: true},
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "No listing will be output.\n" +
@@ -252,9 +252,9 @@ func TestListSettingsHasWorkToDo(t *testing.T) {
 		},
 		"none true, albums and artists and tracks explicitly set": {
 			ls: &cmd.ListSettings{
-				Albums:  cmd.CommandFlag[bool]{UserSet: true},
-				Artists: cmd.CommandFlag[bool]{UserSet: true},
-				Tracks:  cmd.CommandFlag[bool]{UserSet: true},
+				Albums:  cmdtoolkit.CommandFlag[bool]{UserSet: true},
+				Artists: cmdtoolkit.CommandFlag[bool]{UserSet: true},
+				Tracks:  cmdtoolkit.CommandFlag[bool]{UserSet: true},
 			},
 			WantedRecording: output.WantedRecording{
 				Error: "No listing will be output.\n" +
@@ -269,43 +269,43 @@ func TestListSettingsHasWorkToDo(t *testing.T) {
 			},
 		},
 		"tracks true": {
-			ls:   &cmd.ListSettings{Tracks: cmd.CommandFlag[bool]{Value: true}},
+			ls:   &cmd.ListSettings{Tracks: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			want: true,
 		},
 		"artists true": {
-			ls:   &cmd.ListSettings{Artists: cmd.CommandFlag[bool]{Value: true}},
+			ls:   &cmd.ListSettings{Artists: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			want: true,
 		},
 		"artists and tracks true": {
 			ls: &cmd.ListSettings{
-				Artists: cmd.CommandFlag[bool]{Value: true},
-				Tracks:  cmd.CommandFlag[bool]{Value: true},
+				Artists: cmdtoolkit.CommandFlag[bool]{Value: true},
+				Tracks:  cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			want: true,
 		},
 		"albums true": {
-			ls:   &cmd.ListSettings{Albums: cmd.CommandFlag[bool]{Value: true}},
+			ls:   &cmd.ListSettings{Albums: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			want: true,
 		},
 		"albums and tracks true": {
 			ls: &cmd.ListSettings{
-				Albums: cmd.CommandFlag[bool]{Value: true},
-				Tracks: cmd.CommandFlag[bool]{Value: true},
+				Albums: cmdtoolkit.CommandFlag[bool]{Value: true},
+				Tracks: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			want: true,
 		},
 		"albums and artists true": {
 			ls: &cmd.ListSettings{
-				Albums:  cmd.CommandFlag[bool]{Value: true},
-				Artists: cmd.CommandFlag[bool]{Value: true},
+				Albums:  cmdtoolkit.CommandFlag[bool]{Value: true},
+				Artists: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			want: true,
 		},
 		"albums and artists and tracks true": {
 			ls: &cmd.ListSettings{
-				Albums:  cmd.CommandFlag[bool]{Value: true},
-				Artists: cmd.CommandFlag[bool]{Value: true},
-				Tracks:  cmd.CommandFlag[bool]{Value: true},
+				Albums:  cmdtoolkit.CommandFlag[bool]{Value: true},
+				Artists: cmdtoolkit.CommandFlag[bool]{Value: true},
+				Tracks:  cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			want: true,
 		},
@@ -331,94 +331,94 @@ func TestListSettingsTracksSortable(t *testing.T) {
 		// https://github.com/majohn-r/mp3repair/issues/170
 		"-lrt --byTitle": {
 			ls: &cmd.ListSettings{
-				Albums:      cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				Artists:     cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				Tracks:      cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				SortByTitle: cmd.CommandFlag[bool]{Value: true, UserSet: true},
+				Albums:      cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				Artists:     cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				Tracks:      cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				SortByTitle: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
 			},
 			want: true,
 			lsFinal: &cmd.ListSettings{
-				Albums:      cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				Artists:     cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				Tracks:      cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				SortByTitle: cmd.CommandFlag[bool]{Value: true, UserSet: true},
+				Albums:      cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				Artists:     cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				Tracks:      cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				SortByTitle: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
 			},
 		},
 		// https://github.com/majohn-r/mp3repair/issues/170
 		"-lrt --byNumber": {
 			ls: &cmd.ListSettings{
-				Albums:       cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				Artists:      cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				Tracks:       cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true, UserSet: true},
+				Albums:       cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				Artists:      cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
 			},
 			want: true,
 			lsFinal: &cmd.ListSettings{
-				Albums:       cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				Artists:      cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				Tracks:       cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true, UserSet: true},
+				Albums:       cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				Artists:      cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
 			},
 		},
 		// https://github.com/majohn-r/mp3repair/issues/170
 		"-lt --byTitle": {
 			ls: &cmd.ListSettings{
-				Albums:      cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				Tracks:      cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				SortByTitle: cmd.CommandFlag[bool]{Value: true, UserSet: true},
+				Albums:      cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				Tracks:      cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				SortByTitle: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
 			},
 			want: true,
 			lsFinal: &cmd.ListSettings{
-				Albums:      cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				Tracks:      cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				SortByTitle: cmd.CommandFlag[bool]{Value: true, UserSet: true},
+				Albums:      cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				Tracks:      cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				SortByTitle: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
 			},
 		},
 		// https://github.com/majohn-r/mp3repair/issues/170
 		"-lt --byNumber": {
 			ls: &cmd.ListSettings{
-				Albums:       cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				Tracks:       cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true, UserSet: true},
+				Albums:       cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
 			},
 			want: true,
 			lsFinal: &cmd.ListSettings{
-				Albums:       cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				Tracks:       cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true, UserSet: true},
+				Albums:       cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
 			},
 		},
 		// https://github.com/majohn-r/mp3repair/issues/170
 		"-rt --byTitle": {
 			ls: &cmd.ListSettings{
-				Artists:     cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				Tracks:      cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				SortByTitle: cmd.CommandFlag[bool]{Value: true, UserSet: true},
+				Artists:     cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				Tracks:      cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				SortByTitle: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
 			},
 			want: true,
 			lsFinal: &cmd.ListSettings{
-				Artists:     cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				Tracks:      cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				SortByTitle: cmd.CommandFlag[bool]{Value: true, UserSet: true},
+				Artists:     cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				Tracks:      cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				SortByTitle: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
 			},
 		},
 		// https://github.com/majohn-r/mp3repair/issues/170
 		"-t --byTitle": {
 			ls: &cmd.ListSettings{
-				Tracks:      cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				SortByTitle: cmd.CommandFlag[bool]{Value: true, UserSet: true},
+				Tracks:      cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				SortByTitle: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
 			},
 			want: true,
 			lsFinal: &cmd.ListSettings{
-				Tracks:      cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				SortByTitle: cmd.CommandFlag[bool]{Value: true, UserSet: true},
+				Tracks:      cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				SortByTitle: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
 			},
 		},
 		"tracks listed, both options set, neither explicitly": {
 			ls: &cmd.ListSettings{
-				Tracks:       cmd.CommandFlag[bool]{Value: true},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true},
-				SortByTitle:  cmd.CommandFlag[bool]{Value: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByTitle:  cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
@@ -432,9 +432,9 @@ func TestListSettingsTracksSortable(t *testing.T) {
 		},
 		"tracks listed, both options set, by number explicitly": {
 			ls: &cmd.ListSettings{
-				Tracks:       cmd.CommandFlag[bool]{Value: true},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				SortByTitle:  cmd.CommandFlag[bool]{Value: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				SortByTitle:  cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
@@ -449,9 +449,9 @@ func TestListSettingsTracksSortable(t *testing.T) {
 		},
 		"tracks listed, both options set, by title explicitly": {
 			ls: &cmd.ListSettings{
-				Tracks:       cmd.CommandFlag[bool]{Value: true},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true},
-				SortByTitle:  cmd.CommandFlag[bool]{Value: true, UserSet: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByTitle:  cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
@@ -466,9 +466,9 @@ func TestListSettingsTracksSortable(t *testing.T) {
 		},
 		"tracks listed, both options set, both explicitly": {
 			ls: &cmd.ListSettings{
-				Tracks:       cmd.CommandFlag[bool]{Value: true},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				SortByTitle:  cmd.CommandFlag[bool]{Value: true, UserSet: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				SortByTitle:  cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
@@ -482,8 +482,8 @@ func TestListSettingsTracksSortable(t *testing.T) {
 		},
 		"tracks listed, no albums, sort by number, neither explicitly": {
 			ls: &cmd.ListSettings{
-				Tracks:       cmd.CommandFlag[bool]{Value: true},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
@@ -499,9 +499,9 @@ func TestListSettingsTracksSortable(t *testing.T) {
 		},
 		"tracks listed, no albums, sort by number, albums explicitly": {
 			ls: &cmd.ListSettings{
-				Albums:       cmd.CommandFlag[bool]{UserSet: true},
-				Tracks:       cmd.CommandFlag[bool]{Value: true},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true},
+				Albums:       cmdtoolkit.CommandFlag[bool]{UserSet: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
@@ -516,8 +516,8 @@ func TestListSettingsTracksSortable(t *testing.T) {
 		},
 		"tracks listed, no albums, sort by number, sort explicitly": {
 			ls: &cmd.ListSettings{
-				Tracks:       cmd.CommandFlag[bool]{Value: true},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true, UserSet: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
@@ -532,9 +532,9 @@ func TestListSettingsTracksSortable(t *testing.T) {
 		},
 		"tracks listed, no albums, sort by number, both explicitly": {
 			ls: &cmd.ListSettings{
-				Albums:       cmd.CommandFlag[bool]{UserSet: true},
-				Tracks:       cmd.CommandFlag[bool]{Value: true},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true, UserSet: true},
+				Albums:       cmdtoolkit.CommandFlag[bool]{UserSet: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
@@ -549,9 +549,9 @@ func TestListSettingsTracksSortable(t *testing.T) {
 		},
 		"tracks listed, both sorting options explicitly false": {
 			ls: &cmd.ListSettings{
-				Tracks:       cmd.CommandFlag[bool]{Value: true},
-				SortByNumber: cmd.CommandFlag[bool]{UserSet: true},
-				SortByTitle:  cmd.CommandFlag[bool]{UserSet: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{UserSet: true},
+				SortByTitle:  cmdtoolkit.CommandFlag[bool]{UserSet: true},
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
@@ -564,14 +564,14 @@ func TestListSettingsTracksSortable(t *testing.T) {
 		},
 		"tracks listed, no sorting, user said no to number": {
 			ls: &cmd.ListSettings{
-				Tracks:       cmd.CommandFlag[bool]{Value: true},
-				SortByNumber: cmd.CommandFlag[bool]{UserSet: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{UserSet: true},
 			},
 			want: true,
 			lsFinal: &cmd.ListSettings{
-				Tracks:       cmd.CommandFlag[bool]{Value: true},
-				SortByNumber: cmd.CommandFlag[bool]{UserSet: true},
-				SortByTitle:  cmd.CommandFlag[bool]{Value: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{UserSet: true},
+				SortByTitle:  cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			WantedRecording: output.WantedRecording{
 				Log: "level='info'" +
@@ -583,14 +583,14 @@ func TestListSettingsTracksSortable(t *testing.T) {
 		},
 		"tracks listed, no sorting, user said no to title": {
 			ls: &cmd.ListSettings{
-				Tracks:      cmd.CommandFlag[bool]{Value: true},
-				SortByTitle: cmd.CommandFlag[bool]{UserSet: true},
+				Tracks:      cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByTitle: cmdtoolkit.CommandFlag[bool]{UserSet: true},
 			},
 			want: true,
 			lsFinal: &cmd.ListSettings{
-				Tracks:       cmd.CommandFlag[bool]{Value: true},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true},
-				SortByTitle:  cmd.CommandFlag[bool]{UserSet: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByTitle:  cmdtoolkit.CommandFlag[bool]{UserSet: true},
 			},
 			WantedRecording: output.WantedRecording{
 				Log: "level='info'" +
@@ -602,14 +602,14 @@ func TestListSettingsTracksSortable(t *testing.T) {
 		},
 		"tracks listed, no sorting, albums included": {
 			ls: &cmd.ListSettings{
-				Albums: cmd.CommandFlag[bool]{Value: true},
-				Tracks: cmd.CommandFlag[bool]{Value: true},
+				Albums: cmdtoolkit.CommandFlag[bool]{Value: true},
+				Tracks: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			want: true,
 			lsFinal: &cmd.ListSettings{
-				Albums:       cmd.CommandFlag[bool]{Value: true},
-				Tracks:       cmd.CommandFlag[bool]{Value: true},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true},
+				Albums:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			WantedRecording: output.WantedRecording{
 				Log: "level='info'" +
@@ -620,11 +620,11 @@ func TestListSettingsTracksSortable(t *testing.T) {
 			},
 		},
 		"tracks listed, no sorting, no albums": {
-			ls:   &cmd.ListSettings{Tracks: cmd.CommandFlag[bool]{Value: true}},
+			ls:   &cmd.ListSettings{Tracks: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			want: true,
 			lsFinal: &cmd.ListSettings{
-				Tracks:      cmd.CommandFlag[bool]{Value: true},
-				SortByTitle: cmd.CommandFlag[bool]{Value: true},
+				Tracks:      cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByTitle: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			WantedRecording: output.WantedRecording{
 				Log: "level='info'" +
@@ -636,17 +636,17 @@ func TestListSettingsTracksSortable(t *testing.T) {
 		},
 		"tracks not listed, no sorting explicitly called for": {
 			ls: &cmd.ListSettings{
-				SortByNumber: cmd.CommandFlag[bool]{UserSet: true},
-				SortByTitle:  cmd.CommandFlag[bool]{UserSet: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{UserSet: true},
+				SortByTitle:  cmdtoolkit.CommandFlag[bool]{UserSet: true},
 			},
 			want: true,
 			lsFinal: &cmd.ListSettings{
-				SortByNumber: cmd.CommandFlag[bool]{UserSet: true},
-				SortByTitle:  cmd.CommandFlag[bool]{UserSet: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{UserSet: true},
+				SortByTitle:  cmdtoolkit.CommandFlag[bool]{UserSet: true},
 			},
 		},
 		"tracks not listed, sort by number explicitly called for": {
-			ls:   &cmd.ListSettings{SortByNumber: cmd.CommandFlag[bool]{Value: true, UserSet: true}},
+			ls:   &cmd.ListSettings{SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true}},
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "Your sorting preferences are not relevant.\n" +
@@ -659,7 +659,7 @@ func TestListSettingsTracksSortable(t *testing.T) {
 			},
 		},
 		"tracks not listed, sort by title explicitly called for": {
-			ls:   &cmd.ListSettings{SortByTitle: cmd.CommandFlag[bool]{Value: true, UserSet: true}},
+			ls:   &cmd.ListSettings{SortByTitle: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true}},
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "Your sorting preferences are not relevant.\n" +
@@ -672,8 +672,8 @@ func TestListSettingsTracksSortable(t *testing.T) {
 		},
 		"tracks not listed, sort by number and title explicitly called for": {
 			ls: &cmd.ListSettings{
-				SortByNumber: cmd.CommandFlag[bool]{Value: true, UserSet: true},
-				SortByTitle:  cmd.CommandFlag[bool]{Value: true, UserSet: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				SortByTitle:  cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
@@ -688,26 +688,26 @@ func TestListSettingsTracksSortable(t *testing.T) {
 		},
 		"tracks listed, albums too, just sort by number": {
 			ls: &cmd.ListSettings{
-				Albums:       cmd.CommandFlag[bool]{Value: true},
-				Tracks:       cmd.CommandFlag[bool]{Value: true},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true},
+				Albums:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			want: true,
 			lsFinal: &cmd.ListSettings{
-				Albums:       cmd.CommandFlag[bool]{Value: true},
-				Tracks:       cmd.CommandFlag[bool]{Value: true},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true},
+				Albums:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 		},
 		"tracks listed, just sort by title": {
 			ls: &cmd.ListSettings{
-				Tracks:      cmd.CommandFlag[bool]{Value: true},
-				SortByTitle: cmd.CommandFlag[bool]{Value: true},
+				Tracks:      cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByTitle: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			want: true,
 			lsFinal: &cmd.ListSettings{
-				Tracks:      cmd.CommandFlag[bool]{Value: true},
-				SortByTitle: cmd.CommandFlag[bool]{Value: true},
+				Tracks:      cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByTitle: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 		},
 	}
@@ -738,32 +738,32 @@ var (
 		SimpleName: "track 10",
 		Number:     10,
 	}.NewTrack()
-	safeSearchFlags = &cmd.SectionFlags{
-		SectionName: "search",
-		Details: map[string]*cmd.FlagDetails{
+	safeSearchFlags = &cmdtoolkit.FlagSet{
+		Name: "search",
+		Details: map[string]*cmdtoolkit.FlagDetails{
 			cmd.SearchAlbumFilter: {
 				Usage:        "regular expression specifying which albums to select",
-				ExpectedType: cmd.StringType,
+				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: ".*",
 			},
 			cmd.SearchArtistFilter: {
 				Usage:        "regular expression specifying which artists to select",
-				ExpectedType: cmd.StringType,
+				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: ".*",
 			},
 			cmd.SearchTrackFilter: {
 				Usage:        "regular expression specifying which tracks to select",
-				ExpectedType: cmd.StringType,
+				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: ".*",
 			},
 			cmd.SearchTopDir: {
 				Usage:        "top directory specifying where to find mp3 files",
-				ExpectedType: cmd.StringType,
+				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: ".",
 			},
 			cmd.SearchFileExtensions: {
 				Usage:        "comma-delimited list of file extensions used by mp3" + " files",
-				ExpectedType: cmd.StringType,
+				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: ".mp3",
 			},
 		},
@@ -891,7 +891,7 @@ func TestListSettingsListTrackDiagnostics(t *testing.T) {
 		output.WantedRecording
 	}{
 		"permitted": {
-			ls:    &cmd.ListSettings{Diagnostic: cmd.CommandFlag[bool]{Value: true}},
+			ls:    &cmd.ListSettings{Diagnostic: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			track: sampleTrack,
 			WantedRecording: output.WantedRecording{
 				Log: "level='error'" +
@@ -909,7 +909,7 @@ func TestListSettingsListTrackDiagnostics(t *testing.T) {
 			},
 		},
 		"not permitted": {
-			ls: &cmd.ListSettings{Diagnostic: cmd.CommandFlag[bool]{Value: false}},
+			ls: &cmd.ListSettings{Diagnostic: cmdtoolkit.CommandFlag[bool]{Value: false}},
 		},
 	}
 	for name, tt := range tests {
@@ -978,9 +978,9 @@ func TestListSettingsListTrackDetails(t *testing.T) {
 		track *files.Track
 		output.WantedRecording
 	}{
-		"not wanted": {ls: &cmd.ListSettings{Details: cmd.CommandFlag[bool]{Value: false}}},
+		"not wanted": {ls: &cmd.ListSettings{Details: cmdtoolkit.CommandFlag[bool]{Value: false}}},
 		"wanted": {
-			ls:    &cmd.ListSettings{Details: cmd.CommandFlag[bool]{Value: true}},
+			ls:    &cmd.ListSettings{Details: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			track: sampleTrack,
 			WantedRecording: output.WantedRecording{
 				Error: "The details are not available for track \"track 10\" on album" +
@@ -1011,32 +1011,32 @@ func TestListSettingsAnnotateTrackName(t *testing.T) {
 		want  string
 	}{
 		"no annotations": {
-			ls:    &cmd.ListSettings{Annotate: cmd.CommandFlag[bool]{Value: false}},
+			ls:    &cmd.ListSettings{Annotate: cmdtoolkit.CommandFlag[bool]{Value: false}},
 			track: sampleTrack,
 			want:  "track 10",
 		},
 		"annotations, albums printed": {
 			ls: &cmd.ListSettings{
-				Albums:   cmd.CommandFlag[bool]{Value: true},
-				Annotate: cmd.CommandFlag[bool]{Value: true},
+				Albums:   cmdtoolkit.CommandFlag[bool]{Value: true},
+				Annotate: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			track: sampleTrack,
 			want:  "track 10",
 		},
 		"annotations, no albums, artists included": {
 			ls: &cmd.ListSettings{
-				Albums:   cmd.CommandFlag[bool]{Value: false},
-				Artists:  cmd.CommandFlag[bool]{Value: true},
-				Annotate: cmd.CommandFlag[bool]{Value: true},
+				Albums:   cmdtoolkit.CommandFlag[bool]{Value: false},
+				Artists:  cmdtoolkit.CommandFlag[bool]{Value: true},
+				Annotate: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			track: sampleTrack,
 			want:  "\"track 10\" on \"my album\"",
 		},
 		"annotations, no albums, no artists": {
 			ls: &cmd.ListSettings{
-				Albums:   cmd.CommandFlag[bool]{Value: false},
-				Artists:  cmd.CommandFlag[bool]{Value: false},
-				Annotate: cmd.CommandFlag[bool]{Value: true},
+				Albums:   cmdtoolkit.CommandFlag[bool]{Value: false},
+				Artists:  cmdtoolkit.CommandFlag[bool]{Value: false},
+				Annotate: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			track: sampleTrack,
 			want:  "\"track 10\" on \"my album\" by \"my artist\"",
@@ -1072,7 +1072,7 @@ func TestListSettingsListTracksByName(t *testing.T) {
 			tab:    2,
 		},
 		"multiple tracks": {
-			ls:     &cmd.ListSettings{Annotate: cmd.CommandFlag[bool]{Value: true}},
+			ls:     &cmd.ListSettings{Annotate: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			tracks: generateTracks(25),
 			tab:    0,
 			WantedRecording: output.WantedRecording{
@@ -1105,7 +1105,7 @@ func TestListSettingsListTracksByName(t *testing.T) {
 			},
 		},
 		"https://github.com/majohn-r/mp3repair/issues/147": {
-			ls: &cmd.ListSettings{Annotate: cmd.CommandFlag[bool]{Value: true}},
+			ls: &cmd.ListSettings{Annotate: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			tracks: []*files.Track{
 				{
 					SimpleName: "Old Brown Shoe",
@@ -1219,19 +1219,19 @@ func TestListSettingsListTracks(t *testing.T) {
 		output.WantedRecording
 	}{
 		"no tracks": {
-			ls: &cmd.ListSettings{Tracks: cmd.CommandFlag[bool]{Value: true}},
+			ls: &cmd.ListSettings{Tracks: cmdtoolkit.CommandFlag[bool]{Value: true}},
 		},
 		"do not list tracks": {
 			ls: &cmd.ListSettings{
-				Tracks:       cmd.CommandFlag[bool]{Value: false},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: false},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			tracks: generateTracks(99),
 		},
 		"list tracks by number": {
 			ls: &cmd.ListSettings{
-				Tracks:       cmd.CommandFlag[bool]{Value: true},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			tracks: generateTracks(25),
 			tab:    2,
@@ -1266,8 +1266,8 @@ func TestListSettingsListTracks(t *testing.T) {
 		},
 		"list tracks by name": {
 			ls: &cmd.ListSettings{
-				Tracks:      cmd.CommandFlag[bool]{Value: true},
-				SortByTitle: cmd.CommandFlag[bool]{Value: true},
+				Tracks:      cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByTitle: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			tracks: generateTracks(25),
 			tab:    2,
@@ -1318,29 +1318,29 @@ func TestListSettingsAnnotateAlbumName(t *testing.T) {
 	}{
 		"no annotation, no artist": {
 			ls: &cmd.ListSettings{
-				Artists:  cmd.CommandFlag[bool]{Value: false},
-				Annotate: cmd.CommandFlag[bool]{Value: false},
+				Artists:  cmdtoolkit.CommandFlag[bool]{Value: false},
+				Annotate: cmdtoolkit.CommandFlag[bool]{Value: false},
 			},
 			want: "my album",
 		},
 		"no annotation, with artist": {
 			ls: &cmd.ListSettings{
-				Artists:  cmd.CommandFlag[bool]{Value: true},
-				Annotate: cmd.CommandFlag[bool]{Value: false},
+				Artists:  cmdtoolkit.CommandFlag[bool]{Value: true},
+				Annotate: cmdtoolkit.CommandFlag[bool]{Value: false},
 			},
 			want: "my album",
 		},
 		"with annotation, no artist": {
 			ls: &cmd.ListSettings{
-				Artists:  cmd.CommandFlag[bool]{Value: false},
-				Annotate: cmd.CommandFlag[bool]{Value: true},
+				Artists:  cmdtoolkit.CommandFlag[bool]{Value: false},
+				Annotate: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			want: "\"my album\" by \"my artist\"",
 		},
 		"with annotation, with artist": {
 			ls: &cmd.ListSettings{
-				Artists:  cmd.CommandFlag[bool]{Value: true},
-				Annotate: cmd.CommandFlag[bool]{Value: true},
+				Artists:  cmdtoolkit.CommandFlag[bool]{Value: true},
+				Annotate: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			want: "my album",
 		},
@@ -1409,7 +1409,7 @@ func TestListSettingsListAlbums(t *testing.T) {
 			tab:    0,
 		},
 		"list albums without tracks": {
-			ls:     &cmd.ListSettings{Albums: cmd.CommandFlag[bool]{Value: true}},
+			ls:     &cmd.ListSettings{Albums: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			albums: generateAlbums(3, 3),
 			tab:    2,
 			WantedRecording: output.WantedRecording{
@@ -1421,10 +1421,10 @@ func TestListSettingsListAlbums(t *testing.T) {
 		},
 		"list tracks only": {
 			ls: &cmd.ListSettings{
-				Artists:     cmd.CommandFlag[bool]{Value: true},
-				Tracks:      cmd.CommandFlag[bool]{Value: true},
-				Annotate:    cmd.CommandFlag[bool]{Value: true},
-				SortByTitle: cmd.CommandFlag[bool]{Value: true},
+				Artists:     cmdtoolkit.CommandFlag[bool]{Value: true},
+				Tracks:      cmdtoolkit.CommandFlag[bool]{Value: true},
+				Annotate:    cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByTitle: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			albums: generateAlbums(2, 2),
 			tab:    2,
@@ -1438,10 +1438,10 @@ func TestListSettingsListAlbums(t *testing.T) {
 		},
 		"list albums and tracks": {
 			ls: &cmd.ListSettings{
-				Albums:       cmd.CommandFlag[bool]{Value: true},
-				Tracks:       cmd.CommandFlag[bool]{Value: true},
-				Annotate:     cmd.CommandFlag[bool]{Value: true},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true},
+				Albums:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				Annotate:     cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			albums: generateAlbums(3, 3),
 			tab:    0,
@@ -1463,8 +1463,8 @@ func TestListSettingsListAlbums(t *testing.T) {
 		},
 		"https://github.com/majohn-r/mp3repair/issues/147": {
 			ls: &cmd.ListSettings{
-				Albums:   cmd.CommandFlag[bool]{Value: true},
-				Annotate: cmd.CommandFlag[bool]{Value: true},
+				Albums:   cmdtoolkit.CommandFlag[bool]{Value: true},
+				Annotate: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			albums: []*files.Album{
 				{
@@ -1575,9 +1575,9 @@ func TestListSettingsListFilteredArtists(t *testing.T) {
 		"no artists": {ls: &cmd.ListSettings{}},
 		"tracks": {
 			ls: &cmd.ListSettings{
-				Tracks:      cmd.CommandFlag[bool]{Value: true},
-				Annotate:    cmd.CommandFlag[bool]{Value: true},
-				SortByTitle: cmd.CommandFlag[bool]{Value: true},
+				Tracks:      cmdtoolkit.CommandFlag[bool]{Value: true},
+				Annotate:    cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByTitle: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			artists: generateArtists(3, 3, 3),
 			WantedRecording: output.WantedRecording{
@@ -1613,8 +1613,8 @@ func TestListSettingsListFilteredArtists(t *testing.T) {
 		},
 		"albums": {
 			ls: &cmd.ListSettings{
-				Albums:   cmd.CommandFlag[bool]{Value: true},
-				Annotate: cmd.CommandFlag[bool]{Value: true},
+				Albums:   cmdtoolkit.CommandFlag[bool]{Value: true},
+				Annotate: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			artists: generateArtists(3, 3, 3),
 			WantedRecording: output.WantedRecording{
@@ -1632,10 +1632,10 @@ func TestListSettingsListFilteredArtists(t *testing.T) {
 		},
 		"albums and tracks": {
 			ls: &cmd.ListSettings{
-				Albums:       cmd.CommandFlag[bool]{Value: true},
-				Tracks:       cmd.CommandFlag[bool]{Value: true},
-				Annotate:     cmd.CommandFlag[bool]{Value: true},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true},
+				Albums:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				Annotate:     cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			artists: generateArtists(3, 3, 3),
 			WantedRecording: output.WantedRecording{
@@ -1679,7 +1679,7 @@ func TestListSettingsListFilteredArtists(t *testing.T) {
 			},
 		},
 		"artists": {
-			ls:      &cmd.ListSettings{Artists: cmd.CommandFlag[bool]{Value: true}},
+			ls:      &cmd.ListSettings{Artists: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			artists: generateArtists(3, 3, 3),
 			WantedRecording: output.WantedRecording{
 				Console: "" +
@@ -1690,10 +1690,10 @@ func TestListSettingsListFilteredArtists(t *testing.T) {
 		},
 		"artists and tracks": {
 			ls: &cmd.ListSettings{
-				Artists:     cmd.CommandFlag[bool]{Value: true},
-				Tracks:      cmd.CommandFlag[bool]{Value: true},
-				Annotate:    cmd.CommandFlag[bool]{Value: true},
-				SortByTitle: cmd.CommandFlag[bool]{Value: true},
+				Artists:     cmdtoolkit.CommandFlag[bool]{Value: true},
+				Tracks:      cmdtoolkit.CommandFlag[bool]{Value: true},
+				Annotate:    cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByTitle: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			artists: generateArtists(3, 3, 3),
 			WantedRecording: output.WantedRecording{
@@ -1732,8 +1732,8 @@ func TestListSettingsListFilteredArtists(t *testing.T) {
 		},
 		"artists and albums": {
 			ls: &cmd.ListSettings{
-				Albums:  cmd.CommandFlag[bool]{Value: true},
-				Artists: cmd.CommandFlag[bool]{Value: true},
+				Albums:  cmdtoolkit.CommandFlag[bool]{Value: true},
+				Artists: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			artists: generateArtists(3, 3, 3),
 			WantedRecording: output.WantedRecording{
@@ -1754,10 +1754,10 @@ func TestListSettingsListFilteredArtists(t *testing.T) {
 		},
 		"everything": {
 			ls: &cmd.ListSettings{
-				Artists:      cmd.CommandFlag[bool]{Value: true},
-				Albums:       cmd.CommandFlag[bool]{Value: true},
-				Tracks:       cmd.CommandFlag[bool]{Value: true},
-				SortByNumber: cmd.CommandFlag[bool]{Value: true},
+				Artists:      cmdtoolkit.CommandFlag[bool]{Value: true},
+				Albums:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				Tracks:       cmdtoolkit.CommandFlag[bool]{Value: true},
+				SortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			artists: generateArtists(3, 3, 3),
 			WantedRecording: output.WantedRecording{
@@ -1823,160 +1823,160 @@ func Test_ListRun(t *testing.T) {
 	}()
 	cmd.SearchFlags = safeSearchFlags
 
-	testListFlags := &cmd.SectionFlags{
-		SectionName: cmd.ListCommand,
-		Details: map[string]*cmd.FlagDetails{
+	testListFlags := &cmdtoolkit.FlagSet{
+		Name: cmd.ListCommand,
+		Details: map[string]*cmdtoolkit.FlagDetails{
 			cmd.ListAlbums: {
 				AbbreviatedName: "l",
 				Usage:           "include album names in listing",
-				ExpectedType:    cmd.BoolType,
+				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
 			cmd.ListArtists: {
 				AbbreviatedName: "r",
 				Usage:           "include artist names in listing",
-				ExpectedType:    cmd.BoolType,
+				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    true,
 			},
 			cmd.ListTracks: {
 				AbbreviatedName: "t",
 				Usage:           "include track names in listing",
-				ExpectedType:    cmd.BoolType,
+				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
 			cmd.ListSortByNumber: {
 				Usage:        "sort tracks by track number",
-				ExpectedType: cmd.BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
 			cmd.ListSortByTitle: {
 				Usage:        "sort tracks by track title",
-				ExpectedType: cmd.BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
 			cmd.ListAnnotate: {
 				Usage:        "annotate listings with album and artist names",
-				ExpectedType: cmd.BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
 			cmd.ListDetails: {
 				Usage:        "include details with tracks",
-				ExpectedType: cmd.BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
 			cmd.ListDiagnostic: {
 				Usage:        "include diagnostic information with tracks",
-				ExpectedType: cmd.BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
 		},
 	}
 	testCmd := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), testCmd.Flags(),
+	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), testCmd.Flags(),
 		testListFlags, cmd.SearchFlags)
 
-	testListFlags2 := &cmd.SectionFlags{
-		SectionName: cmd.ListCommand,
-		Details: map[string]*cmd.FlagDetails{
+	testListFlags2 := &cmdtoolkit.FlagSet{
+		Name: cmd.ListCommand,
+		Details: map[string]*cmdtoolkit.FlagDetails{
 			cmd.ListAlbums: {
 				AbbreviatedName: "l",
 				Usage:           "include album names in listing",
-				ExpectedType:    cmd.BoolType,
+				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
 			cmd.ListArtists: {
 				AbbreviatedName: "r",
 				Usage:           "include artist names in listing",
-				ExpectedType:    cmd.BoolType,
+				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    true,
 			},
 			cmd.ListTracks: {
 				AbbreviatedName: "t",
 				Usage:           "include track names in listing",
-				ExpectedType:    cmd.BoolType,
+				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    true,
 			},
 			cmd.ListSortByNumber: {
 				Usage:        "sort tracks by track number",
-				ExpectedType: cmd.BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: true,
 			},
 			cmd.ListSortByTitle: {
 				Usage:        "sort tracks by track title",
-				ExpectedType: cmd.BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: true,
 			},
 			cmd.ListAnnotate: {
 				Usage:        "annotate listings with album and artist names",
-				ExpectedType: cmd.BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
 			cmd.ListDetails: {
 				Usage:        "include details with tracks",
-				ExpectedType: cmd.BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
 			cmd.ListDiagnostic: {
 				Usage:        "include diagnostic information with tracks",
-				ExpectedType: cmd.BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
 		},
 	}
 	testCmd2 := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), testCmd2.Flags(),
+	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), testCmd2.Flags(),
 		testListFlags2, cmd.SearchFlags)
 
-	testListFlags3 := &cmd.SectionFlags{
-		SectionName: cmd.ListCommand,
-		Details: map[string]*cmd.FlagDetails{
+	testListFlags3 := &cmdtoolkit.FlagSet{
+		Name: cmd.ListCommand,
+		Details: map[string]*cmdtoolkit.FlagDetails{
 			cmd.ListAlbums: {
 				AbbreviatedName: "l",
 				Usage:           "include album names in listing",
-				ExpectedType:    cmd.BoolType,
+				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
 			cmd.ListArtists: {
 				AbbreviatedName: "r",
 				Usage:           "include artist names in listing",
-				ExpectedType:    cmd.BoolType,
+				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
 			cmd.ListTracks: {
 				AbbreviatedName: "t",
 				Usage:           "include track names in listing",
-				ExpectedType:    cmd.BoolType,
+				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
 			cmd.ListSortByNumber: {
 				Usage:        "sort tracks by track number",
-				ExpectedType: cmd.BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
 			cmd.ListSortByTitle: {
 				Usage:        "sort tracks by track title",
-				ExpectedType: cmd.BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
 			cmd.ListAnnotate: {
 				Usage:        "annotate listings with album and artist names",
-				ExpectedType: cmd.BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
 			cmd.ListDetails: {
 				Usage:        "include details with tracks",
-				ExpectedType: cmd.BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
 			cmd.ListDiagnostic: {
 				Usage:        "include diagnostic information with tracks",
-				ExpectedType: cmd.BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
 		},
 	}
 	testCmd3 := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), testCmd3.Flags(),
+	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), testCmd3.Flags(),
 		testListFlags3, cmd.SearchFlags)
 
 	tests := map[string]struct {
@@ -2129,7 +2129,7 @@ func TestListSettingsListArtists(t *testing.T) {
 		output.WantedRecording
 	}{
 		"no data": {
-			ls: &cmd.ListSettings{Artists: cmd.CommandFlag[bool]{Value: true}},
+			ls: &cmd.ListSettings{Artists: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			args: args{
 				allArtists: nil,
 				searchSettings: &cmd.SearchSettings{
@@ -2143,7 +2143,7 @@ func TestListSettingsListArtists(t *testing.T) {
 			// loading artists resulting in no artists
 		},
 		"with data": {
-			ls: &cmd.ListSettings{Artists: cmd.CommandFlag[bool]{Value: true}},
+			ls: &cmd.ListSettings{Artists: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			args: args{
 				allArtists: generateArtists(3, 4, 5),
 				searchSettings: &cmd.SearchSettings{
@@ -2180,7 +2180,7 @@ func TestListHelp(t *testing.T) {
 	}()
 	cmd.SearchFlags = safeSearchFlags
 	commandUnderTest := cloneCommand(cmd.ListCmd)
-	cmd.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
+	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), cmd.ListFlags, cmd.SearchFlags)
 	tests := map[string]struct {
 		output.WantedRecording

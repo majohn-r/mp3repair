@@ -18,13 +18,13 @@ import (
 
 func TestProcessRepairFlags(t *testing.T) {
 	tests := map[string]struct {
-		values map[string]*cmd.CommandFlag[any]
+		values map[string]*cmdtoolkit.CommandFlag[any]
 		want   *cmd.RepairSettings
 		want1  bool
 		output.WantedRecording
 	}{
 		"bad value": {
-			values: map[string]*cmd.CommandFlag[any]{},
+			values: map[string]*cmdtoolkit.CommandFlag[any]{},
 			want:   &cmd.RepairSettings{},
 			want1:  false,
 			WantedRecording: output.WantedRecording{
@@ -37,8 +37,8 @@ func TestProcessRepairFlags(t *testing.T) {
 			},
 		},
 		"good value": {
-			values: map[string]*cmd.CommandFlag[any]{"dryRun": {Value: true}},
-			want:   &cmd.RepairSettings{DryRun: cmd.CommandFlag[bool]{Value: true}},
+			values: map[string]*cmdtoolkit.CommandFlag[any]{"dryRun": {Value: true}},
+			want:   &cmd.RepairSettings{DryRun: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			want1:  true,
 		},
 	}
@@ -748,7 +748,7 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 		output.WantedRecording
 	}{
 		"clean dry run": {
-			rs:         &cmd.RepairSettings{DryRun: cmd.CommandFlag[bool]{Value: true}},
+			rs:         &cmd.RepairSettings{DryRun: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			artists:    generateArtists(2, 3, 4),
 			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
@@ -756,7 +756,7 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 			},
 		},
 		"dirty dry run": {
-			rs:         &cmd.RepairSettings{DryRun: cmd.CommandFlag[bool]{Value: true}},
+			rs:         &cmd.RepairSettings{DryRun: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			artists:    dirty,
 			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
@@ -1037,7 +1037,7 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 			},
 		},
 		"clean repair": {
-			rs:         &cmd.RepairSettings{DryRun: cmd.CommandFlag[bool]{Value: false}},
+			rs:         &cmd.RepairSettings{DryRun: cmdtoolkit.CommandFlag[bool]{Value: false}},
 			artists:    generateArtists(2, 3, 4),
 			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
@@ -1045,7 +1045,7 @@ func TestRepairSettings_RepairArtists(t *testing.T) {
 			},
 		},
 		"dirty repair": {
-			rs:         &cmd.RepairSettings{DryRun: cmd.CommandFlag[bool]{Value: false}},
+			rs:         &cmd.RepairSettings{DryRun: cmdtoolkit.CommandFlag[bool]{Value: false}},
 			artists:    dirty,
 			wantStatus: cmdtoolkit.NewExitSystemError("repair"),
 			WantedRecording: output.WantedRecording{
@@ -1443,12 +1443,12 @@ func TestRepairSettings_ProcessArtists(t *testing.T) {
 		output.WantedRecording
 	}{
 		"nothing to do": {
-			rs:         &cmd.RepairSettings{DryRun: cmd.CommandFlag[bool]{Value: true}},
+			rs:         &cmd.RepairSettings{DryRun: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			args:       args{},
 			wantStatus: cmdtoolkit.NewExitUserError("repair"),
 		},
 		"clean artists": {
-			rs: &cmd.RepairSettings{DryRun: cmd.CommandFlag[bool]{Value: true}},
+			rs: &cmd.RepairSettings{DryRun: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			args: args{
 				allArtists: generateArtists(2, 3, 4),
 				ss: &cmd.SearchSettings{
@@ -1484,18 +1484,18 @@ func TestRepairRun(t *testing.T) {
 		cmd.SearchFlags = originalSearchFlags
 	}()
 	cmd.SearchFlags = safeSearchFlags
-	repairFlags := &cmd.SectionFlags{
-		SectionName: "repair",
-		Details: map[string]*cmd.FlagDetails{
+	repairFlags := &cmdtoolkit.FlagSet{
+		Name: "repair",
+		Details: map[string]*cmdtoolkit.FlagDetails{
 			"dryRun": {
 				Usage:        "output what would have been repaired, but make no" + " repairs",
-				ExpectedType: cmd.BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
 		},
 	}
 	command := &cobra.Command{}
-	cmd.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), command.Flags(),
+	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), command.Flags(),
 		repairFlags, cmd.SearchFlags)
 	tests := map[string]struct {
 		cmd *cobra.Command
@@ -1545,7 +1545,7 @@ func TestRepairHelp(t *testing.T) {
 	}()
 	cmd.SearchFlags = safeSearchFlags
 	commandUnderTest := cloneCommand(cmd.RepairCmd)
-	cmd.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
+	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), cmd.RepairFlags, cmd.SearchFlags)
 	tests := map[string]struct {
 		output.WantedRecording

@@ -11,55 +11,55 @@ import (
 
 func Test_interpretStyle(t *testing.T) {
 	tests := map[string]struct {
-		flag CommandFlag[string]
+		flag cmdtoolkit.CommandFlag[string]
 		want cmdtoolkit.FlowerBoxStyle
 	}{
 		"lc ascii": {
-			flag: CommandFlag[string]{Value: "ascii"},
+			flag: cmdtoolkit.CommandFlag[string]{Value: "ascii"},
 			want: cmdtoolkit.ASCIIFlowerBox,
 		},
 		"uc ascii": {
-			flag: CommandFlag[string]{Value: "ASCII"},
+			flag: cmdtoolkit.CommandFlag[string]{Value: "ASCII"},
 			want: cmdtoolkit.ASCIIFlowerBox,
 		},
 		"lc rounded": {
-			flag: CommandFlag[string]{Value: "rounded"},
+			flag: cmdtoolkit.CommandFlag[string]{Value: "rounded"},
 			want: cmdtoolkit.CurvedFlowerBox,
 		},
 		"uc rounded": {
-			flag: CommandFlag[string]{Value: "ROUNDED"},
+			flag: cmdtoolkit.CommandFlag[string]{Value: "ROUNDED"},
 			want: cmdtoolkit.CurvedFlowerBox,
 		},
 		"lc light": {
-			flag: CommandFlag[string]{Value: "light"},
+			flag: cmdtoolkit.CommandFlag[string]{Value: "light"},
 			want: cmdtoolkit.LightLinedFlowerBox,
 		},
 		"uc light": {
-			flag: CommandFlag[string]{Value: "LIGHT"},
+			flag: cmdtoolkit.CommandFlag[string]{Value: "LIGHT"},
 			want: cmdtoolkit.LightLinedFlowerBox,
 		},
 		"lc heavy": {
-			flag: CommandFlag[string]{Value: "heavy"},
+			flag: cmdtoolkit.CommandFlag[string]{Value: "heavy"},
 			want: cmdtoolkit.HeavyLinedFlowerBox,
 		},
 		"uc heavy": {
-			flag: CommandFlag[string]{Value: "HEAVY"},
+			flag: cmdtoolkit.CommandFlag[string]{Value: "HEAVY"},
 			want: cmdtoolkit.HeavyLinedFlowerBox,
 		},
 		"lc double": {
-			flag: CommandFlag[string]{Value: "double"},
+			flag: cmdtoolkit.CommandFlag[string]{Value: "double"},
 			want: cmdtoolkit.DoubleLinedFlowerBox,
 		},
 		"uc double": {
-			flag: CommandFlag[string]{Value: "DOUBLE"},
+			flag: cmdtoolkit.CommandFlag[string]{Value: "DOUBLE"},
 			want: cmdtoolkit.DoubleLinedFlowerBox,
 		},
 		"empty": {
-			flag: CommandFlag[string]{Value: ""},
+			flag: cmdtoolkit.CommandFlag[string]{Value: ""},
 			want: cmdtoolkit.CurvedFlowerBox,
 		},
 		"garbage": {
-			flag: CommandFlag[string]{Value: "abc"},
+			flag: cmdtoolkit.CommandFlag[string]{Value: "abc"},
 			want: cmdtoolkit.CurvedFlowerBox,
 		},
 	}

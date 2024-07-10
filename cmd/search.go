@@ -46,32 +46,32 @@ For more (too much, often, you are warned) information, do a web search for
 
 var (
 	// SearchFlags is a common set of flags that many commands need to use
-	SearchFlags = &SectionFlags{
-		SectionName: "search",
-		Details: map[string]*FlagDetails{
+	SearchFlags = &cmdtoolkit.FlagSet{
+		Name: "search",
+		Details: map[string]*cmdtoolkit.FlagDetails{
 			SearchAlbumFilter: {
 				Usage:        "regular expression specifying which albums to select",
-				ExpectedType: StringType,
+				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: ".*",
 			},
 			SearchArtistFilter: {
 				Usage:        "regular expression specifying which artists to select",
-				ExpectedType: StringType,
+				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: ".*",
 			},
 			SearchTrackFilter: {
 				Usage:        "regular expression specifying which tracks to select",
-				ExpectedType: StringType,
+				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: ".*",
 			},
 			SearchTopDir: {
 				Usage:        "top directory specifying where to find mp3 files",
-				ExpectedType: StringType,
+				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: filepath.Join("%HOMEPATH%", "Music"),
 			},
 			SearchFileExtensions: {
 				Usage:        "comma-delimited list of file extensions used by mp3 files",
-				ExpectedType: StringType,
+				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: ".mp3",
 			},
 		},
@@ -96,15 +96,15 @@ func (ss *SearchSettings) Values() map[string]any {
 	}
 }
 
-func EvaluateSearchFlags(o output.Bus, producer FlagProducer) (*SearchSettings, bool) {
-	values, eSlice := ReadFlags(producer, SearchFlags)
-	if ProcessFlagErrors(o, eSlice) {
+func EvaluateSearchFlags(o output.Bus, producer cmdtoolkit.FlagProducer) (*SearchSettings, bool) {
+	values, eSlice := cmdtoolkit.ReadFlags(producer, SearchFlags)
+	if cmdtoolkit.ProcessFlagErrors(o, eSlice) {
 		return ProcessSearchFlags(o, values)
 	}
 	return &SearchSettings{}, false
 }
 
-func ProcessSearchFlags(o output.Bus, values map[string]*CommandFlag[any]) (settings *SearchSettings, flagsOk bool) {
+func ProcessSearchFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (settings *SearchSettings, flagsOk bool) {
 	flagsOk = true // optimistic
 	regexOk := true
 	settings = &SearchSettings{}
@@ -173,8 +173,8 @@ func ProcessSearchFlags(o output.Bus, values map[string]*CommandFlag[any]) (sett
 	return
 }
 
-func EvaluateFileExtensions(o output.Bus, values map[string]*CommandFlag[any]) ([]string, bool) {
-	rawValue, flagErr := GetString(o, values, SearchFileExtensions)
+func EvaluateFileExtensions(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) ([]string, bool) {
+	rawValue, flagErr := cmdtoolkit.GetString(o, values, SearchFileExtensions)
 	if flagErr != nil {
 		return []string{}, false
 	}
@@ -205,8 +205,8 @@ func EvaluateFileExtensions(o output.Bus, values map[string]*CommandFlag[any]) (
 	return extensions, extensionsValid
 }
 
-func EvaluateTopDir(o output.Bus, values map[string]*CommandFlag[any]) (dir string, topDirValid bool) {
-	rawValue, flagErr := GetString(o, values, SearchTopDir)
+func EvaluateTopDir(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (dir string, topDirValid bool) {
+	rawValue, flagErr := cmdtoolkit.GetString(o, values, SearchTopDir)
 	if flagErr != nil {
 		return
 	}
@@ -263,7 +263,7 @@ func EvaluateTopDir(o output.Bus, values map[string]*CommandFlag[any]) (dir stri
 }
 
 type FilterFlag struct {
-	Values             map[string]*CommandFlag[any]
+	Values             map[string]*cmdtoolkit.CommandFlag[any]
 	FlagName           string
 	FlagRepresentation string
 }
@@ -276,7 +276,7 @@ type EvaluatedFilter struct {
 
 func EvaluateFilter(o output.Bus, filtering FilterFlag) EvaluatedFilter {
 	result := EvaluatedFilter{RegexOk: true}
-	rawValue, flagErr := GetString(o, filtering.Values, filtering.FlagName)
+	rawValue, flagErr := cmdtoolkit.GetString(o, filtering.Values, filtering.FlagName)
 	if flagErr != nil {
 		return result
 	}

@@ -26,7 +26,6 @@ var (
 	PlainFileExists       = cmdtoolkit.PlainFileExists
 	ReadConfigurationFile = cmdtoolkit.ReadConfigurationFile
 	ReadDirectory         = cmdtoolkit.ReadDirectory
-	SetFlagIndicator      = cmdtoolkit.SetFlagIndicator
 	ClearDirty            = files.ClearDirty
 	Dirty                 = files.Dirty
 	MarkDirty             = files.MarkDirty

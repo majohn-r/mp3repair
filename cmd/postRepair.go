@@ -93,5 +93,5 @@ func init() {
 	RootCmd.AddCommand(PostRepairCmd)
 	bus := getBus()
 	c := getConfiguration()
-	AddFlags(bus, c, PostRepairCmd.Flags(), SearchFlags)
+	cmdtoolkit.AddFlags(bus, c, PostRepairCmd.Flags(), SearchFlags)
 }

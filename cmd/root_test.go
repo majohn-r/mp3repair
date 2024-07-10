@@ -270,7 +270,6 @@ func Test_InitGlobals(t *testing.T) {
 	originalInitLogging := cmd.InitLogging
 	originalInitApplicationPath := cmd.InitApplicationPath
 	originalReadConfigurationFile := cmd.ReadConfigurationFile
-	originalSetFlagIndicator := cmd.SetFlagIndicator
 	originalVersion := cmd.Version
 	originalCreation := cmd.Creation
 	originalInitialized := cmd.Initialized
@@ -282,7 +281,6 @@ func Test_InitGlobals(t *testing.T) {
 		cmd.InitLogging = originalInitLogging
 		cmd.InitApplicationPath = originalInitApplicationPath
 		cmd.ReadConfigurationFile = originalReadConfigurationFile
-		cmd.SetFlagIndicator = originalSetFlagIndicator
 		cmd.Version = originalVersion
 		cmd.Creation = originalCreation
 		cmd.Initialized = originalInitialized
@@ -420,7 +418,7 @@ func Test_InitGlobals(t *testing.T) {
 			cmd.InitLogging = tt.initLogging
 			cmd.InitApplicationPath = tt.initApplicationPath
 			cmd.ReadConfigurationFile = tt.readConfigurationFile
-			cmd.SetFlagIndicator = tt.setFlagIndicator
+
 			cmd.Creation = tt.creationVal
 			cmd.Version = tt.versionVal
 			cmd.InitGlobals()

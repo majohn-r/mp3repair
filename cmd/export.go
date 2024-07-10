@@ -37,19 +37,19 @@ var (
 			"  Overwrite a pre-existing defaults.yaml file",
 		RunE: ExportRun,
 	}
-	ExportFlags = &SectionFlags{
-		SectionName: ExportCommand,
-		Details: map[string]*FlagDetails{
+	ExportFlags = &cmdtoolkit.FlagSet{
+		Name: ExportCommand,
+		Details: map[string]*cmdtoolkit.FlagDetails{
 			ExportFlagDefaults: {
 				AbbreviatedName: "d",
 				Usage:           "write default program configuration data",
-				ExpectedType:    BoolType,
+				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
 			ExportFlagOverwrite: {
 				AbbreviatedName: "o",
 				Usage:           "overwrite existing file",
-				ExpectedType:    BoolType,
+				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
 		},
@@ -57,7 +57,7 @@ var (
 	defaultConfigurationSettings = map[string]map[string]any{}
 )
 
-func addDefaults(sf *SectionFlags) {
+func addDefaults(sf *cmdtoolkit.FlagSet) {
 	payload := map[string]any{}
 	for flag, details := range sf.Details {
 		bounded, ok := details.DefaultValue.(*cmdtoolkit.IntBounds)
@@ -68,19 +68,19 @@ func addDefaults(sf *SectionFlags) {
 			payload[flag] = details.DefaultValue
 		}
 	}
-	defaultConfigurationSettings[sf.SectionName] = payload
+	defaultConfigurationSettings[sf.Name] = payload
 }
 
 type ExportSettings struct {
-	DefaultsEnabled  CommandFlag[bool]
-	OverwriteEnabled CommandFlag[bool]
+	DefaultsEnabled  cmdtoolkit.CommandFlag[bool]
+	OverwriteEnabled cmdtoolkit.CommandFlag[bool]
 }
 
 func ExportRun(cmd *cobra.Command, _ []string) error {
 	o := getBus()
-	values, eSlice := ReadFlags(cmd.Flags(), ExportFlags)
+	values, eSlice := cmdtoolkit.ReadFlags(cmd.Flags(), ExportFlags)
 	exitError := cmdtoolkit.NewExitProgrammingError(ExportCommand)
-	if ProcessFlagErrors(o, eSlice) {
+	if cmdtoolkit.ProcessFlagErrors(o, eSlice) {
 		settings, flagsOk := ProcessExportFlags(o, values)
 		if flagsOk {
 			LogCommandStart(o, ExportCommand, map[string]any{
@@ -95,15 +95,15 @@ func ExportRun(cmd *cobra.Command, _ []string) error {
 	return cmdtoolkit.ToErrorInterface(exitError)
 }
 
-func ProcessExportFlags(o output.Bus, values map[string]*CommandFlag[any]) (*ExportSettings, bool) {
+func ProcessExportFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (*ExportSettings, bool) {
 	var flagErr error
 	result := &ExportSettings{}
 	flagsOk := true // optimistic
-	result.DefaultsEnabled, flagErr = GetBool(o, values, ExportFlagDefaults)
+	result.DefaultsEnabled, flagErr = cmdtoolkit.GetBool(o, values, ExportFlagDefaults)
 	if flagErr != nil {
 		flagsOk = false
 	}
-	result.OverwriteEnabled, flagErr = GetBool(o, values, ExportFlagOverwrite)
+	result.OverwriteEnabled, flagErr = cmdtoolkit.GetBool(o, values, ExportFlagOverwrite)
 	if flagErr != nil {
 		flagsOk = false
 	}
@@ -209,5 +209,5 @@ func init() {
 	addDefaults(ExportFlags)
 	o := getBus()
 	c := getConfiguration()
-	AddFlags(o, c, ExportCmd.Flags(), ExportFlags)
+	cmdtoolkit.AddFlags(o, c, ExportCmd.Flags(), ExportFlags)
 }

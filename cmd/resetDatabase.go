@@ -65,40 +65,40 @@ This command does nothing if it determines that the ` + repairCommandName + ` co
 changes, unless the ` + resetDBForceFlag + ` flag is set.`,
 		RunE: ResetDBRun,
 	}
-	ResetDatabaseFlags = &SectionFlags{
-		SectionName: resetDBCommandName,
-		Details: map[string]*FlagDetails{
+	ResetDatabaseFlags = &cmdtoolkit.FlagSet{
+		Name: resetDBCommandName,
+		Details: map[string]*cmdtoolkit.FlagDetails{
 			resetDBTimeout: {
 				AbbreviatedName: resetDBTimeoutAbbr,
 				Usage:           fmt.Sprintf("timeout in seconds (minimum %d, maximum %d) for stopping the media player service", minTimeout, maxTimeout),
-				ExpectedType:    IntType,
+				ExpectedType:    cmdtoolkit.IntType,
 				DefaultValue:    cmdtoolkit.NewIntBounds(minTimeout, defaultTimeout, maxTimeout),
 			},
 			resetDBService: {
 				Usage:        "name of the media player service",
-				ExpectedType: StringType,
+				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: "WMPNetworkSVC",
 			},
 			resetDBMetadataDir: {
 				Usage:        "directory where the media player service metadata files are stored",
-				ExpectedType: StringType,
+				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: filepath.Join("%USERPROFILE%", "AppData", "Local", "Microsoft", "Media Player"),
 			},
 			resetDBExtension: {
 				Usage:        "extension for metadata files",
-				ExpectedType: StringType,
+				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: ".wmdb",
 			},
 			resetDBForce: {
 				AbbreviatedName: resetDBForceAbbr,
 				Usage:           "if set, force a database reset",
-				ExpectedType:    BoolType,
+				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
 			resetDBIgnoreServiceErrors: {
 				AbbreviatedName: resetDBIgnoreServiceErrorsAbbr,
 				Usage:           "if set, ignore service errors and delete the media player service metadata files",
-				ExpectedType:    BoolType,
+				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
 		},
@@ -118,8 +118,8 @@ changes, unless the ` + resetDBForceFlag + ` flag is set.`,
 func ResetDBRun(cmd *cobra.Command, _ []string) error {
 	exitError := cmdtoolkit.NewExitSystemError(resetDBCommandName)
 	o := getBus()
-	values, eSlice := ReadFlags(cmd.Flags(), ResetDatabaseFlags)
-	if ProcessFlagErrors(o, eSlice) {
+	values, eSlice := cmdtoolkit.ReadFlags(cmd.Flags(), ResetDatabaseFlags)
+	if cmdtoolkit.ProcessFlagErrors(o, eSlice) {
 		flags, flagsOk := ProcessResetDBFlags(o, values)
 		if flagsOk {
 			LogCommandStart(o, resetDBCommandName, map[string]any{
@@ -137,12 +137,12 @@ func ResetDBRun(cmd *cobra.Command, _ []string) error {
 }
 
 type ResetDBSettings struct {
-	Extension           CommandFlag[string]
-	Force               CommandFlag[bool]
-	IgnoreServiceErrors CommandFlag[bool]
-	MetadataDir         CommandFlag[string]
-	Service             CommandFlag[string]
-	Timeout             CommandFlag[int]
+	Extension           cmdtoolkit.CommandFlag[string]
+	Force               cmdtoolkit.CommandFlag[bool]
+	IgnoreServiceErrors cmdtoolkit.CommandFlag[bool]
+	MetadataDir         cmdtoolkit.CommandFlag[string]
+	Service             cmdtoolkit.CommandFlag[string]
+	Timeout             cmdtoolkit.CommandFlag[int]
 }
 
 func (rDBSettings *ResetDBSettings) ResetService(o output.Bus) (e *cmdtoolkit.ExitError) {
@@ -464,31 +464,31 @@ func (rDBSettings *ResetDBSettings) DeleteMetadataFiles(o output.Bus, paths []st
 	return
 }
 
-func ProcessResetDBFlags(o output.Bus, values map[string]*CommandFlag[any]) (*ResetDBSettings, bool) {
+func ProcessResetDBFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (*ResetDBSettings, bool) {
 	var flagErr error
 	result := &ResetDBSettings{}
 	flagsOk := true // optimistic
-	result.Timeout, flagErr = GetInt(o, values, resetDBTimeout)
+	result.Timeout, flagErr = cmdtoolkit.GetInt(o, values, resetDBTimeout)
 	if flagErr != nil {
 		flagsOk = false
 	}
-	result.Service, flagErr = GetString(o, values, resetDBService)
+	result.Service, flagErr = cmdtoolkit.GetString(o, values, resetDBService)
 	if flagErr != nil {
 		flagsOk = false
 	}
-	result.MetadataDir, flagErr = GetString(o, values, resetDBMetadataDir)
+	result.MetadataDir, flagErr = cmdtoolkit.GetString(o, values, resetDBMetadataDir)
 	if flagErr != nil {
 		flagsOk = false
 	}
-	result.Extension, flagErr = GetString(o, values, resetDBExtension)
+	result.Extension, flagErr = cmdtoolkit.GetString(o, values, resetDBExtension)
 	if flagErr != nil {
 		flagsOk = false
 	}
-	result.Force, flagErr = GetBool(o, values, resetDBForce)
+	result.Force, flagErr = cmdtoolkit.GetBool(o, values, resetDBForce)
 	if flagErr != nil {
 		flagsOk = false
 	}
-	result.IgnoreServiceErrors, flagErr = GetBool(o, values, resetDBIgnoreServiceErrors)
+	result.IgnoreServiceErrors, flagErr = cmdtoolkit.GetBool(o, values, resetDBIgnoreServiceErrors)
 	if flagErr != nil {
 		flagsOk = false
 	}
@@ -500,5 +500,5 @@ func init() {
 	addDefaults(ResetDatabaseFlags)
 	o := getBus()
 	c := getConfiguration()
-	AddFlags(o, c, ResetDatabaseCmd.Flags(), ResetDatabaseFlags)
+	cmdtoolkit.AddFlags(o, c, ResetDatabaseCmd.Flags(), ResetDatabaseFlags)
 }

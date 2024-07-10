@@ -43,12 +43,12 @@ var (
 			"  Output what would be repaired, but does not perform the stated repairs",
 		RunE: RepairRun,
 	}
-	RepairFlags = &SectionFlags{
-		SectionName: repairCommandName,
-		Details: map[string]*FlagDetails{
+	RepairFlags = &cmdtoolkit.FlagSet{
+		Name: repairCommandName,
+		Details: map[string]*cmdtoolkit.FlagDetails{
 			"dryRun": {
 				Usage:        "output what would have been repaired, but make no repairs",
-				ExpectedType: BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
 		},
@@ -59,9 +59,9 @@ func RepairRun(cmd *cobra.Command, _ []string) error {
 	exitError := cmdtoolkit.NewExitProgrammingError(repairCommandName)
 	o := getBus()
 	producer := cmd.Flags()
-	values, eSlice := ReadFlags(producer, RepairFlags)
+	values, eSlice := cmdtoolkit.ReadFlags(producer, RepairFlags)
 	searchSettings, searchFlagsOk := EvaluateSearchFlags(o, producer)
-	if ProcessFlagErrors(o, eSlice) && searchFlagsOk {
+	if cmdtoolkit.ProcessFlagErrors(o, eSlice) && searchFlagsOk {
 		if rs, flagsOk := ProcessRepairFlags(o, values); flagsOk {
 			details := map[string]any{repairDryRunFlag: rs.DryRun.Value}
 			for k, v := range searchSettings.Values() {
@@ -76,7 +76,7 @@ func RepairRun(cmd *cobra.Command, _ []string) error {
 }
 
 type RepairSettings struct {
-	DryRun CommandFlag[bool]
+	DryRun cmdtoolkit.CommandFlag[bool]
 }
 
 func (rs *RepairSettings) ProcessArtists(o output.Bus, allArtists []*files.Artist, ss *SearchSettings) (e *cmdtoolkit.ExitError) {
@@ -288,11 +288,11 @@ func EnsureTrackBackupDirectoryExists(o output.Bus, cAl *ConcernedAlbum) (path s
 	return
 }
 
-func ProcessRepairFlags(o output.Bus, values map[string]*CommandFlag[any]) (*RepairSettings, bool) {
+func ProcessRepairFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (*RepairSettings, bool) {
 	rs := &RepairSettings{}
 	flagsOk := true // optimistic
 	var flagErr error
-	if rs.DryRun, flagErr = GetBool(o, values, repairDryRun); flagErr != nil {
+	if rs.DryRun, flagErr = cmdtoolkit.GetBool(o, values, repairDryRun); flagErr != nil {
 		flagsOk = false
 	}
 	return rs, flagsOk
@@ -303,5 +303,5 @@ func init() {
 	addDefaults(RepairFlags)
 	o := getBus()
 	c := getConfiguration()
-	AddFlags(o, c, RepairCmd.Flags(), RepairFlags, SearchFlags)
+	cmdtoolkit.AddFlags(o, c, RepairCmd.Flags(), RepairFlags, SearchFlags)
 }

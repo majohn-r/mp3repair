@@ -66,12 +66,12 @@ var (
 		),
 		RunE: AboutRun,
 	}
-	aboutFlags = &SectionFlags{
-		SectionName: aboutCommand,
-		Details: map[string]*FlagDetails{
+	aboutFlags = &cmdtoolkit.FlagSet{
+		Name: aboutCommand,
+		Details: map[string]*cmdtoolkit.FlagDetails{
 			aboutStyle: {
 				Usage:        "specify the output border style",
-				ExpectedType: StringType,
+				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: "rounded",
 			},
 		},
@@ -86,10 +86,10 @@ var (
 
 func AboutRun(cmd *cobra.Command, _ []string) error {
 	o := BusGetter()
-	values, eSlice := ReadFlags(cmd.Flags(), aboutFlags)
+	values, eSlice := cmdtoolkit.ReadFlags(cmd.Flags(), aboutFlags)
 	exitError := cmdtoolkit.NewExitProgrammingError(ExportCommand)
-	if ProcessFlagErrors(o, eSlice) {
-		flag, err := GetString(o, values, aboutStyle)
+	if cmdtoolkit.ProcessFlagErrors(o, eSlice) {
+		flag, err := cmdtoolkit.GetString(o, values, aboutStyle)
 		if err == nil {
 			style := interpretStyle(flag)
 			LogCommandStart(o, aboutCommand, map[string]any{aboutStyle: style})
@@ -100,7 +100,7 @@ func AboutRun(cmd *cobra.Command, _ []string) error {
 	return cmdtoolkit.ToErrorInterface(exitError)
 }
 
-func interpretStyle(flag CommandFlag[string]) cmdtoolkit.FlowerBoxStyle {
+func interpretStyle(flag cmdtoolkit.CommandFlag[string]) cmdtoolkit.FlowerBoxStyle {
 	var style cmdtoolkit.FlowerBoxStyle
 	switch strings.ToLower(flag.Value) {
 	case "ascii":
@@ -157,5 +157,5 @@ func init() {
 	addDefaults(aboutFlags)
 	o := getBus()
 	c := getConfiguration()
-	AddFlags(o, c, AboutCmd.Flags(), aboutFlags)
+	cmdtoolkit.AddFlags(o, c, AboutCmd.Flags(), aboutFlags)
 }

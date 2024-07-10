@@ -90,25 +90,25 @@ var (
 			"  reports errors in the track numbers of mp3 files",
 		RunE: CheckRun,
 	}
-	CheckFlags = &SectionFlags{
-		SectionName: CheckCommand,
-		Details: map[string]*FlagDetails{
+	CheckFlags = &cmdtoolkit.FlagSet{
+		Name: CheckCommand,
+		Details: map[string]*cmdtoolkit.FlagDetails{
 			CheckEmpty: {
 				AbbreviatedName: CheckEmptyAbbr,
 				Usage:           "report empty album and artist directories",
-				ExpectedType:    BoolType,
+				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
 			CheckFiles: {
 				AbbreviatedName: CheckFilesAbbr,
 				Usage:           "report metadata/file inconsistencies",
-				ExpectedType:    BoolType,
+				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
 			CheckNumbering: {
 				AbbreviatedName: CheckNumberingAbbr,
 				Usage:           "report missing track numbers and duplicated track numbering",
-				ExpectedType:    BoolType,
+				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
 		},
@@ -119,9 +119,9 @@ func CheckRun(cmd *cobra.Command, _ []string) error {
 	exitError := cmdtoolkit.NewExitProgrammingError(CheckCommand)
 	o := getBus()
 	producer := cmd.Flags()
-	values, eSlice := ReadFlags(producer, CheckFlags)
+	values, eSlice := cmdtoolkit.ReadFlags(producer, CheckFlags)
 	searchSettings, searchFlagsOk := EvaluateSearchFlags(o, producer)
-	if ProcessFlagErrors(o, eSlice) && searchFlagsOk {
+	if cmdtoolkit.ProcessFlagErrors(o, eSlice) && searchFlagsOk {
 		if cs, flagsOk := ProcessCheckFlags(o, values); flagsOk {
 			details := map[string]any{
 				CheckEmptyFlag:       cs.Empty.Value,
@@ -142,9 +142,9 @@ func CheckRun(cmd *cobra.Command, _ []string) error {
 }
 
 type CheckSettings struct {
-	Empty     CommandFlag[bool]
-	Files     CommandFlag[bool]
-	Numbering CommandFlag[bool]
+	Empty     cmdtoolkit.CommandFlag[bool]
+	Files     cmdtoolkit.CommandFlag[bool]
+	Numbering cmdtoolkit.CommandFlag[bool]
 }
 
 func (cs *CheckSettings) MaybeDoWork(o output.Bus, ss *SearchSettings) (err *cmdtoolkit.ExitError) {
@@ -394,17 +394,17 @@ func (cs *CheckSettings) HasWorkToDo(o output.Bus) bool {
 	return false
 }
 
-func ProcessCheckFlags(o output.Bus, values map[string]*CommandFlag[any]) (*CheckSettings, bool) {
+func ProcessCheckFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (*CheckSettings, bool) {
 	settings := &CheckSettings{}
 	flagsOk := true // optimistic
 	var flagErr error
-	if settings.Empty, flagErr = GetBool(o, values, CheckEmpty); flagErr != nil {
+	if settings.Empty, flagErr = cmdtoolkit.GetBool(o, values, CheckEmpty); flagErr != nil {
 		flagsOk = false
 	}
-	if settings.Files, flagErr = GetBool(o, values, CheckFiles); flagErr != nil {
+	if settings.Files, flagErr = cmdtoolkit.GetBool(o, values, CheckFiles); flagErr != nil {
 		flagsOk = false
 	}
-	if settings.Numbering, flagErr = GetBool(o, values, CheckNumbering); flagErr != nil {
+	if settings.Numbering, flagErr = cmdtoolkit.GetBool(o, values, CheckNumbering); flagErr != nil {
 		flagsOk = false
 	}
 	return settings, flagsOk
@@ -415,5 +415,5 @@ func init() {
 	addDefaults(CheckFlags)
 	o := getBus()
 	c := getConfiguration()
-	AddFlags(o, c, CheckCmd.Flags(), CheckFlags, SearchFlags)
+	cmdtoolkit.AddFlags(o, c, CheckCmd.Flags(), CheckFlags, SearchFlags)
 }

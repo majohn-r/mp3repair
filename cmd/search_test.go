@@ -1,6 +1,7 @@
 package cmd_test
 
 import (
+	"fmt"
 	"io/fs"
 	"mp3repair/cmd"
 	"mp3repair/internal/files"
@@ -26,7 +27,7 @@ func TestEvaluateFilter(t *testing.T) {
 	}{
 		"missing flag": {
 			filtering: cmd.FilterFlag{
-				Values:             map[string]*cmd.CommandFlag[any]{},
+				Values:             map[string]*cmdtoolkit.CommandFlag[any]{},
 				FlagName:           "albumFilter",
 				FlagRepresentation: "--albumFilter",
 			},
@@ -41,7 +42,7 @@ func TestEvaluateFilter(t *testing.T) {
 		},
 		"bad regex, user-supplied": {
 			filtering: cmd.FilterFlag{
-				Values: map[string]*cmd.CommandFlag[any]{
+				Values: map[string]*cmdtoolkit.CommandFlag[any]{
 					"albumFilter": {UserSet: true, Value: "[9-0]"},
 				},
 				FlagName:           "albumFilter",
@@ -66,7 +67,7 @@ func TestEvaluateFilter(t *testing.T) {
 		},
 		"bad regex, as configured": {
 			filtering: cmd.FilterFlag{
-				Values: map[string]*cmd.CommandFlag[any]{
+				Values: map[string]*cmdtoolkit.CommandFlag[any]{
 					"albumFilter": {UserSet: false, Value: "[9-0]"},
 				},
 				FlagName:           "albumFilter",
@@ -91,7 +92,7 @@ func TestEvaluateFilter(t *testing.T) {
 		},
 		"good regex": {
 			filtering: cmd.FilterFlag{
-				Values: map[string]*cmd.CommandFlag[any]{
+				Values: map[string]*cmdtoolkit.CommandFlag[any]{
 					"albumFilter": {UserSet: true, Value: `\d`},
 				},
 				FlagName:           "albumFilter",
@@ -126,13 +127,13 @@ func TestEvaluateTopDir(t *testing.T) {
 	_ = cmdtoolkit.FileSystem().Mkdir(goodDir, cmdtoolkit.StdDirPermissions)
 	_ = afero.WriteFile(cmdtoolkit.FileSystem(), badDir, []byte("data"), cmdtoolkit.StdFilePermissions)
 	tests := map[string]struct {
-		values  map[string]*cmd.CommandFlag[any]
+		values  map[string]*cmdtoolkit.CommandFlag[any]
 		wantDir string
 		wantOk  bool
 		output.WantedRecording
 	}{
 		"missing flag": {
-			values: map[string]*cmd.CommandFlag[any]{},
+			values: map[string]*cmdtoolkit.CommandFlag[any]{},
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"topDir\" is not found.\n",
 				Log: "level='error'" +
@@ -142,7 +143,7 @@ func TestEvaluateTopDir(t *testing.T) {
 			},
 		},
 		"non-existent file, user set": {
-			values: map[string]*cmd.CommandFlag[any]{
+			values: map[string]*cmdtoolkit.CommandFlag[any]{
 				"topDir": {UserSet: true, Value: "no such directory"},
 			},
 			WantedRecording: output.WantedRecording{
@@ -159,7 +160,7 @@ func TestEvaluateTopDir(t *testing.T) {
 			},
 		},
 		"non-existent file, as configured": {
-			values: map[string]*cmd.CommandFlag[any]{
+			values: map[string]*cmdtoolkit.CommandFlag[any]{
 				"topDir": {UserSet: false, Value: "no such directory"},
 			},
 			WantedRecording: output.WantedRecording{
@@ -177,7 +178,7 @@ func TestEvaluateTopDir(t *testing.T) {
 			},
 		},
 		"non-existent directory, user set": {
-			values: map[string]*cmd.CommandFlag[any]{
+			values: map[string]*cmdtoolkit.CommandFlag[any]{
 				"topDir": {UserSet: true, Value: badDir},
 			},
 			WantedRecording: output.WantedRecording{
@@ -193,7 +194,7 @@ func TestEvaluateTopDir(t *testing.T) {
 			},
 		},
 		"non-existent directory, as configured": {
-			values: map[string]*cmd.CommandFlag[any]{
+			values: map[string]*cmdtoolkit.CommandFlag[any]{
 				"topDir": {UserSet: false, Value: badDir},
 			},
 			WantedRecording: output.WantedRecording{
@@ -210,7 +211,7 @@ func TestEvaluateTopDir(t *testing.T) {
 			},
 		},
 		"valid directory": {
-			values: map[string]*cmd.CommandFlag[any]{
+			values: map[string]*cmdtoolkit.CommandFlag[any]{
 				"topDir": {UserSet: false, Value: goodDir},
 			},
 			wantDir: goodDir,
@@ -234,13 +235,13 @@ func TestEvaluateTopDir(t *testing.T) {
 
 func TestProcessSearchFlags(t *testing.T) {
 	tests := map[string]struct {
-		values       map[string]*cmd.CommandFlag[any]
+		values       map[string]*cmdtoolkit.CommandFlag[any]
 		wantSettings *cmd.SearchSettings
 		wantOk       bool
 		output.WantedRecording
 	}{
 		"no data": {
-			values:       map[string]*cmd.CommandFlag[any]{},
+			values:       map[string]*cmdtoolkit.CommandFlag[any]{},
 			wantSettings: &cmd.SearchSettings{},
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"albumFilter\" is not found.\n" +
@@ -271,7 +272,7 @@ func TestProcessSearchFlags(t *testing.T) {
 			},
 		},
 		"bad data": {
-			values: map[string]*cmd.CommandFlag[any]{
+			values: map[string]*cmdtoolkit.CommandFlag[any]{
 				"albumFilter":  {Value: "[2"},
 				"artistFilter": {Value: "[1-0]"},
 				"trackFilter":  {Value: "0++"},
@@ -366,7 +367,7 @@ func TestProcessSearchFlags(t *testing.T) {
 			},
 		},
 		"good data": {
-			values: map[string]*cmd.CommandFlag[any]{
+			values: map[string]*cmdtoolkit.CommandFlag[any]{
 				"albumFilter":  {Value: "[23]"},
 				"artistFilter": {Value: "[0-7]"},
 				"trackFilter":  {Value: "0+"},
@@ -398,9 +399,84 @@ func TestProcessSearchFlags(t *testing.T) {
 	}
 }
 
+type testFlag struct {
+	value     any
+	valueKind any
+	changed   bool
+}
+
+type testFlagProducer struct {
+	flags map[string]testFlag
+}
+
+func (tfp testFlagProducer) Changed(name string) bool {
+	if flag, found := tfp.flags[name]; found {
+		return flag.changed
+	} else {
+		return false
+	}
+}
+
+func (tfp testFlagProducer) GetBool(name string) (b bool, flagErr error) {
+	if flag, found := tfp.flags[name]; found {
+		if flag.valueKind == cmdtoolkit.BoolType {
+			if value, ok := flag.value.(bool); ok {
+				b = value
+			} else {
+				flagErr = fmt.Errorf(
+					"code error: value for %q name is supposed to be bool, but it isn't",
+					name)
+			}
+		} else {
+			flagErr = fmt.Errorf("flag %q is not marked boolean", name)
+		}
+	} else {
+		flagErr = fmt.Errorf("flag %q does not exist", name)
+	}
+	return
+}
+
+func (tfp testFlagProducer) GetInt(name string) (i int, flagErr error) {
+	if flag, found := tfp.flags[name]; found {
+		if flag.valueKind == cmdtoolkit.IntType {
+			if value, ok := flag.value.(int); ok {
+				i = value
+			} else {
+				flagErr = fmt.Errorf(
+					"code error: value for %q name is supposed to be int, but it isn't",
+					name)
+			}
+		} else {
+			flagErr = fmt.Errorf("flag %q is not marked int", name)
+		}
+	} else {
+		flagErr = fmt.Errorf("flag %q does not exist", name)
+	}
+	return
+}
+
+func (tfp testFlagProducer) GetString(name string) (s string, flagErr error) {
+	if flag, found := tfp.flags[name]; found {
+		if flag.valueKind == cmdtoolkit.StringType {
+			if value, ok := flag.value.(string); ok {
+				s = value
+			} else {
+				flagErr = fmt.Errorf(
+					"code error: value for %q name is supposed to be string, but it isn't",
+					name)
+			}
+		} else {
+			flagErr = fmt.Errorf("flag %q is not marked string", name)
+		}
+	} else {
+		flagErr = fmt.Errorf("flag %q does not exist", name)
+	}
+	return
+}
+
 func TestEvaluateSearchFlags(t *testing.T) {
 	tests := map[string]struct {
-		producer     cmd.FlagProducer
+		producer     cmdtoolkit.FlagProducer
 		wantSettings *cmd.SearchSettings
 		wantOk       bool
 		output.WantedRecording
@@ -434,11 +510,11 @@ func TestEvaluateSearchFlags(t *testing.T) {
 		"good data": {
 			producer: testFlagProducer{
 				flags: map[string]testFlag{
-					"albumFilter":  {value: "\\d+", valueKind: cmd.StringType},
-					"artistFilter": {value: "Beatles", valueKind: cmd.StringType},
-					"trackFilter":  {value: "Sadie", valueKind: cmd.StringType},
-					"topDir":       {value: ".", valueKind: cmd.StringType},
-					"extensions":   {value: ".mp3", valueKind: cmd.StringType},
+					"albumFilter":  {value: "\\d+", valueKind: cmdtoolkit.StringType},
+					"artistFilter": {value: "Beatles", valueKind: cmdtoolkit.StringType},
+					"trackFilter":  {value: "Sadie", valueKind: cmdtoolkit.StringType},
+					"topDir":       {value: ".", valueKind: cmdtoolkit.StringType},
+					"extensions":   {value: ".mp3", valueKind: cmdtoolkit.StringType},
 				},
 			},
 			wantSettings: &cmd.SearchSettings{
@@ -468,13 +544,13 @@ func TestEvaluateSearchFlags(t *testing.T) {
 
 func TestEvaluateFileExtensions(t *testing.T) {
 	tests := map[string]struct {
-		values map[string]*cmd.CommandFlag[any]
+		values map[string]*cmdtoolkit.CommandFlag[any]
 		want   []string
 		want1  bool
 		output.WantedRecording
 	}{
 		"no data": {
-			values: map[string]*cmd.CommandFlag[any]{},
+			values: map[string]*cmdtoolkit.CommandFlag[any]{},
 			want:   []string{},
 			want1:  false,
 			WantedRecording: output.WantedRecording{
@@ -486,17 +562,17 @@ func TestEvaluateFileExtensions(t *testing.T) {
 			},
 		},
 		"one extension": {
-			values: map[string]*cmd.CommandFlag[any]{"extensions": {Value: ".mp3"}},
+			values: map[string]*cmdtoolkit.CommandFlag[any]{"extensions": {Value: ".mp3"}},
 			want:   []string{".mp3"},
 			want1:  true,
 		},
 		"two extensions": {
-			values: map[string]*cmd.CommandFlag[any]{"extensions": {Value: ".mp3,.mPThree"}},
+			values: map[string]*cmdtoolkit.CommandFlag[any]{"extensions": {Value: ".mp3,.mPThree"}},
 			want:   []string{".mp3", ".mPThree"},
 			want1:  true,
 		},
 		"bad extensions": {
-			values: map[string]*cmd.CommandFlag[any]{"extensions": {Value: ".mp3,,foo,."}},
+			values: map[string]*cmdtoolkit.CommandFlag[any]{"extensions": {Value: ".mp3,,foo,."}},
 			want:   []string{".mp3"},
 			want1:  false,
 			WantedRecording: output.WantedRecording{

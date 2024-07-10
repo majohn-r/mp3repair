@@ -60,50 +60,50 @@ var (
 			"  Sort tracks by track number",
 		RunE: ListRun,
 	}
-	ListFlags = &SectionFlags{
-		SectionName: ListCommand,
-		Details: map[string]*FlagDetails{
+	ListFlags = &cmdtoolkit.FlagSet{
+		Name: ListCommand,
+		Details: map[string]*cmdtoolkit.FlagDetails{
 			ListAlbums: {
 				AbbreviatedName: "l",
 				Usage:           "include album names in listing",
-				ExpectedType:    BoolType,
+				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
 			ListArtists: {
 				AbbreviatedName: "r",
 				Usage:           "include artist names in listing",
-				ExpectedType:    BoolType,
+				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
 			ListTracks: {
 				AbbreviatedName: "t",
 				Usage:           "include track names in listing",
-				ExpectedType:    BoolType,
+				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
 			ListSortByNumber: {
 				Usage:        "sort tracks by track number",
-				ExpectedType: BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
 			ListSortByTitle: {
 				Usage:        "sort tracks by track title",
-				ExpectedType: BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
 			ListAnnotate: {
 				Usage:        "annotate listings with album and artist names",
-				ExpectedType: BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
 			ListDetails: {
 				Usage:        "include details with tracks",
-				ExpectedType: BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
 			ListDiagnostic: {
 				Usage:        "include diagnostic information with tracks",
-				ExpectedType: BoolType,
+				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
 		},
@@ -114,9 +114,9 @@ func ListRun(cmd *cobra.Command, _ []string) error {
 	exitError := cmdtoolkit.NewExitProgrammingError(ListCommand)
 	o := getBus()
 	producer := cmd.Flags()
-	values, eSlice := ReadFlags(producer, ListFlags)
+	values, eSlice := cmdtoolkit.ReadFlags(producer, ListFlags)
 	searchSettings, searchFlagsOk := EvaluateSearchFlags(o, producer)
-	if ProcessFlagErrors(o, eSlice) && searchFlagsOk {
+	if cmdtoolkit.ProcessFlagErrors(o, eSlice) && searchFlagsOk {
 		if ls, flagsOk := ProcessListFlags(o, values); flagsOk {
 			details := map[string]any{
 				ListAlbumsFlag:       ls.Albums.Value,
@@ -155,14 +155,14 @@ func ListRun(cmd *cobra.Command, _ []string) error {
 }
 
 type ListSettings struct {
-	Albums       CommandFlag[bool]
-	Annotate     CommandFlag[bool]
-	Artists      CommandFlag[bool]
-	Details      CommandFlag[bool]
-	Diagnostic   CommandFlag[bool]
-	SortByNumber CommandFlag[bool]
-	SortByTitle  CommandFlag[bool]
-	Tracks       CommandFlag[bool]
+	Albums       cmdtoolkit.CommandFlag[bool]
+	Annotate     cmdtoolkit.CommandFlag[bool]
+	Artists      cmdtoolkit.CommandFlag[bool]
+	Details      cmdtoolkit.CommandFlag[bool]
+	Diagnostic   cmdtoolkit.CommandFlag[bool]
+	SortByNumber cmdtoolkit.CommandFlag[bool]
+	SortByTitle  cmdtoolkit.CommandFlag[bool]
+	Tracks       cmdtoolkit.CommandFlag[bool]
 }
 
 func (ls *ListSettings) ListArtists(o output.Bus, allArtists []*files.Artist, ss *SearchSettings) (err *cmdtoolkit.ExitError) {
@@ -558,32 +558,32 @@ func (ls *ListSettings) HasWorkToDo(o output.Bus) bool {
 	return false
 }
 
-func ProcessListFlags(o output.Bus, values map[string]*CommandFlag[any]) (*ListSettings, bool) {
+func ProcessListFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (*ListSettings, bool) {
 	settings := &ListSettings{}
 	flagsOk := true // optimistic
 	var flagErr error
-	if settings.Albums, flagErr = GetBool(o, values, ListAlbums); flagErr != nil {
+	if settings.Albums, flagErr = cmdtoolkit.GetBool(o, values, ListAlbums); flagErr != nil {
 		flagsOk = false
 	}
-	if settings.Annotate, flagErr = GetBool(o, values, ListAnnotate); flagErr != nil {
+	if settings.Annotate, flagErr = cmdtoolkit.GetBool(o, values, ListAnnotate); flagErr != nil {
 		flagsOk = false
 	}
-	if settings.Artists, flagErr = GetBool(o, values, ListArtists); flagErr != nil {
+	if settings.Artists, flagErr = cmdtoolkit.GetBool(o, values, ListArtists); flagErr != nil {
 		flagsOk = false
 	}
-	if settings.Details, flagErr = GetBool(o, values, ListDetails); flagErr != nil {
+	if settings.Details, flagErr = cmdtoolkit.GetBool(o, values, ListDetails); flagErr != nil {
 		flagsOk = false
 	}
-	if settings.Diagnostic, flagErr = GetBool(o, values, ListDiagnostic); flagErr != nil {
+	if settings.Diagnostic, flagErr = cmdtoolkit.GetBool(o, values, ListDiagnostic); flagErr != nil {
 		flagsOk = false
 	}
-	if settings.SortByNumber, flagErr = GetBool(o, values, ListSortByNumber); flagErr != nil {
+	if settings.SortByNumber, flagErr = cmdtoolkit.GetBool(o, values, ListSortByNumber); flagErr != nil {
 		flagsOk = false
 	}
-	if settings.SortByTitle, flagErr = GetBool(o, values, ListSortByTitle); flagErr != nil {
+	if settings.SortByTitle, flagErr = cmdtoolkit.GetBool(o, values, ListSortByTitle); flagErr != nil {
 		flagsOk = false
 	}
-	if settings.Tracks, flagErr = GetBool(o, values, ListTracks); flagErr != nil {
+	if settings.Tracks, flagErr = cmdtoolkit.GetBool(o, values, ListTracks); flagErr != nil {
 		flagsOk = false
 	}
 	return settings, flagsOk
@@ -594,5 +594,5 @@ func init() {
 	addDefaults(ListFlags)
 	c := getConfiguration()
 	o := getBus()
-	AddFlags(o, c, ListCmd.Flags(), ListFlags, SearchFlags)
+	cmdtoolkit.AddFlags(o, c, ListCmd.Flags(), ListFlags, SearchFlags)
 }
