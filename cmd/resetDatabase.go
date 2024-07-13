@@ -178,19 +178,19 @@ func maybeClearDirty(o output.Bus, e *cmdtoolkit.ExitError) {
 	}
 }
 
-type ServiceManager interface {
+type serviceManager interface {
 	Disconnect() error
 	OpenService(name string) (*mgr.Service, error)
 	ListServices() ([]string, error)
 }
 
-type ServiceRep interface {
+type serviceRep interface {
 	Close() error
 	Control(c svc.Cmd) (svc.Status, error)
 	Query() (svc.Status, error)
 }
 
-func openService(manager ServiceManager, serviceName string) (ServiceRep, error) {
+func openService(manager serviceManager, serviceName string) (serviceRep, error) {
 	if manager == nil || reflect.ValueOf(manager).IsNil() {
 		return nil, fmt.Errorf("nil manager")
 	}
@@ -218,14 +218,14 @@ func outputSystemErrorCause(o output.Bus) {
 	}
 }
 
-func listServices(manager ServiceManager) ([]string, error) {
+func listServices(manager serviceManager) ([]string, error) {
 	if manager == nil || reflect.ValueOf(manager).IsNil() {
 		return nil, fmt.Errorf("nil manager")
 	}
 	return manager.ListServices()
 }
 
-func (rDBSettings *resetDBSettings) disableService(o output.Bus, manager ServiceManager) (ok bool,
+func (rDBSettings *resetDBSettings) disableService(o output.Bus, manager serviceManager) (ok bool,
 	e *cmdtoolkit.ExitError) {
 	service, serviceError := openService(manager, rDBSettings.service.Value)
 	if serviceError != nil {
@@ -254,13 +254,13 @@ func (rDBSettings *resetDBSettings) disableService(o output.Bus, manager Service
 	return
 }
 
-func disconnectManager(manager ServiceManager) {
+func disconnectManager(manager serviceManager) {
 	if !reflect.ValueOf(manager).IsNil() && manager != nil {
 		_ = manager.Disconnect()
 	}
 }
 
-func listAvailableServices(o output.Bus, manager ServiceManager, services []string) {
+func listAvailableServices(o output.Bus, manager serviceManager, services []string) {
 	o.WriteError("The following services are available:\n")
 	if len(services) == 0 {
 		o.WriteError("  - none -\n")
@@ -292,7 +292,7 @@ func listAvailableServices(o output.Bus, manager ServiceManager, services []stri
 	}
 }
 
-func addServiceState(m map[string][]string, s ServiceRep, serviceName string) {
+func addServiceState(m map[string][]string, s serviceRep, serviceName string) {
 	status, queryErr := runQuery(s)
 	switch queryErr {
 	case nil:
@@ -304,21 +304,21 @@ func addServiceState(m map[string][]string, s ServiceRep, serviceName string) {
 	}
 }
 
-func runQuery(s ServiceRep) (svc.Status, error) {
+func runQuery(s serviceRep) (svc.Status, error) {
 	if reflect.ValueOf(s).IsNil() {
 		return svc.Status{}, fmt.Errorf("no service")
 	}
 	return s.Query()
 }
 
-func closeService(s ServiceRep) {
+func closeService(s serviceRep) {
 	if !reflect.ValueOf(s).IsNil() {
 		_ = s.Close()
 	}
 }
 
-func (rDBSettings *resetDBSettings) stopFoundService(o output.Bus, manager ServiceManager,
-	service ServiceRep) (ok bool, e *cmdtoolkit.ExitError) {
+func (rDBSettings *resetDBSettings) stopFoundService(o output.Bus, manager serviceManager,
+	service serviceRep) (ok bool, e *cmdtoolkit.ExitError) {
 	defer func() {
 		_ = manager.Disconnect()
 		closeService(service)
@@ -368,7 +368,7 @@ func (rDBSettings *resetDBSettings) reportServiceStopped(o output.Bus) {
 	o.Log(output.Info, "service stopped", map[string]any{"service": rDBSettings.service.Value})
 }
 
-func (rDBSettings *resetDBSettings) waitForStop(o output.Bus, s ServiceRep, expiration time.Time,
+func (rDBSettings *resetDBSettings) waitForStop(o output.Bus, s serviceRep, expiration time.Time,
 	checkInterval time.Duration) (bool, *cmdtoolkit.ExitError) {
 	for {
 		if expiration.Before(time.Now()) {

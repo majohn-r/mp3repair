@@ -126,7 +126,7 @@ func newTestService(values ...svc.Status) *testService {
 
 func Test_resetDBSettings_waitForStop(t *testing.T) {
 	type args struct {
-		s             ServiceRep
+		s             serviceRep
 		expiration    time.Time
 		checkInterval time.Duration
 	}
@@ -247,8 +247,8 @@ func newTestManager(m map[string]*mgr.Service, list []string) *testManager {
 
 func Test_resetDBSettings_stopFoundService(t *testing.T) {
 	type args struct {
-		manager ServiceManager
-		service ServiceRep
+		manager serviceManager
+		service serviceRep
 	}
 	tests := map[string]struct {
 		resetDBSettings *resetDBSettings
@@ -377,7 +377,7 @@ func Test_resetDBSettings_stopFoundService(t *testing.T) {
 func Test_addServiceState(t *testing.T) {
 	tests := map[string]struct {
 		m           map[string][]string
-		s           ServiceRep
+		s           serviceRep
 		serviceName string
 		want        map[string][]string
 	}{
@@ -412,7 +412,7 @@ func Test_addServiceState(t *testing.T) {
 
 func Test_listAvailableServices(t *testing.T) {
 	type args struct {
-		manager  ServiceManager
+		manager  serviceManager
 		services []string
 	}
 	tests := map[string]struct {
@@ -458,7 +458,7 @@ func Test_listAvailableServices(t *testing.T) {
 func Test_resetDBSettings_disableService(t *testing.T) {
 	tests := map[string]struct {
 		resetDBSettings *resetDBSettings
-		manager         ServiceManager
+		manager         serviceManager
 		wantOk          bool
 		wantStatus      *cmdtoolkit.ExitError
 		output.WantedRecording
