@@ -133,7 +133,7 @@ func checkRun(cmd *cobra.Command, _ []string) error {
 			for k, v := range searchSettings.Values() {
 				details[k] = v
 			}
-			LogCommandStart(o, checkCommand, details)
+			logCommandStart(o, checkCommand, details)
 			exitError = cs.maybeDoWork(o, searchSettings)
 		}
 	}
@@ -199,7 +199,7 @@ func (cs *checkSettings) performFileAnalysis(o output.Bus,
 			artists = append(artists, cAr.backingArtist())
 		}
 		if filteredArtists := ss.Filter(o, artists); len(filteredArtists) != 0 {
-			ReadMetadata(o, filteredArtists)
+			readMetadata(o, filteredArtists)
 			for _, artist := range filteredArtists {
 				for _, album := range artist.Albums {
 					for _, track := range album.Tracks {

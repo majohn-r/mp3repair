@@ -57,11 +57,11 @@ func Test_processRepairFlags(t *testing.T) {
 }
 
 func Test_ensureTrackBackupDirectoryExists(t *testing.T) {
-	originalDirExists := DirExists
-	originalMkdir := Mkdir
+	originalDirExists := dirExists
+	originalMkdir := mkdir
 	defer func() {
-		DirExists = originalDirExists
-		Mkdir = originalMkdir
+		dirExists = originalDirExists
+		mkdir = originalMkdir
 	}()
 	album := &files.Album{}
 	if albums := generateAlbums(1, 5); len(albums) > 0 {
@@ -112,8 +112,8 @@ func Test_ensureTrackBackupDirectoryExists(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			DirExists = tt.dirExists
-			Mkdir = tt.mkdir
+			dirExists = tt.dirExists
+			mkdir = tt.mkdir
 			o := output.NewRecorder()
 			gotPath, gotExists := EnsureTrackBackupDirectoryExists(o, tt.cAl)
 			if gotPath != tt.wantPath {
@@ -128,11 +128,11 @@ func Test_ensureTrackBackupDirectoryExists(t *testing.T) {
 }
 
 func Test_tryTrackBackup(t *testing.T) {
-	originalPlainFileExists := PlainFileExists
-	originalCopyFile := CopyFile
+	originalPlainFileExists := plainFileExists
+	originalCopyFile := copyFile
 	defer func() {
-		PlainFileExists = originalPlainFileExists
-		CopyFile = originalCopyFile
+		plainFileExists = originalPlainFileExists
+		copyFile = originalCopyFile
 	}()
 	track := &files.Track{}
 	if tracks := generateTracks(1); len(tracks) > 0 {
@@ -205,8 +205,8 @@ func Test_tryTrackBackup(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			PlainFileExists = tt.plainFileExists
-			CopyFile = tt.copyFile
+			plainFileExists = tt.plainFileExists
+			copyFile = tt.copyFile
 			o := output.NewRecorder()
 			gotBackedUp := TryTrackBackup(o, tt.args.t, tt.args.path)
 			if gotBackedUp != tt.wantBackedUp {
@@ -218,12 +218,12 @@ func Test_tryTrackBackup(t *testing.T) {
 }
 
 func Test_processTrackRepairResults(t *testing.T) {
-	originalMarkDirty := MarkDirty
+	originalMarkDirty := markDirty
 	defer func() {
-		MarkDirty = originalMarkDirty
+		markDirty = originalMarkDirty
 	}()
 	var markedDirty bool
-	MarkDirty = func(o output.Bus) {
+	markDirty = func(o output.Bus) {
 		markedDirty = true
 	}
 	track := &files.Track{}
@@ -325,13 +325,13 @@ func Test_backupAndRepairTracks(t *testing.T) {
 			}
 		}
 	}
-	originalDirExists := DirExists
-	originalPlainFileExists := PlainFileExists
-	originalCopyFile := CopyFile
+	originalDirExists := dirExists
+	originalPlainFileExists := plainFileExists
+	originalCopyFile := copyFile
 	defer func() {
-		DirExists = originalDirExists
-		PlainFileExists = originalPlainFileExists
-		CopyFile = originalCopyFile
+		dirExists = originalDirExists
+		plainFileExists = originalPlainFileExists
+		copyFile = originalCopyFile
 	}()
 	tests := map[string]struct {
 		dirExists        func(string) bool
@@ -566,9 +566,9 @@ func Test_backupAndRepairTracks(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			DirExists = tt.dirExists
-			PlainFileExists = tt.plainFileExists
-			CopyFile = tt.copyFile
+			dirExists = tt.dirExists
+			plainFileExists = tt.plainFileExists
+			copyFile = tt.copyFile
 			o := output.NewRecorder()
 			if got := BackupAndRepairTracks(o, tt.concernedArtists); !compareExitErrors(got, tt.wantStatus) {
 				t.Errorf("backupAndRepairTracks() got %s want %s", got, tt.wantStatus)
@@ -710,23 +710,23 @@ func Test_findConflictedTracks(t *testing.T) {
 }
 
 func Test_repairSettings_repairArtists(t *testing.T) {
-	originalReadMetadata := ReadMetadata
-	originalDirExists := DirExists
-	originalPlainFileExists := PlainFileExists
-	originalCopyFile := CopyFile
-	originalMarkDirty := MarkDirty
+	originalReadMetadata := readMetadata
+	originalDirExists := dirExists
+	originalPlainFileExists := plainFileExists
+	originalCopyFile := copyFile
+	originalMarkDirty := markDirty
 	defer func() {
-		ReadMetadata = originalReadMetadata
-		DirExists = originalDirExists
-		PlainFileExists = originalPlainFileExists
-		CopyFile = originalCopyFile
-		MarkDirty = originalMarkDirty
+		readMetadata = originalReadMetadata
+		dirExists = originalDirExists
+		plainFileExists = originalPlainFileExists
+		copyFile = originalCopyFile
+		markDirty = originalMarkDirty
 	}()
-	ReadMetadata = func(_ output.Bus, _ []*files.Artist) {}
-	DirExists = func(_ string) bool { return true }
-	PlainFileExists = func(_ string) bool { return false }
-	CopyFile = func(_, _ string) error { return nil }
-	MarkDirty = func(_ output.Bus) {}
+	readMetadata = func(_ output.Bus, _ []*files.Artist) {}
+	dirExists = func(_ string) bool { return true }
+	plainFileExists = func(_ string) bool { return false }
+	copyFile = func(_, _ string) error { return nil }
+	markDirty = func(_ output.Bus) {}
 	dirty := generateArtists(2, 3, 4)
 	for _, aR := range dirty {
 		for _, aL := range aR.Albums {
@@ -1426,11 +1426,11 @@ func Test_repairSettings_repairArtists(t *testing.T) {
 }
 
 func Test_repairSettings_processArtists(t *testing.T) {
-	originalReadMetadata := ReadMetadata
+	originalReadMetadata := readMetadata
 	defer func() {
-		ReadMetadata = originalReadMetadata
+		readMetadata = originalReadMetadata
 	}()
-	ReadMetadata = func(_ output.Bus, _ []*files.Artist) {}
+	readMetadata = func(_ output.Bus, _ []*files.Artist) {}
 	type args struct {
 		allArtists []*files.Artist
 		ss         *SearchSettings

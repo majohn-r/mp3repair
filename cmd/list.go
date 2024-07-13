@@ -136,7 +136,7 @@ func ListRun(cmd *cobra.Command, _ []string) error {
 			for k, v := range searchSettings.Values() {
 				details[k] = v
 			}
-			LogCommandStart(o, ListCommand, details)
+			logCommandStart(o, ListCommand, details)
 			switch ls.HasWorkToDo(o) {
 			case true:
 				switch ls.TracksSortable(o) {

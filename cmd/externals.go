@@ -13,29 +13,29 @@ import (
 )
 
 var (
-	ApplicationPath       = cmdtoolkit.ApplicationPath
-	CopyFile              = cmdtoolkit.CopyFile
-	DereferenceEnvVar     = cmdtoolkit.DereferenceEnvVar
-	DirExists             = cmdtoolkit.DirExists
-	InitApplicationPath   = cmdtoolkit.InitApplicationPath
-	InitLogging           = cmdtoolkit.InitLogging
-	InterpretBuildData    = cmdtoolkit.InterpretBuildData
-	LogCommandStart       = cmdtoolkit.LogCommandStart
-	LogPath               = cmdtoolkit.LogPath
-	Mkdir                 = cmdtoolkit.Mkdir
-	PlainFileExists       = cmdtoolkit.PlainFileExists
-	ReadConfigurationFile = cmdtoolkit.ReadConfigurationFile
-	ReadDirectory         = cmdtoolkit.ReadDirectory
-	ClearDirty            = files.ClearDirty
-	Dirty                 = files.Dirty
-	MarkDirty             = files.MarkDirty
-	ReadMetadata          = files.ReadMetadata
-	Connect               = mgr.Connect
+	applicationPath       = cmdtoolkit.ApplicationPath
+	copyFile              = cmdtoolkit.CopyFile
+	dereferenceEnvVar     = cmdtoolkit.DereferenceEnvVar
+	dirExists             = cmdtoolkit.DirExists
+	initApplicationPath   = cmdtoolkit.InitApplicationPath
+	initLogging           = cmdtoolkit.InitLogging
+	interpretBuildData    = cmdtoolkit.InterpretBuildData
+	logCommandStart       = cmdtoolkit.LogCommandStart
+	logPath               = cmdtoolkit.LogPath
+	mkdir                 = cmdtoolkit.Mkdir
+	plainFileExists       = cmdtoolkit.PlainFileExists
+	readConfigurationFile = cmdtoolkit.ReadConfigurationFile
+	readDirectory         = cmdtoolkit.ReadDirectory
+	clearDirty            = files.ClearDirty
+	dirty                 = files.Dirty
+	markDirty             = files.MarkDirty
+	readMetadata          = files.ReadMetadata
+	connect               = mgr.Connect
 	Exit                  = os.Exit
-	Rename                = os.Rename
-	Remove                = os.Remove
-	RemoveAll             = os.RemoveAll
-	WriteFile             = os.WriteFile
-	NewDefaultBus         = output.NewDefaultBus
-	Since                 = time.Since
+	rename                = os.Rename
+	remove                = os.Remove
+	removeAll             = os.RemoveAll
+	writeFile             = os.WriteFile
+	newDefaultBus         = output.NewDefaultBus
+	since                 = time.Since
 )

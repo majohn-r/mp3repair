@@ -156,9 +156,9 @@ func Test_exportFlagSettings_canOverwriteConfigurationFile(t *testing.T) {
 }
 
 func Test_createConfigurationFile(t *testing.T) {
-	originalWriteFile := WriteFile
+	originalWriteFile := writeFile
 	defer func() {
-		WriteFile = originalWriteFile
+		writeFile = originalWriteFile
 	}()
 	type args struct {
 		f       string
@@ -199,7 +199,7 @@ func Test_createConfigurationFile(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			WriteFile = tt.writeFile
+			writeFile = tt.writeFile
 			if got := createConfigurationFile(o, tt.args.f, tt.args.content); got != tt.want {
 				t.Errorf("createConfigurationFile() = %v, want %v", got, tt.want)
 			}
@@ -209,13 +209,13 @@ func Test_createConfigurationFile(t *testing.T) {
 }
 
 func Test_exportFlagSettings_overwriteConfigurationFile(t *testing.T) {
-	originalWriteFile := WriteFile
-	originalRename := Rename
-	originalRemove := Remove
+	originalWriteFile := writeFile
+	originalRename := rename
+	originalRemove := remove
 	defer func() {
-		WriteFile = originalWriteFile
-		Rename = originalRename
-		Remove = originalRemove
+		writeFile = originalWriteFile
+		rename = originalRename
+		remove = originalRemove
 	}()
 	type args struct {
 		f       string
@@ -305,9 +305,9 @@ func Test_exportFlagSettings_overwriteConfigurationFile(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			WriteFile = tt.writeFile
-			Rename = tt.rename
-			Remove = tt.remove
+			writeFile = tt.writeFile
+			rename = tt.rename
+			remove = tt.remove
 			got := tt.efs.overwriteConfigurationFile(o, tt.args.f, tt.args.payload)
 			if !compareExitErrors(got, tt.wantStatus) {
 				t.Errorf("exportFlagSettings.overwriteConfigurationFile() got %s want %s", got, tt.wantStatus)
@@ -318,17 +318,17 @@ func Test_exportFlagSettings_overwriteConfigurationFile(t *testing.T) {
 }
 
 func Test_exportFlagSettings_exportDefaultConfiguration(t *testing.T) {
-	originalWriteFile := WriteFile
-	originalRename := Rename
-	originalRemove := Remove
-	originalPlainFileExists := PlainFileExists
-	originalApplicationPath := ApplicationPath
+	originalWriteFile := writeFile
+	originalRename := rename
+	originalRemove := remove
+	originalPlainFileExists := plainFileExists
+	originalApplicationPath := applicationPath
 	defer func() {
-		WriteFile = originalWriteFile
-		Rename = originalRename
-		Remove = originalRemove
-		PlainFileExists = originalPlainFileExists
-		ApplicationPath = originalApplicationPath
+		writeFile = originalWriteFile
+		rename = originalRename
+		remove = originalRemove
+		plainFileExists = originalPlainFileExists
+		applicationPath = originalApplicationPath
 	}()
 	tests := map[string]struct {
 		efs             *exportSettings
@@ -416,11 +416,11 @@ func Test_exportFlagSettings_exportDefaultConfiguration(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			WriteFile = tt.writeFile
-			PlainFileExists = tt.plainFileExists
-			Remove = tt.remove
-			Rename = tt.rename
-			ApplicationPath = tt.applicationPath
+			writeFile = tt.writeFile
+			plainFileExists = tt.plainFileExists
+			remove = tt.remove
+			rename = tt.rename
+			applicationPath = tt.applicationPath
 			if got := tt.efs.exportDefaultConfiguration(o); !compareExitErrors(got, tt.wantStatus) {
 				t.Errorf("exportFlagSettings.exportDefaultConfiguration() got %s want %s", got, tt.wantStatus)
 			}

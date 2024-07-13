@@ -29,39 +29,39 @@ func (tec testingElevationControl) WillRunElevated() bool { return false }
 
 func Test_aboutRun(t *testing.T) {
 	originalBusGetter := BusGetter
-	originalInterpretBuildData := InterpretBuildData
-	originalLogPath := LogPath
+	originalInterpretBuildData := interpretBuildData
+	originalLogPath := logPath
 	originalVersion := version
 	originalCreation := creation
-	originalApplicationPath := ApplicationPath
-	originalPlainFileExists := PlainFileExists
+	originalApplicationPath := applicationPath
+	originalPlainFileExists := plainFileExists
 	originalMP3RepairElevationControl := mp3repairElevationControl
 	defer func() {
 		BusGetter = originalBusGetter
-		InterpretBuildData = originalInterpretBuildData
-		LogPath = originalLogPath
+		interpretBuildData = originalInterpretBuildData
+		logPath = originalLogPath
 		version = originalVersion
 		creation = originalCreation
-		ApplicationPath = originalApplicationPath
-		PlainFileExists = originalPlainFileExists
+		applicationPath = originalApplicationPath
+		plainFileExists = originalPlainFileExists
 		mp3repairElevationControl = originalMP3RepairElevationControl
 	}()
-	InterpretBuildData = func(func() (*debug.BuildInfo, bool)) (string, []string) {
+	interpretBuildData = func(func() (*debug.BuildInfo, bool)) (string, []string) {
 		return "go1.22.x", []string{
 			"go.dependency.1 v1.2.3",
 			"go.dependency.2 v1.3.4",
 			"go.dependency.3 v0.1.2",
 		}
 	}
-	LogPath = func() string {
+	logPath = func() string {
 		return "/my/files/tmp/logs/mp3repair"
 	}
 	version = "0.40.0"
 	creation = "2024-02-24T13:14:05-05:00"
-	ApplicationPath = func() string {
+	applicationPath = func() string {
 		return "/my/files/apppath"
 	}
-	PlainFileExists = func(_ string) bool { return true }
+	plainFileExists = func(_ string) bool { return true }
 	type args struct {
 		in0 *cobra.Command
 		in1 []string
@@ -171,35 +171,35 @@ func Test_about_Help(t *testing.T) {
 }
 
 func Test_acquireAboutData(t *testing.T) {
-	originalInterpretBuildData := InterpretBuildData
-	originalLogPath := LogPath
+	originalInterpretBuildData := interpretBuildData
+	originalLogPath := logPath
 	originalVersion := version
 	originalCreation := creation
-	originalApplicationPath := ApplicationPath
-	originalPlainFileExists := PlainFileExists
+	originalApplicationPath := applicationPath
+	originalPlainFileExists := plainFileExists
 	originalMP3RepairElevationControl := mp3repairElevationControl
 	defer func() {
-		InterpretBuildData = originalInterpretBuildData
-		LogPath = originalLogPath
+		interpretBuildData = originalInterpretBuildData
+		logPath = originalLogPath
 		version = originalVersion
 		creation = originalCreation
-		ApplicationPath = originalApplicationPath
-		PlainFileExists = originalPlainFileExists
+		applicationPath = originalApplicationPath
+		plainFileExists = originalPlainFileExists
 		mp3repairElevationControl = originalMP3RepairElevationControl
 	}()
-	InterpretBuildData = func(func() (*debug.BuildInfo, bool)) (string, []string) {
+	interpretBuildData = func(func() (*debug.BuildInfo, bool)) (string, []string) {
 		return "go1.22.x", []string{
 			"go.dependency.1 v1.2.3",
 			"go.dependency.2 v1.3.4",
 			"go.dependency.3 v0.1.2",
 		}
 	}
-	LogPath = func() string {
+	logPath = func() string {
 		return "/my/files/tmp/logs/mp3repair"
 	}
 	version = "0.40.0"
 	creation = "2024-02-24T13:14:05-05:00"
-	ApplicationPath = func() string {
+	applicationPath = func() string {
 		return "/my/files/apppath"
 	}
 	tests := map[string]struct {
@@ -288,7 +288,7 @@ func Test_acquireAboutData(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			PlainFileExists = tt.plainFileExists
+			plainFileExists = tt.plainFileExists
 			tec := testingElevationControl{
 				desiredStatus: []string{},
 			}

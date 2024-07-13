@@ -15,9 +15,9 @@ import (
 )
 
 func Test_removeTrackBackupDirectory(t *testing.T) {
-	originalRemoveAll := RemoveAll
+	originalRemoveAll := removeAll
 	defer func() {
-		RemoveAll = originalRemoveAll
+		removeAll = originalRemoveAll
 	}()
 	tests := map[string]struct {
 		removeAll func(dir string) error
@@ -50,7 +50,7 @@ func Test_removeTrackBackupDirectory(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			RemoveAll = tt.removeAll
+			removeAll = tt.removeAll
 			o := output.NewRecorder()
 			if got := RemoveTrackBackupDirectory(o, tt.dir); got != tt.want {
 				t.Errorf("removeTrackBackupDirectory() = %v, want %v", got, tt.want)
@@ -61,11 +61,11 @@ func Test_removeTrackBackupDirectory(t *testing.T) {
 }
 
 func Test_postRepairWork(t *testing.T) {
-	originalRemoveAll := RemoveAll
-	originalDirExists := DirExists
+	originalRemoveAll := removeAll
+	originalDirExists := dirExists
 	defer func() {
-		RemoveAll = originalRemoveAll
-		DirExists = originalDirExists
+		removeAll = originalRemoveAll
+		dirExists = originalDirExists
 	}()
 	type args struct {
 		ss         *SearchSettings
@@ -179,8 +179,8 @@ func Test_postRepairWork(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			RemoveAll = tt.removeAll
-			DirExists = tt.dirExists
+			removeAll = tt.removeAll
+			dirExists = tt.dirExists
 			o := output.NewRecorder()
 			_ = PostRepairWork(o, tt.args.ss, tt.args.allArtists)
 			o.Report(t, "postRepairWork()", tt.WantedRecording)

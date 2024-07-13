@@ -33,7 +33,7 @@ func PostRepairRun(cmd *cobra.Command, _ []string) error {
 	ss, searchFlagsOk := EvaluateSearchFlags(o, producer)
 	if searchFlagsOk {
 		// do some work here!
-		LogCommandStart(o, postRepairCommandName, ss.Values())
+		logCommandStart(o, postRepairCommandName, ss.Values())
 		allArtists := ss.Load(o)
 		exitError = PostRepairWork(o, ss, allArtists)
 	}
@@ -53,7 +53,7 @@ func PostRepairWork(o output.Bus, ss *SearchSettings, allArtists []*files.Artist
 			for _, artist := range filteredArtists {
 				for _, album := range artist.Albums {
 					dir := album.BackupDirectory()
-					if DirExists(dir) {
+					if dirExists(dir) {
 						dirs = append(dirs, dir)
 					}
 				}
@@ -78,7 +78,7 @@ func PostRepairWork(o output.Bus, ss *SearchSettings, allArtists []*files.Artist
 }
 
 func RemoveTrackBackupDirectory(o output.Bus, dir string) bool {
-	if fileErr := RemoveAll(dir); fileErr != nil {
+	if fileErr := removeAll(dir); fileErr != nil {
 		o.Log(output.Error, "cannot delete directory", map[string]any{
 			"directory": dir,
 			"error":     fileErr,

@@ -122,7 +122,7 @@ func ResetDBRun(cmd *cobra.Command, _ []string) error {
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) {
 		flags, flagsOk := ProcessResetDBFlags(o, values)
 		if flagsOk {
-			LogCommandStart(o, resetDBCommandName, map[string]any{
+			logCommandStart(o, resetDBCommandName, map[string]any{
 				resetDBTimeoutFlag:             flags.Timeout.Value,
 				resetDBServiceFlag:             flags.Service.Value,
 				resetDBMetadataDirFlag:         flags.MetadataDir.Value,
@@ -146,7 +146,7 @@ type ResetDBSettings struct {
 }
 
 func (rDBSettings *ResetDBSettings) ResetService(o output.Bus) (e *cmdtoolkit.ExitError) {
-	if rDBSettings.Force.Value || Dirty() {
+	if rDBSettings.Force.Value || dirty() {
 		stopped, e2 := rDBSettings.StopService(o)
 		if e2 != nil {
 			e = e2
@@ -176,7 +176,7 @@ func UpdateServiceStatus(currentStatus, proposedStatus *cmdtoolkit.ExitError) *c
 
 func MaybeClearDirty(o output.Bus, e *cmdtoolkit.ExitError) {
 	if e == nil {
-		ClearDirty(o)
+		clearDirty(o)
 	}
 }
 
@@ -200,7 +200,7 @@ func openService(manager ServiceManager, serviceName string) (ServiceRep, error)
 }
 
 func (rDBSettings *ResetDBSettings) StopService(o output.Bus) (bool, *cmdtoolkit.ExitError) {
-	if manager, connectErr := Connect(); connectErr != nil {
+	if manager, connectErr := connect(); connectErr != nil {
 		e := cmdtoolkit.NewExitSystemError(resetDBCommandName)
 		o.WriteCanonicalError("An attempt to connect with the service manager failed; error"+
 			" is '%v'", connectErr)
@@ -414,7 +414,7 @@ func (rDBSettings *ResetDBSettings) CleanUpMetadata(o output.Bus, stopped bool) 
 		}
 	}
 	// either stopped or service errors are ignored
-	metadataFiles, filesOk := ReadDirectory(o, rDBSettings.MetadataDir.Value)
+	metadataFiles, filesOk := readDirectory(o, rDBSettings.MetadataDir.Value)
 	if !filesOk {
 		return nil
 	}
@@ -435,7 +435,7 @@ func (rDBSettings *ResetDBSettings) FilterMetadataFiles(entries []fs.FileInfo) [
 	for _, file := range entries {
 		if strings.HasSuffix(file.Name(), rDBSettings.Extension.Value) {
 			path := filepath.Join(rDBSettings.MetadataDir.Value, file.Name())
-			if PlainFileExists(path) {
+			if plainFileExists(path) {
 				paths = append(paths, path)
 			}
 		}
@@ -449,7 +449,7 @@ func (rDBSettings *ResetDBSettings) DeleteMetadataFiles(o output.Bus, paths []st
 	}
 	var count int
 	for _, path := range paths {
-		fileErr := Remove(path)
+		fileErr := remove(path)
 		switch {
 		case fileErr != nil:
 			cmdtoolkit.LogFileDeletionFailure(o, path, fileErr)

@@ -82,7 +82,7 @@ func exportRun(cmd *cobra.Command, _ []string) error {
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) {
 		settings, flagsOk := processExportFlags(o, values)
 		if flagsOk {
-			LogCommandStart(o, exportCommand, map[string]any{
+			logCommandStart(o, exportCommand, map[string]any{
 				exportDefaultsAsFlag:  settings.defaultsEnabled.Value,
 				"defaults-user-set":   settings.defaultsEnabled.UserSet,
 				exportOverwriteAsFlag: settings.overwriteEnabled.Value,
@@ -110,7 +110,7 @@ func processExportFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[
 }
 
 func createConfigurationFile(o output.Bus, f string, content []byte) bool {
-	if fileErr := WriteFile(f, content, cmdtoolkit.StdFilePermissions); fileErr != nil {
+	if fileErr := writeFile(f, content, cmdtoolkit.StdFilePermissions); fileErr != nil {
 		cmdtoolkit.ReportFileCreationFailure(o, exportCommand, f, fileErr)
 		return false
 	}
@@ -119,8 +119,8 @@ func createConfigurationFile(o output.Bus, f string, content []byte) bool {
 }
 
 func configFile() (path string, exists bool) {
-	path = filepath.Join(ApplicationPath(), cmdtoolkit.DefaultConfigFileName())
-	exists = PlainFileExists(path)
+	path = filepath.Join(applicationPath(), cmdtoolkit.DefaultConfigFileName())
+	exists = plainFileExists(path)
 	return
 }
 
@@ -146,7 +146,7 @@ func (es *exportSettings) overwriteConfigurationFile(o output.Bus, f string, pay
 		return cmdtoolkit.NewExitUserError(exportCommand)
 	}
 	backup := f + "-backup"
-	if fileErr := Rename(f, backup); fileErr != nil {
+	if fileErr := rename(f, backup); fileErr != nil {
 		o.WriteCanonicalError("The file %q cannot be renamed to %q: %v", f, backup, fileErr)
 		o.Log(output.Error, "rename failed", map[string]any{
 			"error": fileErr,
@@ -158,7 +158,7 @@ func (es *exportSettings) overwriteConfigurationFile(o output.Bus, f string, pay
 	if !createConfigurationFile(o, f, payload) {
 		return cmdtoolkit.NewExitSystemError(exportCommand)
 	}
-	_ = Remove(backup)
+	_ = remove(backup)
 	return nil
 }
 

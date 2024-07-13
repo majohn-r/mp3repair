@@ -355,7 +355,7 @@ func (ss *SearchSettings) Filter(o output.Bus, originalArtists []*files.Artist) 
 }
 
 func (ss *SearchSettings) Load(o output.Bus) []*files.Artist {
-	artistFiles, dirRead := ReadDirectory(o, ss.TopDirectory)
+	artistFiles, dirRead := readDirectory(o, ss.TopDirectory)
 	artists := make([]*files.Artist, 0, len(artistFiles))
 	if dirRead {
 		for _, artistFile := range artistFiles {
@@ -383,7 +383,7 @@ func (ss *SearchSettings) Load(o output.Bus) []*files.Artist {
 }
 
 func (ss *SearchSettings) addAlbums(o output.Bus, artist *files.Artist) {
-	if albumFiles, artistDirRead := ReadDirectory(o, artist.FilePath); artistDirRead {
+	if albumFiles, artistDirRead := readDirectory(o, artist.FilePath); artistDirRead {
 		for _, albumFile := range albumFiles {
 			if albumFile.IsDir() {
 				album := files.NewAlbumFromFile(albumFile, artist)
@@ -395,7 +395,7 @@ func (ss *SearchSettings) addAlbums(o output.Bus, artist *files.Artist) {
 }
 
 func (ss *SearchSettings) addTracks(o output.Bus, album *files.Album) {
-	if trackFiles, filesAvailable := ReadDirectory(o, album.FilePath); filesAvailable {
+	if trackFiles, filesAvailable := readDirectory(o, album.FilePath); filesAvailable {
 		for _, trackFile := range trackFiles {
 			if extension, isTrack := ss.isValidTrackFile(trackFile); isTrack {
 				parsedName, valid := files.TrackNameParser{

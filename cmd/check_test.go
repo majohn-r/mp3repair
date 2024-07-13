@@ -532,11 +532,11 @@ func Test_recordTrackFileConcerns(t *testing.T) {
 }
 
 func Test_checkSettings_performFileAnalysis(t *testing.T) {
-	originalReadMetadata := ReadMetadata
+	originalReadMetadata := readMetadata
 	defer func() {
-		ReadMetadata = originalReadMetadata
+		readMetadata = originalReadMetadata
 	}()
-	ReadMetadata = func(_ output.Bus, _ []*files.Artist) {}
+	readMetadata = func(_ output.Bus, _ []*files.Artist) {}
 	type args struct {
 		checkedArtists []*concernedArtist
 		ss             *SearchSettings
@@ -651,11 +651,11 @@ func Test_checkSettings_maybeReportCleanResults(t *testing.T) {
 }
 
 func Test_checkSettings_performChecks(t *testing.T) {
-	originalReadMetadata := ReadMetadata
+	originalReadMetadata := readMetadata
 	defer func() {
-		ReadMetadata = originalReadMetadata
+		readMetadata = originalReadMetadata
 	}()
-	ReadMetadata = func(_ output.Bus, _ []*files.Artist) {}
+	readMetadata = func(_ output.Bus, _ []*files.Artist) {}
 	type args struct {
 		artists []*files.Artist
 		ss      *SearchSettings

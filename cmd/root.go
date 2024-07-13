@@ -88,10 +88,10 @@ func InitGlobals() {
 	initLock.Lock()
 	defer initLock.Unlock()
 	if !Initialized {
-		Bus = NewDefaultBus(cmdtoolkit.ProductionLogger)
+		Bus = newDefaultBus(cmdtoolkit.ProductionLogger)
 		configOk := false
-		if InitLogging(Bus, appName) && InitApplicationPath(Bus, appName) {
-			InternalConfig, configOk = ReadConfigurationFile(Bus)
+		if initLogging(Bus, appName) && initApplicationPath(Bus, appName) {
+			InternalConfig, configOk = readConfigurationFile(Bus)
 		}
 		if !configOk {
 			Exit(1)
@@ -106,7 +106,7 @@ func CookCommandLineArguments(o output.Bus, inputArgs []string) []string {
 		return args
 	}
 	for _, arg := range inputArgs[1:] {
-		cookedArg, dereferenceErr := DereferenceEnvVar(arg)
+		cookedArg, dereferenceErr := dereferenceEnvVar(arg)
 		if dereferenceErr != nil {
 			o.WriteCanonicalError("An error was found in processing argument %q: %v",
 				arg, dereferenceErr)
@@ -156,7 +156,7 @@ func RunMain(o output.Bus, cmd CommandExecutor, start time.Time) int {
 	err := cmd.Execute()
 	exitCode := ObtainExitCode(err)
 	o.Log(output.Info, "execution ends", map[string]any{
-		"duration": Since(start),
+		"duration": since(start),
 		"exitCode": exitCode,
 	})
 	if exitCode != 0 {

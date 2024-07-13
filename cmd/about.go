@@ -91,7 +91,7 @@ func aboutRun(cmd *cobra.Command, _ []string) error {
 		flag, err := cmdtoolkit.GetString(o, values, aboutStyle)
 		if err == nil {
 			style := interpretStyle(flag)
-			LogCommandStart(o, aboutCommand, map[string]any{aboutStyle: style})
+			logCommandStart(o, aboutCommand, map[string]any{aboutStyle: style})
 			o.WriteConsole(strings.Join(cmdtoolkit.StyledFlowerBox(acquireAboutData(o), style), "\n"))
 			exitError = nil
 		}
@@ -117,7 +117,7 @@ func interpretStyle(flag cmdtoolkit.CommandFlag[string]) cmdtoolkit.FlowerBoxSty
 }
 
 func acquireAboutData(o output.Bus) []string {
-	cachedGoVersion, cachedBuildDependencies = InterpretBuildData(debug.ReadBuildInfo)
+	cachedGoVersion, cachedBuildDependencies = interpretBuildData(debug.ReadBuildInfo)
 	// 9: 1 each for
 	// - app name
 	// - copyright
@@ -133,7 +133,7 @@ func acquireAboutData(o output.Bus) []string {
 		"Build Information",
 		cmdtoolkit.FormatGoVersion(cachedGoVersion))
 	lines = append(lines, cmdtoolkit.FormatBuildDependencies(cachedBuildDependencies)...)
-	lines = append(lines, fmt.Sprintf("Log files are written to %s", LogPath()))
+	lines = append(lines, fmt.Sprintf("Log files are written to %s", logPath()))
 	path, exists := configFile()
 	switch {
 	case exists:

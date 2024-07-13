@@ -539,10 +539,10 @@ func Test_resetDBSettings_disableService(t *testing.T) {
 }
 
 func Test_resetDBSettings_stopService(t *testing.T) {
-	originalConnect := Connect
+	originalConnect := connect
 	originalProcessIsElevated := ProcessIsElevated
 	defer func() {
-		Connect = originalConnect
+		connect = originalConnect
 		ProcessIsElevated = originalProcessIsElevated
 	}()
 	ProcessIsElevated = func() bool { return false }
@@ -602,7 +602,7 @@ func Test_resetDBSettings_stopService(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			Connect = tt.connect
+			connect = tt.connect
 			o := output.NewRecorder()
 			gotOk, gotStatus := tt.resetDBSettings.StopService(o)
 			if gotOk != tt.wantOk {
@@ -617,9 +617,9 @@ func Test_resetDBSettings_stopService(t *testing.T) {
 }
 
 func Test_resetDBSettings_deleteMetadataFiles(t *testing.T) {
-	originalRemove := Remove
+	originalRemove := remove
 	defer func() {
-		Remove = originalRemove
+		remove = originalRemove
 	}()
 	tests := map[string]struct {
 		remove          func(string) error
@@ -665,7 +665,7 @@ func Test_resetDBSettings_deleteMetadataFiles(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			Remove = tt.remove
+			remove = tt.remove
 			o := output.NewRecorder()
 			if got := tt.resetDBSettings.DeleteMetadataFiles(o, tt.paths); !compareExitErrors(got, tt.want) {
 				t.Errorf("resetDBSettings.deleteMetadataFiles() %s want %s", got, tt.want)
@@ -676,9 +676,9 @@ func Test_resetDBSettings_deleteMetadataFiles(t *testing.T) {
 }
 
 func Test_resetDBSettings_filterMetadataFiles(t *testing.T) {
-	originalPlainFileExists := PlainFileExists
+	originalPlainFileExists := plainFileExists
 	defer func() {
-		PlainFileExists = originalPlainFileExists
+		plainFileExists = originalPlainFileExists
 	}()
 	tests := map[string]struct {
 		plainFileExists func(string) bool
@@ -703,7 +703,7 @@ func Test_resetDBSettings_filterMetadataFiles(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			PlainFileExists = tt.plainFileExists
+			plainFileExists = tt.plainFileExists
 			if got := tt.resetDBSettings.FilterMetadataFiles(tt.entries); !reflect.DeepEqual(got,
 				tt.want) {
 				t.Errorf("resetDBSettings.filterMetadataFiles() = %v, want %v", got, tt.want)
@@ -713,13 +713,13 @@ func Test_resetDBSettings_filterMetadataFiles(t *testing.T) {
 }
 
 func Test_resetDBSettings_cleanUpMetadata(t *testing.T) {
-	originalReadDirectory := ReadDirectory
-	originalPlainFileExists := PlainFileExists
-	originalRemove := Remove
+	originalReadDirectory := readDirectory
+	originalPlainFileExists := plainFileExists
+	originalRemove := remove
 	defer func() {
-		ReadDirectory = originalReadDirectory
-		PlainFileExists = originalPlainFileExists
-		Remove = originalRemove
+		readDirectory = originalReadDirectory
+		plainFileExists = originalPlainFileExists
+		remove = originalRemove
 	}()
 	tests := map[string]struct {
 		readDirectory   func(output.Bus, string) ([]fs.FileInfo, bool)
@@ -813,9 +813,9 @@ func Test_resetDBSettings_cleanUpMetadata(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			ReadDirectory = tt.readDirectory
-			PlainFileExists = tt.plainFileExists
-			Remove = tt.remove
+			readDirectory = tt.readDirectory
+			plainFileExists = tt.plainFileExists
+			remove = tt.remove
 			o := output.NewRecorder()
 			if got := tt.resetDBSettings.CleanUpMetadata(o, tt.stopped); !compareExitErrors(got, tt.want) {
 				t.Errorf("resetDBSettings.cleanUpMetadata() %s want %s", got, tt.want)
@@ -826,19 +826,19 @@ func Test_resetDBSettings_cleanUpMetadata(t *testing.T) {
 }
 
 func Test_resetDBSettings_resetService(t *testing.T) {
-	originalDirty := Dirty
-	originalClearDirty := ClearDirty
-	originalConnect := Connect
+	originalDirty := dirty
+	originalClearDirty := clearDirty
+	originalConnect := connect
 	originalProcessIsElevated := ProcessIsElevated
 	defer func() {
-		Dirty = originalDirty
-		ClearDirty = originalClearDirty
-		Connect = originalConnect
+		dirty = originalDirty
+		clearDirty = originalClearDirty
+		connect = originalConnect
 		ProcessIsElevated = originalProcessIsElevated
 	}()
 	ProcessIsElevated = func() bool { return false }
-	ClearDirty = func(_ output.Bus) {}
-	Connect = func() (*mgr.Mgr, error) { return nil, fmt.Errorf("access denied") }
+	clearDirty = func(_ output.Bus) {}
+	connect = func() (*mgr.Mgr, error) { return nil, fmt.Errorf("access denied") }
 	tests := map[string]struct {
 		dirty           func() bool
 		resetDBSettings *ResetDBSettings
@@ -911,7 +911,7 @@ func Test_resetDBSettings_resetService(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			Dirty = tt.dirty
+			dirty = tt.dirty
 			o := output.NewRecorder()
 			if got := tt.resetDBSettings.ResetService(o); !compareExitErrors(got, tt.want) {
 				t.Errorf("resetDBSettings.resetService() got %s want %s", got, tt.want)
@@ -924,12 +924,12 @@ func Test_resetDBSettings_resetService(t *testing.T) {
 func Test_resetDBRun(t *testing.T) {
 	InitGlobals()
 	originalBus := Bus
-	originalDirty := Dirty
+	originalDirty := dirty
 	defer func() {
 		Bus = originalBus
-		Dirty = originalDirty
+		dirty = originalDirty
 	}()
-	Dirty = func() bool { return false }
+	dirty = func() bool { return false }
 	flags := &cmdtoolkit.FlagSet{
 		Name: "resetDatabase",
 		Details: map[string]*cmdtoolkit.FlagDetails{
@@ -1220,12 +1220,12 @@ func Test_updateServiceStatus(t *testing.T) {
 }
 
 func Test_maybeClearDirty(t *testing.T) {
-	originalClearDirty := ClearDirty
+	originalClearDirty := clearDirty
 	defer func() {
-		ClearDirty = originalClearDirty
+		clearDirty = originalClearDirty
 	}()
 	var clearDirtyCalled bool
-	ClearDirty = func(_ output.Bus) {
+	clearDirty = func(_ output.Bus) {
 		clearDirtyCalled = true
 	}
 	tests := map[string]struct {

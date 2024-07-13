@@ -61,14 +61,14 @@ func (p panickyCommand) Execute() error     { panic("oh dear") }
 
 func Test_runMain(t *testing.T) {
 	originalArgs := os.Args
-	originalSince := Since
+	originalSince := since
 	originalVersion := version
 	originalCreation := creation
 	originalCachedGoVersion := cachedGoVersion
 	originalCachedBuildDependencies := cachedBuildDependencies
 	originalMP3repairElevationControl := mp3repairElevationControl
 	defer func() {
-		Since = originalSince
+		since = originalSince
 		os.Args = originalArgs
 		version = originalVersion
 		creation = originalCreation
@@ -191,7 +191,7 @@ func Test_runMain(t *testing.T) {
 		},
 	}
 	for name, tt := range tests {
-		Since = func(_ time.Time) time.Duration {
+		since = func(_ time.Time) time.Duration {
 			return 0
 		}
 		t.Run(name, func(t *testing.T) {
@@ -208,9 +208,9 @@ func Test_runMain(t *testing.T) {
 }
 
 func Test_cookCommandLineArguments(t *testing.T) {
-	originalDereferenceEnvVar := DereferenceEnvVar
+	originalDereferenceEnvVar := dereferenceEnvVar
 	defer func() {
-		DereferenceEnvVar = originalDereferenceEnvVar
+		dereferenceEnvVar = originalDereferenceEnvVar
 	}()
 	tests := map[string]struct {
 		inputArgs         []string
@@ -253,7 +253,7 @@ func Test_cookCommandLineArguments(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			DereferenceEnvVar = tt.dereferenceEnvVar
+			dereferenceEnvVar = tt.dereferenceEnvVar
 			got := CookCommandLineArguments(o, tt.inputArgs)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("cookCommandLineArguments() = %v, want %v", got, tt.want)
@@ -265,10 +265,10 @@ func Test_cookCommandLineArguments(t *testing.T) {
 
 func Test_initGlobals(t *testing.T) {
 	originalExit := Exit
-	originalNewDefaultBus := NewDefaultBus
-	originalInitLogging := InitLogging
-	originalInitApplicationPath := InitApplicationPath
-	originalReadConfigurationFile := ReadConfigurationFile
+	originalNewDefaultBus := newDefaultBus
+	originalInitLogging := initLogging
+	originalInitApplicationPath := initApplicationPath
+	originalReadConfigurationFile := readConfigurationFile
 	originalVersion := version
 	originalCreation := creation
 	originalInitialized := Initialized
@@ -276,10 +276,10 @@ func Test_initGlobals(t *testing.T) {
 	originalInternalConfig := InternalConfig
 	defer func() {
 		Exit = originalExit
-		NewDefaultBus = originalNewDefaultBus
-		InitLogging = originalInitLogging
-		InitApplicationPath = originalInitApplicationPath
-		ReadConfigurationFile = originalReadConfigurationFile
+		newDefaultBus = originalNewDefaultBus
+		initLogging = originalInitLogging
+		initApplicationPath = originalInitApplicationPath
+		readConfigurationFile = originalReadConfigurationFile
 		version = originalVersion
 		creation = originalCreation
 		Initialized = originalInitialized
@@ -413,10 +413,10 @@ func Test_initGlobals(t *testing.T) {
 			flagIndicatorRecorded = defaultFlagIndicator
 			Initialized = tt.initialize
 			Exit = tt.exitFunc
-			NewDefaultBus = tt.newDefaultBus
-			InitLogging = tt.initLogging
-			InitApplicationPath = tt.initApplicationPath
-			ReadConfigurationFile = tt.readConfigurationFile
+			newDefaultBus = tt.newDefaultBus
+			initLogging = tt.initLogging
+			initApplicationPath = tt.initApplicationPath
+			readConfigurationFile = tt.readConfigurationFile
 
 			creation = tt.creationVal
 			version = tt.versionVal

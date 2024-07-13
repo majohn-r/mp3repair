@@ -67,7 +67,7 @@ func RepairRun(cmd *cobra.Command, _ []string) error {
 			for k, v := range searchSettings.Values() {
 				details[k] = v
 			}
-			LogCommandStart(o, repairCommandName, details)
+			logCommandStart(o, repairCommandName, details)
 			allArtists := searchSettings.Load(o)
 			exitError = rs.ProcessArtists(o, allArtists, searchSettings)
 		}
@@ -90,7 +90,7 @@ func (rs *RepairSettings) ProcessArtists(o output.Bus, allArtists []*files.Artis
 }
 
 func (rs *RepairSettings) RepairArtists(o output.Bus, artists []*files.Artist) *cmdtoolkit.ExitError {
-	ReadMetadata(o, artists) // read all track metadata
+	readMetadata(o, artists) // read all track metadata
 	concernedArtists := createConcernedArtists(artists)
 	count := FindConflictedTracks(concernedArtists)
 	if rs.DryRun.Value {
@@ -230,14 +230,14 @@ func ProcessTrackRepairResults(o output.Bus, t *files.Track, updateErrs []error)
 		return cmdtoolkit.NewExitSystemError(repairCommandName)
 	}
 	o.WriteConsole("%q repaired.\n", t)
-	MarkDirty(o)
+	markDirty(o)
 	return nil
 }
 
 func TryTrackBackup(o output.Bus, t *files.Track, path string) (backedUp bool) {
 	backupFile := filepath.Join(path, fmt.Sprintf("%d.mp3", t.Number))
 	switch {
-	case PlainFileExists(backupFile):
+	case plainFileExists(backupFile):
 		o.WriteCanonicalError("The backup file for track file %q, %q, already exists", t,
 			backupFile)
 		o.Log(output.Error, "file already exists", map[string]any{
@@ -245,7 +245,7 @@ func TryTrackBackup(o output.Bus, t *files.Track, path string) (backedUp bool) {
 			"file":    backupFile,
 		})
 	default:
-		copyErr := CopyFile(t.FilePath, backupFile)
+		copyErr := copyFile(t.FilePath, backupFile)
 		switch copyErr {
 		case nil:
 			o.WriteCanonicalConsole("The track file %q has been backed up to %q", t,
@@ -271,8 +271,8 @@ func TryTrackBackup(o output.Bus, t *files.Track, path string) (backedUp bool) {
 func EnsureTrackBackupDirectoryExists(o output.Bus, cAl *ConcernedAlbum) (path string, exists bool) {
 	path = cAl.backing.BackupDirectory()
 	exists = true
-	if !DirExists(path) {
-		if fileErr := Mkdir(path); fileErr != nil {
+	if !dirExists(path) {
+		if fileErr := mkdir(path); fileErr != nil {
 			exists = false
 			o.WriteCanonicalError("The directory %q cannot be created: %v", path, fileErr)
 			o.WriteCanonicalError(

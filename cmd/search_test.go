@@ -643,9 +643,9 @@ func newTestFile(name string, contents []*testFile) *testFile {
 }
 
 func Test_searchSettings_load(t *testing.T) {
-	originalReadDirectory := ReadDirectory
+	originalReadDirectory := readDirectory
 	defer func() {
-		ReadDirectory = originalReadDirectory
+		readDirectory = originalReadDirectory
 	}()
 	album1Content1 := newTestFile("subfolder", []*testFile{newTestFile("foo", nil)})
 	album1Content2 := newTestFile("cover.jpg", nil)
@@ -678,7 +678,7 @@ func Test_searchSettings_load(t *testing.T) {
 		Number:     1,
 	}.NewTrack()
 	testAlbum.AddTrack(testTrack)
-	ReadDirectory = func(_ output.Bus, dir string) ([]fs.FileInfo, bool) {
+	readDirectory = func(_ output.Bus, dir string) ([]fs.FileInfo, bool) {
 		if tf, found := testFiles[dir]; found {
 			var entries []fs.FileInfo
 			for _, f := range tf.files {
