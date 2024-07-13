@@ -12,96 +12,95 @@ import (
 )
 
 const (
-	ListAlbums           = "albums"
-	ListAlbumsFlag       = "--" + ListAlbums
-	ListAnnotate         = "annotate"
-	ListAnnotateFlag     = "--" + ListAnnotate
-	ListArtists          = "artists"
-	ListArtistsFlag      = "--" + ListArtists
-	ListCommand          = "list"
-	ListDetails          = "details"
-	ListDetailsFlag      = "--" + ListDetails
-	ListDiagnostic       = "diagnostic"
-	ListDiagnosticFlag   = "--" + ListDiagnostic
-	ListSortByNumber     = "byNumber"
-	ListSortByNumberFlag = "--" + ListSortByNumber
-	ListSortByTitle      = "byTitle"
-	ListSortByTitleFlag  = "--" + ListSortByTitle
-	ListTracks           = "tracks"
-	ListTracksFlag       = "--" + ListTracks
+	listAlbums           = "albums"
+	listAlbumsFlag       = "--" + listAlbums
+	listAnnotate         = "annotate"
+	listAnnotateFlag     = "--" + listAnnotate
+	listArtists          = "artists"
+	listArtistsFlag      = "--" + listArtists
+	listCommand          = "list"
+	listDetails          = "details"
+	listDetailsFlag      = "--" + listDetails
+	listDiagnostic       = "diagnostic"
+	listDiagnosticFlag   = "--" + listDiagnostic
+	listSortByNumber     = "byNumber"
+	listSortByNumberFlag = "--" + listSortByNumber
+	listSortByTitle      = "byTitle"
+	listSortByTitleFlag  = "--" + listSortByTitle
+	listTracks           = "tracks"
+	listTracksFlag       = "--" + listTracks
 )
 
 var (
-	// ListCmd represents the list command
-	ListCmd = &cobra.Command{
-		Use: ListCommand + " [" + ListAlbumsFlag + "] [" + ListArtistsFlag + "] " +
-			"[" + ListTracksFlag + "] [" + ListAnnotateFlag + "] [" + ListDetailsFlag + "] " +
-			"[" + ListDiagnosticFlag + "] [" + ListSortByNumberFlag + " | " +
-			ListSortByTitleFlag + "] " + searchUsage,
+	listCmd = &cobra.Command{
+		Use: listCommand + " [" + listAlbumsFlag + "] [" + listArtistsFlag + "] " +
+			"[" + listTracksFlag + "] [" + listAnnotateFlag + "] [" + listDetailsFlag + "] " +
+			"[" + listDiagnosticFlag + "] [" + listSortByNumberFlag + " | " +
+			listSortByTitleFlag + "] " + searchUsage,
 		DisableFlagsInUseLine: true,
 		Short:                 "Lists mp3 files and containing album and artist directories",
 		Long: fmt.Sprintf(
-			"%q lists mp3 files and containing album and artist directories", ListCommand),
-		Example: ListCommand + " " + ListAnnotateFlag + "\n" +
+			"%q lists mp3 files and containing album and artist directories", listCommand),
+		Example: listCommand + " " + listAnnotateFlag + "\n" +
 			"  Annotate tracks with album and artist data and albums with artist data\n" +
-			ListCommand + " " + ListDetailsFlag + "\n" +
+			listCommand + " " + listDetailsFlag + "\n" +
 			"  Include detailed information, if available, for each track. This includes" +
 			" composer,\n" +
 			"  conductor, key, lyricist, orchestra/band, and subtitle\n" +
-			ListCommand + " " + ListAlbumsFlag + "\n" +
+			listCommand + " " + listAlbumsFlag + "\n" +
 			"  Include the album names in the output\n" +
-			ListCommand + " " + ListArtistsFlag + "\n" +
+			listCommand + " " + listArtistsFlag + "\n" +
 			"  Include the artist names in the output\n" +
-			ListCommand + " " + ListTracksFlag + "\n" +
+			listCommand + " " + listTracksFlag + "\n" +
 			"  Include the track names in the output\n" +
-			ListCommand + " " + ListSortByTitleFlag + "\n" +
+			listCommand + " " + listSortByTitleFlag + "\n" +
 			"  Sort tracks by name, ignoring track numbers\n" +
-			ListCommand + " " + ListSortByNumberFlag + "\n" +
+			listCommand + " " + listSortByNumberFlag + "\n" +
 			"  Sort tracks by track number",
-		RunE: ListRun,
+		RunE: listRun,
 	}
-	ListFlags = &cmdtoolkit.FlagSet{
-		Name: ListCommand,
+	listFlags = &cmdtoolkit.FlagSet{
+		Name: listCommand,
 		Details: map[string]*cmdtoolkit.FlagDetails{
-			ListAlbums: {
+			listAlbums: {
 				AbbreviatedName: "l",
 				Usage:           "include album names in listing",
 				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
-			ListArtists: {
+			listArtists: {
 				AbbreviatedName: "r",
 				Usage:           "include artist names in listing",
 				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
-			ListTracks: {
+			listTracks: {
 				AbbreviatedName: "t",
 				Usage:           "include track names in listing",
 				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
-			ListSortByNumber: {
+			listSortByNumber: {
 				Usage:        "sort tracks by track number",
 				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
-			ListSortByTitle: {
+			listSortByTitle: {
 				Usage:        "sort tracks by track title",
 				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
-			ListAnnotate: {
+			listAnnotate: {
 				Usage:        "annotate listings with album and artist names",
 				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
-			ListDetails: {
+			listDetails: {
 				Usage:        "include details with tracks",
 				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
-			ListDiagnostic: {
+			listDiagnostic: {
 				Usage:        "include diagnostic information with tracks",
 				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
@@ -110,74 +109,74 @@ var (
 	}
 )
 
-func ListRun(cmd *cobra.Command, _ []string) error {
-	exitError := cmdtoolkit.NewExitProgrammingError(ListCommand)
+func listRun(cmd *cobra.Command, _ []string) error {
+	exitError := cmdtoolkit.NewExitProgrammingError(listCommand)
 	o := getBus()
 	producer := cmd.Flags()
-	values, eSlice := cmdtoolkit.ReadFlags(producer, ListFlags)
+	values, eSlice := cmdtoolkit.ReadFlags(producer, listFlags)
 	searchSettings, searchFlagsOk := EvaluateSearchFlags(o, producer)
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) && searchFlagsOk {
-		if ls, flagsOk := ProcessListFlags(o, values); flagsOk {
+		if ls, flagsOk := processListFlags(o, values); flagsOk {
 			details := map[string]any{
-				ListAlbumsFlag:       ls.Albums.Value,
-				"albums-user-set":    ls.Albums.UserSet,
-				ListAnnotateFlag:     ls.Annotate.Value,
-				ListArtistsFlag:      ls.Artists.Value,
-				"artists-user-set":   ls.Artists.UserSet,
-				ListSortByNumberFlag: ls.SortByNumber.Value,
-				"byNumber-user-set":  ls.SortByNumber.UserSet,
-				ListSortByTitleFlag:  ls.SortByTitle.Value,
-				"byTitle-user-set":   ls.SortByTitle.UserSet,
-				ListDetailsFlag:      ls.Details.Value,
-				ListDiagnosticFlag:   ls.Diagnostic.Value,
-				ListTracksFlag:       ls.Tracks.Value,
-				"tracks-user-set":    ls.Tracks.UserSet,
+				listAlbumsFlag:       ls.albums.Value,
+				"albums-user-set":    ls.albums.UserSet,
+				listAnnotateFlag:     ls.annotate.Value,
+				listArtistsFlag:      ls.artists.Value,
+				"artists-user-set":   ls.artists.UserSet,
+				listSortByNumberFlag: ls.sortByNumber.Value,
+				"byNumber-user-set":  ls.sortByNumber.UserSet,
+				listSortByTitleFlag:  ls.sortByTitle.Value,
+				"byTitle-user-set":   ls.sortByTitle.UserSet,
+				listDetailsFlag:      ls.details.Value,
+				listDiagnosticFlag:   ls.diagnostic.Value,
+				listTracksFlag:       ls.tracks.Value,
+				"tracks-user-set":    ls.tracks.UserSet,
 			}
 			for k, v := range searchSettings.Values() {
 				details[k] = v
 			}
-			logCommandStart(o, ListCommand, details)
-			switch ls.HasWorkToDo(o) {
+			logCommandStart(o, listCommand, details)
+			switch ls.hasWorkToDo(o) {
 			case true:
-				switch ls.TracksSortable(o) {
+				switch ls.tracksSortable(o) {
 				case true:
 					allArtists := searchSettings.Load(o)
-					exitError = ls.ListArtists(o, allArtists, searchSettings)
+					exitError = ls.listArtists(o, allArtists, searchSettings)
 				case false:
-					exitError = cmdtoolkit.NewExitUserError(ListCommand)
+					exitError = cmdtoolkit.NewExitUserError(listCommand)
 				}
 			case false:
-				exitError = cmdtoolkit.NewExitUserError(ListCommand)
+				exitError = cmdtoolkit.NewExitUserError(listCommand)
 			}
 		}
 	}
 	return cmdtoolkit.ToErrorInterface(exitError)
 }
 
-type ListSettings struct {
-	Albums       cmdtoolkit.CommandFlag[bool]
-	Annotate     cmdtoolkit.CommandFlag[bool]
-	Artists      cmdtoolkit.CommandFlag[bool]
-	Details      cmdtoolkit.CommandFlag[bool]
-	Diagnostic   cmdtoolkit.CommandFlag[bool]
-	SortByNumber cmdtoolkit.CommandFlag[bool]
-	SortByTitle  cmdtoolkit.CommandFlag[bool]
-	Tracks       cmdtoolkit.CommandFlag[bool]
+type listSettings struct {
+	albums       cmdtoolkit.CommandFlag[bool]
+	annotate     cmdtoolkit.CommandFlag[bool]
+	artists      cmdtoolkit.CommandFlag[bool]
+	details      cmdtoolkit.CommandFlag[bool]
+	diagnostic   cmdtoolkit.CommandFlag[bool]
+	sortByNumber cmdtoolkit.CommandFlag[bool]
+	sortByTitle  cmdtoolkit.CommandFlag[bool]
+	tracks       cmdtoolkit.CommandFlag[bool]
 }
 
-func (ls *ListSettings) ListArtists(o output.Bus, allArtists []*files.Artist, ss *SearchSettings) (err *cmdtoolkit.ExitError) {
-	err = cmdtoolkit.NewExitUserError(ListCommand)
+func (ls *listSettings) listArtists(o output.Bus, allArtists []*files.Artist, ss *SearchSettings) (err *cmdtoolkit.ExitError) {
+	err = cmdtoolkit.NewExitUserError(listCommand)
 	if len(allArtists) != 0 {
 		if filteredArtists := ss.Filter(o, allArtists); len(filteredArtists) != 0 {
-			ls.ListFilteredArtists(o, filteredArtists)
+			ls.listFilteredArtists(o, filteredArtists)
 			err = nil
 		}
 	}
 	return err
 }
 
-func (ls *ListSettings) ListFilteredArtists(o output.Bus, artists []*files.Artist) {
-	if ls.Artists.Value {
+func (ls *listSettings) listFilteredArtists(o output.Bus, artists []*files.Artist) {
+	if ls.artists.Value {
 		m := map[string]*files.Artist{}
 		names := make([]string, 0, len(artists))
 		for _, a := range artists {
@@ -190,7 +189,7 @@ func (ls *ListSettings) ListFilteredArtists(o output.Bus, artists []*files.Artis
 			artist := m[s]
 			if artist != nil {
 				o.IncrementTab(2)
-				ls.ListAlbums(o, artist.Albums)
+				ls.listAlbums(o, artist.Albums)
 				o.DecrementTab(2)
 			}
 		}
@@ -204,33 +203,33 @@ func (ls *ListSettings) ListFilteredArtists(o output.Bus, artists []*files.Artis
 	for _, a := range artists {
 		albums = append(albums, a.Albums...)
 	}
-	ls.ListAlbums(o, albums)
+	ls.listAlbums(o, albums)
 }
 
-type AlbumSlice []*files.Album
+type albumSlice []*files.Album
 
-func (as AlbumSlice) Len() int {
+func (as albumSlice) Len() int {
 	return len(as)
 }
 
-func (as AlbumSlice) Less(i, j int) bool {
+func (as albumSlice) Less(i, j int) bool {
 	if as[i].Title == as[j].Title {
 		return as[i].RecordingArtistName() < as[j].RecordingArtistName()
 	}
 	return as[i].Title < as[j].Title
 }
 
-func (as AlbumSlice) Swap(i, j int) {
+func (as albumSlice) Swap(i, j int) {
 	as[i], as[j] = as[j], as[i]
 }
 
-func (ls *ListSettings) ListAlbums(o output.Bus, albums []*files.Album) {
-	if ls.Albums.Value {
-		sort.Sort(AlbumSlice(albums))
+func (ls *listSettings) listAlbums(o output.Bus, albums []*files.Album) {
+	if ls.albums.Value {
+		sort.Sort(albumSlice(albums))
 		for _, album := range albums {
-			o.WriteConsole("Album: %s\n", ls.AnnotateAlbumName(album))
+			o.WriteConsole("Album: %s\n", ls.annotateAlbumName(album))
 			o.IncrementTab(2)
-			ls.ListTracks(o, album.Tracks)
+			ls.listTracks(o, album.Tracks)
 			o.DecrementTab(2)
 		}
 		return
@@ -243,12 +242,12 @@ func (ls *ListSettings) ListAlbums(o output.Bus, albums []*files.Album) {
 	for _, album := range albums {
 		tracks = append(tracks, album.Tracks...)
 	}
-	ls.ListTracks(o, tracks)
+	ls.listTracks(o, tracks)
 }
 
-func (ls *ListSettings) AnnotateAlbumName(album *files.Album) string {
+func (ls *listSettings) annotateAlbumName(album *files.Album) string {
 	switch {
-	case !ls.Artists.Value && ls.Annotate.Value:
+	case !ls.artists.Value && ls.annotate.Value:
 		return strings.Join([]string{quote(album.Title), "by",
 			quote(album.RecordingArtistName())}, " ")
 	default:
@@ -256,20 +255,20 @@ func (ls *ListSettings) AnnotateAlbumName(album *files.Album) string {
 	}
 }
 
-func (ls *ListSettings) ListTracks(o output.Bus, tracks []*files.Track) {
-	if !ls.Tracks.Value {
+func (ls *listSettings) listTracks(o output.Bus, tracks []*files.Track) {
+	if !ls.tracks.Value {
 		return
 	}
-	if ls.SortByNumber.Value {
-		ls.ListTracksByNumber(o, tracks)
+	if ls.sortByNumber.Value {
+		ls.listTracksByNumber(o, tracks)
 		return
 	}
-	if ls.SortByTitle.Value {
-		ls.ListTracksByName(o, tracks)
+	if ls.sortByTitle.Value {
+		ls.listTracksByName(o, tracks)
 	}
 }
 
-func (ls *ListSettings) ListTracksByNumber(o output.Bus, tracks []*files.Track) {
+func (ls *listSettings) listTracksByNumber(o output.Bus, tracks []*files.Track) {
 	m := map[int]*files.Track{}
 	numbers := make([]int, 0, len(tracks))
 	for _, track := range tracks {
@@ -282,20 +281,20 @@ func (ls *ListSettings) ListTracksByNumber(o output.Bus, tracks []*files.Track) 
 		if track != nil {
 			o.WriteConsole("%2d. %s\n", n, track.SimpleName)
 			o.IncrementTab(2)
-			ls.ListTrackDetails(o, track)
-			ls.ListTrackDiagnostics(o, track)
+			ls.listTrackDetails(o, track)
+			ls.listTrackDiagnostics(o, track)
 			o.DecrementTab(2)
 		}
 	}
 }
 
-type TrackSlice []*files.Track
+type trackSlice []*files.Track
 
-func (ts TrackSlice) Len() int {
+func (ts trackSlice) Len() int {
 	return len(ts)
 }
 
-func (ts TrackSlice) Less(i, j int) bool {
+func (ts trackSlice) Less(i, j int) bool {
 	if ts[i].SimpleName == ts[j].SimpleName {
 		album1 := ts[i].Album
 		album2 := ts[j].Album
@@ -307,17 +306,17 @@ func (ts TrackSlice) Less(i, j int) bool {
 	return ts[i].SimpleName < ts[j].SimpleName
 }
 
-func (ts TrackSlice) Swap(i, j int) {
+func (ts trackSlice) Swap(i, j int) {
 	ts[i], ts[j] = ts[j], ts[i]
 }
 
-func (ls *ListSettings) ListTracksByName(o output.Bus, tracks []*files.Track) {
-	sort.Sort(TrackSlice(tracks))
+func (ls *listSettings) listTracksByName(o output.Bus, tracks []*files.Track) {
+	sort.Sort(trackSlice(tracks))
 	for _, track := range tracks {
-		o.WriteConsole("%s\n", ls.AnnotateTrackName(track))
+		o.WriteConsole("%s\n", ls.annotateTrackName(track))
 		o.IncrementTab(2)
-		ls.ListTrackDetails(o, track)
-		ls.ListTrackDiagnostics(o, track)
+		ls.listTrackDetails(o, track)
+		ls.listTrackDiagnostics(o, track)
 		o.DecrementTab(2)
 	}
 }
@@ -326,28 +325,27 @@ func quote(s string) string {
 	return fmt.Sprintf("%q", s)
 }
 
-func (ls *ListSettings) AnnotateTrackName(track *files.Track) string {
+func (ls *listSettings) annotateTrackName(track *files.Track) string {
 	commonName := track.SimpleName
-	if !ls.Annotate.Value || ls.Albums.Value {
+	if !ls.annotate.Value || ls.albums.Value {
 		return commonName
 	}
 	trackNameParts := []string{quote(commonName), "on", quote(track.AlbumName())}
-	if !ls.Artists.Value {
+	if !ls.artists.Value {
 		trackNameParts = append(trackNameParts, "by", quote(track.RecordingArtist()))
 	}
 	return strings.Join(trackNameParts, " ")
 }
 
-func (ls *ListSettings) ListTrackDetails(o output.Bus, track *files.Track) {
-	if ls.Details.Value {
+func (ls *listSettings) listTrackDetails(o output.Bus, track *files.Track) {
+	if ls.details.Value {
 		// go get information from track and display it
 		m, readErr := track.Details()
-		ShowDetails(o, track, m, readErr)
+		showDetails(o, track, m, readErr)
 	}
 }
 
-// ShowDetails outputs track details; this functionality is split out for testing
-func ShowDetails(o output.Bus, track *files.Track, details map[string]string, detailsError error) {
+func showDetails(o output.Bus, track *files.Track, details map[string]string, detailsError error) {
 	if detailsError != nil {
 		o.Log(output.Error, "cannot get details", map[string]any{
 			"error": detailsError,
@@ -375,17 +373,16 @@ func ShowDetails(o output.Bus, track *files.Track, details map[string]string, de
 	o.DecrementTab(2)
 }
 
-func (ls *ListSettings) ListTrackDiagnostics(o output.Bus, track *files.Track) {
-	if ls.Diagnostic.Value {
+func (ls *listSettings) listTrackDiagnostics(o output.Bus, track *files.Track) {
+	if ls.diagnostic.Value {
 		info, ID3V2readErr := track.ID3V2Diagnostics()
-		ShowID3V2Diagnostics(o, track, info, ID3V2readErr)
+		showID3V2Diagnostics(o, track, info, ID3V2readErr)
 		tags, ID3V1readErr := track.ID3V1Diagnostics()
-		ShowID3V1Diagnostics(o, track, tags, ID3V1readErr)
+		showID3V1Diagnostics(o, track, tags, ID3V1readErr)
 	}
 }
 
-// ShowID3V1Diagnostics outputs ID3V1 diagnostic data; this function is split out for testing
-func ShowID3V1Diagnostics(o output.Bus, track *files.Track, tags []string, readErr error) {
+func showID3V1Diagnostics(o output.Bus, track *files.Track, tags []string, readErr error) {
 	if readErr != nil {
 		track.ReportMetadataReadError(o, files.ID3V1, readErr.Error())
 		return
@@ -395,9 +392,7 @@ func ShowID3V1Diagnostics(o output.Bus, track *files.Track, tags []string, readE
 	}
 }
 
-// ShowID3V2Diagnostics outputs ID3V2 diagnostic data; this functionality is split out for
-// testing
-func ShowID3V2Diagnostics(o output.Bus, track *files.Track, info *files.ID3V2Info, readErr error) {
+func showID3V2Diagnostics(o output.Bus, track *files.Track, info *files.ID3V2Info, readErr error) {
 	if readErr != nil {
 		track.ReportMetadataReadError(o, files.ID3V2, readErr.Error())
 		return
@@ -411,137 +406,137 @@ func ShowID3V2Diagnostics(o output.Bus, track *files.Track, info *files.ID3V2Inf
 	}
 }
 
-func (ls *ListSettings) TracksSortable(o output.Bus) bool {
-	bothSortingOptionsSet := ls.SortByNumber.Value && ls.SortByTitle.Value
-	neitherSortingOptionSet := !ls.SortByNumber.Value && !ls.SortByTitle.Value
-	if ls.Tracks.Value {
+func (ls *listSettings) tracksSortable(o output.Bus) bool {
+	bothSortingOptionsSet := ls.sortByNumber.Value && ls.sortByTitle.Value
+	neitherSortingOptionSet := !ls.sortByNumber.Value && !ls.sortByTitle.Value
+	if ls.tracks.Value {
 		switch {
 		case bothSortingOptionsSet:
 			o.WriteCanonicalError("Track sorting cannot be done")
 			o.WriteCanonicalError("Why?")
-			switch ls.SortByNumber.UserSet {
+			switch ls.sortByNumber.UserSet {
 			case true:
-				switch ls.SortByTitle.UserSet {
+				switch ls.sortByTitle.UserSet {
 				case true:
 					o.WriteCanonicalError("You explicitly set %s and %s true",
-						ListSortByNumberFlag, ListSortByTitleFlag)
+						listSortByNumberFlag, listSortByTitleFlag)
 				case false:
 					o.WriteCanonicalError(
 						"The %s flag is configured true and you explicitly set %s true",
-						ListSortByTitleFlag, ListSortByNumberFlag)
+						listSortByTitleFlag, listSortByNumberFlag)
 				}
 			case false:
-				switch ls.SortByTitle.UserSet {
+				switch ls.sortByTitle.UserSet {
 				case true:
 					o.WriteCanonicalError(
 						"The %s flag is configured true and you explicitly set %s true",
-						ListSortByNumberFlag, ListSortByTitleFlag)
+						listSortByNumberFlag, listSortByTitleFlag)
 				case false:
 					o.WriteCanonicalError("The %s and %s flags are both configured true",
-						ListSortByNumberFlag, ListSortByTitleFlag)
+						listSortByNumberFlag, listSortByTitleFlag)
 				}
 			}
 			o.WriteCanonicalError("What to do:\nEither edit the configuration file and use" +
 				" those default values, or use appropriate command line values")
 			return false
-		case ls.SortByNumber.Value && !ls.Albums.Value:
+		case ls.sortByNumber.Value && !ls.albums.Value:
 			o.WriteCanonicalError("Sorting tracks by number not possible.")
 			o.WriteCanonicalError("Why?")
 			o.WriteCanonicalError("Track numbers are only relevant if albums are also output.")
-			switch ls.SortByNumber.UserSet {
+			switch ls.sortByNumber.UserSet {
 			case true:
-				switch ls.Albums.UserSet {
+				switch ls.albums.UserSet {
 				case true:
-					o.WriteCanonicalError("You set %s true and %s false.", ListSortByNumberFlag, ListAlbumsFlag)
+					o.WriteCanonicalError("You set %s true and %s false.", listSortByNumberFlag, listAlbumsFlag)
 				case false:
-					o.WriteCanonicalError("You set %s true and %s is configured as false", ListSortByNumberFlag, ListAlbumsFlag)
+					o.WriteCanonicalError("You set %s true and %s is configured as false", listSortByNumberFlag, listAlbumsFlag)
 				}
 			case false:
-				switch ls.Albums.UserSet {
+				switch ls.albums.UserSet {
 				case true:
-					o.WriteCanonicalError("You set %s false and %s is configured as true", ListAlbumsFlag, ListSortByNumberFlag)
+					o.WriteCanonicalError("You set %s false and %s is configured as true", listAlbumsFlag, listSortByNumberFlag)
 				case false:
-					o.WriteCanonicalError("%s is configured as false, and %s is configured as true", ListAlbumsFlag, ListSortByNumberFlag)
+					o.WriteCanonicalError("%s is configured as false, and %s is configured as true", listAlbumsFlag, listSortByNumberFlag)
 				}
 			}
 			o.WriteCanonicalError("What to do:\nEither edit the configuration file or change which flags you set on the command line.")
 			return false
 		case neitherSortingOptionSet:
-			if ls.SortByNumber.UserSet && ls.SortByTitle.UserSet {
+			if ls.sortByNumber.UserSet && ls.sortByTitle.UserSet {
 				o.WriteCanonicalError("A listing of tracks is not possible.")
 				o.WriteCanonicalError("Why?")
-				o.WriteCanonicalError("Tracks are enabled, but you set both %s and %s false", ListSortByNumberFlag, ListSortByTitleFlag)
+				o.WriteCanonicalError("Tracks are enabled, but you set both %s and %s false", listSortByNumberFlag, listSortByTitleFlag)
 				o.WriteCanonicalError("What to do:\nEnable one of the sorting flags")
 				return false
 			}
 			// pick a sensible option
 			switch {
-			case ls.SortByNumber.UserSet:
-				ls.SortByTitle.Value = true // pick the other setting
-			case ls.SortByTitle.UserSet:
-				ls.SortByNumber.Value = true // pick the other setting
+			case ls.sortByNumber.UserSet:
+				ls.sortByTitle.Value = true // pick the other setting
+			case ls.sortByTitle.UserSet:
+				ls.sortByNumber.Value = true // pick the other setting
 			default: // ok, pick something sensible, user does not care
-				switch ls.Albums.Value {
+				switch ls.albums.Value {
 				case true:
-					ls.SortByNumber.Value = true
+					ls.sortByNumber.Value = true
 				case false:
-					ls.SortByTitle.Value = true
+					ls.sortByTitle.Value = true
 				}
 			}
 			o.Log(output.Info, "no track sorting set, providing a sensible value", map[string]any{
-				ListAlbumsFlag:      ls.Albums.Value,
-				ListSortByNumber:    ls.SortByNumber.Value,
-				ListSortByTitleFlag: ls.SortByTitle.Value,
+				listAlbumsFlag:      ls.albums.Value,
+				listSortByNumber:    ls.sortByNumber.Value,
+				listSortByTitleFlag: ls.sortByTitle.Value,
 			})
 			return true
 		default: // https://github.com/majohn-r/mp3repair/issues/170
 			return true
 		}
 	}
-	if (ls.SortByNumber.Value && ls.SortByNumber.UserSet) || (ls.SortByTitle.Value && ls.SortByTitle.UserSet) {
+	if (ls.sortByNumber.Value && ls.sortByNumber.UserSet) || (ls.sortByTitle.Value && ls.sortByTitle.UserSet) {
 		o.WriteCanonicalError("Your sorting preferences are not relevant")
 		o.WriteCanonicalError("Why?")
 		o.WriteCanonicalError(
 			"Tracks are not included in the output, but you explicitly set %s or %s true.",
-			ListSortByNumberFlag, ListSortByTitleFlag)
+			listSortByNumberFlag, listSortByTitleFlag)
 		o.WriteCanonicalError("What to do:\nEither set %s true or remove the sorting flags"+
-			" from the command line.", ListTracksFlag)
+			" from the command line.", listTracksFlag)
 		return false
 	}
 	return true
 }
 
-func (ls *ListSettings) HasWorkToDo(o output.Bus) bool {
-	if ls.Albums.Value || ls.Artists.Value || ls.Tracks.Value {
+func (ls *listSettings) hasWorkToDo(o output.Bus) bool {
+	if ls.albums.Value || ls.artists.Value || ls.tracks.Value {
 		return true
 	}
 	o.WriteCanonicalError("No listing will be output.\nWhy?\n")
 	switch {
-	case ls.Albums.UserSet || ls.Artists.UserSet || ls.Tracks.UserSet:
+	case ls.albums.UserSet || ls.artists.UserSet || ls.tracks.UserSet:
 		flagsUserSet := make([]string, 0, 3)
 		flagsFromConfig := make([]string, 0, 3)
 		switch {
-		case ls.Albums.UserSet:
-			flagsUserSet = append(flagsUserSet, ListAlbumsFlag)
+		case ls.albums.UserSet:
+			flagsUserSet = append(flagsUserSet, listAlbumsFlag)
 		default:
-			flagsFromConfig = append(flagsFromConfig, ListAlbumsFlag)
+			flagsFromConfig = append(flagsFromConfig, listAlbumsFlag)
 		}
 		switch {
-		case ls.Artists.UserSet:
-			flagsUserSet = append(flagsUserSet, ListArtistsFlag)
+		case ls.artists.UserSet:
+			flagsUserSet = append(flagsUserSet, listArtistsFlag)
 		default:
-			flagsFromConfig = append(flagsFromConfig, ListArtistsFlag)
+			flagsFromConfig = append(flagsFromConfig, listArtistsFlag)
 		}
 		switch {
-		case ls.Tracks.UserSet:
-			flagsUserSet = append(flagsUserSet, ListTracksFlag)
+		case ls.tracks.UserSet:
+			flagsUserSet = append(flagsUserSet, listTracksFlag)
 		default:
-			flagsFromConfig = append(flagsFromConfig, ListTracksFlag)
+			flagsFromConfig = append(flagsFromConfig, listTracksFlag)
 		}
 		switch len(flagsFromConfig) {
 		case 0:
 			o.WriteCanonicalError("You explicitly set %s, %s, and %s false",
-				ListAlbumsFlag, ListArtistsFlag, ListTracksFlag)
+				listAlbumsFlag, listArtistsFlag, listTracksFlag)
 		default:
 			o.WriteCanonicalError(
 				"In addition to %s configured false, you explicitly set %s false",
@@ -549,7 +544,7 @@ func (ls *ListSettings) HasWorkToDo(o output.Bus) bool {
 		}
 	default: // user did not set any of the relevant flags that way
 		o.WriteCanonicalError("The flags %s, %s, and %s are all configured false",
-			ListAlbumsFlag, ListArtistsFlag, ListTracksFlag)
+			listAlbumsFlag, listArtistsFlag, listTracksFlag)
 	}
 	o.WriteError("What to do:\n")
 	o.WriteCanonicalError("Either:\n[1] Edit the configuration file so that at least one" +
@@ -558,41 +553,41 @@ func (ls *ListSettings) HasWorkToDo(o output.Bus) bool {
 	return false
 }
 
-func ProcessListFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (*ListSettings, bool) {
-	settings := &ListSettings{}
+func processListFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (*listSettings, bool) {
+	settings := &listSettings{}
 	flagsOk := true // optimistic
 	var flagErr error
-	if settings.Albums, flagErr = cmdtoolkit.GetBool(o, values, ListAlbums); flagErr != nil {
+	if settings.albums, flagErr = cmdtoolkit.GetBool(o, values, listAlbums); flagErr != nil {
 		flagsOk = false
 	}
-	if settings.Annotate, flagErr = cmdtoolkit.GetBool(o, values, ListAnnotate); flagErr != nil {
+	if settings.annotate, flagErr = cmdtoolkit.GetBool(o, values, listAnnotate); flagErr != nil {
 		flagsOk = false
 	}
-	if settings.Artists, flagErr = cmdtoolkit.GetBool(o, values, ListArtists); flagErr != nil {
+	if settings.artists, flagErr = cmdtoolkit.GetBool(o, values, listArtists); flagErr != nil {
 		flagsOk = false
 	}
-	if settings.Details, flagErr = cmdtoolkit.GetBool(o, values, ListDetails); flagErr != nil {
+	if settings.details, flagErr = cmdtoolkit.GetBool(o, values, listDetails); flagErr != nil {
 		flagsOk = false
 	}
-	if settings.Diagnostic, flagErr = cmdtoolkit.GetBool(o, values, ListDiagnostic); flagErr != nil {
+	if settings.diagnostic, flagErr = cmdtoolkit.GetBool(o, values, listDiagnostic); flagErr != nil {
 		flagsOk = false
 	}
-	if settings.SortByNumber, flagErr = cmdtoolkit.GetBool(o, values, ListSortByNumber); flagErr != nil {
+	if settings.sortByNumber, flagErr = cmdtoolkit.GetBool(o, values, listSortByNumber); flagErr != nil {
 		flagsOk = false
 	}
-	if settings.SortByTitle, flagErr = cmdtoolkit.GetBool(o, values, ListSortByTitle); flagErr != nil {
+	if settings.sortByTitle, flagErr = cmdtoolkit.GetBool(o, values, listSortByTitle); flagErr != nil {
 		flagsOk = false
 	}
-	if settings.Tracks, flagErr = cmdtoolkit.GetBool(o, values, ListTracks); flagErr != nil {
+	if settings.tracks, flagErr = cmdtoolkit.GetBool(o, values, listTracks); flagErr != nil {
 		flagsOk = false
 	}
 	return settings, flagsOk
 }
 
 func init() {
-	RootCmd.AddCommand(ListCmd)
-	addDefaults(ListFlags)
+	RootCmd.AddCommand(listCmd)
+	addDefaults(listFlags)
 	c := getConfiguration()
 	o := getBus()
-	cmdtoolkit.AddFlags(o, c, ListCmd.Flags(), ListFlags, SearchFlags)
+	cmdtoolkit.AddFlags(o, c, listCmd.Flags(), listFlags, SearchFlags)
 }

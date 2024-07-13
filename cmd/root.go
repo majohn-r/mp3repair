@@ -43,7 +43,7 @@ var (
 
 First, get a listing of the available mp3 files:
 
-` + appName + ` ` + ListCommand + ` -lrt
+` + appName + ` ` + listCommand + ` -lrt
 
 Then check for problems in the track metadata:
 
