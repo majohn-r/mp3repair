@@ -86,7 +86,7 @@ var (
 func aboutRun(cmd *cobra.Command, _ []string) error {
 	o := BusGetter()
 	values, eSlice := cmdtoolkit.ReadFlags(cmd.Flags(), aboutFlags)
-	exitError := cmdtoolkit.NewExitProgrammingError(ExportCommand)
+	exitError := cmdtoolkit.NewExitProgrammingError(aboutCommand)
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) {
 		flag, err := cmdtoolkit.GetString(o, values, aboutStyle)
 		if err == nil {

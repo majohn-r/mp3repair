@@ -11,42 +11,41 @@ import (
 )
 
 const (
-	ExportCommand        = "export"
-	ExportFlagDefaults   = "defaults"
-	exportDefaultsAsFlag = "--" + ExportFlagDefaults
+	exportCommand        = "export"
+	exportFlagDefaults   = "defaults"
+	exportDefaultsAsFlag = "--" + exportFlagDefaults
 	exportDefaultsCure   = "What to do:\nUse either '" + exportDefaultsAsFlag + "' or '" +
 		exportDefaultsAsFlag + "=true' to enable exporting defaults"
-	ExportFlagOverwrite   = "overwrite"
-	exportOverwriteAsFlag = "--" + ExportFlagOverwrite
+	exportFlagOverwrite   = "overwrite"
+	exportOverwriteAsFlag = "--" + exportFlagOverwrite
 	exportOverwriteCure   = "What to do:\nUse either '" + exportOverwriteAsFlag + "' or '" +
 		exportOverwriteAsFlag + "=true' to enable overwriting the existing file"
 )
 
-// ExportCmd represents the export command
 var (
-	ExportCmd = &cobra.Command{
-		Use: ExportCommand + " [" + exportDefaultsAsFlag + "] [" +
+	exportCmd = &cobra.Command{
+		Use: exportCommand + " [" + exportDefaultsAsFlag + "] [" +
 			exportOverwriteAsFlag + "]",
 		DisableFlagsInUseLine: true,
 		Short:                 "Exports default program configuration data",
-		Long: fmt.Sprintf("%q", ExportCommand) +
+		Long: fmt.Sprintf("%q", exportCommand) +
 			` exports default program configuration data to %APPDATA%\mp3repair\defaults.yaml`,
-		Example: ExportCommand + " " + exportDefaultsAsFlag + "\n" +
+		Example: exportCommand + " " + exportDefaultsAsFlag + "\n" +
 			"  Write default program configuration data\n" +
-			ExportCommand + " " + exportOverwriteAsFlag + "\n" +
+			exportCommand + " " + exportOverwriteAsFlag + "\n" +
 			"  Overwrite a pre-existing defaults.yaml file",
-		RunE: ExportRun,
+		RunE: exportRun,
 	}
-	ExportFlags = &cmdtoolkit.FlagSet{
-		Name: ExportCommand,
+	exportFlags = &cmdtoolkit.FlagSet{
+		Name: exportCommand,
 		Details: map[string]*cmdtoolkit.FlagDetails{
-			ExportFlagDefaults: {
+			exportFlagDefaults: {
 				AbbreviatedName: "d",
 				Usage:           "write default program configuration data",
 				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
-			ExportFlagOverwrite: {
+			exportFlagOverwrite: {
 				AbbreviatedName: "o",
 				Usage:           "overwrite existing file",
 				ExpectedType:    cmdtoolkit.BoolType,
@@ -71,48 +70,48 @@ func addDefaults(sf *cmdtoolkit.FlagSet) {
 	defaultConfigurationSettings[sf.Name] = payload
 }
 
-type ExportSettings struct {
-	DefaultsEnabled  cmdtoolkit.CommandFlag[bool]
-	OverwriteEnabled cmdtoolkit.CommandFlag[bool]
+type exportSettings struct {
+	defaultsEnabled  cmdtoolkit.CommandFlag[bool]
+	overwriteEnabled cmdtoolkit.CommandFlag[bool]
 }
 
-func ExportRun(cmd *cobra.Command, _ []string) error {
+func exportRun(cmd *cobra.Command, _ []string) error {
 	o := getBus()
-	values, eSlice := cmdtoolkit.ReadFlags(cmd.Flags(), ExportFlags)
-	exitError := cmdtoolkit.NewExitProgrammingError(ExportCommand)
+	values, eSlice := cmdtoolkit.ReadFlags(cmd.Flags(), exportFlags)
+	exitError := cmdtoolkit.NewExitProgrammingError(exportCommand)
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) {
-		settings, flagsOk := ProcessExportFlags(o, values)
+		settings, flagsOk := processExportFlags(o, values)
 		if flagsOk {
-			LogCommandStart(o, ExportCommand, map[string]any{
-				exportDefaultsAsFlag:  settings.DefaultsEnabled.Value,
-				"defaults-user-set":   settings.DefaultsEnabled.UserSet,
-				exportOverwriteAsFlag: settings.OverwriteEnabled.Value,
-				"overwrite-user-set":  settings.OverwriteEnabled.UserSet,
+			LogCommandStart(o, exportCommand, map[string]any{
+				exportDefaultsAsFlag:  settings.defaultsEnabled.Value,
+				"defaults-user-set":   settings.defaultsEnabled.UserSet,
+				exportOverwriteAsFlag: settings.overwriteEnabled.Value,
+				"overwrite-user-set":  settings.overwriteEnabled.UserSet,
 			})
-			exitError = settings.ExportDefaultConfiguration(o)
+			exitError = settings.exportDefaultConfiguration(o)
 		}
 	}
 	return cmdtoolkit.ToErrorInterface(exitError)
 }
 
-func ProcessExportFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (*ExportSettings, bool) {
+func processExportFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (*exportSettings, bool) {
 	var flagErr error
-	result := &ExportSettings{}
+	result := &exportSettings{}
 	flagsOk := true // optimistic
-	result.DefaultsEnabled, flagErr = cmdtoolkit.GetBool(o, values, ExportFlagDefaults)
+	result.defaultsEnabled, flagErr = cmdtoolkit.GetBool(o, values, exportFlagDefaults)
 	if flagErr != nil {
 		flagsOk = false
 	}
-	result.OverwriteEnabled, flagErr = cmdtoolkit.GetBool(o, values, ExportFlagOverwrite)
+	result.overwriteEnabled, flagErr = cmdtoolkit.GetBool(o, values, exportFlagOverwrite)
 	if flagErr != nil {
 		flagsOk = false
 	}
 	return result, flagsOk
 }
 
-func CreateConfigurationFile(o output.Bus, f string, content []byte) bool {
+func createConfigurationFile(o output.Bus, f string, content []byte) bool {
 	if fileErr := WriteFile(f, content, cmdtoolkit.StdFilePermissions); fileErr != nil {
-		cmdtoolkit.ReportFileCreationFailure(o, ExportCommand, f, fileErr)
+		cmdtoolkit.ReportFileCreationFailure(o, exportCommand, f, fileErr)
 		return false
 	}
 	o.WriteCanonicalConsole("File %q has been written", f)
@@ -125,26 +124,26 @@ func configFile() (path string, exists bool) {
 	return
 }
 
-func (es *ExportSettings) ExportDefaultConfiguration(o output.Bus) *cmdtoolkit.ExitError {
-	if !es.CanWriteConfigurationFile(o) {
-		return cmdtoolkit.NewExitUserError(ExportCommand)
+func (es *exportSettings) exportDefaultConfiguration(o output.Bus) *cmdtoolkit.ExitError {
+	if !es.canWriteConfigurationFile(o) {
+		return cmdtoolkit.NewExitUserError(exportCommand)
 	}
 	// ignoring error return, as we're not marshalling structs, where mischief
 	// can occur
 	payload, _ := yaml.Marshal(defaultConfigurationSettings)
 	f, exists := configFile()
 	if exists {
-		return es.OverwriteConfigurationFile(o, f, payload)
+		return es.overwriteConfigurationFile(o, f, payload)
 	}
-	if !CreateConfigurationFile(o, f, payload) {
-		return cmdtoolkit.NewExitSystemError(ExportCommand)
+	if !createConfigurationFile(o, f, payload) {
+		return cmdtoolkit.NewExitSystemError(exportCommand)
 	}
 	return nil
 }
 
-func (es *ExportSettings) OverwriteConfigurationFile(o output.Bus, f string, payload []byte) *cmdtoolkit.ExitError {
-	if !es.CanOverwriteConfigurationFile(o, f) {
-		return cmdtoolkit.NewExitUserError(ExportCommand)
+func (es *exportSettings) overwriteConfigurationFile(o output.Bus, f string, payload []byte) *cmdtoolkit.ExitError {
+	if !es.canOverwriteConfigurationFile(o, f) {
+		return cmdtoolkit.NewExitUserError(exportCommand)
 	}
 	backup := f + "-backup"
 	if fileErr := Rename(f, backup); fileErr != nil {
@@ -154,25 +153,25 @@ func (es *ExportSettings) OverwriteConfigurationFile(o output.Bus, f string, pay
 			"old":   f,
 			"new":   backup,
 		})
-		return cmdtoolkit.NewExitSystemError(ExportCommand)
+		return cmdtoolkit.NewExitSystemError(exportCommand)
 	}
-	if !CreateConfigurationFile(o, f, payload) {
-		return cmdtoolkit.NewExitSystemError(ExportCommand)
+	if !createConfigurationFile(o, f, payload) {
+		return cmdtoolkit.NewExitSystemError(exportCommand)
 	}
 	_ = Remove(backup)
 	return nil
 }
 
-func (es *ExportSettings) CanOverwriteConfigurationFile(o output.Bus, f string) bool {
-	if !es.OverwriteEnabled.Value {
+func (es *exportSettings) canOverwriteConfigurationFile(o output.Bus, f string) bool {
+	if !es.overwriteEnabled.Value {
 		o.WriteCanonicalError("The file %q exists and cannot be overwritten", f)
 		o.Log(output.Error, "overwrite is not permitted", map[string]any{
 			exportOverwriteAsFlag: false,
 			"fileName":            f,
-			"user-set":            es.OverwriteEnabled.UserSet,
+			"user-set":            es.overwriteEnabled.UserSet,
 		})
 		switch {
-		case es.OverwriteEnabled.UserSet:
+		case es.overwriteEnabled.UserSet:
 			o.WriteCanonicalError("Why?\nYou explicitly set %s false", exportOverwriteAsFlag)
 		default:
 			o.WriteCanonicalError(
@@ -184,15 +183,15 @@ func (es *ExportSettings) CanOverwriteConfigurationFile(o output.Bus, f string) 
 	return true
 }
 
-func (es *ExportSettings) CanWriteConfigurationFile(o output.Bus) bool {
-	if !es.DefaultsEnabled.Value {
+func (es *exportSettings) canWriteConfigurationFile(o output.Bus) bool {
+	if !es.defaultsEnabled.Value {
 		o.WriteCanonicalError("default configuration settings will not be exported")
 		o.Log(output.Error, "export defaults disabled", map[string]any{
 			exportDefaultsAsFlag: false,
-			"user-set":           es.DefaultsEnabled.UserSet,
+			"user-set":           es.defaultsEnabled.UserSet,
 		})
 		switch {
-		case es.DefaultsEnabled.UserSet:
+		case es.defaultsEnabled.UserSet:
 			o.WriteCanonicalError("Why?\nYou explicitly set %s false", exportDefaultsAsFlag)
 		default:
 			o.WriteCanonicalError("Why?\nAs currently configured, exporting default" +
@@ -205,9 +204,9 @@ func (es *ExportSettings) CanWriteConfigurationFile(o output.Bus) bool {
 }
 
 func init() {
-	RootCmd.AddCommand(ExportCmd)
-	addDefaults(ExportFlags)
+	RootCmd.AddCommand(exportCmd)
+	addDefaults(exportFlags)
 	o := getBus()
 	c := getConfiguration()
-	cmdtoolkit.AddFlags(o, c, ExportCmd.Flags(), ExportFlags)
+	cmdtoolkit.AddFlags(o, c, exportCmd.Flags(), exportFlags)
 }
