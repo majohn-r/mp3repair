@@ -18,7 +18,7 @@ func TestMarkDirty(t *testing.T) {
 	_ = cmdtoolkit.Mkdir(emptyDir)
 	filledDir := "filled"
 	_ = cmdtoolkit.Mkdir(filledDir)
-	_ = createFile(filledDir, DirtyFileName)
+	_ = createFile(filledDir, dirtyFileName)
 	tests := map[string]struct {
 		appPath string
 		output.WantedRecording
@@ -62,12 +62,12 @@ func TestDirty(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			if tt.want {
-				if fileErr := createFileWithContent(testDir, DirtyFileName,
+				if fileErr := createFileWithContent(testDir, dirtyFileName,
 					[]byte("dirty")); fileErr != nil {
-					t.Errorf("Dirty() error creating %q: %v", DirtyFileName, fileErr)
+					t.Errorf("Dirty() error creating %q: %v", dirtyFileName, fileErr)
 				}
 			} else {
-				_ = cmdtoolkit.FileSystem().Remove(filepath.Join(testDir, DirtyFileName))
+				_ = cmdtoolkit.FileSystem().Remove(filepath.Join(testDir, dirtyFileName))
 			}
 			if gotDirty := Dirty(); gotDirty != tt.want {
 				t.Errorf("Dirty() = %t, want %t", gotDirty, tt.want)
@@ -84,13 +84,13 @@ func TestClearDirty(t *testing.T) {
 	testDir := "clearDirty"
 	_ = cmdtoolkit.Mkdir(testDir)
 	oldAppPath := cmdtoolkit.ApplicationPath()
-	_ = createFileWithContent(testDir, DirtyFileName, []byte("dirty"))
+	_ = createFileWithContent(testDir, dirtyFileName, []byte("dirty"))
 	// create another file structure with a dirty file that is open for reading
 	permanentlyDirtyDirectory := "clearDirty2"
 	_ = cmdtoolkit.Mkdir(permanentlyDirtyDirectory)
-	_ = createFileWithContent(permanentlyDirtyDirectory, DirtyFileName, []byte("dirty"))
+	_ = createFileWithContent(permanentlyDirtyDirectory, dirtyFileName, []byte("dirty"))
 	// open file locks file from being deleted
-	f, _ := cmdtoolkit.FileSystem().Open(filepath.Join(permanentlyDirtyDirectory, DirtyFileName))
+	f, _ := cmdtoolkit.FileSystem().Open(filepath.Join(permanentlyDirtyDirectory, dirtyFileName))
 	defer func() {
 		cmdtoolkit.SetApplicationPath(oldAppPath)
 		_ = f.Close()

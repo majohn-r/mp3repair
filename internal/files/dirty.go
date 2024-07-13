@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	DirtyFileName = "metadata.dirty"
+	dirtyFileName = "metadata.dirty"
 )
 
 func MarkDirty(o output.Bus) {
@@ -41,5 +41,5 @@ func Dirty() bool {
 }
 
 func dirtyPath() string {
-	return filepath.Join(cmdtoolkit.ApplicationPath(), DirtyFileName)
+	return filepath.Join(cmdtoolkit.ApplicationPath(), dirtyFileName)
 }
