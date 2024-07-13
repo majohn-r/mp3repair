@@ -52,7 +52,7 @@ func Test_removeTrackBackupDirectory(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			removeAll = tt.removeAll
 			o := output.NewRecorder()
-			if got := RemoveTrackBackupDirectory(o, tt.dir); got != tt.want {
+			if got := removeTrackBackupDirectory(o, tt.dir); got != tt.want {
 				t.Errorf("removeTrackBackupDirectory() = %v, want %v", got, tt.want)
 			}
 			o.Report(t, "removeTrackBackupDirectory()", tt.WantedRecording)
@@ -182,7 +182,7 @@ func Test_postRepairWork(t *testing.T) {
 			removeAll = tt.removeAll
 			dirExists = tt.dirExists
 			o := output.NewRecorder()
-			_ = PostRepairWork(o, tt.args.ss, tt.args.allArtists)
+			_ = postRepairWork(o, tt.args.ss, tt.args.allArtists)
 			o.Report(t, "postRepairWork()", tt.WantedRecording)
 		})
 	}
@@ -234,14 +234,14 @@ func Test_postRepairRun(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			Bus = o // cook getBus()
-			_ = PostRepairRun(tt.args.cmd, tt.args.in1)
+			_ = postRepairRun(tt.args.cmd, tt.args.in1)
 			o.Report(t, "postRepairRun()", tt.WantedRecording)
 		})
 	}
 }
 
 func Test_postRepair_Help(t *testing.T) {
-	commandUnderTest := cloneCommand(PostRepairCmd)
+	commandUnderTest := cloneCommand(postRepairCmd)
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), safeSearchFlags)
 	tests := map[string]struct {
@@ -283,7 +283,7 @@ func Test_postRepair_Help(t *testing.T) {
 }
 
 func Test_postRepair_Usage(t *testing.T) {
-	commandUnderTest := cloneCommand(PostRepairCmd)
+	commandUnderTest := cloneCommand(postRepairCmd)
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), safeSearchFlags)
 	tests := map[string]struct {
