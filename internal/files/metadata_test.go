@@ -15,10 +15,10 @@ func TestSourceTypeName(t *testing.T) {
 		sT   SourceType
 		want string
 	}{
-		"undefined": {sT: UndefinedSource, want: "undefined"},
+		"undefined": {sT: undefinedSource, want: "undefined"},
 		"ID3V1":     {sT: ID3V1, want: "ID3V1"},
 		"ID3V2":     {sT: ID3V2, want: "ID3V2"},
-		"total":     {sT: TotalSources, want: "total"},
+		"total":     {sT: totalSources, want: "total"},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -77,8 +77,8 @@ func TestYearsMatch(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := YearsMatch(tt.args.metadataYear, tt.args.albumYear); got != tt.want {
-				t.Errorf("YearsMatch() = %v, want %v", got, tt.want)
+			if got := yearsMatch(tt.args.metadataYear, tt.args.albumYear); got != tt.want {
+				t.Errorf("yearsMatch() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -106,19 +106,19 @@ func TestTrackMetadata_SetArtistName(t *testing.T) {
 		},
 		"unknown": {
 			tm:   NewTrackMetadata(),
-			args: args{src: UndefinedSource, name: "what artist?"},
+			args: args{src: undefinedSource, name: "what artist?"},
 			want: "",
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			tt.tm.SetArtistName(tt.args.src, tt.args.name)
-			if got := tt.tm.ArtistName(tt.args.src).Original(); got != tt.want {
-				t.Errorf("TrackMetadata.ArtistName() got %q want %q", got, tt.want)
+			if got := tt.tm.artistName(tt.args.src).originalValue(); got != tt.want {
+				t.Errorf("TrackMetadata.artistName() got %q want %q", got, tt.want)
 			}
 			tt.tm.SetCanonicalSource(tt.args.src)
-			if got := tt.tm.CanonicalArtistName(); got != tt.want {
-				t.Errorf("TrackMetadata.CanonicalArtistName() got %q want %q", got, tt.want)
+			if got := tt.tm.canonicalArtistName(); got != tt.want {
+				t.Errorf("TrackMetadata.canonicalArtistName() got %q want %q", got, tt.want)
 			}
 		})
 	}
@@ -146,15 +146,15 @@ func TestTrackMetadata_CorrectArtistName(t *testing.T) {
 		},
 		"unknown": {
 			tm:   NewTrackMetadata(),
-			args: args{src: UndefinedSource, name: "what artist?"},
+			args: args{src: undefinedSource, name: "what artist?"},
 			want: "",
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			tt.tm.CorrectArtistName(tt.args.src, tt.args.name)
-			if got := tt.tm.ArtistName(tt.args.src).Correction(); got != tt.want {
-				t.Errorf("TrackMetadata.ArtistName() got %q want %q", got, tt.want)
+			tt.tm.correctArtistName(tt.args.src, tt.args.name)
+			if got := tt.tm.artistName(tt.args.src).correctedValue(); got != tt.want {
+				t.Errorf("TrackMetadata.artistName() got %q want %q", got, tt.want)
 			}
 		})
 	}
@@ -182,19 +182,19 @@ func TestTrackMetadata_SetAlbumName(t *testing.T) {
 		},
 		"unknown": {
 			tm:   NewTrackMetadata(),
-			args: args{src: UndefinedSource, name: "what album?"},
+			args: args{src: undefinedSource, name: "what album?"},
 			want: "",
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			tt.tm.SetAlbumName(tt.args.src, tt.args.name)
-			if got := tt.tm.AlbumName(tt.args.src).Original(); got != tt.want {
-				t.Errorf("TrackMetadata.AlbumName() got %q want %q", got, tt.want)
+			if got := tt.tm.albumName(tt.args.src).originalValue(); got != tt.want {
+				t.Errorf("TrackMetadata.albumName() got %q want %q", got, tt.want)
 			}
 			tt.tm.SetCanonicalSource(tt.args.src)
-			if got := tt.tm.CanonicalAlbumName(); got != tt.want {
-				t.Errorf("TrackMetadata.CanonicalAlbumName() got %q want %q", got, tt.want)
+			if got := tt.tm.canonicalAlbumName(); got != tt.want {
+				t.Errorf("TrackMetadata.canonicalAlbumName() got %q want %q", got, tt.want)
 			}
 		})
 	}
@@ -222,15 +222,15 @@ func TestTrackMetadata_CorrectAlbumName(t *testing.T) {
 		},
 		"unknown": {
 			tm:   NewTrackMetadata(),
-			args: args{src: UndefinedSource, name: "what album?"},
+			args: args{src: undefinedSource, name: "what album?"},
 			want: "",
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			tt.tm.CorrectAlbumName(tt.args.src, tt.args.name)
-			if got := tt.tm.AlbumName(tt.args.src).Correction(); got != tt.want {
-				t.Errorf("TrackMetadata.AlbumName() got %q want %q", got, tt.want)
+			tt.tm.correctAlbumName(tt.args.src, tt.args.name)
+			if got := tt.tm.albumName(tt.args.src).correctedValue(); got != tt.want {
+				t.Errorf("TrackMetadata.albumName() got %q want %q", got, tt.want)
 			}
 		})
 	}
@@ -258,19 +258,19 @@ func TestTrackMetadata_SetAlbumGenre(t *testing.T) {
 		},
 		"unknown": {
 			tm:   NewTrackMetadata(),
-			args: args{src: UndefinedSource, name: "what genre?"},
+			args: args{src: undefinedSource, name: "what genre?"},
 			want: "",
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			tt.tm.SetAlbumGenre(tt.args.src, tt.args.name)
-			if got := tt.tm.AlbumGenre(tt.args.src).Original(); got != tt.want {
-				t.Errorf("TrackMetadata.AlbumGenre() got %q want %q", got, tt.want)
+			if got := tt.tm.albumGenre(tt.args.src).originalValue(); got != tt.want {
+				t.Errorf("TrackMetadata.albumGenre() got %q want %q", got, tt.want)
 			}
 			tt.tm.SetCanonicalSource(tt.args.src)
-			if got := tt.tm.CanonicalAlbumGenre(); got != tt.want {
-				t.Errorf("TrackMetadata.CanonicalAlbumGenre() got %q want %q", got, tt.want)
+			if got := tt.tm.canonicalAlbumGenre(); got != tt.want {
+				t.Errorf("TrackMetadata.canonicalAlbumGenre() got %q want %q", got, tt.want)
 			}
 		})
 	}
@@ -298,15 +298,15 @@ func TestTrackMetadata_CorrectAlbumGenre(t *testing.T) {
 		},
 		"unknown": {
 			tm:   NewTrackMetadata(),
-			args: args{src: UndefinedSource, name: "what genre?"},
+			args: args{src: undefinedSource, name: "what genre?"},
 			want: "",
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			tt.tm.CorrectAlbumGenre(tt.args.src, tt.args.name)
-			if got := tt.tm.AlbumGenre(tt.args.src).Correction(); got != tt.want {
-				t.Errorf("TrackMetadata.AlbumGenre() got %q want %q", got, tt.want)
+			tt.tm.correctAlbumGenre(tt.args.src, tt.args.name)
+			if got := tt.tm.albumGenre(tt.args.src).correctedValue(); got != tt.want {
+				t.Errorf("TrackMetadata.albumGenre() got %q want %q", got, tt.want)
 			}
 		})
 	}
@@ -334,19 +334,19 @@ func TestTrackMetadata_SetAlbumYear(t *testing.T) {
 		},
 		"unknown": {
 			tm:   NewTrackMetadata(),
-			args: args{src: UndefinedSource, name: "1984?"},
+			args: args{src: undefinedSource, name: "1984?"},
 			want: "",
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			tt.tm.SetAlbumYear(tt.args.src, tt.args.name)
-			if got := tt.tm.AlbumYear(tt.args.src).Original(); got != tt.want {
-				t.Errorf("TrackMetadata.AlbumYear() got %q want %q", got, tt.want)
+			if got := tt.tm.albumYear(tt.args.src).originalValue(); got != tt.want {
+				t.Errorf("TrackMetadata.albumYear() got %q want %q", got, tt.want)
 			}
 			tt.tm.SetCanonicalSource(tt.args.src)
-			if got := tt.tm.CanonicalAlbumYear(); got != tt.want {
-				t.Errorf("TrackMetadata.CanonicalAlbumYear() got %q want %q", got, tt.want)
+			if got := tt.tm.canonicalAlbumYear(); got != tt.want {
+				t.Errorf("TrackMetadata.canonicalAlbumYear() got %q want %q", got, tt.want)
 			}
 		})
 	}
@@ -374,15 +374,15 @@ func TestTrackMetadata_CorrectAlbumYear(t *testing.T) {
 		},
 		"unknown": {
 			tm:   NewTrackMetadata(),
-			args: args{src: UndefinedSource, name: "1984?"},
+			args: args{src: undefinedSource, name: "1984?"},
 			want: "",
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			tt.tm.CorrectAlbumYear(tt.args.src, tt.args.name)
-			if got := tt.tm.AlbumYear(tt.args.src).Correction(); got != tt.want {
-				t.Errorf("TrackMetadata.AlbumYear() got %q want %q", got, tt.want)
+			tt.tm.correctAlbumYear(tt.args.src, tt.args.name)
+			if got := tt.tm.albumYear(tt.args.src).correctedValue(); got != tt.want {
+				t.Errorf("TrackMetadata.albumYear() got %q want %q", got, tt.want)
 			}
 		})
 	}
@@ -410,19 +410,19 @@ func TestTrackMetadata_SetTrackName(t *testing.T) {
 		},
 		"unknown": {
 			tm:   NewTrackMetadata(),
-			args: args{src: UndefinedSource, name: "I can has track?"},
+			args: args{src: undefinedSource, name: "I can has track?"},
 			want: "",
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			tt.tm.SetTrackName(tt.args.src, tt.args.name)
-			if got := tt.tm.TrackName(tt.args.src).Original(); got != tt.want {
-				t.Errorf("TrackMetadata.TrackName() got %q want %q", got, tt.want)
+			if got := tt.tm.trackName(tt.args.src).originalValue(); got != tt.want {
+				t.Errorf("TrackMetadata.trackName() got %q want %q", got, tt.want)
 			}
 			tt.tm.SetCanonicalSource(tt.args.src)
-			if got := tt.tm.CanonicalTrackName(); got != tt.want {
-				t.Errorf("TrackMetadata.CanonicalTrackName() got %q want %q", got, tt.want)
+			if got := tt.tm.canonicalTrackName(); got != tt.want {
+				t.Errorf("TrackMetadata.canonicalTrackName() got %q want %q", got, tt.want)
 			}
 		})
 	}
@@ -450,15 +450,15 @@ func TestTrackMetadata_CorrectTrackName(t *testing.T) {
 		},
 		"unknown": {
 			tm:   NewTrackMetadata(),
-			args: args{src: UndefinedSource, name: "I can has track?"},
+			args: args{src: undefinedSource, name: "I can has track?"},
 			want: "",
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			tt.tm.CorrectTrackName(tt.args.src, tt.args.name)
-			if got := tt.tm.TrackName(tt.args.src).Correction(); got != tt.want {
-				t.Errorf("TrackMetadata.TrackName() got %q want %q", got, tt.want)
+			tt.tm.correctTrackName(tt.args.src, tt.args.name)
+			if got := tt.tm.trackName(tt.args.src).correctedValue(); got != tt.want {
+				t.Errorf("TrackMetadata.trackName() got %q want %q", got, tt.want)
 			}
 		})
 	}
@@ -486,19 +486,19 @@ func TestTrackMetadata_SetTrackNumber(t *testing.T) {
 		},
 		"unknown": {
 			tm:   NewTrackMetadata(),
-			args: args{src: UndefinedSource, number: 45},
+			args: args{src: undefinedSource, number: 45},
 			want: 0,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			tt.tm.SetTrackNumber(tt.args.src, tt.args.number)
-			if got := tt.tm.TrackNumber(tt.args.src).Original(); got != tt.want {
-				t.Errorf("TrackMetadata.TrackNumber() got %q want %q", got, tt.want)
+			if got := tt.tm.trackNumber(tt.args.src).originalValue(); got != tt.want {
+				t.Errorf("TrackMetadata.trackNumber() got %q want %q", got, tt.want)
 			}
 			tt.tm.SetCanonicalSource(tt.args.src)
-			if got := tt.tm.CanonicalTrackNumber(); got != tt.want {
-				t.Errorf("TrackMetadata.CanonicalTrackNumber() got %q want %q", got, tt.want)
+			if got := tt.tm.canonicalTrackNumber(); got != tt.want {
+				t.Errorf("TrackMetadata.canonicalTrackNumber() got %q want %q", got, tt.want)
 			}
 		})
 	}
@@ -526,15 +526,15 @@ func TestTrackMetadata_CorrectTrackNumber(t *testing.T) {
 		},
 		"unknown": {
 			tm:   NewTrackMetadata(),
-			args: args{src: UndefinedSource, number: 45},
+			args: args{src: undefinedSource, number: 45},
 			want: 0,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			tt.tm.CorrectTrackNumber(tt.args.src, tt.args.number)
-			if got := tt.tm.TrackNumber(tt.args.src).Correction(); got != tt.want {
-				t.Errorf("TrackMetadata.TrackNumber() got %q want %q", got, tt.want)
+			tt.tm.correctTrackNumber(tt.args.src, tt.args.number)
+			if got := tt.tm.trackNumber(tt.args.src).correctedValue(); got != tt.want {
+				t.Errorf("TrackMetadata.trackNumber() got %q want %q", got, tt.want)
 			}
 		})
 	}
@@ -562,15 +562,15 @@ func TestTrackMetadata_SetErrorCause(t *testing.T) {
 		},
 		"unknown": {
 			tm:   NewTrackMetadata(),
-			args: args{src: UndefinedSource, cause: "what happened?"},
+			args: args{src: undefinedSource, cause: "what happened?"},
 			want: "",
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			tt.tm.SetErrorCause(tt.args.src, tt.args.cause)
-			if got := tt.tm.ErrorCause(tt.args.src); got != tt.want {
-				t.Errorf("TrackMetadata.ErrorCause() got %q want %q", got, tt.want)
+			tt.tm.setErrorCause(tt.args.src, tt.args.cause)
+			if got := tt.tm.errorCause(tt.args.src); got != tt.want {
+				t.Errorf("TrackMetadata.errorCause() got %q want %q", got, tt.want)
 			}
 		})
 	}
@@ -594,15 +594,15 @@ func TestTrackMetadata_SetEditRequired(t *testing.T) {
 		},
 		"unknown": {
 			tm:   NewTrackMetadata(),
-			src:  UndefinedSource,
+			src:  undefinedSource,
 			want: false,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			tt.tm.SetEditRequired(tt.src)
-			if got := tt.tm.EditRequired(tt.src); got != tt.want {
-				t.Errorf("TrackMetadata.EditRequired() got %t want %t", got, tt.want)
+			tt.tm.setEditRequired(tt.src)
+			if got := tt.tm.editRequired(tt.src); got != tt.want {
+				t.Errorf("TrackMetadata.editRequired() got %t want %t", got, tt.want)
 			}
 		})
 	}
@@ -623,11 +623,11 @@ func TestTrackMetadata_SetCDIdentifier(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			tt.tm.SetCDIdentifier(tt.body)
-			if got := tt.tm.CDIdentifier().Original(); !reflect.DeepEqual(got.Body, tt.want) {
-				t.Errorf("TrackMetadata.CDIdentifier() got %v want %v", got, tt.want)
+			if got := tt.tm.cdIdentifier().originalValue(); !reflect.DeepEqual(got.Body, tt.want) {
+				t.Errorf("TrackMetadata.cdIdentifier() got %v want %v", got, tt.want)
 			}
-			if got := tt.tm.CanonicalCDIdentifier(); !reflect.DeepEqual(got.Body, tt.want) {
-				t.Errorf("TrackMetadata.CanonicalCDIdentifier() got %v want %v", got, tt.want)
+			if got := tt.tm.canonicalCDIdentifier(); !reflect.DeepEqual(got.Body, tt.want) {
+				t.Errorf("TrackMetadata.canonicalCDIdentifier() got %v want %v", got, tt.want)
 			}
 		})
 	}
@@ -647,9 +647,9 @@ func TestTrackMetadata_CorrectCDIdentifier(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			tt.tm.CorrectCDIdentifier(tt.body)
-			if got := tt.tm.CDIdentifier().Correction(); !reflect.DeepEqual(got.Body, tt.want) {
-				t.Errorf("TrackMetadata.CDIdentifier() got %v want %v", got, tt.want)
+			tt.tm.correctCDIdentifier(tt.body)
+			if got := tt.tm.cdIdentifier().correctedValue(); !reflect.DeepEqual(got.Body, tt.want) {
+				t.Errorf("TrackMetadata.cdIdentifier() got %v want %v", got, tt.want)
 			}
 		})
 	}
@@ -665,64 +665,64 @@ func TestNewTrackMetadata(t *testing.T) {
 				t.Errorf("NewTrackMetadata() = %v, want %v", got, tt.want)
 			}
 			for _, src := range []SourceType{ID3V1, ID3V2} {
-				artistName := tt.want.ArtistName(src)
-				if got := artistName.Original(); got != "" {
-					t.Errorf("NewTrackMetadata().ArtistName(%s).Original() = %q, want %q", src.Name(), got, "")
+				artistName := tt.want.artistName(src)
+				if got := artistName.originalValue(); got != "" {
+					t.Errorf("NewTrackMetadata().artistName(%s).originalValue() = %q, want %q", src.Name(), got, "")
 				}
-				if got := artistName.Correction(); got != "" {
-					t.Errorf("NewTrackMetadata().ArtistName(%s).Correction() = %q, want %q", src.Name(), got, "")
+				if got := artistName.correctedValue(); got != "" {
+					t.Errorf("NewTrackMetadata().artistName(%s).correctedValue() = %q, want %q", src.Name(), got, "")
 				}
-				albumName := tt.want.AlbumName(src)
-				if got := albumName.Original(); got != "" {
-					t.Errorf("NewTrackMetadata().AlbumName(%s).Original() = %q, want %q", src.Name(), got, "")
+				albumName := tt.want.albumName(src)
+				if got := albumName.originalValue(); got != "" {
+					t.Errorf("NewTrackMetadata().albumName(%s).originalValue() = %q, want %q", src.Name(), got, "")
 				}
-				if got := albumName.Correction(); got != "" {
-					t.Errorf("NewTrackMetadata().AlbumName(%s).Correction() = %q, want %q", src.Name(), got, "")
+				if got := albumName.correctedValue(); got != "" {
+					t.Errorf("NewTrackMetadata().albumName(%s).correctedValue() = %q, want %q", src.Name(), got, "")
 				}
-				albumGenre := tt.want.AlbumGenre(src)
-				if got := albumGenre.Original(); got != "" {
-					t.Errorf("NewTrackMetadata().AlbumGenre(%s).Original() = %q, want %q", src.Name(), got, "")
+				albumGenre := tt.want.albumGenre(src)
+				if got := albumGenre.originalValue(); got != "" {
+					t.Errorf("NewTrackMetadata().albumGenre(%s).originalValue() = %q, want %q", src.Name(), got, "")
 				}
-				if got := albumGenre.Correction(); got != "" {
-					t.Errorf("NewTrackMetadata().AlbumGenre(%s).Correction() = %q, want %q", src.Name(), got, "")
+				if got := albumGenre.correctedValue(); got != "" {
+					t.Errorf("NewTrackMetadata().albumGenre(%s).correctedValue() = %q, want %q", src.Name(), got, "")
 				}
-				albumYear := tt.want.AlbumYear(src)
-				if got := albumYear.Original(); got != "" {
-					t.Errorf("NewTrackMetadata().AlbumYear(%s).Original() = %q, want %q", src.Name(), got, "")
+				albumYear := tt.want.albumYear(src)
+				if got := albumYear.originalValue(); got != "" {
+					t.Errorf("NewTrackMetadata().albumYear(%s).originalValue() = %q, want %q", src.Name(), got, "")
 				}
-				if got := albumYear.Correction(); got != "" {
-					t.Errorf("NewTrackMetadata().AlbumYear(%s).Correction() = %q, want %q", src.Name(), got, "")
+				if got := albumYear.correctedValue(); got != "" {
+					t.Errorf("NewTrackMetadata().albumYear(%s).correctedValue() = %q, want %q", src.Name(), got, "")
 				}
-				trackName := tt.want.TrackName(src)
-				if got := trackName.Original(); got != "" {
-					t.Errorf("NewTrackMetadata().TrackName(%s).Original() = %q, want %q", src.Name(), got, "")
+				trackName := tt.want.trackName(src)
+				if got := trackName.originalValue(); got != "" {
+					t.Errorf("NewTrackMetadata().trackName(%s).originalValue() = %q, want %q", src.Name(), got, "")
 				}
-				if got := trackName.Correction(); got != "" {
-					t.Errorf("NewTrackMetadata().TrackName(%s).Correction() = %q, want %q", src.Name(), got, "")
+				if got := trackName.correctedValue(); got != "" {
+					t.Errorf("NewTrackMetadata().trackName(%s).correctedValue() = %q, want %q", src.Name(), got, "")
 				}
-				trackNumber := tt.want.TrackNumber(src)
-				if got := trackNumber.Original(); got != 0 {
-					t.Errorf("NewTrackMetadata().TrackNumber(%s).Original() = %d, want %d", src.Name(), got, 0)
+				trackNumber := tt.want.trackNumber(src)
+				if got := trackNumber.originalValue(); got != 0 {
+					t.Errorf("NewTrackMetadata().trackNumber(%s).originalValue() = %d, want %d", src.Name(), got, 0)
 				}
-				if got := trackNumber.Correction(); got != 0 {
-					t.Errorf("NewTrackMetadata().TrackNumber(%s).Correction() = %d, want %d", src.Name(), got, 0)
+				if got := trackNumber.correctedValue(); got != 0 {
+					t.Errorf("NewTrackMetadata().trackNumber(%s).correctedValue() = %d, want %d", src.Name(), got, 0)
 				}
-				if got := tt.want.ErrorCause(src); got != "" {
-					t.Errorf("NewTrackMetadata().ErrorCause(%s) = %q, want %q", src.Name(), got, "")
+				if got := tt.want.errorCause(src); got != "" {
+					t.Errorf("NewTrackMetadata().errorCause(%s) = %q, want %q", src.Name(), got, "")
 				}
-				if got := tt.want.EditRequired(src); got != false {
-					t.Errorf("NewTrackMetadata().EditRequired(%s) = %t, want %t", src.Name(), got, false)
+				if got := tt.want.editRequired(src); got != false {
+					t.Errorf("NewTrackMetadata().editRequired(%s) = %t, want %t", src.Name(), got, false)
 				}
 			}
-			cdi := tt.want.CDIdentifier()
-			if got := cdi.Original(); len(got.Body) != 0 {
-				t.Errorf("NewTrackMetadata().CDIdentifier().Original() = %v, want %v", got.Body, []byte{})
+			cdi := tt.want.cdIdentifier()
+			if got := cdi.originalValue(); len(got.Body) != 0 {
+				t.Errorf("NewTrackMetadata().cdIdentifier().originalValue() = %v, want %v", got.Body, []byte{})
 			}
-			if got := cdi.Correction(); len(got.Body) != 0 {
-				t.Errorf("NewTrackMetadata().CDIdentifier().Correction() = %v, want %v", got.Body, []byte{})
+			if got := cdi.correctedValue(); len(got.Body) != 0 {
+				t.Errorf("NewTrackMetadata().cdIdentifier().correctedValue() = %v, want %v", got.Body, []byte{})
 			}
-			if got := tt.want.CanonicalSource(); got != UndefinedSource {
-				t.Errorf("NewTrackMetadata().CanonicalSource() = %s, want %s", got.Name(), UndefinedSource.Name())
+			if got := tt.want.canonicalSource(); got != undefinedSource {
+				t.Errorf("NewTrackMetadata().canonicalSource() = %s, want %s", got.Name(), undefinedSource.Name())
 			}
 		})
 	}
@@ -760,11 +760,11 @@ func TestInitializeMetadata(t *testing.T) {
 	_ = createFileWithContent(testDir, completeFile, payloadComplete)
 	noSuchFile := "no such file.mp3"
 	missingFileData := NewTrackMetadata()
-	missingFileData.SetErrorCause(ID3V1, "open "+testDir+"\\"+noSuchFile+": file does not exist")
-	missingFileData.SetErrorCause(ID3V2, "open "+testDir+"\\"+noSuchFile+": file does not exist")
+	missingFileData.setErrorCause(ID3V1, "open "+testDir+"\\"+noSuchFile+": file does not exist")
+	missingFileData.setErrorCause(ID3V2, "open "+testDir+"\\"+noSuchFile+": file does not exist")
 	noMetadata := NewTrackMetadata()
-	noMetadata.SetErrorCause(ID3V1, "no ID3V1 metadata found")
-	noMetadata.SetErrorCause(ID3V2, "no ID3V2 metadata found")
+	noMetadata.setErrorCause(ID3V1, "no ID3V1 metadata found")
+	noMetadata.setErrorCause(ID3V2, "no ID3V2 metadata found")
 	onlyID3V1Metadata := NewTrackMetadata()
 	onlyID3V1Metadata.SetArtistName(ID3V1, "The Beatles")
 	onlyID3V1Metadata.SetAlbumName(ID3V1, "On Air: Live At The BBC, Volum")
@@ -772,7 +772,7 @@ func TestInitializeMetadata(t *testing.T) {
 	onlyID3V1Metadata.SetAlbumYear(ID3V1, "2013")
 	onlyID3V1Metadata.SetTrackName(ID3V1, "Ringo - Pop Profile [Interview")
 	onlyID3V1Metadata.SetTrackNumber(ID3V1, 29)
-	onlyID3V1Metadata.SetErrorCause(ID3V2, "no ID3V2 metadata found")
+	onlyID3V1Metadata.setErrorCause(ID3V2, "no ID3V2 metadata found")
 	onlyID3V1Metadata.SetCanonicalSource(ID3V1)
 	onlyID3V2Metadata := NewTrackMetadata()
 	onlyID3V2Metadata.SetArtistName(ID3V2, "unknown artist")
@@ -783,7 +783,7 @@ func TestInitializeMetadata(t *testing.T) {
 	onlyID3V2Metadata.SetTrackNumber(ID3V2, 2)
 	onlyID3V2Metadata.SetCDIdentifier([]byte{0})
 	onlyID3V2Metadata.SetCanonicalSource(ID3V2)
-	onlyID3V2Metadata.SetErrorCause(ID3V1, "no ID3V1 metadata found")
+	onlyID3V2Metadata.setErrorCause(ID3V1, "no ID3V1 metadata found")
 	allMetadata := NewTrackMetadata()
 	allMetadata.SetArtistName(ID3V1, "The Beatles")
 	allMetadata.SetAlbumName(ID3V1, "On Air: Live At The BBC, Volum")
@@ -826,8 +826,8 @@ func TestInitializeMetadata(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := InitializeMetadata(tt.path); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("InitializeMetadata() = %v, want %v", got, tt.want)
+			if got := initializeMetadata(tt.path); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("initializeMetadata() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -857,12 +857,12 @@ func TestTrackMetadata_isValid(t *testing.T) {
 
 func TestTrackMetadata_ErrorCauses(t *testing.T) {
 	ID3V1Metadata := NewTrackMetadata()
-	ID3V1Metadata.SetErrorCause(ID3V1, "id3v1 error")
+	ID3V1Metadata.setErrorCause(ID3V1, "id3v1 error")
 	ID3V2Metadata := NewTrackMetadata()
-	ID3V2Metadata.SetErrorCause(ID3V2, "id3v2 error")
+	ID3V2Metadata.setErrorCause(ID3V2, "id3v2 error")
 	bothMetadata := NewTrackMetadata()
-	bothMetadata.SetErrorCause(ID3V1, "id3v1 error")
-	bothMetadata.SetErrorCause(ID3V2, "id3v2 error")
+	bothMetadata.setErrorCause(ID3V1, "id3v1 error")
+	bothMetadata.setErrorCause(ID3V2, "id3v2 error")
 	tests := map[string]struct {
 		tm   *TrackMetadata
 		want []string
@@ -874,8 +874,8 @@ func TestTrackMetadata_ErrorCauses(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tm.ErrorCauses(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("TrackMetadata.ErrorCauses() = %v, want %v", got, tt.want)
+			if got := tt.tm.errorCauses(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("TrackMetadata.errorCauses() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -904,28 +904,28 @@ func TestTrackMetadata_TrackNumberDiffers(t *testing.T) {
 	tm4.SetTrackNumber(ID3V2, expectedTrack-1)
 	// 5. ID3V1 has an error, ID3V2 track number does not differ
 	tm5 := NewTrackMetadata()
-	tm5.SetErrorCause(ID3V1, "bad format")
+	tm5.setErrorCause(ID3V1, "bad format")
 	tm5.SetTrackNumber(ID3V1, 0)
 	tm5.SetTrackNumber(ID3V2, expectedTrack)
 	// 6. ID3V1 has an error, ID3V2 track number differs
 	tm6 := NewTrackMetadata()
-	tm6.SetErrorCause(ID3V1, "bad format")
+	tm6.setErrorCause(ID3V1, "bad format")
 	tm6.SetTrackNumber(ID3V1, 0)
 	tm6.SetTrackNumber(ID3V2, expectedTrack+1)
 	// 7. ID3V2 has an error, ID3V1 track number does not differ
 	tm7 := NewTrackMetadata()
-	tm7.SetErrorCause(ID3V2, "bad format")
+	tm7.setErrorCause(ID3V2, "bad format")
 	tm7.SetTrackNumber(ID3V1, expectedTrack)
 	tm7.SetTrackNumber(ID3V2, 0)
 	// 8. ID3V2 has an error, ID3V1 track number differs
 	tm8 := NewTrackMetadata()
-	tm8.SetErrorCause(ID3V2, "bad format")
+	tm8.setErrorCause(ID3V2, "bad format")
 	tm8.SetTrackNumber(ID3V1, expectedTrack+1)
 	tm8.SetTrackNumber(ID3V2, 0)
 	// 9. both ID3V1 and ID3V2 have errors
 	tm9 := NewTrackMetadata()
-	tm9.SetErrorCause(ID3V1, "bad format")
-	tm9.SetErrorCause(ID3V2, "bad format")
+	tm9.setErrorCause(ID3V1, "bad format")
+	tm9.setErrorCause(ID3V2, "bad format")
 	tm9.SetTrackNumber(ID3V1, 0)
 	tm9.SetTrackNumber(ID3V2, 0)
 	tests := map[string]struct {
@@ -1021,20 +1021,20 @@ func TestTrackMetadata_TrackNumberDiffers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tm.TrackNumberDiffers(tt.trackNumberFromFileName); got != tt.wantDiffers {
-				t.Errorf("TrackMetadata.TrackNumberDiffers() = %t, want %t", got, tt.wantDiffers)
+			if got := tt.tm.trackNumberDiffers(tt.trackNumberFromFileName); got != tt.wantDiffers {
+				t.Errorf("TrackMetadata.trackNumberDiffers() = %t, want %t", got, tt.wantDiffers)
 			}
-			if got := tt.tm.TrackNumber(ID3V1).Correction(); got != tt.wantCorrectedID3V1TrackNumber {
-				t.Errorf("TrackMetadata.TrackNumberDiffers() corrected ID3V1 track number = %d, want %d", got, tt.wantCorrectedID3V1TrackNumber)
+			if got := tt.tm.trackNumber(ID3V1).correctedValue(); got != tt.wantCorrectedID3V1TrackNumber {
+				t.Errorf("TrackMetadata.trackNumberDiffers() corrected ID3V1 track number = %d, want %d", got, tt.wantCorrectedID3V1TrackNumber)
 			}
-			if got := tt.tm.TrackNumber(ID3V2).Correction(); got != tt.wantCorrectedID3V2TrackNumber {
-				t.Errorf("TrackMetadata.TrackNumberDiffers() corrected ID3V2 track number = %d, want %d", got, tt.wantCorrectedID3V2TrackNumber)
+			if got := tt.tm.trackNumber(ID3V2).correctedValue(); got != tt.wantCorrectedID3V2TrackNumber {
+				t.Errorf("TrackMetadata.trackNumberDiffers() corrected ID3V2 track number = %d, want %d", got, tt.wantCorrectedID3V2TrackNumber)
 			}
-			if got := tt.tm.EditRequired(ID3V1); got != tt.wantID3V1EditRequired {
-				t.Errorf("TrackMetadata.TrackNumberDiffers() ID3V1 edit required = %t, want %t", got, tt.wantID3V1EditRequired)
+			if got := tt.tm.editRequired(ID3V1); got != tt.wantID3V1EditRequired {
+				t.Errorf("TrackMetadata.trackNumberDiffers() ID3V1 edit required = %t, want %t", got, tt.wantID3V1EditRequired)
 			}
-			if got := tt.tm.EditRequired(ID3V2); got != tt.wantID3V2EditRequired {
-				t.Errorf("TrackMetadata.TrackNumberDiffers() ID3V2 edit required = %t, want %t", got, tt.wantID3V2EditRequired)
+			if got := tt.tm.editRequired(ID3V2); got != tt.wantID3V2EditRequired {
+				t.Errorf("TrackMetadata.trackNumberDiffers() ID3V2 edit required = %t, want %t", got, tt.wantID3V2EditRequired)
 			}
 		})
 	}
@@ -1061,28 +1061,28 @@ func TestTrackMetadata_TrackNameDiffers(t *testing.T) {
 	tm4.SetTrackName(ID3V2, expectedName+"2")
 	// 5. ID3V1 has an error, ID3V2 track name does not differ
 	tm5 := NewTrackMetadata()
-	tm5.SetErrorCause(ID3V1, "bad format")
+	tm5.setErrorCause(ID3V1, "bad format")
 	tm5.SetTrackName(ID3V1, "")
 	tm5.SetTrackName(ID3V2, expectedName)
 	// 6. ID3V1 has an error, ID3V2 track name differs
 	tm6 := NewTrackMetadata()
-	tm6.SetErrorCause(ID3V1, "bad format")
+	tm6.setErrorCause(ID3V1, "bad format")
 	tm6.SetTrackName(ID3V1, "")
 	tm6.SetTrackName(ID3V2, expectedName+"1")
 	// 7. ID3V2 has an error, ID3V1 track name does not differ
 	tm7 := NewTrackMetadata()
-	tm7.SetErrorCause(ID3V2, "bad format")
+	tm7.setErrorCause(ID3V2, "bad format")
 	tm7.SetTrackName(ID3V1, expectedName)
 	tm7.SetTrackName(ID3V2, "")
 	// 8. ID3V2 has an error, ID3V1 track number differs
 	tm8 := NewTrackMetadata()
-	tm8.SetErrorCause(ID3V2, "bad format")
+	tm8.setErrorCause(ID3V2, "bad format")
 	tm8.SetTrackName(ID3V1, expectedName+"1")
 	tm8.SetTrackName(ID3V2, "")
 	// 9. both ID3V1 and ID3V2 have errors
 	tm9 := NewTrackMetadata()
-	tm9.SetErrorCause(ID3V1, "bad format")
-	tm9.SetErrorCause(ID3V2, "bad format")
+	tm9.setErrorCause(ID3V1, "bad format")
+	tm9.setErrorCause(ID3V2, "bad format")
 	tm9.SetTrackName(ID3V1, "")
 	tm9.SetTrackName(ID3V2, "")
 	tests := map[string]struct {
@@ -1178,20 +1178,20 @@ func TestTrackMetadata_TrackNameDiffers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tm.TrackNameDiffers(tt.nameFromFile); got != tt.wantDiffers {
-				t.Errorf("TrackMetadata.TrackNameDiffers() = %v, want %v", got, tt.wantDiffers)
+			if got := tt.tm.trackNameDiffers(tt.nameFromFile); got != tt.wantDiffers {
+				t.Errorf("TrackMetadata.trackNameDiffers() = %v, want %v", got, tt.wantDiffers)
 			}
-			if got := tt.tm.TrackName(ID3V1).Correction(); got != tt.wantCorrectedID3V1TrackName {
-				t.Errorf("TrackMetadata.TrackNameDiffers() corrected ID3V1 track name = %q, want %q", got, tt.wantCorrectedID3V1TrackName)
+			if got := tt.tm.trackName(ID3V1).correctedValue(); got != tt.wantCorrectedID3V1TrackName {
+				t.Errorf("TrackMetadata.trackNameDiffers() corrected ID3V1 track name = %q, want %q", got, tt.wantCorrectedID3V1TrackName)
 			}
-			if got := tt.tm.TrackName(ID3V2).Correction(); got != tt.wantCorrectedID3V2TrackName {
-				t.Errorf("TrackMetadata.TrackNameDiffers() corrected ID3V2 track name = %q, want %q", got, tt.wantCorrectedID3V2TrackName)
+			if got := tt.tm.trackName(ID3V2).correctedValue(); got != tt.wantCorrectedID3V2TrackName {
+				t.Errorf("TrackMetadata.trackNameDiffers() corrected ID3V2 track name = %q, want %q", got, tt.wantCorrectedID3V2TrackName)
 			}
-			if got := tt.tm.EditRequired(ID3V1); got != tt.wantID3V1EditRequired {
-				t.Errorf("TrackMetadata.TrackNameDiffers() ID3V1 edit required = %t, want %t", got, tt.wantID3V1EditRequired)
+			if got := tt.tm.editRequired(ID3V1); got != tt.wantID3V1EditRequired {
+				t.Errorf("TrackMetadata.trackNameDiffers() ID3V1 edit required = %t, want %t", got, tt.wantID3V1EditRequired)
 			}
-			if got := tt.tm.EditRequired(ID3V2); got != tt.wantID3V2EditRequired {
-				t.Errorf("TrackMetadata.TrackNameDiffers() ID3V2 edit required = %t, want %t", got, tt.wantID3V2EditRequired)
+			if got := tt.tm.editRequired(ID3V2); got != tt.wantID3V2EditRequired {
+				t.Errorf("TrackMetadata.trackNameDiffers() ID3V2 edit required = %t, want %t", got, tt.wantID3V2EditRequired)
 			}
 		})
 	}
@@ -1218,28 +1218,28 @@ func TestTrackMetadata_AlbumNameDiffers(t *testing.T) {
 	tm4.SetAlbumName(ID3V2, expectedName+"2")
 	// 5. ID3V1 has an error, ID3V2 album name does not differ
 	tm5 := NewTrackMetadata()
-	tm5.SetErrorCause(ID3V1, "bad format")
+	tm5.setErrorCause(ID3V1, "bad format")
 	tm5.SetAlbumName(ID3V1, "")
 	tm5.SetAlbumName(ID3V2, expectedName)
 	// 6. ID3V1 has an error, ID3V2 album name differs
 	tm6 := NewTrackMetadata()
-	tm6.SetErrorCause(ID3V1, "bad format")
+	tm6.setErrorCause(ID3V1, "bad format")
 	tm6.SetAlbumName(ID3V1, "")
 	tm6.SetAlbumName(ID3V2, expectedName+"1")
 	// 7. ID3V2 has an error, ID3V1 album name does not differ
 	tm7 := NewTrackMetadata()
-	tm7.SetErrorCause(ID3V2, "bad format")
+	tm7.setErrorCause(ID3V2, "bad format")
 	tm7.SetAlbumName(ID3V1, expectedName)
 	tm7.SetAlbumName(ID3V2, "")
 	// 8. ID3V2 has an error, ID3V1 album number differs
 	tm8 := NewTrackMetadata()
-	tm8.SetErrorCause(ID3V2, "bad format")
+	tm8.setErrorCause(ID3V2, "bad format")
 	tm8.SetAlbumName(ID3V1, expectedName+"1")
 	tm8.SetAlbumName(ID3V2, "")
 	// 9. both ID3V1 and ID3V2 have errors
 	tm9 := NewTrackMetadata()
-	tm9.SetErrorCause(ID3V1, "bad format")
-	tm9.SetErrorCause(ID3V2, "bad format")
+	tm9.setErrorCause(ID3V1, "bad format")
+	tm9.setErrorCause(ID3V2, "bad format")
 	tm9.SetAlbumName(ID3V1, "")
 	tm9.SetAlbumName(ID3V2, "")
 	tests := map[string]struct {
@@ -1335,20 +1335,20 @@ func TestTrackMetadata_AlbumNameDiffers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tm.AlbumNameDiffers(tt.nameFromFile); got != tt.wantDiffers {
-				t.Errorf("TrackMetadata.AlbumNameDiffers() = %v, want %v", got, tt.wantDiffers)
+			if got := tt.tm.albumNameDiffers(tt.nameFromFile); got != tt.wantDiffers {
+				t.Errorf("TrackMetadata.albumNameDiffers() = %v, want %v", got, tt.wantDiffers)
 			}
-			if got := tt.tm.AlbumName(ID3V1).Correction(); got != tt.wantCorrectedID3V1AlbumName {
-				t.Errorf("TrackMetadata.AlbumNameDiffers() corrected ID3V1 album name = %q, want %q", got, tt.wantCorrectedID3V1AlbumName)
+			if got := tt.tm.albumName(ID3V1).correctedValue(); got != tt.wantCorrectedID3V1AlbumName {
+				t.Errorf("TrackMetadata.albumNameDiffers() corrected ID3V1 album name = %q, want %q", got, tt.wantCorrectedID3V1AlbumName)
 			}
-			if got := tt.tm.AlbumName(ID3V2).Correction(); got != tt.wantCorrectedID3V2AlbumName {
-				t.Errorf("TrackMetadata.AlbumNameDiffers() corrected ID3V2 album name = %q, want %q", got, tt.wantCorrectedID3V2AlbumName)
+			if got := tt.tm.albumName(ID3V2).correctedValue(); got != tt.wantCorrectedID3V2AlbumName {
+				t.Errorf("TrackMetadata.albumNameDiffers() corrected ID3V2 album name = %q, want %q", got, tt.wantCorrectedID3V2AlbumName)
 			}
-			if got := tt.tm.EditRequired(ID3V1); got != tt.wantID3V1EditRequired {
-				t.Errorf("TrackMetadata.AlbumNameDiffers() ID3V1 edit required = %t, want %t", got, tt.wantID3V1EditRequired)
+			if got := tt.tm.editRequired(ID3V1); got != tt.wantID3V1EditRequired {
+				t.Errorf("TrackMetadata.albumNameDiffers() ID3V1 edit required = %t, want %t", got, tt.wantID3V1EditRequired)
 			}
-			if got := tt.tm.EditRequired(ID3V2); got != tt.wantID3V2EditRequired {
-				t.Errorf("TrackMetadata.AlbumNameDiffers() ID3V2 edit required = %t, want %t", got, tt.wantID3V2EditRequired)
+			if got := tt.tm.editRequired(ID3V2); got != tt.wantID3V2EditRequired {
+				t.Errorf("TrackMetadata.albumNameDiffers() ID3V2 edit required = %t, want %t", got, tt.wantID3V2EditRequired)
 			}
 		})
 	}
@@ -1377,28 +1377,28 @@ func TestTrackMetadata_ArtistNameDiffers(t *testing.T) {
 	tm4.SetArtistName(ID3V2, expectedName+"2")
 	// 5. ID3V1 has an error, ID3V2 artist name does not differ
 	tm5 := NewTrackMetadata()
-	tm5.SetErrorCause(ID3V1, "bad format")
+	tm5.setErrorCause(ID3V1, "bad format")
 	tm5.SetArtistName(ID3V1, "")
 	tm5.SetArtistName(ID3V2, expectedName)
 	// 6. ID3V1 has an error, ID3V2 artist name differs
 	tm6 := NewTrackMetadata()
-	tm6.SetErrorCause(ID3V1, "bad format")
+	tm6.setErrorCause(ID3V1, "bad format")
 	tm6.SetArtistName(ID3V1, "")
 	tm6.SetArtistName(ID3V2, expectedName+"1")
 	// 7. ID3V2 has an error, ID3V1 artist name does not differ
 	tm7 := NewTrackMetadata()
-	tm7.SetErrorCause(ID3V2, "bad format")
+	tm7.setErrorCause(ID3V2, "bad format")
 	tm7.SetArtistName(ID3V1, expectedName)
 	tm7.SetArtistName(ID3V2, "")
 	// 8. ID3V2 has an error, ID3V1 artist number differs
 	tm8 := NewTrackMetadata()
-	tm8.SetErrorCause(ID3V2, "bad format")
+	tm8.setErrorCause(ID3V2, "bad format")
 	tm8.SetArtistName(ID3V1, expectedName+"1")
 	tm8.SetArtistName(ID3V2, "")
 	// 9. both ID3V1 and ID3V2 have errors
 	tm9 := NewTrackMetadata()
-	tm9.SetErrorCause(ID3V1, "bad format")
-	tm9.SetErrorCause(ID3V2, "bad format")
+	tm9.setErrorCause(ID3V1, "bad format")
+	tm9.setErrorCause(ID3V2, "bad format")
 	tm9.SetArtistName(ID3V1, "")
 	tm9.SetArtistName(ID3V2, "")
 	tests := map[string]struct {
@@ -1494,20 +1494,20 @@ func TestTrackMetadata_ArtistNameDiffers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tm.ArtistNameDiffers(tt.nameFromFile); got != tt.wantDiffers {
-				t.Errorf("TrackMetadata.ArtistNameDiffers() = %v, want %v", got, tt.wantDiffers)
+			if got := tt.tm.artistNameDiffers(tt.nameFromFile); got != tt.wantDiffers {
+				t.Errorf("TrackMetadata.artistNameDiffers() = %v, want %v", got, tt.wantDiffers)
 			}
-			if got := tt.tm.ArtistName(ID3V1).Correction(); got != tt.wantCorrectedID3V1ArtistName {
-				t.Errorf("TrackMetadata.ArtistNameDiffers() corrected ID3V1 artist name = %q, want %q", got, tt.wantCorrectedID3V1ArtistName)
+			if got := tt.tm.artistName(ID3V1).correctedValue(); got != tt.wantCorrectedID3V1ArtistName {
+				t.Errorf("TrackMetadata.artistNameDiffers() corrected ID3V1 artist name = %q, want %q", got, tt.wantCorrectedID3V1ArtistName)
 			}
-			if got := tt.tm.ArtistName(ID3V2).Correction(); got != tt.wantCorrectedID3V2ArtistName {
-				t.Errorf("TrackMetadata.ArtistNameDiffers() corrected ID3V2 artist name = %q, want %q", got, tt.wantCorrectedID3V2ArtistName)
+			if got := tt.tm.artistName(ID3V2).correctedValue(); got != tt.wantCorrectedID3V2ArtistName {
+				t.Errorf("TrackMetadata.artistNameDiffers() corrected ID3V2 artist name = %q, want %q", got, tt.wantCorrectedID3V2ArtistName)
 			}
-			if got := tt.tm.EditRequired(ID3V1); got != tt.wantID3V1EditRequired {
-				t.Errorf("TrackMetadata.ArtistNameDiffers() ID3V1 edit required = %t, want %t", got, tt.wantID3V1EditRequired)
+			if got := tt.tm.editRequired(ID3V1); got != tt.wantID3V1EditRequired {
+				t.Errorf("TrackMetadata.artistNameDiffers() ID3V1 edit required = %t, want %t", got, tt.wantID3V1EditRequired)
 			}
-			if got := tt.tm.EditRequired(ID3V2); got != tt.wantID3V2EditRequired {
-				t.Errorf("TrackMetadata.ArtistNameDiffers() ID3V2 edit required = %t, want %t", got, tt.wantID3V2EditRequired)
+			if got := tt.tm.editRequired(ID3V2); got != tt.wantID3V2EditRequired {
+				t.Errorf("TrackMetadata.artistNameDiffers() ID3V2 edit required = %t, want %t", got, tt.wantID3V2EditRequired)
 			}
 		})
 	}
@@ -1536,28 +1536,28 @@ func TestTrackMetadata_AlbumGenreDiffers(t *testing.T) {
 	tm4.SetAlbumGenre(ID3V2, "rap")
 	// 5. ID3V1 has an error, ID3V2 album genre does not differ
 	tm5 := NewTrackMetadata()
-	tm5.SetErrorCause(ID3V1, "bad format")
+	tm5.setErrorCause(ID3V1, "bad format")
 	tm5.SetAlbumGenre(ID3V1, "")
 	tm5.SetAlbumGenre(ID3V2, expectedGenre)
 	// 6. ID3V1 has an error, ID3V2 album genre differs
 	tm6 := NewTrackMetadata()
-	tm6.SetErrorCause(ID3V1, "bad format")
+	tm6.setErrorCause(ID3V1, "bad format")
 	tm6.SetAlbumGenre(ID3V1, "")
 	tm6.SetAlbumGenre(ID3V2, "country")
 	// 7. ID3V2 has an error, ID3V1 album genre does not differ
 	tm7 := NewTrackMetadata()
-	tm7.SetErrorCause(ID3V2, "bad format")
+	tm7.setErrorCause(ID3V2, "bad format")
 	tm7.SetAlbumGenre(ID3V1, expectedGenre)
 	tm7.SetAlbumGenre(ID3V2, "")
 	// 8. ID3V2 has an error, ID3V1 album number differs
 	tm8 := NewTrackMetadata()
-	tm8.SetErrorCause(ID3V2, "bad format")
+	tm8.setErrorCause(ID3V2, "bad format")
 	tm8.SetAlbumGenre(ID3V1, "country")
 	tm8.SetAlbumGenre(ID3V2, "")
 	// 9. both ID3V1 and ID3V2 have errors
 	tm9 := NewTrackMetadata()
-	tm9.SetErrorCause(ID3V1, "bad format")
-	tm9.SetErrorCause(ID3V2, "bad format")
+	tm9.setErrorCause(ID3V1, "bad format")
+	tm9.setErrorCause(ID3V2, "bad format")
 	tm9.SetAlbumGenre(ID3V1, "")
 	tm9.SetAlbumGenre(ID3V2, "")
 	tests := map[string]struct {
@@ -1653,20 +1653,20 @@ func TestTrackMetadata_AlbumGenreDiffers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tm.AlbumGenreDiffers(tt.canonicalAlbumGenre); got != tt.wantDiffers {
-				t.Errorf("TrackMetadata.AlbumGenreDiffers() = %v, want %v", got, tt.wantDiffers)
+			if got := tt.tm.albumGenreDiffers(tt.canonicalAlbumGenre); got != tt.wantDiffers {
+				t.Errorf("TrackMetadata.albumGenreDiffers() = %v, want %v", got, tt.wantDiffers)
 			}
-			if got := tt.tm.AlbumGenre(ID3V1).Correction(); got != tt.wantCorrectedID3V1AlbumGenre {
-				t.Errorf("TrackMetadata.AlbumGenreDiffers() corrected ID3V1 album genre = %q, want %q", got, tt.wantCorrectedID3V1AlbumGenre)
+			if got := tt.tm.albumGenre(ID3V1).correctedValue(); got != tt.wantCorrectedID3V1AlbumGenre {
+				t.Errorf("TrackMetadata.albumGenreDiffers() corrected ID3V1 album genre = %q, want %q", got, tt.wantCorrectedID3V1AlbumGenre)
 			}
-			if got := tt.tm.AlbumGenre(ID3V2).Correction(); got != tt.wantCorrectedID3V2AlbumGenre {
-				t.Errorf("TrackMetadata.AlbumGenreDiffers() corrected ID3V2 album genre = %q, want %q", got, tt.wantCorrectedID3V2AlbumGenre)
+			if got := tt.tm.albumGenre(ID3V2).correctedValue(); got != tt.wantCorrectedID3V2AlbumGenre {
+				t.Errorf("TrackMetadata.albumGenreDiffers() corrected ID3V2 album genre = %q, want %q", got, tt.wantCorrectedID3V2AlbumGenre)
 			}
-			if got := tt.tm.EditRequired(ID3V1); got != tt.wantID3V1EditRequired {
-				t.Errorf("TrackMetadata.AlbumGenreDiffers() ID3V1 edit required = %t, want %t", got, tt.wantID3V1EditRequired)
+			if got := tt.tm.editRequired(ID3V1); got != tt.wantID3V1EditRequired {
+				t.Errorf("TrackMetadata.albumGenreDiffers() ID3V1 edit required = %t, want %t", got, tt.wantID3V1EditRequired)
 			}
-			if got := tt.tm.EditRequired(ID3V2); got != tt.wantID3V2EditRequired {
-				t.Errorf("TrackMetadata.AlbumGenreDiffers() ID3V2 edit required = %t, want %t", got, tt.wantID3V2EditRequired)
+			if got := tt.tm.editRequired(ID3V2); got != tt.wantID3V2EditRequired {
+				t.Errorf("TrackMetadata.albumGenreDiffers() ID3V2 edit required = %t, want %t", got, tt.wantID3V2EditRequired)
 			}
 		})
 	}
@@ -1693,28 +1693,28 @@ func TestTrackMetadata_AlbumYearDiffers(t *testing.T) {
 	tm4.SetAlbumYear(ID3V2, "2001")
 	// 5. ID3V1 has an error, ID3V2 album year does not differ
 	tm5 := NewTrackMetadata()
-	tm5.SetErrorCause(ID3V1, "bad format")
+	tm5.setErrorCause(ID3V1, "bad format")
 	tm5.SetAlbumYear(ID3V1, "")
 	tm5.SetAlbumYear(ID3V2, expectedYear)
 	// 6. ID3V1 has an error, ID3V2 album year differs
 	tm6 := NewTrackMetadata()
-	tm6.SetErrorCause(ID3V1, "bad format")
+	tm6.setErrorCause(ID3V1, "bad format")
 	tm6.SetAlbumYear(ID3V1, "")
 	tm6.SetAlbumYear(ID3V2, "1984")
 	// 7. ID3V2 has an error, ID3V1 album year does not differ
 	tm7 := NewTrackMetadata()
-	tm7.SetErrorCause(ID3V2, "bad format")
+	tm7.setErrorCause(ID3V2, "bad format")
 	tm7.SetAlbumYear(ID3V1, expectedYear)
 	tm7.SetAlbumYear(ID3V2, "")
 	// 8. ID3V2 has an error, ID3V1 album number differs
 	tm8 := NewTrackMetadata()
-	tm8.SetErrorCause(ID3V2, "bad format")
+	tm8.setErrorCause(ID3V2, "bad format")
 	tm8.SetAlbumYear(ID3V1, "1984")
 	tm8.SetAlbumYear(ID3V2, "")
 	// 9. both ID3V1 and ID3V2 have errors
 	tm9 := NewTrackMetadata()
-	tm9.SetErrorCause(ID3V1, "bad format")
-	tm9.SetErrorCause(ID3V2, "bad format")
+	tm9.setErrorCause(ID3V1, "bad format")
+	tm9.setErrorCause(ID3V2, "bad format")
 	tm9.SetAlbumYear(ID3V1, "")
 	tm9.SetAlbumYear(ID3V2, "")
 	tests := map[string]struct {
@@ -1810,20 +1810,20 @@ func TestTrackMetadata_AlbumYearDiffers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tm.AlbumYearDiffers(tt.canonicalAlbumYear); got != tt.wantDiffers {
-				t.Errorf("TrackMetadata.AlbumYearDiffers() = %v, want %v", got, tt.wantDiffers)
+			if got := tt.tm.albumYearDiffers(tt.canonicalAlbumYear); got != tt.wantDiffers {
+				t.Errorf("TrackMetadata.albumYearDiffers() = %v, want %v", got, tt.wantDiffers)
 			}
-			if got := tt.tm.AlbumYear(ID3V1).Correction(); got != tt.wantCorrectedID3V1AlbumYear {
-				t.Errorf("TrackMetadata.AlbumYearDiffers() corrected ID3V1 album year = %q, want %q", got, tt.wantCorrectedID3V1AlbumYear)
+			if got := tt.tm.albumYear(ID3V1).correctedValue(); got != tt.wantCorrectedID3V1AlbumYear {
+				t.Errorf("TrackMetadata.albumYearDiffers() corrected ID3V1 album year = %q, want %q", got, tt.wantCorrectedID3V1AlbumYear)
 			}
-			if got := tt.tm.AlbumYear(ID3V2).Correction(); got != tt.wantCorrectedID3V2AlbumYear {
-				t.Errorf("TrackMetadata.AlbumYearDiffers() corrected ID3V2 album year = %q, want %q", got, tt.wantCorrectedID3V2AlbumYear)
+			if got := tt.tm.albumYear(ID3V2).correctedValue(); got != tt.wantCorrectedID3V2AlbumYear {
+				t.Errorf("TrackMetadata.albumYearDiffers() corrected ID3V2 album year = %q, want %q", got, tt.wantCorrectedID3V2AlbumYear)
 			}
-			if got := tt.tm.EditRequired(ID3V1); got != tt.wantID3V1EditRequired {
-				t.Errorf("TrackMetadata.AlbumYearDiffers() ID3V1 edit required = %t, want %t", got, tt.wantID3V1EditRequired)
+			if got := tt.tm.editRequired(ID3V1); got != tt.wantID3V1EditRequired {
+				t.Errorf("TrackMetadata.albumYearDiffers() ID3V1 edit required = %t, want %t", got, tt.wantID3V1EditRequired)
 			}
-			if got := tt.tm.EditRequired(ID3V2); got != tt.wantID3V2EditRequired {
-				t.Errorf("TrackMetadata.AlbumYearDiffers() ID3V2 edit required = %t, want %t", got, tt.wantID3V2EditRequired)
+			if got := tt.tm.editRequired(ID3V2); got != tt.wantID3V2EditRequired {
+				t.Errorf("TrackMetadata.albumYearDiffers() ID3V2 edit required = %t, want %t", got, tt.wantID3V2EditRequired)
 			}
 		})
 	}
@@ -1840,7 +1840,7 @@ func TestTrackMetadata_CDIdentifierDiffers(t *testing.T) {
 	tm2.SetCDIdentifier([]byte("some other CD"))
 	// 3. ID3V2 has an error
 	tm3 := NewTrackMetadata()
-	tm3.SetErrorCause(ID3V2, "bad format")
+	tm3.setErrorCause(ID3V2, "bad format")
 	tm3.SetCDIdentifier([]byte{})
 	tests := map[string]struct {
 		tm                            *TrackMetadata
@@ -1873,20 +1873,20 @@ func TestTrackMetadata_CDIdentifierDiffers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tm.CDIdentifierDiffers(tt.canonicalCDIdentifier); got != tt.wantDiffers {
-				t.Errorf("TrackMetadata.CDIdentifierDiffers() = %v, want %v", got, tt.wantDiffers)
+			if got := tt.tm.cdIdentifierDiffers(tt.canonicalCDIdentifier); got != tt.wantDiffers {
+				t.Errorf("TrackMetadata.cdIdentifierDiffers() = %v, want %v", got, tt.wantDiffers)
 			}
-			if got := tt.tm.EditRequired(ID3V2); got != tt.wantID3V2EditRequired {
-				t.Errorf("TrackMetadata.CDIdentifierDiffers() ID3V2 edit required = %t, want %t", got, tt.wantID3V2EditRequired)
+			if got := tt.tm.editRequired(ID3V2); got != tt.wantID3V2EditRequired {
+				t.Errorf("TrackMetadata.cdIdentifierDiffers() ID3V2 edit required = %t, want %t", got, tt.wantID3V2EditRequired)
 			}
-			got := tt.tm.CDIdentifier().Correction().Body
+			got := tt.tm.cdIdentifier().correctedValue().Body
 			if len(got) == 0 {
 				if len(tt.wantCorrectedCDIdentifierBody) != 0 {
-					t.Errorf("TrackMetadata.CDIdentifierDiffers() corrected CD Identifier = %v, want %v", got, tt.wantCorrectedCDIdentifierBody)
+					t.Errorf("TrackMetadata.cdIdentifierDiffers() corrected CD Identifier = %v, want %v", got, tt.wantCorrectedCDIdentifierBody)
 				}
 			} else {
 				if !reflect.DeepEqual(got, tt.wantCorrectedCDIdentifierBody) {
-					t.Errorf("TrackMetadata.CDIdentifierDiffers() corrected CD Identifier = %v, want %v", got, tt.wantCorrectedCDIdentifierBody)
+					t.Errorf("TrackMetadata.cdIdentifierDiffers() corrected CD Identifier = %v, want %v", got, tt.wantCorrectedCDIdentifierBody)
 				}
 			}
 		})
@@ -1940,8 +1940,8 @@ func TestTrackMetadata_CanonicalAlbumNameMatches(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tm.CanonicalAlbumNameMatches(tt.nameFromFile); got != tt.want {
-				t.Errorf("TrackMetadata.CanonicalAlbumNameMatches() = %v, want %v", got, tt.want)
+			if got := tt.tm.canonicalAlbumNameMatches(tt.nameFromFile); got != tt.want {
+				t.Errorf("TrackMetadata.canonicalAlbumNameMatches() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -1994,8 +1994,8 @@ func TestTrackMetadata_CanonicalArtistNameMatches(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.tm.CanonicalArtistNameMatches(tt.nameFromFile); got != tt.want {
-				t.Errorf("TrackMetadata.CanonicalArtistNameMatches() = %v, want %v", got, tt.want)
+			if got := tt.tm.canonicalArtistNameMatches(tt.nameFromFile); got != tt.want {
+				t.Errorf("TrackMetadata.canonicalArtistNameMatches() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -2005,15 +2005,15 @@ func TestTrackMetadata_Update(t *testing.T) {
 	// create some TrackMetadata to apply
 	loadedTm := NewTrackMetadata()
 	for _, src := range []SourceType{ID3V1, ID3V2} {
-		loadedTm.CorrectArtistName(src, "corrected artist")
-		loadedTm.CorrectAlbumName(src, "corrected album")
-		loadedTm.CorrectAlbumGenre(src, "rock")
-		loadedTm.CorrectAlbumYear(src, "2024")
-		loadedTm.CorrectTrackName(src, "corrected name")
-		loadedTm.CorrectTrackNumber(src, 42)
-		loadedTm.SetEditRequired(src)
+		loadedTm.correctArtistName(src, "corrected artist")
+		loadedTm.correctAlbumName(src, "corrected album")
+		loadedTm.correctAlbumGenre(src, "rock")
+		loadedTm.correctAlbumYear(src, "2024")
+		loadedTm.correctTrackName(src, "corrected name")
+		loadedTm.correctTrackNumber(src, 42)
+		loadedTm.setEditRequired(src)
 	}
-	loadedTm.CorrectCDIdentifier([]byte("corrected CD identifier"))
+	loadedTm.correctCDIdentifier([]byte("corrected CD identifier"))
 	// create a valid file
 	testDir := "Update"
 	defer func() {
@@ -2060,8 +2060,8 @@ func TestTrackMetadata_Update(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if gotE := tt.tm.Update(tt.path); len(gotE) != tt.wantErrorCount {
-				t.Errorf("TrackMetadata.Update() = %v, want %v", gotE, tt.wantErrorCount)
+			if gotE := tt.tm.update(tt.path); len(gotE) != tt.wantErrorCount {
+				t.Errorf("TrackMetadata.update() = %v, want %v", gotE, tt.wantErrorCount)
 			}
 		})
 	}

@@ -375,55 +375,55 @@ func Test_framerSliceAsString(t *testing.T) {
 
 func Test_id3v2NameDiffers(t *testing.T) {
 	tests := map[string]struct {
-		cS   *ComparableStrings
+		cS   *comparableStrings
 		want bool
 	}{
 		"identical strings": {
-			cS: &ComparableStrings{
-				External: "simple name",
-				Metadata: "simple name",
+			cS: &comparableStrings{
+				external: "simple name",
+				metadata: "simple name",
 			},
 			want: false,
 		},
 		"identical strings with case differences": {
-			cS: &ComparableStrings{
-				External: "SIMPLE name",
-				Metadata: "simple NAME",
+			cS: &comparableStrings{
+				external: "SIMPLE name",
+				metadata: "simple NAME",
 			},
 			want: false,
 		},
 		"strings of different length": {
-			cS: &ComparableStrings{
-				External: "simple name",
-				Metadata: "artist: simple name",
+			cS: &comparableStrings{
+				external: "simple name",
+				metadata: "artist: simple name",
 			},
 			want: true,
 		},
 		"use of runes that are illegal for file names": {
-			cS: &ComparableStrings{
-				External: "simple_name",
-				Metadata: "simple:name",
+			cS: &comparableStrings{
+				external: "simple_name",
+				metadata: "simple:name",
 			},
 			want: false,
 		},
 		"metadata with trailing space": {
-			cS: &ComparableStrings{
-				External: "simple name",
-				Metadata: "simple name ",
+			cS: &comparableStrings{
+				external: "simple name",
+				metadata: "simple name ",
 			},
 			want: false,
 		},
 		"period on the end": {
-			cS: &ComparableStrings{
-				External: "simple name.",
-				Metadata: "simple name.",
+			cS: &comparableStrings{
+				external: "simple name.",
+				metadata: "simple name.",
 			},
 			want: false,
 		},
 		"complex mismatch": {
-			cS: &ComparableStrings{
-				External: "simple_name",
-				Metadata: "simple: nam",
+			cS: &comparableStrings{
+				external: "simple_name",
+				metadata: "simple: nam",
 			},
 			want: true,
 		},
@@ -663,20 +663,20 @@ func Test_normalizeGenre(t *testing.T) {
 
 func Test_id3v2GenreDiffers(t *testing.T) {
 	tests := map[string]struct {
-		cS   *ComparableStrings
+		cS   *comparableStrings
 		want bool
 	}{
 		"match": {
-			cS: &ComparableStrings{
-				External: "Classic Rock",
-				Metadata: "Classic Rock",
+			cS: &comparableStrings{
+				external: "Classic Rock",
+				metadata: "Classic Rock",
 			},
 			want: false,
 		},
 		"no match": {
-			cS: &ComparableStrings{
-				External: "Classic Rock",
-				Metadata: "classic rock",
+			cS: &comparableStrings{
+				external: "Classic Rock",
+				metadata: "classic rock",
 			},
 			want: true,
 		},

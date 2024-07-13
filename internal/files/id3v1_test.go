@@ -1125,68 +1125,68 @@ func TestId3v1MetadataWrite(t *testing.T) {
 
 func TestId3v1NameDiffers(t *testing.T) {
 	tests := map[string]struct {
-		cS   *ComparableStrings
+		cS   *comparableStrings
 		want bool
 	}{
 		"identical strings": {
-			cS: &ComparableStrings{
-				External: "Fiddler On The Roof",
-				Metadata: "Fiddler On The Roof",
+			cS: &comparableStrings{
+				external: "Fiddler On The Roof",
+				metadata: "Fiddler On The Roof",
 			}, want: false,
 		},
 		"unusable characters in metadata": {
-			cS: &ComparableStrings{
-				External: "Theme From M-A-S-H",
-				Metadata: "Theme From M*A*S*H",
+			cS: &comparableStrings{
+				external: "Theme From M-A-S-H",
+				metadata: "Theme From M*A*S*H",
 			},
 			want: false,
 		},
 		"really long name": {
-			cS: &ComparableStrings{
-				External: "A Funny Thing Happened On The Way To The Forum 1996 Broadway Revival Cast",
-				Metadata: "A Funny Thing Happened On The",
+			cS: &comparableStrings{
+				external: "A Funny Thing Happened On The Way To The Forum 1996 Broadway Revival Cast",
+				metadata: "A Funny Thing Happened On The",
 			},
 			want: false,
 		},
 		"non-ASCII values": {
-			cS: &ComparableStrings{
-				External: "Grohg - Cortège Macabre",
-				Metadata: "Grohg - Cort\xe8ge Macabre",
+			cS: &comparableStrings{
+				external: "Grohg - Cortège Macabre",
+				metadata: "Grohg - Cort\xe8ge Macabre",
 			},
 			want: false,
 		},
 		"larger non-ASCII values": {
-			cS: &ComparableStrings{
-				External: "Dvořák",
-				Metadata: "Dvor\xe1k",
+			cS: &comparableStrings{
+				external: "Dvořák",
+				metadata: "Dvor\xe1k",
 			},
 			want: false,
 		},
 		"identical strings with case differences": {
-			cS: &ComparableStrings{
-				External: "SIMPLE name",
-				Metadata: "simple NAME",
+			cS: &comparableStrings{
+				external: "SIMPLE name",
+				metadata: "simple NAME",
 			},
 			want: false,
 		},
 		"strings of different length within name length limit": {
-			cS: &ComparableStrings{
-				External: "simple name",
-				Metadata: "artist: simple name",
+			cS: &comparableStrings{
+				external: "simple name",
+				metadata: "artist: simple name",
 			},
 			want: true,
 		},
 		"use of runes that are illegal for file names": {
-			cS: &ComparableStrings{
-				External: "simple_name",
-				Metadata: "simple:name",
+			cS: &comparableStrings{
+				external: "simple_name",
+				metadata: "simple:name",
 			},
 			want: false,
 		},
 		"complex mismatch": {
-			cS: &ComparableStrings{
-				External: "simple_name",
-				Metadata: "simple: nam",
+			cS: &comparableStrings{
+				external: "simple_name",
+				metadata: "simple: nam",
 			},
 			want: true,
 		},
@@ -1202,35 +1202,35 @@ func TestId3v1NameDiffers(t *testing.T) {
 
 func TestId3v1GenreDiffers(t *testing.T) {
 	tests := map[string]struct {
-		cS   *ComparableStrings
+		cS   *comparableStrings
 		want bool
 	}{
 		"match": {
-			cS: &ComparableStrings{
-				External: "Classic Rock",
-				Metadata: "Classic Rock",
+			cS: &comparableStrings{
+				external: "Classic Rock",
+				metadata: "Classic Rock",
 			},
 			want: false,
 		},
 		"case does not match": {
-			cS: &ComparableStrings{
-				External: "Classic Rock",
-				Metadata: "classic rock",
+			cS: &comparableStrings{
+				external: "Classic Rock",
+				metadata: "classic rock",
 			},
 			want: false,
 		},
 		"other": {
-			cS: &ComparableStrings{
-				External: "Prog Rock",
-				Metadata: "other",
+			cS: &comparableStrings{
+				external: "Prog Rock",
+				metadata: "other",
 			},
 			want: false,
 		},
 		"known genre": {
 			// known id3v1 genre - "Other" will not match
-			cS: &ComparableStrings{
-				External: "Classic Rock",
-				Metadata: "Other",
+			cS: &comparableStrings{
+				external: "Classic Rock",
+				metadata: "Other",
 			},
 			want: true,
 		},

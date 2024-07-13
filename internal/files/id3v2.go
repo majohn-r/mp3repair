@@ -157,7 +157,7 @@ func selectUnknownFrame(mcdiFramers []id3v2.Framer) id3v2.UnknownFrame {
 
 func updateID3V2TrackMetadata(tm *TrackMetadata, path string) error {
 	const src = ID3V2
-	if !tm.EditRequired(src) {
+	if !tm.editRequired(src) {
 		return nil
 	}
 	tag, readErr := readID3V2Tag(path)
@@ -168,25 +168,25 @@ func updateID3V2TrackMetadata(tm *TrackMetadata, path string) error {
 		_ = tag.Close()
 	}()
 	tag.SetDefaultEncoding(id3v2.EncodingUTF8)
-	if artistName := tm.ArtistName(src).Correction(); artistName != "" {
+	if artistName := tm.artistName(src).correctedValue(); artistName != "" {
 		tag.SetArtist(artistName)
 	}
-	if albumName := tm.AlbumName(src).Correction(); albumName != "" {
+	if albumName := tm.albumName(src).correctedValue(); albumName != "" {
 		tag.SetAlbum(albumName)
 	}
-	if albumGenre := tm.AlbumGenre(src).Correction(); albumGenre != "" {
+	if albumGenre := tm.albumGenre(src).correctedValue(); albumGenre != "" {
 		tag.SetGenre(albumGenre)
 	}
-	if albumYear := tm.AlbumYear(src).Correction(); albumYear != "" {
+	if albumYear := tm.albumYear(src).correctedValue(); albumYear != "" {
 		tag.SetYear(albumYear)
 	}
-	if trackName := tm.TrackName(src).Correction(); trackName != "" {
+	if trackName := tm.trackName(src).correctedValue(); trackName != "" {
 		tag.SetTitle(trackName)
 	}
-	if trackNumber := tm.TrackNumber(src).Correction(); trackNumber != 0 {
+	if trackNumber := tm.trackNumber(src).correctedValue(); trackNumber != 0 {
 		tag.AddTextFrame("TRCK", tag.DefaultEncoding(), fmt.Sprintf("%d", trackNumber))
 	}
-	cdIdentifier := tm.CDIdentifier().Correction()
+	cdIdentifier := tm.cdIdentifier().correctedValue()
 	if len(cdIdentifier.Body) != 0 {
 		tag.DeleteFrames(mcdiFrame)
 		tag.AddFrame(mcdiFrame, cdIdentifier)
@@ -273,9 +273,9 @@ func framerSliceAsString(f []id3v2.Framer) string {
 	return fmt.Sprintf("<<%s>>", strings.Join(substrings, ", "))
 }
 
-func id3v2NameDiffers(cS *ComparableStrings) bool {
-	externalName := strings.ToLower(cS.External)
-	metadataName := strings.ToLower(cS.Metadata)
+func id3v2NameDiffers(cS *comparableStrings) bool {
+	externalName := strings.ToLower(cS.external)
+	metadataName := strings.ToLower(cS.metadata)
 	// strip off trailing space from the metadata value
 	for strings.HasSuffix(metadataName, " ") {
 		metadataName = metadataName[:len(metadataName)-1]
@@ -301,7 +301,7 @@ func id3v2NameDiffers(cS *ComparableStrings) bool {
 	return false // rune by rune comparison was successful
 }
 
-func id3v2GenreDiffers(cS *ComparableStrings) bool {
+func id3v2GenreDiffers(cS *comparableStrings) bool {
 	// differs unless exact match. Period.
-	return cS.External != cS.Metadata
+	return cS.external != cS.metadata
 }

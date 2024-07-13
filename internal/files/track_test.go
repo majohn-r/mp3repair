@@ -759,7 +759,7 @@ func TestReadMetadata(t *testing.T) {
 								track.FilePath)
 						} else if track.hasMetadataError() {
 							t.Errorf("ReadMetadata() track %q is defective: %v",
-								track.FilePath, track.Metadata.ErrorCauses())
+								track.FilePath, track.Metadata.errorCauses())
 						}
 					}
 				}
@@ -813,7 +813,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	metadata2.SetAlbumYear(src2, "1999")
 	metadata2.SetTrackName(src2, "good track")
 	metadata2.SetTrackNumber(src2, 3)
-	metadata2.SetErrorCause(ID3V2, "no id3v2 metadata, how odd")
+	metadata2.setErrorCause(ID3V2, "no id3v2 metadata, how odd")
 	goodTrack := TrackMaker{
 		Album:      goodAlbum,
 		FileName:   "03 good track.mp3",
@@ -824,11 +824,11 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	goodAlbum.AddTrack(goodTrack)
 	goodArtist.AddAlbum(goodAlbum)
 	errorMetadata := NewTrackMetadata()
-	errorMetadata.SetErrorCause(ID3V1, "oops")
-	errorMetadata.SetErrorCause(ID3V2, "oops")
+	errorMetadata.setErrorCause(ID3V1, "oops")
+	errorMetadata.setErrorCause(ID3V2, "oops")
 	noMetadata := NewTrackMetadata()
-	noMetadata.SetErrorCause(ID3V1, errNoID3V1MetadataFound.Error())
-	noMetadata.SetErrorCause(ID3V2, errNoID3V2MetadataFound.Error())
+	noMetadata.setErrorCause(ID3V1, errNoID3V1MetadataFound.Error())
+	noMetadata.setErrorCause(ID3V2, errNoID3V2MetadataFound.Error())
 	tests := map[string]struct {
 		t    *Track
 		want []string
@@ -973,7 +973,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 				t.Errorf("Track.UpdateMetadata() = %v, want %v", eStrings, tt.wantE)
 			} else if len(gotE) == 0 && tt.t.Metadata != nil {
 				// verify file was correctly rewritten
-				gotTm := InitializeMetadata(tt.t.FilePath)
+				gotTm := initializeMetadata(tt.t.FilePath)
 				if !reflect.DeepEqual(gotTm, tt.wantTm) {
 					t.Errorf("Track.UpdateMetadata() read %#v, want %#v", gotTm, tt.wantTm)
 				}
@@ -1261,8 +1261,8 @@ func TestProcessAlbumMetadata(t *testing.T) {
 
 func TestTrack_ReportMetadataErrors(t *testing.T) {
 	tm := NewTrackMetadata()
-	tm.SetErrorCause(ID3V1, "id3v1 error!")
-	tm.SetErrorCause(ID3V2, "id3v2 error!")
+	tm.setErrorCause(ID3V1, "id3v1 error!")
+	tm.setErrorCause(ID3V2, "id3v2 error!")
 	tests := map[string]struct {
 		t *Track
 		output.WantedRecording

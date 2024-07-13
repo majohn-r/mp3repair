@@ -796,7 +796,7 @@ func writeToFile(f afero.File, b []byte) (int, error) {
 
 func updateID3V1TrackMetadata(tm *TrackMetadata, path string) error {
 	const src = ID3V1
-	if !tm.EditRequired(src) {
+	if !tm.editRequired(src) {
 		return nil
 	}
 	var v1 *id3v1Metadata
@@ -805,22 +805,22 @@ func updateID3V1TrackMetadata(tm *TrackMetadata, path string) error {
 	if fileErr != nil {
 		return fileErr
 	}
-	if artistName := tm.ArtistName(src).Correction(); artistName != "" {
+	if artistName := tm.artistName(src).correctedValue(); artistName != "" {
 		v1.setArtist(artistName)
 	}
-	if albumName := tm.AlbumName(src).Correction(); albumName != "" {
+	if albumName := tm.albumName(src).correctedValue(); albumName != "" {
 		v1.setAlbum(albumName)
 	}
-	if albumGenre := tm.AlbumGenre(src).Correction(); albumGenre != "" {
+	if albumGenre := tm.albumGenre(src).correctedValue(); albumGenre != "" {
 		v1.setGenre(albumGenre)
 	}
-	if albumYear := tm.AlbumYear(src).Correction(); albumYear != "" {
+	if albumYear := tm.albumYear(src).correctedValue(); albumYear != "" {
 		v1.setYear(albumYear)
 	}
-	if trackName := tm.TrackName(src).Correction(); trackName != "" {
+	if trackName := tm.trackName(src).correctedValue(); trackName != "" {
 		v1.setTitle(trackName)
 	}
-	if trackNumber := tm.TrackNumber(src).Correction(); trackNumber != 0 {
+	if trackNumber := tm.trackNumber(src).correctedValue(); trackNumber != 0 {
 		_ = v1.setTrack(trackNumber)
 	}
 	return v1.write(path)
@@ -878,9 +878,9 @@ func (im *id3v1Metadata) internalWrite(path string,
 	return
 }
 
-func id3v1NameDiffers(cS *ComparableStrings) bool {
-	bs := make([]byte, 0, 2*len(cS.External))
-	for _, r := range strings.ToLower(cS.External) {
+func id3v1NameDiffers(cS *comparableStrings) bool {
+	bs := make([]byte, 0, 2*len(cS.external))
+	for _, r := range strings.ToLower(cS.external) {
 		b, mappingFound := runeByteMapping[r]
 		switch {
 		case mappingFound:
@@ -895,7 +895,7 @@ func id3v1NameDiffers(cS *ComparableStrings) bool {
 	for bs[len(bs)-1] == ' ' {
 		bs = bs[:len(bs)-1]
 	}
-	metadataRunes := []rune(strings.ToLower(cS.Metadata))
+	metadataRunes := []rune(strings.ToLower(cS.metadata))
 	externalRunes := []rune(string(bs))
 	if len(metadataRunes) != len(externalRunes) {
 		return true
@@ -913,14 +913,14 @@ func id3v1NameDiffers(cS *ComparableStrings) bool {
 	return false
 }
 
-func id3v1GenreDiffers(cS *ComparableStrings) bool {
-	if _, genreFound := genreIndex(cS.External); !genreFound {
+func id3v1GenreDiffers(cS *comparableStrings) bool {
+	if _, genreFound := genreIndex(cS.external); !genreFound {
 		// the external genre does not map to a known id3v1 genre but "other"
 		// always matches the external name
-		if cS.Metadata == "other" {
+		if cS.metadata == "other" {
 			return false
 		}
 	}
 	// external name is a known id3v1 genre, or metadata name is not "other"
-	return !strings.EqualFold(cS.External, cS.Metadata)
+	return !strings.EqualFold(cS.external, cS.metadata)
 }
