@@ -22,13 +22,13 @@ import (
 func Test_processResetDBFlags(t *testing.T) {
 	tests := map[string]struct {
 		values map[string]*cmdtoolkit.CommandFlag[any]
-		want   *ResetDBSettings
+		want   *resetDBSettings
 		want1  bool
 		output.WantedRecording
 	}{
 		"massive errors": {
 			values: nil,
-			want:   &ResetDBSettings{},
+			want:   &resetDBSettings{},
 			want1:  false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -68,13 +68,13 @@ func Test_processResetDBFlags(t *testing.T) {
 				"service":             {Value: "music service"},
 				"timeout":             {Value: 5},
 			},
-			want: &ResetDBSettings{
-				Extension:           cmdtoolkit.CommandFlag[string]{Value: ".foo"},
-				Force:               cmdtoolkit.CommandFlag[bool]{Value: true},
-				IgnoreServiceErrors: cmdtoolkit.CommandFlag[bool]{Value: true},
-				MetadataDir:         cmdtoolkit.CommandFlag[string]{Value: "metadata"},
-				Service:             cmdtoolkit.CommandFlag[string]{Value: "music service"},
-				Timeout:             cmdtoolkit.CommandFlag[int]{Value: 5},
+			want: &resetDBSettings{
+				extension:           cmdtoolkit.CommandFlag[string]{Value: ".foo"},
+				force:               cmdtoolkit.CommandFlag[bool]{Value: true},
+				ignoreServiceErrors: cmdtoolkit.CommandFlag[bool]{Value: true},
+				metadataDir:         cmdtoolkit.CommandFlag[string]{Value: "metadata"},
+				service:             cmdtoolkit.CommandFlag[string]{Value: "music service"},
+				timeout:             cmdtoolkit.CommandFlag[int]{Value: 5},
 			},
 			want1: true,
 		},
@@ -82,7 +82,7 @@ func Test_processResetDBFlags(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			got, got1 := ProcessResetDBFlags(o, tt.values)
+			got, got1 := processResetDBFlags(o, tt.values)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("processResetDBFlags() got = %v, want %v", got, tt.want)
 			}
@@ -131,16 +131,16 @@ func Test_resetDBSettings_waitForStop(t *testing.T) {
 		checkInterval time.Duration
 	}
 	tests := map[string]struct {
-		resetDBSettings *ResetDBSettings
+		resetDBSettings *resetDBSettings
 		args
 		wantOk     bool
 		wantStatus *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"already timed out": {
-			resetDBSettings: &ResetDBSettings{
-				Service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
-				Timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
+			resetDBSettings: &resetDBSettings{
+				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
+				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
 			args:       args{expiration: time.Now().Add(time.Duration(-1) * time.Second)},
 			wantStatus: cmdtoolkit.NewExitSystemError("resetDatabase"),
@@ -157,9 +157,9 @@ func Test_resetDBSettings_waitForStop(t *testing.T) {
 			},
 		},
 		"query error": {
-			resetDBSettings: &ResetDBSettings{
-				Service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
-				Timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
+			resetDBSettings: &resetDBSettings{
+				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
+				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
 			args: args{
 				s:             newTestService(),
@@ -178,9 +178,9 @@ func Test_resetDBSettings_waitForStop(t *testing.T) {
 			},
 		},
 		"stops correctly": {
-			resetDBSettings: &ResetDBSettings{
-				Service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
-				Timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
+			resetDBSettings: &resetDBSettings{
+				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
+				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
 			args: args{
 				s: newTestService(
@@ -203,7 +203,7 @@ func Test_resetDBSettings_waitForStop(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			gotOk, gotStatus := tt.resetDBSettings.WaitForStop(o, tt.args.s, tt.args.expiration, tt.args.checkInterval)
+			gotOk, gotStatus := tt.resetDBSettings.waitForStop(o, tt.args.s, tt.args.expiration, tt.args.checkInterval)
 			if gotOk != tt.wantOk {
 				t.Errorf("resetDBSettings.waitForStop() = %t, want %t", gotOk, tt.wantOk)
 			}
@@ -251,16 +251,16 @@ func Test_resetDBSettings_stopFoundService(t *testing.T) {
 		service ServiceRep
 	}
 	tests := map[string]struct {
-		resetDBSettings *ResetDBSettings
+		resetDBSettings *resetDBSettings
 		args
 		wantOk     bool
 		wantStatus *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"defective service": {
-			resetDBSettings: &ResetDBSettings{
-				Service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
-				Timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
+			resetDBSettings: &resetDBSettings{
+				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
+				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
 			args: args{
 				manager: newTestManager(nil, nil),
@@ -278,9 +278,9 @@ func Test_resetDBSettings_stopFoundService(t *testing.T) {
 			},
 		},
 		"already stopped": {
-			resetDBSettings: &ResetDBSettings{
-				Service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
-				Timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
+			resetDBSettings: &resetDBSettings{
+				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
+				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
 			args: args{
 				manager: newTestManager(nil, nil),
@@ -296,9 +296,9 @@ func Test_resetDBSettings_stopFoundService(t *testing.T) {
 			},
 		},
 		"stopped easily": {
-			resetDBSettings: &ResetDBSettings{
-				Service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
-				Timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
+			resetDBSettings: &resetDBSettings{
+				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
+				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
 			args: args{
 				manager: newTestManager(nil, nil),
@@ -316,9 +316,9 @@ func Test_resetDBSettings_stopFoundService(t *testing.T) {
 			},
 		},
 		"stopped with a little more difficulty": {
-			resetDBSettings: &ResetDBSettings{
-				Service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
-				Timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
+			resetDBSettings: &resetDBSettings{
+				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
+				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
 			args: args{
 				manager: newTestManager(nil, nil),
@@ -337,9 +337,9 @@ func Test_resetDBSettings_stopFoundService(t *testing.T) {
 			},
 		},
 		"cannot be stopped": {
-			resetDBSettings: &ResetDBSettings{
-				Service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
-				Timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
+			resetDBSettings: &resetDBSettings{
+				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
+				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
 			args: args{
 				manager: newTestManager(nil, nil),
@@ -361,7 +361,7 @@ func Test_resetDBSettings_stopFoundService(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			gotOk, gotStatus := tt.resetDBSettings.StopFoundService(o, tt.args.manager,
+			gotOk, gotStatus := tt.resetDBSettings.stopFoundService(o, tt.args.manager,
 				tt.args.service)
 			if gotOk != tt.wantOk {
 				t.Errorf("resetDBSettings.stopFoundService() = %v, want %v", gotOk, tt.wantOk)
@@ -402,7 +402,7 @@ func Test_addServiceState(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			AddServiceState(tt.m, tt.s, tt.serviceName)
+			addServiceState(tt.m, tt.s, tt.serviceName)
 			if !reflect.DeepEqual(tt.m, tt.want) {
 				t.Errorf("addServiceState() = %v, want %v", tt.m, tt.want)
 			}
@@ -410,7 +410,7 @@ func Test_addServiceState(t *testing.T) {
 	}
 }
 
-func Test_listServices(t *testing.T) {
+func Test_listAvailableServices(t *testing.T) {
 	type args struct {
 		manager  ServiceManager
 		services []string
@@ -449,24 +449,24 @@ func Test_listServices(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			ListServices(o, tt.args.manager, tt.args.services)
-			o.Report(t, "listServices()", tt.WantedRecording)
+			listAvailableServices(o, tt.args.manager, tt.args.services)
+			o.Report(t, "listAvailableServices()", tt.WantedRecording)
 		})
 	}
 }
 
 func Test_resetDBSettings_disableService(t *testing.T) {
 	tests := map[string]struct {
-		resetDBSettings *ResetDBSettings
+		resetDBSettings *resetDBSettings
 		manager         ServiceManager
 		wantOk          bool
 		wantStatus      *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"defective manager #1": {
-			resetDBSettings: &ResetDBSettings{
-				Service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
-				Timeout: cmdtoolkit.CommandFlag[int]{Value: 1},
+			resetDBSettings: &resetDBSettings{
+				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
+				timeout: cmdtoolkit.CommandFlag[int]{Value: 1},
 			},
 			manager:    newTestManager(nil, []string{"my service"}),
 			wantStatus: cmdtoolkit.NewExitSystemError("resetDatabase"),
@@ -485,9 +485,9 @@ func Test_resetDBSettings_disableService(t *testing.T) {
 			},
 		},
 		"defective manager #2": {
-			resetDBSettings: &ResetDBSettings{
-				Service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
-				Timeout: cmdtoolkit.CommandFlag[int]{Value: 1},
+			resetDBSettings: &resetDBSettings{
+				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
+				timeout: cmdtoolkit.CommandFlag[int]{Value: 1},
 			},
 			manager:    newTestManager(nil, nil),
 			wantStatus: cmdtoolkit.NewExitSystemError("resetDatabase"),
@@ -506,9 +506,9 @@ func Test_resetDBSettings_disableService(t *testing.T) {
 			},
 		},
 		"defective manager #3": {
-			resetDBSettings: &ResetDBSettings{
-				Service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
-				Timeout: cmdtoolkit.CommandFlag[int]{Value: 1},
+			resetDBSettings: &resetDBSettings{
+				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
+				timeout: cmdtoolkit.CommandFlag[int]{Value: 1},
 			},
 			manager:    newTestManager(map[string]*mgr.Service{"my service": nil}, nil),
 			wantStatus: cmdtoolkit.NewExitSystemError("resetDatabase"),
@@ -526,7 +526,7 @@ func Test_resetDBSettings_disableService(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			gotOk, gotStatus := tt.resetDBSettings.DisableService(o, tt.manager)
+			gotOk, gotStatus := tt.resetDBSettings.disableService(o, tt.manager)
 			if gotOk != tt.wantOk {
 				t.Errorf("resetDBSettings.disableService() = %v, want %v", gotOk, tt.wantOk)
 			}
@@ -540,15 +540,15 @@ func Test_resetDBSettings_disableService(t *testing.T) {
 
 func Test_resetDBSettings_stopService(t *testing.T) {
 	originalConnect := connect
-	originalProcessIsElevated := ProcessIsElevated
+	originalProcessIsElevated := processIsElevated
 	defer func() {
 		connect = originalConnect
-		ProcessIsElevated = originalProcessIsElevated
+		processIsElevated = originalProcessIsElevated
 	}()
-	ProcessIsElevated = func() bool { return false }
+	processIsElevated = func() bool { return false }
 	tests := map[string]struct {
 		connect         func() (*mgr.Mgr, error)
-		resetDBSettings *ResetDBSettings
+		resetDBSettings *resetDBSettings
 		wantOk          bool
 		wantStatus      *cmdtoolkit.ExitError
 		output.WantedRecording
@@ -557,9 +557,9 @@ func Test_resetDBSettings_stopService(t *testing.T) {
 			connect: func() (*mgr.Mgr, error) {
 				return nil, fmt.Errorf("no manager available")
 			},
-			resetDBSettings: &ResetDBSettings{
-				Service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
-				Timeout: cmdtoolkit.CommandFlag[int]{Value: 1},
+			resetDBSettings: &resetDBSettings{
+				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
+				timeout: cmdtoolkit.CommandFlag[int]{Value: 1},
 			},
 			wantStatus: cmdtoolkit.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
@@ -580,9 +580,9 @@ func Test_resetDBSettings_stopService(t *testing.T) {
 			connect: func() (*mgr.Mgr, error) {
 				return nil, nil
 			},
-			resetDBSettings: &ResetDBSettings{
-				Service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
-				Timeout: cmdtoolkit.CommandFlag[int]{Value: 1},
+			resetDBSettings: &resetDBSettings{
+				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
+				timeout: cmdtoolkit.CommandFlag[int]{Value: 1},
 			},
 			wantStatus: cmdtoolkit.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
@@ -604,7 +604,7 @@ func Test_resetDBSettings_stopService(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			connect = tt.connect
 			o := output.NewRecorder()
-			gotOk, gotStatus := tt.resetDBSettings.StopService(o)
+			gotOk, gotStatus := tt.resetDBSettings.stopService(o)
 			if gotOk != tt.wantOk {
 				t.Errorf("resetDBSettings.stopService() = %v, want %v", gotOk, tt.wantOk)
 			}
@@ -623,19 +623,19 @@ func Test_resetDBSettings_deleteMetadataFiles(t *testing.T) {
 	}()
 	tests := map[string]struct {
 		remove          func(string) error
-		resetDBSettings *ResetDBSettings
+		resetDBSettings *resetDBSettings
 		paths           []string
 		want            *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"no files": {
-			resetDBSettings: &ResetDBSettings{MetadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata/dir"}},
+			resetDBSettings: &resetDBSettings{metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata/dir"}},
 			paths:           nil,
 			want:            nil,
 		},
 		"locked files": {
 			remove:          func(_ string) error { return fmt.Errorf("cannot remove file") },
-			resetDBSettings: &ResetDBSettings{MetadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata/dir"}},
+			resetDBSettings: &resetDBSettings{metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata/dir"}},
 			paths:           []string{"file1", "file2"},
 			want:            cmdtoolkit.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
@@ -654,7 +654,7 @@ func Test_resetDBSettings_deleteMetadataFiles(t *testing.T) {
 		},
 		"deletable files": {
 			remove:          func(_ string) error { return nil },
-			resetDBSettings: &ResetDBSettings{MetadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata/dir"}},
+			resetDBSettings: &resetDBSettings{metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata/dir"}},
 			paths:           []string{"file1", "file2"},
 			want:            nil,
 			WantedRecording: output.WantedRecording{
@@ -667,7 +667,7 @@ func Test_resetDBSettings_deleteMetadataFiles(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			remove = tt.remove
 			o := output.NewRecorder()
-			if got := tt.resetDBSettings.DeleteMetadataFiles(o, tt.paths); !compareExitErrors(got, tt.want) {
+			if got := tt.resetDBSettings.deleteMetadataFiles(o, tt.paths); !compareExitErrors(got, tt.want) {
 				t.Errorf("resetDBSettings.deleteMetadataFiles() %s want %s", got, tt.want)
 			}
 			o.Report(t, "resetDBSettings.deleteMetadataFiles()", tt.WantedRecording)
@@ -682,16 +682,16 @@ func Test_resetDBSettings_filterMetadataFiles(t *testing.T) {
 	}()
 	tests := map[string]struct {
 		plainFileExists func(string) bool
-		resetDBSettings *ResetDBSettings
+		resetDBSettings *resetDBSettings
 		entries         []fs.FileInfo
 		want            []string
 	}{
 		"no entries": {want: []string{}},
 		"mixed entries": {
 			plainFileExists: func(s string) bool { return !strings.Contains(s, "dir.") },
-			resetDBSettings: &ResetDBSettings{
-				MetadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata"},
-				Extension:   cmdtoolkit.CommandFlag[string]{Value: ".db"},
+			resetDBSettings: &resetDBSettings{
+				metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata"},
+				extension:   cmdtoolkit.CommandFlag[string]{Value: ".db"},
 			},
 			entries: []fs.FileInfo{
 				newTestFile("dir. foo.db", nil),
@@ -704,7 +704,7 @@ func Test_resetDBSettings_filterMetadataFiles(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			plainFileExists = tt.plainFileExists
-			if got := tt.resetDBSettings.FilterMetadataFiles(tt.entries); !reflect.DeepEqual(got,
+			if got := tt.resetDBSettings.filterMetadataFiles(tt.entries); !reflect.DeepEqual(got,
 				tt.want) {
 				t.Errorf("resetDBSettings.filterMetadataFiles() = %v, want %v", got, tt.want)
 			}
@@ -725,15 +725,15 @@ func Test_resetDBSettings_cleanUpMetadata(t *testing.T) {
 		readDirectory   func(output.Bus, string) ([]fs.FileInfo, bool)
 		plainFileExists func(string) bool
 		remove          func(string) error
-		resetDBSettings *ResetDBSettings
+		resetDBSettings *resetDBSettings
 		stopped         bool
 		want            *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"did not stop, cannot ignore it": {
-			resetDBSettings: &ResetDBSettings{
-				Service:             cmdtoolkit.CommandFlag[string]{Value: "musicService"},
-				IgnoreServiceErrors: cmdtoolkit.CommandFlag[bool]{Value: false},
+			resetDBSettings: &resetDBSettings{
+				service:             cmdtoolkit.CommandFlag[string]{Value: "musicService"},
+				ignoreServiceErrors: cmdtoolkit.CommandFlag[bool]{Value: false},
 			},
 			stopped: false,
 			want:    cmdtoolkit.NewExitUserError("resetDatabase"),
@@ -751,7 +751,7 @@ func Test_resetDBSettings_cleanUpMetadata(t *testing.T) {
 			readDirectory: func(_ output.Bus, _ string) ([]fs.FileInfo, bool) {
 				return nil, true
 			},
-			resetDBSettings: &ResetDBSettings{MetadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata"}},
+			resetDBSettings: &resetDBSettings{metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata"}},
 			stopped:         true,
 			want:            nil,
 			WantedRecording: output.WantedRecording{
@@ -767,9 +767,9 @@ func Test_resetDBSettings_cleanUpMetadata(t *testing.T) {
 			readDirectory: func(_ output.Bus, _ string) ([]fs.FileInfo, bool) {
 				return nil, true
 			},
-			resetDBSettings: &ResetDBSettings{
-				MetadataDir:         cmdtoolkit.CommandFlag[string]{Value: "metadata"},
-				IgnoreServiceErrors: cmdtoolkit.CommandFlag[bool]{Value: true},
+			resetDBSettings: &resetDBSettings{
+				metadataDir:         cmdtoolkit.CommandFlag[string]{Value: "metadata"},
+				ignoreServiceErrors: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			stopped: false,
 			want:    nil,
@@ -786,9 +786,9 @@ func Test_resetDBSettings_cleanUpMetadata(t *testing.T) {
 			readDirectory: func(_ output.Bus, _ string) ([]fs.FileInfo, bool) {
 				return nil, false
 			},
-			resetDBSettings: &ResetDBSettings{
-				MetadataDir:         cmdtoolkit.CommandFlag[string]{Value: "metadata"},
-				IgnoreServiceErrors: cmdtoolkit.CommandFlag[bool]{Value: true},
+			resetDBSettings: &resetDBSettings{
+				metadataDir:         cmdtoolkit.CommandFlag[string]{Value: "metadata"},
+				ignoreServiceErrors: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			stopped:         false,
 			want:            nil,
@@ -800,9 +800,9 @@ func Test_resetDBSettings_cleanUpMetadata(t *testing.T) {
 			},
 			plainFileExists: func(_ string) bool { return true },
 			remove:          func(_ string) error { return nil },
-			resetDBSettings: &ResetDBSettings{
-				MetadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata"},
-				Extension:   cmdtoolkit.CommandFlag[string]{Value: ".db"},
+			resetDBSettings: &resetDBSettings{
+				metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata"},
+				extension:   cmdtoolkit.CommandFlag[string]{Value: ".db"},
 			},
 			stopped: true,
 			want:    nil,
@@ -817,7 +817,7 @@ func Test_resetDBSettings_cleanUpMetadata(t *testing.T) {
 			plainFileExists = tt.plainFileExists
 			remove = tt.remove
 			o := output.NewRecorder()
-			if got := tt.resetDBSettings.CleanUpMetadata(o, tt.stopped); !compareExitErrors(got, tt.want) {
+			if got := tt.resetDBSettings.cleanUpMetadata(o, tt.stopped); !compareExitErrors(got, tt.want) {
 				t.Errorf("resetDBSettings.cleanUpMetadata() %s want %s", got, tt.want)
 			}
 			o.Report(t, "resetDBSettings.cleanUpMetadata()", tt.WantedRecording)
@@ -829,25 +829,25 @@ func Test_resetDBSettings_resetService(t *testing.T) {
 	originalDirty := dirty
 	originalClearDirty := clearDirty
 	originalConnect := connect
-	originalProcessIsElevated := ProcessIsElevated
+	originalProcessIsElevated := processIsElevated
 	defer func() {
 		dirty = originalDirty
 		clearDirty = originalClearDirty
 		connect = originalConnect
-		ProcessIsElevated = originalProcessIsElevated
+		processIsElevated = originalProcessIsElevated
 	}()
-	ProcessIsElevated = func() bool { return false }
+	processIsElevated = func() bool { return false }
 	clearDirty = func(_ output.Bus) {}
 	connect = func() (*mgr.Mgr, error) { return nil, fmt.Errorf("access denied") }
 	tests := map[string]struct {
 		dirty           func() bool
-		resetDBSettings *ResetDBSettings
+		resetDBSettings *resetDBSettings
 		want            *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"not dirty, no force": {
 			dirty:           func() bool { return false },
-			resetDBSettings: &ResetDBSettings{Force: cmdtoolkit.CommandFlag[bool]{Value: false}},
+			resetDBSettings: &resetDBSettings{force: cmdtoolkit.CommandFlag[bool]{Value: false}},
 			want:            cmdtoolkit.NewExitUserError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -862,7 +862,7 @@ func Test_resetDBSettings_resetService(t *testing.T) {
 		},
 		"not dirty, force": {
 			dirty:           func() bool { return false },
-			resetDBSettings: &ResetDBSettings{Force: cmdtoolkit.CommandFlag[bool]{Value: true}},
+			resetDBSettings: &resetDBSettings{force: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			want:            cmdtoolkit.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -886,7 +886,7 @@ func Test_resetDBSettings_resetService(t *testing.T) {
 		},
 		"dirty, not force": {
 			dirty:           func() bool { return true },
-			resetDBSettings: &ResetDBSettings{},
+			resetDBSettings: &resetDBSettings{},
 			want:            cmdtoolkit.NewExitSystemError("resetDatabase"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -913,7 +913,7 @@ func Test_resetDBSettings_resetService(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			dirty = tt.dirty
 			o := output.NewRecorder()
-			if got := tt.resetDBSettings.ResetService(o); !compareExitErrors(got, tt.want) {
+			if got := tt.resetDBSettings.resetService(o); !compareExitErrors(got, tt.want) {
 				t.Errorf("resetDBSettings.resetService() got %s want %s", got, tt.want)
 			}
 			o.Report(t, "resetDBSettings.resetService()", tt.WantedRecording)
@@ -1005,16 +1005,16 @@ func Test_resetDBRun(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			Bus = o
-			_ = ResetDBRun(tt.cmd, tt.in1)
+			_ = resetDBRun(tt.cmd, tt.in1)
 			o.Report(t, "resetDBRun()", tt.WantedRecording)
 		})
 	}
 }
 
 func Test_resetDatabase_Help(t *testing.T) {
-	commandUnderTest := cloneCommand(ResetDatabaseCmd)
+	commandUnderTest := cloneCommand(resetDatabaseCmd)
 	flagMap := map[string]*cmdtoolkit.FlagDetails{}
-	for k, v := range ResetDatabaseFlags.Details {
+	for k, v := range resetDatabaseFlags.Details {
 		switch k {
 		case "metadataDir":
 			flagMap[k] = v.Copy()
@@ -1212,7 +1212,7 @@ func Test_updateServiceStatus(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := UpdateServiceStatus(tt.args.currentStatus, tt.args.proposedStatus); !compareExitErrors(got, tt.want) {
+			if got := updateServiceStatus(tt.args.currentStatus, tt.args.proposedStatus); !compareExitErrors(got, tt.want) {
 				t.Errorf("updateServiceStatus() = %v, want %v", got, tt.want)
 			}
 		})
@@ -1252,7 +1252,7 @@ func Test_maybeClearDirty(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			clearDirtyCalled = false
-			MaybeClearDirty(output.NewNilBus(), tt.status)
+			maybeClearDirty(output.NewNilBus(), tt.status)
 			if got := clearDirtyCalled; got != tt.want {
 				t.Errorf("maybeClearDirty = %t want %t", got, tt.want)
 			}
@@ -1261,9 +1261,9 @@ func Test_maybeClearDirty(t *testing.T) {
 }
 
 func Test_outputSystemErrorCause(t *testing.T) {
-	originalProcessIsElevated := ProcessIsElevated
+	originalProcessIsElevated := processIsElevated
 	defer func() {
-		ProcessIsElevated = originalProcessIsElevated
+		processIsElevated = originalProcessIsElevated
 	}()
 	tests := map[string]struct {
 		isElevated func() bool
@@ -1285,9 +1285,9 @@ func Test_outputSystemErrorCause(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			ProcessIsElevated = tt.isElevated
+			processIsElevated = tt.isElevated
 			o := output.NewRecorder()
-			OutputSystemErrorCause(o)
+			outputSystemErrorCause(o)
 			o.Report(t, "outputSystemErrorCause()", tt.WantedRecording)
 		})
 	}

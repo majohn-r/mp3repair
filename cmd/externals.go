@@ -24,6 +24,7 @@ var (
 	logPath               = cmdtoolkit.LogPath
 	mkdir                 = cmdtoolkit.Mkdir
 	plainFileExists       = cmdtoolkit.PlainFileExists
+	processIsElevated     = cmdtoolkit.ProcessIsElevated
 	readConfigurationFile = cmdtoolkit.ReadConfigurationFile
 	readDirectory         = cmdtoolkit.ReadDirectory
 	clearDirty            = files.ClearDirty

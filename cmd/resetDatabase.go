@@ -39,8 +39,7 @@ const (
 )
 
 var (
-	// ResetDatabaseCmd represents the resetDatabase command
-	ResetDatabaseCmd = &cobra.Command{
+	resetDatabaseCmd = &cobra.Command{
 		Use: "" + resetDBCommandName +
 			" [" + resetDBTimeoutFlag + " seconds]" +
 			" [" + resetDBServiceFlag + " name]" +
@@ -63,9 +62,9 @@ run as administrator. If, for whatever reasons, the service cannot be stopped, u
 
 This command does nothing if it determines that the ` + repairCommandName + ` command has not made any
 changes, unless the ` + resetDBForceFlag + ` flag is set.`,
-		RunE: ResetDBRun,
+		RunE: resetDBRun,
 	}
-	ResetDatabaseFlags = &cmdtoolkit.FlagSet{
+	resetDatabaseFlags = &cmdtoolkit.FlagSet{
 		Name: resetDBCommandName,
 		Details: map[string]*cmdtoolkit.FlagDetails{
 			resetDBTimeout: {
@@ -103,8 +102,7 @@ changes, unless the ` + resetDBForceFlag + ` flag is set.`,
 			},
 		},
 	}
-	ProcessIsElevated = cmdtoolkit.ProcessIsElevated
-	stateToStatus     = map[svc.State]string{
+	stateToStatus = map[svc.State]string{
 		svc.Stopped:         "stopped",
 		svc.StartPending:    "start pending",
 		svc.StopPending:     "stop pending",
@@ -115,45 +113,45 @@ changes, unless the ` + resetDBForceFlag + ` flag is set.`,
 	}
 )
 
-func ResetDBRun(cmd *cobra.Command, _ []string) error {
+func resetDBRun(cmd *cobra.Command, _ []string) error {
 	exitError := cmdtoolkit.NewExitSystemError(resetDBCommandName)
 	o := getBus()
-	values, eSlice := cmdtoolkit.ReadFlags(cmd.Flags(), ResetDatabaseFlags)
+	values, eSlice := cmdtoolkit.ReadFlags(cmd.Flags(), resetDatabaseFlags)
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) {
-		flags, flagsOk := ProcessResetDBFlags(o, values)
+		flags, flagsOk := processResetDBFlags(o, values)
 		if flagsOk {
 			logCommandStart(o, resetDBCommandName, map[string]any{
-				resetDBTimeoutFlag:             flags.Timeout.Value,
-				resetDBServiceFlag:             flags.Service.Value,
-				resetDBMetadataDirFlag:         flags.MetadataDir.Value,
-				resetDBExtensionFlag:           flags.Extension.Value,
-				resetDBForceFlag:               flags.Force.Value,
-				resetDBIgnoreServiceErrorsFlag: flags.IgnoreServiceErrors.Value,
+				resetDBTimeoutFlag:             flags.timeout.Value,
+				resetDBServiceFlag:             flags.service.Value,
+				resetDBMetadataDirFlag:         flags.metadataDir.Value,
+				resetDBExtensionFlag:           flags.extension.Value,
+				resetDBForceFlag:               flags.force.Value,
+				resetDBIgnoreServiceErrorsFlag: flags.ignoreServiceErrors.Value,
 			})
-			exitError = flags.ResetService(o)
+			exitError = flags.resetService(o)
 		}
 	}
 	return cmdtoolkit.ToErrorInterface(exitError)
 }
 
-type ResetDBSettings struct {
-	Extension           cmdtoolkit.CommandFlag[string]
-	Force               cmdtoolkit.CommandFlag[bool]
-	IgnoreServiceErrors cmdtoolkit.CommandFlag[bool]
-	MetadataDir         cmdtoolkit.CommandFlag[string]
-	Service             cmdtoolkit.CommandFlag[string]
-	Timeout             cmdtoolkit.CommandFlag[int]
+type resetDBSettings struct {
+	extension           cmdtoolkit.CommandFlag[string]
+	force               cmdtoolkit.CommandFlag[bool]
+	ignoreServiceErrors cmdtoolkit.CommandFlag[bool]
+	metadataDir         cmdtoolkit.CommandFlag[string]
+	service             cmdtoolkit.CommandFlag[string]
+	timeout             cmdtoolkit.CommandFlag[int]
 }
 
-func (rDBSettings *ResetDBSettings) ResetService(o output.Bus) (e *cmdtoolkit.ExitError) {
-	if rDBSettings.Force.Value || dirty() {
-		stopped, e2 := rDBSettings.StopService(o)
+func (rDBSettings *resetDBSettings) resetService(o output.Bus) (e *cmdtoolkit.ExitError) {
+	if rDBSettings.force.Value || dirty() {
+		stopped, e2 := rDBSettings.stopService(o)
 		if e2 != nil {
 			e = e2
 		}
-		e2 = rDBSettings.CleanUpMetadata(o, stopped)
-		e = UpdateServiceStatus(e, e2)
-		MaybeClearDirty(o, e)
+		e2 = rDBSettings.cleanUpMetadata(o, stopped)
+		e = updateServiceStatus(e, e2)
+		maybeClearDirty(o, e)
 		return
 	}
 	e = cmdtoolkit.NewExitUserError(resetDBCommandName)
@@ -167,14 +165,14 @@ func (rDBSettings *ResetDBSettings) ResetService(o output.Bus) (e *cmdtoolkit.Ex
 	return
 }
 
-func UpdateServiceStatus(currentStatus, proposedStatus *cmdtoolkit.ExitError) *cmdtoolkit.ExitError {
+func updateServiceStatus(currentStatus, proposedStatus *cmdtoolkit.ExitError) *cmdtoolkit.ExitError {
 	if currentStatus == nil {
 		return proposedStatus
 	}
 	return currentStatus
 }
 
-func MaybeClearDirty(o output.Bus, e *cmdtoolkit.ExitError) {
+func maybeClearDirty(o output.Bus, e *cmdtoolkit.ExitError) {
 	if e == nil {
 		clearDirty(o)
 	}
@@ -199,21 +197,21 @@ func openService(manager ServiceManager, serviceName string) (ServiceRep, error)
 	return manager.OpenService(serviceName)
 }
 
-func (rDBSettings *ResetDBSettings) StopService(o output.Bus) (bool, *cmdtoolkit.ExitError) {
+func (rDBSettings *resetDBSettings) stopService(o output.Bus) (bool, *cmdtoolkit.ExitError) {
 	if manager, connectErr := connect(); connectErr != nil {
 		e := cmdtoolkit.NewExitSystemError(resetDBCommandName)
 		o.WriteCanonicalError("An attempt to connect with the service manager failed; error"+
 			" is '%v'", connectErr)
-		OutputSystemErrorCause(o)
+		outputSystemErrorCause(o)
 		o.Log(output.Error, "service manager connect failed", map[string]any{"error": connectErr})
 		return false, e
 	} else {
-		return rDBSettings.DisableService(o, manager)
+		return rDBSettings.disableService(o, manager)
 	}
 }
 
-func OutputSystemErrorCause(o output.Bus) {
-	if !ProcessIsElevated() {
+func outputSystemErrorCause(o output.Bus) {
+	if !processIsElevated() {
 		o.WriteCanonicalError("Why?\nThis failure is likely to be due to lack of permissions")
 		o.WriteCanonicalError("What to do:\n" +
 			"If you can, try running this command as an administrator.")
@@ -227,22 +225,22 @@ func listServices(manager ServiceManager) ([]string, error) {
 	return manager.ListServices()
 }
 
-func (rDBSettings *ResetDBSettings) DisableService(o output.Bus, manager ServiceManager) (ok bool,
+func (rDBSettings *resetDBSettings) disableService(o output.Bus, manager ServiceManager) (ok bool,
 	e *cmdtoolkit.ExitError) {
-	service, serviceError := openService(manager, rDBSettings.Service.Value)
+	service, serviceError := openService(manager, rDBSettings.service.Value)
 	if serviceError != nil {
 		e = cmdtoolkit.NewExitSystemError(resetDBCommandName)
-		o.WriteCanonicalError("The service %q cannot be opened: %v", rDBSettings.Service.Value,
+		o.WriteCanonicalError("The service %q cannot be opened: %v", rDBSettings.service.Value,
 			serviceError)
 		o.Log(output.Error, "service problem", map[string]any{
-			"service": rDBSettings.Service.Value,
+			"service": rDBSettings.service.Value,
 			"trigger": "OpenService",
 			"error":   serviceError,
 		})
 		serviceList, listError := listServices(manager)
 		switch listError {
 		case nil:
-			ListServices(o, manager, serviceList)
+			listAvailableServices(o, manager, serviceList)
 		default:
 			o.Log(output.Error, "service problem", map[string]any{
 				"trigger": "ListServices",
@@ -252,7 +250,7 @@ func (rDBSettings *ResetDBSettings) DisableService(o output.Bus, manager Service
 		disconnectManager(manager)
 		return
 	}
-	ok, e = rDBSettings.StopFoundService(o, manager, service)
+	ok, e = rDBSettings.stopFoundService(o, manager, service)
 	return
 }
 
@@ -262,7 +260,7 @@ func disconnectManager(manager ServiceManager) {
 	}
 }
 
-func ListServices(o output.Bus, manager ServiceManager, services []string) {
+func listAvailableServices(o output.Bus, manager ServiceManager, services []string) {
 	o.WriteError("The following services are available:\n")
 	if len(services) == 0 {
 		o.WriteError("  - none -\n")
@@ -274,7 +272,7 @@ func ListServices(o output.Bus, manager ServiceManager, services []string) {
 		service, serviceErr := openService(manager, serviceName)
 		switch serviceErr {
 		case nil:
-			AddServiceState(m, service, serviceName)
+			addServiceState(m, service, serviceName)
 			closeService(service)
 		default:
 			e := serviceErr.Error()
@@ -294,7 +292,7 @@ func ListServices(o output.Bus, manager ServiceManager, services []string) {
 	}
 }
 
-func AddServiceState(m map[string][]string, s ServiceRep, serviceName string) {
+func addServiceState(m map[string][]string, s ServiceRep, serviceName string) {
 	status, queryErr := runQuery(s)
 	switch queryErr {
 	case nil:
@@ -319,7 +317,7 @@ func closeService(s ServiceRep) {
 	}
 }
 
-func (rDBSettings *ResetDBSettings) StopFoundService(o output.Bus, manager ServiceManager,
+func (rDBSettings *resetDBSettings) stopFoundService(o output.Bus, manager ServiceManager,
 	service ServiceRep) (ok bool, e *cmdtoolkit.ExitError) {
 	defer func() {
 		_ = manager.Disconnect()
@@ -329,59 +327,59 @@ func (rDBSettings *ResetDBSettings) StopFoundService(o output.Bus, manager Servi
 	if svcErr != nil {
 		e = cmdtoolkit.NewExitSystemError(resetDBCommandName)
 		o.WriteCanonicalError("An error occurred while trying to stop service %q: %v",
-			rDBSettings.Service.Value, svcErr)
-		rDBSettings.ReportServiceQueryError(o, svcErr)
+			rDBSettings.service.Value, svcErr)
+		rDBSettings.reportServiceQueryError(o, svcErr)
 		return
 	}
 	if status.State == svc.Stopped {
-		rDBSettings.ReportServiceStopped(o)
+		rDBSettings.reportServiceStopped(o)
 		ok = true
 		return
 	}
 	status, svcErr = service.Control(svc.Stop)
 	if svcErr == nil {
 		if status.State == svc.Stopped {
-			rDBSettings.ReportServiceStopped(o)
+			rDBSettings.reportServiceStopped(o)
 			ok = true
 			return
 		}
-		timeout := time.Now().Add(time.Duration(rDBSettings.Timeout.Value) * time.Second)
-		ok, e = rDBSettings.WaitForStop(o, service, timeout, 100*time.Millisecond)
+		timeout := time.Now().Add(time.Duration(rDBSettings.timeout.Value) * time.Second)
+		ok, e = rDBSettings.waitForStop(o, service, timeout, 100*time.Millisecond)
 		return
 	}
 	e = cmdtoolkit.NewExitSystemError(resetDBCommandName)
-	o.WriteCanonicalError("The service %q cannot be stopped: %v", rDBSettings.Service.Value, svcErr)
+	o.WriteCanonicalError("The service %q cannot be stopped: %v", rDBSettings.service.Value, svcErr)
 	o.Log(output.Error, "service problem", map[string]any{
-		"service": rDBSettings.Service.Value,
+		"service": rDBSettings.service.Value,
 		"trigger": "Stop",
 		"error":   svcErr,
 	})
 	return
 }
 
-func (rDBSettings *ResetDBSettings) ReportServiceQueryError(o output.Bus, svcErr error) {
+func (rDBSettings *resetDBSettings) reportServiceQueryError(o output.Bus, svcErr error) {
 	o.Log(output.Error, "service query error", map[string]any{
-		"service": rDBSettings.Service.Value,
+		"service": rDBSettings.service.Value,
 		"error":   svcErr,
 	})
 }
 
-func (rDBSettings *ResetDBSettings) ReportServiceStopped(o output.Bus) {
-	o.Log(output.Info, "service stopped", map[string]any{"service": rDBSettings.Service.Value})
+func (rDBSettings *resetDBSettings) reportServiceStopped(o output.Bus) {
+	o.Log(output.Info, "service stopped", map[string]any{"service": rDBSettings.service.Value})
 }
 
-func (rDBSettings *ResetDBSettings) WaitForStop(o output.Bus, s ServiceRep, expiration time.Time,
+func (rDBSettings *resetDBSettings) waitForStop(o output.Bus, s ServiceRep, expiration time.Time,
 	checkInterval time.Duration) (bool, *cmdtoolkit.ExitError) {
 	for {
 		if expiration.Before(time.Now()) {
 			o.WriteCanonicalError(
 				"The service %q could not be stopped within the %d second timeout",
-				rDBSettings.Service.Value, rDBSettings.Timeout.Value)
+				rDBSettings.service.Value, rDBSettings.timeout.Value)
 			o.Log(output.Error, "service problem", map[string]any{
-				"service": rDBSettings.Service.Value,
+				"service": rDBSettings.service.Value,
 				"trigger": "Stop",
 				"error":   "timed out",
-				"timeout": rDBSettings.Timeout.Value,
+				"timeout": rDBSettings.timeout.Value,
 			})
 			return false, cmdtoolkit.NewExitSystemError(resetDBCommandName)
 		}
@@ -390,51 +388,51 @@ func (rDBSettings *ResetDBSettings) WaitForStop(o output.Bus, s ServiceRep, expi
 		if svcErr != nil {
 			o.WriteCanonicalError(
 				"An error occurred while attempting to stop the service %q: %v",
-				rDBSettings.Service.Value, svcErr)
-			rDBSettings.ReportServiceQueryError(o, svcErr)
+				rDBSettings.service.Value, svcErr)
+			rDBSettings.reportServiceQueryError(o, svcErr)
 			return false, cmdtoolkit.NewExitSystemError(resetDBCommandName)
 		}
 		if status.State == svc.Stopped {
-			rDBSettings.ReportServiceStopped(o)
+			rDBSettings.reportServiceStopped(o)
 			return true, nil
 		}
 	}
 }
 
-func (rDBSettings *ResetDBSettings) CleanUpMetadata(o output.Bus, stopped bool) *cmdtoolkit.ExitError {
+func (rDBSettings *resetDBSettings) cleanUpMetadata(o output.Bus, stopped bool) *cmdtoolkit.ExitError {
 	if !stopped {
-		if !rDBSettings.IgnoreServiceErrors.Value {
+		if !rDBSettings.ignoreServiceErrors.Value {
 			o.WriteCanonicalError("Metadata files will not be deleted")
 			o.WriteCanonicalError(
 				"Why?\nThe music service %q could not be stopped, and %q is false",
-				rDBSettings.Service.Value, resetDBIgnoreServiceErrorsFlag)
+				rDBSettings.service.Value, resetDBIgnoreServiceErrorsFlag)
 			o.WriteCanonicalError("What to do:\nRerun this command with %q set to true",
 				resetDBIgnoreServiceErrorsFlag)
 			return cmdtoolkit.NewExitUserError(resetDBCommandName)
 		}
 	}
 	// either stopped or service errors are ignored
-	metadataFiles, filesOk := readDirectory(o, rDBSettings.MetadataDir.Value)
+	metadataFiles, filesOk := readDirectory(o, rDBSettings.metadataDir.Value)
 	if !filesOk {
 		return nil
 	}
-	pathsToDelete := rDBSettings.FilterMetadataFiles(metadataFiles)
+	pathsToDelete := rDBSettings.filterMetadataFiles(metadataFiles)
 	if len(pathsToDelete) > 0 {
-		return rDBSettings.DeleteMetadataFiles(o, pathsToDelete)
+		return rDBSettings.deleteMetadataFiles(o, pathsToDelete)
 	}
-	o.WriteCanonicalConsole("No metadata files were found in %q", rDBSettings.MetadataDir.Value)
+	o.WriteCanonicalConsole("No metadata files were found in %q", rDBSettings.metadataDir.Value)
 	o.Log(output.Info, "no files found", map[string]any{
-		"directory": rDBSettings.MetadataDir.Value,
-		"extension": rDBSettings.Extension.Value,
+		"directory": rDBSettings.metadataDir.Value,
+		"extension": rDBSettings.extension.Value,
 	})
 	return nil
 }
 
-func (rDBSettings *ResetDBSettings) FilterMetadataFiles(entries []fs.FileInfo) []string {
+func (rDBSettings *resetDBSettings) filterMetadataFiles(entries []fs.FileInfo) []string {
 	paths := make([]string, 0)
 	for _, file := range entries {
-		if strings.HasSuffix(file.Name(), rDBSettings.Extension.Value) {
-			path := filepath.Join(rDBSettings.MetadataDir.Value, file.Name())
+		if strings.HasSuffix(file.Name(), rDBSettings.extension.Value) {
+			path := filepath.Join(rDBSettings.metadataDir.Value, file.Name())
 			if plainFileExists(path) {
 				paths = append(paths, path)
 			}
@@ -443,7 +441,7 @@ func (rDBSettings *ResetDBSettings) FilterMetadataFiles(entries []fs.FileInfo) [
 	return paths
 }
 
-func (rDBSettings *ResetDBSettings) DeleteMetadataFiles(o output.Bus, paths []string) (e *cmdtoolkit.ExitError) {
+func (rDBSettings *resetDBSettings) deleteMetadataFiles(o output.Bus, paths []string) (e *cmdtoolkit.ExitError) {
 	if len(paths) == 0 {
 		return
 	}
@@ -460,35 +458,35 @@ func (rDBSettings *ResetDBSettings) DeleteMetadataFiles(o output.Bus, paths []st
 	}
 	o.WriteCanonicalConsole(
 		"%d out of %d metadata files have been deleted from %q", count, len(paths),
-		rDBSettings.MetadataDir.Value)
+		rDBSettings.metadataDir.Value)
 	return
 }
 
-func ProcessResetDBFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (*ResetDBSettings, bool) {
+func processResetDBFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (*resetDBSettings, bool) {
 	var flagErr error
-	result := &ResetDBSettings{}
+	result := &resetDBSettings{}
 	flagsOk := true // optimistic
-	result.Timeout, flagErr = cmdtoolkit.GetInt(o, values, resetDBTimeout)
+	result.timeout, flagErr = cmdtoolkit.GetInt(o, values, resetDBTimeout)
 	if flagErr != nil {
 		flagsOk = false
 	}
-	result.Service, flagErr = cmdtoolkit.GetString(o, values, resetDBService)
+	result.service, flagErr = cmdtoolkit.GetString(o, values, resetDBService)
 	if flagErr != nil {
 		flagsOk = false
 	}
-	result.MetadataDir, flagErr = cmdtoolkit.GetString(o, values, resetDBMetadataDir)
+	result.metadataDir, flagErr = cmdtoolkit.GetString(o, values, resetDBMetadataDir)
 	if flagErr != nil {
 		flagsOk = false
 	}
-	result.Extension, flagErr = cmdtoolkit.GetString(o, values, resetDBExtension)
+	result.extension, flagErr = cmdtoolkit.GetString(o, values, resetDBExtension)
 	if flagErr != nil {
 		flagsOk = false
 	}
-	result.Force, flagErr = cmdtoolkit.GetBool(o, values, resetDBForce)
+	result.force, flagErr = cmdtoolkit.GetBool(o, values, resetDBForce)
 	if flagErr != nil {
 		flagsOk = false
 	}
-	result.IgnoreServiceErrors, flagErr = cmdtoolkit.GetBool(o, values, resetDBIgnoreServiceErrors)
+	result.ignoreServiceErrors, flagErr = cmdtoolkit.GetBool(o, values, resetDBIgnoreServiceErrors)
 	if flagErr != nil {
 		flagsOk = false
 	}
@@ -496,9 +494,9 @@ func ProcessResetDBFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag
 }
 
 func init() {
-	RootCmd.AddCommand(ResetDatabaseCmd)
-	addDefaults(ResetDatabaseFlags)
+	RootCmd.AddCommand(resetDatabaseCmd)
+	addDefaults(resetDatabaseFlags)
 	o := getBus()
 	c := getConfiguration()
-	cmdtoolkit.AddFlags(o, c, ResetDatabaseCmd.Flags(), ResetDatabaseFlags)
+	cmdtoolkit.AddFlags(o, c, resetDatabaseCmd.Flags(), resetDatabaseFlags)
 }
