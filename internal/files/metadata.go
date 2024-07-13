@@ -19,11 +19,11 @@ const (
 
 var (
 	nameComparators = map[SourceType]func(*ComparableStrings) bool{
-		ID3V1: Id3v1NameDiffers,
+		ID3V1: id3v1NameDiffers,
 		ID3V2: id3v2NameDiffers,
 	}
 	genreComparators = map[SourceType]func(*ComparableStrings) bool{
-		ID3V1: Id3v1GenreDiffers,
+		ID3V1: id3v1GenreDiffers,
 		ID3V2: id3v2GenreDiffers,
 	}
 	trackMetadataUpdaters = map[SourceType]func(tm *TrackMetadata, path string) error{
@@ -375,15 +375,15 @@ func (tm *TrackMetadata) SetID3v2Values(d *id3v2Metadata) {
 	tm.SetCDIdentifier(d.musicCDIdentifier.Body)
 }
 
-func (tm *TrackMetadata) SetID3v1Values(v1 *Id3v1Metadata) {
-	tm.SetArtistName(ID3V1, v1.Artist())
-	tm.SetAlbumName(ID3V1, v1.Album())
-	if genre, genreFound := v1.Genre(); genreFound {
+func (tm *TrackMetadata) SetID3v1Values(v1 *id3v1Metadata) {
+	tm.SetArtistName(ID3V1, v1.artist())
+	tm.SetAlbumName(ID3V1, v1.album())
+	if genre, genreFound := v1.genre(); genreFound {
 		tm.SetAlbumGenre(ID3V1, genre)
 	}
-	tm.SetAlbumYear(ID3V1, v1.Year())
-	tm.SetTrackName(ID3V1, v1.Title())
-	if track, trackValid := v1.Track(); trackValid {
+	tm.SetAlbumYear(ID3V1, v1.year())
+	tm.SetTrackName(ID3V1, v1.title())
+	if track, trackValid := v1.track(); trackValid {
 		tm.SetTrackNumber(ID3V1, track)
 	}
 }
@@ -393,7 +393,7 @@ func (tm *TrackMetadata) IsValid() bool {
 }
 
 func InitializeMetadata(path string) *TrackMetadata {
-	id3v1Metadata, id3v1Err := InternalReadID3V1Metadata(path, FileReader)
+	id3v1Metadata, id3v1Err := internalReadID3V1Metadata(path, fileReader)
 	id3v2Metadata := rawReadID3V2Metadata(path)
 	tm := NewTrackMetadata()
 	switch {

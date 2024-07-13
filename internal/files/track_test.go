@@ -587,27 +587,27 @@ var nameToID3V2TagName = map[string]string{
 var recognizedTagNames = []string{"artist", "album", "title", "genre", "year", "track"}
 
 func createID3V1TaggedData(m map[string]any) []byte {
-	v1 := NewID3v1Metadata()
-	v1.WriteString("TAG", TagField)
+	v1 := newID3v1Metadata()
+	v1.writeString("TAG", tagField)
 	for _, tagName := range recognizedTagNames {
 		if value, tagNameFound := m[tagName]; tagNameFound {
 			switch tagName {
 			case "artist":
-				v1.SetArtist(value.(string))
+				v1.setArtist(value.(string))
 			case "album":
-				v1.SetAlbum(value.(string))
+				v1.setAlbum(value.(string))
 			case "title":
-				v1.SetTitle(value.(string))
+				v1.setTitle(value.(string))
 			case "genre":
-				v1.SetGenre(value.(string))
+				v1.setGenre(value.(string))
 			case "year":
-				v1.SetYear(value.(string))
+				v1.setYear(value.(string))
 			case "track":
-				v1.SetTrack(value.(int))
+				v1.setTrack(value.(int))
 			}
 		}
 	}
-	return v1.RawData()
+	return v1.rawData()
 }
 
 func createConsistentlyTaggedData(audio []byte, m map[string]any) []byte {
@@ -827,7 +827,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	errorMetadata.SetErrorCause(ID3V1, "oops")
 	errorMetadata.SetErrorCause(ID3V2, "oops")
 	noMetadata := NewTrackMetadata()
-	noMetadata.SetErrorCause(ID3V1, ErrNoID3V1MetadataFound.Error())
+	noMetadata.SetErrorCause(ID3V1, errNoID3V1MetadataFound.Error())
 	noMetadata.SetErrorCause(ID3V2, errNoID3V2MetadataFound.Error())
 	tests := map[string]struct {
 		t    *Track

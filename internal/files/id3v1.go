@@ -52,15 +52,15 @@ type id3v1Field struct {
 	endOffset   int
 }
 
-type BiDirectionalMap[K comparable, V comparable] struct {
+type biDirectionalMap[K comparable, V comparable] struct {
 	k2v        map[K]V
 	v2k        map[V]K
 	kNormalize func(K) K
 	vNormalize func(V) V
 }
 
-func NewBiDirectionalMap[K comparable, V comparable](keyNormalize func(K) K, valueNormalize func(V) V) *BiDirectionalMap[K, V] {
-	bdMap := &BiDirectionalMap[K, V]{
+func newBiDirectionalMap[K comparable, V comparable](keyNormalize func(K) K, valueNormalize func(V) V) *biDirectionalMap[K, V] {
+	bdMap := &biDirectionalMap[K, V]{
 		k2v:        map[K]V{},
 		v2k:        map[V]K{},
 		kNormalize: keyNormalize,
@@ -79,17 +79,17 @@ func NewBiDirectionalMap[K comparable, V comparable](keyNormalize func(K) K, val
 	return bdMap
 }
 
-func (bdMap *BiDirectionalMap[K, V]) LookupKey(key K) (V, bool) {
+func (bdMap *biDirectionalMap[K, V]) lookupKey(key K) (V, bool) {
 	v, found := bdMap.k2v[bdMap.kNormalize(key)]
 	return v, found
 }
 
-func (bdMap *BiDirectionalMap[K, V]) LookupValue(value V) (K, bool) {
+func (bdMap *biDirectionalMap[K, V]) lookupValue(value V) (K, bool) {
 	k, found := bdMap.v2k[bdMap.vNormalize(value)]
 	return k, found
 }
 
-var Genres *BiDirectionalMap[int, string]
+var genres *biDirectionalMap[int, string]
 
 func normalizeGenreNames(name string) string {
 	n := strings.ToLower(name)
@@ -99,17 +99,17 @@ func normalizeGenreNames(name string) string {
 	return n
 }
 
-func Populate(m map[int]string) (*BiDirectionalMap[int, string], error) {
-	g := NewBiDirectionalMap[int, string](nil, normalizeGenreNames)
+func populate(m map[int]string) (*biDirectionalMap[int, string], error) {
+	g := newBiDirectionalMap[int, string](nil, normalizeGenreNames)
 	for k, v := range m {
-		if err := g.AddPair(k, v); err != nil {
+		if err := g.addPair(k, v); err != nil {
 			return nil, err
 		}
 	}
 	return g, nil
 }
 
-func (bdMap *BiDirectionalMap[K, V]) AddPair(k K, v V) error {
+func (bdMap *biDirectionalMap[K, V]) addPair(k K, v V) error {
 	normalizedV := bdMap.vNormalize(v)
 	normalizedK := bdMap.kNormalize(k)
 	if _, exists := bdMap.v2k[normalizedV]; exists {
@@ -123,29 +123,29 @@ func (bdMap *BiDirectionalMap[K, V]) AddPair(k K, v V) error {
 	return nil
 }
 
-func (bdMap *BiDirectionalMap[K, V]) KeyMap() map[K]V {
+func (bdMap *biDirectionalMap[K, V]) keyMap() map[K]V {
 	return bdMap.k2v
 }
 
-func (bdMap *BiDirectionalMap[K, V]) ValueMap() map[V]K {
+func (bdMap *biDirectionalMap[K, V]) valueMap() map[V]K {
 	return bdMap.v2k
 }
 
-func InitGenres() error {
-	if Genres == nil {
-		Genres, _ = Populate(documentedGenres)
+func initGenres() error {
+	if genres == nil {
+		genres, _ = populate(documentedGenres)
 	}
 	return nil
 }
 
 func genreIndex(genreName string) (int, bool) {
-	_ = InitGenres()
-	return Genres.LookupValue(genreName)
+	_ = initGenres()
+	return genres.lookupValue(genreName)
 }
 
 func genreName(genreIndex int) (string, bool) {
-	_ = InitGenres()
-	return Genres.LookupKey(genreIndex)
+	_ = initGenres()
+	return genres.lookupKey(genreIndex)
 }
 
 var (
@@ -568,8 +568,8 @@ var (
 		'ž': {'z'},      // Latin Small letter Z with caron
 		'ſ': {'S'},      // Latin Small letter long S
 	}
-	// TagField is the initial field for ID3V1 metadata, and should contain 'TAG'
-	TagField = initID3v1Field(tagOffset, tagLength)
+	// tagField is the initial field for ID3V1 metadata, and should contain 'TAG'
+	tagField = initID3v1Field(tagOffset, tagLength)
 	// these are the remaining fields making up ID3V1 metadata
 	titleField    = initID3v1Field(titleOffset, titleLength)
 	artistField   = initID3v1Field(artistOffset, artistLength)
@@ -580,22 +580,22 @@ var (
 	trackField    = initID3v1Field(trackOffset, trackLength)
 	genreField    = initID3v1Field(genreOffset, genreLength)
 
-	ErrNoID3V1MetadataFound = fmt.Errorf("no ID3V1 metadata found")
+	errNoID3V1MetadataFound = fmt.Errorf("no ID3V1 metadata found")
 )
 
 func initID3v1Field(offset, length int) id3v1Field {
 	return id3v1Field{startOffset: offset, length: length, endOffset: offset + length}
 }
 
-type Id3v1Metadata struct {
+type id3v1Metadata struct {
 	data []byte
 }
 
-func (im *Id3v1Metadata) RawData() []byte {
+func (im *id3v1Metadata) rawData() []byte {
 	return im.data
 }
 
-func (im *Id3v1Metadata) WithData(b []byte) *Id3v1Metadata {
+func (im *id3v1Metadata) withData(b []byte) *id3v1Metadata {
 	im.data = make([]byte, id3v1Length)
 	switch {
 	case len(b) >= id3v1Length:
@@ -611,23 +611,23 @@ func (im *Id3v1Metadata) WithData(b []byte) *Id3v1Metadata {
 	return im
 }
 
-func NewID3v1Metadata() *Id3v1Metadata {
-	return &Id3v1Metadata{data: make([]byte, id3v1Length)}
+func newID3v1Metadata() *id3v1Metadata {
+	return &id3v1Metadata{data: make([]byte, id3v1Length)}
 }
 
-func (im *Id3v1Metadata) readString(f id3v1Field) string {
-	return Trim(string(im.data[f.startOffset:f.endOffset]))
+func (im *id3v1Metadata) readString(f id3v1Field) string {
+	return trim(string(im.data[f.startOffset:f.endOffset]))
 }
 
-func (im *Id3v1Metadata) IsValid() bool {
-	return im.readString(TagField) == "TAG"
+func (im *id3v1Metadata) IsValid() bool {
+	return im.readString(tagField) == "TAG"
 }
 
-func (im *Id3v1Metadata) Title() string {
+func (im *id3v1Metadata) title() string {
 	return im.readString(titleField)
 }
 
-func (im *Id3v1Metadata) WriteString(s string, f id3v1Field) {
+func (im *id3v1Metadata) writeString(s string, f id3v1Field) {
 	copy(im.data[f.startOffset:f.endOffset], bytes.Repeat([]byte{0}, f.length))
 	// truncate long strings ...
 	if len(s) > f.length {
@@ -650,47 +650,47 @@ func repairName(s string) string {
 	return string(bs)
 }
 
-func (im *Id3v1Metadata) SetTitle(s string) {
-	im.WriteString(repairName(s), titleField)
+func (im *id3v1Metadata) setTitle(s string) {
+	im.writeString(repairName(s), titleField)
 }
 
-func (im *Id3v1Metadata) Artist() string {
+func (im *id3v1Metadata) artist() string {
 	return im.readString(artistField)
 }
 
-func (im *Id3v1Metadata) SetArtist(s string) {
-	im.WriteString(repairName(s), artistField)
+func (im *id3v1Metadata) setArtist(s string) {
+	im.writeString(repairName(s), artistField)
 }
 
-func (im *Id3v1Metadata) Album() string {
+func (im *id3v1Metadata) album() string {
 	return im.readString(albumField)
 }
 
-func (im *Id3v1Metadata) SetAlbum(s string) {
-	im.WriteString(repairName(s), albumField)
+func (im *id3v1Metadata) setAlbum(s string) {
+	im.writeString(repairName(s), albumField)
 }
 
-func (im *Id3v1Metadata) Year() string {
+func (im *id3v1Metadata) year() string {
 	return im.readString(yearField)
 }
 
-func (im *Id3v1Metadata) SetYear(s string) {
-	im.WriteString(s, yearField)
+func (im *id3v1Metadata) setYear(s string) {
+	im.writeString(s, yearField)
 }
 
-func (im *Id3v1Metadata) Comment() string {
+func (im *id3v1Metadata) comment() string {
 	return im.readString(commentField)
 }
 
-func (im *Id3v1Metadata) SetComment(s string) {
-	im.WriteString(s, commentField)
+func (im *id3v1Metadata) setComment(s string) {
+	im.writeString(s, commentField)
 }
 
-func (im *Id3v1Metadata) readInt(f id3v1Field) int {
+func (im *id3v1Metadata) readInt(f id3v1Field) int {
 	return int(im.data[f.startOffset])
 }
 
-func (im *Id3v1Metadata) Track() (trackNumber int, trackNumberValid bool) {
+func (im *id3v1Metadata) track() (trackNumber int, trackNumberValid bool) {
 	if im.readInt(zeroByteField) == 0 {
 		trackNumber = im.readInt(trackField)
 		trackNumberValid = true
@@ -698,11 +698,11 @@ func (im *Id3v1Metadata) Track() (trackNumber int, trackNumberValid bool) {
 	return
 }
 
-func (im *Id3v1Metadata) writeInt(v int, f id3v1Field) {
+func (im *id3v1Metadata) writeInt(v int, f id3v1Field) {
 	im.data[f.startOffset] = byte(v)
 }
 
-func (im *Id3v1Metadata) SetTrack(t int) (b bool) {
+func (im *id3v1Metadata) setTrack(t int) (b bool) {
 	if t >= 1 && t <= 255 {
 		im.writeInt(0, zeroByteField)
 		im.writeInt(t, trackField)
@@ -711,12 +711,12 @@ func (im *Id3v1Metadata) SetTrack(t int) (b bool) {
 	return
 }
 
-func (im *Id3v1Metadata) Genre() (string, bool) {
+func (im *id3v1Metadata) genre() (string, bool) {
 	genre, genreFound := genreName(im.readInt(genreField))
 	return genre, genreFound
 }
 
-func (im *Id3v1Metadata) SetGenre(s string) {
+func (im *id3v1Metadata) setGenre(s string) {
 	index, found := genreIndex(s)
 	if !found {
 		v, _ := genreIndex("other")
@@ -726,39 +726,39 @@ func (im *Id3v1Metadata) SetGenre(s string) {
 	im.writeInt(index, genreField)
 }
 
-func Trim(s string) string {
+func trim(s string) string {
 	for s != "" && (s[len(s)-1:] == " " || s[len(s)-1:] == "\u0000") {
 		s = s[:len(s)-1]
 	}
 	return s
 }
 
-func ReadID3v1Metadata(path string) ([]string, error) {
-	v1, readErr := InternalReadID3V1Metadata(path, FileReader)
+func readID3v1Metadata(path string) ([]string, error) {
+	v1, readErr := internalReadID3V1Metadata(path, fileReader)
 	if readErr != nil {
 		return nil, readErr
 	}
 	output := make([]string, 0, 5)
-	output = append(output, fmt.Sprintf("Artist: %q", v1.Artist()),
-		fmt.Sprintf("Album: %q", v1.Album()), fmt.Sprintf("Title: %q", v1.Title()))
-	if track, trackNumberValid := v1.Track(); trackNumberValid {
+	output = append(output, fmt.Sprintf("Artist: %q", v1.artist()),
+		fmt.Sprintf("Album: %q", v1.album()), fmt.Sprintf("Title: %q", v1.title()))
+	if track, trackNumberValid := v1.track(); trackNumberValid {
 		output = append(output, fmt.Sprintf("Track: %d", track))
 	}
-	output = append(output, fmt.Sprintf("Year: %q", v1.Year()))
-	if genre, genreFound := v1.Genre(); genreFound {
+	output = append(output, fmt.Sprintf("Year: %q", v1.year()))
+	if genre, genreFound := v1.genre(); genreFound {
 		output = append(output, fmt.Sprintf("Genre: %q", genre))
 	}
-	if comment := v1.Comment(); comment != "" {
+	if comment := v1.comment(); comment != "" {
 		output = append(output, fmt.Sprintf("Comment: %q", comment))
 	}
 	return output, nil
 }
 
-func FileReader(f afero.File, b []byte) (int, error) {
+func fileReader(f afero.File, b []byte) (int, error) {
 	return f.Read(b)
 }
 
-func InternalReadID3V1Metadata(path string, readFunc func(f afero.File, b []byte) (int, error)) (*Id3v1Metadata, error) {
+func internalReadID3V1Metadata(path string, readFunc func(f afero.File, b []byte) (int, error)) (*id3v1Metadata, error) {
 	file, fileErr := cmdtoolkit.FileSystem().Open(path)
 	if fileErr != nil {
 		return nil, fileErr
@@ -768,10 +768,10 @@ func InternalReadID3V1Metadata(path string, readFunc func(f afero.File, b []byte
 	}()
 	fileStat, _ := file.Stat()
 	if fileStat != nil && fileStat.Size() < id3v1Length {
-		return nil, ErrNoID3V1MetadataFound
+		return nil, errNoID3V1MetadataFound
 	}
 	_, _ = file.Seek(-id3v1Length, io.SeekEnd)
-	v1 := NewID3v1Metadata()
+	v1 := newID3v1Metadata()
 	r, readErr := readFunc(file, v1.data)
 	if readErr != nil {
 		return nil, readErr
@@ -781,16 +781,16 @@ func InternalReadID3V1Metadata(path string, readFunc func(f afero.File, b []byte
 			fmt.Errorf("cannot read id3v1 metadata from file %q; only %d bytes read", path, r)
 	}
 	if !v1.IsValid() {
-		return nil, ErrNoID3V1MetadataFound
+		return nil, errNoID3V1MetadataFound
 	}
 	return v1, nil
 }
 
-func (im *Id3v1Metadata) Write(path string) error {
-	return im.InternalWrite(path, WriteToFile)
+func (im *id3v1Metadata) write(path string) error {
+	return im.internalWrite(path, writeToFile)
 }
 
-func WriteToFile(f afero.File, b []byte) (int, error) {
+func writeToFile(f afero.File, b []byte) (int, error) {
 	return f.Write(b)
 }
 
@@ -799,34 +799,34 @@ func updateID3V1TrackMetadata(tm *TrackMetadata, path string) error {
 	if !tm.EditRequired(src) {
 		return nil
 	}
-	var v1 *Id3v1Metadata
+	var v1 *id3v1Metadata
 	var fileErr error
-	v1, fileErr = InternalReadID3V1Metadata(path, FileReader)
+	v1, fileErr = internalReadID3V1Metadata(path, fileReader)
 	if fileErr != nil {
 		return fileErr
 	}
 	if artistName := tm.ArtistName(src).Correction(); artistName != "" {
-		v1.SetArtist(artistName)
+		v1.setArtist(artistName)
 	}
 	if albumName := tm.AlbumName(src).Correction(); albumName != "" {
-		v1.SetAlbum(albumName)
+		v1.setAlbum(albumName)
 	}
 	if albumGenre := tm.AlbumGenre(src).Correction(); albumGenre != "" {
-		v1.SetGenre(albumGenre)
+		v1.setGenre(albumGenre)
 	}
 	if albumYear := tm.AlbumYear(src).Correction(); albumYear != "" {
-		v1.SetYear(albumYear)
+		v1.setYear(albumYear)
 	}
 	if trackName := tm.TrackName(src).Correction(); trackName != "" {
-		v1.SetTitle(trackName)
+		v1.setTitle(trackName)
 	}
 	if trackNumber := tm.TrackNumber(src).Correction(); trackNumber != 0 {
-		_ = v1.SetTrack(trackNumber)
+		_ = v1.setTrack(trackNumber)
 	}
-	return v1.Write(path)
+	return v1.write(path)
 }
 
-func (im *Id3v1Metadata) InternalWrite(path string,
+func (im *id3v1Metadata) internalWrite(path string,
 	writeFunc func(f afero.File, b []byte) (int, error)) (fileErr error) {
 	fS := cmdtoolkit.FileSystem()
 	var src afero.File
@@ -878,7 +878,7 @@ func (im *Id3v1Metadata) InternalWrite(path string,
 	return
 }
 
-func Id3v1NameDiffers(cS *ComparableStrings) bool {
+func id3v1NameDiffers(cS *ComparableStrings) bool {
 	bs := make([]byte, 0, 2*len(cS.External))
 	for _, r := range strings.ToLower(cS.External) {
 		b, mappingFound := runeByteMapping[r]
@@ -913,7 +913,7 @@ func Id3v1NameDiffers(cS *ComparableStrings) bool {
 	return false
 }
 
-func Id3v1GenreDiffers(cS *ComparableStrings) bool {
+func id3v1GenreDiffers(cS *ComparableStrings) bool {
 	if _, genreFound := genreIndex(cS.External); !genreFound {
 		// the external genre does not map to a known id3v1 genre but "other"
 		// always matches the external name

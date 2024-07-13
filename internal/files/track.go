@@ -228,7 +228,7 @@ func (t *Track) ReconcileMetadata() MetadataState {
 	if len(metadataErrors) != 0 {
 		for _, e := range metadataErrors {
 			switch e {
-			case ErrNoID3V1MetadataFound.Error():
+			case errNoID3V1MetadataFound.Error():
 				mS.missingID3V1 = true
 			case errNoID3V2MetadataFound.Error():
 				mS.missingID3V2 = true
@@ -667,7 +667,7 @@ func (t *Track) CopyFile(destination string) error {
 // (e.g., the input file is too short to have an ID3V1 tag), or an invalid ID3V1
 // tag (IsValid() is false), returns a non-nil error
 func (t *Track) ID3V1Diagnostics() ([]string, error) {
-	return ReadID3v1Metadata(t.FilePath)
+	return readID3v1Metadata(t.FilePath)
 }
 
 // ID3V2Diagnostics returns ID3V2 tag data - the ID3V2 version, its encoding,
