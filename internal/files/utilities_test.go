@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestIsIllegalRuneForFileNames(t *testing.T) {
+func Test_isIllegalRuneForFileNames(t *testing.T) {
 	tests := map[string]struct {
 		r    rune
 		want bool
@@ -159,8 +159,8 @@ func TestIsIllegalRuneForFileNames(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := IsIllegalRuneForFileNames(tt.r); got != tt.want {
-				t.Errorf("IsIllegalRuneForFileNames = %v, want %v", got, tt.want)
+			if got := isIllegalRuneForFileNames(tt.r); got != tt.want {
+				t.Errorf("isIllegalRuneForFileNames = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -294,7 +294,7 @@ func Id3v2NameDiffers(cS *ComparableStrings) bool {
 		}
 		// allow for the metadata rune to be one that is illegal for file names:
 		// the external name is likely to be a file name
-		if !IsIllegalRuneForFileNames(c) {
+		if !isIllegalRuneForFileNames(c) {
 			return true
 		}
 	}
