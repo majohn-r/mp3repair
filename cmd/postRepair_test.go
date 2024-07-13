@@ -189,10 +189,10 @@ func Test_postRepairWork(t *testing.T) {
 }
 
 func Test_postRepairRun(t *testing.T) {
-	InitGlobals()
-	originalBus := Bus
+	initGlobals()
+	originalBus := bus
 	defer func() {
-		Bus = originalBus
+		bus = originalBus
 	}()
 	command := &cobra.Command{}
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), command.Flags(),
@@ -233,7 +233,7 @@ func Test_postRepairRun(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			Bus = o // cook getBus()
+			bus = o // cook getBus()
 			_ = postRepairRun(tt.args.cmd, tt.args.in1)
 			o.Report(t, "postRepairRun()", tt.WantedRecording)
 		})

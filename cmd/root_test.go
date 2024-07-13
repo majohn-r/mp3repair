@@ -15,14 +15,14 @@ import (
 )
 
 func Test_execute(t *testing.T) {
-	InitGlobals()
+	initGlobals()
 	originalArgs := os.Args
 	originalExit := Exit
-	originalBus := Bus
+	originalBus := bus
 	defer func() {
 		os.Args = originalArgs
 		Exit = originalExit
-		Bus = originalBus
+		bus = originalBus
 	}()
 	tests := map[string]struct {
 		args []string
@@ -87,7 +87,7 @@ func Test_runMain(t *testing.T) {
 		},
 	}
 	type args struct {
-		cmd   CommandExecutor
+		cmd   commandExecutor
 		start time.Time
 	}
 	tests := map[string]struct {
@@ -201,7 +201,7 @@ func Test_runMain(t *testing.T) {
 			cachedGoVersion = tt.goVersion
 			cachedBuildDependencies = tt.dependencies
 			o := output.NewRecorder()
-			RunMain(o, tt.args.cmd, tt.args.start)
+			runMain(o, tt.args.cmd, tt.args.start)
 			o.Report(t, "runMain()", tt.WantedRecording)
 		})
 	}
@@ -254,7 +254,7 @@ func Test_cookCommandLineArguments(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			dereferenceEnvVar = tt.dereferenceEnvVar
-			got := CookCommandLineArguments(o, tt.inputArgs)
+			got := cookCommandLineArguments(o, tt.inputArgs)
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("cookCommandLineArguments() = %v, want %v", got, tt.want)
 			}
@@ -271,9 +271,9 @@ func Test_initGlobals(t *testing.T) {
 	originalReadConfigurationFile := readConfigurationFile
 	originalVersion := version
 	originalCreation := creation
-	originalInitialized := Initialized
-	originalBus := Bus
-	originalInternalConfig := InternalConfig
+	originalInitialized := initialized
+	originalBus := bus
+	originalInternalConfig := internalConfig
 	defer func() {
 		Exit = originalExit
 		newDefaultBus = originalNewDefaultBus
@@ -282,9 +282,9 @@ func Test_initGlobals(t *testing.T) {
 		readConfigurationFile = originalReadConfigurationFile
 		version = originalVersion
 		creation = originalCreation
-		Initialized = originalInitialized
-		Bus = originalBus
-		InternalConfig = originalInternalConfig
+		initialized = originalInitialized
+		bus = originalBus
+		internalConfig = originalInternalConfig
 	}()
 	o := output.NewRecorder()
 	defaultExitFunctionCalled := false
@@ -405,13 +405,13 @@ func Test_initGlobals(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o = output.NewRecorder()
-			InternalConfig = cmdtoolkit.EmptyConfiguration()
+			internalConfig = cmdtoolkit.EmptyConfiguration()
 			ExitFunctionCalled = defaultExitFunctionCalled
 			exitCodeRecorded = defaultExitCode
 			creationRecorded = defaultCreation
 			versionRecorded = defaultVersion
 			flagIndicatorRecorded = defaultFlagIndicator
-			Initialized = tt.initialize
+			initialized = tt.initialize
 			Exit = tt.exitFunc
 			newDefaultBus = tt.newDefaultBus
 			initLogging = tt.initLogging
@@ -420,8 +420,8 @@ func Test_initGlobals(t *testing.T) {
 
 			creation = tt.creationVal
 			version = tt.versionVal
-			InitGlobals()
-			if got := InternalConfig; !reflect.DeepEqual(got, tt.wantConfig) {
+			initGlobals()
+			if got := internalConfig; !reflect.DeepEqual(got, tt.wantConfig) {
 				t.Errorf("initGlobals: _c got %v want %v", got, tt.wantConfig)
 			}
 			if got := ExitFunctionCalled; got != tt.wantExitFuncCalled {
@@ -484,7 +484,7 @@ func Test_root_Usage(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			command := cloneCommand(RootCmd)
+			command := cloneCommand(rootCmd)
 			enableCommandRecording(o, command)
 			_ = command.Usage()
 			o.Report(t, "root Usage()", tt.WantedRecording)
@@ -507,7 +507,7 @@ func Test_obtainExitCode(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := ObtainExitCode(tt.err); got != tt.want {
+			if got := obtainExitCode(tt.err); got != tt.want {
 				t.Errorf("obtainExitCode() = %v, want %v", got, tt.want)
 			}
 		})

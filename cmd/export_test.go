@@ -522,12 +522,12 @@ func Test_processExportFlags(t *testing.T) {
 }
 
 func Test_exportRun(t *testing.T) {
-	InitGlobals()
+	initGlobals()
 	originalExportFlags := exportFlags
-	originalBus := Bus
+	originalBus := bus
 	defer func() {
 		exportFlags = originalExportFlags
-		Bus = originalBus
+		bus = originalBus
 	}()
 	tests := map[string]struct {
 		cmd   *cobra.Command
@@ -613,7 +613,7 @@ func Test_exportRun(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			exportFlags = tt.flags
 			o := output.NewRecorder()
-			Bus = o // this is what getBus() should return when exportRun calls it
+			bus = o // this is what getBus() should return when exportRun calls it
 			_ = exportRun(tt.cmd, []string{})
 			o.Report(t, "exportRun()", tt.WantedRecording)
 		})

@@ -84,7 +84,7 @@ var (
 )
 
 func aboutRun(cmd *cobra.Command, _ []string) error {
-	o := BusGetter()
+	o := busGetter()
 	values, eSlice := cmdtoolkit.ReadFlags(cmd.Flags(), aboutFlags)
 	exitError := cmdtoolkit.NewExitProgrammingError(aboutCommand)
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) {
@@ -152,7 +152,7 @@ func acquireAboutData(o output.Bus) []string {
 }
 
 func init() {
-	RootCmd.AddCommand(aboutCmd)
+	rootCmd.AddCommand(aboutCmd)
 	addDefaults(aboutFlags)
 	o := getBus()
 	c := getConfiguration()

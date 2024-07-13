@@ -28,7 +28,7 @@ func (tec testingElevationControl) ConfigureExit(f func(int)) func(int) { return
 func (tec testingElevationControl) WillRunElevated() bool { return false }
 
 func Test_aboutRun(t *testing.T) {
-	originalBusGetter := BusGetter
+	originalBusGetter := busGetter
 	originalInterpretBuildData := interpretBuildData
 	originalLogPath := logPath
 	originalVersion := version
@@ -37,7 +37,7 @@ func Test_aboutRun(t *testing.T) {
 	originalPlainFileExists := plainFileExists
 	originalMP3RepairElevationControl := mp3repairElevationControl
 	defer func() {
-		BusGetter = originalBusGetter
+		busGetter = originalBusGetter
 		interpretBuildData = originalInterpretBuildData
 		logPath = originalLogPath
 		version = originalVersion
@@ -93,7 +93,7 @@ func Test_aboutRun(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			BusGetter = func() output.Bus { return o }
+			busGetter = func() output.Bus { return o }
 			mp3repairElevationControl = testingElevationControl{
 				desiredStatus: []string{"mp3repair is running with elevated privileges"},
 			}

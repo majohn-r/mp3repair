@@ -89,7 +89,7 @@ func removeTrackBackupDirectory(o output.Bus, dir string) bool {
 }
 
 func init() {
-	RootCmd.AddCommand(postRepairCmd)
+	rootCmd.AddCommand(postRepairCmd)
 	bus := getBus()
 	c := getConfiguration()
 	cmdtoolkit.AddFlags(bus, c, postRepairCmd.Flags(), SearchFlags)

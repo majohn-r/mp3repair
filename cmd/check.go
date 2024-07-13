@@ -410,7 +410,7 @@ func processCheckFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[a
 }
 
 func init() {
-	RootCmd.AddCommand(checkCmd)
+	rootCmd.AddCommand(checkCmd)
 	addDefaults(checkFlags)
 	o := getBus()
 	c := getConfiguration()

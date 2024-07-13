@@ -298,7 +298,7 @@ func processRepairFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[
 }
 
 func init() {
-	RootCmd.AddCommand(repairCmd)
+	rootCmd.AddCommand(repairCmd)
 	addDefaults(repairFlags)
 	o := getBus()
 	c := getConfiguration()

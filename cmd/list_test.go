@@ -1813,11 +1813,11 @@ func Test_listSettings_listFilteredArtists(t *testing.T) {
 }
 
 func Test_listRun(t *testing.T) {
-	InitGlobals()
-	originalBus := Bus
+	initGlobals()
+	originalBus := bus
 	originalSearchFlags := SearchFlags
 	defer func() {
-		Bus = originalBus
+		bus = originalBus
 		SearchFlags = originalSearchFlags
 	}()
 	SearchFlags = safeSearchFlags
@@ -2099,7 +2099,7 @@ func Test_listRun(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			Bus = o // cook getBus()
+			bus = o // cook getBus()
 			_ = listRun(tt.cmd, tt.in1)
 			o.Report(t, "listRun()", tt.WantedRecording)
 		})

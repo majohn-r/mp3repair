@@ -1475,11 +1475,11 @@ func Test_repairSettings_processArtists(t *testing.T) {
 }
 
 func Test_repairRun(t *testing.T) {
-	InitGlobals()
-	originalBus := Bus
+	initGlobals()
+	originalBus := bus
 	originalSearchFlags := SearchFlags
 	defer func() {
-		Bus = originalBus
+		bus = originalBus
 		SearchFlags = originalSearchFlags
 	}()
 	SearchFlags = safeSearchFlags
@@ -1530,7 +1530,7 @@ func Test_repairRun(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			Bus = o // cook getBus()
+			bus = o // cook getBus()
 			_ = repairRun(tt.cmd, tt.in1)
 			o.Report(t, "repairRun()", tt.WantedRecording)
 		})

@@ -776,11 +776,11 @@ func Test_checkSettings_maybeDoWork(t *testing.T) {
 }
 
 func Test_checkRun(t *testing.T) {
-	InitGlobals()
-	originalBus := Bus
+	initGlobals()
+	originalBus := bus
 	originalSearchFlags := SearchFlags
 	defer func() {
-		Bus = originalBus
+		bus = originalBus
 		SearchFlags = originalSearchFlags
 	}()
 	SearchFlags = safeSearchFlags
@@ -853,7 +853,7 @@ func Test_checkRun(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			Bus = o // cook getBus()
+			bus = o // cook getBus()
 			_ = checkRun(tt.args.cmd, tt.args.in1)
 			o.Report(t, "checkRun()", tt.WantedRecording)
 		})

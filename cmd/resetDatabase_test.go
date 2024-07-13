@@ -922,11 +922,11 @@ func Test_resetDBSettings_resetService(t *testing.T) {
 }
 
 func Test_resetDBRun(t *testing.T) {
-	InitGlobals()
-	originalBus := Bus
+	initGlobals()
+	originalBus := bus
 	originalDirty := dirty
 	defer func() {
-		Bus = originalBus
+		bus = originalBus
 		dirty = originalDirty
 	}()
 	dirty = func() bool { return false }
@@ -1004,7 +1004,7 @@ func Test_resetDBRun(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			Bus = o
+			bus = o
 			_ = resetDBRun(tt.cmd, tt.in1)
 			o.Report(t, "resetDBRun()", tt.WantedRecording)
 		})

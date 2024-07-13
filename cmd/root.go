@@ -22,8 +22,7 @@ const (
 )
 
 var (
-	// RootCmd represents the base command when called without any subcommands
-	RootCmd = &cobra.Command{
+	rootCmd = &cobra.Command{
 		SilenceErrors: true,
 		Use:           appName,
 		Short:         fmt.Sprintf("%q is a repair program for mp3 files", appName),
@@ -64,43 +63,40 @@ the process:
 
 ` + appName + ` ` + resetDBCommandName,
 	}
-	// Bus is the output bus to be used by commands; initially set to a nil bus for safety
-	Bus            = output.NewNilBus()
-	InternalConfig = cmdtoolkit.EmptyConfiguration()
-	// BusGetter is a variable that makes it easy for tests to inject a testing Bus, such as an
-	// output.Recorder
-	BusGetter   = getBus
-	initLock    = &sync.RWMutex{}
-	Initialized = false
+	bus            = output.NewNilBus()
+	internalConfig = cmdtoolkit.EmptyConfiguration()
+	busGetter      = getBus
+	initLock       = &sync.RWMutex{}
+	initialized    = false
 )
 
 func getBus() output.Bus {
-	InitGlobals()
-	return Bus
+	initGlobals()
+	return bus
 }
 
 func getConfiguration() *cmdtoolkit.Configuration {
-	InitGlobals()
-	return InternalConfig
+	initGlobals()
+	return internalConfig
 }
 
-func InitGlobals() {
+func initGlobals() {
 	initLock.Lock()
 	defer initLock.Unlock()
-	if !Initialized {
-		Bus = newDefaultBus(cmdtoolkit.ProductionLogger)
+	if !initialized {
+		bus = newDefaultBus(cmdtoolkit.ProductionLogger)
 		configOk := false
-		if initLogging(Bus, appName) && initApplicationPath(Bus, appName) {
-			InternalConfig, configOk = readConfigurationFile(Bus)
+		if initLogging(bus, appName) && initApplicationPath(bus, appName) {
+			internalConfig, configOk = readConfigurationFile(bus)
 		}
 		if !configOk {
 			Exit(1)
 		}
-		Initialized = true
+		initialized = true
 	}
 }
 
-func CookCommandLineArguments(o output.Bus, inputArgs []string) []string {
+func cookCommandLineArguments(o output.Bus, inputArgs []string) []string {
 	args := make([]string, 0, len(inputArgs))
 	if len(inputArgs) <= 1 {
 		return args
@@ -121,7 +117,7 @@ func CookCommandLineArguments(o output.Bus, inputArgs []string) []string {
 	return args
 }
 
-type CommandExecutor interface {
+type commandExecutor interface {
 	SetArgs(a []string)
 	Execute() error
 }
@@ -132,18 +128,18 @@ type CommandExecutor interface {
 func Execute() {
 	start := time.Now()
 	o := getBus()
-	exitCode := RunMain(o, RootCmd, start)
+	exitCode := runMain(o, rootCmd, start)
 	Exit(exitCode)
 }
 
-func RunMain(o output.Bus, cmd CommandExecutor, start time.Time) int {
+func runMain(o output.Bus, cmd commandExecutor, start time.Time) int {
 	defer func() {
 		if r := recover(); r != nil {
 			o.WriteCanonicalError("A runtime error occurred: %q", r)
 			o.Log(output.Error, "Panic recovered", map[string]any{"error": r})
 		}
 	}()
-	cookedArgs := CookCommandLineArguments(o, os.Args)
+	cookedArgs := cookCommandLineArguments(o, os.Args)
 	o.Log(output.Info, "execution starts", map[string]any{
 		"version":      version,
 		"timeStamp":    creation,
@@ -154,7 +150,7 @@ func RunMain(o output.Bus, cmd CommandExecutor, start time.Time) int {
 	mp3repairElevationControl.Log(o, output.Info)
 	cmd.SetArgs(cookedArgs)
 	err := cmd.Execute()
-	exitCode := ObtainExitCode(err)
+	exitCode := obtainExitCode(err)
 	o.Log(output.Info, "execution ends", map[string]any{
 		"duration": since(start),
 		"exitCode": exitCode,
@@ -166,7 +162,7 @@ func RunMain(o output.Bus, cmd CommandExecutor, start time.Time) int {
 	return exitCode
 }
 
-func ObtainExitCode(err error) int {
+func obtainExitCode(err error) int {
 	switch {
 	case err == nil:
 		return 0
@@ -184,7 +180,7 @@ func ObtainExitCode(err error) int {
 
 func init() {
 	o := getBus()
-	RootCmd.SetErr(o.ErrorWriter())
-	RootCmd.SetOut(o.ConsoleWriter())
-	RootCmd.CompletionOptions.HiddenDefaultCmd = true
+	rootCmd.SetErr(o.ErrorWriter())
+	rootCmd.SetOut(o.ConsoleWriter())
+	rootCmd.CompletionOptions.HiddenDefaultCmd = true
 }

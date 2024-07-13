@@ -204,7 +204,7 @@ func (es *exportSettings) canWriteConfigurationFile(o output.Bus) bool {
 }
 
 func init() {
-	RootCmd.AddCommand(exportCmd)
+	rootCmd.AddCommand(exportCmd)
 	addDefaults(exportFlags)
 	o := getBus()
 	c := getConfiguration()
