@@ -9,19 +9,19 @@ import (
 	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 )
 
-type Id3v2Metadata struct {
-	AlbumTitle        string
-	ArtistName        string
-	Err               error
-	Genre             string
-	MusicCDIdentifier id3v2.UnknownFrame
-	TrackName         string
-	TrackNumber       int
-	Year              string
+type id3v2Metadata struct {
+	albumTitle        string
+	artistName        string
+	err               error
+	genre             string
+	musicCDIdentifier id3v2.UnknownFrame
+	trackName         string
+	trackNumber       int
+	year              string
 }
 
-func (im *Id3v2Metadata) HasError() bool {
-	return im.Err != nil
+func (im *id3v2Metadata) hasError() bool {
+	return im.err != nil
 }
 
 func readID3V2Tag(path string) (*id3v2.Tag, error) {
@@ -30,52 +30,52 @@ func readID3V2Tag(path string) (*id3v2.Tag, error) {
 		return nil, readError
 	}
 	tag, parseError := id3v2.ParseReader(file, id3v2.Options{Parse: true, ParseFrames: nil})
-	if IsTagAbsent(tag) {
-		return tag, ErrNoID3V2MetadataFound
+	if isTagAbsent(tag) {
+		return tag, errNoID3V2MetadataFound
 	}
 	return tag, parseError
 }
 
-func IsTagAbsent(tag *id3v2.Tag) bool {
+func isTagAbsent(tag *id3v2.Tag) bool {
 	if tag == nil {
 		return true
 	}
 	return tag.Count() == 0
 }
 
-func RawReadID3V2Metadata(path string) (d *Id3v2Metadata) {
-	d = &Id3v2Metadata{}
+func rawReadID3V2Metadata(path string) (d *id3v2Metadata) {
+	d = &id3v2Metadata{}
 	tag, readErr := readID3V2Tag(path)
 	if readErr != nil {
-		d.Err = readErr
+		d.err = readErr
 		return
 	}
 	defer func() {
 		_ = tag.Close()
 	}()
-	trackNumber, trackErr := ToTrackNumber(tag.GetTextFrame(trackFrame).Text)
+	trackNumber, trackErr := toTrackNumber(tag.GetTextFrame(trackFrame).Text)
 	if trackErr != nil {
-		d.Err = trackErr
+		d.err = trackErr
 		return
 	}
-	d.AlbumTitle = RemoveLeadingBOMs(tag.Album())
-	d.ArtistName = RemoveLeadingBOMs(tag.Artist())
-	d.Genre = NormalizeGenre(RemoveLeadingBOMs(tag.Genre()))
-	d.TrackName = RemoveLeadingBOMs(tag.Title())
-	d.TrackNumber = trackNumber
-	d.Year = RemoveLeadingBOMs(tag.Year())
+	d.albumTitle = removeLeadingBOMs(tag.Album())
+	d.artistName = removeLeadingBOMs(tag.Artist())
+	d.genre = normalizeGenre(removeLeadingBOMs(tag.Genre()))
+	d.trackName = removeLeadingBOMs(tag.Title())
+	d.trackNumber = trackNumber
+	d.year = removeLeadingBOMs(tag.Year())
 	mcdiFramers := tag.AllFrames()[mcdiFrame]
-	d.MusicCDIdentifier = SelectUnknownFrame(mcdiFramers)
+	d.musicCDIdentifier = selectUnknownFrame(mcdiFramers)
 	return
 }
 
-// NormalizeGenre handles issues relating to a common practice in mp3 files, where the ID3V2
+// normalizeGenre handles issues relating to a common practice in mp3 files, where the ID3V2
 // genre field 'recognizes' the older ID3V1 genre field, by its value being written as
 // "(key)value", where 'key' is the integer index (as used by ID3V1) and 'value' is the
 // canonical ID3V1 string for that key. This function detects these "(key)value" strings,
 // verifies that 'value' is correct for the specified key, and, if so, returns the 'value'
 // piece without the parenthetical key. Everything else passes through 'as is'.
-func NormalizeGenre(s string) string {
+func normalizeGenre(s string) string {
 	var i int
 	var value string
 	if n, scanErr := fmt.Sscanf(s, "(%d)%s", &i, &value); n == 2 && scanErr == nil {
@@ -92,15 +92,15 @@ func NormalizeGenre(s string) string {
 }
 
 var (
-	ErrMalformedTrackNumber = fmt.Errorf("track number first character is not a digit")
-	ErrMissingTrackNumber   = fmt.Errorf("track number is zero length")
-	ErrNoID3V2MetadataFound = fmt.Errorf("no ID3V2 metadata found")
+	errMalformedTrackNumber = fmt.Errorf("track number first character is not a digit")
+	errMissingTrackNumber   = fmt.Errorf("track number is zero length")
+	errNoID3V2MetadataFound = fmt.Errorf("no ID3V2 metadata found")
 )
 
-func ToTrackNumber(s string) (int, error) {
-	s = RemoveLeadingBOMs(s)
+func toTrackNumber(s string) (int, error) {
+	s = removeLeadingBOMs(s)
 	if s == "" {
-		return 0, ErrMissingTrackNumber
+		return 0, errMissingTrackNumber
 	}
 	// this is more complicated than I wanted, because some mp3 rippers produce
 	// track numbers like "12/14", meaning 12th track of 14
@@ -116,7 +116,7 @@ func ToTrackNumber(s string) (int, error) {
 			// found something other than a digit
 			switch j {
 			case 0: // never saw a digit
-				return 0, ErrMalformedTrackNumber
+				return 0, errMalformedTrackNumber
 			default: // did read at least one digit
 				return n, nil
 			}
@@ -126,9 +126,9 @@ func ToTrackNumber(s string) (int, error) {
 	return n, nil
 }
 
-// RemoveLeadingBOMs removes leading byte order marks (BOMs); frame values may begin with BOMs,
+// removeLeadingBOMs removes leading byte order marks (BOMs); frame values may begin with BOMs,
 // depending on encoding
-func RemoveLeadingBOMs(s string) string {
+func removeLeadingBOMs(s string) string {
 	if s == "" {
 		return s
 	}
@@ -145,7 +145,7 @@ func RemoveLeadingBOMs(s string) string {
 	return string(r)
 }
 
-func SelectUnknownFrame(mcdiFramers []id3v2.Framer) id3v2.UnknownFrame {
+func selectUnknownFrame(mcdiFramers []id3v2.Framer) id3v2.UnknownFrame {
 	if len(mcdiFramers) == 1 {
 		frame := mcdiFramers[0]
 		if f, ok := frame.(id3v2.UnknownFrame); ok {
@@ -194,28 +194,28 @@ func updateID3V2TrackMetadata(tm *TrackMetadata, path string) error {
 	return tag.Save()
 }
 
-type Id3v2TrackFrame struct {
-	Name  string
-	Value string
+type id3v2TrackFrame struct {
+	name  string
+	value string
 }
 
 // String returns the contents of an ID3V2TrackFrame formatted in the form
 // "name = \"value\"".
-func (itf *Id3v2TrackFrame) String() string {
-	return fmt.Sprintf("%s = %q", itf.Name, itf.Value)
+func (itf *id3v2TrackFrame) String() string {
+	return fmt.Sprintf("%s = %q", itf.name, itf.value)
 }
 
 type ID3V2Info struct {
 	Version      byte
 	Encoding     string
 	FrameStrings []string
-	RawFrames    []*Id3v2TrackFrame
+	RawFrames    []*id3v2TrackFrame
 }
 
-func ReadID3V2Metadata(path string) (info *ID3V2Info, e error) {
+func readID3V2Metadata(path string) (info *ID3V2Info, e error) {
 	info = &ID3V2Info{
 		FrameStrings: []string{},
-		RawFrames:    []*Id3v2TrackFrame{},
+		RawFrames:    []*id3v2TrackFrame{},
 	}
 	tag, readErr := readID3V2Tag(path)
 	if readErr != nil {
@@ -237,18 +237,18 @@ func ReadID3V2Metadata(path string) (info *ID3V2Info, e error) {
 		var value string
 		switch {
 		case strings.HasPrefix(n, "T"): // tag
-			value = RemoveLeadingBOMs(tag.GetTextFrame(n).Text)
+			value = removeLeadingBOMs(tag.GetTextFrame(n).Text)
 		default:
-			value = FramerSliceAsString(frameMap[n])
+			value = framerSliceAsString(frameMap[n])
 		}
-		frame := &Id3v2TrackFrame{Name: n, Value: value}
+		frame := &id3v2TrackFrame{name: n, value: value}
 		info.FrameStrings = append(info.FrameStrings, frame.String())
 		info.RawFrames = append(info.RawFrames, frame)
 	}
 	return
 }
 
-func FramerSliceAsString(f []id3v2.Framer) string {
+func framerSliceAsString(f []id3v2.Framer) string {
 	substrings := make([]string, 0, len(f))
 	switch {
 	case len(f) == 1:
@@ -273,7 +273,7 @@ func FramerSliceAsString(f []id3v2.Framer) string {
 	return fmt.Sprintf("<<%s>>", strings.Join(substrings, ", "))
 }
 
-func Id3v2NameDiffers(cS *ComparableStrings) bool {
+func id3v2NameDiffers(cS *ComparableStrings) bool {
 	externalName := strings.ToLower(cS.External)
 	metadataName := strings.ToLower(cS.Metadata)
 	// strip off trailing space from the metadata value
@@ -301,7 +301,7 @@ func Id3v2NameDiffers(cS *ComparableStrings) bool {
 	return false // rune by rune comparison was successful
 }
 
-func Id3v2GenreDiffers(cS *ComparableStrings) bool {
+func id3v2GenreDiffers(cS *ComparableStrings) bool {
 	// differs unless exact match. Period.
 	return cS.External != cS.Metadata
 }

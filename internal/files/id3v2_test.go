@@ -57,7 +57,7 @@ func createID3v2TaggedData(audio []byte, frames map[string]string) []byte {
 	return content
 }
 
-func TestRawReadID3V2Metadata(t *testing.T) {
+func Test_rawReadID3V2Metadata(t *testing.T) {
 	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
 	defer func() {
 		cmdtoolkit.AssignFileSystem(originalFileSystem)
@@ -82,41 +82,41 @@ func TestRawReadID3V2Metadata(t *testing.T) {
 	_ = createFileWithContent(".", "badFile.mp3", createID3v2TaggedData(payload, frames))
 	tests := map[string]struct {
 		path  string
-		wantD *Id3v2Metadata
+		wantD *id3v2Metadata
 	}{
 		"bad test": {
 			path:  "./noSuchFile!.mp3",
-			wantD: &Id3v2Metadata{Err: fmt.Errorf("foo")},
+			wantD: &id3v2Metadata{err: fmt.Errorf("foo")},
 		},
 		"good test": {
 			path: "./goodFile.mp3",
-			wantD: &Id3v2Metadata{
-				AlbumTitle:  "unknown album",
-				ArtistName:  "unknown artist",
-				TrackName:   "unknown track",
-				TrackNumber: 2,
+			wantD: &id3v2Metadata{
+				albumTitle:  "unknown album",
+				artistName:  "unknown artist",
+				trackName:   "unknown track",
+				trackNumber: 2,
 			},
 		},
 		"bad data test": {
 			path:  "./badFile.mp3",
-			wantD: &Id3v2Metadata{Err: ErrMalformedTrackNumber},
+			wantD: &id3v2Metadata{err: errMalformedTrackNumber},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			gotD := RawReadID3V2Metadata(tt.path)
-			if gotD.HasError() {
-				if !tt.wantD.HasError() {
-					t.Errorf("RawReadID3V2Metadata() = %v, want %v", gotD, tt.wantD)
+			gotD := rawReadID3V2Metadata(tt.path)
+			if gotD.hasError() {
+				if !tt.wantD.hasError() {
+					t.Errorf("rawReadID3V2Metadata() = %v, want %v", gotD, tt.wantD)
 				}
-			} else if tt.wantD.HasError() {
-				t.Errorf("RawReadID3V2Metadata() = %v, want %v", gotD, tt.wantD)
+			} else if tt.wantD.hasError() {
+				t.Errorf("rawReadID3V2Metadata() = %v, want %v", gotD, tt.wantD)
 			}
 		})
 	}
 }
 
-func TestRemoveLeadingBOMs(t *testing.T) {
+func Test_removeLeadingBOMs(t *testing.T) {
 	tests := map[string]struct {
 		s    string
 		want string
@@ -128,14 +128,14 @@ func TestRemoveLeadingBOMs(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := RemoveLeadingBOMs(tt.s); got != tt.want {
-				t.Errorf("RemoveLeadingBOMs() = %q, want %q", got, tt.want)
+			if got := removeLeadingBOMs(tt.s); got != tt.want {
+				t.Errorf("removeLeadingBOMs() = %q, want %q", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestToTrackNumber(t *testing.T) {
+func Test_toTrackNumber(t *testing.T) {
 	tests := map[string]struct {
 		s       string
 		wantI   int
@@ -179,13 +179,13 @@ func TestToTrackNumber(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			gotI, gotErr := ToTrackNumber(tt.s)
+			gotI, gotErr := toTrackNumber(tt.s)
 			if (gotErr != nil) != tt.wantErr {
-				t.Errorf("ToTrackNumber() error = %v, wantErr %v", gotErr, tt.wantErr)
+				t.Errorf("toTrackNumber() error = %v, wantErr %v", gotErr, tt.wantErr)
 				return
 			}
 			if gotErr == nil && gotI != tt.wantI {
-				t.Errorf("ToTrackNumber() = %d, want %d", gotI, tt.wantI)
+				t.Errorf("toTrackNumber() = %d, want %d", gotI, tt.wantI)
 			}
 		})
 	}
@@ -210,7 +210,7 @@ func (u unspecifiedFrame) WriteTo(w io.Writer) (int64, error) {
 	return int64(count), fileErr
 }
 
-func TestSelectUnknownFrame(t *testing.T) {
+func Test_selectUnknownFrame(t *testing.T) {
 	tests := map[string]struct {
 		mcdiFramers []id3v2.Framer
 		want        id3v2.UnknownFrame
@@ -237,33 +237,33 @@ func TestSelectUnknownFrame(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := SelectUnknownFrame(tt.mcdiFramers); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("SelectUnknownFrame() = %v, want %v", got, tt.want)
+			if got := selectUnknownFrame(tt.mcdiFramers); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("selectUnknownFrame() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestID3V2TrackFrameStringType(t *testing.T) {
+func Test_iD3V2TrackFrame_String(t *testing.T) {
 	tests := map[string]struct {
-		f    *Id3v2TrackFrame
+		f    *id3v2TrackFrame
 		want string
 	}{
 		"usual": {
-			f:    &Id3v2TrackFrame{Name: "T1", Value: "V1"},
+			f:    &id3v2TrackFrame{name: "T1", value: "V1"},
 			want: "T1 = \"V1\"",
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			if got := tt.f.String(); got != tt.want {
-				t.Errorf("Id3v2TrackFrame.String() = %q, want %q", got, tt.want)
+				t.Errorf("id3v2TrackFrame.String() = %q, want %q", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestReadID3V2Metadata(t *testing.T) {
+func Test_readID3V2Metadata(t *testing.T) {
 	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
 	defer func() {
 		cmdtoolkit.AssignFileSystem(originalFileSystem)
@@ -319,22 +319,22 @@ func TestReadID3V2Metadata(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			// ignoring raw frames ...
-			gotInfo, gotErr := ReadID3V2Metadata(tt.path)
+			gotInfo, gotErr := readID3V2Metadata(tt.path)
 			if (gotErr != nil) != tt.wantErr {
-				t.Errorf("ReadID3V2Metadata() error = %v, wantErr %v", gotErr, tt.wantErr)
+				t.Errorf("readID3V2Metadata() error = %v, wantErr %v", gotErr, tt.wantErr)
 				return
 			}
 			if gotErr == nil {
 				if gotInfo.Version != tt.wantVersion {
-					t.Errorf("ReadID3V2Metadata() gotInfo.Version = %v, want %v",
+					t.Errorf("readID3V2Metadata() gotInfo.Version = %v, want %v",
 						gotInfo.Version, tt.wantVersion)
 				}
 				if gotInfo.Encoding != tt.wantEncoding {
-					t.Errorf("ReadID3V2Metadata gotInfo.Encoding = %v, want %v",
+					t.Errorf("readID3V2Metadata gotInfo.Encoding = %v, want %v",
 						gotInfo.Encoding, tt.wantEncoding)
 				}
 				if !reflect.DeepEqual(gotInfo.FrameStrings, tt.wantFrameStrings) {
-					t.Errorf("ReadID3V2Metadata gotInfo.FrameStrings = %v, want %v",
+					t.Errorf("readID3V2Metadata gotInfo.FrameStrings = %v, want %v",
 						gotInfo.FrameStrings, tt.wantFrameStrings)
 				}
 			}
@@ -342,7 +342,7 @@ func TestReadID3V2Metadata(t *testing.T) {
 	}
 }
 
-func TestFramerSliceAsString(t *testing.T) {
+func Test_framerSliceAsString(t *testing.T) {
 	tests := map[string]struct {
 		f    []id3v2.Framer
 		want string
@@ -366,14 +366,14 @@ func TestFramerSliceAsString(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := FramerSliceAsString(tt.f); got != tt.want {
-				t.Errorf("FramerSliceAsString() = %q, want %q", got, tt.want)
+			if got := framerSliceAsString(tt.f); got != tt.want {
+				t.Errorf("framerSliceAsString() = %q, want %q", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestId3v2NameDiffers(t *testing.T) {
+func Test_id3v2NameDiffers(t *testing.T) {
 	tests := map[string]struct {
 		cS   *ComparableStrings
 		want bool
@@ -430,8 +430,8 @@ func TestId3v2NameDiffers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := Id3v2NameDiffers(tt.cS); got != tt.want {
-				t.Errorf("Id3v2NameDiffers() = %v, want %v", got, tt.want)
+			if got := id3v2NameDiffers(tt.cS); got != tt.want {
+				t.Errorf("id3v2NameDiffers() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -632,7 +632,7 @@ var lcGenres = map[int]string{
 	191: "psybient",
 }
 
-func TestNormalizeGenre(t *testing.T) {
+func Test_normalizeGenre(t *testing.T) {
 	type test struct {
 		g    string
 		want string
@@ -654,14 +654,14 @@ func TestNormalizeGenre(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := NormalizeGenre(tt.g); got != tt.want {
-				t.Errorf("NormalizeGenre() = %v, want %v", got, tt.want)
+			if got := normalizeGenre(tt.g); got != tt.want {
+				t.Errorf("normalizeGenre() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestId3v2GenreDiffers(t *testing.T) {
+func Test_id3v2GenreDiffers(t *testing.T) {
 	tests := map[string]struct {
 		cS   *ComparableStrings
 		want bool
@@ -683,14 +683,14 @@ func TestId3v2GenreDiffers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := Id3v2GenreDiffers(tt.cS); got != tt.want {
-				t.Errorf("Id3v2GenreDiffers() = %v, want %v", got, tt.want)
+			if got := id3v2GenreDiffers(tt.cS); got != tt.want {
+				t.Errorf("id3v2GenreDiffers() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestIsTagAbsent(t *testing.T) {
+func Test_isTagAbsent(t *testing.T) {
 	tagWithContent := id3v2.NewEmptyTag()
 	tagWithContent.AddTextFrame("TFOO", id3v2.EncodingISO, "foo")
 	tests := map[string]struct {
@@ -703,8 +703,8 @@ func TestIsTagAbsent(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := IsTagAbsent(tt.tag); got != tt.want {
-				t.Errorf("IsTagAbsent() = %v, want %v", got, tt.want)
+			if got := isTagAbsent(tt.tag); got != tt.want {
+				t.Errorf("isTagAbsent() = %v, want %v", got, tt.want)
 			}
 		})
 	}

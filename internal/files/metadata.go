@@ -20,11 +20,11 @@ const (
 var (
 	nameComparators = map[SourceType]func(*ComparableStrings) bool{
 		ID3V1: Id3v1NameDiffers,
-		ID3V2: Id3v2NameDiffers,
+		ID3V2: id3v2NameDiffers,
 	}
 	genreComparators = map[SourceType]func(*ComparableStrings) bool{
 		ID3V1: Id3v1GenreDiffers,
-		ID3V2: Id3v2GenreDiffers,
+		ID3V2: id3v2GenreDiffers,
 	}
 	trackMetadataUpdaters = map[SourceType]func(tm *TrackMetadata, path string) error{
 		ID3V1: updateID3V1TrackMetadata,
@@ -365,14 +365,14 @@ func (tm *TrackMetadata) CanonicalSource() SourceType {
 	return tm.canonicalSource
 }
 
-func (tm *TrackMetadata) SetID3v2Values(d *Id3v2Metadata) {
-	tm.SetArtistName(ID3V2, d.ArtistName)
-	tm.SetAlbumName(ID3V2, d.AlbumTitle)
-	tm.SetAlbumGenre(ID3V2, d.Genre)
-	tm.SetAlbumYear(ID3V2, d.Year)
-	tm.SetTrackName(ID3V2, d.TrackName)
-	tm.SetTrackNumber(ID3V2, d.TrackNumber)
-	tm.SetCDIdentifier(d.MusicCDIdentifier.Body)
+func (tm *TrackMetadata) SetID3v2Values(d *id3v2Metadata) {
+	tm.SetArtistName(ID3V2, d.artistName)
+	tm.SetAlbumName(ID3V2, d.albumTitle)
+	tm.SetAlbumGenre(ID3V2, d.genre)
+	tm.SetAlbumYear(ID3V2, d.year)
+	tm.SetTrackName(ID3V2, d.trackName)
+	tm.SetTrackNumber(ID3V2, d.trackNumber)
+	tm.SetCDIdentifier(d.musicCDIdentifier.Body)
 }
 
 func (tm *TrackMetadata) SetID3v1Values(v1 *Id3v1Metadata) {
@@ -394,18 +394,18 @@ func (tm *TrackMetadata) IsValid() bool {
 
 func InitializeMetadata(path string) *TrackMetadata {
 	id3v1Metadata, id3v1Err := InternalReadID3V1Metadata(path, FileReader)
-	id3v2Metadata := RawReadID3V2Metadata(path)
+	id3v2Metadata := rawReadID3V2Metadata(path)
 	tm := NewTrackMetadata()
 	switch {
-	case id3v1Err != nil && id3v2Metadata.Err != nil:
+	case id3v1Err != nil && id3v2Metadata.err != nil:
 		tm.SetErrorCause(ID3V1, id3v1Err.Error())
-		tm.SetErrorCause(ID3V2, id3v2Metadata.Err.Error())
+		tm.SetErrorCause(ID3V2, id3v2Metadata.err.Error())
 	case id3v1Err != nil:
 		tm.SetErrorCause(ID3V1, id3v1Err.Error())
 		tm.SetID3v2Values(id3v2Metadata)
 		tm.SetCanonicalSource(ID3V2)
-	case id3v2Metadata.Err != nil:
-		tm.SetErrorCause(ID3V2, id3v2Metadata.Err.Error())
+	case id3v2Metadata.err != nil:
+		tm.SetErrorCause(ID3V2, id3v2Metadata.err.Error())
 		tm.SetID3v1Values(id3v1Metadata)
 		tm.SetCanonicalSource(ID3V1)
 	default:

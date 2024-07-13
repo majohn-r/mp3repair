@@ -132,7 +132,7 @@ func TestTrackNameParserParse(t *testing.T) {
 	}
 }
 
-func TestTracksSort(t *testing.T) {
+func Test_tracks_Sort(t *testing.T) {
 	tests := map[string]struct {
 		tracks []*Track
 	}{
@@ -179,7 +179,7 @@ func TestTracksSort(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			sort.Sort(Tracks(tt.tracks))
+			sort.Sort(tracks(tt.tracks))
 			for i := range tt.tracks {
 				if i == 0 {
 					continue
@@ -191,15 +191,15 @@ func TestTracksSort(t *testing.T) {
 				artist1 := album1.RecordingArtistName()
 				artist2 := album2.RecordingArtistName()
 				if artist1 > artist2 {
-					t.Errorf("Tracks.Sort() track[%d] artist name %q comes after track[%d] artist name %q",
+					t.Errorf("tracks.Sort() track[%d] artist name %q comes after track[%d] artist name %q",
 						i-1, artist1, i, artist2)
 				} else if artist1 == artist2 {
 					if album1.Title > album2.Title {
-						t.Errorf("Tracks.Sort() track[%d] album name %q comes after track[%d] album name %q",
+						t.Errorf("tracks.Sort() track[%d] album name %q comes after track[%d] album name %q",
 							i-1, album1.Title, i, album2.Title)
 					} else if album1.Title == album2.Title {
 						if track1.Number > track2.Number {
-							t.Errorf("Tracks.Sort() track[%d] track %d comes after track[%d] track %d",
+							t.Errorf("tracks.Sort() track[%d] track %d comes after track[%d] track %d",
 								i-1, track1.Number, i, track2.Number)
 						}
 					}
@@ -754,10 +754,10 @@ func TestReadMetadata(t *testing.T) {
 			for _, artist := range tt.artists {
 				for _, album := range artist.Albums {
 					for _, track := range album.Tracks {
-						if track.NeedsMetadata() {
+						if track.needsMetadata() {
 							t.Errorf("ReadMetadata() track %q has no metadata",
 								track.FilePath)
-						} else if track.HasMetadataError() {
+						} else if track.hasMetadataError() {
 							t.Errorf("ReadMetadata() track %q is defective: %v",
 								track.FilePath, track.Metadata.ErrorCauses())
 						}
@@ -828,7 +828,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	errorMetadata.SetErrorCause(ID3V2, "oops")
 	noMetadata := NewTrackMetadata()
 	noMetadata.SetErrorCause(ID3V1, ErrNoID3V1MetadataFound.Error())
-	noMetadata.SetErrorCause(ID3V2, ErrNoID3V2MetadataFound.Error())
+	noMetadata.SetErrorCause(ID3V2, errNoID3V2MetadataFound.Error())
 	tests := map[string]struct {
 		t    *Track
 		want []string
@@ -958,7 +958,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 		},
 		"no edit required": {
 			t:     &Track{Metadata: nil},
-			wantE: []string{ErrNoEditNeeded.Error()},
+			wantE: []string{errNoEditNeeded.Error()},
 		},
 		"edit required": {t: track, wantTm: editedTm},
 	}

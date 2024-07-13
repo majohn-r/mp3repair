@@ -33,7 +33,7 @@ var (
 		"TPE2": "Orchestra/Band",
 		"TPE3": "Conductor",
 	}
-	ErrNoEditNeeded = fmt.Errorf("no edit required")
+	errNoEditNeeded = fmt.Errorf("no edit required")
 	trackNameRegex  = regexp.MustCompile(defaultTrackNamePattern)
 )
 
@@ -92,11 +92,10 @@ func (ti TrackMaker) NewTrack() *Track {
 	}
 }
 
-// Tracks is used for sorting tracks spanning albums and artists.
-type Tracks []*Track
+type tracks []*Track
 
 // Len returns the number of *Track instances.
-func (ts Tracks) Len() int {
+func (ts tracks) Len() int {
 	return len(ts)
 }
 
@@ -105,7 +104,7 @@ func (ts Tracks) Len() int {
 // first track's album comes before the second track's album. If the tracks come
 // from the same artist and album, then it returns true if the first track's
 // track number comes before the second track's track number.
-func (ts Tracks) Less(i, j int) bool {
+func (ts tracks) Less(i, j int) bool {
 	track1 := ts[i]
 	track2 := ts[j]
 	album1 := track1.Album
@@ -125,15 +124,15 @@ func (ts Tracks) Less(i, j int) bool {
 }
 
 // Swap swaps two tracks.
-func (ts Tracks) Swap(i, j int) {
+func (ts tracks) Swap(i, j int) {
 	ts[i], ts[j] = ts[j], ts[i]
 }
 
-func (t *Track) NeedsMetadata() bool {
+func (t *Track) needsMetadata() bool {
 	return t.Metadata == nil
 }
 
-func (t *Track) HasMetadataError() bool {
+func (t *Track) hasMetadataError() bool {
 	return t.Metadata != nil && len(t.Metadata.ErrorCauses()) != 0
 }
 
@@ -231,7 +230,7 @@ func (t *Track) ReconcileMetadata() MetadataState {
 			switch e {
 			case ErrNoID3V1MetadataFound.Error():
 				mS.missingID3V1 = true
-			case ErrNoID3V2MetadataFound.Error():
+			case errNoID3V2MetadataFound.Error():
 				mS.missingID3V2 = true
 			}
 		}
@@ -320,7 +319,7 @@ func (t *Track) ReportMetadataProblems() []string {
 // performs that work
 func (t *Track) UpdateMetadata() (e []error) {
 	if !t.ReconcileMetadata().HasConflicts() {
-		e = append(e, ErrNoEditNeeded)
+		e = append(e, errNoEditNeeded)
 		return
 	}
 	e = append(e, t.Metadata.Update(t.FilePath)...)
@@ -333,7 +332,7 @@ func (t *Track) UpdateMetadata() (e []error) {
 type empty struct{}
 
 func (t *Track) LoadMetadata(bar *pb.ProgressBar) {
-	if t.NeedsMetadata() {
+	if t.needsMetadata() {
 		openFiles <- empty{} // block while full
 		go func() {
 			defer func() {
@@ -576,7 +575,7 @@ func reportAllTrackErrors(o output.Bus, artists []*Artist) {
 }
 
 func (t *Track) ReportMetadataErrors(o output.Bus) {
-	if t.HasMetadataError() {
+	if t.hasMetadataError() {
 		for _, src := range []SourceType{ID3V1, ID3V2} {
 			if metadata := t.Metadata; metadata != nil {
 				if e := metadata.ErrorCause(src); e != "" {
@@ -674,20 +673,20 @@ func (t *Track) ID3V1Diagnostics() ([]string, error) {
 // ID3V2Diagnostics returns ID3V2 tag data - the ID3V2 version, its encoding,
 // and a slice of all the frames in the tag.
 func (t *Track) ID3V2Diagnostics() (*ID3V2Info, error) {
-	return ReadID3V2Metadata(t.FilePath)
+	return readID3V2Metadata(t.FilePath)
 }
 
 // Details returns relevant details about the track
 func (t *Track) Details() (map[string]string, error) {
-	info, readErr := ReadID3V2Metadata(t.FilePath)
+	info, readErr := readID3V2Metadata(t.FilePath)
 	if readErr != nil {
 		return nil, readErr
 	}
 	m := map[string]string{}
 	// only include known frames
 	for _, frame := range info.RawFrames {
-		if value, descriptionFound := frameDescriptions[frame.Name]; descriptionFound {
-			m[value] = frame.Value
+		if value, descriptionFound := frameDescriptions[frame.name]; descriptionFound {
+			m[value] = frame.value
 		}
 	}
 	return m, nil

@@ -108,7 +108,10 @@ func findConflictedTracks(concernedArtists []*concernedArtist) int {
 	for _, cAr := range concernedArtists {
 		for _, cAl := range cAr.albums() {
 			for _, cT := range cAl.tracks() {
-				state := cT.backing.ReconcileMetadata()
+				// this awkward declaration keeps helpful (sic) IDEs from declaring that
+				// MetadataState need not be public
+				var state files.MetadataState
+				state = cT.backing.ReconcileMetadata()
 				if state.HasArtistNameConflict() {
 					cT.addConcern(conflictConcern,
 						"the artist name field does not match the name of the artist"+
