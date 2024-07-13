@@ -209,60 +209,6 @@ func Test_tracks_Sort(t *testing.T) {
 	}
 }
 
-func TestTrack_AlbumPath(t *testing.T) {
-	tests := map[string]struct {
-		t    *Track
-		want string
-	}{
-		"no containing album": {t: &Track{}, want: ""},
-		"has containing album": {
-			t:    &Track{Album: AlbumMaker{Path: "album-path"}.NewAlbum()},
-			want: "album-path"},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			if got := tt.t.AlbumPath(); got != tt.want {
-				t.Errorf("Track.AlbumPath() = %q, want %q", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestTrack_CopyFile(t *testing.T) {
-	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
-	defer func() {
-		cmdtoolkit.AssignFileSystem(originalFileSystem)
-	}()
-	topDir := "copies"
-	_ = cmdtoolkit.Mkdir(topDir)
-	srcName := "source.mp3"
-	srcPath := filepath.Join(topDir, srcName)
-	_ = createFile(topDir, srcName)
-	tests := map[string]struct {
-		t           *Track
-		destination string
-		wantErr     bool
-	}{
-		"error case": {
-			t:           &Track{FilePath: "no such file"},
-			destination: filepath.Join(topDir, "destination.mp3"),
-			wantErr:     true,
-		},
-		"good case": {
-			t:           &Track{FilePath: srcPath},
-			destination: filepath.Join(topDir, "destination.mp3"),
-			wantErr:     false,
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			if gotErr := tt.t.CopyFile(tt.destination); (gotErr != nil) != tt.wantErr {
-				t.Errorf("Track.CopyFile() error = %v, wantErr %v", gotErr, tt.wantErr)
-			}
-		})
-	}
-}
-
 func TestTrackString(t *testing.T) {
 	tests := map[string]struct {
 		t    *Track
@@ -404,12 +350,12 @@ func TestCanonicalChoice(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			gotS, gotOk := CanonicalChoice(tt.m)
+			gotS, gotOk := canonicalChoice(tt.m)
 			if gotS != tt.wantS {
-				t.Errorf("CanonicalChoice gotS = %v, want %v", gotS, tt.wantS)
+				t.Errorf("canonicalChoice gotS = %v, want %v", gotS, tt.wantS)
 			}
 			if gotOk != tt.wantOk {
-				t.Errorf("CanonicalChoice gotOk = %v, want %v", gotOk, tt.wantOk)
+				t.Errorf("canonicalChoice gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
 		})
 	}
@@ -678,11 +624,11 @@ func TestTrackLoadMetadata(t *testing.T) {
 			bar := pb.New(1)
 			bar.SetWriter(output.NewNilBus().ErrorWriter())
 			bar.Start()
-			tt.t.LoadMetadata(bar)
-			WaitForFilesClosed()
+			tt.t.loadMetadata(bar)
+			waitForFilesClosed()
 			bar.Finish()
 			if !reflect.DeepEqual(tt.t.Metadata, tt.want) {
-				t.Errorf("Track.LoadMetadata() got %#v want %#v", tt.t.Metadata, tt.want)
+				t.Errorf("Track.loadMetadata() got %#v want %#v", tt.t.Metadata, tt.want)
 			}
 		})
 	}
@@ -1061,8 +1007,8 @@ func TestProcessArtistMetadata(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			ProcessArtistMetadata(o, tt.artists)
-			o.Report(t, "ProcessArtistMetadata()", tt.WantedRecording)
+			processArtistMetadata(o, tt.artists)
+			o.Report(t, "processArtistMetadata()", tt.WantedRecording)
 		})
 	}
 }
@@ -1253,8 +1199,8 @@ func TestProcessAlbumMetadata(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			ProcessAlbumMetadata(o, tt.artists)
-			o.Report(t, "ProcessAlbumMetadata()", tt.WantedRecording)
+			processAlbumMetadata(o, tt.artists)
+			o.Report(t, "processAlbumMetadata()", tt.WantedRecording)
 		})
 	}
 }
@@ -1294,8 +1240,8 @@ func TestTrack_ReportMetadataErrors(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			tt.t.ReportMetadataErrors(o)
-			o.Report(t, "Track.ReportMetadataErrors()", tt.WantedRecording)
+			tt.t.reportMetadataErrors(o)
+			o.Report(t, "Track.reportMetadataErrors()", tt.WantedRecording)
 		})
 	}
 }
@@ -1429,8 +1375,8 @@ func TestProgressWriter(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := ProgressWriter(tt.o); got != tt.want {
-				t.Errorf("ProgressWriter() = %v, want %v", got, tt.want)
+			if got := progressWriter(tt.o); got != tt.want {
+				t.Errorf("progressWriter() = %v, want %v", got, tt.want)
 			}
 		})
 	}

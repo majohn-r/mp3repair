@@ -397,7 +397,9 @@ func (ss *searchSettings) addTracks(o output.Bus, album *files.Album) {
 	if trackFiles, filesAvailable := readDirectory(o, album.FilePath); filesAvailable {
 		for _, trackFile := range trackFiles {
 			if extension, isTrack := ss.isValidTrackFile(trackFile); isTrack {
-				parsedName, valid := files.TrackNameParser{
+				var parsedName *files.ParsedTrackName
+				var valid bool
+				parsedName, valid = files.TrackNameParser{
 					FileName:  trackFile.Name(),
 					Album:     album,
 					Extension: extension,
