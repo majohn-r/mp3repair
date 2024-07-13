@@ -68,7 +68,7 @@ func Test_ensureTrackBackupDirectoryExists(t *testing.T) {
 		album = albums[0]
 	}
 	tests := map[string]struct {
-		cAl        *ConcernedAlbum
+		cAl        *concernedAlbum
 		dirExists  func(s string) bool
 		mkdir      func(s string) error
 		wantPath   string

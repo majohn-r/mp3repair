@@ -346,7 +346,7 @@ func Test_concernedAlbum_toConsole(t *testing.T) {
 		nilAlbum = albums[0]
 	}
 	tests := map[string]struct {
-		cAl *ConcernedAlbum
+		cAl *concernedAlbum
 		output.WantedRecording
 	}{
 		"nil": {cAl: newConcernedAlbum(nilAlbum)},
@@ -732,7 +732,7 @@ func Test_concernedAlbum_rollup(t *testing.T) {
 		}
 	}
 	tests := map[string]struct {
-		cAl  *ConcernedAlbum
+		cAl  *concernedAlbum
 		want bool
 	}{
 		"no tracks": {

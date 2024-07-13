@@ -107,18 +107,18 @@ func (cT *concernedTrack) backingTrack() *files.Track {
 	return cT.backing
 }
 
-type ConcernedAlbum struct {
+type concernedAlbum struct {
 	concerns
 	concernedTracks []*concernedTrack
 	backing         *files.Album
 	trackMap        map[string]*concernedTrack
 }
 
-func newConcernedAlbum(album *files.Album) *ConcernedAlbum {
+func newConcernedAlbum(album *files.Album) *concernedAlbum {
 	if album == nil {
 		return nil
 	}
-	cAl := &ConcernedAlbum{
+	cAl := &concernedAlbum{
 		concerns:        newConcerns(),
 		concernedTracks: make([]*concernedTrack, 0, len(album.Tracks)),
 		backing:         album,
@@ -130,22 +130,22 @@ func newConcernedAlbum(album *files.Album) *ConcernedAlbum {
 	return cAl
 }
 
-func (cAl *ConcernedAlbum) addConcern(source concernType, concern string) {
+func (cAl *concernedAlbum) addConcern(source concernType, concern string) {
 	cAl.concerns.addConcern(source, concern)
 }
 
-func (cAl *ConcernedAlbum) addTrack(track *files.Track) {
+func (cAl *concernedAlbum) addTrack(track *files.Track) {
 	if cT := newConcernedTrack(track); cT != nil {
 		cAl.concernedTracks = append(cAl.concernedTracks, cT)
 		cAl.trackMap[cT.backing.FileName()] = cT
 	}
 }
 
-func (cAl *ConcernedAlbum) backingAlbum() *files.Album {
+func (cAl *concernedAlbum) backingAlbum() *files.Album {
 	return cAl.backing
 }
 
-func (cAl *ConcernedAlbum) isConcerned() bool {
+func (cAl *concernedAlbum) isConcerned() bool {
 	if cAl.concerns.isConcerned() {
 		return true
 	}
@@ -157,11 +157,11 @@ func (cAl *ConcernedAlbum) isConcerned() bool {
 	return false
 }
 
-func (cAl *ConcernedAlbum) name() string {
+func (cAl *concernedAlbum) name() string {
 	return cAl.backing.Title
 }
 
-func (cAl *ConcernedAlbum) lookup(track *files.Track) *concernedTrack {
+func (cAl *concernedAlbum) lookup(track *files.Track) *concernedTrack {
 	var cT *concernedTrack
 	if track, found := cAl.trackMap[track.FileName()]; found {
 		cT = track
@@ -169,7 +169,7 @@ func (cAl *ConcernedAlbum) lookup(track *files.Track) *concernedTrack {
 	return cT
 }
 
-func (cAl *ConcernedAlbum) rollup() bool {
+func (cAl *concernedAlbum) rollup() bool {
 	if len(cAl.concernedTracks) <= 1 {
 		return false
 	}
@@ -189,7 +189,7 @@ func (cAl *ConcernedAlbum) rollup() bool {
 	return true
 }
 
-func (cAl *ConcernedAlbum) toConsole(o output.Bus) {
+func (cAl *concernedAlbum) toConsole(o output.Bus) {
 	if cAl.isConcerned() {
 		o.WriteConsole("Album %q\n", cAl.name())
 		cAl.concerns.toConsole(o)
@@ -211,15 +211,15 @@ func (cAl *ConcernedAlbum) toConsole(o output.Bus) {
 	}
 }
 
-func (cAl *ConcernedAlbum) tracks() []*concernedTrack {
+func (cAl *concernedAlbum) tracks() []*concernedTrack {
 	return cAl.concernedTracks
 }
 
 type concernedArtist struct {
 	concerns
-	concernedAlbums []*ConcernedAlbum
+	concernedAlbums []*concernedAlbum
 	backing         *files.Artist
-	albumMap        map[string]*ConcernedAlbum
+	albumMap        map[string]*concernedAlbum
 }
 
 func newConcernedArtist(artist *files.Artist) *concernedArtist {
@@ -228,9 +228,9 @@ func newConcernedArtist(artist *files.Artist) *concernedArtist {
 	}
 	cAr := &concernedArtist{
 		concerns:        newConcerns(),
-		concernedAlbums: make([]*ConcernedAlbum, 0, len(artist.Albums)),
+		concernedAlbums: make([]*concernedAlbum, 0, len(artist.Albums)),
 		backing:         artist,
-		albumMap:        map[string]*ConcernedAlbum{},
+		albumMap:        map[string]*concernedAlbum{},
 	}
 	for _, album := range artist.Albums {
 		cAr.addAlbum(album)
@@ -249,7 +249,7 @@ func (cAr *concernedArtist) addConcern(source concernType, concern string) {
 	cAr.concerns.addConcern(source, concern)
 }
 
-func (cAr *concernedArtist) albums() []*ConcernedAlbum {
+func (cAr *concernedArtist) albums() []*concernedAlbum {
 	return cAr.concernedAlbums
 }
 
@@ -308,7 +308,7 @@ func (cAr *concernedArtist) toConsole(o output.Bus) {
 	if cAr.isConcerned() {
 		o.WriteConsole("Artist %q\n", cAr.name())
 		cAr.concerns.toConsole(o)
-		m := map[string]*ConcernedAlbum{}
+		m := map[string]*concernedAlbum{}
 		names := make([]string, 0, len(cAr.concernedAlbums))
 		for _, cT := range cAr.concernedAlbums {
 			albumName := cT.name()

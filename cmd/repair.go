@@ -267,7 +267,7 @@ func tryTrackBackup(o output.Bus, t *files.Track, path string) (backedUp bool) {
 	return
 }
 
-func ensureTrackBackupDirectoryExists(o output.Bus, cAl *ConcernedAlbum) (path string, exists bool) {
+func ensureTrackBackupDirectoryExists(o output.Bus, cAl *concernedAlbum) (path string, exists bool) {
 	path = cAl.backing.BackupDirectory()
 	exists = true
 	if !dirExists(path) {
