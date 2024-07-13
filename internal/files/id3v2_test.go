@@ -1,9 +1,8 @@
-package files_test
+package files
 
 import (
 	"fmt"
 	"io"
-	"mp3repair/internal/files"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -83,15 +82,15 @@ func TestRawReadID3V2Metadata(t *testing.T) {
 	_ = createFileWithContent(".", "badFile.mp3", createID3v2TaggedData(payload, frames))
 	tests := map[string]struct {
 		path  string
-		wantD *files.Id3v2Metadata
+		wantD *Id3v2Metadata
 	}{
 		"bad test": {
 			path:  "./noSuchFile!.mp3",
-			wantD: &files.Id3v2Metadata{Err: fmt.Errorf("foo")},
+			wantD: &Id3v2Metadata{Err: fmt.Errorf("foo")},
 		},
 		"good test": {
 			path: "./goodFile.mp3",
-			wantD: &files.Id3v2Metadata{
+			wantD: &Id3v2Metadata{
 				AlbumTitle:  "unknown album",
 				ArtistName:  "unknown artist",
 				TrackName:   "unknown track",
@@ -100,12 +99,12 @@ func TestRawReadID3V2Metadata(t *testing.T) {
 		},
 		"bad data test": {
 			path:  "./badFile.mp3",
-			wantD: &files.Id3v2Metadata{Err: files.ErrMalformedTrackNumber},
+			wantD: &Id3v2Metadata{Err: ErrMalformedTrackNumber},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			gotD := files.RawReadID3V2Metadata(tt.path)
+			gotD := RawReadID3V2Metadata(tt.path)
 			if gotD.HasError() {
 				if !tt.wantD.HasError() {
 					t.Errorf("RawReadID3V2Metadata() = %v, want %v", gotD, tt.wantD)
@@ -129,7 +128,7 @@ func TestRemoveLeadingBOMs(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := files.RemoveLeadingBOMs(tt.s); got != tt.want {
+			if got := RemoveLeadingBOMs(tt.s); got != tt.want {
 				t.Errorf("RemoveLeadingBOMs() = %q, want %q", got, tt.want)
 			}
 		})
@@ -180,7 +179,7 @@ func TestToTrackNumber(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			gotI, gotErr := files.ToTrackNumber(tt.s)
+			gotI, gotErr := ToTrackNumber(tt.s)
 			if (gotErr != nil) != tt.wantErr {
 				t.Errorf("ToTrackNumber() error = %v, wantErr %v", gotErr, tt.wantErr)
 				return
@@ -238,7 +237,7 @@ func TestSelectUnknownFrame(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := files.SelectUnknownFrame(tt.mcdiFramers); !reflect.DeepEqual(got, tt.want) {
+			if got := SelectUnknownFrame(tt.mcdiFramers); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("SelectUnknownFrame() = %v, want %v", got, tt.want)
 			}
 		})
@@ -247,11 +246,11 @@ func TestSelectUnknownFrame(t *testing.T) {
 
 func TestID3V2TrackFrameStringType(t *testing.T) {
 	tests := map[string]struct {
-		f    *files.Id3v2TrackFrame
+		f    *Id3v2TrackFrame
 		want string
 	}{
 		"usual": {
-			f:    &files.Id3v2TrackFrame{Name: "T1", Value: "V1"},
+			f:    &Id3v2TrackFrame{Name: "T1", Value: "V1"},
 			want: "T1 = \"V1\"",
 		},
 	}
@@ -320,7 +319,7 @@ func TestReadID3V2Metadata(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			// ignoring raw frames ...
-			gotInfo, gotErr := files.ReadID3V2Metadata(tt.path)
+			gotInfo, gotErr := ReadID3V2Metadata(tt.path)
 			if (gotErr != nil) != tt.wantErr {
 				t.Errorf("ReadID3V2Metadata() error = %v, wantErr %v", gotErr, tt.wantErr)
 				return
@@ -354,7 +353,7 @@ func TestFramerSliceAsString(t *testing.T) {
 		},
 		"unexpected frame": {
 			f:    []id3v2.Framer{unspecifiedFrame{content: "hello world"}},
-			want: "<<files_test.unspecifiedFrame{content:\"hello world\"}>>",
+			want: "<<files.unspecifiedFrame{content:\"hello world\"}>>",
 		},
 		"multiple frames": {
 			f: []id3v2.Framer{
@@ -362,12 +361,12 @@ func TestFramerSliceAsString(t *testing.T) {
 				unspecifiedFrame{content: "hello world"},
 			},
 			want: "<<[0 []byte{0x0, 0x1, 0x2}]," +
-				" [1 files_test.unspecifiedFrame{content:\"hello world\"}]>>",
+				" [1 files.unspecifiedFrame{content:\"hello world\"}]>>",
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := files.FramerSliceAsString(tt.f); got != tt.want {
+			if got := FramerSliceAsString(tt.f); got != tt.want {
 				t.Errorf("FramerSliceAsString() = %q, want %q", got, tt.want)
 			}
 		})
@@ -376,53 +375,53 @@ func TestFramerSliceAsString(t *testing.T) {
 
 func TestId3v2NameDiffers(t *testing.T) {
 	tests := map[string]struct {
-		cS   *files.ComparableStrings
+		cS   *ComparableStrings
 		want bool
 	}{
 		"identical strings": {
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "simple name",
 				Metadata: "simple name",
 			},
 			want: false,
 		},
 		"identical strings with case differences": {
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "SIMPLE name",
 				Metadata: "simple NAME",
 			},
 			want: false,
 		},
 		"strings of different length": {
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "simple name",
 				Metadata: "artist: simple name",
 			},
 			want: true,
 		},
 		"use of runes that are illegal for file names": {
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "simple_name",
 				Metadata: "simple:name",
 			},
 			want: false,
 		},
 		"metadata with trailing space": {
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "simple name",
 				Metadata: "simple name ",
 			},
 			want: false,
 		},
 		"period on the end": {
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "simple name.",
 				Metadata: "simple name.",
 			},
 			want: false,
 		},
 		"complex mismatch": {
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "simple_name",
 				Metadata: "simple: nam",
 			},
@@ -431,7 +430,7 @@ func TestId3v2NameDiffers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := files.Id3v2NameDiffers(tt.cS); got != tt.want {
+			if got := Id3v2NameDiffers(tt.cS); got != tt.want {
 				t.Errorf("Id3v2NameDiffers() = %v, want %v", got, tt.want)
 			}
 		})
@@ -655,7 +654,7 @@ func TestNormalizeGenre(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := files.NormalizeGenre(tt.g); got != tt.want {
+			if got := NormalizeGenre(tt.g); got != tt.want {
 				t.Errorf("NormalizeGenre() = %v, want %v", got, tt.want)
 			}
 		})
@@ -664,18 +663,18 @@ func TestNormalizeGenre(t *testing.T) {
 
 func TestId3v2GenreDiffers(t *testing.T) {
 	tests := map[string]struct {
-		cS   *files.ComparableStrings
+		cS   *ComparableStrings
 		want bool
 	}{
 		"match": {
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "Classic Rock",
 				Metadata: "Classic Rock",
 			},
 			want: false,
 		},
 		"no match": {
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "Classic Rock",
 				Metadata: "classic rock",
 			},
@@ -684,7 +683,7 @@ func TestId3v2GenreDiffers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := files.Id3v2GenreDiffers(tt.cS); got != tt.want {
+			if got := Id3v2GenreDiffers(tt.cS); got != tt.want {
 				t.Errorf("Id3v2GenreDiffers() = %v, want %v", got, tt.want)
 			}
 		})
@@ -704,7 +703,7 @@ func TestIsTagAbsent(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := files.IsTagAbsent(tt.tag); got != tt.want {
+			if got := IsTagAbsent(tt.tag); got != tt.want {
 				t.Errorf("IsTagAbsent() = %v, want %v", got, tt.want)
 			}
 		})

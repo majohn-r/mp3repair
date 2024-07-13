@@ -1,31 +1,30 @@
-package files_test
+package files
 
 import (
 	"io/fs"
-	"mp3repair/internal/files"
 	"path/filepath"
 	"reflect"
 	"testing"
 )
 
 func TestArtist_Copy(t *testing.T) {
-	complexArtist := &files.Artist{
+	complexArtist := &Artist{
 		Name:          "artist's name",
 		FilePath:      "Music/artist's name",
 		CanonicalName: "Actually, Fred",
 	}
-	complexArtist2 := &files.Artist{
+	complexArtist2 := &Artist{
 		Name:          "artist's name",
 		FilePath:      "Music/artist's name",
 		CanonicalName: "Actually, Fred",
 	}
 	tests := map[string]struct {
-		a    *files.Artist
-		want *files.Artist
+		a    *Artist
+		want *Artist
 	}{
 		"simple test": {
-			a:    files.NewArtist("artist name", "Music/artist name"),
-			want: files.NewArtist("artist name", "Music/artist name"),
+			a:    NewArtist("artist name", "Music/artist name"),
+			want: NewArtist("artist name", "Music/artist name"),
 		},
 		"complex test": {
 			a:    complexArtist,
@@ -48,19 +47,19 @@ func TestNewArtistFromFile(t *testing.T) {
 	}
 	tests := map[string]struct {
 		args
-		want *files.Artist
+		want *Artist
 	}{
 		"simple": {
 			args: args{
 				f:   &testFile{name: "my artist"},
 				dir: "Music",
 			},
-			want: files.NewArtist("my artist", filepath.Join("Music", "my artist")),
+			want: NewArtist("my artist", filepath.Join("Music", "my artist")),
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := files.NewArtistFromFile(tt.args.f,
+			if got := NewArtistFromFile(tt.args.f,
 				tt.args.dir); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewArtistFromFile() = %v, want %v", got, tt.want)
 			}
@@ -70,12 +69,12 @@ func TestNewArtistFromFile(t *testing.T) {
 
 func TestArtist_HasAlbums(t *testing.T) {
 	tests := map[string]struct {
-		a    *files.Artist
+		a    *Artist
 		want bool
 	}{
-		"empty": {a: &files.Artist{}, want: false},
+		"empty": {a: &Artist{}, want: false},
 		"with albums": {
-			a:    &files.Artist{Albums: []*files.Album{{}}},
+			a:    &Artist{Albums: []*Album{{}}},
 			want: true,
 		},
 	}

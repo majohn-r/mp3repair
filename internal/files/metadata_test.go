@@ -1,7 +1,6 @@
-package files_test
+package files
 
 import (
-	"mp3repair/internal/files"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -13,13 +12,13 @@ import (
 
 func TestSourceTypeName(t *testing.T) {
 	tests := map[string]struct {
-		sT   files.SourceType
+		sT   SourceType
 		want string
 	}{
-		"undefined": {sT: files.UndefinedSource, want: "undefined"},
-		"ID3V1":     {sT: files.ID3V1, want: "ID3V1"},
-		"ID3V2":     {sT: files.ID3V2, want: "ID3V2"},
-		"total":     {sT: files.TotalSources, want: "total"},
+		"undefined": {sT: UndefinedSource, want: "undefined"},
+		"ID3V1":     {sT: ID3V1, want: "ID3V1"},
+		"ID3V2":     {sT: ID3V2, want: "ID3V2"},
+		"total":     {sT: TotalSources, want: "total"},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -78,7 +77,7 @@ func TestYearsMatch(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := files.YearsMatch(tt.args.metadataYear, tt.args.albumYear); got != tt.want {
+			if got := YearsMatch(tt.args.metadataYear, tt.args.albumYear); got != tt.want {
 				t.Errorf("YearsMatch() = %v, want %v", got, tt.want)
 			}
 		})
@@ -87,27 +86,27 @@ func TestYearsMatch(t *testing.T) {
 
 func TestTrackMetadata_SetArtistName(t *testing.T) {
 	type args struct {
-		src  files.SourceType
+		src  SourceType
 		name string
 	}
 	tests := map[string]struct {
-		tm *files.TrackMetadata
+		tm *TrackMetadata
 		args
 		want string
 	}{
 		"id3v1": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V1, name: "my favorite old artist"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V1, name: "my favorite old artist"},
 			want: "my favorite old artist",
 		},
 		"id3v2": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V2, name: "my favorite new artist"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V2, name: "my favorite new artist"},
 			want: "my favorite new artist",
 		},
 		"unknown": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.UndefinedSource, name: "what artist?"},
+			tm:   NewTrackMetadata(),
+			args: args{src: UndefinedSource, name: "what artist?"},
 			want: "",
 		},
 	}
@@ -127,27 +126,27 @@ func TestTrackMetadata_SetArtistName(t *testing.T) {
 
 func TestTrackMetadata_CorrectArtistName(t *testing.T) {
 	type args struct {
-		src  files.SourceType
+		src  SourceType
 		name string
 	}
 	tests := map[string]struct {
-		tm *files.TrackMetadata
+		tm *TrackMetadata
 		args
 		want string
 	}{
 		"id3v1": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V1, name: "my favorite old artist"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V1, name: "my favorite old artist"},
 			want: "my favorite old artist",
 		},
 		"id3v2": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V2, name: "my favorite new artist"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V2, name: "my favorite new artist"},
 			want: "my favorite new artist",
 		},
 		"unknown": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.UndefinedSource, name: "what artist?"},
+			tm:   NewTrackMetadata(),
+			args: args{src: UndefinedSource, name: "what artist?"},
 			want: "",
 		},
 	}
@@ -163,27 +162,27 @@ func TestTrackMetadata_CorrectArtistName(t *testing.T) {
 
 func TestTrackMetadata_SetAlbumName(t *testing.T) {
 	type args struct {
-		src  files.SourceType
+		src  SourceType
 		name string
 	}
 	tests := map[string]struct {
-		tm *files.TrackMetadata
+		tm *TrackMetadata
 		args
 		want string
 	}{
 		"id3v1": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V1, name: "my favorite old album"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V1, name: "my favorite old album"},
 			want: "my favorite old album",
 		},
 		"id3v2": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V2, name: "my favorite new album"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V2, name: "my favorite new album"},
 			want: "my favorite new album",
 		},
 		"unknown": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.UndefinedSource, name: "what album?"},
+			tm:   NewTrackMetadata(),
+			args: args{src: UndefinedSource, name: "what album?"},
 			want: "",
 		},
 	}
@@ -203,27 +202,27 @@ func TestTrackMetadata_SetAlbumName(t *testing.T) {
 
 func TestTrackMetadata_CorrectAlbumName(t *testing.T) {
 	type args struct {
-		src  files.SourceType
+		src  SourceType
 		name string
 	}
 	tests := map[string]struct {
-		tm *files.TrackMetadata
+		tm *TrackMetadata
 		args
 		want string
 	}{
 		"id3v1": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V1, name: "my favorite old album"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V1, name: "my favorite old album"},
 			want: "my favorite old album",
 		},
 		"id3v2": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V2, name: "my favorite new album"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V2, name: "my favorite new album"},
 			want: "my favorite new album",
 		},
 		"unknown": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.UndefinedSource, name: "what album?"},
+			tm:   NewTrackMetadata(),
+			args: args{src: UndefinedSource, name: "what album?"},
 			want: "",
 		},
 	}
@@ -239,27 +238,27 @@ func TestTrackMetadata_CorrectAlbumName(t *testing.T) {
 
 func TestTrackMetadata_SetAlbumGenre(t *testing.T) {
 	type args struct {
-		src  files.SourceType
+		src  SourceType
 		name string
 	}
 	tests := map[string]struct {
-		tm *files.TrackMetadata
+		tm *TrackMetadata
 		args
 		want string
 	}{
 		"id3v1": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V1, name: "old genre"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V1, name: "old genre"},
 			want: "old genre",
 		},
 		"id3v2": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V2, name: "new genre"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V2, name: "new genre"},
 			want: "new genre",
 		},
 		"unknown": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.UndefinedSource, name: "what genre?"},
+			tm:   NewTrackMetadata(),
+			args: args{src: UndefinedSource, name: "what genre?"},
 			want: "",
 		},
 	}
@@ -279,27 +278,27 @@ func TestTrackMetadata_SetAlbumGenre(t *testing.T) {
 
 func TestTrackMetadata_CorrectAlbumGenre(t *testing.T) {
 	type args struct {
-		src  files.SourceType
+		src  SourceType
 		name string
 	}
 	tests := map[string]struct {
-		tm *files.TrackMetadata
+		tm *TrackMetadata
 		args
 		want string
 	}{
 		"id3v1": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V1, name: "old genre"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V1, name: "old genre"},
 			want: "old genre",
 		},
 		"id3v2": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V2, name: "new genre"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V2, name: "new genre"},
 			want: "new genre",
 		},
 		"unknown": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.UndefinedSource, name: "what genre?"},
+			tm:   NewTrackMetadata(),
+			args: args{src: UndefinedSource, name: "what genre?"},
 			want: "",
 		},
 	}
@@ -315,27 +314,27 @@ func TestTrackMetadata_CorrectAlbumGenre(t *testing.T) {
 
 func TestTrackMetadata_SetAlbumYear(t *testing.T) {
 	type args struct {
-		src  files.SourceType
+		src  SourceType
 		name string
 	}
 	tests := map[string]struct {
-		tm *files.TrackMetadata
+		tm *TrackMetadata
 		args
 		want string
 	}{
 		"id3v1": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V1, name: "1900"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V1, name: "1900"},
 			want: "1900",
 		},
 		"id3v2": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V2, name: "2000"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V2, name: "2000"},
 			want: "2000",
 		},
 		"unknown": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.UndefinedSource, name: "1984?"},
+			tm:   NewTrackMetadata(),
+			args: args{src: UndefinedSource, name: "1984?"},
 			want: "",
 		},
 	}
@@ -355,27 +354,27 @@ func TestTrackMetadata_SetAlbumYear(t *testing.T) {
 
 func TestTrackMetadata_CorrectAlbumYear(t *testing.T) {
 	type args struct {
-		src  files.SourceType
+		src  SourceType
 		name string
 	}
 	tests := map[string]struct {
-		tm *files.TrackMetadata
+		tm *TrackMetadata
 		args
 		want string
 	}{
 		"id3v1": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V1, name: "1900"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V1, name: "1900"},
 			want: "1900",
 		},
 		"id3v2": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V2, name: "2000"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V2, name: "2000"},
 			want: "2000",
 		},
 		"unknown": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.UndefinedSource, name: "1984?"},
+			tm:   NewTrackMetadata(),
+			args: args{src: UndefinedSource, name: "1984?"},
 			want: "",
 		},
 	}
@@ -391,27 +390,27 @@ func TestTrackMetadata_CorrectAlbumYear(t *testing.T) {
 
 func TestTrackMetadata_SetTrackName(t *testing.T) {
 	type args struct {
-		src  files.SourceType
+		src  SourceType
 		name string
 	}
 	tests := map[string]struct {
-		tm *files.TrackMetadata
+		tm *TrackMetadata
 		args
 		want string
 	}{
 		"id3v1": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V1, name: "My old track"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V1, name: "My old track"},
 			want: "My old track",
 		},
 		"id3v2": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V2, name: "My new track"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V2, name: "My new track"},
 			want: "My new track",
 		},
 		"unknown": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.UndefinedSource, name: "I can has track?"},
+			tm:   NewTrackMetadata(),
+			args: args{src: UndefinedSource, name: "I can has track?"},
 			want: "",
 		},
 	}
@@ -431,27 +430,27 @@ func TestTrackMetadata_SetTrackName(t *testing.T) {
 
 func TestTrackMetadata_CorrectTrackName(t *testing.T) {
 	type args struct {
-		src  files.SourceType
+		src  SourceType
 		name string
 	}
 	tests := map[string]struct {
-		tm *files.TrackMetadata
+		tm *TrackMetadata
 		args
 		want string
 	}{
 		"id3v1": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V1, name: "My old track"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V1, name: "My old track"},
 			want: "My old track",
 		},
 		"id3v2": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V2, name: "My new track"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V2, name: "My new track"},
 			want: "My new track",
 		},
 		"unknown": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.UndefinedSource, name: "I can has track?"},
+			tm:   NewTrackMetadata(),
+			args: args{src: UndefinedSource, name: "I can has track?"},
 			want: "",
 		},
 	}
@@ -467,27 +466,27 @@ func TestTrackMetadata_CorrectTrackName(t *testing.T) {
 
 func TestTrackMetadata_SetTrackNumber(t *testing.T) {
 	type args struct {
-		src    files.SourceType
+		src    SourceType
 		number int
 	}
 	tests := map[string]struct {
-		tm *files.TrackMetadata
+		tm *TrackMetadata
 		args
 		want int
 	}{
 		"id3v1": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V1, number: 19},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V1, number: 19},
 			want: 19,
 		},
 		"id3v2": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V2, number: 20},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V2, number: 20},
 			want: 20,
 		},
 		"unknown": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.UndefinedSource, number: 45},
+			tm:   NewTrackMetadata(),
+			args: args{src: UndefinedSource, number: 45},
 			want: 0,
 		},
 	}
@@ -507,27 +506,27 @@ func TestTrackMetadata_SetTrackNumber(t *testing.T) {
 
 func TestTrackMetadata_CorrectTrackNumber(t *testing.T) {
 	type args struct {
-		src    files.SourceType
+		src    SourceType
 		number int
 	}
 	tests := map[string]struct {
-		tm *files.TrackMetadata
+		tm *TrackMetadata
 		args
 		want int
 	}{
 		"id3v1": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V1, number: 19},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V1, number: 19},
 			want: 19,
 		},
 		"id3v2": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V2, number: 20},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V2, number: 20},
 			want: 20,
 		},
 		"unknown": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.UndefinedSource, number: 45},
+			tm:   NewTrackMetadata(),
+			args: args{src: UndefinedSource, number: 45},
 			want: 0,
 		},
 	}
@@ -543,27 +542,27 @@ func TestTrackMetadata_CorrectTrackNumber(t *testing.T) {
 
 func TestTrackMetadata_SetErrorCause(t *testing.T) {
 	type args struct {
-		src   files.SourceType
+		src   SourceType
 		cause string
 	}
 	tests := map[string]struct {
-		tm *files.TrackMetadata
+		tm *TrackMetadata
 		args
 		want string
 	}{
 		"id3v1": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V1, cause: "failure to read ID3V1 data"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V1, cause: "failure to read ID3V1 data"},
 			want: "failure to read ID3V1 data",
 		},
 		"id3v2": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.ID3V2, cause: "failure to read ID3V2 data"},
+			tm:   NewTrackMetadata(),
+			args: args{src: ID3V2, cause: "failure to read ID3V2 data"},
 			want: "failure to read ID3V2 data",
 		},
 		"unknown": {
-			tm:   files.NewTrackMetadata(),
-			args: args{src: files.UndefinedSource, cause: "what happened?"},
+			tm:   NewTrackMetadata(),
+			args: args{src: UndefinedSource, cause: "what happened?"},
 			want: "",
 		},
 	}
@@ -579,23 +578,23 @@ func TestTrackMetadata_SetErrorCause(t *testing.T) {
 
 func TestTrackMetadata_SetEditRequired(t *testing.T) {
 	tests := map[string]struct {
-		tm   *files.TrackMetadata
-		src  files.SourceType
+		tm   *TrackMetadata
+		src  SourceType
 		want bool
 	}{
 		"id3v1": {
-			tm:   files.NewTrackMetadata(),
-			src:  files.ID3V1,
+			tm:   NewTrackMetadata(),
+			src:  ID3V1,
 			want: true,
 		},
 		"id3v2": {
-			tm:   files.NewTrackMetadata(),
-			src:  files.ID3V2,
+			tm:   NewTrackMetadata(),
+			src:  ID3V2,
 			want: true,
 		},
 		"unknown": {
-			tm:   files.NewTrackMetadata(),
-			src:  files.UndefinedSource,
+			tm:   NewTrackMetadata(),
+			src:  UndefinedSource,
 			want: false,
 		},
 	}
@@ -611,12 +610,12 @@ func TestTrackMetadata_SetEditRequired(t *testing.T) {
 
 func TestTrackMetadata_SetCDIdentifier(t *testing.T) {
 	tests := map[string]struct {
-		tm   *files.TrackMetadata
+		tm   *TrackMetadata
 		body []byte
 		want []byte
 	}{
 		"id3v2": {
-			tm:   files.NewTrackMetadata(),
+			tm:   NewTrackMetadata(),
 			body: []byte("new"),
 			want: []byte("new"),
 		},
@@ -636,12 +635,12 @@ func TestTrackMetadata_SetCDIdentifier(t *testing.T) {
 
 func TestTrackMetadata_CorrectCDIdentifier(t *testing.T) {
 	tests := map[string]struct {
-		tm   *files.TrackMetadata
+		tm   *TrackMetadata
 		body []byte
 		want []byte
 	}{
 		"id3v2": {
-			tm:   files.NewTrackMetadata(),
+			tm:   NewTrackMetadata(),
 			body: []byte("old"),
 			want: []byte("old"),
 		},
@@ -658,14 +657,14 @@ func TestTrackMetadata_CorrectCDIdentifier(t *testing.T) {
 
 func TestNewTrackMetadata(t *testing.T) {
 	tests := map[string]struct {
-		want *files.TrackMetadata
-	}{"test": {want: files.NewTrackMetadata()}}
+		want *TrackMetadata
+	}{"test": {want: NewTrackMetadata()}}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := files.NewTrackMetadata(); !reflect.DeepEqual(got, tt.want) {
+			if got := NewTrackMetadata(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewTrackMetadata() = %v, want %v", got, tt.want)
 			}
-			for _, src := range []files.SourceType{files.ID3V1, files.ID3V2} {
+			for _, src := range []SourceType{ID3V1, ID3V2} {
 				artistName := tt.want.ArtistName(src)
 				if got := artistName.Original(); got != "" {
 					t.Errorf("NewTrackMetadata().ArtistName(%s).Original() = %q, want %q", src.Name(), got, "")
@@ -722,8 +721,8 @@ func TestNewTrackMetadata(t *testing.T) {
 			if got := cdi.Correction(); len(got.Body) != 0 {
 				t.Errorf("NewTrackMetadata().CDIdentifier().Correction() = %v, want %v", got.Body, []byte{})
 			}
-			if got := tt.want.CanonicalSource(); got != files.UndefinedSource {
-				t.Errorf("NewTrackMetadata().CanonicalSource() = %s, want %s", got.Name(), files.UndefinedSource.Name())
+			if got := tt.want.CanonicalSource(); got != UndefinedSource {
+				t.Errorf("NewTrackMetadata().CanonicalSource() = %s, want %s", got.Name(), UndefinedSource.Name())
 			}
 		})
 	}
@@ -760,49 +759,49 @@ func TestInitializeMetadata(t *testing.T) {
 	payloadComplete = append(payloadComplete, payloadID3v1Only...)
 	_ = createFileWithContent(testDir, completeFile, payloadComplete)
 	noSuchFile := "no such file.mp3"
-	missingFileData := files.NewTrackMetadata()
-	missingFileData.SetErrorCause(files.ID3V1, "open "+testDir+"\\"+noSuchFile+": file does not exist")
-	missingFileData.SetErrorCause(files.ID3V2, "open "+testDir+"\\"+noSuchFile+": file does not exist")
-	noMetadata := files.NewTrackMetadata()
-	noMetadata.SetErrorCause(files.ID3V1, "no ID3V1 metadata found")
-	noMetadata.SetErrorCause(files.ID3V2, "no ID3V2 metadata found")
-	onlyID3V1Metadata := files.NewTrackMetadata()
-	onlyID3V1Metadata.SetArtistName(files.ID3V1, "The Beatles")
-	onlyID3V1Metadata.SetAlbumName(files.ID3V1, "On Air: Live At The BBC, Volum")
-	onlyID3V1Metadata.SetAlbumGenre(files.ID3V1, "other")
-	onlyID3V1Metadata.SetAlbumYear(files.ID3V1, "2013")
-	onlyID3V1Metadata.SetTrackName(files.ID3V1, "Ringo - Pop Profile [Interview")
-	onlyID3V1Metadata.SetTrackNumber(files.ID3V1, 29)
-	onlyID3V1Metadata.SetErrorCause(files.ID3V2, "no ID3V2 metadata found")
-	onlyID3V1Metadata.SetCanonicalSource(files.ID3V1)
-	onlyID3V2Metadata := files.NewTrackMetadata()
-	onlyID3V2Metadata.SetArtistName(files.ID3V2, "unknown artist")
-	onlyID3V2Metadata.SetAlbumName(files.ID3V2, "unknown album")
-	onlyID3V2Metadata.SetAlbumGenre(files.ID3V2, "dance music")
-	onlyID3V2Metadata.SetAlbumYear(files.ID3V2, "2022")
-	onlyID3V2Metadata.SetTrackName(files.ID3V2, "unknown track")
-	onlyID3V2Metadata.SetTrackNumber(files.ID3V2, 2)
+	missingFileData := NewTrackMetadata()
+	missingFileData.SetErrorCause(ID3V1, "open "+testDir+"\\"+noSuchFile+": file does not exist")
+	missingFileData.SetErrorCause(ID3V2, "open "+testDir+"\\"+noSuchFile+": file does not exist")
+	noMetadata := NewTrackMetadata()
+	noMetadata.SetErrorCause(ID3V1, "no ID3V1 metadata found")
+	noMetadata.SetErrorCause(ID3V2, "no ID3V2 metadata found")
+	onlyID3V1Metadata := NewTrackMetadata()
+	onlyID3V1Metadata.SetArtistName(ID3V1, "The Beatles")
+	onlyID3V1Metadata.SetAlbumName(ID3V1, "On Air: Live At The BBC, Volum")
+	onlyID3V1Metadata.SetAlbumGenre(ID3V1, "other")
+	onlyID3V1Metadata.SetAlbumYear(ID3V1, "2013")
+	onlyID3V1Metadata.SetTrackName(ID3V1, "Ringo - Pop Profile [Interview")
+	onlyID3V1Metadata.SetTrackNumber(ID3V1, 29)
+	onlyID3V1Metadata.SetErrorCause(ID3V2, "no ID3V2 metadata found")
+	onlyID3V1Metadata.SetCanonicalSource(ID3V1)
+	onlyID3V2Metadata := NewTrackMetadata()
+	onlyID3V2Metadata.SetArtistName(ID3V2, "unknown artist")
+	onlyID3V2Metadata.SetAlbumName(ID3V2, "unknown album")
+	onlyID3V2Metadata.SetAlbumGenre(ID3V2, "dance music")
+	onlyID3V2Metadata.SetAlbumYear(ID3V2, "2022")
+	onlyID3V2Metadata.SetTrackName(ID3V2, "unknown track")
+	onlyID3V2Metadata.SetTrackNumber(ID3V2, 2)
 	onlyID3V2Metadata.SetCDIdentifier([]byte{0})
-	onlyID3V2Metadata.SetCanonicalSource(files.ID3V2)
-	onlyID3V2Metadata.SetErrorCause(files.ID3V1, "no ID3V1 metadata found")
-	allMetadata := files.NewTrackMetadata()
-	allMetadata.SetArtistName(files.ID3V1, "The Beatles")
-	allMetadata.SetAlbumName(files.ID3V1, "On Air: Live At The BBC, Volum")
-	allMetadata.SetAlbumGenre(files.ID3V1, "other")
-	allMetadata.SetAlbumYear(files.ID3V1, "2013")
-	allMetadata.SetTrackName(files.ID3V1, "Ringo - Pop Profile [Interview")
-	allMetadata.SetTrackNumber(files.ID3V1, 29)
-	allMetadata.SetArtistName(files.ID3V2, "unknown artist")
-	allMetadata.SetAlbumName(files.ID3V2, "unknown album")
-	allMetadata.SetAlbumGenre(files.ID3V2, "dance music")
-	allMetadata.SetAlbumYear(files.ID3V2, "2022")
-	allMetadata.SetTrackName(files.ID3V2, "unknown track")
-	allMetadata.SetTrackNumber(files.ID3V2, 2)
+	onlyID3V2Metadata.SetCanonicalSource(ID3V2)
+	onlyID3V2Metadata.SetErrorCause(ID3V1, "no ID3V1 metadata found")
+	allMetadata := NewTrackMetadata()
+	allMetadata.SetArtistName(ID3V1, "The Beatles")
+	allMetadata.SetAlbumName(ID3V1, "On Air: Live At The BBC, Volum")
+	allMetadata.SetAlbumGenre(ID3V1, "other")
+	allMetadata.SetAlbumYear(ID3V1, "2013")
+	allMetadata.SetTrackName(ID3V1, "Ringo - Pop Profile [Interview")
+	allMetadata.SetTrackNumber(ID3V1, 29)
+	allMetadata.SetArtistName(ID3V2, "unknown artist")
+	allMetadata.SetAlbumName(ID3V2, "unknown album")
+	allMetadata.SetAlbumGenre(ID3V2, "dance music")
+	allMetadata.SetAlbumYear(ID3V2, "2022")
+	allMetadata.SetTrackName(ID3V2, "unknown track")
+	allMetadata.SetTrackNumber(ID3V2, 2)
 	allMetadata.SetCDIdentifier([]byte{0})
-	allMetadata.SetCanonicalSource(files.ID3V2)
+	allMetadata.SetCanonicalSource(ID3V2)
 	tests := map[string]struct {
 		path string
-		want *files.TrackMetadata
+		want *TrackMetadata
 	}{
 		"missing file": {
 			path: filepath.Join(testDir, noSuchFile),
@@ -827,7 +826,7 @@ func TestInitializeMetadata(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := files.InitializeMetadata(tt.path); !reflect.DeepEqual(got, tt.want) {
+			if got := InitializeMetadata(tt.path); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("InitializeMetadata() = %v, want %v", got, tt.want)
 			}
 		})
@@ -835,15 +834,15 @@ func TestInitializeMetadata(t *testing.T) {
 }
 
 func TestTrackMetadata_isValid(t *testing.T) {
-	ID3V1Metadata := files.NewTrackMetadata()
-	ID3V1Metadata.SetCanonicalSource(files.ID3V1)
-	ID3V2Metadata := files.NewTrackMetadata()
-	ID3V2Metadata.SetCanonicalSource(files.ID3V2)
+	ID3V1Metadata := NewTrackMetadata()
+	ID3V1Metadata.SetCanonicalSource(ID3V1)
+	ID3V2Metadata := NewTrackMetadata()
+	ID3V2Metadata.SetCanonicalSource(ID3V2)
 	tests := map[string]struct {
-		tm   *files.TrackMetadata
+		tm   *TrackMetadata
 		want bool
 	}{
-		"uninitialized data": {tm: files.NewTrackMetadata(), want: false},
+		"uninitialized data": {tm: NewTrackMetadata(), want: false},
 		"ID3V1 set":          {tm: ID3V1Metadata, want: true},
 		"ID3V2 set":          {tm: ID3V2Metadata, want: true},
 	}
@@ -857,18 +856,18 @@ func TestTrackMetadata_isValid(t *testing.T) {
 }
 
 func TestTrackMetadata_ErrorCauses(t *testing.T) {
-	ID3V1Metadata := files.NewTrackMetadata()
-	ID3V1Metadata.SetErrorCause(files.ID3V1, "id3v1 error")
-	ID3V2Metadata := files.NewTrackMetadata()
-	ID3V2Metadata.SetErrorCause(files.ID3V2, "id3v2 error")
-	bothMetadata := files.NewTrackMetadata()
-	bothMetadata.SetErrorCause(files.ID3V1, "id3v1 error")
-	bothMetadata.SetErrorCause(files.ID3V2, "id3v2 error")
+	ID3V1Metadata := NewTrackMetadata()
+	ID3V1Metadata.SetErrorCause(ID3V1, "id3v1 error")
+	ID3V2Metadata := NewTrackMetadata()
+	ID3V2Metadata.SetErrorCause(ID3V2, "id3v2 error")
+	bothMetadata := NewTrackMetadata()
+	bothMetadata.SetErrorCause(ID3V1, "id3v1 error")
+	bothMetadata.SetErrorCause(ID3V2, "id3v2 error")
 	tests := map[string]struct {
-		tm   *files.TrackMetadata
+		tm   *TrackMetadata
 		want []string
 	}{
-		"neither":    {tm: files.NewTrackMetadata(), want: []string{}},
+		"neither":    {tm: NewTrackMetadata(), want: []string{}},
 		"id3v1 only": {tm: ID3V1Metadata, want: []string{"id3v1 error"}},
 		"id3v2 only": {tm: ID3V2Metadata, want: []string{"id3v2 error"}},
 		"both":       {tm: bothMetadata, want: []string{"id3v1 error", "id3v2 error"}},
@@ -886,51 +885,51 @@ func TestTrackMetadata_TrackNumberDiffers(t *testing.T) {
 	expectedTrack := 14
 	// 1. neither ID3V1 nor ID3v2 have errors, and neither ID3V1 nor ID3V2 track
 	//    numbers differ
-	tm1 := files.NewTrackMetadata()
-	tm1.SetTrackNumber(files.ID3V1, expectedTrack)
-	tm1.SetTrackNumber(files.ID3V2, expectedTrack)
+	tm1 := NewTrackMetadata()
+	tm1.SetTrackNumber(ID3V1, expectedTrack)
+	tm1.SetTrackNumber(ID3V2, expectedTrack)
 	// 2. neither ID3V1 nor ID3v2 have errors, and only ID3V1 track number
 	//    differs
-	tm2 := files.NewTrackMetadata()
-	tm2.SetTrackNumber(files.ID3V1, expectedTrack+1)
-	tm2.SetTrackNumber(files.ID3V2, expectedTrack)
+	tm2 := NewTrackMetadata()
+	tm2.SetTrackNumber(ID3V1, expectedTrack+1)
+	tm2.SetTrackNumber(ID3V2, expectedTrack)
 	// 3. neither ID3V1 nor ID3v2 have errors, and only ID3V2 track number
 	//    differs
-	tm3 := files.NewTrackMetadata()
-	tm3.SetTrackNumber(files.ID3V1, expectedTrack)
-	tm3.SetTrackNumber(files.ID3V2, expectedTrack-1)
+	tm3 := NewTrackMetadata()
+	tm3.SetTrackNumber(ID3V1, expectedTrack)
+	tm3.SetTrackNumber(ID3V2, expectedTrack-1)
 	// 4. neither ID3V1 nor ID3v2 have errors, and both track numbers differ
-	tm4 := files.NewTrackMetadata()
-	tm4.SetTrackNumber(files.ID3V1, expectedTrack+1)
-	tm4.SetTrackNumber(files.ID3V2, expectedTrack-1)
+	tm4 := NewTrackMetadata()
+	tm4.SetTrackNumber(ID3V1, expectedTrack+1)
+	tm4.SetTrackNumber(ID3V2, expectedTrack-1)
 	// 5. ID3V1 has an error, ID3V2 track number does not differ
-	tm5 := files.NewTrackMetadata()
-	tm5.SetErrorCause(files.ID3V1, "bad format")
-	tm5.SetTrackNumber(files.ID3V1, 0)
-	tm5.SetTrackNumber(files.ID3V2, expectedTrack)
+	tm5 := NewTrackMetadata()
+	tm5.SetErrorCause(ID3V1, "bad format")
+	tm5.SetTrackNumber(ID3V1, 0)
+	tm5.SetTrackNumber(ID3V2, expectedTrack)
 	// 6. ID3V1 has an error, ID3V2 track number differs
-	tm6 := files.NewTrackMetadata()
-	tm6.SetErrorCause(files.ID3V1, "bad format")
-	tm6.SetTrackNumber(files.ID3V1, 0)
-	tm6.SetTrackNumber(files.ID3V2, expectedTrack+1)
+	tm6 := NewTrackMetadata()
+	tm6.SetErrorCause(ID3V1, "bad format")
+	tm6.SetTrackNumber(ID3V1, 0)
+	tm6.SetTrackNumber(ID3V2, expectedTrack+1)
 	// 7. ID3V2 has an error, ID3V1 track number does not differ
-	tm7 := files.NewTrackMetadata()
-	tm7.SetErrorCause(files.ID3V2, "bad format")
-	tm7.SetTrackNumber(files.ID3V1, expectedTrack)
-	tm7.SetTrackNumber(files.ID3V2, 0)
+	tm7 := NewTrackMetadata()
+	tm7.SetErrorCause(ID3V2, "bad format")
+	tm7.SetTrackNumber(ID3V1, expectedTrack)
+	tm7.SetTrackNumber(ID3V2, 0)
 	// 8. ID3V2 has an error, ID3V1 track number differs
-	tm8 := files.NewTrackMetadata()
-	tm8.SetErrorCause(files.ID3V2, "bad format")
-	tm8.SetTrackNumber(files.ID3V1, expectedTrack+1)
-	tm8.SetTrackNumber(files.ID3V2, 0)
+	tm8 := NewTrackMetadata()
+	tm8.SetErrorCause(ID3V2, "bad format")
+	tm8.SetTrackNumber(ID3V1, expectedTrack+1)
+	tm8.SetTrackNumber(ID3V2, 0)
 	// 9. both ID3V1 and ID3V2 have errors
-	tm9 := files.NewTrackMetadata()
-	tm9.SetErrorCause(files.ID3V1, "bad format")
-	tm9.SetErrorCause(files.ID3V2, "bad format")
-	tm9.SetTrackNumber(files.ID3V1, 0)
-	tm9.SetTrackNumber(files.ID3V2, 0)
+	tm9 := NewTrackMetadata()
+	tm9.SetErrorCause(ID3V1, "bad format")
+	tm9.SetErrorCause(ID3V2, "bad format")
+	tm9.SetTrackNumber(ID3V1, 0)
+	tm9.SetTrackNumber(ID3V2, 0)
 	tests := map[string]struct {
-		tm                            *files.TrackMetadata
+		tm                            *TrackMetadata
 		trackNumberFromFileName       int
 		wantDiffers                   bool
 		wantCorrectedID3V1TrackNumber int
@@ -1025,16 +1024,16 @@ func TestTrackMetadata_TrackNumberDiffers(t *testing.T) {
 			if got := tt.tm.TrackNumberDiffers(tt.trackNumberFromFileName); got != tt.wantDiffers {
 				t.Errorf("TrackMetadata.TrackNumberDiffers() = %t, want %t", got, tt.wantDiffers)
 			}
-			if got := tt.tm.TrackNumber(files.ID3V1).Correction(); got != tt.wantCorrectedID3V1TrackNumber {
+			if got := tt.tm.TrackNumber(ID3V1).Correction(); got != tt.wantCorrectedID3V1TrackNumber {
 				t.Errorf("TrackMetadata.TrackNumberDiffers() corrected ID3V1 track number = %d, want %d", got, tt.wantCorrectedID3V1TrackNumber)
 			}
-			if got := tt.tm.TrackNumber(files.ID3V2).Correction(); got != tt.wantCorrectedID3V2TrackNumber {
+			if got := tt.tm.TrackNumber(ID3V2).Correction(); got != tt.wantCorrectedID3V2TrackNumber {
 				t.Errorf("TrackMetadata.TrackNumberDiffers() corrected ID3V2 track number = %d, want %d", got, tt.wantCorrectedID3V2TrackNumber)
 			}
-			if got := tt.tm.EditRequired(files.ID3V1); got != tt.wantID3V1EditRequired {
+			if got := tt.tm.EditRequired(ID3V1); got != tt.wantID3V1EditRequired {
 				t.Errorf("TrackMetadata.TrackNumberDiffers() ID3V1 edit required = %t, want %t", got, tt.wantID3V1EditRequired)
 			}
-			if got := tt.tm.EditRequired(files.ID3V2); got != tt.wantID3V2EditRequired {
+			if got := tt.tm.EditRequired(ID3V2); got != tt.wantID3V2EditRequired {
 				t.Errorf("TrackMetadata.TrackNumberDiffers() ID3V2 edit required = %t, want %t", got, tt.wantID3V2EditRequired)
 			}
 		})
@@ -1045,49 +1044,49 @@ func TestTrackMetadata_TrackNameDiffers(t *testing.T) {
 	expectedName := "my fine track"
 	// 1. neither ID3V1 nor ID3v2 have errors, and neither ID3V1 nor ID3V2 track
 	//    names differ
-	tm1 := files.NewTrackMetadata()
-	tm1.SetTrackName(files.ID3V1, expectedName)
-	tm1.SetTrackName(files.ID3V2, expectedName)
+	tm1 := NewTrackMetadata()
+	tm1.SetTrackName(ID3V1, expectedName)
+	tm1.SetTrackName(ID3V2, expectedName)
 	// 2. neither ID3V1 nor ID3v2 have errors, and only ID3V1 track name differs
-	tm2 := files.NewTrackMetadata()
-	tm2.SetTrackName(files.ID3V1, expectedName+"1")
-	tm2.SetTrackName(files.ID3V2, expectedName)
+	tm2 := NewTrackMetadata()
+	tm2.SetTrackName(ID3V1, expectedName+"1")
+	tm2.SetTrackName(ID3V2, expectedName)
 	// 3. neither ID3V1 nor ID3v2 have errors, and only ID3V2 track name differs
-	tm3 := files.NewTrackMetadata()
-	tm3.SetTrackName(files.ID3V1, expectedName)
-	tm3.SetTrackName(files.ID3V2, expectedName+"2")
+	tm3 := NewTrackMetadata()
+	tm3.SetTrackName(ID3V1, expectedName)
+	tm3.SetTrackName(ID3V2, expectedName+"2")
 	// 4. neither ID3V1 nor ID3v2 have errors, and both track names differ
-	tm4 := files.NewTrackMetadata()
-	tm4.SetTrackName(files.ID3V1, expectedName+"1")
-	tm4.SetTrackName(files.ID3V2, expectedName+"2")
+	tm4 := NewTrackMetadata()
+	tm4.SetTrackName(ID3V1, expectedName+"1")
+	tm4.SetTrackName(ID3V2, expectedName+"2")
 	// 5. ID3V1 has an error, ID3V2 track name does not differ
-	tm5 := files.NewTrackMetadata()
-	tm5.SetErrorCause(files.ID3V1, "bad format")
-	tm5.SetTrackName(files.ID3V1, "")
-	tm5.SetTrackName(files.ID3V2, expectedName)
+	tm5 := NewTrackMetadata()
+	tm5.SetErrorCause(ID3V1, "bad format")
+	tm5.SetTrackName(ID3V1, "")
+	tm5.SetTrackName(ID3V2, expectedName)
 	// 6. ID3V1 has an error, ID3V2 track name differs
-	tm6 := files.NewTrackMetadata()
-	tm6.SetErrorCause(files.ID3V1, "bad format")
-	tm6.SetTrackName(files.ID3V1, "")
-	tm6.SetTrackName(files.ID3V2, expectedName+"1")
+	tm6 := NewTrackMetadata()
+	tm6.SetErrorCause(ID3V1, "bad format")
+	tm6.SetTrackName(ID3V1, "")
+	tm6.SetTrackName(ID3V2, expectedName+"1")
 	// 7. ID3V2 has an error, ID3V1 track name does not differ
-	tm7 := files.NewTrackMetadata()
-	tm7.SetErrorCause(files.ID3V2, "bad format")
-	tm7.SetTrackName(files.ID3V1, expectedName)
-	tm7.SetTrackName(files.ID3V2, "")
+	tm7 := NewTrackMetadata()
+	tm7.SetErrorCause(ID3V2, "bad format")
+	tm7.SetTrackName(ID3V1, expectedName)
+	tm7.SetTrackName(ID3V2, "")
 	// 8. ID3V2 has an error, ID3V1 track number differs
-	tm8 := files.NewTrackMetadata()
-	tm8.SetErrorCause(files.ID3V2, "bad format")
-	tm8.SetTrackName(files.ID3V1, expectedName+"1")
-	tm8.SetTrackName(files.ID3V2, "")
+	tm8 := NewTrackMetadata()
+	tm8.SetErrorCause(ID3V2, "bad format")
+	tm8.SetTrackName(ID3V1, expectedName+"1")
+	tm8.SetTrackName(ID3V2, "")
 	// 9. both ID3V1 and ID3V2 have errors
-	tm9 := files.NewTrackMetadata()
-	tm9.SetErrorCause(files.ID3V1, "bad format")
-	tm9.SetErrorCause(files.ID3V2, "bad format")
-	tm9.SetTrackName(files.ID3V1, "")
-	tm9.SetTrackName(files.ID3V2, "")
+	tm9 := NewTrackMetadata()
+	tm9.SetErrorCause(ID3V1, "bad format")
+	tm9.SetErrorCause(ID3V2, "bad format")
+	tm9.SetTrackName(ID3V1, "")
+	tm9.SetTrackName(ID3V2, "")
 	tests := map[string]struct {
-		tm                          *files.TrackMetadata
+		tm                          *TrackMetadata
 		nameFromFile                string
 		wantDiffers                 bool
 		wantCorrectedID3V1TrackName string
@@ -1182,16 +1181,16 @@ func TestTrackMetadata_TrackNameDiffers(t *testing.T) {
 			if got := tt.tm.TrackNameDiffers(tt.nameFromFile); got != tt.wantDiffers {
 				t.Errorf("TrackMetadata.TrackNameDiffers() = %v, want %v", got, tt.wantDiffers)
 			}
-			if got := tt.tm.TrackName(files.ID3V1).Correction(); got != tt.wantCorrectedID3V1TrackName {
+			if got := tt.tm.TrackName(ID3V1).Correction(); got != tt.wantCorrectedID3V1TrackName {
 				t.Errorf("TrackMetadata.TrackNameDiffers() corrected ID3V1 track name = %q, want %q", got, tt.wantCorrectedID3V1TrackName)
 			}
-			if got := tt.tm.TrackName(files.ID3V2).Correction(); got != tt.wantCorrectedID3V2TrackName {
+			if got := tt.tm.TrackName(ID3V2).Correction(); got != tt.wantCorrectedID3V2TrackName {
 				t.Errorf("TrackMetadata.TrackNameDiffers() corrected ID3V2 track name = %q, want %q", got, tt.wantCorrectedID3V2TrackName)
 			}
-			if got := tt.tm.EditRequired(files.ID3V1); got != tt.wantID3V1EditRequired {
+			if got := tt.tm.EditRequired(ID3V1); got != tt.wantID3V1EditRequired {
 				t.Errorf("TrackMetadata.TrackNameDiffers() ID3V1 edit required = %t, want %t", got, tt.wantID3V1EditRequired)
 			}
-			if got := tt.tm.EditRequired(files.ID3V2); got != tt.wantID3V2EditRequired {
+			if got := tt.tm.EditRequired(ID3V2); got != tt.wantID3V2EditRequired {
 				t.Errorf("TrackMetadata.TrackNameDiffers() ID3V2 edit required = %t, want %t", got, tt.wantID3V2EditRequired)
 			}
 		})
@@ -1202,49 +1201,49 @@ func TestTrackMetadata_AlbumNameDiffers(t *testing.T) {
 	expectedName := "my fine album"
 	// 1. neither ID3V1 nor ID3v2 have errors, and neither ID3V1 nor ID3V2 album
 	//    names differ
-	tm1 := files.NewTrackMetadata()
-	tm1.SetAlbumName(files.ID3V1, expectedName)
-	tm1.SetAlbumName(files.ID3V2, expectedName)
+	tm1 := NewTrackMetadata()
+	tm1.SetAlbumName(ID3V1, expectedName)
+	tm1.SetAlbumName(ID3V2, expectedName)
 	// 2. neither ID3V1 nor ID3v2 have errors, and only ID3V1 album name differs
-	tm2 := files.NewTrackMetadata()
-	tm2.SetAlbumName(files.ID3V1, expectedName+"1")
-	tm2.SetAlbumName(files.ID3V2, expectedName)
+	tm2 := NewTrackMetadata()
+	tm2.SetAlbumName(ID3V1, expectedName+"1")
+	tm2.SetAlbumName(ID3V2, expectedName)
 	// 3. neither ID3V1 nor ID3v2 have errors, and only ID3V2 album name differs
-	tm3 := files.NewTrackMetadata()
-	tm3.SetAlbumName(files.ID3V1, expectedName)
-	tm3.SetAlbumName(files.ID3V2, expectedName+"2")
+	tm3 := NewTrackMetadata()
+	tm3.SetAlbumName(ID3V1, expectedName)
+	tm3.SetAlbumName(ID3V2, expectedName+"2")
 	// 4. neither ID3V1 nor ID3v2 have errors, and both album names differ
-	tm4 := files.NewTrackMetadata()
-	tm4.SetAlbumName(files.ID3V1, expectedName+"1")
-	tm4.SetAlbumName(files.ID3V2, expectedName+"2")
+	tm4 := NewTrackMetadata()
+	tm4.SetAlbumName(ID3V1, expectedName+"1")
+	tm4.SetAlbumName(ID3V2, expectedName+"2")
 	// 5. ID3V1 has an error, ID3V2 album name does not differ
-	tm5 := files.NewTrackMetadata()
-	tm5.SetErrorCause(files.ID3V1, "bad format")
-	tm5.SetAlbumName(files.ID3V1, "")
-	tm5.SetAlbumName(files.ID3V2, expectedName)
+	tm5 := NewTrackMetadata()
+	tm5.SetErrorCause(ID3V1, "bad format")
+	tm5.SetAlbumName(ID3V1, "")
+	tm5.SetAlbumName(ID3V2, expectedName)
 	// 6. ID3V1 has an error, ID3V2 album name differs
-	tm6 := files.NewTrackMetadata()
-	tm6.SetErrorCause(files.ID3V1, "bad format")
-	tm6.SetAlbumName(files.ID3V1, "")
-	tm6.SetAlbumName(files.ID3V2, expectedName+"1")
+	tm6 := NewTrackMetadata()
+	tm6.SetErrorCause(ID3V1, "bad format")
+	tm6.SetAlbumName(ID3V1, "")
+	tm6.SetAlbumName(ID3V2, expectedName+"1")
 	// 7. ID3V2 has an error, ID3V1 album name does not differ
-	tm7 := files.NewTrackMetadata()
-	tm7.SetErrorCause(files.ID3V2, "bad format")
-	tm7.SetAlbumName(files.ID3V1, expectedName)
-	tm7.SetAlbumName(files.ID3V2, "")
+	tm7 := NewTrackMetadata()
+	tm7.SetErrorCause(ID3V2, "bad format")
+	tm7.SetAlbumName(ID3V1, expectedName)
+	tm7.SetAlbumName(ID3V2, "")
 	// 8. ID3V2 has an error, ID3V1 album number differs
-	tm8 := files.NewTrackMetadata()
-	tm8.SetErrorCause(files.ID3V2, "bad format")
-	tm8.SetAlbumName(files.ID3V1, expectedName+"1")
-	tm8.SetAlbumName(files.ID3V2, "")
+	tm8 := NewTrackMetadata()
+	tm8.SetErrorCause(ID3V2, "bad format")
+	tm8.SetAlbumName(ID3V1, expectedName+"1")
+	tm8.SetAlbumName(ID3V2, "")
 	// 9. both ID3V1 and ID3V2 have errors
-	tm9 := files.NewTrackMetadata()
-	tm9.SetErrorCause(files.ID3V1, "bad format")
-	tm9.SetErrorCause(files.ID3V2, "bad format")
-	tm9.SetAlbumName(files.ID3V1, "")
-	tm9.SetAlbumName(files.ID3V2, "")
+	tm9 := NewTrackMetadata()
+	tm9.SetErrorCause(ID3V1, "bad format")
+	tm9.SetErrorCause(ID3V2, "bad format")
+	tm9.SetAlbumName(ID3V1, "")
+	tm9.SetAlbumName(ID3V2, "")
 	tests := map[string]struct {
-		tm                          *files.TrackMetadata
+		tm                          *TrackMetadata
 		nameFromFile                string
 		wantDiffers                 bool
 		wantCorrectedID3V1AlbumName string
@@ -1339,16 +1338,16 @@ func TestTrackMetadata_AlbumNameDiffers(t *testing.T) {
 			if got := tt.tm.AlbumNameDiffers(tt.nameFromFile); got != tt.wantDiffers {
 				t.Errorf("TrackMetadata.AlbumNameDiffers() = %v, want %v", got, tt.wantDiffers)
 			}
-			if got := tt.tm.AlbumName(files.ID3V1).Correction(); got != tt.wantCorrectedID3V1AlbumName {
+			if got := tt.tm.AlbumName(ID3V1).Correction(); got != tt.wantCorrectedID3V1AlbumName {
 				t.Errorf("TrackMetadata.AlbumNameDiffers() corrected ID3V1 album name = %q, want %q", got, tt.wantCorrectedID3V1AlbumName)
 			}
-			if got := tt.tm.AlbumName(files.ID3V2).Correction(); got != tt.wantCorrectedID3V2AlbumName {
+			if got := tt.tm.AlbumName(ID3V2).Correction(); got != tt.wantCorrectedID3V2AlbumName {
 				t.Errorf("TrackMetadata.AlbumNameDiffers() corrected ID3V2 album name = %q, want %q", got, tt.wantCorrectedID3V2AlbumName)
 			}
-			if got := tt.tm.EditRequired(files.ID3V1); got != tt.wantID3V1EditRequired {
+			if got := tt.tm.EditRequired(ID3V1); got != tt.wantID3V1EditRequired {
 				t.Errorf("TrackMetadata.AlbumNameDiffers() ID3V1 edit required = %t, want %t", got, tt.wantID3V1EditRequired)
 			}
-			if got := tt.tm.EditRequired(files.ID3V2); got != tt.wantID3V2EditRequired {
+			if got := tt.tm.EditRequired(ID3V2); got != tt.wantID3V2EditRequired {
 				t.Errorf("TrackMetadata.AlbumNameDiffers() ID3V2 edit required = %t, want %t", got, tt.wantID3V2EditRequired)
 			}
 		})
@@ -1359,51 +1358,51 @@ func TestTrackMetadata_ArtistNameDiffers(t *testing.T) {
 	expectedName := "my fine artist"
 	// 1. neither ID3V1 nor ID3v2 have errors, and neither ID3V1 nor ID3V2
 	//    artist names differ
-	tm1 := files.NewTrackMetadata()
-	tm1.SetArtistName(files.ID3V1, expectedName)
-	tm1.SetArtistName(files.ID3V2, expectedName)
+	tm1 := NewTrackMetadata()
+	tm1.SetArtistName(ID3V1, expectedName)
+	tm1.SetArtistName(ID3V2, expectedName)
 	// 2. neither ID3V1 nor ID3v2 have errors, and only ID3V1 artist name
 	//    differs
-	tm2 := files.NewTrackMetadata()
-	tm2.SetArtistName(files.ID3V1, expectedName+"1")
-	tm2.SetArtistName(files.ID3V2, expectedName)
+	tm2 := NewTrackMetadata()
+	tm2.SetArtistName(ID3V1, expectedName+"1")
+	tm2.SetArtistName(ID3V2, expectedName)
 	// 3. neither ID3V1 nor ID3v2 have errors, and only ID3V2 artist name
 	//    differs
-	tm3 := files.NewTrackMetadata()
-	tm3.SetArtistName(files.ID3V1, expectedName)
-	tm3.SetArtistName(files.ID3V2, expectedName+"2")
+	tm3 := NewTrackMetadata()
+	tm3.SetArtistName(ID3V1, expectedName)
+	tm3.SetArtistName(ID3V2, expectedName+"2")
 	// 4. neither ID3V1 nor ID3v2 have errors, and both artist names differ
-	tm4 := files.NewTrackMetadata()
-	tm4.SetArtistName(files.ID3V1, expectedName+"1")
-	tm4.SetArtistName(files.ID3V2, expectedName+"2")
+	tm4 := NewTrackMetadata()
+	tm4.SetArtistName(ID3V1, expectedName+"1")
+	tm4.SetArtistName(ID3V2, expectedName+"2")
 	// 5. ID3V1 has an error, ID3V2 artist name does not differ
-	tm5 := files.NewTrackMetadata()
-	tm5.SetErrorCause(files.ID3V1, "bad format")
-	tm5.SetArtistName(files.ID3V1, "")
-	tm5.SetArtistName(files.ID3V2, expectedName)
+	tm5 := NewTrackMetadata()
+	tm5.SetErrorCause(ID3V1, "bad format")
+	tm5.SetArtistName(ID3V1, "")
+	tm5.SetArtistName(ID3V2, expectedName)
 	// 6. ID3V1 has an error, ID3V2 artist name differs
-	tm6 := files.NewTrackMetadata()
-	tm6.SetErrorCause(files.ID3V1, "bad format")
-	tm6.SetArtistName(files.ID3V1, "")
-	tm6.SetArtistName(files.ID3V2, expectedName+"1")
+	tm6 := NewTrackMetadata()
+	tm6.SetErrorCause(ID3V1, "bad format")
+	tm6.SetArtistName(ID3V1, "")
+	tm6.SetArtistName(ID3V2, expectedName+"1")
 	// 7. ID3V2 has an error, ID3V1 artist name does not differ
-	tm7 := files.NewTrackMetadata()
-	tm7.SetErrorCause(files.ID3V2, "bad format")
-	tm7.SetArtistName(files.ID3V1, expectedName)
-	tm7.SetArtistName(files.ID3V2, "")
+	tm7 := NewTrackMetadata()
+	tm7.SetErrorCause(ID3V2, "bad format")
+	tm7.SetArtistName(ID3V1, expectedName)
+	tm7.SetArtistName(ID3V2, "")
 	// 8. ID3V2 has an error, ID3V1 artist number differs
-	tm8 := files.NewTrackMetadata()
-	tm8.SetErrorCause(files.ID3V2, "bad format")
-	tm8.SetArtistName(files.ID3V1, expectedName+"1")
-	tm8.SetArtistName(files.ID3V2, "")
+	tm8 := NewTrackMetadata()
+	tm8.SetErrorCause(ID3V2, "bad format")
+	tm8.SetArtistName(ID3V1, expectedName+"1")
+	tm8.SetArtistName(ID3V2, "")
 	// 9. both ID3V1 and ID3V2 have errors
-	tm9 := files.NewTrackMetadata()
-	tm9.SetErrorCause(files.ID3V1, "bad format")
-	tm9.SetErrorCause(files.ID3V2, "bad format")
-	tm9.SetArtistName(files.ID3V1, "")
-	tm9.SetArtistName(files.ID3V2, "")
+	tm9 := NewTrackMetadata()
+	tm9.SetErrorCause(ID3V1, "bad format")
+	tm9.SetErrorCause(ID3V2, "bad format")
+	tm9.SetArtistName(ID3V1, "")
+	tm9.SetArtistName(ID3V2, "")
 	tests := map[string]struct {
-		tm                           *files.TrackMetadata
+		tm                           *TrackMetadata
 		nameFromFile                 string
 		wantDiffers                  bool
 		wantCorrectedID3V1ArtistName string
@@ -1498,16 +1497,16 @@ func TestTrackMetadata_ArtistNameDiffers(t *testing.T) {
 			if got := tt.tm.ArtistNameDiffers(tt.nameFromFile); got != tt.wantDiffers {
 				t.Errorf("TrackMetadata.ArtistNameDiffers() = %v, want %v", got, tt.wantDiffers)
 			}
-			if got := tt.tm.ArtistName(files.ID3V1).Correction(); got != tt.wantCorrectedID3V1ArtistName {
+			if got := tt.tm.ArtistName(ID3V1).Correction(); got != tt.wantCorrectedID3V1ArtistName {
 				t.Errorf("TrackMetadata.ArtistNameDiffers() corrected ID3V1 artist name = %q, want %q", got, tt.wantCorrectedID3V1ArtistName)
 			}
-			if got := tt.tm.ArtistName(files.ID3V2).Correction(); got != tt.wantCorrectedID3V2ArtistName {
+			if got := tt.tm.ArtistName(ID3V2).Correction(); got != tt.wantCorrectedID3V2ArtistName {
 				t.Errorf("TrackMetadata.ArtistNameDiffers() corrected ID3V2 artist name = %q, want %q", got, tt.wantCorrectedID3V2ArtistName)
 			}
-			if got := tt.tm.EditRequired(files.ID3V1); got != tt.wantID3V1EditRequired {
+			if got := tt.tm.EditRequired(ID3V1); got != tt.wantID3V1EditRequired {
 				t.Errorf("TrackMetadata.ArtistNameDiffers() ID3V1 edit required = %t, want %t", got, tt.wantID3V1EditRequired)
 			}
-			if got := tt.tm.EditRequired(files.ID3V2); got != tt.wantID3V2EditRequired {
+			if got := tt.tm.EditRequired(ID3V2); got != tt.wantID3V2EditRequired {
 				t.Errorf("TrackMetadata.ArtistNameDiffers() ID3V2 edit required = %t, want %t", got, tt.wantID3V2EditRequired)
 			}
 		})
@@ -1518,51 +1517,51 @@ func TestTrackMetadata_AlbumGenreDiffers(t *testing.T) {
 	expectedGenre := "rock"
 	// 1. neither ID3V1 nor ID3v2 have errors, and neither ID3V1 nor ID3V2 album
 	//    genres differ
-	tm1 := files.NewTrackMetadata()
-	tm1.SetAlbumGenre(files.ID3V1, expectedGenre)
-	tm1.SetAlbumGenre(files.ID3V2, expectedGenre)
+	tm1 := NewTrackMetadata()
+	tm1.SetAlbumGenre(ID3V1, expectedGenre)
+	tm1.SetAlbumGenre(ID3V2, expectedGenre)
 	// 2. neither ID3V1 nor ID3v2 have errors, and only ID3V1 album genre
 	//    differs
-	tm2 := files.NewTrackMetadata()
-	tm2.SetAlbumGenre(files.ID3V1, "country")
-	tm2.SetAlbumGenre(files.ID3V2, expectedGenre)
+	tm2 := NewTrackMetadata()
+	tm2.SetAlbumGenre(ID3V1, "country")
+	tm2.SetAlbumGenre(ID3V2, expectedGenre)
 	// 3. neither ID3V1 nor ID3v2 have errors, and only ID3V2 album genre
 	//    differs
-	tm3 := files.NewTrackMetadata()
-	tm3.SetAlbumGenre(files.ID3V1, expectedGenre)
-	tm3.SetAlbumGenre(files.ID3V2, "rap")
+	tm3 := NewTrackMetadata()
+	tm3.SetAlbumGenre(ID3V1, expectedGenre)
+	tm3.SetAlbumGenre(ID3V2, "rap")
 	// 4. neither ID3V1 nor ID3v2 have errors, and both album genres differ
-	tm4 := files.NewTrackMetadata()
-	tm4.SetAlbumGenre(files.ID3V1, "country")
-	tm4.SetAlbumGenre(files.ID3V2, "rap")
+	tm4 := NewTrackMetadata()
+	tm4.SetAlbumGenre(ID3V1, "country")
+	tm4.SetAlbumGenre(ID3V2, "rap")
 	// 5. ID3V1 has an error, ID3V2 album genre does not differ
-	tm5 := files.NewTrackMetadata()
-	tm5.SetErrorCause(files.ID3V1, "bad format")
-	tm5.SetAlbumGenre(files.ID3V1, "")
-	tm5.SetAlbumGenre(files.ID3V2, expectedGenre)
+	tm5 := NewTrackMetadata()
+	tm5.SetErrorCause(ID3V1, "bad format")
+	tm5.SetAlbumGenre(ID3V1, "")
+	tm5.SetAlbumGenre(ID3V2, expectedGenre)
 	// 6. ID3V1 has an error, ID3V2 album genre differs
-	tm6 := files.NewTrackMetadata()
-	tm6.SetErrorCause(files.ID3V1, "bad format")
-	tm6.SetAlbumGenre(files.ID3V1, "")
-	tm6.SetAlbumGenre(files.ID3V2, "country")
+	tm6 := NewTrackMetadata()
+	tm6.SetErrorCause(ID3V1, "bad format")
+	tm6.SetAlbumGenre(ID3V1, "")
+	tm6.SetAlbumGenre(ID3V2, "country")
 	// 7. ID3V2 has an error, ID3V1 album genre does not differ
-	tm7 := files.NewTrackMetadata()
-	tm7.SetErrorCause(files.ID3V2, "bad format")
-	tm7.SetAlbumGenre(files.ID3V1, expectedGenre)
-	tm7.SetAlbumGenre(files.ID3V2, "")
+	tm7 := NewTrackMetadata()
+	tm7.SetErrorCause(ID3V2, "bad format")
+	tm7.SetAlbumGenre(ID3V1, expectedGenre)
+	tm7.SetAlbumGenre(ID3V2, "")
 	// 8. ID3V2 has an error, ID3V1 album number differs
-	tm8 := files.NewTrackMetadata()
-	tm8.SetErrorCause(files.ID3V2, "bad format")
-	tm8.SetAlbumGenre(files.ID3V1, "country")
-	tm8.SetAlbumGenre(files.ID3V2, "")
+	tm8 := NewTrackMetadata()
+	tm8.SetErrorCause(ID3V2, "bad format")
+	tm8.SetAlbumGenre(ID3V1, "country")
+	tm8.SetAlbumGenre(ID3V2, "")
 	// 9. both ID3V1 and ID3V2 have errors
-	tm9 := files.NewTrackMetadata()
-	tm9.SetErrorCause(files.ID3V1, "bad format")
-	tm9.SetErrorCause(files.ID3V2, "bad format")
-	tm9.SetAlbumGenre(files.ID3V1, "")
-	tm9.SetAlbumGenre(files.ID3V2, "")
+	tm9 := NewTrackMetadata()
+	tm9.SetErrorCause(ID3V1, "bad format")
+	tm9.SetErrorCause(ID3V2, "bad format")
+	tm9.SetAlbumGenre(ID3V1, "")
+	tm9.SetAlbumGenre(ID3V2, "")
 	tests := map[string]struct {
-		tm                           *files.TrackMetadata
+		tm                           *TrackMetadata
 		canonicalAlbumGenre          string
 		wantDiffers                  bool
 		wantCorrectedID3V1AlbumGenre string
@@ -1657,16 +1656,16 @@ func TestTrackMetadata_AlbumGenreDiffers(t *testing.T) {
 			if got := tt.tm.AlbumGenreDiffers(tt.canonicalAlbumGenre); got != tt.wantDiffers {
 				t.Errorf("TrackMetadata.AlbumGenreDiffers() = %v, want %v", got, tt.wantDiffers)
 			}
-			if got := tt.tm.AlbumGenre(files.ID3V1).Correction(); got != tt.wantCorrectedID3V1AlbumGenre {
+			if got := tt.tm.AlbumGenre(ID3V1).Correction(); got != tt.wantCorrectedID3V1AlbumGenre {
 				t.Errorf("TrackMetadata.AlbumGenreDiffers() corrected ID3V1 album genre = %q, want %q", got, tt.wantCorrectedID3V1AlbumGenre)
 			}
-			if got := tt.tm.AlbumGenre(files.ID3V2).Correction(); got != tt.wantCorrectedID3V2AlbumGenre {
+			if got := tt.tm.AlbumGenre(ID3V2).Correction(); got != tt.wantCorrectedID3V2AlbumGenre {
 				t.Errorf("TrackMetadata.AlbumGenreDiffers() corrected ID3V2 album genre = %q, want %q", got, tt.wantCorrectedID3V2AlbumGenre)
 			}
-			if got := tt.tm.EditRequired(files.ID3V1); got != tt.wantID3V1EditRequired {
+			if got := tt.tm.EditRequired(ID3V1); got != tt.wantID3V1EditRequired {
 				t.Errorf("TrackMetadata.AlbumGenreDiffers() ID3V1 edit required = %t, want %t", got, tt.wantID3V1EditRequired)
 			}
-			if got := tt.tm.EditRequired(files.ID3V2); got != tt.wantID3V2EditRequired {
+			if got := tt.tm.EditRequired(ID3V2); got != tt.wantID3V2EditRequired {
 				t.Errorf("TrackMetadata.AlbumGenreDiffers() ID3V2 edit required = %t, want %t", got, tt.wantID3V2EditRequired)
 			}
 		})
@@ -1677,49 +1676,49 @@ func TestTrackMetadata_AlbumYearDiffers(t *testing.T) {
 	expectedYear := "1999"
 	// 1. neither ID3V1 nor ID3v2 have errors, and neither ID3V1 nor ID3V2 album
 	//    years differ
-	tm1 := files.NewTrackMetadata()
-	tm1.SetAlbumYear(files.ID3V1, expectedYear)
-	tm1.SetAlbumYear(files.ID3V2, expectedYear)
+	tm1 := NewTrackMetadata()
+	tm1.SetAlbumYear(ID3V1, expectedYear)
+	tm1.SetAlbumYear(ID3V2, expectedYear)
 	// 2. neither ID3V1 nor ID3v2 have errors, and only ID3V1 album year differs
-	tm2 := files.NewTrackMetadata()
-	tm2.SetAlbumYear(files.ID3V1, "1984")
-	tm2.SetAlbumYear(files.ID3V2, expectedYear)
+	tm2 := NewTrackMetadata()
+	tm2.SetAlbumYear(ID3V1, "1984")
+	tm2.SetAlbumYear(ID3V2, expectedYear)
 	// 3. neither ID3V1 nor ID3v2 have errors, and only ID3V2 album year differs
-	tm3 := files.NewTrackMetadata()
-	tm3.SetAlbumYear(files.ID3V1, expectedYear)
-	tm3.SetAlbumYear(files.ID3V2, "2001")
+	tm3 := NewTrackMetadata()
+	tm3.SetAlbumYear(ID3V1, expectedYear)
+	tm3.SetAlbumYear(ID3V2, "2001")
 	// 4. neither ID3V1 nor ID3v2 have errors, and both album years differ
-	tm4 := files.NewTrackMetadata()
-	tm4.SetAlbumYear(files.ID3V1, "1984")
-	tm4.SetAlbumYear(files.ID3V2, "2001")
+	tm4 := NewTrackMetadata()
+	tm4.SetAlbumYear(ID3V1, "1984")
+	tm4.SetAlbumYear(ID3V2, "2001")
 	// 5. ID3V1 has an error, ID3V2 album year does not differ
-	tm5 := files.NewTrackMetadata()
-	tm5.SetErrorCause(files.ID3V1, "bad format")
-	tm5.SetAlbumYear(files.ID3V1, "")
-	tm5.SetAlbumYear(files.ID3V2, expectedYear)
+	tm5 := NewTrackMetadata()
+	tm5.SetErrorCause(ID3V1, "bad format")
+	tm5.SetAlbumYear(ID3V1, "")
+	tm5.SetAlbumYear(ID3V2, expectedYear)
 	// 6. ID3V1 has an error, ID3V2 album year differs
-	tm6 := files.NewTrackMetadata()
-	tm6.SetErrorCause(files.ID3V1, "bad format")
-	tm6.SetAlbumYear(files.ID3V1, "")
-	tm6.SetAlbumYear(files.ID3V2, "1984")
+	tm6 := NewTrackMetadata()
+	tm6.SetErrorCause(ID3V1, "bad format")
+	tm6.SetAlbumYear(ID3V1, "")
+	tm6.SetAlbumYear(ID3V2, "1984")
 	// 7. ID3V2 has an error, ID3V1 album year does not differ
-	tm7 := files.NewTrackMetadata()
-	tm7.SetErrorCause(files.ID3V2, "bad format")
-	tm7.SetAlbumYear(files.ID3V1, expectedYear)
-	tm7.SetAlbumYear(files.ID3V2, "")
+	tm7 := NewTrackMetadata()
+	tm7.SetErrorCause(ID3V2, "bad format")
+	tm7.SetAlbumYear(ID3V1, expectedYear)
+	tm7.SetAlbumYear(ID3V2, "")
 	// 8. ID3V2 has an error, ID3V1 album number differs
-	tm8 := files.NewTrackMetadata()
-	tm8.SetErrorCause(files.ID3V2, "bad format")
-	tm8.SetAlbumYear(files.ID3V1, "1984")
-	tm8.SetAlbumYear(files.ID3V2, "")
+	tm8 := NewTrackMetadata()
+	tm8.SetErrorCause(ID3V2, "bad format")
+	tm8.SetAlbumYear(ID3V1, "1984")
+	tm8.SetAlbumYear(ID3V2, "")
 	// 9. both ID3V1 and ID3V2 have errors
-	tm9 := files.NewTrackMetadata()
-	tm9.SetErrorCause(files.ID3V1, "bad format")
-	tm9.SetErrorCause(files.ID3V2, "bad format")
-	tm9.SetAlbumYear(files.ID3V1, "")
-	tm9.SetAlbumYear(files.ID3V2, "")
+	tm9 := NewTrackMetadata()
+	tm9.SetErrorCause(ID3V1, "bad format")
+	tm9.SetErrorCause(ID3V2, "bad format")
+	tm9.SetAlbumYear(ID3V1, "")
+	tm9.SetAlbumYear(ID3V2, "")
 	tests := map[string]struct {
-		tm                          *files.TrackMetadata
+		tm                          *TrackMetadata
 		canonicalAlbumYear          string
 		wantDiffers                 bool
 		wantCorrectedID3V1AlbumYear string
@@ -1814,16 +1813,16 @@ func TestTrackMetadata_AlbumYearDiffers(t *testing.T) {
 			if got := tt.tm.AlbumYearDiffers(tt.canonicalAlbumYear); got != tt.wantDiffers {
 				t.Errorf("TrackMetadata.AlbumYearDiffers() = %v, want %v", got, tt.wantDiffers)
 			}
-			if got := tt.tm.AlbumYear(files.ID3V1).Correction(); got != tt.wantCorrectedID3V1AlbumYear {
+			if got := tt.tm.AlbumYear(ID3V1).Correction(); got != tt.wantCorrectedID3V1AlbumYear {
 				t.Errorf("TrackMetadata.AlbumYearDiffers() corrected ID3V1 album year = %q, want %q", got, tt.wantCorrectedID3V1AlbumYear)
 			}
-			if got := tt.tm.AlbumYear(files.ID3V2).Correction(); got != tt.wantCorrectedID3V2AlbumYear {
+			if got := tt.tm.AlbumYear(ID3V2).Correction(); got != tt.wantCorrectedID3V2AlbumYear {
 				t.Errorf("TrackMetadata.AlbumYearDiffers() corrected ID3V2 album year = %q, want %q", got, tt.wantCorrectedID3V2AlbumYear)
 			}
-			if got := tt.tm.EditRequired(files.ID3V1); got != tt.wantID3V1EditRequired {
+			if got := tt.tm.EditRequired(ID3V1); got != tt.wantID3V1EditRequired {
 				t.Errorf("TrackMetadata.AlbumYearDiffers() ID3V1 edit required = %t, want %t", got, tt.wantID3V1EditRequired)
 			}
-			if got := tt.tm.EditRequired(files.ID3V2); got != tt.wantID3V2EditRequired {
+			if got := tt.tm.EditRequired(ID3V2); got != tt.wantID3V2EditRequired {
 				t.Errorf("TrackMetadata.AlbumYearDiffers() ID3V2 edit required = %t, want %t", got, tt.wantID3V2EditRequired)
 			}
 		})
@@ -1834,17 +1833,17 @@ func TestTrackMetadata_CDIdentifierDiffers(t *testing.T) {
 	expectedBody := []byte("my lovely CD")
 	canonicalFrame := id3v2.UnknownFrame{Body: expectedBody}
 	// 1. ID3v2 does not have an error, the CD Identifier does not differ
-	tm1 := files.NewTrackMetadata()
+	tm1 := NewTrackMetadata()
 	tm1.SetCDIdentifier(expectedBody)
 	// 2. ID3v2 does not have an error, the CD Identifier differs
-	tm2 := files.NewTrackMetadata()
+	tm2 := NewTrackMetadata()
 	tm2.SetCDIdentifier([]byte("some other CD"))
 	// 3. ID3V2 has an error
-	tm3 := files.NewTrackMetadata()
-	tm3.SetErrorCause(files.ID3V2, "bad format")
+	tm3 := NewTrackMetadata()
+	tm3.SetErrorCause(ID3V2, "bad format")
 	tm3.SetCDIdentifier([]byte{})
 	tests := map[string]struct {
-		tm                            *files.TrackMetadata
+		tm                            *TrackMetadata
 		canonicalCDIdentifier         id3v2.UnknownFrame
 		wantDiffers                   bool
 		wantCorrectedCDIdentifierBody []byte
@@ -1877,7 +1876,7 @@ func TestTrackMetadata_CDIdentifierDiffers(t *testing.T) {
 			if got := tt.tm.CDIdentifierDiffers(tt.canonicalCDIdentifier); got != tt.wantDiffers {
 				t.Errorf("TrackMetadata.CDIdentifierDiffers() = %v, want %v", got, tt.wantDiffers)
 			}
-			if got := tt.tm.EditRequired(files.ID3V2); got != tt.wantID3V2EditRequired {
+			if got := tt.tm.EditRequired(ID3V2); got != tt.wantID3V2EditRequired {
 				t.Errorf("TrackMetadata.CDIdentifierDiffers() ID3V2 edit required = %t, want %t", got, tt.wantID3V2EditRequired)
 			}
 			got := tt.tm.CDIdentifier().Correction().Body
@@ -1896,25 +1895,25 @@ func TestTrackMetadata_CDIdentifierDiffers(t *testing.T) {
 
 func TestTrackMetadata_CanonicalAlbumNameMatches(t *testing.T) {
 	albumName := "my favorite album"
-	tm1 := files.NewTrackMetadata()
-	tm1.SetAlbumName(files.ID3V1, albumName)
-	tm1.SetCanonicalSource(files.ID3V1)
-	tm2 := files.NewTrackMetadata()
-	tm2.SetAlbumName(files.ID3V1, "my other favorite album")
-	tm2.SetCanonicalSource(files.ID3V1)
-	tm3 := files.NewTrackMetadata()
-	tm3.SetAlbumName(files.ID3V2, albumName)
-	tm3.SetCanonicalSource(files.ID3V2)
-	tm4 := files.NewTrackMetadata()
-	tm4.SetAlbumName(files.ID3V2, "my other favorite album")
-	tm4.SetCanonicalSource(files.ID3V2)
+	tm1 := NewTrackMetadata()
+	tm1.SetAlbumName(ID3V1, albumName)
+	tm1.SetCanonicalSource(ID3V1)
+	tm2 := NewTrackMetadata()
+	tm2.SetAlbumName(ID3V1, "my other favorite album")
+	tm2.SetCanonicalSource(ID3V1)
+	tm3 := NewTrackMetadata()
+	tm3.SetAlbumName(ID3V2, albumName)
+	tm3.SetCanonicalSource(ID3V2)
+	tm4 := NewTrackMetadata()
+	tm4.SetAlbumName(ID3V2, "my other favorite album")
+	tm4.SetCanonicalSource(ID3V2)
 	tests := map[string]struct {
-		tm           *files.TrackMetadata
+		tm           *TrackMetadata
 		nameFromFile string
 		want         bool
 	}{
 		"no data": {
-			tm:           files.NewTrackMetadata(),
+			tm:           NewTrackMetadata(),
 			nameFromFile: albumName,
 			want:         false,
 		},
@@ -1950,25 +1949,25 @@ func TestTrackMetadata_CanonicalAlbumNameMatches(t *testing.T) {
 
 func TestTrackMetadata_CanonicalArtistNameMatches(t *testing.T) {
 	artistName := "my favorite artist"
-	tm1 := files.NewTrackMetadata()
-	tm1.SetArtistName(files.ID3V1, artistName)
-	tm1.SetCanonicalSource(files.ID3V1)
-	tm2 := files.NewTrackMetadata()
-	tm2.SetArtistName(files.ID3V1, "my other favorite artist")
-	tm2.SetCanonicalSource(files.ID3V1)
-	tm3 := files.NewTrackMetadata()
-	tm3.SetArtistName(files.ID3V2, artistName)
-	tm3.SetCanonicalSource(files.ID3V2)
-	tm4 := files.NewTrackMetadata()
-	tm4.SetArtistName(files.ID3V2, "my other favorite artist")
-	tm4.SetCanonicalSource(files.ID3V2)
+	tm1 := NewTrackMetadata()
+	tm1.SetArtistName(ID3V1, artistName)
+	tm1.SetCanonicalSource(ID3V1)
+	tm2 := NewTrackMetadata()
+	tm2.SetArtistName(ID3V1, "my other favorite artist")
+	tm2.SetCanonicalSource(ID3V1)
+	tm3 := NewTrackMetadata()
+	tm3.SetArtistName(ID3V2, artistName)
+	tm3.SetCanonicalSource(ID3V2)
+	tm4 := NewTrackMetadata()
+	tm4.SetArtistName(ID3V2, "my other favorite artist")
+	tm4.SetCanonicalSource(ID3V2)
 	tests := map[string]struct {
-		tm           *files.TrackMetadata
+		tm           *TrackMetadata
 		nameFromFile string
 		want         bool
 	}{
 		"no data": {
-			tm:           files.NewTrackMetadata(),
+			tm:           NewTrackMetadata(),
 			nameFromFile: artistName,
 			want:         false,
 		},
@@ -2004,8 +2003,8 @@ func TestTrackMetadata_CanonicalArtistNameMatches(t *testing.T) {
 
 func TestTrackMetadata_Update(t *testing.T) {
 	// create some TrackMetadata to apply
-	loadedTm := files.NewTrackMetadata()
-	for _, src := range []files.SourceType{files.ID3V1, files.ID3V2} {
+	loadedTm := NewTrackMetadata()
+	for _, src := range []SourceType{ID3V1, ID3V2} {
 		loadedTm.CorrectArtistName(src, "corrected artist")
 		loadedTm.CorrectAlbumName(src, "corrected album")
 		loadedTm.CorrectAlbumGenre(src, "rock")
@@ -2039,12 +2038,12 @@ func TestTrackMetadata_Update(t *testing.T) {
 	payloadComplete = append(payloadComplete, payloadID3v1Only...)
 	_ = createFileWithContent(testDir, completeFile, payloadComplete)
 	tests := map[string]struct {
-		tm             *files.TrackMetadata
+		tm             *TrackMetadata
 		path           string
 		wantErrorCount int
 	}{
 		"no data": {
-			tm:             files.NewTrackMetadata(),
+			tm:             NewTrackMetadata(),
 			path:           "",
 			wantErrorCount: 0,
 		},

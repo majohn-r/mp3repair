@@ -1,9 +1,8 @@
-package files_test
+package files
 
 import (
 	"fmt"
 	"io/fs"
-	"mp3repair/internal/files"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -14,18 +13,18 @@ import (
 
 func TestAlbum_RecordingArtistName(t *testing.T) {
 	tests := map[string]struct {
-		a    *files.Album
+		a    *Album
 		want string
 	}{
 		"with recording artist": {
-			a: files.AlbumMaker{
+			a: AlbumMaker{
 				Title:  "album1",
-				Artist: files.NewArtist("artist1", ""),
+				Artist: NewArtist("artist1", ""),
 			}.NewAlbum(),
 			want: "artist1",
 		},
 		"no recording artist": {
-			a:    files.AlbumMaker{Title: "album1"}.NewAlbum(),
+			a:    AlbumMaker{Title: "album1"}.NewAlbum(),
 			want: "",
 		},
 	}
@@ -39,9 +38,9 @@ func TestAlbum_RecordingArtistName(t *testing.T) {
 }
 
 func TestAlbum_Copy(t *testing.T) {
-	complexAlbum := &files.Album{
+	complexAlbum := &Album{
 		Title:             "my album",
-		RecordingArtist:   files.NewArtist("my artist", "Music/my artist"),
+		RecordingArtist:   NewArtist("my artist", "Music/my artist"),
 		FilePath:          "Music/my artist/my album",
 		CanonicalGenre:    "rap",
 		CanonicalTitle:    "my special album",
@@ -49,7 +48,7 @@ func TestAlbum_Copy(t *testing.T) {
 		MusicCDIdentifier: id3v2.UnknownFrame{Body: []byte{0, 1, 2}},
 	}
 	for k := 1; k <= 10; k++ {
-		track := files.TrackMaker{
+		track := TrackMaker{
 			Album:      complexAlbum,
 			FileName:   fmt.Sprintf("%d track %d.mp3", k, k),
 			SimpleName: fmt.Sprintf("track %d", k),
@@ -57,9 +56,9 @@ func TestAlbum_Copy(t *testing.T) {
 		}.NewTrack()
 		complexAlbum.AddTrack(track)
 	}
-	complexAlbum2 := &files.Album{
+	complexAlbum2 := &Album{
 		Title:             "my album",
-		RecordingArtist:   files.NewArtist("my artist", "Music/my artist"),
+		RecordingArtist:   NewArtist("my artist", "Music/my artist"),
 		FilePath:          "Music/my artist/my album",
 		CanonicalGenre:    "rap",
 		CanonicalTitle:    "my special album",
@@ -67,7 +66,7 @@ func TestAlbum_Copy(t *testing.T) {
 		MusicCDIdentifier: id3v2.UnknownFrame{Body: []byte{0, 1, 2}},
 	}
 	for k := 1; k <= 10; k++ {
-		track := files.TrackMaker{
+		track := TrackMaker{
 			Album:      complexAlbum2,
 			FileName:   fmt.Sprintf("%d track %d.mp3", k, k),
 			SimpleName: fmt.Sprintf("track %d", k),
@@ -76,27 +75,27 @@ func TestAlbum_Copy(t *testing.T) {
 		complexAlbum2.AddTrack(track)
 	}
 	type args struct {
-		ar            *files.Artist
+		ar            *Artist
 		includeTracks bool
 	}
 	tests := map[string]struct {
-		a *files.Album
+		a *Album
 		args
-		want *files.Album
+		want *Album
 	}{
 		"simple test": {
-			a: files.AlbumMaker{
+			a: AlbumMaker{
 				Title:  "album name",
-				Artist: files.NewArtist("artist", "Music/artist"),
+				Artist: NewArtist("artist", "Music/artist"),
 				Path:   "Music/artist/album name",
 			}.NewAlbum(),
 			args: args{
-				ar:            files.NewArtist("artist", "Music/artist"),
+				ar:            NewArtist("artist", "Music/artist"),
 				includeTracks: true,
 			},
-			want: files.AlbumMaker{
+			want: AlbumMaker{
 				Title:  "album name",
-				Artist: files.NewArtist("artist", "Music/artist"),
+				Artist: NewArtist("artist", "Music/artist"),
 				Path:   "Music/artist/album name",
 			}.NewAlbum(),
 		},
@@ -121,11 +120,11 @@ func TestAlbum_Copy(t *testing.T) {
 
 func TestAlbum_BackupDirectory(t *testing.T) {
 	tests := map[string]struct {
-		a    *files.Album
+		a    *Album
 		want string
 	}{
 		"simple": {
-			a:    files.AlbumMaker{Title: "album", Path: "artist/album"}.NewAlbum(),
+			a:    AlbumMaker{Title: "album", Path: "artist/album"}.NewAlbum(),
 			want: "artist\\album\\pre-repair-backup",
 		},
 	}
@@ -177,21 +176,21 @@ func (tf *testFile) Sys() any {
 }
 
 func TestNewAlbumFromFile(t *testing.T) {
-	testArtist := files.NewArtist("artist name", filepath.Join("Music", "artist name"))
+	testArtist := NewArtist("artist name", filepath.Join("Music", "artist name"))
 	type args struct {
 		file fs.FileInfo
-		ar   *files.Artist
+		ar   *Artist
 	}
 	tests := map[string]struct {
 		args
-		want *files.Album
+		want *Album
 	}{
 		"simple": {
 			args: args{
 				file: &testFile{name: "simple file"},
 				ar:   testArtist,
 			},
-			want: files.AlbumMaker{
+			want: AlbumMaker{
 				Title:  "simple file",
 				Artist: testArtist,
 				Path:   filepath.Join(testArtist.FilePath, "simple file"),
@@ -200,7 +199,7 @@ func TestNewAlbumFromFile(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := files.NewAlbumFromFile(tt.args.file,
+			if got := NewAlbumFromFile(tt.args.file,
 				tt.args.ar); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewAlbumFromFile() = %v, want %v", got, tt.want)
 			}
@@ -210,16 +209,16 @@ func TestNewAlbumFromFile(t *testing.T) {
 
 func TestAlbum_HasTracks(t *testing.T) {
 	tests := map[string]struct {
-		a    *files.Album
+		a    *Album
 		want bool
 	}{
 		"empty": {
-			a:    &files.Album{},
+			a:    &Album{},
 			want: false,
 		},
 		"with tracks": {
-			a: &files.Album{
-				Tracks: []*files.Track{{}},
+			a: &Album{
+				Tracks: []*Track{{}},
 			},
 			want: true,
 		},

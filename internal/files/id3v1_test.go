@@ -1,8 +1,7 @@
-package files_test
+package files
 
 import (
 	"fmt"
-	"mp3repair/internal/files"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -61,25 +60,25 @@ func Test_Trim(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := files.Trim(tt.s); got != tt.want {
+			if got := Trim(tt.s); got != tt.want {
 				t.Errorf("Trim() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func NewID3v1MetadataWithData(b []byte) *files.Id3v1Metadata {
-	return files.NewID3v1Metadata().WithData(b)
+func NewID3v1MetadataWithData(b []byte) *Id3v1Metadata {
+	return NewID3v1Metadata().WithData(b)
 }
 
 func TestNewId3v1MetadataWithData(t *testing.T) {
 	tests := map[string]struct {
 		b    []byte
-		want *files.Id3v1Metadata
+		want *Id3v1Metadata
 	}{
 		"short data": {
 			b: []byte{1, 2, 3, 4},
-			want: files.NewID3v1Metadata().WithData([]byte{
+			want: NewID3v1Metadata().WithData([]byte{
 				1, 2, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -93,7 +92,7 @@ func TestNewId3v1MetadataWithData(t *testing.T) {
 		},
 		"just right": {
 			b:    id3v1DataSet1,
-			want: files.NewID3v1Metadata().WithData(id3v1DataSet1),
+			want: NewID3v1Metadata().WithData(id3v1DataSet1),
 		},
 		"too much data": {
 			b: []byte{
@@ -107,7 +106,7 @@ func TestNewId3v1MetadataWithData(t *testing.T) {
 				70, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 				80, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 			},
-			want: files.NewID3v1Metadata().WithData([]byte{
+			want: NewID3v1Metadata().WithData([]byte{
 				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 				10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 				20, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -131,7 +130,7 @@ func TestNewId3v1MetadataWithData(t *testing.T) {
 
 func TestId3v1MetadataIsValid(t *testing.T) {
 	tests := map[string]struct {
-		v1   *files.Id3v1Metadata
+		v1   *Id3v1Metadata
 		want bool
 	}{
 		"expected": {v1: NewID3v1MetadataWithData(id3v1DataSet1), want: true},
@@ -148,7 +147,7 @@ func TestId3v1MetadataIsValid(t *testing.T) {
 
 func TestId3v1MetadataTitle(t *testing.T) {
 	tests := map[string]struct {
-		v1   *files.Id3v1Metadata
+		v1   *Id3v1Metadata
 		want string
 	}{
 		"ringo": {
@@ -168,9 +167,9 @@ func TestId3v1MetadataTitle(t *testing.T) {
 
 func TestId3v1MetadataSetTitle(t *testing.T) {
 	tests := map[string]struct {
-		v1   *files.Id3v1Metadata
+		v1   *Id3v1Metadata
 		s    string
-		want *files.Id3v1Metadata
+		want *Id3v1Metadata
 	}{
 		"short title": {
 			v1: NewID3v1MetadataWithData(id3v1DataSet1),
@@ -242,7 +241,7 @@ func TestId3v1MetadataSetTitle(t *testing.T) {
 
 func Test_Id3v1MetadataArtist(t *testing.T) {
 	tests := map[string]struct {
-		v1   *files.Id3v1Metadata
+		v1   *Id3v1Metadata
 		want string
 	}{
 		"beatles1": {v1: NewID3v1MetadataWithData(id3v1DataSet1), want: "The Beatles"},
@@ -259,9 +258,9 @@ func Test_Id3v1MetadataArtist(t *testing.T) {
 
 func TestId3v1MetadataSetArtist(t *testing.T) {
 	tests := map[string]struct {
-		v1   *files.Id3v1Metadata
+		v1   *Id3v1Metadata
 		s    string
-		want *files.Id3v1Metadata
+		want *Id3v1Metadata
 	}{
 		"short name": {
 			v1: NewID3v1MetadataWithData(id3v1DataSet1),
@@ -340,7 +339,7 @@ func TestId3v1MetadataSetArtist(t *testing.T) {
 
 func TestId3v1MetadataAlbum(t *testing.T) {
 	tests := map[string]struct {
-		v1   *files.Id3v1Metadata
+		v1   *Id3v1Metadata
 		want string
 	}{
 		"BBC": {
@@ -363,9 +362,9 @@ func TestId3v1MetadataAlbum(t *testing.T) {
 
 func TestId3v1MetadataSetAlbum(t *testing.T) {
 	tests := map[string]struct {
-		v1   *files.Id3v1Metadata
+		v1   *Id3v1Metadata
 		s    string
-		want *files.Id3v1Metadata
+		want *Id3v1Metadata
 	}{
 		"short name": {
 			v1: NewID3v1MetadataWithData(id3v1DataSet1),
@@ -441,12 +440,12 @@ func TestId3v1MetadataSetAlbum(t *testing.T) {
 
 func TestId3v1MetadataYear(t *testing.T) {
 	tests := map[string]struct {
-		v1   *files.Id3v1Metadata
+		v1   *Id3v1Metadata
 		want string
 	}{
 		"BBC":         {v1: NewID3v1MetadataWithData(id3v1DataSet1), want: "2013"},
 		"White Album": {v1: NewID3v1MetadataWithData(id3v1DataSet2), want: "1968"},
-		"no date":     {v1: files.NewID3v1Metadata(), want: ""},
+		"no date":     {v1: NewID3v1Metadata(), want: ""},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -460,9 +459,9 @@ func TestId3v1MetadataYear(t *testing.T) {
 
 func TestId3v1MetadataSetYear(t *testing.T) {
 	tests := map[string]struct {
-		v1     *files.Id3v1Metadata
+		v1     *Id3v1Metadata
 		s      string
-		wantV1 *files.Id3v1Metadata
+		wantV1 *Id3v1Metadata
 	}{
 		"realistic": {
 			v1: NewID3v1MetadataWithData(id3v1DataSet1),
@@ -498,7 +497,7 @@ func TestId3v1MetadataSetYear(t *testing.T) {
 
 func TestId3v1MetadataComment(t *testing.T) {
 	tests := map[string]struct {
-		v1   *files.Id3v1Metadata
+		v1   *Id3v1Metadata
 		want string
 	}{
 		"BBC":         {v1: NewID3v1MetadataWithData(id3v1DataSet1)},
@@ -515,9 +514,9 @@ func TestId3v1MetadataComment(t *testing.T) {
 
 func TestId3v1MetadataSetComment(t *testing.T) {
 	tests := map[string]struct {
-		v1   *files.Id3v1Metadata
+		v1   *Id3v1Metadata
 		s    string
-		want *files.Id3v1Metadata
+		want *Id3v1Metadata
 	}{
 		"typical comment": {
 			v1: NewID3v1MetadataWithData(id3v1DataSet1),
@@ -574,7 +573,7 @@ func TestId3v1MetadataSetComment(t *testing.T) {
 
 func TestId3v1MetadataTrack(t *testing.T) {
 	tests := map[string]struct {
-		v1     *files.Id3v1Metadata
+		v1     *Id3v1Metadata
 		wantI  int
 		wantOk bool
 	}{
@@ -616,10 +615,10 @@ func TestId3v1MetadataTrack(t *testing.T) {
 
 func TestId3v1MetadataSetTrack(t *testing.T) {
 	tests := map[string]struct {
-		v1     *files.Id3v1Metadata
+		v1     *Id3v1Metadata
 		t      int
 		want   bool
-		wantV1 *files.Id3v1Metadata
+		wantV1 *Id3v1Metadata
 	}{
 		"low": {
 			v1:     NewID3v1MetadataWithData(id3v1DataSet1),
@@ -670,7 +669,7 @@ func TestId3v1MetadataSetTrack(t *testing.T) {
 
 func TestId3v1MetadataGenre(t *testing.T) {
 	tests := map[string]struct {
-		v1     *files.Id3v1Metadata
+		v1     *Id3v1Metadata
 		wantS  string
 		wantOk bool
 	}{
@@ -712,9 +711,9 @@ func TestId3v1MetadataGenre(t *testing.T) {
 
 func TestId3v1MetadataSetGenre(t *testing.T) {
 	tests := map[string]struct {
-		v1     *files.Id3v1Metadata
+		v1     *Id3v1Metadata
 		s      string
-		wantV1 *files.Id3v1Metadata
+		wantV1 *Id3v1Metadata
 	}{
 		"no such genre": {
 			v1: NewID3v1MetadataWithData(id3v1DataSet1),
@@ -815,7 +814,7 @@ func TestInternalReadId3V1Metadata(t *testing.T) {
 	}
 	tests := map[string]struct {
 		args
-		want    *files.Id3v1Metadata
+		want    *Id3v1Metadata
 		wantErr bool
 	}{
 		"non-existent file": {
@@ -849,19 +848,19 @@ func TestInternalReadId3V1Metadata(t *testing.T) {
 			wantErr: true,
 		},
 		"bad file": {
-			args:    args{path: filepath.Join(testDir, badFile), readFunc: files.FileReader},
+			args:    args{path: filepath.Join(testDir, badFile), readFunc: FileReader},
 			want:    nil,
 			wantErr: true,
 		},
 		"good file": {
-			args:    args{path: filepath.Join(testDir, goodFile), readFunc: files.FileReader},
+			args:    args{path: filepath.Join(testDir, goodFile), readFunc: FileReader},
 			want:    NewID3v1MetadataWithData(id3v1DataSet1),
 			wantErr: false,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, gotErr := files.InternalReadID3V1Metadata(tt.args.path, tt.args.readFunc)
+			got, gotErr := InternalReadID3V1Metadata(tt.args.path, tt.args.readFunc)
 			if (gotErr != nil) != tt.wantErr {
 				t.Errorf("InternalReadID3V1Metadata error = %v, wantErr %v", gotErr, tt.wantErr)
 				return
@@ -918,7 +917,7 @@ func TestReadId3v1Metadata(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, gotErr := files.ReadID3v1Metadata(tt.path)
+			got, gotErr := ReadID3v1Metadata(tt.path)
 			if (gotErr != nil) != tt.wantErr {
 				t.Errorf("ReadID3v1Metadata error = %v, wantErr %v", gotErr, tt.wantErr)
 				return
@@ -960,7 +959,7 @@ func TestId3v1MetadataInternalWrite(t *testing.T) {
 		writeFunc func(f afero.File, b []byte) (int, error)
 	}
 	tests := map[string]struct {
-		v1 *files.Id3v1Metadata
+		v1 *Id3v1Metadata
 		args
 		wantErr  bool
 		wantData []byte
@@ -994,7 +993,7 @@ func TestId3v1MetadataInternalWrite(t *testing.T) {
 			v1: NewID3v1MetadataWithData(id3v1DataSet2),
 			args: args{
 				oldPath:   filepath.Join(testDir, goodFile),
-				writeFunc: files.WriteToFile,
+				writeFunc: WriteToFile,
 			},
 			wantData: []byte{
 				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -1068,7 +1067,7 @@ func TestId3v1MetadataWrite(t *testing.T) {
 	payload = append(payload, id3v1DataSet1...)
 	_ = createFileWithContent(testDir, goodFile, payload)
 	tests := map[string]struct {
-		v1       *files.Id3v1Metadata
+		v1       *Id3v1Metadata
 		path     string
 		wantErr  bool
 		wantData []byte
@@ -1126,66 +1125,66 @@ func TestId3v1MetadataWrite(t *testing.T) {
 
 func TestId3v1NameDiffers(t *testing.T) {
 	tests := map[string]struct {
-		cS   *files.ComparableStrings
+		cS   *ComparableStrings
 		want bool
 	}{
 		"identical strings": {
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "Fiddler On The Roof",
 				Metadata: "Fiddler On The Roof",
 			}, want: false,
 		},
 		"unusable characters in metadata": {
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "Theme From M-A-S-H",
 				Metadata: "Theme From M*A*S*H",
 			},
 			want: false,
 		},
 		"really long name": {
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "A Funny Thing Happened On The Way To The Forum 1996 Broadway Revival Cast",
 				Metadata: "A Funny Thing Happened On The",
 			},
 			want: false,
 		},
 		"non-ASCII values": {
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "Grohg - Cortège Macabre",
 				Metadata: "Grohg - Cort\xe8ge Macabre",
 			},
 			want: false,
 		},
 		"larger non-ASCII values": {
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "Dvořák",
 				Metadata: "Dvor\xe1k",
 			},
 			want: false,
 		},
 		"identical strings with case differences": {
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "SIMPLE name",
 				Metadata: "simple NAME",
 			},
 			want: false,
 		},
 		"strings of different length within name length limit": {
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "simple name",
 				Metadata: "artist: simple name",
 			},
 			want: true,
 		},
 		"use of runes that are illegal for file names": {
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "simple_name",
 				Metadata: "simple:name",
 			},
 			want: false,
 		},
 		"complex mismatch": {
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "simple_name",
 				Metadata: "simple: nam",
 			},
@@ -1194,7 +1193,7 @@ func TestId3v1NameDiffers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := files.Id3v1NameDiffers(tt.cS); got != tt.want {
+			if got := Id3v1NameDiffers(tt.cS); got != tt.want {
 				t.Errorf("Id3v1NameDiffers() = %v, want %v", got, tt.want)
 			}
 		})
@@ -1203,25 +1202,25 @@ func TestId3v1NameDiffers(t *testing.T) {
 
 func TestId3v1GenreDiffers(t *testing.T) {
 	tests := map[string]struct {
-		cS   *files.ComparableStrings
+		cS   *ComparableStrings
 		want bool
 	}{
 		"match": {
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "Classic Rock",
 				Metadata: "Classic Rock",
 			},
 			want: false,
 		},
 		"case does not match": {
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "Classic Rock",
 				Metadata: "classic rock",
 			},
 			want: false,
 		},
 		"other": {
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "Prog Rock",
 				Metadata: "other",
 			},
@@ -1229,7 +1228,7 @@ func TestId3v1GenreDiffers(t *testing.T) {
 		},
 		"known genre": {
 			// known id3v1 genre - "Other" will not match
-			cS: &files.ComparableStrings{
+			cS: &ComparableStrings{
 				External: "Classic Rock",
 				Metadata: "Other",
 			},
@@ -1238,7 +1237,7 @@ func TestId3v1GenreDiffers(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := files.Id3v1GenreDiffers(tt.cS); got != tt.want {
+			if got := Id3v1GenreDiffers(tt.cS); got != tt.want {
 				t.Errorf("Id3v1GenreDiffers() = %v, want %v", got, tt.want)
 			}
 		})
@@ -1247,12 +1246,12 @@ func TestId3v1GenreDiffers(t *testing.T) {
 
 func TestBiDirectionalMap_AddPair(t *testing.T) {
 	tests := map[string]struct {
-		m       *files.BiDirectionalMap[string, string]
+		m       *BiDirectionalMap[string, string]
 		input   map[string]string
 		wantErr bool
 	}{
 		"redundant key": {
-			m: files.NewBiDirectionalMap[string, string](strings.ToLower, nil),
+			m: NewBiDirectionalMap[string, string](strings.ToLower, nil),
 			input: map[string]string{
 				"k1": "v1",
 				"K1": "v2",
@@ -1260,7 +1259,7 @@ func TestBiDirectionalMap_AddPair(t *testing.T) {
 			wantErr: true,
 		},
 		"redundant value": {
-			m: files.NewBiDirectionalMap[string, string](nil, nil),
+			m: NewBiDirectionalMap[string, string](nil, nil),
 			input: map[string]string{
 				"k1": "v1",
 				"k2": "v1",
@@ -1268,7 +1267,7 @@ func TestBiDirectionalMap_AddPair(t *testing.T) {
 			wantErr: true,
 		},
 		"good": {
-			m: files.NewBiDirectionalMap[string, string](nil, nil),
+			m: NewBiDirectionalMap[string, string](nil, nil),
 			input: map[string]string{
 				"k1": "v1",
 				"k2": "v2",
@@ -1292,10 +1291,10 @@ func TestBiDirectionalMap_AddPair(t *testing.T) {
 }
 
 func TestPopulate(t *testing.T) {
-	_ = files.InitGenres()
+	_ = InitGenres()
 	tests := map[string]struct {
 		m       map[int]string
-		wantMap *files.BiDirectionalMap[int, string]
+		wantMap *BiDirectionalMap[int, string]
 		wantErr bool
 	}{
 		"error": {
@@ -1308,13 +1307,13 @@ func TestPopulate(t *testing.T) {
 		},
 		"normal": {
 			m:       lcGenres,
-			wantMap: files.Genres,
+			wantMap: Genres,
 			wantErr: false,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got, err := files.Populate(tt.m)
+			got, err := Populate(tt.m)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Populate() error = %v, wantErr %v", err, tt.wantErr)
 			}

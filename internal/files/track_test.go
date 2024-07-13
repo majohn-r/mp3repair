@@ -1,10 +1,9 @@
-package files_test
+package files
 
 import (
 	"errors"
 	"fmt"
 	"io"
-	"mp3repair/internal/files"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -21,48 +20,48 @@ import (
 
 func TestTrackNameParserParse(t *testing.T) {
 	tests := map[string]struct {
-		parser         files.TrackNameParser
-		wantParsedName *files.ParsedTrackName
+		parser         TrackNameParser
+		wantParsedName *ParsedTrackName
 		wantValid      bool
 		output.WantedRecording
 	}{
 		"expected use case": {
-			parser: files.TrackNameParser{
+			parser: TrackNameParser{
 				FileName: "59 track name.mp3",
-				Album: &files.Album{
+				Album: &Album{
 					Title:           "some album",
-					RecordingArtist: &files.Artist{Name: "some artist"},
+					RecordingArtist: &Artist{Name: "some artist"},
 				},
 				Extension: ".mp3",
 			},
-			wantParsedName: &files.ParsedTrackName{SimpleName: "track name", Number: 59},
+			wantParsedName: &ParsedTrackName{SimpleName: "track name", Number: 59},
 			wantValid:      true,
 		},
 		"expected use case with hyphen separator": {
-			parser: files.TrackNameParser{
+			parser: TrackNameParser{
 				FileName: "60-other track name.mp3",
-				Album: &files.Album{
+				Album: &Album{
 					Title:           "some album",
-					RecordingArtist: &files.Artist{Name: "some artist"},
+					RecordingArtist: &Artist{Name: "some artist"},
 				},
 				Extension: ".mp3",
 			},
-			wantParsedName: &files.ParsedTrackName{
+			wantParsedName: &ParsedTrackName{
 				SimpleName: "other track name",
 				Number:     60,
 			},
 			wantValid: true,
 		},
 		"wrong extension": {
-			parser: files.TrackNameParser{
+			parser: TrackNameParser{
 				FileName: "59 track name.mp4",
-				Album: &files.Album{
+				Album: &Album{
 					Title:           "some album",
-					RecordingArtist: &files.Artist{Name: "some artist"},
+					RecordingArtist: &Artist{Name: "some artist"},
 				},
 				Extension: ".mp3",
 			},
-			wantParsedName: &files.ParsedTrackName{
+			wantParsedName: &ParsedTrackName{
 				SimpleName: "track name.mp4",
 				Number:     59,
 			},
@@ -77,15 +76,15 @@ func TestTrackNameParserParse(t *testing.T) {
 			},
 		},
 		"missing track number": {
-			parser: files.TrackNameParser{
+			parser: TrackNameParser{
 				FileName: "track name.mp3",
-				Album: &files.Album{
+				Album: &Album{
 					Title:           "some album",
-					RecordingArtist: &files.Artist{Name: "some artist"},
+					RecordingArtist: &Artist{Name: "some artist"},
 				},
 				Extension: ".mp3",
 			},
-			wantParsedName: &files.ParsedTrackName{SimpleName: "name"},
+			wantParsedName: &ParsedTrackName{SimpleName: "name"},
 			WantedRecording: output.WantedRecording{
 				Error: "The track \"track name.mp3\" on album \"some album\" by artist" +
 					" \"some artist\" cannot be parsed.\n",
@@ -97,11 +96,11 @@ func TestTrackNameParserParse(t *testing.T) {
 			},
 		},
 		"missing track number, simple name": {
-			parser: files.TrackNameParser{
+			parser: TrackNameParser{
 				FileName: "trackName.mp3",
-				Album: &files.Album{
+				Album: &Album{
 					Title:           "some album",
-					RecordingArtist: &files.Artist{Name: "some artist"},
+					RecordingArtist: &Artist{Name: "some artist"},
 				},
 				Extension: ".mp3",
 			},
@@ -135,44 +134,44 @@ func TestTrackNameParserParse(t *testing.T) {
 
 func TestTracksSort(t *testing.T) {
 	tests := map[string]struct {
-		tracks []*files.Track
+		tracks []*Track
 	}{
 		"degenerate case": {},
 		"mixed tracks": {
-			tracks: []*files.Track{
+			tracks: []*Track{
 				{
 					Number: 10,
-					Album: files.AlbumMaker{
+					Album: AlbumMaker{
 						Title:  "album2",
-						Artist: files.NewArtist("artist3", ""),
+						Artist: NewArtist("artist3", ""),
 					}.NewAlbum(),
 				},
 				{
 					Number: 1,
-					Album: files.AlbumMaker{
+					Album: AlbumMaker{
 						Title:  "album2",
-						Artist: files.NewArtist("artist3", ""),
+						Artist: NewArtist("artist3", ""),
 					}.NewAlbum(),
 				},
 				{
 					Number: 3,
-					Album: files.AlbumMaker{
+					Album: AlbumMaker{
 						Title:  "album3",
-						Artist: files.NewArtist("artist2", ""),
+						Artist: NewArtist("artist2", ""),
 					}.NewAlbum(),
 				},
 				{
 					Number: 3,
-					Album: files.AlbumMaker{
+					Album: AlbumMaker{
 						Title:  "album3",
-						Artist: files.NewArtist("artist4", ""),
+						Artist: NewArtist("artist4", ""),
 					}.NewAlbum(),
 				},
 				{
 					Number: 3,
-					Album: files.AlbumMaker{
+					Album: AlbumMaker{
 						Title:  "album5",
-						Artist: files.NewArtist("artist2", ""),
+						Artist: NewArtist("artist2", ""),
 					}.NewAlbum(),
 				},
 			},
@@ -180,7 +179,7 @@ func TestTracksSort(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			sort.Sort(files.Tracks(tt.tracks))
+			sort.Sort(Tracks(tt.tracks))
 			for i := range tt.tracks {
 				if i == 0 {
 					continue
@@ -212,12 +211,12 @@ func TestTracksSort(t *testing.T) {
 
 func TestTrack_AlbumPath(t *testing.T) {
 	tests := map[string]struct {
-		t    *files.Track
+		t    *Track
 		want string
 	}{
-		"no containing album": {t: &files.Track{}, want: ""},
+		"no containing album": {t: &Track{}, want: ""},
 		"has containing album": {
-			t:    &files.Track{Album: files.AlbumMaker{Path: "album-path"}.NewAlbum()},
+			t:    &Track{Album: AlbumMaker{Path: "album-path"}.NewAlbum()},
 			want: "album-path"},
 	}
 	for name, tt := range tests {
@@ -240,17 +239,17 @@ func TestTrack_CopyFile(t *testing.T) {
 	srcPath := filepath.Join(topDir, srcName)
 	_ = createFile(topDir, srcName)
 	tests := map[string]struct {
-		t           *files.Track
+		t           *Track
 		destination string
 		wantErr     bool
 	}{
 		"error case": {
-			t:           &files.Track{FilePath: "no such file"},
+			t:           &Track{FilePath: "no such file"},
 			destination: filepath.Join(topDir, "destination.mp3"),
 			wantErr:     true,
 		},
 		"good case": {
-			t:           &files.Track{FilePath: srcPath},
+			t:           &Track{FilePath: srcPath},
 			destination: filepath.Join(topDir, "destination.mp3"),
 			wantErr:     false,
 		},
@@ -266,11 +265,11 @@ func TestTrack_CopyFile(t *testing.T) {
 
 func TestTrackString(t *testing.T) {
 	tests := map[string]struct {
-		t    *files.Track
+		t    *Track
 		want string
 	}{
 		"expected": {
-			t:    &files.Track{FilePath: "my path"},
+			t:    &Track{FilePath: "my path"},
 			want: "my path",
 		},
 	}
@@ -285,12 +284,12 @@ func TestTrackString(t *testing.T) {
 
 func TestTrack_AlbumName(t *testing.T) {
 	tests := map[string]struct {
-		t    *files.Track
+		t    *Track
 		want string
 	}{
-		"orphan track": {t: &files.Track{}, want: ""},
+		"orphan track": {t: &Track{}, want: ""},
 		"good track": {
-			t:    &files.Track{Album: &files.Album{Title: "my album name"}},
+			t:    &Track{Album: &Album{Title: "my album name"}},
 			want: "my album name"},
 	}
 	for name, tt := range tests {
@@ -304,13 +303,13 @@ func TestTrack_AlbumName(t *testing.T) {
 
 func TestTrack_RecordingArtist(t *testing.T) {
 	tests := map[string]struct {
-		t    *files.Track
+		t    *Track
 		want string
 	}{
-		"orphan track": {t: &files.Track{}, want: ""},
+		"orphan track": {t: &Track{}, want: ""},
 		"good track": {
-			t: &files.Track{
-				Album: &files.Album{RecordingArtist: &files.Artist{Name: "my artist"}},
+			t: &Track{
+				Album: &Album{RecordingArtist: &Artist{Name: "my artist"}},
 			},
 			want: "my artist",
 		},
@@ -326,11 +325,11 @@ func TestTrack_RecordingArtist(t *testing.T) {
 
 func TestTrack_Directory(t *testing.T) {
 	tests := map[string]struct {
-		t    *files.Track
+		t    *Track
 		want string
 	}{
 		"typical": {
-			t:    &files.Track{FilePath: "Music/my artist/my album/03 track.mp3"},
+			t:    &Track{FilePath: "Music/my artist/my album/03 track.mp3"},
 			want: "Music\\my artist\\my album",
 		},
 	}
@@ -345,11 +344,11 @@ func TestTrack_Directory(t *testing.T) {
 
 func TestTrack_FileName(t *testing.T) {
 	tests := map[string]struct {
-		t    *files.Track
+		t    *Track
 		want string
 	}{
 		"typical": {
-			t:    &files.Track{FilePath: "Music/my artist/my album/03 track.mp3"},
+			t:    &Track{FilePath: "Music/my artist/my album/03 track.mp3"},
 			want: "03 track.mp3",
 		},
 	}
@@ -405,7 +404,7 @@ func TestCanonicalChoice(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			gotS, gotOk := files.CanonicalChoice(tt.m)
+			gotS, gotOk := CanonicalChoice(tt.m)
 			if gotS != tt.wantS {
 				t.Errorf("CanonicalChoice gotS = %v, want %v", gotS, tt.wantS)
 			}
@@ -441,18 +440,18 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 	goodFileName := "goodFile.mp3"
 	_ = createFileWithContent(".", goodFileName, content)
 	tests := map[string]struct {
-		t                *files.Track
+		t                *Track
 		wantEncoding     string
 		wantVersion      byte
 		wantFrameStrings []string
 		wantErr          bool
 	}{
 		"error case": {
-			t:       &files.Track{FilePath: "./no such file"},
+			t:       &Track{FilePath: "./no such file"},
 			wantErr: true,
 		},
 		"good case": {
-			t:            &files.Track{FilePath: filepath.Join(".", goodFileName)},
+			t:            &Track{FilePath: filepath.Join(".", goodFileName)},
 			wantEncoding: "ISO-8859-1",
 			wantVersion:  3,
 			wantFrameStrings: []string{
@@ -537,20 +536,20 @@ func TestTrack_ID3V1Diagnostics(t *testing.T) {
 		12,
 	})
 	tests := map[string]struct {
-		t       *files.Track
+		t       *Track
 		want    []string
 		wantErr bool
 	}{
 		"small file": {
-			t:       &files.Track{FilePath: filepath.Join(testDir, smallFile)},
+			t:       &Track{FilePath: filepath.Join(testDir, smallFile)},
 			wantErr: true,
 		},
 		"invalid file": {
-			t:       &files.Track{FilePath: filepath.Join(testDir, invalidFile)},
+			t:       &Track{FilePath: filepath.Join(testDir, invalidFile)},
 			wantErr: true,
 		},
 		"good file": {
-			t: &files.Track{FilePath: filepath.Join(testDir, goodFile)},
+			t: &Track{FilePath: filepath.Join(testDir, goodFile)},
 			want: []string{
 				"Artist: \"The Beatles\"",
 				"Album: \"On Air: Live At The BBC, Volum\"",
@@ -588,8 +587,8 @@ var nameToID3V2TagName = map[string]string{
 var recognizedTagNames = []string{"artist", "album", "title", "genre", "year", "track"}
 
 func createID3V1TaggedData(m map[string]any) []byte {
-	v1 := files.NewID3v1Metadata()
-	v1.WriteString("TAG", files.TagField)
+	v1 := NewID3v1Metadata()
+	v1.WriteString("TAG", TagField)
 	for _, tagName := range recognizedTagNames {
 		if value, tagNameFound := m[tagName]; tagNameFound {
 			switch tagName {
@@ -651,8 +650,8 @@ func TestTrackLoadMetadata(t *testing.T) {
 	})
 	fileName := "05 A brilliant track.mp3"
 	_ = createFileWithContent(testDir, fileName, payload)
-	postReadTm := files.NewTrackMetadata()
-	for _, src := range []files.SourceType{files.ID3V1, files.ID3V2} {
+	postReadTm := NewTrackMetadata()
+	for _, src := range []SourceType{ID3V1, ID3V2} {
 		postReadTm.SetArtistName(src, artistName)
 		postReadTm.SetAlbumName(src, albumName)
 		postReadTm.SetAlbumGenre(src, genre)
@@ -661,16 +660,16 @@ func TestTrackLoadMetadata(t *testing.T) {
 		postReadTm.SetTrackNumber(src, track)
 	}
 	postReadTm.SetCDIdentifier([]byte{0})
-	postReadTm.SetCanonicalSource(files.ID3V2)
+	postReadTm.SetCanonicalSource(ID3V2)
 	tests := map[string]struct {
-		t    *files.Track
-		want *files.TrackMetadata
+		t    *Track
+		want *TrackMetadata
 	}{
 		"no read needed": {
-			t:    &files.Track{Metadata: files.NewTrackMetadata()},
-			want: files.NewTrackMetadata()},
+			t:    &Track{Metadata: NewTrackMetadata()},
+			want: NewTrackMetadata()},
 		"read file": {
-			t:    &files.Track{FilePath: filepath.Join(testDir, fileName)},
+			t:    &Track{FilePath: filepath.Join(testDir, fileName)},
 			want: postReadTm,
 		},
 	}
@@ -680,7 +679,7 @@ func TestTrackLoadMetadata(t *testing.T) {
 			bar.SetWriter(output.NewNilBus().ErrorWriter())
 			bar.Start()
 			tt.t.LoadMetadata(bar)
-			files.WaitForFilesClosed()
+			WaitForFilesClosed()
 			bar.Finish()
 			if !reflect.DeepEqual(tt.t.Metadata, tt.want) {
 				t.Errorf("Track.LoadMetadata() got %#v want %#v", tt.t.Metadata, tt.want)
@@ -697,18 +696,18 @@ func TestReadMetadata(t *testing.T) {
 	// 5 artists, 20 albums each, 50 tracks apiece ... total: 5,000 tracks
 	testDir := "ReadMetadata"
 	_ = cmdtoolkit.Mkdir(testDir)
-	var artists []*files.Artist
+	var artists []*Artist
 	for k := 0; k < 5; k++ {
 		artistName := fmt.Sprintf("artist %d", k)
 		artistPath := filepath.Join(testDir, artistName)
 		_ = cmdtoolkit.Mkdir(artistPath)
-		artist := files.NewArtist(artistName, artistPath)
+		artist := NewArtist(artistName, artistPath)
 		artists = append(artists, artist)
 		for m := 0; m < 20; m++ {
 			albumName := fmt.Sprintf("album %d-%d", k, m)
 			albumPath := filepath.Join(artistPath, albumName)
 			_ = cmdtoolkit.Mkdir(albumPath)
-			album := files.AlbumMaker{
+			album := AlbumMaker{
 				Title:  albumName,
 				Artist: artist,
 				Path:   albumName,
@@ -717,7 +716,7 @@ func TestReadMetadata(t *testing.T) {
 			for n := 0; n < 50; n++ {
 				trackName := fmt.Sprintf("track %d-%d-%d", k, m, n)
 				trackFileName := fmt.Sprintf("%02d %s.mp3", n+1, trackName)
-				track := &files.Track{
+				track := &Track{
 					FilePath:   filepath.Join(albumPath, trackFileName),
 					SimpleName: trackName,
 					Album:      album,
@@ -739,7 +738,7 @@ func TestReadMetadata(t *testing.T) {
 		}
 	}
 	tests := map[string]struct {
-		artists []*files.Artist
+		artists []*Artist
 		output.WantedRecording
 	}{
 		"thorough test": {
@@ -750,7 +749,7 @@ func TestReadMetadata(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			files.ReadMetadata(o, tt.artists)
+			ReadMetadata(o, tt.artists)
 			o.Report(t, "ReadMetadata()", tt.WantedRecording)
 			for _, artist := range tt.artists {
 				for _, album := range artist.Albums {
@@ -770,16 +769,16 @@ func TestReadMetadata(t *testing.T) {
 }
 
 func TestTrack_ReportMetadataProblems(t *testing.T) {
-	problematicArtist := files.NewArtist("problematic:artist", "")
-	problematicAlbum := &files.Album{
+	problematicArtist := NewArtist("problematic:artist", "")
+	problematicAlbum := &Album{
 		Title:           "problematic:album",
 		RecordingArtist: problematicArtist,
 		CanonicalGenre:  "hard rock",
 		CanonicalYear:   "1999",
 		CanonicalTitle:  "problematic:album",
 	}
-	src := files.ID3V2
-	metadata := files.NewTrackMetadata()
+	src := ID3V2
+	metadata := NewTrackMetadata()
 	metadata.SetCanonicalSource(src)
 	metadata.SetCDIdentifier([]byte{1, 3, 5})
 	metadata.SetArtistName(src, "unknown artist")
@@ -788,7 +787,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	metadata.SetAlbumYear(src, "2001")
 	metadata.SetTrackName(src, "unknown title")
 	metadata.SetTrackNumber(src, 2)
-	problematicTrack := files.TrackMaker{
+	problematicTrack := TrackMaker{
 		Album:      problematicAlbum,
 		FileName:   "03 bad track.mp3",
 		SimpleName: "bad track",
@@ -797,16 +796,16 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	problematicTrack.Metadata = metadata
 	problematicAlbum.AddTrack(problematicTrack)
 	problematicArtist.AddAlbum(problematicAlbum)
-	goodArtist := files.NewArtist("good artist", "")
-	goodAlbum := &files.Album{
+	goodArtist := NewArtist("good artist", "")
+	goodAlbum := &Album{
 		Title:           "good album",
 		RecordingArtist: goodArtist,
 		CanonicalGenre:  "Classic Rock",
 		CanonicalYear:   "1999",
 		CanonicalTitle:  "good album",
 	}
-	src2 := files.ID3V1
-	metadata2 := files.NewTrackMetadata()
+	src2 := ID3V1
+	metadata2 := NewTrackMetadata()
 	metadata2.SetCanonicalSource(src2)
 	metadata2.SetArtistName(src2, "good artist")
 	metadata2.SetAlbumName(src2, "good album")
@@ -814,8 +813,8 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	metadata2.SetAlbumYear(src2, "1999")
 	metadata2.SetTrackName(src2, "good track")
 	metadata2.SetTrackNumber(src2, 3)
-	metadata2.SetErrorCause(files.ID3V2, "no id3v2 metadata, how odd")
-	goodTrack := files.TrackMaker{
+	metadata2.SetErrorCause(ID3V2, "no id3v2 metadata, how odd")
+	goodTrack := TrackMaker{
 		Album:      goodAlbum,
 		FileName:   "03 good track.mp3",
 		SimpleName: "good track",
@@ -824,26 +823,26 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	goodTrack.Metadata = metadata2
 	goodAlbum.AddTrack(goodTrack)
 	goodArtist.AddAlbum(goodAlbum)
-	errorMetadata := files.NewTrackMetadata()
-	errorMetadata.SetErrorCause(files.ID3V1, "oops")
-	errorMetadata.SetErrorCause(files.ID3V2, "oops")
-	noMetadata := files.NewTrackMetadata()
-	noMetadata.SetErrorCause(files.ID3V1, files.ErrNoID3V1MetadataFound.Error())
-	noMetadata.SetErrorCause(files.ID3V2, files.ErrNoID3V2MetadataFound.Error())
+	errorMetadata := NewTrackMetadata()
+	errorMetadata.SetErrorCause(ID3V1, "oops")
+	errorMetadata.SetErrorCause(ID3V2, "oops")
+	noMetadata := NewTrackMetadata()
+	noMetadata.SetErrorCause(ID3V1, ErrNoID3V1MetadataFound.Error())
+	noMetadata.SetErrorCause(ID3V2, ErrNoID3V2MetadataFound.Error())
 	tests := map[string]struct {
-		t    *files.Track
+		t    *Track
 		want []string
 	}{
 		"unread metadata": {
-			t:    &files.Track{Metadata: nil},
+			t:    &Track{Metadata: nil},
 			want: []string{"differences cannot be determined: metadata has not been read"},
 		},
 		"track with error": {
-			t:    &files.Track{Metadata: errorMetadata},
+			t:    &Track{Metadata: errorMetadata},
 			want: []string{"differences cannot be determined: track metadata may be corrupted"},
 		},
 		"track with no metadata": {
-			t:    &files.Track{Metadata: noMetadata},
+			t:    &Track{Metadata: noMetadata},
 			want: []string{"differences cannot be determined: the track file contains no metadata"},
 		},
 		"track with metadata differences": {
@@ -888,8 +887,8 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 		"track":  1,
 	})
 	_ = createFileWithContent(testDir, trackName, trackContents)
-	expectedMetadata := files.NewTrackMetadata()
-	for _, src := range []files.SourceType{files.ID3V1, files.ID3V2} {
+	expectedMetadata := NewTrackMetadata()
+	for _, src := range []SourceType{ID3V1, ID3V2} {
 		expectedMetadata.SetArtistName(src, "unknown artist")
 		expectedMetadata.SetAlbumName(src, "unknown album")
 		expectedMetadata.SetAlbumGenre(src, "unknown")
@@ -897,12 +896,12 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 		expectedMetadata.SetTrackName(src, "unknown title")
 		expectedMetadata.SetTrackNumber(src, 1)
 	}
-	expectedMetadata.SetCanonicalSource(files.ID3V2)
-	track := &files.Track{
+	expectedMetadata.SetCanonicalSource(ID3V2)
+	track := &Track{
 		FilePath:   filepath.Join(testDir, trackName),
 		SimpleName: strings.TrimSuffix(trackName, ".mp3"),
 		Number:     2,
-		Album: &files.Album{
+		Album: &Album{
 			Title:          "fine album",
 			CanonicalGenre: "classic rock",
 			CanonicalYear:  "2022",
@@ -910,32 +909,32 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 			MusicCDIdentifier: id3v2.UnknownFrame{
 				Body: []byte("fine album"),
 			},
-			RecordingArtist: &files.Artist{
+			RecordingArtist: &Artist{
 				Name:          "fine artist",
 				CanonicalName: "fine artist",
 			},
 		},
 		Metadata: expectedMetadata,
 	}
-	deletedTrack := &files.Track{
+	deletedTrack := &Track{
 		FilePath:   filepath.Join(testDir, "no such file"),
 		SimpleName: strings.TrimSuffix(trackName, ".mp3"),
 		Number:     2,
-		Album: &files.Album{
+		Album: &Album{
 			Title:             "fine album",
 			CanonicalGenre:    "classic rock",
 			CanonicalYear:     "2022",
 			CanonicalTitle:    "fine album",
 			MusicCDIdentifier: id3v2.UnknownFrame{Body: []byte("fine album")},
-			RecordingArtist: &files.Artist{
+			RecordingArtist: &Artist{
 				Name:          "fine artist",
 				CanonicalName: "fine artist",
 			},
 		},
 		Metadata: expectedMetadata,
 	}
-	editedTm := files.NewTrackMetadata()
-	for _, src := range []files.SourceType{files.ID3V1, files.ID3V2} {
+	editedTm := NewTrackMetadata()
+	for _, src := range []SourceType{ID3V1, ID3V2} {
 		editedTm.SetArtistName(src, "fine artist")
 		editedTm.SetAlbumName(src, "fine album")
 		editedTm.SetAlbumGenre(src, "classic rock")
@@ -944,11 +943,11 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 		editedTm.SetTrackNumber(src, 2)
 	}
 	editedTm.SetCDIdentifier([]byte("fine album"))
-	editedTm.SetCanonicalSource(files.ID3V2)
+	editedTm.SetCanonicalSource(ID3V2)
 	tests := map[string]struct {
-		t      *files.Track
+		t      *Track
 		wantE  []string
-		wantTm *files.TrackMetadata
+		wantTm *TrackMetadata
 	}{
 		"error checking": {
 			t: deletedTrack,
@@ -958,8 +957,8 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 			},
 		},
 		"no edit required": {
-			t:     &files.Track{Metadata: nil},
-			wantE: []string{files.ErrNoEditNeeded.Error()},
+			t:     &Track{Metadata: nil},
+			wantE: []string{ErrNoEditNeeded.Error()},
 		},
 		"edit required": {t: track, wantTm: editedTm},
 	}
@@ -974,7 +973,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 				t.Errorf("Track.UpdateMetadata() = %v, want %v", eStrings, tt.wantE)
 			} else if len(gotE) == 0 && tt.t.Metadata != nil {
 				// verify file was correctly rewritten
-				gotTm := files.InitializeMetadata(tt.t.FilePath)
+				gotTm := InitializeMetadata(tt.t.FilePath)
 				if !reflect.DeepEqual(gotTm, tt.wantTm) {
 					t.Errorf("Track.UpdateMetadata() read %#v, want %#v", gotTm, tt.wantTm)
 				}
@@ -984,15 +983,15 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 }
 
 func TestProcessArtistMetadata(t *testing.T) {
-	artist1 := files.NewArtist("artist_name", "")
-	album1 := files.AlbumMaker{Title: "album1", Artist: artist1}.NewAlbum()
+	artist1 := NewArtist("artist_name", "")
+	album1 := AlbumMaker{Title: "album1", Artist: artist1}.NewAlbum()
 	artist1.AddAlbum(album1)
 	for k := 1; k <= 10; k++ {
-		src := files.ID3V2
-		tm := files.NewTrackMetadata()
+		src := ID3V2
+		tm := NewTrackMetadata()
 		tm.SetCanonicalSource(src)
 		tm.SetArtistName(src, "artist:name")
-		track := files.TrackMaker{
+		track := TrackMaker{
 			Album:      album1,
 			FileName:   fmt.Sprintf("%02d track%d.mp3", k, k),
 			SimpleName: fmt.Sprintf("track%d", k),
@@ -1001,15 +1000,15 @@ func TestProcessArtistMetadata(t *testing.T) {
 		track.Metadata = tm
 		album1.AddTrack(track)
 	}
-	artist2 := files.NewArtist("artist_name", "")
-	album2 := files.AlbumMaker{Title: "album2", Artist: artist2}.NewAlbum()
+	artist2 := NewArtist("artist_name", "")
+	album2 := AlbumMaker{Title: "album2", Artist: artist2}.NewAlbum()
 	artist2.AddAlbum(album2)
 	for k := 1; k <= 10; k++ {
-		src := files.ID3V2
-		tm := files.NewTrackMetadata()
+		src := ID3V2
+		tm := NewTrackMetadata()
 		tm.SetCanonicalSource(src)
 		tm.SetArtistName(src, "unknown artist")
-		track := files.TrackMaker{
+		track := TrackMaker{
 			Album:      album2,
 			FileName:   fmt.Sprintf("%02d track%d.mp3", k, k),
 			SimpleName: fmt.Sprintf("track%d", k),
@@ -1018,19 +1017,19 @@ func TestProcessArtistMetadata(t *testing.T) {
 		track.Metadata = tm
 		album2.AddTrack(track)
 	}
-	artist3 := files.NewArtist("artist_name", "")
-	album3 := files.AlbumMaker{Title: "album3", Artist: artist3}.NewAlbum()
+	artist3 := NewArtist("artist_name", "")
+	album3 := AlbumMaker{Title: "album3", Artist: artist3}.NewAlbum()
 	artist3.AddAlbum(album3)
 	for k := 1; k <= 10; k++ {
-		src := files.ID3V2
-		tm := files.NewTrackMetadata()
+		src := ID3V2
+		tm := NewTrackMetadata()
 		tm.SetCanonicalSource(src)
 		if k%2 == 0 {
 			tm.SetArtistName(src, "artist:name")
 		} else {
 			tm.SetArtistName(src, "artist_name")
 		}
-		track := files.TrackMaker{
+		track := TrackMaker{
 			Album:      album3,
 			FileName:   fmt.Sprintf("%02d track%d.mp3", k, k),
 			SimpleName: fmt.Sprintf("track%d", k),
@@ -1040,13 +1039,13 @@ func TestProcessArtistMetadata(t *testing.T) {
 		album3.AddTrack(track)
 	}
 	tests := map[string]struct {
-		artists []*files.Artist
+		artists []*Artist
 		output.WantedRecording
 	}{
-		"unanimous choice": {artists: []*files.Artist{artist1}},
-		"unknown choice":   {artists: []*files.Artist{artist2}},
+		"unanimous choice": {artists: []*Artist{artist1}},
+		"unknown choice":   {artists: []*Artist{artist2}},
 		"ambiguous choice": {
-			artists: []*files.Artist{artist3},
+			artists: []*Artist{artist3},
 			WantedRecording: output.WantedRecording{
 				Error: "There are multiple artist name fields for \"artist_name\"," +
 					" and there is no unambiguously preferred choice; candidates are" +
@@ -1062,7 +1061,7 @@ func TestProcessArtistMetadata(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			files.ProcessArtistMetadata(o, tt.artists)
+			ProcessArtistMetadata(o, tt.artists)
 			o.Report(t, "ProcessArtistMetadata()", tt.WantedRecording)
 		})
 	}
@@ -1070,18 +1069,18 @@ func TestProcessArtistMetadata(t *testing.T) {
 
 func TestProcessAlbumMetadata(t *testing.T) {
 	// ordinary test data
-	src := files.ID3V2
-	var artists1 []*files.Artist
-	artist1 := files.NewArtist("good artist", "")
+	src := ID3V2
+	var artists1 []*Artist
+	artist1 := NewArtist("good artist", "")
 	artists1 = append(artists1, artist1)
-	album1 := files.AlbumMaker{Title: "good-album", Artist: artist1}.NewAlbum()
+	album1 := AlbumMaker{Title: "good-album", Artist: artist1}.NewAlbum()
 	artist1.AddAlbum(album1)
-	tm := files.NewTrackMetadata()
+	tm := NewTrackMetadata()
 	tm.SetCanonicalSource(src)
 	tm.SetAlbumName(src, "good:album")
 	tm.SetAlbumGenre(src, "pop")
 	tm.SetAlbumYear(src, "2022")
-	track1 := files.TrackMaker{
+	track1 := TrackMaker{
 		Album:      album1,
 		FileName:   "01 track1.mp3",
 		SimpleName: "track1",
@@ -1090,20 +1089,20 @@ func TestProcessAlbumMetadata(t *testing.T) {
 	track1.Metadata = tm
 	album1.AddTrack(track1)
 	// more interesting test data
-	var artists2 []*files.Artist
-	artist2 := files.NewArtist("another good artist", "")
+	var artists2 []*Artist
+	artist2 := NewArtist("another good artist", "")
 	artists2 = append(artists2, artist2)
-	album2 := files.AlbumMaker{
+	album2 := AlbumMaker{
 		Title:  "another good_album",
 		Artist: artist2,
 	}.NewAlbum()
 	artist2.AddAlbum(album2)
-	tm2a := files.NewTrackMetadata()
+	tm2a := NewTrackMetadata()
 	tm2a.SetCanonicalSource(src)
 	tm2a.SetAlbumName(src, "unknown album")
 	tm2a.SetAlbumGenre(src, "unknown")
 	tm2a.SetAlbumYear(src, "")
-	track2a := files.TrackMaker{
+	track2a := TrackMaker{
 		Album:      album2,
 		FileName:   "01 track1.mp3",
 		SimpleName: "track1",
@@ -1111,12 +1110,12 @@ func TestProcessAlbumMetadata(t *testing.T) {
 	}.NewTrack()
 	track2a.Metadata = tm2a
 	album2.AddTrack(track2a)
-	tm2b := files.NewTrackMetadata()
+	tm2b := NewTrackMetadata()
 	tm2b.SetCanonicalSource(src)
 	tm2b.SetAlbumName(src, "another good:album")
 	tm2b.SetAlbumGenre(src, "pop")
 	tm2b.SetAlbumYear(src, "2022")
-	track2b := files.TrackMaker{
+	track2b := TrackMaker{
 		Album:      album1,
 		FileName:   "02 track2.mp3",
 		SimpleName: "track2",
@@ -1124,12 +1123,12 @@ func TestProcessAlbumMetadata(t *testing.T) {
 	}.NewTrack()
 	track2b.Metadata = tm2b
 	album2.AddTrack(track2b)
-	tm2c := files.NewTrackMetadata()
+	tm2c := NewTrackMetadata()
 	tm2c.SetCanonicalSource(src)
 	tm2c.SetAlbumName(src, "another good:album")
 	tm2c.SetAlbumGenre(src, "pop")
 	tm2c.SetAlbumYear(src, "2022")
-	track2c := files.TrackMaker{
+	track2c := TrackMaker{
 		Album:      album1,
 		FileName:   "03 track3.mp3",
 		SimpleName: "track3",
@@ -1138,21 +1137,21 @@ func TestProcessAlbumMetadata(t *testing.T) {
 	track2c.Metadata = tm2c
 	album2.AddTrack(track2c)
 	// error case data
-	var artists3 []*files.Artist
-	artist3 := files.NewArtist("problematic artist", "")
+	var artists3 []*Artist
+	artist3 := NewArtist("problematic artist", "")
 	artists3 = append(artists3, artist3)
-	album3 := files.AlbumMaker{
+	album3 := AlbumMaker{
 		Title:  "problematic_album",
 		Artist: artist3,
 	}.NewAlbum()
 	artist3.AddAlbum(album3)
-	tm3a := files.NewTrackMetadata()
+	tm3a := NewTrackMetadata()
 	tm3a.SetCanonicalSource(src)
 	tm3a.SetCDIdentifier([]byte{1, 2, 3})
 	tm3a.SetAlbumName(src, "problematic:album")
 	tm3a.SetAlbumGenre(src, "rock")
 	tm3a.SetAlbumYear(src, "2023")
-	track3a := files.TrackMaker{
+	track3a := TrackMaker{
 		Album:      album2,
 		FileName:   "01 track1.mp3",
 		SimpleName: "track1",
@@ -1160,13 +1159,13 @@ func TestProcessAlbumMetadata(t *testing.T) {
 	}.NewTrack()
 	track3a.Metadata = tm3a
 	album3.AddTrack(track3a)
-	tm3b := files.NewTrackMetadata()
+	tm3b := NewTrackMetadata()
 	tm3b.SetCanonicalSource(src)
 	tm3b.SetCDIdentifier([]byte{1, 2, 3, 4})
 	tm3b.SetAlbumName(src, "problematic:Album")
 	tm3b.SetAlbumGenre(src, "pop")
 	tm3b.SetAlbumYear(src, "2022")
-	track3b := files.TrackMaker{
+	track3b := TrackMaker{
 		Album:      album1,
 		FileName:   "02 track2.mp3",
 		SimpleName: "track2",
@@ -1174,13 +1173,13 @@ func TestProcessAlbumMetadata(t *testing.T) {
 	}.NewTrack()
 	track3b.Metadata = tm3b
 	album3.AddTrack(track3b)
-	tm3c := files.NewTrackMetadata()
+	tm3c := NewTrackMetadata()
 	tm3c.SetCanonicalSource(src)
 	tm3c.SetCDIdentifier([]byte{1, 2, 3, 4, 5})
 	tm3c.SetAlbumName(src, "Problematic:album")
 	tm3c.SetAlbumGenre(src, "folk")
 	tm3c.SetAlbumYear(src, "2021")
-	track3c := files.TrackMaker{
+	track3c := TrackMaker{
 		Album:      album1,
 		FileName:   "03 track3.mp3",
 		SimpleName: "track3",
@@ -1189,7 +1188,7 @@ func TestProcessAlbumMetadata(t *testing.T) {
 	track3c.Metadata = tm3c
 	album3.AddTrack(track3c)
 	// verify code can handle missing metadata
-	track4 := files.TrackMaker{
+	track4 := TrackMaker{
 		Album:      album1,
 		FileName:   "04 track4.mp3",
 		SimpleName: "track4",
@@ -1197,7 +1196,7 @@ func TestProcessAlbumMetadata(t *testing.T) {
 	}.NewTrack()
 	album3.AddTrack(track4)
 	tests := map[string]struct {
-		artists []*files.Artist
+		artists []*Artist
 		output.WantedRecording
 	}{
 		"ordinary test":    {artists: artists1},
@@ -1254,28 +1253,28 @@ func TestProcessAlbumMetadata(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			files.ProcessAlbumMetadata(o, tt.artists)
+			ProcessAlbumMetadata(o, tt.artists)
 			o.Report(t, "ProcessAlbumMetadata()", tt.WantedRecording)
 		})
 	}
 }
 
 func TestTrack_ReportMetadataErrors(t *testing.T) {
-	tm := files.NewTrackMetadata()
-	tm.SetErrorCause(files.ID3V1, "id3v1 error!")
-	tm.SetErrorCause(files.ID3V2, "id3v2 error!")
+	tm := NewTrackMetadata()
+	tm.SetErrorCause(ID3V1, "id3v1 error!")
+	tm.SetErrorCause(ID3V2, "id3v2 error!")
 	tests := map[string]struct {
-		t *files.Track
+		t *Track
 		output.WantedRecording
 	}{
 		"error handling": {
-			t: &files.Track{
+			t: &Track{
 				SimpleName: "silly track",
 				FilePath:   "Music\\silly artist\\silly album\\01 silly track.mp3",
 				Metadata:   tm,
-				Album: &files.Album{
+				Album: &Album{
 					Title:           "silly album",
-					RecordingArtist: &files.Artist{Name: "silly artist"},
+					RecordingArtist: &Artist{Name: "silly artist"},
 				},
 			},
 			WantedRecording: output.WantedRecording{
@@ -1330,16 +1329,16 @@ func TestTrack_Details(t *testing.T) {
 	goodFileName := "goodFile.mp3"
 	_ = createFileWithContent(".", goodFileName, content)
 	tests := map[string]struct {
-		t       *files.Track
+		t       *Track
 		want    map[string]string
 		wantErr bool
 	}{
 		"error case": {
-			t:       &files.Track{FilePath: "./no such file"},
+			t:       &Track{FilePath: "./no such file"},
 			wantErr: true,
 		},
 		"good case": {
-			t: &files.Track{FilePath: filepath.Join(".", goodFileName)},
+			t: &Track{FilePath: filepath.Join(".", goodFileName)},
 			want: map[string]string{
 				"Composer":       "a couple of idiots",
 				"Lyricist":       "An infinite number of monkeys with a typewriter",
@@ -1430,7 +1429,7 @@ func TestProgressWriter(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := files.ProgressWriter(tt.o); got != tt.want {
+			if got := ProgressWriter(tt.o); got != tt.want {
 				t.Errorf("ProgressWriter() = %v, want %v", got, tt.want)
 			}
 		})

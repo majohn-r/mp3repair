@@ -1,7 +1,6 @@
-package files_test
+package files
 
 import (
-	"mp3repair/internal/files"
 	"testing"
 )
 
@@ -160,7 +159,7 @@ func TestIsIllegalRuneForFileNames(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := files.IsIllegalRuneForFileNames(tt.r); got != tt.want {
+			if got := IsIllegalRuneForFileNames(tt.r); got != tt.want {
 				t.Errorf("IsIllegalRuneForFileNames = %v, want %v", got, tt.want)
 			}
 		})
