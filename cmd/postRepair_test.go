@@ -1,11 +1,10 @@
 /*
 Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
 */
-package cmd_test
+package cmd
 
 import (
 	"fmt"
-	"mp3repair/cmd"
 	"mp3repair/internal/files"
 	"regexp"
 	"testing"
@@ -15,10 +14,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func TestRemoveTrackBackupDirectory(t *testing.T) {
-	originalRemoveAll := cmd.RemoveAll
+func Test_removeTrackBackupDirectory(t *testing.T) {
+	originalRemoveAll := RemoveAll
 	defer func() {
-		cmd.RemoveAll = originalRemoveAll
+		RemoveAll = originalRemoveAll
 	}()
 	tests := map[string]struct {
 		removeAll func(dir string) error
@@ -51,25 +50,25 @@ func TestRemoveTrackBackupDirectory(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			cmd.RemoveAll = tt.removeAll
+			RemoveAll = tt.removeAll
 			o := output.NewRecorder()
-			if got := cmd.RemoveTrackBackupDirectory(o, tt.dir); got != tt.want {
-				t.Errorf("RemoveTrackBackupDirectory() = %v, want %v", got, tt.want)
+			if got := RemoveTrackBackupDirectory(o, tt.dir); got != tt.want {
+				t.Errorf("removeTrackBackupDirectory() = %v, want %v", got, tt.want)
 			}
-			o.Report(t, "RemoveTrackBackupDirectory()", tt.WantedRecording)
+			o.Report(t, "removeTrackBackupDirectory()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestPostRepairWork(t *testing.T) {
-	originalRemoveAll := cmd.RemoveAll
-	originalDirExists := cmd.DirExists
+func Test_postRepairWork(t *testing.T) {
+	originalRemoveAll := RemoveAll
+	originalDirExists := DirExists
 	defer func() {
-		cmd.RemoveAll = originalRemoveAll
-		cmd.DirExists = originalDirExists
+		RemoveAll = originalRemoveAll
+		DirExists = originalDirExists
 	}()
 	type args struct {
-		ss         *cmd.SearchSettings
+		ss         *SearchSettings
 		allArtists []*files.Artist
 	}
 	tests := map[string]struct {
@@ -81,14 +80,14 @@ func TestPostRepairWork(t *testing.T) {
 		"no load": {args: args{}},
 		"no artists": {
 			args: args{
-				ss:         &cmd.SearchSettings{},
+				ss:         &SearchSettings{},
 				allArtists: []*files.Artist{},
 			},
 		},
 		"artists with no work to do": {
 			dirExists: func(dir string) bool { return false },
 			args: args{
-				ss: &cmd.SearchSettings{
+				ss: &SearchSettings{
 					ArtistFilter: regexp.MustCompile(".*"),
 					AlbumFilter:  regexp.MustCompile(".*"),
 					TrackFilter:  regexp.MustCompile(".*"),
@@ -103,7 +102,7 @@ func TestPostRepairWork(t *testing.T) {
 			dirExists: func(dir string) bool { return true },
 			removeAll: func(dir string) error { return nil },
 			args: args{
-				ss: &cmd.SearchSettings{
+				ss: &SearchSettings{
 					ArtistFilter: regexp.MustCompile(".*"),
 					AlbumFilter:  regexp.MustCompile(".*"),
 					TrackFilter:  regexp.MustCompile(".*"),
@@ -139,7 +138,7 @@ func TestPostRepairWork(t *testing.T) {
 			dirExists: func(dir string) bool { return true },
 			removeAll: func(dir string) error { return fmt.Errorf("nope") },
 			args: args{
-				ss: &cmd.SearchSettings{
+				ss: &SearchSettings{
 					ArtistFilter: regexp.MustCompile(".*"),
 					AlbumFilter:  regexp.MustCompile(".*"),
 					TrackFilter:  regexp.MustCompile(".*"),
@@ -180,20 +179,20 @@ func TestPostRepairWork(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			cmd.RemoveAll = tt.removeAll
-			cmd.DirExists = tt.dirExists
+			RemoveAll = tt.removeAll
+			DirExists = tt.dirExists
 			o := output.NewRecorder()
-			_ = cmd.PostRepairWork(o, tt.args.ss, tt.args.allArtists)
-			o.Report(t, "PostRepairWork()", tt.WantedRecording)
+			_ = PostRepairWork(o, tt.args.ss, tt.args.allArtists)
+			o.Report(t, "postRepairWork()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestPostRepairRun(t *testing.T) {
-	cmd.InitGlobals()
-	originalBus := cmd.Bus
+func Test_postRepairRun(t *testing.T) {
+	InitGlobals()
+	originalBus := Bus
 	defer func() {
-		cmd.Bus = originalBus
+		Bus = originalBus
 	}()
 	command := &cobra.Command{}
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), command.Flags(),
@@ -234,15 +233,15 @@ func TestPostRepairRun(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			cmd.Bus = o // cook getBus()
-			_ = cmd.PostRepairRun(tt.args.cmd, tt.args.in1)
-			o.Report(t, "PostRepairRun()", tt.WantedRecording)
+			Bus = o // cook getBus()
+			_ = PostRepairRun(tt.args.cmd, tt.args.in1)
+			o.Report(t, "postRepairRun()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestPostRepairHelp(t *testing.T) {
-	commandUnderTest := cloneCommand(cmd.PostRepairCmd)
+func Test_postRepair_Help(t *testing.T) {
+	commandUnderTest := cloneCommand(PostRepairCmd)
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), safeSearchFlags)
 	tests := map[string]struct {
@@ -283,8 +282,8 @@ func TestPostRepairHelp(t *testing.T) {
 	}
 }
 
-func TestPostRepairUsage(t *testing.T) {
-	commandUnderTest := cloneCommand(cmd.PostRepairCmd)
+func Test_postRepair_Usage(t *testing.T) {
+	commandUnderTest := cloneCommand(PostRepairCmd)
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), safeSearchFlags)
 	tests := map[string]struct {

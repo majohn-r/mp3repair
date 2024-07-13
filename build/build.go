@@ -204,7 +204,7 @@ func loadProductData() {
 			default:
 				rawPD.flags = append(rawPD.flags, fmt.Sprintf(flagFormat, value.Flag, value.Value))
 				switch value.Flag {
-				case "mp3repair/cmd.Version":
+				case "mp3repair/cmd.version":
 					var major int
 					var minor int
 					var patch int

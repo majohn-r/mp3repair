@@ -1,7 +1,7 @@
-package cmd_test
+package cmd
 
 import (
-	"mp3repair/cmd"
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"reflect"
 	"runtime/debug"
 	"testing"
@@ -27,41 +27,41 @@ func (tec testingElevationControl) ConfigureExit(f func(int)) func(int) { return
 
 func (tec testingElevationControl) WillRunElevated() bool { return false }
 
-func TestAboutRun(t *testing.T) {
-	originalBusGetter := cmd.BusGetter
-	originalInterpretBuildData := cmd.InterpretBuildData
-	originalLogPath := cmd.LogPath
-	originalVersion := cmd.Version
-	originalCreation := cmd.Creation
-	originalApplicationPath := cmd.ApplicationPath
-	originalPlainFileExists := cmd.PlainFileExists
-	originalMP3RepairElevationControl := cmd.MP3RepairElevationControl
+func Test_aboutRun(t *testing.T) {
+	originalBusGetter := BusGetter
+	originalInterpretBuildData := InterpretBuildData
+	originalLogPath := LogPath
+	originalVersion := version
+	originalCreation := creation
+	originalApplicationPath := ApplicationPath
+	originalPlainFileExists := PlainFileExists
+	originalMP3RepairElevationControl := mp3repairElevationControl
 	defer func() {
-		cmd.BusGetter = originalBusGetter
-		cmd.InterpretBuildData = originalInterpretBuildData
-		cmd.LogPath = originalLogPath
-		cmd.Version = originalVersion
-		cmd.Creation = originalCreation
-		cmd.ApplicationPath = originalApplicationPath
-		cmd.PlainFileExists = originalPlainFileExists
-		cmd.MP3RepairElevationControl = originalMP3RepairElevationControl
+		BusGetter = originalBusGetter
+		InterpretBuildData = originalInterpretBuildData
+		LogPath = originalLogPath
+		version = originalVersion
+		creation = originalCreation
+		ApplicationPath = originalApplicationPath
+		PlainFileExists = originalPlainFileExists
+		mp3repairElevationControl = originalMP3RepairElevationControl
 	}()
-	cmd.InterpretBuildData = func(func() (*debug.BuildInfo, bool)) (string, []string) {
+	InterpretBuildData = func(func() (*debug.BuildInfo, bool)) (string, []string) {
 		return "go1.22.x", []string{
 			"go.dependency.1 v1.2.3",
 			"go.dependency.2 v1.3.4",
 			"go.dependency.3 v0.1.2",
 		}
 	}
-	cmd.LogPath = func() string {
+	LogPath = func() string {
 		return "/my/files/tmp/logs/mp3repair"
 	}
-	cmd.Version = "0.40.0"
-	cmd.Creation = "2024-02-24T13:14:05-05:00"
-	cmd.ApplicationPath = func() string {
+	version = "0.40.0"
+	creation = "2024-02-24T13:14:05-05:00"
+	ApplicationPath = func() string {
 		return "/my/files/apppath"
 	}
-	cmd.PlainFileExists = func(_ string) bool { return true }
+	PlainFileExists = func(_ string) bool { return true }
 	type args struct {
 		in0 *cobra.Command
 		in1 []string
@@ -71,7 +71,7 @@ func TestAboutRun(t *testing.T) {
 		output.WantedRecording
 	}{
 		"simple": {
-			args: args{in0: cmd.AboutCmd},
+			args: args{in0: aboutCmd},
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"╭───────────────────────────────────────────────────────────────────────────────╮\n" +
@@ -93,12 +93,12 @@ func TestAboutRun(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			cmd.BusGetter = func() output.Bus { return o }
-			cmd.MP3RepairElevationControl = testingElevationControl{
+			BusGetter = func() output.Bus { return o }
+			mp3repairElevationControl = testingElevationControl{
 				desiredStatus: []string{"mp3repair is running with elevated privileges"},
 			}
-			_ = cmd.AboutRun(tt.args.in0, tt.args.in1)
-			o.Report(t, "AboutRun()", tt.WantedRecording)
+			_ = aboutRun(tt.args.in0, tt.args.in1)
+			o.Report(t, "aboutRun()", tt.WantedRecording)
 		})
 	}
 }
@@ -108,7 +108,7 @@ func enableCommandRecording(o *output.Recorder, command *cobra.Command) {
 	command.SetOut(o.ConsoleWriter())
 }
 
-func TestAboutHelp(t *testing.T) {
+func Test_about_Help(t *testing.T) {
 	tests := map[string]struct {
 		output.WantedRecording
 	}{
@@ -162,7 +162,7 @@ func TestAboutHelp(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			command := cmd.AboutCmd
+			command := aboutCmd
 			enableCommandRecording(o, command)
 			_ = command.Help()
 			o.Report(t, "about Help()", tt.WantedRecording)
@@ -170,36 +170,36 @@ func TestAboutHelp(t *testing.T) {
 	}
 }
 
-func TestAcquireAboutData(t *testing.T) {
-	originalInterpretBuildData := cmd.InterpretBuildData
-	originalLogPath := cmd.LogPath
-	originalVersion := cmd.Version
-	originalCreation := cmd.Creation
-	originalApplicationPath := cmd.ApplicationPath
-	originalPlainFileExists := cmd.PlainFileExists
-	originalMP3RepairElevationControl := cmd.MP3RepairElevationControl
+func Test_acquireAboutData(t *testing.T) {
+	originalInterpretBuildData := InterpretBuildData
+	originalLogPath := LogPath
+	originalVersion := version
+	originalCreation := creation
+	originalApplicationPath := ApplicationPath
+	originalPlainFileExists := PlainFileExists
+	originalMP3RepairElevationControl := mp3repairElevationControl
 	defer func() {
-		cmd.InterpretBuildData = originalInterpretBuildData
-		cmd.LogPath = originalLogPath
-		cmd.Version = originalVersion
-		cmd.Creation = originalCreation
-		cmd.ApplicationPath = originalApplicationPath
-		cmd.PlainFileExists = originalPlainFileExists
-		cmd.MP3RepairElevationControl = originalMP3RepairElevationControl
+		InterpretBuildData = originalInterpretBuildData
+		LogPath = originalLogPath
+		version = originalVersion
+		creation = originalCreation
+		ApplicationPath = originalApplicationPath
+		PlainFileExists = originalPlainFileExists
+		mp3repairElevationControl = originalMP3RepairElevationControl
 	}()
-	cmd.InterpretBuildData = func(func() (*debug.BuildInfo, bool)) (string, []string) {
+	InterpretBuildData = func(func() (*debug.BuildInfo, bool)) (string, []string) {
 		return "go1.22.x", []string{
 			"go.dependency.1 v1.2.3",
 			"go.dependency.2 v1.3.4",
 			"go.dependency.3 v0.1.2",
 		}
 	}
-	cmd.LogPath = func() string {
+	LogPath = func() string {
 		return "/my/files/tmp/logs/mp3repair"
 	}
-	cmd.Version = "0.40.0"
-	cmd.Creation = "2024-02-24T13:14:05-05:00"
-	cmd.ApplicationPath = func() string {
+	version = "0.40.0"
+	creation = "2024-02-24T13:14:05-05:00"
+	ApplicationPath = func() string {
 		return "/my/files/apppath"
 	}
 	tests := map[string]struct {
@@ -288,7 +288,7 @@ func TestAcquireAboutData(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			cmd.PlainFileExists = tt.plainFileExists
+			PlainFileExists = tt.plainFileExists
 			tec := testingElevationControl{
 				desiredStatus: []string{},
 			}
@@ -303,9 +303,72 @@ func TestAcquireAboutData(t *testing.T) {
 					tec.desiredStatus = append(tec.desiredStatus, "The environment variable MP3REPAIR_RUNS_AS_ADMIN evaluates as false")
 				}
 			}
-			cmd.MP3RepairElevationControl = tec
-			if got := cmd.AcquireAboutData(output.NewNilBus()); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("AcquireAboutData() got %v, want %v", got, tt.want)
+			mp3repairElevationControl = tec
+			if got := acquireAboutData(output.NewNilBus()); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("acquireAboutData() got %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_interpretStyle(t *testing.T) {
+	tests := map[string]struct {
+		flag cmdtoolkit.CommandFlag[string]
+		want cmdtoolkit.FlowerBoxStyle
+	}{
+		"lc ascii": {
+			flag: cmdtoolkit.CommandFlag[string]{Value: "ascii"},
+			want: cmdtoolkit.ASCIIFlowerBox,
+		},
+		"uc ascii": {
+			flag: cmdtoolkit.CommandFlag[string]{Value: "ASCII"},
+			want: cmdtoolkit.ASCIIFlowerBox,
+		},
+		"lc rounded": {
+			flag: cmdtoolkit.CommandFlag[string]{Value: "rounded"},
+			want: cmdtoolkit.CurvedFlowerBox,
+		},
+		"uc rounded": {
+			flag: cmdtoolkit.CommandFlag[string]{Value: "ROUNDED"},
+			want: cmdtoolkit.CurvedFlowerBox,
+		},
+		"lc light": {
+			flag: cmdtoolkit.CommandFlag[string]{Value: "light"},
+			want: cmdtoolkit.LightLinedFlowerBox,
+		},
+		"uc light": {
+			flag: cmdtoolkit.CommandFlag[string]{Value: "LIGHT"},
+			want: cmdtoolkit.LightLinedFlowerBox,
+		},
+		"lc heavy": {
+			flag: cmdtoolkit.CommandFlag[string]{Value: "heavy"},
+			want: cmdtoolkit.HeavyLinedFlowerBox,
+		},
+		"uc heavy": {
+			flag: cmdtoolkit.CommandFlag[string]{Value: "HEAVY"},
+			want: cmdtoolkit.HeavyLinedFlowerBox,
+		},
+		"lc double": {
+			flag: cmdtoolkit.CommandFlag[string]{Value: "double"},
+			want: cmdtoolkit.DoubleLinedFlowerBox,
+		},
+		"uc double": {
+			flag: cmdtoolkit.CommandFlag[string]{Value: "DOUBLE"},
+			want: cmdtoolkit.DoubleLinedFlowerBox,
+		},
+		"empty": {
+			flag: cmdtoolkit.CommandFlag[string]{Value: ""},
+			want: cmdtoolkit.CurvedFlowerBox,
+		},
+		"garbage": {
+			flag: cmdtoolkit.CommandFlag[string]{Value: "abc"},
+			want: cmdtoolkit.CurvedFlowerBox,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := interpretStyle(tt.flag); got != tt.want {
+				t.Errorf("interpretStyle() = %v, want %v", got, tt.want)
 			}
 		})
 	}

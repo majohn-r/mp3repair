@@ -24,13 +24,13 @@ var (
 		Use: repairCommandName + " [" + repairDryRunFlag + "] " +
 			searchUsage,
 		DisableFlagsInUseLine: true,
-		Short: "Repairs problems found by running '" + CheckCommand + " " +
-			CheckFilesFlag + "'",
+		Short: "Repairs problems found by running '" + checkCommand + " " +
+			checkFilesFlag + "'",
 		Long: "" +
 			fmt.Sprintf("%q repairs the problems found by running '%s %s'\n",
-				repairCommandName, CheckCommand, CheckFilesFlag) +
+				repairCommandName, checkCommand, checkFilesFlag) +
 			"\n" +
-			"This command rewrites the mp3 files that the " + CheckCommand +
+			"This command rewrites the mp3 files that the " + checkCommand +
 			" command noted as having metadata\n" +
 			"inconsistent with the file structure. Prior to rewriting an mp3 file, the " +
 			repairCommandName + "\n" +
@@ -91,7 +91,7 @@ func (rs *RepairSettings) ProcessArtists(o output.Bus, allArtists []*files.Artis
 
 func (rs *RepairSettings) RepairArtists(o output.Bus, artists []*files.Artist) *cmdtoolkit.ExitError {
 	ReadMetadata(o, artists) // read all track metadata
-	concernedArtists := CreateConcernedArtists(artists)
+	concernedArtists := createConcernedArtists(artists)
 	count := FindConflictedTracks(concernedArtists)
 	if rs.DryRun.Value {
 		ReportRepairsNeeded(o, concernedArtists)
@@ -104,44 +104,44 @@ func (rs *RepairSettings) RepairArtists(o output.Bus, artists []*files.Artist) *
 	return BackupAndRepairTracks(o, concernedArtists)
 }
 
-func FindConflictedTracks(concernedArtists []*ConcernedArtist) int {
+func FindConflictedTracks(concernedArtists []*concernedArtist) int {
 	count := 0
 	for _, cAr := range concernedArtists {
-		for _, cAl := range cAr.Albums() {
-			for _, cT := range cAl.Tracks() {
+		for _, cAl := range cAr.albums() {
+			for _, cT := range cAl.tracks() {
 				state := cT.backing.ReconcileMetadata()
 				if state.HasArtistNameConflict() {
-					cT.AddConcern(ConflictConcern,
+					cT.addConcern(conflictConcern,
 						"the artist name field does not match the name of the artist"+
 							" directory")
 				}
 				if state.HasAlbumNameConflict() {
-					cT.AddConcern(ConflictConcern,
+					cT.addConcern(conflictConcern,
 						"the album name field does not match the name of the album"+
 							" directory")
 				}
 				if state.HasGenreConflict() {
-					cT.AddConcern(ConflictConcern,
+					cT.addConcern(conflictConcern,
 						"the genre field does not match the other tracks in the album")
 				}
 				if state.HasMCDIConflict() {
-					cT.AddConcern(ConflictConcern,
+					cT.addConcern(conflictConcern,
 						"the music CD identifier field does not match the other tracks in"+
 							" the album")
 				}
 				if state.HasNumberingConflict() {
-					cT.AddConcern(ConflictConcern,
+					cT.addConcern(conflictConcern,
 						"the track number field does not match the track's file name")
 				}
 				if state.HasTrackNameConflict() {
-					cT.AddConcern(ConflictConcern,
+					cT.addConcern(conflictConcern,
 						"the track name field does not match the track's file name")
 				}
 				if state.HasYearConflict() {
-					cT.AddConcern(ConflictConcern,
+					cT.addConcern(conflictConcern,
 						"the year field does not match the other tracks in the album")
 				}
-				if cT.IsConcerned() {
+				if cT.isConcerned() {
 					count++
 				}
 			}
@@ -150,9 +150,9 @@ func FindConflictedTracks(concernedArtists []*ConcernedArtist) int {
 	return count
 }
 
-func ReportRepairsNeeded(o output.Bus, concernedArtists []*ConcernedArtist) {
+func ReportRepairsNeeded(o output.Bus, concernedArtists []*concernedArtist) {
 	artistNames := make([]string, 0, len(concernedArtists))
-	artistMap := map[string]*ConcernedArtist{}
+	artistMap := map[string]*concernedArtist{}
 	for _, cAr := range concernedArtists {
 		name := cAr.name()
 		artistNames = append(artistNames, name)
@@ -162,12 +162,12 @@ func ReportRepairsNeeded(o output.Bus, concernedArtists []*ConcernedArtist) {
 	headerPrinted := false
 	for _, name := range artistNames {
 		if cAr := artistMap[name]; cAr != nil {
-			if cAr.IsConcerned() {
+			if cAr.isConcerned() {
 				if !headerPrinted {
 					o.WriteConsole("The following concerns can be repaired:\n")
 					headerPrinted = true
 				}
-				cAr.ToConsole(o)
+				cAr.toConsole(o)
 			}
 		}
 	}
@@ -180,14 +180,14 @@ func nothingToDo(o output.Bus) {
 	o.WriteCanonicalConsole("No repairable track defects were found.")
 }
 
-func BackupAndRepairTracks(o output.Bus, concernedArtists []*ConcernedArtist) *cmdtoolkit.ExitError {
+func BackupAndRepairTracks(o output.Bus, concernedArtists []*concernedArtist) *cmdtoolkit.ExitError {
 	var e *cmdtoolkit.ExitError
 	for _, cAr := range concernedArtists {
-		if !cAr.IsConcerned() {
+		if !cAr.isConcerned() {
 			continue
 		}
-		for _, cAl := range cAr.albums {
-			if !cAl.IsConcerned() {
+		for _, cAl := range cAr.concernedAlbums {
+			if !cAl.isConcerned() {
 				continue
 			}
 			path, exists := EnsureTrackBackupDirectoryExists(o, cAl)
@@ -195,8 +195,8 @@ func BackupAndRepairTracks(o output.Bus, concernedArtists []*ConcernedArtist) *c
 				e = cmdtoolkit.NewExitSystemError(repairCommandName)
 				continue
 			}
-			for _, cT := range cAl.tracks {
-				if !cT.IsConcerned() {
+			for _, cT := range cAl.concernedTracks {
+				if !cT.isConcerned() {
 					continue
 				}
 				t := cT.backing

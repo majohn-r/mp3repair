@@ -1,11 +1,10 @@
 /*
 Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
 */
-package cmd_test
+package cmd
 
 import (
 	"fmt"
-	"mp3repair/cmd"
 	"mp3repair/internal/files"
 	"path/filepath"
 	"reflect"
@@ -17,16 +16,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func TestProcessCheckFlags(t *testing.T) {
+func Test_processCheckFlags(t *testing.T) {
 	tests := map[string]struct {
 		values map[string]*cmdtoolkit.CommandFlag[any]
-		want   *cmd.CheckSettings
+		want   *checkSettings
 		want1  bool
 		output.WantedRecording
 	}{
 		"no data": {
 			values: map[string]*cmdtoolkit.CommandFlag[any]{},
-			want:   &cmd.CheckSettings{},
+			want:   &checkSettings{},
 			want1:  false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -54,7 +53,7 @@ func TestProcessCheckFlags(t *testing.T) {
 				"files":     {Value: false},
 				"numbering": {Value: false},
 			},
-			want:  &cmd.CheckSettings{},
+			want:  &checkSettings{},
 			want1: true,
 		},
 		"overridden": {
@@ -63,10 +62,10 @@ func TestProcessCheckFlags(t *testing.T) {
 				"files":     {Value: true, UserSet: true},
 				"numbering": {Value: true, UserSet: true},
 			},
-			want: &cmd.CheckSettings{
-				Empty:     cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
-				Files:     cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
-				Numbering: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+			want: &checkSettings{
+				empty:     cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				files:     cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
+				numbering: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
 			},
 			want1: true,
 		},
@@ -74,26 +73,26 @@ func TestProcessCheckFlags(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			got, got1 := cmd.ProcessCheckFlags(o, tt.values)
+			got, got1 := processCheckFlags(o, tt.values)
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ProcessCheckFlags() got = %v, want %v", got, tt.want)
+				t.Errorf("processCheckFlags() got = %v, want %v", got, tt.want)
 			}
 			if got1 != tt.want1 {
-				t.Errorf("ProcessCheckFlags() got1 = %v, want %v", got1, tt.want1)
+				t.Errorf("processCheckFlags() got1 = %v, want %v", got1, tt.want1)
 			}
-			o.Report(t, "ProcessCheckFlags()", tt.WantedRecording)
+			o.Report(t, "processCheckFlags()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestCheckSettings_HasWorkToDo(t *testing.T) {
+func Test_checkSettings_hasWorkToDo(t *testing.T) {
 	tests := map[string]struct {
-		cs   *cmd.CheckSettings
+		cs   *checkSettings
 		want bool
 		output.WantedRecording
 	}{
 		"no work, as configured": {
-			cs:   &cmd.CheckSettings{},
+			cs:   &checkSettings{},
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -109,7 +108,7 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 			},
 		},
 		"no work, empty configured that way": {
-			cs:   &cmd.CheckSettings{Empty: cmdtoolkit.CommandFlag[bool]{UserSet: true}},
+			cs:   &checkSettings{empty: cmdtoolkit.CommandFlag[bool]{UserSet: true}},
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -126,7 +125,7 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 			},
 		},
 		"no work, files configured that way": {
-			cs:   &cmd.CheckSettings{Files: cmdtoolkit.CommandFlag[bool]{UserSet: true}},
+			cs:   &checkSettings{files: cmdtoolkit.CommandFlag[bool]{UserSet: true}},
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -143,7 +142,7 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 			},
 		},
 		"no work, numbering configured that way": {
-			cs:   &cmd.CheckSettings{Numbering: cmdtoolkit.CommandFlag[bool]{UserSet: true}},
+			cs:   &checkSettings{numbering: cmdtoolkit.CommandFlag[bool]{UserSet: true}},
 			want: false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -160,9 +159,9 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 			},
 		},
 		"no work, empty and files configured that way": {
-			cs: &cmd.CheckSettings{
-				Empty: cmdtoolkit.CommandFlag[bool]{UserSet: true},
-				Files: cmdtoolkit.CommandFlag[bool]{UserSet: true},
+			cs: &checkSettings{
+				empty: cmdtoolkit.CommandFlag[bool]{UserSet: true},
+				files: cmdtoolkit.CommandFlag[bool]{UserSet: true},
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
@@ -180,9 +179,9 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 			},
 		},
 		"no work, empty and numbering configured that way": {
-			cs: &cmd.CheckSettings{
-				Empty:     cmdtoolkit.CommandFlag[bool]{UserSet: true},
-				Numbering: cmdtoolkit.CommandFlag[bool]{UserSet: true},
+			cs: &checkSettings{
+				empty:     cmdtoolkit.CommandFlag[bool]{UserSet: true},
+				numbering: cmdtoolkit.CommandFlag[bool]{UserSet: true},
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
@@ -200,9 +199,9 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 			},
 		},
 		"no work, numbering and files configured that way": {
-			cs: &cmd.CheckSettings{
-				Numbering: cmdtoolkit.CommandFlag[bool]{UserSet: true},
-				Files:     cmdtoolkit.CommandFlag[bool]{UserSet: true},
+			cs: &checkSettings{
+				numbering: cmdtoolkit.CommandFlag[bool]{UserSet: true},
+				files:     cmdtoolkit.CommandFlag[bool]{UserSet: true},
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
@@ -220,10 +219,10 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 			},
 		},
 		"no work, all flags configured that way": {
-			cs: &cmd.CheckSettings{
-				Numbering: cmdtoolkit.CommandFlag[bool]{UserSet: true},
-				Files:     cmdtoolkit.CommandFlag[bool]{UserSet: true},
-				Empty:     cmdtoolkit.CommandFlag[bool]{UserSet: true},
+			cs: &checkSettings{
+				numbering: cmdtoolkit.CommandFlag[bool]{UserSet: true},
+				files:     cmdtoolkit.CommandFlag[bool]{UserSet: true},
+				empty:     cmdtoolkit.CommandFlag[bool]{UserSet: true},
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
@@ -240,43 +239,43 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 			},
 		},
 		"check empty": {
-			cs:   &cmd.CheckSettings{Empty: cmdtoolkit.CommandFlag[bool]{Value: true}},
+			cs:   &checkSettings{empty: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			want: true,
 		},
 		"check files": {
-			cs:   &cmd.CheckSettings{Files: cmdtoolkit.CommandFlag[bool]{Value: true}},
+			cs:   &checkSettings{files: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			want: true,
 		},
 		"check numbering": {
-			cs:   &cmd.CheckSettings{Numbering: cmdtoolkit.CommandFlag[bool]{Value: true}},
+			cs:   &checkSettings{numbering: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			want: true,
 		},
 		"check empty and files": {
-			cs: &cmd.CheckSettings{
-				Empty: cmdtoolkit.CommandFlag[bool]{Value: true},
-				Files: cmdtoolkit.CommandFlag[bool]{Value: true},
+			cs: &checkSettings{
+				empty: cmdtoolkit.CommandFlag[bool]{Value: true},
+				files: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			want: true,
 		},
 		"check empty and numbering": {
-			cs: &cmd.CheckSettings{
-				Empty:     cmdtoolkit.CommandFlag[bool]{Value: true},
-				Numbering: cmdtoolkit.CommandFlag[bool]{Value: true},
+			cs: &checkSettings{
+				empty:     cmdtoolkit.CommandFlag[bool]{Value: true},
+				numbering: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			want: true,
 		},
 		"check numbering and files": {
-			cs: &cmd.CheckSettings{
-				Numbering: cmdtoolkit.CommandFlag[bool]{Value: true},
-				Files:     cmdtoolkit.CommandFlag[bool]{Value: true},
+			cs: &checkSettings{
+				numbering: cmdtoolkit.CommandFlag[bool]{Value: true},
+				files:     cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			want: true,
 		},
 		"check everything": {
-			cs: &cmd.CheckSettings{
-				Empty:     cmdtoolkit.CommandFlag[bool]{Value: true},
-				Files:     cmdtoolkit.CommandFlag[bool]{Value: true},
-				Numbering: cmdtoolkit.CommandFlag[bool]{Value: true},
+			cs: &checkSettings{
+				empty:     cmdtoolkit.CommandFlag[bool]{Value: true},
+				files:     cmdtoolkit.CommandFlag[bool]{Value: true},
+				numbering: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			want: true,
 		},
@@ -284,78 +283,78 @@ func TestCheckSettings_HasWorkToDo(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			if got := tt.cs.HasWorkToDo(o); got != tt.want {
-				t.Errorf("CheckSettings.HasWorkToDo() = %v, want %v", got, tt.want)
+			if got := tt.cs.hasWorkToDo(o); got != tt.want {
+				t.Errorf("checkSettings.hasWorkToDo() = %v, want %v", got, tt.want)
 			}
-			o.Report(t, "CheckSettings.HasWorkToDo()", tt.WantedRecording)
+			o.Report(t, "checkSettings.hasWorkToDo()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestCheckSettings_PerformEmptyAnalysis(t *testing.T) {
+func Test_checkSettings_performEmptyAnalysis(t *testing.T) {
 	tests := map[string]struct {
-		cs             *cmd.CheckSettings
-		checkedArtists []*cmd.ConcernedArtist
+		cs             *checkSettings
+		checkedArtists []*concernedArtist
 		want           bool
 	}{
-		"do nothing": {cs: &cmd.CheckSettings{Empty: cmdtoolkit.CommandFlag[bool]{Value: false}}},
+		"do nothing": {cs: &checkSettings{empty: cmdtoolkit.CommandFlag[bool]{Value: false}}},
 		"empty slice": {
-			cs:             &cmd.CheckSettings{Empty: cmdtoolkit.CommandFlag[bool]{Value: true}},
+			cs:             &checkSettings{empty: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			checkedArtists: nil,
 		},
 		"full slice, no problems": {
-			cs:             &cmd.CheckSettings{Empty: cmdtoolkit.CommandFlag[bool]{Value: true}},
-			checkedArtists: cmd.CreateConcernedArtists(generateArtists(5, 6, 7)),
+			cs:             &checkSettings{empty: cmdtoolkit.CommandFlag[bool]{Value: true}},
+			checkedArtists: createConcernedArtists(generateArtists(5, 6, 7)),
 		},
 		"empty artists": {
-			cs:             &cmd.CheckSettings{Empty: cmdtoolkit.CommandFlag[bool]{Value: true}},
-			checkedArtists: cmd.CreateConcernedArtists(generateArtists(1, 0, 10)),
+			cs:             &checkSettings{empty: cmdtoolkit.CommandFlag[bool]{Value: true}},
+			checkedArtists: createConcernedArtists(generateArtists(1, 0, 10)),
 			want:           true,
 		},
 		"empty albums": {
-			cs:             &cmd.CheckSettings{Empty: cmdtoolkit.CommandFlag[bool]{Value: true}},
-			checkedArtists: cmd.CreateConcernedArtists(generateArtists(4, 6, 0)),
+			cs:             &checkSettings{empty: cmdtoolkit.CommandFlag[bool]{Value: true}},
+			checkedArtists: createConcernedArtists(generateArtists(4, 6, 0)),
 			want:           true,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.cs.PerformEmptyAnalysis(tt.checkedArtists); got != tt.want {
-				t.Errorf("CheckSettings.PerformEmptyAnalysis() = %v, want %v", got, tt.want)
+			if got := tt.cs.performEmptyAnalysis(tt.checkedArtists); got != tt.want {
+				t.Errorf("checkSettings.performEmptyAnalysis() = %v, want %v", got, tt.want)
 			}
 			verifiedFound := false
 			for _, artist := range tt.checkedArtists {
-				if artist.IsConcerned() {
+				if artist.isConcerned() {
 					verifiedFound = true
 				}
 			}
 			if verifiedFound != tt.want {
-				t.Errorf("CheckSettings.PerformEmptyAnalysis() verified = %v, want %v",
+				t.Errorf("checkSettings.performEmptyAnalysis() verified = %v, want %v",
 					verifiedFound, tt.want)
 			}
 		})
 	}
 }
 
-func TestNumberGapGenerateMissingTrackNumbers(t *testing.T) {
+func Test_numberGap_generateMissingTrackNumbers(t *testing.T) {
 	tests := map[string]struct {
-		gap  cmd.NumberGap
+		gap  numberGap
 		want string
 	}{
-		"equal":    {gap: cmd.NumberGap{Value1: 2, Value2: 2}, want: "2"},
-		"unequal":  {gap: cmd.NumberGap{Value1: 2, Value2: 3}, want: "2-3"},
-		"unequal2": {gap: cmd.NumberGap{Value1: 3, Value2: 2}, want: "2-3"},
+		"equal":    {gap: numberGap{value1: 2, value2: 2}, want: "2"},
+		"unequal":  {gap: numberGap{value1: 2, value2: 3}, want: "2-3"},
+		"unequal2": {gap: numberGap{value1: 3, value2: 2}, want: "2-3"},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.gap.GenerateMissingTrackNumbers(); got != tt.want {
-				t.Errorf("NumberGap.GenerateMissingTrackNumbers() = %v, want %v", got, tt.want)
+			if got := tt.gap.generateMissingTrackNumbers(); got != tt.want {
+				t.Errorf("numberGap.generateMissingTrackNumbers() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestGenerateNumberingConcerns(t *testing.T) {
+func Test_generateNumberingConcerns(t *testing.T) {
 	type args struct {
 		m        map[int][]string
 		maxTrack int
@@ -402,15 +401,15 @@ func TestGenerateNumberingConcerns(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := cmd.GenerateNumberingConcerns(tt.args.m,
+			if got := generateNumberingConcerns(tt.args.m,
 				tt.args.maxTrack); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GenerateNumberingConcerns() = %v, want %v", got, tt.want)
+				t.Errorf("generateNumberingConcerns() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func TestCheckSettings_PerformNumberingAnalysis(t *testing.T) {
+func Test_checkSettings_performNumberingAnalysis(t *testing.T) {
 	var defectiveArtists []*files.Artist
 	for r := 0; r < 4; r++ {
 		artistName := fmt.Sprintf("my artist %d", r)
@@ -438,47 +437,47 @@ func TestCheckSettings_PerformNumberingAnalysis(t *testing.T) {
 	}
 
 	tests := map[string]struct {
-		cs             *cmd.CheckSettings
-		checkedArtists []*cmd.ConcernedArtist
+		cs             *checkSettings
+		checkedArtists []*concernedArtist
 		want           bool
 	}{
 		"no analysis": {
-			cs:             &cmd.CheckSettings{Numbering: cmdtoolkit.CommandFlag[bool]{Value: false}},
-			checkedArtists: cmd.CreateConcernedArtists(generateArtists(5, 6, 7)),
+			cs:             &checkSettings{numbering: cmdtoolkit.CommandFlag[bool]{Value: false}},
+			checkedArtists: createConcernedArtists(generateArtists(5, 6, 7)),
 			want:           false,
 		},
 		"ok analysis": {
-			cs:             &cmd.CheckSettings{Numbering: cmdtoolkit.CommandFlag[bool]{Value: true}},
-			checkedArtists: cmd.CreateConcernedArtists(generateArtists(5, 6, 7)),
+			cs:             &checkSettings{numbering: cmdtoolkit.CommandFlag[bool]{Value: true}},
+			checkedArtists: createConcernedArtists(generateArtists(5, 6, 7)),
 			want:           false,
 		},
 		"missing numbers found": {
-			cs:             &cmd.CheckSettings{Numbering: cmdtoolkit.CommandFlag[bool]{Value: true}},
-			checkedArtists: cmd.CreateConcernedArtists(defectiveArtists),
+			cs:             &checkSettings{numbering: cmdtoolkit.CommandFlag[bool]{Value: true}},
+			checkedArtists: createConcernedArtists(defectiveArtists),
 			want:           true,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.cs.PerformNumberingAnalysis(tt.checkedArtists); got != tt.want {
-				t.Errorf("CheckSettings.PerformNumberingAnalysis() = %v, want %v", got,
+			if got := tt.cs.performNumberingAnalysis(tt.checkedArtists); got != tt.want {
+				t.Errorf("checkSettings.performNumberingAnalysis() = %v, want %v", got,
 					tt.want)
 			}
 			verifiedFound := false
 			for _, artist := range tt.checkedArtists {
-				if artist.IsConcerned() {
+				if artist.isConcerned() {
 					verifiedFound = true
 				}
 			}
 			if verifiedFound != tt.want {
-				t.Errorf("CheckSettings.PerformNumberingAnalysis() verified = %v, want %v",
+				t.Errorf("checkSettings.performNumberingAnalysis() verified = %v, want %v",
 					verifiedFound, tt.want)
 			}
 		})
 	}
 }
 
-func TestRecordTrackFileConcerns(t *testing.T) {
+func Test_recordTrackFileConcerns(t *testing.T) {
 	originalArtists := generateArtists(5, 6, 7)
 	tracks := make([]*files.Track, 0)
 	for _, artist := range originalArtists {
@@ -490,7 +489,7 @@ func TestRecordTrackFileConcerns(t *testing.T) {
 		}
 	}
 	type args struct {
-		checkedArtists []*cmd.ConcernedArtist
+		checkedArtists []*concernedArtist
 		track          *files.Track
 		concerns       []string
 	}
@@ -504,7 +503,7 @@ func TestRecordTrackFileConcerns(t *testing.T) {
 		},
 		"concerns": {
 			args: args{
-				checkedArtists: cmd.CreateConcernedArtists(originalArtists),
+				checkedArtists: createConcernedArtists(originalArtists),
 				track:          tracks[len(tracks)-1],
 				concerns:       []string{"mismatched artist", "mismatched album"},
 			},
@@ -513,52 +512,52 @@ func TestRecordTrackFileConcerns(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			got := cmd.RecordTrackFileConcerns(tt.args.checkedArtists, tt.args.track, tt.args.concerns)
+			got := recordTrackFileConcerns(tt.args.checkedArtists, tt.args.track, tt.args.concerns)
 			if got != tt.wantFoundConcerns {
-				t.Errorf("RecordTrackFileConcerns() = %v, want %v", got, tt.wantFoundConcerns)
+				t.Errorf("recordTrackFileConcerns() = %v, want %v", got, tt.wantFoundConcerns)
 			}
 			if tt.wantFoundConcerns {
 				hasConcerns := false
 				for _, cAr := range tt.args.checkedArtists {
-					if cAr.IsConcerned() {
+					if cAr.isConcerned() {
 						hasConcerns = true
 					}
 				}
 				if !hasConcerns {
-					t.Errorf("RecordTrackFileConcerns() true, but no concerns actually recorded")
+					t.Errorf("recordTrackFileConcerns() true, but no concerns actually recorded")
 				}
 			}
 		})
 	}
 }
 
-func TestCheckSettings_PerformFileAnalysis(t *testing.T) {
-	originalReadMetadata := cmd.ReadMetadata
+func Test_checkSettings_performFileAnalysis(t *testing.T) {
+	originalReadMetadata := ReadMetadata
 	defer func() {
-		cmd.ReadMetadata = originalReadMetadata
+		ReadMetadata = originalReadMetadata
 	}()
-	cmd.ReadMetadata = func(_ output.Bus, _ []*files.Artist) {}
+	ReadMetadata = func(_ output.Bus, _ []*files.Artist) {}
 	type args struct {
-		checkedArtists []*cmd.ConcernedArtist
-		ss             *cmd.SearchSettings
+		checkedArtists []*concernedArtist
+		ss             *SearchSettings
 	}
 	tests := map[string]struct {
-		cs *cmd.CheckSettings
+		cs *checkSettings
 		args
 		want bool
 		output.WantedRecording
 	}{
 		"not permitted to do anything": {
-			cs:              &cmd.CheckSettings{Files: cmdtoolkit.CommandFlag[bool]{Value: false}},
+			cs:              &checkSettings{files: cmdtoolkit.CommandFlag[bool]{Value: false}},
 			args:            args{},
 			want:            false,
 			WantedRecording: output.WantedRecording{},
 		},
 		"allowed, but nothing to check": {
-			cs: &cmd.CheckSettings{Files: cmdtoolkit.CommandFlag[bool]{Value: true}},
+			cs: &checkSettings{files: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			args: args{
-				checkedArtists: []*cmd.ConcernedArtist{},
-				ss:             &cmd.SearchSettings{},
+				checkedArtists: []*concernedArtist{},
+				ss:             &SearchSettings{},
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
@@ -574,10 +573,10 @@ func TestCheckSettings_PerformFileAnalysis(t *testing.T) {
 			},
 		},
 		"work to do": {
-			cs: &cmd.CheckSettings{Files: cmdtoolkit.CommandFlag[bool]{Value: true}},
+			cs: &checkSettings{files: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			args: args{
-				checkedArtists: cmd.CreateConcernedArtists(generateArtists(4, 5, 6)),
-				ss: &cmd.SearchSettings{
+				checkedArtists: createConcernedArtists(generateArtists(4, 5, 6)),
+				ss: &SearchSettings{
 					ArtistFilter: regexp.MustCompile(".*"),
 					AlbumFilter:  regexp.MustCompile(".*"),
 					TrackFilter:  regexp.MustCompile(".*"),
@@ -590,49 +589,49 @@ func TestCheckSettings_PerformFileAnalysis(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			got := tt.cs.PerformFileAnalysis(o, tt.args.checkedArtists, tt.args.ss)
+			got := tt.cs.performFileAnalysis(o, tt.args.checkedArtists, tt.args.ss)
 			if got != tt.want {
-				t.Errorf("CheckSettings.PerformFileAnalysis() = %v, want %v", got, tt.want)
+				t.Errorf("checkSettings.performFileAnalysis() = %v, want %v", got, tt.want)
 			}
-			o.Report(t, "CheckSettings.PerformFileAnalysis()", tt.WantedRecording)
+			o.Report(t, "checkSettings.performFileAnalysis()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestCheckSettings_MaybeReportCleanResults(t *testing.T) {
+func Test_checkSettings_maybeReportCleanResults(t *testing.T) {
 	tests := map[string]struct {
-		cs       *cmd.CheckSettings
-		requests cmd.CheckReportRequests
+		cs       *checkSettings
+		requests checkReportRequests
 		output.WantedRecording
 	}{
 		"no concerns found because nothing was checked": {
-			cs:              &cmd.CheckSettings{},
-			requests:        cmd.CheckReportRequests{},
+			cs:              &checkSettings{},
+			requests:        checkReportRequests{},
 			WantedRecording: output.WantedRecording{},
 		},
 		"all concerns found, everything was checked": {
-			cs: &cmd.CheckSettings{
-				Empty:     cmdtoolkit.CommandFlag[bool]{Value: true},
-				Numbering: cmdtoolkit.CommandFlag[bool]{Value: true},
-				Files:     cmdtoolkit.CommandFlag[bool]{Value: true},
+			cs: &checkSettings{
+				empty:     cmdtoolkit.CommandFlag[bool]{Value: true},
+				numbering: cmdtoolkit.CommandFlag[bool]{Value: true},
+				files:     cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
-			requests: cmd.CheckReportRequests{
-				ReportEmptyCheckResults:     true,
-				ReportFilesCheckResults:     true,
-				ReportNumberingCheckResults: true,
+			requests: checkReportRequests{
+				reportEmptyCheckResults:     true,
+				reportFilesCheckResults:     true,
+				reportNumberingCheckResults: true,
 			},
 			WantedRecording: output.WantedRecording{},
 		},
 		"no concerns found, everything was checked": {
-			cs: &cmd.CheckSettings{
-				Empty:     cmdtoolkit.CommandFlag[bool]{Value: true},
-				Numbering: cmdtoolkit.CommandFlag[bool]{Value: true},
-				Files:     cmdtoolkit.CommandFlag[bool]{Value: true},
+			cs: &checkSettings{
+				empty:     cmdtoolkit.CommandFlag[bool]{Value: true},
+				numbering: cmdtoolkit.CommandFlag[bool]{Value: true},
+				files:     cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
-			requests: cmd.CheckReportRequests{
-				ReportEmptyCheckResults:     false,
-				ReportFilesCheckResults:     false,
-				ReportNumberingCheckResults: false,
+			requests: checkReportRequests{
+				reportEmptyCheckResults:     false,
+				reportFilesCheckResults:     false,
+				reportNumberingCheckResults: false,
 			},
 			WantedRecording: output.WantedRecording{
 				Console: "" +
@@ -645,24 +644,24 @@ func TestCheckSettings_MaybeReportCleanResults(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			tt.cs.MaybeReportCleanResults(o, tt.requests)
-			o.Report(t, "CheckSettings.MaybeReportCleanResults()", tt.WantedRecording)
+			tt.cs.maybeReportCleanResults(o, tt.requests)
+			o.Report(t, "checkSettings.maybeReportCleanResults()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestCheckSettings_PerformChecks(t *testing.T) {
-	originalReadMetadata := cmd.ReadMetadata
+func Test_checkSettings_performChecks(t *testing.T) {
+	originalReadMetadata := ReadMetadata
 	defer func() {
-		cmd.ReadMetadata = originalReadMetadata
+		ReadMetadata = originalReadMetadata
 	}()
-	cmd.ReadMetadata = func(_ output.Bus, _ []*files.Artist) {}
+	ReadMetadata = func(_ output.Bus, _ []*files.Artist) {}
 	type args struct {
 		artists []*files.Artist
-		ss      *cmd.SearchSettings
+		ss      *SearchSettings
 	}
 	tests := map[string]struct {
-		cs *cmd.CheckSettings
+		cs *checkSettings
 		args
 		wantStatus *cmdtoolkit.ExitError
 		output.WantedRecording
@@ -674,14 +673,14 @@ func TestCheckSettings_PerformChecks(t *testing.T) {
 			WantedRecording: output.WantedRecording{},
 		},
 		"artists to check, check everything": {
-			cs: &cmd.CheckSettings{
-				Empty:     cmdtoolkit.CommandFlag[bool]{Value: true},
-				Numbering: cmdtoolkit.CommandFlag[bool]{Value: true},
-				Files:     cmdtoolkit.CommandFlag[bool]{Value: true},
+			cs: &checkSettings{
+				empty:     cmdtoolkit.CommandFlag[bool]{Value: true},
+				numbering: cmdtoolkit.CommandFlag[bool]{Value: true},
+				files:     cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			args: args{
 				artists: generateArtists(1, 2, 3),
-				ss: &cmd.SearchSettings{
+				ss: &SearchSettings{
 					ArtistFilter: regexp.MustCompile(".*"),
 					AlbumFilter:  regexp.MustCompile(".*"),
 					TrackFilter:  regexp.MustCompile(".*"),
@@ -700,24 +699,24 @@ func TestCheckSettings_PerformChecks(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			got := tt.cs.PerformChecks(o, tt.args.artists, tt.args.ss)
+			got := tt.cs.performChecks(o, tt.args.artists, tt.args.ss)
 			if !compareExitErrors(got, tt.wantStatus) {
-				t.Errorf("CheckSettings.PerformChecks() got %s want %s", got, tt.wantStatus)
+				t.Errorf("checkSettings.performChecks() got %s want %s", got, tt.wantStatus)
 			}
-			o.Report(t, "CheckSettings.PerformChecks()", tt.WantedRecording)
+			o.Report(t, "checkSettings.performChecks()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestCheckSettings_MaybeDoWork(t *testing.T) {
+func Test_checkSettings_maybeDoWork(t *testing.T) {
 	tests := map[string]struct {
-		cs         *cmd.CheckSettings
-		ss         *cmd.SearchSettings
+		cs         *checkSettings
+		ss         *SearchSettings
 		wantStatus *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"nothing to do": {
-			cs:         &cmd.CheckSettings{},
+			cs:         &checkSettings{},
 			ss:         nil,
 			wantStatus: cmdtoolkit.NewExitUserError("check"),
 			WantedRecording: output.WantedRecording{
@@ -735,8 +734,8 @@ func TestCheckSettings_MaybeDoWork(t *testing.T) {
 			},
 		},
 		"try a little work": {
-			cs: &cmd.CheckSettings{Empty: cmdtoolkit.CommandFlag[bool]{Value: true}},
-			ss: &cmd.SearchSettings{
+			cs: &checkSettings{empty: cmdtoolkit.CommandFlag[bool]{Value: true}},
+			ss: &SearchSettings{
 				ArtistFilter:   regexp.MustCompile(".*"),
 				AlbumFilter:    regexp.MustCompile(".*"),
 				TrackFilter:    regexp.MustCompile(".*"),
@@ -768,40 +767,40 @@ func TestCheckSettings_MaybeDoWork(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			if got := tt.cs.MaybeDoWork(o, tt.ss); !compareExitErrors(got, tt.wantStatus) {
-				t.Errorf("CheckSettings.MaybeDoWork() got %s want %s", got, tt.wantStatus)
+			if got := tt.cs.maybeDoWork(o, tt.ss); !compareExitErrors(got, tt.wantStatus) {
+				t.Errorf("checkSettings.maybeDoWork() got %s want %s", got, tt.wantStatus)
 			}
-			o.Report(t, "CheckSettings.MaybeDoWork()", tt.WantedRecording)
+			o.Report(t, "checkSettings.maybeDoWork()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestCheckRun(t *testing.T) {
-	cmd.InitGlobals()
-	originalBus := cmd.Bus
-	originalSearchFlags := cmd.SearchFlags
+func Test_checkRun(t *testing.T) {
+	InitGlobals()
+	originalBus := Bus
+	originalSearchFlags := SearchFlags
 	defer func() {
-		cmd.Bus = originalBus
-		cmd.SearchFlags = originalSearchFlags
+		Bus = originalBus
+		SearchFlags = originalSearchFlags
 	}()
-	cmd.SearchFlags = safeSearchFlags
+	SearchFlags = safeSearchFlags
 	checkFlags := &cmdtoolkit.FlagSet{
-		Name: cmd.CheckCommand,
+		Name: checkCommand,
 		Details: map[string]*cmdtoolkit.FlagDetails{
-			cmd.CheckEmpty: {
-				AbbreviatedName: cmd.CheckEmptyAbbr,
+			checkEmpty: {
+				AbbreviatedName: checkEmptyAbbr,
 				Usage:           "report empty album and artist directories",
 				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
-			cmd.CheckFiles: {
-				AbbreviatedName: cmd.CheckFilesAbbr,
+			checkFiles: {
+				AbbreviatedName: checkFilesAbbr,
 				Usage:           "report metadata/file inconsistencies",
 				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
-			cmd.CheckNumbering: {
-				AbbreviatedName: cmd.CheckNumberingAbbr,
+			checkNumbering: {
+				AbbreviatedName: checkNumberingAbbr,
 				Usage:           "report missing track numbers and duplicated track numbering",
 				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
@@ -810,7 +809,7 @@ func TestCheckRun(t *testing.T) {
 	}
 	command := &cobra.Command{}
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), command.Flags(),
-		checkFlags, cmd.SearchFlags)
+		checkFlags, SearchFlags)
 	type args struct {
 		cmd *cobra.Command
 		in1 []string
@@ -854,9 +853,9 @@ func TestCheckRun(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			cmd.Bus = o // cook getBus()
-			_ = cmd.CheckRun(tt.args.cmd, tt.args.in1)
-			o.Report(t, "CheckRun()", tt.WantedRecording)
+			Bus = o // cook getBus()
+			_ = checkRun(tt.args.cmd, tt.args.in1)
+			o.Report(t, "checkRun()", tt.WantedRecording)
 		})
 	}
 }
@@ -874,15 +873,15 @@ func cloneCommand(original *cobra.Command) *cobra.Command {
 	return clone
 }
 
-func TestCheckHelp(t *testing.T) {
-	originalSearchFlags := cmd.SearchFlags
+func Test_check_Help(t *testing.T) {
+	originalSearchFlags := SearchFlags
 	defer func() {
-		cmd.SearchFlags = originalSearchFlags
+		SearchFlags = originalSearchFlags
 	}()
-	cmd.SearchFlags = safeSearchFlags
-	commandUnderTest := cloneCommand(cmd.CheckCmd)
+	SearchFlags = safeSearchFlags
+	commandUnderTest := cloneCommand(checkCmd)
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
-		commandUnderTest.Flags(), cmd.CheckFlags, cmd.SearchFlags)
+		commandUnderTest.Flags(), checkFlags, SearchFlags)
 	tests := map[string]struct {
 		output.WantedRecording
 	}{
@@ -925,15 +924,15 @@ func TestCheckHelp(t *testing.T) {
 	}
 }
 
-func TestCheckUsage(t *testing.T) {
-	originalSearchFlags := cmd.SearchFlags
+func Test_check_Usage(t *testing.T) {
+	originalSearchFlags := SearchFlags
 	defer func() {
-		cmd.SearchFlags = originalSearchFlags
+		SearchFlags = originalSearchFlags
 	}()
-	cmd.SearchFlags = safeSearchFlags
-	commandUnderTest := cloneCommand(cmd.CheckCmd)
+	SearchFlags = safeSearchFlags
+	commandUnderTest := cloneCommand(checkCmd)
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
-		commandUnderTest.Flags(), cmd.CheckFlags, cmd.SearchFlags)
+		commandUnderTest.Flags(), checkFlags, SearchFlags)
 	tests := map[string]struct {
 		output.WantedRecording
 	}{

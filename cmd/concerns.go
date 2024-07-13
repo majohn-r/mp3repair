@@ -9,44 +9,44 @@ import (
 	"github.com/majohn-r/output"
 )
 
-type ConcernType int32
+type concernType int32
 
 const (
-	UnspecifiedConcern ConcernType = iota
-	EmptyConcern
-	FilesConcern
-	NumberingConcern
-	ConflictConcern
+	unspecifiedConcern concernType = iota
+	emptyConcern
+	filesConcern
+	numberingConcern
+	conflictConcern
 )
 
-var concernNames = map[ConcernType]string{
-	EmptyConcern:     "empty",
-	FilesConcern:     "files",
-	NumberingConcern: "numbering",
-	ConflictConcern:  "metadata conflict",
+var concernNames = map[concernType]string{
+	emptyConcern:     "empty",
+	filesConcern:     "files",
+	numberingConcern: "numbering",
+	conflictConcern:  "metadata conflict",
 }
 
-func ConcernName(i ConcernType) string {
+func concernName(i concernType) string {
 	if s, found := concernNames[i]; found {
 		return s
 	}
 	return fmt.Sprintf("concern %d", i)
 }
 
-type Concerns struct {
-	concerns map[ConcernType][]string
+type concerns struct {
+	concernsCollection map[concernType][]string
 }
 
-func NewConcerns() Concerns {
-	return Concerns{concerns: map[ConcernType][]string{}}
+func newConcerns() concerns {
+	return concerns{concernsCollection: map[concernType][]string{}}
 }
 
-func (c Concerns) AddConcern(source ConcernType, concern string) {
-	c.concerns[source] = append(c.concerns[source], concern)
+func (c concerns) addConcern(source concernType, concern string) {
+	c.concernsCollection[source] = append(c.concernsCollection[source], concern)
 }
 
-func (c Concerns) IsConcerned() bool {
-	for _, list := range c.concerns {
+func (c concerns) isConcerned() bool {
+	for _, list := range c.concernsCollection {
 		if len(list) > 0 {
 			return true
 		}
@@ -54,12 +54,12 @@ func (c Concerns) IsConcerned() bool {
 	return false
 }
 
-func (c Concerns) ToConsole(o output.Bus) {
-	if c.IsConcerned() {
-		cStrings := make([]string, 0, len(c.concerns))
-		for key, value := range c.concerns {
+func (c concerns) toConsole(o output.Bus) {
+	if c.isConcerned() {
+		cStrings := make([]string, 0, len(c.concernsCollection))
+		for key, value := range c.concernsCollection {
 			for _, s := range value {
-				cStrings = append(cStrings, fmt.Sprintf("* [%s] %s\n", ConcernName(key), s))
+				cStrings = append(cStrings, fmt.Sprintf("* [%s] %s\n", concernName(key), s))
 			}
 		}
 		slices.Sort(cStrings)
@@ -69,88 +69,88 @@ func (c Concerns) ToConsole(o output.Bus) {
 	}
 }
 
-type ConcernedTrack struct {
-	Concerns
+type concernedTrack struct {
+	concerns
 	backing *files.Track
 }
 
-func NewConcernedTrack(track *files.Track) *ConcernedTrack {
+func newConcernedTrack(track *files.Track) *concernedTrack {
 	if track == nil {
 		return nil
 	}
-	return &ConcernedTrack{
-		Concerns: NewConcerns(),
+	return &concernedTrack{
+		concerns: newConcerns(),
 		backing:  track,
 	}
 }
 
-func (cT *ConcernedTrack) AddConcern(source ConcernType, concern string) {
-	cT.Concerns.AddConcern(source, concern)
+func (cT *concernedTrack) addConcern(source concernType, concern string) {
+	cT.concerns.addConcern(source, concern)
 }
 
-func (cT *ConcernedTrack) IsConcerned() bool {
-	return cT.Concerns.IsConcerned()
+func (cT *concernedTrack) isConcerned() bool {
+	return cT.concerns.isConcerned()
 }
 
-func (cT *ConcernedTrack) name() string {
+func (cT *concernedTrack) name() string {
 	return cT.backing.SimpleName
 }
 
-func (cT *ConcernedTrack) ToConsole(o output.Bus) {
-	if cT.IsConcerned() {
+func (cT *concernedTrack) toConsole(o output.Bus) {
+	if cT.isConcerned() {
 		o.WriteConsole("Track %q\n", cT.name())
-		cT.Concerns.ToConsole(o)
+		cT.concerns.toConsole(o)
 	}
 }
 
-func (cT *ConcernedTrack) Track() *files.Track {
+func (cT *concernedTrack) backingTrack() *files.Track {
 	return cT.backing
 }
 
 type ConcernedAlbum struct {
-	Concerns
-	tracks   []*ConcernedTrack
-	backing  *files.Album
-	trackMap map[string]*ConcernedTrack
+	concerns
+	concernedTracks []*concernedTrack
+	backing         *files.Album
+	trackMap        map[string]*concernedTrack
 }
 
-func NewConcernedAlbum(album *files.Album) *ConcernedAlbum {
+func newConcernedAlbum(album *files.Album) *ConcernedAlbum {
 	if album == nil {
 		return nil
 	}
 	cAl := &ConcernedAlbum{
-		Concerns: NewConcerns(),
-		tracks:   make([]*ConcernedTrack, 0, len(album.Tracks)),
-		backing:  album,
-		trackMap: map[string]*ConcernedTrack{},
+		concerns:        newConcerns(),
+		concernedTracks: make([]*concernedTrack, 0, len(album.Tracks)),
+		backing:         album,
+		trackMap:        map[string]*concernedTrack{},
 	}
 	for _, track := range album.Tracks {
-		cAl.AddTrack(track)
+		cAl.addTrack(track)
 	}
 	return cAl
 }
 
-func (cAl *ConcernedAlbum) AddConcern(source ConcernType, concern string) {
-	cAl.Concerns.AddConcern(source, concern)
+func (cAl *ConcernedAlbum) addConcern(source concernType, concern string) {
+	cAl.concerns.addConcern(source, concern)
 }
 
-func (cAl *ConcernedAlbum) AddTrack(track *files.Track) {
-	if cT := NewConcernedTrack(track); cT != nil {
-		cAl.tracks = append(cAl.tracks, cT)
+func (cAl *ConcernedAlbum) addTrack(track *files.Track) {
+	if cT := newConcernedTrack(track); cT != nil {
+		cAl.concernedTracks = append(cAl.concernedTracks, cT)
 		cAl.trackMap[cT.backing.FileName()] = cT
 	}
 }
 
-func (cAl *ConcernedAlbum) Album() *files.Album {
+func (cAl *ConcernedAlbum) backingAlbum() *files.Album {
 	return cAl.backing
 }
 
-func (cAl *ConcernedAlbum) IsConcerned() bool {
-	if cAl.Concerns.IsConcerned() {
+func (cAl *ConcernedAlbum) isConcerned() bool {
+	if cAl.concerns.isConcerned() {
 		return true
 	}
-	for _, cT := range cAl.tracks {
-		if cT.IsConcerned() {
+	for _, cT := range cAl.concernedTracks {
+		if cT.isConcerned() {
 			return true
 		}
 	}
@@ -161,41 +161,41 @@ func (cAl *ConcernedAlbum) name() string {
 	return cAl.backing.Title
 }
 
-func (cAl *ConcernedAlbum) Lookup(track *files.Track) *ConcernedTrack {
-	var cT *ConcernedTrack
+func (cAl *ConcernedAlbum) lookup(track *files.Track) *concernedTrack {
+	var cT *concernedTrack
 	if track, found := cAl.trackMap[track.FileName()]; found {
 		cT = track
 	}
 	return cT
 }
 
-func (cAl *ConcernedAlbum) Rollup() bool {
-	if len(cAl.tracks) <= 1 {
+func (cAl *ConcernedAlbum) rollup() bool {
+	if len(cAl.concernedTracks) <= 1 {
 		return false
 	}
-	if !cAl.IsConcerned() {
+	if !cAl.isConcerned() {
 		return false
 	}
-	initialConcerns := cAl.tracks[0].concerns
-	for _, cT := range cAl.tracks[1:] {
-		if !reflect.DeepEqual(initialConcerns, cT.concerns) {
+	initialConcerns := cAl.concernedTracks[0].concernsCollection
+	for _, cT := range cAl.concernedTracks[1:] {
+		if !reflect.DeepEqual(initialConcerns, cT.concernsCollection) {
 			return false
 		}
 	}
-	mergeConcerns(cAl.concerns, initialConcerns, "for all tracks:")
-	for _, cT := range cAl.tracks {
-		cT.Concerns = NewConcerns()
+	mergeConcerns(cAl.concernsCollection, initialConcerns, "for all tracks:")
+	for _, cT := range cAl.concernedTracks {
+		cT.concerns = newConcerns()
 	}
 	return true
 }
 
-func (cAl *ConcernedAlbum) ToConsole(o output.Bus) {
-	if cAl.IsConcerned() {
+func (cAl *ConcernedAlbum) toConsole(o output.Bus) {
+	if cAl.isConcerned() {
 		o.WriteConsole("Album %q\n", cAl.name())
-		cAl.Concerns.ToConsole(o)
-		m := map[string]*ConcernedTrack{}
-		names := make([]string, 0, len(cAl.tracks))
-		for _, cT := range cAl.tracks {
+		cAl.concerns.toConsole(o)
+		m := map[string]*concernedTrack{}
+		names := make([]string, 0, len(cAl.concernedTracks))
+		for _, cT := range cAl.concernedTracks {
 			trackName := cT.name()
 			m[trackName] = cT
 			names = append(names, trackName)
@@ -204,113 +204,113 @@ func (cAl *ConcernedAlbum) ToConsole(o output.Bus) {
 		o.IncrementTab(2)
 		for _, name := range names {
 			if cT := m[name]; cT != nil {
-				cT.ToConsole(o)
+				cT.toConsole(o)
 			}
 		}
 		o.DecrementTab(2)
 	}
 }
 
-func (cAl *ConcernedAlbum) Tracks() []*ConcernedTrack {
-	return cAl.tracks
+func (cAl *ConcernedAlbum) tracks() []*concernedTrack {
+	return cAl.concernedTracks
 }
 
-type ConcernedArtist struct {
-	Concerns
-	albums   []*ConcernedAlbum
-	backing  *files.Artist
-	albumMap map[string]*ConcernedAlbum
+type concernedArtist struct {
+	concerns
+	concernedAlbums []*ConcernedAlbum
+	backing         *files.Artist
+	albumMap        map[string]*ConcernedAlbum
 }
 
-func NewConcernedArtist(artist *files.Artist) *ConcernedArtist {
+func newConcernedArtist(artist *files.Artist) *concernedArtist {
 	if artist == nil {
 		return nil
 	}
-	cAr := &ConcernedArtist{
-		Concerns: NewConcerns(),
-		albums:   make([]*ConcernedAlbum, 0, len(artist.Albums)),
-		backing:  artist,
-		albumMap: map[string]*ConcernedAlbum{},
+	cAr := &concernedArtist{
+		concerns:        newConcerns(),
+		concernedAlbums: make([]*ConcernedAlbum, 0, len(artist.Albums)),
+		backing:         artist,
+		albumMap:        map[string]*ConcernedAlbum{},
 	}
 	for _, album := range artist.Albums {
-		cAr.AddAlbum(album)
+		cAr.addAlbum(album)
 	}
 	return cAr
 }
 
-func (cAr *ConcernedArtist) AddAlbum(album *files.Album) {
-	if cAl := NewConcernedAlbum(album); cAl != nil {
-		cAr.albums = append(cAr.albums, cAl)
+func (cAr *concernedArtist) addAlbum(album *files.Album) {
+	if cAl := newConcernedAlbum(album); cAl != nil {
+		cAr.concernedAlbums = append(cAr.concernedAlbums, cAl)
 		cAr.albumMap[cAl.name()] = cAl
 	}
 }
 
-func (cAr *ConcernedArtist) AddConcern(source ConcernType, concern string) {
-	cAr.Concerns.AddConcern(source, concern)
+func (cAr *concernedArtist) addConcern(source concernType, concern string) {
+	cAr.concerns.addConcern(source, concern)
 }
 
-func (cAr *ConcernedArtist) Albums() []*ConcernedAlbum {
-	return cAr.albums
+func (cAr *concernedArtist) albums() []*ConcernedAlbum {
+	return cAr.concernedAlbums
 }
 
-func (cAr *ConcernedArtist) Artist() *files.Artist {
+func (cAr *concernedArtist) backingArtist() *files.Artist {
 	return cAr.backing
 }
 
-func (cAr *ConcernedArtist) IsConcerned() bool {
-	if cAr.Concerns.IsConcerned() {
+func (cAr *concernedArtist) isConcerned() bool {
+	if cAr.concerns.isConcerned() {
 		return true
 	}
-	for _, cAl := range cAr.albums {
-		if cAl.IsConcerned() {
+	for _, cAl := range cAr.concernedAlbums {
+		if cAl.isConcerned() {
 			return true
 		}
 	}
 	return false
 }
 
-func (cAr *ConcernedArtist) Lookup(track *files.Track) *ConcernedTrack {
+func (cAr *concernedArtist) lookup(track *files.Track) *concernedTrack {
 	albumKey := track.AlbumName()
 	if cAl, found := cAr.albumMap[albumKey]; found {
-		return cAl.Lookup(track)
+		return cAl.lookup(track)
 	}
 	return nil
 }
 
-func (cAr *ConcernedArtist) name() string {
+func (cAr *concernedArtist) name() string {
 	return cAr.backing.Name
 }
 
-func (cAr *ConcernedArtist) Rollup() bool {
-	if !cAr.IsConcerned() {
+func (cAr *concernedArtist) rollup() bool {
+	if !cAr.isConcerned() {
 		return false
 	}
-	for _, cAl := range cAr.albums {
-		cAl.Rollup()
+	for _, cAl := range cAr.concernedAlbums {
+		cAl.rollup()
 	}
-	if len(cAr.albums) <= 1 {
+	if len(cAr.concernedAlbums) <= 1 {
 		return false
 	}
-	initialConcerns := cAr.albums[0].concerns
-	for _, cAl := range cAr.albums[1:] {
-		if !reflect.DeepEqual(initialConcerns, cAl.concerns) {
+	initialConcerns := cAr.concernedAlbums[0].concernsCollection
+	for _, cAl := range cAr.concernedAlbums[1:] {
+		if !reflect.DeepEqual(initialConcerns, cAl.concernsCollection) {
 			return false
 		}
 	}
-	mergeConcerns(cAr.concerns, initialConcerns, "for all albums:")
-	for _, cAl := range cAr.albums {
-		cAl.Concerns = NewConcerns()
+	mergeConcerns(cAr.concernsCollection, initialConcerns, "for all albums:")
+	for _, cAl := range cAr.concernedAlbums {
+		cAl.concerns = newConcerns()
 	}
 	return true
 }
 
-func (cAr *ConcernedArtist) ToConsole(o output.Bus) {
-	if cAr.IsConcerned() {
+func (cAr *concernedArtist) toConsole(o output.Bus) {
+	if cAr.isConcerned() {
 		o.WriteConsole("Artist %q\n", cAr.name())
-		cAr.Concerns.ToConsole(o)
+		cAr.concerns.toConsole(o)
 		m := map[string]*ConcernedAlbum{}
-		names := make([]string, 0, len(cAr.albums))
-		for _, cT := range cAr.albums {
+		names := make([]string, 0, len(cAr.concernedAlbums))
+		for _, cT := range cAr.concernedAlbums {
 			albumName := cT.name()
 			m[albumName] = cT
 			names = append(names, albumName)
@@ -319,14 +319,14 @@ func (cAr *ConcernedArtist) ToConsole(o output.Bus) {
 		o.IncrementTab(2)
 		for _, name := range names {
 			if cAl := m[name]; cAl != nil {
-				cAl.ToConsole(o)
+				cAl.toConsole(o)
 			}
 		}
 		o.DecrementTab(2)
 	}
 }
 
-func mergeConcerns(initial, addition map[ConcernType][]string, prefix string) {
+func mergeConcerns(initial, addition map[concernType][]string, prefix string) {
 	for concern, issues := range addition {
 		for _, issue := range issues {
 			initial[concern] = append(initial[concern], fmt.Sprintf("%s %s", prefix, issue))
@@ -334,10 +334,10 @@ func mergeConcerns(initial, addition map[ConcernType][]string, prefix string) {
 	}
 }
 
-func CreateConcernedArtists(artists []*files.Artist) []*ConcernedArtist {
-	concernedArtists := make([]*ConcernedArtist, 0, len(artists))
+func createConcernedArtists(artists []*files.Artist) []*concernedArtist {
+	concernedArtists := make([]*concernedArtist, 0, len(artists))
 	for _, artist := range artists {
-		if cAr := NewConcernedArtist(artist); cAr != nil {
+		if cAr := newConcernedArtist(artist); cAr != nil {
 			concernedArtists = append(concernedArtists, cAr)
 		}
 	}

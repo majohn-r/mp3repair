@@ -1,11 +1,10 @@
 /*
 Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
 */
-package cmd_test
+package cmd
 
 import (
 	"fmt"
-	"mp3repair/cmd"
 	"os"
 	"reflect"
 	"testing"
@@ -15,15 +14,15 @@ import (
 	"github.com/majohn-r/output"
 )
 
-func TestExecute(t *testing.T) {
-	cmd.InitGlobals()
+func Test_execute(t *testing.T) {
+	InitGlobals()
 	originalArgs := os.Args
-	originalExit := cmd.Exit
-	originalBus := cmd.Bus
+	originalExit := Exit
+	originalBus := Bus
 	defer func() {
 		os.Args = originalArgs
-		cmd.Exit = originalExit
-		cmd.Bus = originalBus
+		Exit = originalExit
+		Bus = originalBus
 	}()
 	tests := map[string]struct {
 		args []string
@@ -34,12 +33,12 @@ func TestExecute(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			os.Args = tt.args
 			got := -1
-			cmd.Exit = func(code int) {
+			Exit = func(code int) {
 				got = code
 			}
-			cmd.Execute()
+			Execute()
 			if got != 0 {
-				t.Errorf("Execute: got exit code %d, wanted 0", got)
+				t.Errorf("execute: got exit code %d, wanted 0", got)
 			}
 		})
 	}
@@ -60,35 +59,35 @@ type panickyCommand struct{}
 func (p panickyCommand) SetArgs(_ []string) {}
 func (p panickyCommand) Execute() error     { panic("oh dear") }
 
-func TestRunMain(t *testing.T) {
+func Test_runMain(t *testing.T) {
 	originalArgs := os.Args
-	originalSince := cmd.Since
-	originalVersion := cmd.Version
-	originalCreation := cmd.Creation
-	originalCachedGoVersion := cmd.CachedGoVersion
-	originalCachedBuildDependencies := cmd.CachedBuildDependencies
-	originalMP3repairElevationControl := cmd.MP3RepairElevationControl
+	originalSince := Since
+	originalVersion := version
+	originalCreation := creation
+	originalCachedGoVersion := cachedGoVersion
+	originalCachedBuildDependencies := cachedBuildDependencies
+	originalMP3repairElevationControl := mp3repairElevationControl
 	defer func() {
-		cmd.Since = originalSince
+		Since = originalSince
 		os.Args = originalArgs
-		cmd.Version = originalVersion
-		cmd.Creation = originalCreation
-		cmd.CachedGoVersion = originalCachedGoVersion
-		cmd.CachedBuildDependencies = originalCachedBuildDependencies
-		cmd.MP3RepairElevationControl = originalMP3repairElevationControl
+		version = originalVersion
+		creation = originalCreation
+		cachedGoVersion = originalCachedGoVersion
+		cachedBuildDependencies = originalCachedBuildDependencies
+		mp3repairElevationControl = originalMP3repairElevationControl
 	}()
-	cmd.MP3RepairElevationControl = testingElevationControl{
+	mp3repairElevationControl = testingElevationControl{
 		logFields: map[string]any{
 			"elevated":             true,
 			"admin_permission":     true,
 			"stderr_redirected":    false,
 			"stdin_redirected":     false,
 			"stdout_redirected":    false,
-			"environment_variable": cmd.ElevatedPrivilegesPermissionVar,
+			"environment_variable": ElevatedPrivilegesPermissionVar,
 		},
 	}
 	type args struct {
-		cmd   cmd.CommandExecutor
+		cmd   CommandExecutor
 		start time.Time
 	}
 	tests := map[string]struct {
@@ -192,26 +191,26 @@ func TestRunMain(t *testing.T) {
 		},
 	}
 	for name, tt := range tests {
-		cmd.Since = func(_ time.Time) time.Duration {
+		Since = func(_ time.Time) time.Duration {
 			return 0
 		}
 		t.Run(name, func(t *testing.T) {
 			os.Args = tt.cmdline
-			cmd.Version = tt.appVersion
-			cmd.Creation = tt.timestamp
-			cmd.CachedGoVersion = tt.goVersion
-			cmd.CachedBuildDependencies = tt.dependencies
+			version = tt.appVersion
+			creation = tt.timestamp
+			cachedGoVersion = tt.goVersion
+			cachedBuildDependencies = tt.dependencies
 			o := output.NewRecorder()
-			cmd.RunMain(o, tt.args.cmd, tt.args.start)
-			o.Report(t, "RunMain()", tt.WantedRecording)
+			RunMain(o, tt.args.cmd, tt.args.start)
+			o.Report(t, "runMain()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestCookCommandLineArguments(t *testing.T) {
-	originalDereferenceEnvVar := cmd.DereferenceEnvVar
+func Test_cookCommandLineArguments(t *testing.T) {
+	originalDereferenceEnvVar := DereferenceEnvVar
 	defer func() {
-		cmd.DereferenceEnvVar = originalDereferenceEnvVar
+		DereferenceEnvVar = originalDereferenceEnvVar
 	}()
 	tests := map[string]struct {
 		inputArgs         []string
@@ -254,38 +253,38 @@ func TestCookCommandLineArguments(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			cmd.DereferenceEnvVar = tt.dereferenceEnvVar
-			got := cmd.CookCommandLineArguments(o, tt.inputArgs)
+			DereferenceEnvVar = tt.dereferenceEnvVar
+			got := CookCommandLineArguments(o, tt.inputArgs)
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("CookCommandLineArguments() = %v, want %v", got, tt.want)
+				t.Errorf("cookCommandLineArguments() = %v, want %v", got, tt.want)
 			}
-			o.Report(t, "CookCommandLineArguments()", tt.WantedRecording)
+			o.Report(t, "cookCommandLineArguments()", tt.WantedRecording)
 		})
 	}
 }
 
-func Test_InitGlobals(t *testing.T) {
-	originalExit := cmd.Exit
-	originalNewDefaultBus := cmd.NewDefaultBus
-	originalInitLogging := cmd.InitLogging
-	originalInitApplicationPath := cmd.InitApplicationPath
-	originalReadConfigurationFile := cmd.ReadConfigurationFile
-	originalVersion := cmd.Version
-	originalCreation := cmd.Creation
-	originalInitialized := cmd.Initialized
-	originalBus := cmd.Bus
-	originalInternalConfig := cmd.InternalConfig
+func Test_initGlobals(t *testing.T) {
+	originalExit := Exit
+	originalNewDefaultBus := NewDefaultBus
+	originalInitLogging := InitLogging
+	originalInitApplicationPath := InitApplicationPath
+	originalReadConfigurationFile := ReadConfigurationFile
+	originalVersion := version
+	originalCreation := creation
+	originalInitialized := Initialized
+	originalBus := Bus
+	originalInternalConfig := InternalConfig
 	defer func() {
-		cmd.Exit = originalExit
-		cmd.NewDefaultBus = originalNewDefaultBus
-		cmd.InitLogging = originalInitLogging
-		cmd.InitApplicationPath = originalInitApplicationPath
-		cmd.ReadConfigurationFile = originalReadConfigurationFile
-		cmd.Version = originalVersion
-		cmd.Creation = originalCreation
-		cmd.Initialized = originalInitialized
-		cmd.Bus = originalBus
-		cmd.InternalConfig = originalInternalConfig
+		Exit = originalExit
+		NewDefaultBus = originalNewDefaultBus
+		InitLogging = originalInitLogging
+		InitApplicationPath = originalInitApplicationPath
+		ReadConfigurationFile = originalReadConfigurationFile
+		version = originalVersion
+		creation = originalCreation
+		Initialized = originalInitialized
+		Bus = originalBus
+		InternalConfig = originalInternalConfig
 	}()
 	o := output.NewRecorder()
 	defaultExitFunctionCalled := false
@@ -406,46 +405,46 @@ func Test_InitGlobals(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o = output.NewRecorder()
-			cmd.InternalConfig = cmdtoolkit.EmptyConfiguration()
+			InternalConfig = cmdtoolkit.EmptyConfiguration()
 			ExitFunctionCalled = defaultExitFunctionCalled
 			exitCodeRecorded = defaultExitCode
 			creationRecorded = defaultCreation
 			versionRecorded = defaultVersion
 			flagIndicatorRecorded = defaultFlagIndicator
-			cmd.Initialized = tt.initialize
-			cmd.Exit = tt.exitFunc
-			cmd.NewDefaultBus = tt.newDefaultBus
-			cmd.InitLogging = tt.initLogging
-			cmd.InitApplicationPath = tt.initApplicationPath
-			cmd.ReadConfigurationFile = tt.readConfigurationFile
+			Initialized = tt.initialize
+			Exit = tt.exitFunc
+			NewDefaultBus = tt.newDefaultBus
+			InitLogging = tt.initLogging
+			InitApplicationPath = tt.initApplicationPath
+			ReadConfigurationFile = tt.readConfigurationFile
 
-			cmd.Creation = tt.creationVal
-			cmd.Version = tt.versionVal
-			cmd.InitGlobals()
-			if got := cmd.InternalConfig; !reflect.DeepEqual(got, tt.wantConfig) {
-				t.Errorf("InitGlobals: _c got %v want %v", got, tt.wantConfig)
+			creation = tt.creationVal
+			version = tt.versionVal
+			InitGlobals()
+			if got := InternalConfig; !reflect.DeepEqual(got, tt.wantConfig) {
+				t.Errorf("initGlobals: _c got %v want %v", got, tt.wantConfig)
 			}
 			if got := ExitFunctionCalled; got != tt.wantExitFuncCalled {
-				t.Errorf("InitGlobals: exit called got %t want %t", got, tt.wantExitFuncCalled)
+				t.Errorf("initGlobals: exit called got %t want %t", got, tt.wantExitFuncCalled)
 			}
 			if got := exitCodeRecorded; got != tt.wantExitValue {
-				t.Errorf("InitGlobals: exit code got %d want %d", got, tt.wantExitValue)
+				t.Errorf("initGlobals: exit code got %d want %d", got, tt.wantExitValue)
 			}
 			if got := creationRecorded; got != tt.wantCreation {
-				t.Errorf("InitGlobals: creation got %q want %q", got, tt.wantCreation)
+				t.Errorf("initGlobals: creation got %q want %q", got, tt.wantCreation)
 			}
 			if got := versionRecorded; got != tt.wantVersion {
-				t.Errorf("InitGlobals: version got %q want %q", got, tt.wantVersion)
+				t.Errorf("initGlobals: version got %q want %q", got, tt.wantVersion)
 			}
 			if got := flagIndicatorRecorded; got != tt.wantFlagIndicator {
-				t.Errorf("InitGlobals: flag indicator got %q want %q", got, tt.wantFlagIndicator)
+				t.Errorf("initGlobals: flag indicator got %q want %q", got, tt.wantFlagIndicator)
 			}
-			o.Report(t, "InitGlobals()", tt.WantedRecording)
+			o.Report(t, "initGlobals()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestRootUsage(t *testing.T) {
+func Test_root_Usage(t *testing.T) {
 	tests := map[string]struct {
 		output.WantedRecording
 	}{
@@ -485,7 +484,7 @@ func TestRootUsage(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			command := cloneCommand(cmd.RootCmd)
+			command := cloneCommand(RootCmd)
 			enableCommandRecording(o, command)
 			_ = command.Usage()
 			o.Report(t, "root Usage()", tt.WantedRecording)
@@ -493,7 +492,7 @@ func TestRootUsage(t *testing.T) {
 	}
 }
 
-func TestObtainExitCode(t *testing.T) {
+func Test_obtainExitCode(t *testing.T) {
 	var nilExitError *cmdtoolkit.ExitError
 	tests := map[string]struct {
 		err  error
@@ -508,8 +507,8 @@ func TestObtainExitCode(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := cmd.ObtainExitCode(tt.err); got != tt.want {
-				t.Errorf("ObtainExitCode() = %v, want %v", got, tt.want)
+			if got := ObtainExitCode(tt.err); got != tt.want {
+				t.Errorf("obtainExitCode() = %v, want %v", got, tt.want)
 			}
 		})
 	}

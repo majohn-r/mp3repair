@@ -47,7 +47,7 @@ First, get a listing of the available mp3 files:
 
 Then check for problems in the track metadata:
 
-` + appName + ` ` + CheckCommand + ` ` + CheckFilesFlag + `
+` + appName + ` ` + checkCommand + ` ` + checkFilesFlag + `
 
 If problems were found, repair the mp3 files:
 
@@ -145,13 +145,13 @@ func RunMain(o output.Bus, cmd CommandExecutor, start time.Time) int {
 	}()
 	cookedArgs := CookCommandLineArguments(o, os.Args)
 	o.Log(output.Info, "execution starts", map[string]any{
-		"version":      Version,
-		"timeStamp":    Creation,
-		"goVersion":    CachedGoVersion,
-		"dependencies": CachedBuildDependencies,
+		"version":      version,
+		"timeStamp":    creation,
+		"goVersion":    cachedGoVersion,
+		"dependencies": cachedBuildDependencies,
 		"args":         cookedArgs,
 	})
-	MP3RepairElevationControl.Log(o, output.Info)
+	mp3repairElevationControl.Log(o, output.Info)
 	cmd.SetArgs(cookedArgs)
 	err := cmd.Execute()
 	exitCode := ObtainExitCode(err)
@@ -160,8 +160,8 @@ func RunMain(o output.Bus, cmd CommandExecutor, start time.Time) int {
 		"exitCode": exitCode,
 	})
 	if exitCode != 0 {
-		o.WriteCanonicalError("%q version %s, created at %s, failed", appName, Version,
-			Creation)
+		o.WriteCanonicalError("%q version %s, created at %s, failed", appName, version,
+			creation)
 	}
 	return exitCode
 }

@@ -1,13 +1,12 @@
 /*
 Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
 */
-package cmd_test
+package cmd
 
 import (
 	"fmt"
 	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"io/fs"
-	"mp3repair/cmd"
 	"reflect"
 	"testing"
 
@@ -15,14 +14,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func TestExportFlagSettingsCanWriteConfigurationFile(t *testing.T) {
+func Test_exportFlagSettings_canWriteConfigurationFile(t *testing.T) {
 	tests := map[string]struct {
-		efs          *cmd.ExportSettings
+		efs          *ExportSettings
 		wantCanWrite bool
 		output.WantedRecording
 	}{
 		"disabled by default": {
-			efs: &cmd.ExportSettings{
+			efs: &ExportSettings{
 				DefaultsEnabled: cmdtoolkit.CommandFlag[bool]{Value: false, UserSet: false},
 			},
 			wantCanWrite: false,
@@ -41,7 +40,7 @@ func TestExportFlagSettingsCanWriteConfigurationFile(t *testing.T) {
 			},
 		},
 		"disabled intentionally": {
-			efs: &cmd.ExportSettings{
+			efs: &ExportSettings{
 				DefaultsEnabled: cmdtoolkit.CommandFlag[bool]{Value: false, UserSet: true},
 			},
 			wantCanWrite: false,
@@ -59,13 +58,13 @@ func TestExportFlagSettingsCanWriteConfigurationFile(t *testing.T) {
 			},
 		},
 		"enabled by default": {
-			efs: &cmd.ExportSettings{
+			efs: &ExportSettings{
 				DefaultsEnabled: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: false},
 			},
 			wantCanWrite: true,
 		},
 		"enabled intentionally": {
-			efs: &cmd.ExportSettings{
+			efs: &ExportSettings{
 				DefaultsEnabled: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
 			},
 			wantCanWrite: true,
@@ -75,22 +74,22 @@ func TestExportFlagSettingsCanWriteConfigurationFile(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			if gotCanWrite := tt.efs.CanWriteConfigurationFile(o); gotCanWrite != tt.wantCanWrite {
-				t.Errorf("ExportFlagSettings.CanWriteConfigurationFile() = %v, want %v", gotCanWrite, tt.wantCanWrite)
+				t.Errorf("exportFlagSettings.canWriteConfigurationFile() = %v, want %v", gotCanWrite, tt.wantCanWrite)
 			}
-			o.Report(t, "ExportFlagSettings.CanWriteConfigurationFile()", tt.WantedRecording)
+			o.Report(t, "exportFlagSettings.canWriteConfigurationFile()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestExportFlagSettingsCanOverwriteConfigurationFile(t *testing.T) {
+func Test_exportFlagSettings_canOverwriteConfigurationFile(t *testing.T) {
 	tests := map[string]struct {
-		efs              *cmd.ExportSettings
+		efs              *ExportSettings
 		f                string
 		wantCanOverwrite bool
 		output.WantedRecording
 	}{
 		"no overwrite by default": {
-			efs: &cmd.ExportSettings{
+			efs: &ExportSettings{
 				OverwriteEnabled: cmdtoolkit.CommandFlag[bool]{Value: false, UserSet: false},
 			},
 			f:                "[file name here]",
@@ -110,7 +109,7 @@ func TestExportFlagSettingsCanOverwriteConfigurationFile(t *testing.T) {
 			},
 		},
 		"no overwrite intentionally": {
-			efs: &cmd.ExportSettings{
+			efs: &ExportSettings{
 				OverwriteEnabled: cmdtoolkit.CommandFlag[bool]{Value: false, UserSet: true},
 			},
 			f:                "[file name here]",
@@ -130,14 +129,14 @@ func TestExportFlagSettingsCanOverwriteConfigurationFile(t *testing.T) {
 			},
 		},
 		"overwrite enabled by default": {
-			efs: &cmd.ExportSettings{
+			efs: &ExportSettings{
 				OverwriteEnabled: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: false},
 			},
 			f:                "[file name here]",
 			wantCanOverwrite: true,
 		},
 		"overwrite enabled intentionally": {
-			efs: &cmd.ExportSettings{
+			efs: &ExportSettings{
 				OverwriteEnabled: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true},
 			},
 			f:                "[file name here]",
@@ -149,17 +148,17 @@ func TestExportFlagSettingsCanOverwriteConfigurationFile(t *testing.T) {
 			o := output.NewRecorder()
 			gotCanOverwrite := tt.efs.CanOverwriteConfigurationFile(o, tt.f)
 			if gotCanOverwrite != tt.wantCanOverwrite {
-				t.Errorf("ExportFlagSettings.CanOverwriteConfigurationFile() = %v, want %v", gotCanOverwrite, tt.wantCanOverwrite)
+				t.Errorf("exportFlagSettings.canOverwriteConfigurationFile() = %v, want %v", gotCanOverwrite, tt.wantCanOverwrite)
 			}
-			o.Report(t, "ExportFlagSettings.CanOverwriteConfigurationFile()", tt.WantedRecording)
+			o.Report(t, "exportFlagSettings.canOverwriteConfigurationFile()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestCreateConfigurationFile(t *testing.T) {
-	originalWriteFile := cmd.WriteFile
+func Test_createConfigurationFile(t *testing.T) {
+	originalWriteFile := WriteFile
 	defer func() {
-		cmd.WriteFile = originalWriteFile
+		WriteFile = originalWriteFile
 	}()
 	type args struct {
 		f       string
@@ -200,30 +199,30 @@ func TestCreateConfigurationFile(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			cmd.WriteFile = tt.writeFile
-			if got := cmd.CreateConfigurationFile(o, tt.args.f, tt.args.content); got != tt.want {
-				t.Errorf("CreateConfigurationFile() = %v, want %v", got, tt.want)
+			WriteFile = tt.writeFile
+			if got := CreateConfigurationFile(o, tt.args.f, tt.args.content); got != tt.want {
+				t.Errorf("createConfigurationFile() = %v, want %v", got, tt.want)
 			}
-			o.Report(t, "CreateConfigurationFile()", tt.WantedRecording)
+			o.Report(t, "createConfigurationFile()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestExportFlagSettingsOverwriteConfigurationFile(t *testing.T) {
-	originalWriteFile := cmd.WriteFile
-	originalRename := cmd.Rename
-	originalRemove := cmd.Remove
+func Test_exportFlagSettings_overwriteConfigurationFile(t *testing.T) {
+	originalWriteFile := WriteFile
+	originalRename := Rename
+	originalRemove := Remove
 	defer func() {
-		cmd.WriteFile = originalWriteFile
-		cmd.Rename = originalRename
-		cmd.Remove = originalRemove
+		WriteFile = originalWriteFile
+		Rename = originalRename
+		Remove = originalRemove
 	}()
 	type args struct {
 		f       string
 		payload []byte
 	}
 	tests := map[string]struct {
-		efs *cmd.ExportSettings
+		efs *ExportSettings
 		args
 		writeFile  func(string, []byte, fs.FileMode) error
 		rename     func(string, string) error
@@ -232,7 +231,7 @@ func TestExportFlagSettingsOverwriteConfigurationFile(t *testing.T) {
 		output.WantedRecording
 	}{
 		"nothing to do": {
-			efs: &cmd.ExportSettings{
+			efs: &ExportSettings{
 				OverwriteEnabled: cmdtoolkit.CommandFlag[bool]{Value: false},
 			},
 			args:       args{f: "[filename]"},
@@ -252,7 +251,7 @@ func TestExportFlagSettingsOverwriteConfigurationFile(t *testing.T) {
 			},
 		},
 		"rename fails": {
-			efs: &cmd.ExportSettings{
+			efs: &ExportSettings{
 				OverwriteEnabled: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			args: args{f: "[filename]"},
@@ -271,7 +270,7 @@ func TestExportFlagSettingsOverwriteConfigurationFile(t *testing.T) {
 			},
 		},
 		"rename succeeds, create fails": {
-			efs: &cmd.ExportSettings{
+			efs: &ExportSettings{
 				OverwriteEnabled: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			args:   args{f: "[filename]", payload: []byte{}},
@@ -290,7 +289,7 @@ func TestExportFlagSettingsOverwriteConfigurationFile(t *testing.T) {
 			},
 		},
 		"everything succeeds": {
-			efs: &cmd.ExportSettings{
+			efs: &ExportSettings{
 				OverwriteEnabled: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			args:       args{f: "[filename]", payload: []byte{}},
@@ -306,33 +305,33 @@ func TestExportFlagSettingsOverwriteConfigurationFile(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			cmd.WriteFile = tt.writeFile
-			cmd.Rename = tt.rename
-			cmd.Remove = tt.remove
+			WriteFile = tt.writeFile
+			Rename = tt.rename
+			Remove = tt.remove
 			got := tt.efs.OverwriteConfigurationFile(o, tt.args.f, tt.args.payload)
 			if !compareExitErrors(got, tt.wantStatus) {
-				t.Errorf("ExportFlagSettings.OverwriteConfigurationFile() got %s want %s", got, tt.wantStatus)
+				t.Errorf("exportFlagSettings.overwriteConfigurationFile() got %s want %s", got, tt.wantStatus)
 			}
-			o.Report(t, "ExportFlagSettings.OverwriteConfigurationFile()", tt.WantedRecording)
+			o.Report(t, "exportFlagSettings.overwriteConfigurationFile()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
-	originalWriteFile := cmd.WriteFile
-	originalRename := cmd.Rename
-	originalRemove := cmd.Remove
-	originalPlainFileExists := cmd.PlainFileExists
-	originalApplicationPath := cmd.ApplicationPath
+func Test_exportFlagSettings_exportDefaultConfiguration(t *testing.T) {
+	originalWriteFile := WriteFile
+	originalRename := Rename
+	originalRemove := Remove
+	originalPlainFileExists := PlainFileExists
+	originalApplicationPath := ApplicationPath
 	defer func() {
-		cmd.WriteFile = originalWriteFile
-		cmd.Rename = originalRename
-		cmd.Remove = originalRemove
-		cmd.PlainFileExists = originalPlainFileExists
-		cmd.ApplicationPath = originalApplicationPath
+		WriteFile = originalWriteFile
+		Rename = originalRename
+		Remove = originalRemove
+		PlainFileExists = originalPlainFileExists
+		ApplicationPath = originalApplicationPath
 	}()
 	tests := map[string]struct {
-		efs             *cmd.ExportSettings
+		efs             *ExportSettings
 		writeFile       func(string, []byte, fs.FileMode) error
 		plainFileExists func(string) bool
 		rename          func(string, string) error
@@ -342,7 +341,7 @@ func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
 		output.WantedRecording
 	}{
 		"not asking to write": {
-			efs: &cmd.ExportSettings{
+			efs: &ExportSettings{
 				OverwriteEnabled: cmdtoolkit.CommandFlag[bool]{Value: true},
 				DefaultsEnabled:  cmdtoolkit.CommandFlag[bool]{Value: false},
 			},
@@ -364,7 +363,7 @@ func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
 			},
 		},
 		"file does not exist but cannot be created": {
-			efs: &cmd.ExportSettings{
+			efs: &ExportSettings{
 				OverwriteEnabled: cmdtoolkit.CommandFlag[bool]{Value: true},
 				DefaultsEnabled:  cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
@@ -386,7 +385,7 @@ func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
 			},
 		},
 		"file does not exist": {
-			efs: &cmd.ExportSettings{
+			efs: &ExportSettings{
 				OverwriteEnabled: cmdtoolkit.CommandFlag[bool]{Value: true},
 				DefaultsEnabled:  cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
@@ -399,7 +398,7 @@ func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
 			},
 		},
 		"file exists": {
-			efs: &cmd.ExportSettings{
+			efs: &ExportSettings{
 				OverwriteEnabled: cmdtoolkit.CommandFlag[bool]{Value: true},
 				DefaultsEnabled:  cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
@@ -417,32 +416,32 @@ func TestExportFlagSettingsExportDefaultConfiguration(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			cmd.WriteFile = tt.writeFile
-			cmd.PlainFileExists = tt.plainFileExists
-			cmd.Remove = tt.remove
-			cmd.Rename = tt.rename
-			cmd.ApplicationPath = tt.applicationPath
+			WriteFile = tt.writeFile
+			PlainFileExists = tt.plainFileExists
+			Remove = tt.remove
+			Rename = tt.rename
+			ApplicationPath = tt.applicationPath
 			if got := tt.efs.ExportDefaultConfiguration(o); !compareExitErrors(got, tt.wantStatus) {
-				t.Errorf("ExportFlagSettings.ExportDefaultConfiguration() got %s want %s", got, tt.wantStatus)
+				t.Errorf("exportFlagSettings.exportDefaultConfiguration() got %s want %s", got, tt.wantStatus)
 			}
-			o.Report(t, "ExportFlagSettings.ExportDefaultConfiguration()", tt.WantedRecording)
+			o.Report(t, "exportFlagSettings.exportDefaultConfiguration()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestProcessExportFlags(t *testing.T) {
+func Test_processExportFlags(t *testing.T) {
 	tests := map[string]struct {
 		values map[string]*cmdtoolkit.CommandFlag[any]
-		want   *cmd.ExportSettings
+		want   *ExportSettings
 		want1  bool
 		output.WantedRecording
 	}{
 		"nothing went right": {
 			values: map[string]*cmdtoolkit.CommandFlag[any]{
-				cmd.ExportFlagDefaults:  {Value: "foo"},
-				cmd.ExportFlagOverwrite: {Value: "bar"},
+				ExportFlagDefaults:  {Value: "foo"},
+				ExportFlagOverwrite: {Value: "bar"},
 			},
-			want:  &cmd.ExportSettings{},
+			want:  &ExportSettings{},
 			want1: false,
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"defaults\" is not a boolean" +
@@ -463,10 +462,10 @@ func TestProcessExportFlags(t *testing.T) {
 		},
 		"bad defaults settings": {
 			values: map[string]*cmdtoolkit.CommandFlag[any]{
-				cmd.ExportFlagDefaults:  {Value: "foo"},
-				cmd.ExportFlagOverwrite: {Value: true},
+				ExportFlagDefaults:  {Value: "foo"},
+				ExportFlagOverwrite: {Value: true},
 			},
-			want:  &cmd.ExportSettings{OverwriteEnabled: cmdtoolkit.CommandFlag[bool]{Value: true}},
+			want:  &ExportSettings{OverwriteEnabled: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			want1: false,
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"defaults\" is not a boolean" +
@@ -480,10 +479,10 @@ func TestProcessExportFlags(t *testing.T) {
 		},
 		"bad overwrites settings": {
 			values: map[string]*cmdtoolkit.CommandFlag[any]{
-				cmd.ExportFlagDefaults:  {Value: true},
-				cmd.ExportFlagOverwrite: {Value: 17},
+				ExportFlagDefaults:  {Value: true},
+				ExportFlagOverwrite: {Value: 17},
 			},
-			want:  &cmd.ExportSettings{DefaultsEnabled: cmdtoolkit.CommandFlag[bool]{Value: true}},
+			want:  &ExportSettings{DefaultsEnabled: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			want1: false,
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"overwrite\" is not a boolean" +
@@ -497,10 +496,10 @@ func TestProcessExportFlags(t *testing.T) {
 		},
 		"everything good": {
 			values: map[string]*cmdtoolkit.CommandFlag[any]{
-				cmd.ExportFlagDefaults:  {Value: true},
-				cmd.ExportFlagOverwrite: {Value: true},
+				ExportFlagDefaults:  {Value: true},
+				ExportFlagOverwrite: {Value: true},
 			},
-			want: &cmd.ExportSettings{
+			want: &ExportSettings{
 				OverwriteEnabled: cmdtoolkit.CommandFlag[bool]{Value: true},
 				DefaultsEnabled:  cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
@@ -510,25 +509,25 @@ func TestProcessExportFlags(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			got, got1 := cmd.ProcessExportFlags(o, tt.values)
+			got, got1 := ProcessExportFlags(o, tt.values)
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ProcessExportFlags() got = %v, want %v", got, tt.want)
+				t.Errorf("processExportFlags() got = %v, want %v", got, tt.want)
 			}
 			if got1 != tt.want1 {
-				t.Errorf("ProcessExportFlags() got1 = %v, want %v", got1, tt.want1)
+				t.Errorf("processExportFlags() got1 = %v, want %v", got1, tt.want1)
 			}
-			o.Report(t, "ProcessExportFlags()", tt.WantedRecording)
+			o.Report(t, "processExportFlags()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestExportRun(t *testing.T) {
-	cmd.InitGlobals()
-	originalExportFlags := cmd.ExportFlags
-	originalBus := cmd.Bus
+func Test_exportRun(t *testing.T) {
+	InitGlobals()
+	originalExportFlags := ExportFlags
+	originalBus := Bus
 	defer func() {
-		cmd.ExportFlags = originalExportFlags
-		cmd.Bus = originalBus
+		ExportFlags = originalExportFlags
+		Bus = originalBus
 	}()
 	tests := map[string]struct {
 		cmd   *cobra.Command
@@ -536,15 +535,15 @@ func TestExportRun(t *testing.T) {
 		output.WantedRecording
 	}{
 		"missing data": {
-			cmd: cmd.ExportCmd,
+			cmd: ExportCmd,
 			flags: &cmdtoolkit.FlagSet{
-				Name: cmd.ExportCommand,
+				Name: ExportCommand,
 				Details: map[string]*cmdtoolkit.FlagDetails{
-					cmd.ExportFlagOverwrite: {
+					ExportFlagOverwrite: {
 						ExpectedType: cmdtoolkit.BoolType,
 						DefaultValue: 12,
 					},
-					cmd.ExportFlagDefaults: nil,
+					ExportFlagDefaults: nil,
 				},
 			},
 			WantedRecording: output.WantedRecording{
@@ -555,11 +554,11 @@ func TestExportRun(t *testing.T) {
 			},
 		},
 		"incomplete data": {
-			cmd: cmd.ExportCmd,
+			cmd: ExportCmd,
 			flags: &cmdtoolkit.FlagSet{
-				Name: cmd.ExportCommand,
+				Name: ExportCommand,
 				Details: map[string]*cmdtoolkit.FlagDetails{
-					cmd.ExportFlagOverwrite: {
+					ExportFlagOverwrite: {
 						ExpectedType: cmdtoolkit.BoolType,
 						DefaultValue: 12,
 					},
@@ -574,15 +573,15 @@ func TestExportRun(t *testing.T) {
 			},
 		},
 		"valid data": {
-			cmd: cmd.ExportCmd,
+			cmd: ExportCmd,
 			flags: &cmdtoolkit.FlagSet{
-				Name: cmd.ExportCommand,
+				Name: ExportCommand,
 				Details: map[string]*cmdtoolkit.FlagDetails{
-					cmd.ExportFlagOverwrite: {
+					ExportFlagOverwrite: {
 						ExpectedType: cmdtoolkit.BoolType,
 						DefaultValue: false,
 					},
-					cmd.ExportFlagDefaults: {
+					ExportFlagDefaults: {
 						ExpectedType: cmdtoolkit.BoolType,
 						DefaultValue: false,
 					},
@@ -612,16 +611,16 @@ func TestExportRun(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			cmd.ExportFlags = tt.flags
+			ExportFlags = tt.flags
 			o := output.NewRecorder()
-			cmd.Bus = o // this is what getBus() should return when ExportRun calls it
-			_ = cmd.ExportRun(tt.cmd, []string{})
-			o.Report(t, "ExportRun()", tt.WantedRecording)
+			Bus = o // this is what getBus() should return when ExportRun calls it
+			_ = ExportRun(tt.cmd, []string{})
+			o.Report(t, "exportRun()", tt.WantedRecording)
 		})
 	}
 }
 
-func TestExportHelp(t *testing.T) {
+func Test_export_Help(t *testing.T) {
 	tests := map[string]struct {
 		output.WantedRecording
 	}{
@@ -650,7 +649,7 @@ func TestExportHelp(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			command := cmd.ExportCmd
+			command := ExportCmd
 			enableCommandRecording(o, command)
 			_ = command.Help()
 			o.Report(t, "export Help()", tt.WantedRecording)

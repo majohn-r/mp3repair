@@ -20,13 +20,12 @@ const (
 )
 
 var (
-	// Version is the application's semantic version and its value is injected by the build
-	Version string
-	// Creation is the application's build timestamp in RFC3339 format (2006-01-02T15:04:05Z07:00)
+	// version is the application's semantic version and its value is injected by the build
+	version string
+	// creation is the application's build timestamp in RFC3339 format (2006-01-02T15:04:05Z07:00)
 	// and its value is injected by the build
-	Creation string
-	// AboutCmd represents the about command
-	AboutCmd = &cobra.Command{
+	creation string
+	aboutCmd = &cobra.Command{
 		Use:                   aboutCommand + " [" + aboutStyleFlag + " name]",
 		DisableFlagsInUseLine: true,
 		Short:                 "Provides information about the " + appName + " program",
@@ -64,7 +63,7 @@ var (
 			cmdtoolkit.StyledFlowerBox([]string{"output ..."}, cmdtoolkit.DoubleLinedFlowerBox)[0:3],
 			"\n    ",
 		),
-		RunE: AboutRun,
+		RunE: aboutRun,
 	}
 	aboutFlags = &cmdtoolkit.FlagSet{
 		Name: aboutCommand,
@@ -76,15 +75,15 @@ var (
 			},
 		},
 	}
-	CachedGoVersion           string
-	CachedBuildDependencies   []string
-	MP3RepairElevationControl = cmdtoolkit.NewElevationControlWithEnvVar(
+	cachedGoVersion           string
+	cachedBuildDependencies   []string
+	mp3repairElevationControl = cmdtoolkit.NewElevationControlWithEnvVar(
 		ElevatedPrivilegesPermissionVar,
 		DefaultElevatedPrivilegesPermission,
 	)
 )
 
-func AboutRun(cmd *cobra.Command, _ []string) error {
+func aboutRun(cmd *cobra.Command, _ []string) error {
 	o := BusGetter()
 	values, eSlice := cmdtoolkit.ReadFlags(cmd.Flags(), aboutFlags)
 	exitError := cmdtoolkit.NewExitProgrammingError(ExportCommand)
@@ -93,7 +92,7 @@ func AboutRun(cmd *cobra.Command, _ []string) error {
 		if err == nil {
 			style := interpretStyle(flag)
 			LogCommandStart(o, aboutCommand, map[string]any{aboutStyle: style})
-			o.WriteConsole(strings.Join(cmdtoolkit.StyledFlowerBox(AcquireAboutData(o), style), "\n"))
+			o.WriteConsole(strings.Join(cmdtoolkit.StyledFlowerBox(acquireAboutData(o), style), "\n"))
 			exitError = nil
 		}
 	}
@@ -117,8 +116,8 @@ func interpretStyle(flag cmdtoolkit.CommandFlag[string]) cmdtoolkit.FlowerBoxSty
 	return style
 }
 
-func AcquireAboutData(o output.Bus) []string {
-	CachedGoVersion, CachedBuildDependencies = InterpretBuildData(debug.ReadBuildInfo)
+func acquireAboutData(o output.Bus) []string {
+	cachedGoVersion, cachedBuildDependencies = InterpretBuildData(debug.ReadBuildInfo)
 	// 9: 1 each for
 	// - app name
 	// - copyright
@@ -127,13 +126,13 @@ func AcquireAboutData(o output.Bus) []string {
 	// - log file location
 	// - configuration file status
 	// - and up to 3 for elevation status
-	lines := make([]string, 0, 9+len(CachedBuildDependencies))
+	lines := make([]string, 0, 9+len(cachedBuildDependencies))
 	lines = append(lines,
-		cmdtoolkit.DecoratedAppName(appName, Version, Creation),
-		cmdtoolkit.Copyright(o, firstYear, Creation, author),
+		cmdtoolkit.DecoratedAppName(appName, version, creation),
+		cmdtoolkit.Copyright(o, firstYear, creation, author),
 		"Build Information",
-		cmdtoolkit.FormatGoVersion(CachedGoVersion))
-	lines = append(lines, cmdtoolkit.FormatBuildDependencies(CachedBuildDependencies)...)
+		cmdtoolkit.FormatGoVersion(cachedGoVersion))
+	lines = append(lines, cmdtoolkit.FormatBuildDependencies(cachedBuildDependencies)...)
 	lines = append(lines, fmt.Sprintf("Log files are written to %s", LogPath()))
 	path, exists := configFile()
 	switch {
@@ -142,7 +141,7 @@ func AcquireAboutData(o output.Bus) []string {
 	default:
 		lines = append(lines, fmt.Sprintf("Configuration file %s does not yet exist", path))
 	}
-	elevationData := MP3RepairElevationControl.Status(appName)
+	elevationData := mp3repairElevationControl.Status(appName)
 	lines = append(lines, elevationData[0])
 	if len(elevationData) > 1 {
 		for _, s := range elevationData[1:] {
@@ -153,9 +152,9 @@ func AcquireAboutData(o output.Bus) []string {
 }
 
 func init() {
-	RootCmd.AddCommand(AboutCmd)
+	RootCmd.AddCommand(aboutCmd)
 	addDefaults(aboutFlags)
 	o := getBus()
 	c := getConfiguration()
-	cmdtoolkit.AddFlags(o, c, AboutCmd.Flags(), aboutFlags)
+	cmdtoolkit.AddFlags(o, c, aboutCmd.Flags(), aboutFlags)
 }
