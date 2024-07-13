@@ -119,7 +119,7 @@ func checkRun(cmd *cobra.Command, _ []string) error {
 	o := getBus()
 	producer := cmd.Flags()
 	values, eSlice := cmdtoolkit.ReadFlags(producer, checkFlags)
-	searchSettings, searchFlagsOk := EvaluateSearchFlags(o, producer)
+	searchSettings, searchFlagsOk := evaluateSearchFlags(o, producer)
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) && searchFlagsOk {
 		if cs, flagsOk := processCheckFlags(o, values); flagsOk {
 			details := map[string]any{
@@ -130,7 +130,7 @@ func checkRun(cmd *cobra.Command, _ []string) error {
 				checkNumberingFlag:   cs.numbering.Value,
 				"numbering-user-set": cs.numbering.UserSet,
 			}
-			for k, v := range searchSettings.Values() {
+			for k, v := range searchSettings.values() {
 				details[k] = v
 			}
 			logCommandStart(o, checkCommand, details)
@@ -146,15 +146,15 @@ type checkSettings struct {
 	numbering cmdtoolkit.CommandFlag[bool]
 }
 
-func (cs *checkSettings) maybeDoWork(o output.Bus, ss *SearchSettings) (err *cmdtoolkit.ExitError) {
+func (cs *checkSettings) maybeDoWork(o output.Bus, ss *searchSettings) (err *cmdtoolkit.ExitError) {
 	err = cmdtoolkit.NewExitUserError(checkCommand)
 	if cs.hasWorkToDo(o) {
-		err = cs.performChecks(o, ss.Load(o), ss)
+		err = cs.performChecks(o, ss.load(o), ss)
 	}
 	return
 }
 
-func (cs *checkSettings) performChecks(o output.Bus, artists []*files.Artist, ss *SearchSettings) (err *cmdtoolkit.ExitError) {
+func (cs *checkSettings) performChecks(o output.Bus, artists []*files.Artist, ss *searchSettings) (err *cmdtoolkit.ExitError) {
 	err = cmdtoolkit.NewExitUserError(checkCommand)
 	if len(artists) != 0 {
 		err = nil
@@ -191,14 +191,14 @@ func (cs *checkSettings) maybeReportCleanResults(o output.Bus, requests checkRep
 }
 
 func (cs *checkSettings) performFileAnalysis(o output.Bus,
-	concernedArtists []*concernedArtist, ss *SearchSettings) bool {
+	concernedArtists []*concernedArtist, ss *searchSettings) bool {
 	foundConcerns := false
 	if cs.files.Value {
 		artists := make([]*files.Artist, 0, len(concernedArtists))
 		for _, cAr := range concernedArtists {
 			artists = append(artists, cAr.backingArtist())
 		}
-		if filteredArtists := ss.Filter(o, artists); len(filteredArtists) != 0 {
+		if filteredArtists := ss.filter(o, artists); len(filteredArtists) != 0 {
 			readMetadata(o, filteredArtists)
 			for _, artist := range filteredArtists {
 				for _, album := range artist.Albums {
@@ -414,5 +414,5 @@ func init() {
 	addDefaults(checkFlags)
 	o := getBus()
 	c := getConfiguration()
-	cmdtoolkit.AddFlags(o, c, checkCmd.Flags(), checkFlags, SearchFlags)
+	cmdtoolkit.AddFlags(o, c, checkCmd.Flags(), checkFlags, searchFlags)
 }

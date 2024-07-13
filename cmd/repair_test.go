@@ -1433,7 +1433,7 @@ func Test_repairSettings_processArtists(t *testing.T) {
 	readMetadata = func(_ output.Bus, _ []*files.Artist) {}
 	type args struct {
 		allArtists []*files.Artist
-		ss         *SearchSettings
+		ss         *searchSettings
 	}
 	tests := map[string]struct {
 		rs *repairSettings
@@ -1450,10 +1450,10 @@ func Test_repairSettings_processArtists(t *testing.T) {
 			rs: &repairSettings{dryRun: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			args: args{
 				allArtists: generateArtists(2, 3, 4),
-				ss: &SearchSettings{
-					ArtistFilter: regexp.MustCompile(".*"),
-					AlbumFilter:  regexp.MustCompile(".*"),
-					TrackFilter:  regexp.MustCompile(".*"),
+				ss: &searchSettings{
+					artistFilter: regexp.MustCompile(".*"),
+					albumFilter:  regexp.MustCompile(".*"),
+					trackFilter:  regexp.MustCompile(".*"),
 				},
 			},
 			wantStatus: nil,
@@ -1477,12 +1477,12 @@ func Test_repairSettings_processArtists(t *testing.T) {
 func Test_repairRun(t *testing.T) {
 	initGlobals()
 	originalBus := bus
-	originalSearchFlags := SearchFlags
+	originalSearchFlags := searchFlags
 	defer func() {
 		bus = originalBus
-		SearchFlags = originalSearchFlags
+		searchFlags = originalSearchFlags
 	}()
-	SearchFlags = safeSearchFlags
+	searchFlags = safeSearchFlags
 	repairFlags := &cmdtoolkit.FlagSet{
 		Name: "repair",
 		Details: map[string]*cmdtoolkit.FlagDetails{
@@ -1495,7 +1495,7 @@ func Test_repairRun(t *testing.T) {
 	}
 	command := &cobra.Command{}
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), command.Flags(),
-		repairFlags, SearchFlags)
+		repairFlags, searchFlags)
 	tests := map[string]struct {
 		cmd *cobra.Command
 		in1 []string
@@ -1538,14 +1538,14 @@ func Test_repairRun(t *testing.T) {
 }
 
 func Test_repair_Help(t *testing.T) {
-	originalSearchFlags := SearchFlags
+	originalSearchFlags := searchFlags
 	defer func() {
-		SearchFlags = originalSearchFlags
+		searchFlags = originalSearchFlags
 	}()
-	SearchFlags = safeSearchFlags
+	searchFlags = safeSearchFlags
 	commandUnderTest := cloneCommand(repairCmd)
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
-		commandUnderTest.Flags(), repairFlags, SearchFlags)
+		commandUnderTest.Flags(), repairFlags, searchFlags)
 	tests := map[string]struct {
 		output.WantedRecording
 	}{

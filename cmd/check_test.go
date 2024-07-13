@@ -539,7 +539,7 @@ func Test_checkSettings_performFileAnalysis(t *testing.T) {
 	readMetadata = func(_ output.Bus, _ []*files.Artist) {}
 	type args struct {
 		checkedArtists []*concernedArtist
-		ss             *SearchSettings
+		ss             *searchSettings
 	}
 	tests := map[string]struct {
 		cs *checkSettings
@@ -557,7 +557,7 @@ func Test_checkSettings_performFileAnalysis(t *testing.T) {
 			cs: &checkSettings{files: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			args: args{
 				checkedArtists: []*concernedArtist{},
-				ss:             &SearchSettings{},
+				ss:             &searchSettings{},
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
@@ -576,10 +576,10 @@ func Test_checkSettings_performFileAnalysis(t *testing.T) {
 			cs: &checkSettings{files: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			args: args{
 				checkedArtists: createConcernedArtists(generateArtists(4, 5, 6)),
-				ss: &SearchSettings{
-					ArtistFilter: regexp.MustCompile(".*"),
-					AlbumFilter:  regexp.MustCompile(".*"),
-					TrackFilter:  regexp.MustCompile(".*"),
+				ss: &searchSettings{
+					artistFilter: regexp.MustCompile(".*"),
+					albumFilter:  regexp.MustCompile(".*"),
+					trackFilter:  regexp.MustCompile(".*"),
 				},
 			},
 			want:            true,
@@ -658,7 +658,7 @@ func Test_checkSettings_performChecks(t *testing.T) {
 	readMetadata = func(_ output.Bus, _ []*files.Artist) {}
 	type args struct {
 		artists []*files.Artist
-		ss      *SearchSettings
+		ss      *searchSettings
 	}
 	tests := map[string]struct {
 		cs *checkSettings
@@ -680,10 +680,10 @@ func Test_checkSettings_performChecks(t *testing.T) {
 			},
 			args: args{
 				artists: generateArtists(1, 2, 3),
-				ss: &SearchSettings{
-					ArtistFilter: regexp.MustCompile(".*"),
-					AlbumFilter:  regexp.MustCompile(".*"),
-					TrackFilter:  regexp.MustCompile(".*"),
+				ss: &searchSettings{
+					artistFilter: regexp.MustCompile(".*"),
+					albumFilter:  regexp.MustCompile(".*"),
+					trackFilter:  regexp.MustCompile(".*"),
 				},
 			},
 			wantStatus: nil,
@@ -711,7 +711,7 @@ func Test_checkSettings_performChecks(t *testing.T) {
 func Test_checkSettings_maybeDoWork(t *testing.T) {
 	tests := map[string]struct {
 		cs         *checkSettings
-		ss         *SearchSettings
+		ss         *searchSettings
 		wantStatus *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
@@ -735,12 +735,12 @@ func Test_checkSettings_maybeDoWork(t *testing.T) {
 		},
 		"try a little work": {
 			cs: &checkSettings{empty: cmdtoolkit.CommandFlag[bool]{Value: true}},
-			ss: &SearchSettings{
-				ArtistFilter:   regexp.MustCompile(".*"),
-				AlbumFilter:    regexp.MustCompile(".*"),
-				TrackFilter:    regexp.MustCompile(".*"),
-				FileExtensions: []string{".mp3"},
-				TopDirectory:   filepath.Join(".", "no dir"),
+			ss: &searchSettings{
+				artistFilter:   regexp.MustCompile(".*"),
+				albumFilter:    regexp.MustCompile(".*"),
+				trackFilter:    regexp.MustCompile(".*"),
+				fileExtensions: []string{".mp3"},
+				topDirectory:   filepath.Join(".", "no dir"),
 			},
 			wantStatus: cmdtoolkit.NewExitUserError("check"),
 			WantedRecording: output.WantedRecording{
@@ -778,12 +778,12 @@ func Test_checkSettings_maybeDoWork(t *testing.T) {
 func Test_checkRun(t *testing.T) {
 	initGlobals()
 	originalBus := bus
-	originalSearchFlags := SearchFlags
+	originalSearchFlags := searchFlags
 	defer func() {
 		bus = originalBus
-		SearchFlags = originalSearchFlags
+		searchFlags = originalSearchFlags
 	}()
-	SearchFlags = safeSearchFlags
+	searchFlags = safeSearchFlags
 	checkFlags := &cmdtoolkit.FlagSet{
 		Name: checkCommand,
 		Details: map[string]*cmdtoolkit.FlagDetails{
@@ -809,7 +809,7 @@ func Test_checkRun(t *testing.T) {
 	}
 	command := &cobra.Command{}
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), command.Flags(),
-		checkFlags, SearchFlags)
+		checkFlags, searchFlags)
 	type args struct {
 		cmd *cobra.Command
 		in1 []string
@@ -874,14 +874,14 @@ func cloneCommand(original *cobra.Command) *cobra.Command {
 }
 
 func Test_check_Help(t *testing.T) {
-	originalSearchFlags := SearchFlags
+	originalSearchFlags := searchFlags
 	defer func() {
-		SearchFlags = originalSearchFlags
+		searchFlags = originalSearchFlags
 	}()
-	SearchFlags = safeSearchFlags
+	searchFlags = safeSearchFlags
 	commandUnderTest := cloneCommand(checkCmd)
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
-		commandUnderTest.Flags(), checkFlags, SearchFlags)
+		commandUnderTest.Flags(), checkFlags, searchFlags)
 	tests := map[string]struct {
 		output.WantedRecording
 	}{
@@ -925,14 +925,14 @@ func Test_check_Help(t *testing.T) {
 }
 
 func Test_check_Usage(t *testing.T) {
-	originalSearchFlags := SearchFlags
+	originalSearchFlags := searchFlags
 	defer func() {
-		SearchFlags = originalSearchFlags
+		searchFlags = originalSearchFlags
 	}()
-	SearchFlags = safeSearchFlags
+	searchFlags = safeSearchFlags
 	commandUnderTest := cloneCommand(checkCmd)
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
-		commandUnderTest.Flags(), checkFlags, SearchFlags)
+		commandUnderTest.Flags(), checkFlags, searchFlags)
 	tests := map[string]struct {
 		output.WantedRecording
 	}{

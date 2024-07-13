@@ -114,7 +114,7 @@ func listRun(cmd *cobra.Command, _ []string) error {
 	o := getBus()
 	producer := cmd.Flags()
 	values, eSlice := cmdtoolkit.ReadFlags(producer, listFlags)
-	searchSettings, searchFlagsOk := EvaluateSearchFlags(o, producer)
+	searchSettings, searchFlagsOk := evaluateSearchFlags(o, producer)
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) && searchFlagsOk {
 		if ls, flagsOk := processListFlags(o, values); flagsOk {
 			details := map[string]any{
@@ -132,7 +132,7 @@ func listRun(cmd *cobra.Command, _ []string) error {
 				listTracksFlag:       ls.tracks.Value,
 				"tracks-user-set":    ls.tracks.UserSet,
 			}
-			for k, v := range searchSettings.Values() {
+			for k, v := range searchSettings.values() {
 				details[k] = v
 			}
 			logCommandStart(o, listCommand, details)
@@ -140,7 +140,7 @@ func listRun(cmd *cobra.Command, _ []string) error {
 			case true:
 				switch ls.tracksSortable(o) {
 				case true:
-					allArtists := searchSettings.Load(o)
+					allArtists := searchSettings.load(o)
 					exitError = ls.listArtists(o, allArtists, searchSettings)
 				case false:
 					exitError = cmdtoolkit.NewExitUserError(listCommand)
@@ -164,10 +164,10 @@ type listSettings struct {
 	tracks       cmdtoolkit.CommandFlag[bool]
 }
 
-func (ls *listSettings) listArtists(o output.Bus, allArtists []*files.Artist, ss *SearchSettings) (err *cmdtoolkit.ExitError) {
+func (ls *listSettings) listArtists(o output.Bus, allArtists []*files.Artist, ss *searchSettings) (err *cmdtoolkit.ExitError) {
 	err = cmdtoolkit.NewExitUserError(listCommand)
 	if len(allArtists) != 0 {
-		if filteredArtists := ss.Filter(o, allArtists); len(filteredArtists) != 0 {
+		if filteredArtists := ss.filter(o, allArtists); len(filteredArtists) != 0 {
 			ls.listFilteredArtists(o, filteredArtists)
 			err = nil
 		}
@@ -589,5 +589,5 @@ func init() {
 	addDefaults(listFlags)
 	c := getConfiguration()
 	o := getBus()
-	cmdtoolkit.AddFlags(o, c, listCmd.Flags(), listFlags, SearchFlags)
+	cmdtoolkit.AddFlags(o, c, listCmd.Flags(), listFlags, searchFlags)
 }

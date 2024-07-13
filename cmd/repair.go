@@ -59,15 +59,15 @@ func repairRun(cmd *cobra.Command, _ []string) error {
 	o := getBus()
 	producer := cmd.Flags()
 	values, eSlice := cmdtoolkit.ReadFlags(producer, repairFlags)
-	searchSettings, searchFlagsOk := EvaluateSearchFlags(o, producer)
+	searchSettings, searchFlagsOk := evaluateSearchFlags(o, producer)
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) && searchFlagsOk {
 		if rs, flagsOk := processRepairFlags(o, values); flagsOk {
 			details := map[string]any{repairDryRunFlag: rs.dryRun.Value}
-			for k, v := range searchSettings.Values() {
+			for k, v := range searchSettings.values() {
 				details[k] = v
 			}
 			logCommandStart(o, repairCommandName, details)
-			allArtists := searchSettings.Load(o)
+			allArtists := searchSettings.load(o)
 			exitError = rs.processArtists(o, allArtists, searchSettings)
 		}
 	}
@@ -78,10 +78,10 @@ type repairSettings struct {
 	dryRun cmdtoolkit.CommandFlag[bool]
 }
 
-func (rs *repairSettings) processArtists(o output.Bus, allArtists []*files.Artist, ss *SearchSettings) (e *cmdtoolkit.ExitError) {
+func (rs *repairSettings) processArtists(o output.Bus, allArtists []*files.Artist, ss *searchSettings) (e *cmdtoolkit.ExitError) {
 	e = cmdtoolkit.NewExitUserError(repairCommandName)
 	if len(allArtists) != 0 {
-		if filteredArtists := ss.Filter(o, allArtists); len(filteredArtists) != 0 {
+		if filteredArtists := ss.filter(o, allArtists); len(filteredArtists) != 0 {
 			e = rs.repairArtists(o, filteredArtists)
 		}
 	}
@@ -302,5 +302,5 @@ func init() {
 	addDefaults(repairFlags)
 	o := getBus()
 	c := getConfiguration()
-	cmdtoolkit.AddFlags(o, c, repairCmd.Flags(), repairFlags, SearchFlags)
+	cmdtoolkit.AddFlags(o, c, repairCmd.Flags(), repairFlags, searchFlags)
 }

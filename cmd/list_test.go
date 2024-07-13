@@ -740,27 +740,27 @@ var (
 	safeSearchFlags = &cmdtoolkit.FlagSet{
 		Name: "search",
 		Details: map[string]*cmdtoolkit.FlagDetails{
-			SearchAlbumFilter: {
+			searchAlbumFilter: {
 				Usage:        "regular expression specifying which albums to select",
 				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: ".*",
 			},
-			SearchArtistFilter: {
+			searchArtistFilter: {
 				Usage:        "regular expression specifying which artists to select",
 				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: ".*",
 			},
-			SearchTrackFilter: {
+			searchTrackFilter: {
 				Usage:        "regular expression specifying which tracks to select",
 				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: ".*",
 			},
-			SearchTopDir: {
+			searchTopDir: {
 				Usage:        "top directory specifying where to find mp3 files",
 				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: ".",
 			},
-			SearchFileExtensions: {
+			searchFileExtensions: {
 				Usage:        "comma-delimited list of file extensions used by mp3" + " files",
 				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: ".mp3",
@@ -1815,12 +1815,12 @@ func Test_listSettings_listFilteredArtists(t *testing.T) {
 func Test_listRun(t *testing.T) {
 	initGlobals()
 	originalBus := bus
-	originalSearchFlags := SearchFlags
+	originalSearchFlags := searchFlags
 	defer func() {
 		bus = originalBus
-		SearchFlags = originalSearchFlags
+		searchFlags = originalSearchFlags
 	}()
-	SearchFlags = safeSearchFlags
+	searchFlags = safeSearchFlags
 
 	testListFlags := &cmdtoolkit.FlagSet{
 		Name: listCommand,
@@ -1872,7 +1872,7 @@ func Test_listRun(t *testing.T) {
 	}
 	testCmd := &cobra.Command{}
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), testCmd.Flags(),
-		testListFlags, SearchFlags)
+		testListFlags, searchFlags)
 
 	testListFlags2 := &cmdtoolkit.FlagSet{
 		Name: listCommand,
@@ -1924,7 +1924,7 @@ func Test_listRun(t *testing.T) {
 	}
 	testCmd2 := &cobra.Command{}
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), testCmd2.Flags(),
-		testListFlags2, SearchFlags)
+		testListFlags2, searchFlags)
 
 	testListFlags3 := &cmdtoolkit.FlagSet{
 		Name: listCommand,
@@ -1976,7 +1976,7 @@ func Test_listRun(t *testing.T) {
 	}
 	testCmd3 := &cobra.Command{}
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), testCmd3.Flags(),
-		testListFlags3, SearchFlags)
+		testListFlags3, searchFlags)
 
 	tests := map[string]struct {
 		cmd *cobra.Command
@@ -2119,7 +2119,7 @@ func compareExitErrors(e1, e2 *cmdtoolkit.ExitError) bool {
 func Test_listSettings_listArtists(t *testing.T) {
 	type args struct {
 		allArtists     []*files.Artist
-		searchSettings *SearchSettings
+		searchSettings *searchSettings
 	}
 	tests := map[string]struct {
 		ls *listSettings
@@ -2131,10 +2131,10 @@ func Test_listSettings_listArtists(t *testing.T) {
 			ls: &listSettings{artists: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			args: args{
 				allArtists: nil,
-				searchSettings: &SearchSettings{
-					ArtistFilter: regexp.MustCompile(".*"),
-					AlbumFilter:  regexp.MustCompile(".*"),
-					TrackFilter:  regexp.MustCompile(".*"),
+				searchSettings: &searchSettings{
+					artistFilter: regexp.MustCompile(".*"),
+					albumFilter:  regexp.MustCompile(".*"),
+					trackFilter:  regexp.MustCompile(".*"),
 				},
 			},
 			wantStatus: cmdtoolkit.NewExitUserError(listCommand),
@@ -2145,10 +2145,10 @@ func Test_listSettings_listArtists(t *testing.T) {
 			ls: &listSettings{artists: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			args: args{
 				allArtists: generateArtists(3, 4, 5),
-				searchSettings: &SearchSettings{
-					ArtistFilter: regexp.MustCompile(".*"),
-					AlbumFilter:  regexp.MustCompile(".*"),
-					TrackFilter:  regexp.MustCompile(".*"),
+				searchSettings: &searchSettings{
+					artistFilter: regexp.MustCompile(".*"),
+					albumFilter:  regexp.MustCompile(".*"),
+					trackFilter:  regexp.MustCompile(".*"),
 				},
 			},
 			wantStatus: nil,
@@ -2173,14 +2173,14 @@ func Test_listSettings_listArtists(t *testing.T) {
 }
 
 func Test_list_Help(t *testing.T) {
-	originalSearchFlags := SearchFlags
+	originalSearchFlags := searchFlags
 	defer func() {
-		SearchFlags = originalSearchFlags
+		searchFlags = originalSearchFlags
 	}()
-	SearchFlags = safeSearchFlags
+	searchFlags = safeSearchFlags
 	commandUnderTest := cloneCommand(listCmd)
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
-		commandUnderTest.Flags(), listFlags, SearchFlags)
+		commandUnderTest.Flags(), listFlags, searchFlags)
 	tests := map[string]struct {
 		output.WantedRecording
 	}{

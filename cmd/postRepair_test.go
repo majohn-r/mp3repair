@@ -68,7 +68,7 @@ func Test_postRepairWork(t *testing.T) {
 		dirExists = originalDirExists
 	}()
 	type args struct {
-		ss         *SearchSettings
+		ss         *searchSettings
 		allArtists []*files.Artist
 	}
 	tests := map[string]struct {
@@ -80,17 +80,17 @@ func Test_postRepairWork(t *testing.T) {
 		"no load": {args: args{}},
 		"no artists": {
 			args: args{
-				ss:         &SearchSettings{},
+				ss:         &searchSettings{},
 				allArtists: []*files.Artist{},
 			},
 		},
 		"artists with no work to do": {
 			dirExists: func(dir string) bool { return false },
 			args: args{
-				ss: &SearchSettings{
-					ArtistFilter: regexp.MustCompile(".*"),
-					AlbumFilter:  regexp.MustCompile(".*"),
-					TrackFilter:  regexp.MustCompile(".*"),
+				ss: &searchSettings{
+					artistFilter: regexp.MustCompile(".*"),
+					albumFilter:  regexp.MustCompile(".*"),
+					trackFilter:  regexp.MustCompile(".*"),
 				},
 				allArtists: generateArtists(2, 3, 4),
 			},
@@ -102,10 +102,10 @@ func Test_postRepairWork(t *testing.T) {
 			dirExists: func(dir string) bool { return true },
 			removeAll: func(dir string) error { return nil },
 			args: args{
-				ss: &SearchSettings{
-					ArtistFilter: regexp.MustCompile(".*"),
-					AlbumFilter:  regexp.MustCompile(".*"),
-					TrackFilter:  regexp.MustCompile(".*"),
+				ss: &searchSettings{
+					artistFilter: regexp.MustCompile(".*"),
+					albumFilter:  regexp.MustCompile(".*"),
+					trackFilter:  regexp.MustCompile(".*"),
 				},
 				allArtists: generateArtists(2, 3, 4),
 			},
@@ -138,10 +138,10 @@ func Test_postRepairWork(t *testing.T) {
 			dirExists: func(dir string) bool { return true },
 			removeAll: func(dir string) error { return fmt.Errorf("nope") },
 			args: args{
-				ss: &SearchSettings{
-					ArtistFilter: regexp.MustCompile(".*"),
-					AlbumFilter:  regexp.MustCompile(".*"),
-					TrackFilter:  regexp.MustCompile(".*"),
+				ss: &searchSettings{
+					artistFilter: regexp.MustCompile(".*"),
+					albumFilter:  regexp.MustCompile(".*"),
+					trackFilter:  regexp.MustCompile(".*"),
 				},
 				allArtists: generateArtists(2, 3, 4),
 			},

@@ -29,20 +29,20 @@ func postRepairRun(cmd *cobra.Command, _ []string) error {
 	exitError := cmdtoolkit.NewExitProgrammingError(postRepairCommandName)
 	o := getBus()
 	producer := cmd.Flags()
-	ss, searchFlagsOk := EvaluateSearchFlags(o, producer)
+	ss, searchFlagsOk := evaluateSearchFlags(o, producer)
 	if searchFlagsOk {
 		// do some work here!
-		logCommandStart(o, postRepairCommandName, ss.Values())
-		allArtists := ss.Load(o)
+		logCommandStart(o, postRepairCommandName, ss.values())
+		allArtists := ss.load(o)
 		exitError = postRepairWork(o, ss, allArtists)
 	}
 	return cmdtoolkit.ToErrorInterface(exitError)
 }
 
-func postRepairWork(o output.Bus, ss *SearchSettings, allArtists []*files.Artist) (e *cmdtoolkit.ExitError) {
+func postRepairWork(o output.Bus, ss *searchSettings, allArtists []*files.Artist) (e *cmdtoolkit.ExitError) {
 	e = cmdtoolkit.NewExitUserError(postRepairCommandName)
 	if len(allArtists) != 0 {
-		if filteredArtists := ss.Filter(o, allArtists); len(filteredArtists) != 0 {
+		if filteredArtists := ss.filter(o, allArtists); len(filteredArtists) != 0 {
 			e = nil
 			dirCount := 0
 			for _, artist := range filteredArtists {
@@ -92,5 +92,5 @@ func init() {
 	rootCmd.AddCommand(postRepairCmd)
 	bus := getBus()
 	c := getConfiguration()
-	cmdtoolkit.AddFlags(bus, c, postRepairCmd.Flags(), SearchFlags)
+	cmdtoolkit.AddFlags(bus, c, postRepairCmd.Flags(), searchFlags)
 }
