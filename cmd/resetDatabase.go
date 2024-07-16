@@ -495,8 +495,6 @@ func processResetDBFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag
 
 func init() {
 	rootCmd.AddCommand(resetDatabaseCmd)
-	addDefaults(resetDatabaseFlags)
-	o := getBus()
-	c := getConfiguration()
-	cmdtoolkit.AddFlags(o, c, resetDatabaseCmd.Flags(), resetDatabaseFlags)
+	cmdtoolkit.AddDefaults(resetDatabaseFlags)
+	cmdtoolkit.AddFlags(getBus(), getConfiguration(), resetDatabaseCmd.Flags(), resetDatabaseFlags)
 }

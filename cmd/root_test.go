@@ -268,7 +268,7 @@ func Test_initGlobals(t *testing.T) {
 	originalNewDefaultBus := newDefaultBus
 	originalInitLogging := initLogging
 	originalInitApplicationPath := initApplicationPath
-	originalReadConfigurationFile := readConfigurationFile
+	originalReadConfigurationFile := readDefaultsConfigFile
 	originalVersion := version
 	originalCreation := creation
 	originalInitialized := initialized
@@ -279,7 +279,7 @@ func Test_initGlobals(t *testing.T) {
 		newDefaultBus = originalNewDefaultBus
 		initLogging = originalInitLogging
 		initApplicationPath = originalInitApplicationPath
-		readConfigurationFile = originalReadConfigurationFile
+		readDefaultsConfigFile = originalReadConfigurationFile
 		version = originalVersion
 		creation = originalCreation
 		initialized = originalInitialized
@@ -416,7 +416,7 @@ func Test_initGlobals(t *testing.T) {
 			newDefaultBus = tt.newDefaultBus
 			initLogging = tt.initLogging
 			initApplicationPath = tt.initApplicationPath
-			readConfigurationFile = tt.readConfigurationFile
+			readDefaultsConfigFile = tt.readConfigurationFile
 
 			creation = tt.creationVal
 			version = tt.versionVal

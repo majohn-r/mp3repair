@@ -6,7 +6,9 @@ package cmd
 import (
 	"fmt"
 	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
+	"github.com/spf13/afero"
 	"io/fs"
+	"path/filepath"
 	"reflect"
 	"testing"
 
@@ -321,26 +323,29 @@ func Test_exportFlagSettings_exportDefaultConfiguration(t *testing.T) {
 	originalWriteFile := writeFile
 	originalRename := rename
 	originalRemove := remove
-	originalPlainFileExists := plainFileExists
-	originalApplicationPath := applicationPath
+	fileSystem := afero.NewMemMapFs()
+	originalFileSystem := cmdtoolkit.AssignFileSystem(fileSystem)
+	originalAppPath := cmdtoolkit.SetApplicationPath("appPath")
 	defer func() {
 		writeFile = originalWriteFile
 		rename = originalRename
 		remove = originalRemove
-		plainFileExists = originalPlainFileExists
-		applicationPath = originalApplicationPath
+		cmdtoolkit.AssignFileSystem(originalFileSystem)
+		cmdtoolkit.SetApplicationPath(originalAppPath)
 	}()
 	tests := map[string]struct {
-		efs             *exportSettings
-		writeFile       func(string, []byte, fs.FileMode) error
-		plainFileExists func(string) bool
-		rename          func(string, string) error
-		remove          func(string) error
-		applicationPath func() string
-		wantStatus      *cmdtoolkit.ExitError
+		preTest    func()
+		postTest   func()
+		efs        *exportSettings
+		writeFile  func(string, []byte, fs.FileMode) error
+		rename     func(string, string) error
+		remove     func(string) error
+		wantStatus *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"not asking to write": {
+			preTest:  func() {},
+			postTest: func() {},
 			efs: &exportSettings{
 				overwriteEnabled: cmdtoolkit.CommandFlag[bool]{Value: true},
 				defaultsEnabled:  cmdtoolkit.CommandFlag[bool]{Value: false},
@@ -363,6 +368,12 @@ func Test_exportFlagSettings_exportDefaultConfiguration(t *testing.T) {
 			},
 		},
 		"file does not exist but cannot be created": {
+			preTest: func() {
+				_ = fileSystem.MkdirAll(cmdtoolkit.ApplicationPath(), cmdtoolkit.StdDirPermissions)
+			},
+			postTest: func() {
+				_ = fileSystem.RemoveAll(cmdtoolkit.ApplicationPath())
+			},
 			efs: &exportSettings{
 				overwriteEnabled: cmdtoolkit.CommandFlag[bool]{Value: true},
 				defaultsEnabled:  cmdtoolkit.CommandFlag[bool]{Value: true},
@@ -370,9 +381,7 @@ func Test_exportFlagSettings_exportDefaultConfiguration(t *testing.T) {
 			writeFile: func(_ string, _ []byte, _ fs.FileMode) error {
 				return fmt.Errorf("cannot write file, sorry")
 			},
-			plainFileExists: func(_ string) bool { return false },
-			applicationPath: func() string { return "appPath" },
-			wantStatus:      cmdtoolkit.NewExitSystemError("export"),
+			wantStatus: cmdtoolkit.NewExitSystemError("export"),
 			WantedRecording: output.WantedRecording{
 				Error: "The file \"appPath\\\\defaults.yaml\" cannot be created:" +
 					" cannot write file, sorry.\n",
@@ -385,29 +394,43 @@ func Test_exportFlagSettings_exportDefaultConfiguration(t *testing.T) {
 			},
 		},
 		"file does not exist": {
+			preTest: func() {
+				_ = fileSystem.MkdirAll(cmdtoolkit.ApplicationPath(), cmdtoolkit.StdDirPermissions)
+			},
+			postTest: func() {
+				_ = fileSystem.RemoveAll(cmdtoolkit.ApplicationPath())
+			},
 			efs: &exportSettings{
 				overwriteEnabled: cmdtoolkit.CommandFlag[bool]{Value: true},
 				defaultsEnabled:  cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
-			writeFile:       func(_ string, _ []byte, _ fs.FileMode) error { return nil },
-			plainFileExists: func(_ string) bool { return false },
-			applicationPath: func() string { return "appPath" },
-			wantStatus:      nil,
+			writeFile:  func(_ string, _ []byte, _ fs.FileMode) error { return nil },
+			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
 				Console: "File \"appPath\\\\defaults.yaml\" has been written.\n",
 			},
 		},
 		"file exists": {
+			preTest: func() {
+				_ = fileSystem.MkdirAll(cmdtoolkit.ApplicationPath(), cmdtoolkit.StdDirPermissions)
+				_ = afero.WriteFile(
+					fileSystem,
+					filepath.Join(cmdtoolkit.ApplicationPath(), "defaults.yaml"),
+					[]byte{},
+					cmdtoolkit.StdFilePermissions,
+				)
+			},
+			postTest: func() {
+				_ = fileSystem.RemoveAll(cmdtoolkit.ApplicationPath())
+			},
 			efs: &exportSettings{
 				overwriteEnabled: cmdtoolkit.CommandFlag[bool]{Value: true},
 				defaultsEnabled:  cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
-			writeFile:       func(_ string, _ []byte, _ fs.FileMode) error { return nil },
-			plainFileExists: func(_ string) bool { return true },
-			rename:          func(_, _ string) error { return nil },
-			remove:          func(_ string) error { return nil },
-			applicationPath: func() string { return "appPath" },
-			wantStatus:      nil,
+			writeFile:  func(_ string, _ []byte, _ fs.FileMode) error { return nil },
+			rename:     func(_, _ string) error { return nil },
+			remove:     func(_ string) error { return nil },
+			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
 				Console: "File \"appPath\\\\defaults.yaml\" has been written.\n",
 			},
@@ -416,11 +439,11 @@ func Test_exportFlagSettings_exportDefaultConfiguration(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
+			tt.preTest()
+			defer tt.postTest()
 			writeFile = tt.writeFile
-			plainFileExists = tt.plainFileExists
 			remove = tt.remove
 			rename = tt.rename
-			applicationPath = tt.applicationPath
 			if got := tt.efs.exportDefaultConfiguration(o); !compareExitErrors(got, tt.wantStatus) {
 				t.Errorf("exportFlagSettings.exportDefaultConfiguration() got %s want %s", got, tt.wantStatus)
 			}

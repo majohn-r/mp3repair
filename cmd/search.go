@@ -430,5 +430,5 @@ func (ss *searchSettings) isValidTrackFile(file fs.FileInfo) (string, bool) {
 }
 
 func init() {
-	addDefaults(searchFlags)
+	cmdtoolkit.AddDefaults(searchFlags)
 }

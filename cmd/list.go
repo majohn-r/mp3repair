@@ -586,8 +586,6 @@ func processListFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[an
 
 func init() {
 	rootCmd.AddCommand(listCmd)
-	addDefaults(listFlags)
-	c := getConfiguration()
-	o := getBus()
-	cmdtoolkit.AddFlags(o, c, listCmd.Flags(), listFlags, searchFlags)
+	cmdtoolkit.AddDefaults(listFlags)
+	cmdtoolkit.AddFlags(getBus(), getConfiguration(), listCmd.Flags(), listFlags, searchFlags)
 }

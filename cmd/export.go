@@ -2,12 +2,9 @@ package cmd
 
 import (
 	"fmt"
-	"path/filepath"
-
 	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -53,22 +50,7 @@ var (
 			},
 		},
 	}
-	defaultConfigurationSettings = map[string]map[string]any{}
 )
-
-func addDefaults(sf *cmdtoolkit.FlagSet) {
-	payload := map[string]any{}
-	for flag, details := range sf.Details {
-		bounded, ok := details.DefaultValue.(*cmdtoolkit.IntBounds)
-		switch ok {
-		case true:
-			payload[flag] = bounded.DefaultValue
-		case false:
-			payload[flag] = details.DefaultValue
-		}
-	}
-	defaultConfigurationSettings[sf.Name] = payload
-}
 
 type exportSettings struct {
 	defaultsEnabled  cmdtoolkit.CommandFlag[bool]
@@ -118,20 +100,14 @@ func createConfigurationFile(o output.Bus, f string, content []byte) bool {
 	return true
 }
 
-func configFile() (path string, exists bool) {
-	path = filepath.Join(applicationPath(), cmdtoolkit.DefaultConfigFileName())
-	exists = plainFileExists(path)
-	return
-}
-
 func (es *exportSettings) exportDefaultConfiguration(o output.Bus) *cmdtoolkit.ExitError {
 	if !es.canWriteConfigurationFile(o) {
 		return cmdtoolkit.NewExitUserError(exportCommand)
 	}
 	// ignoring error return, as we're not marshalling structs, where mischief
 	// can occur
-	payload, _ := yaml.Marshal(defaultConfigurationSettings)
-	f, exists := configFile()
+	f, exists := cmdtoolkit.DefaultConfigFileStatus()
+	payload := cmdtoolkit.WritableDefaults()
 	if exists {
 		return es.overwriteConfigurationFile(o, f, payload)
 	}
@@ -205,8 +181,6 @@ func (es *exportSettings) canWriteConfigurationFile(o output.Bus) bool {
 
 func init() {
 	rootCmd.AddCommand(exportCmd)
-	addDefaults(exportFlags)
-	o := getBus()
-	c := getConfiguration()
-	cmdtoolkit.AddFlags(o, c, exportCmd.Flags(), exportFlags)
+	cmdtoolkit.AddDefaults(exportFlags)
+	cmdtoolkit.AddFlags(getBus(), getConfiguration(), exportCmd.Flags(), exportFlags)
 }

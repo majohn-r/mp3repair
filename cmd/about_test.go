@@ -2,6 +2,8 @@ package cmd
 
 import (
 	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
+	"github.com/spf13/afero"
+	"path/filepath"
 	"reflect"
 	"runtime/debug"
 	"testing"
@@ -33,18 +35,19 @@ func Test_aboutRun(t *testing.T) {
 	originalLogPath := logPath
 	originalVersion := version
 	originalCreation := creation
-	originalApplicationPath := applicationPath
-	originalPlainFileExists := plainFileExists
+	originalApplicationPath := cmdtoolkit.SetApplicationPath("/my/files/apppath")
 	originalMP3RepairElevationControl := mp3repairElevationControl
+	fs := afero.NewOsFs()
+	originalFileSystem := cmdtoolkit.AssignFileSystem(fs)
 	defer func() {
 		busGetter = originalBusGetter
 		interpretBuildData = originalInterpretBuildData
 		logPath = originalLogPath
 		version = originalVersion
 		creation = originalCreation
-		applicationPath = originalApplicationPath
-		plainFileExists = originalPlainFileExists
+		cmdtoolkit.SetApplicationPath(originalApplicationPath)
 		mp3repairElevationControl = originalMP3RepairElevationControl
+		cmdtoolkit.AssignFileSystem(originalFileSystem)
 	}()
 	interpretBuildData = func(func() (*debug.BuildInfo, bool)) (string, []string) {
 		return "go1.22.x", []string{
@@ -58,10 +61,13 @@ func Test_aboutRun(t *testing.T) {
 	}
 	version = "0.40.0"
 	creation = "2024-02-24T13:14:05-05:00"
-	applicationPath = func() string {
-		return "/my/files/apppath"
-	}
-	plainFileExists = func(_ string) bool { return true }
+	_ = fs.MkdirAll(cmdtoolkit.ApplicationPath(), cmdtoolkit.StdDirPermissions)
+	_ = afero.WriteFile(
+		fs,
+		filepath.Join(cmdtoolkit.ApplicationPath(), "defaults.yaml"),
+		[]byte{},
+		cmdtoolkit.StdFilePermissions,
+	)
 	type args struct {
 		in0 *cobra.Command
 		in1 []string
@@ -175,17 +181,18 @@ func Test_acquireAboutData(t *testing.T) {
 	originalLogPath := logPath
 	originalVersion := version
 	originalCreation := creation
-	originalApplicationPath := applicationPath
-	originalPlainFileExists := plainFileExists
 	originalMP3RepairElevationControl := mp3repairElevationControl
+	originalApplicationPath := cmdtoolkit.SetApplicationPath("/my/files/apppath")
+	fs := afero.NewMemMapFs()
+	originalFileSystem := cmdtoolkit.AssignFileSystem(fs)
 	defer func() {
 		interpretBuildData = originalInterpretBuildData
 		logPath = originalLogPath
 		version = originalVersion
 		creation = originalCreation
-		applicationPath = originalApplicationPath
-		plainFileExists = originalPlainFileExists
 		mp3repairElevationControl = originalMP3RepairElevationControl
+		cmdtoolkit.AssignFileSystem(originalFileSystem)
+		cmdtoolkit.SetApplicationPath(originalApplicationPath)
 	}()
 	interpretBuildData = func(func() (*debug.BuildInfo, bool)) (string, []string) {
 		return "go1.22.x", []string{
@@ -199,18 +206,28 @@ func Test_acquireAboutData(t *testing.T) {
 	}
 	version = "0.40.0"
 	creation = "2024-02-24T13:14:05-05:00"
-	applicationPath = func() string {
-		return "/my/files/apppath"
-	}
 	tests := map[string]struct {
-		plainFileExists      func(string) bool
+		preTest              func()
+		postTest             func()
 		forceElevated        bool
 		forceRedirection     bool
 		forceAdminPermission bool
 		want                 []string
 	}{
 		"with existing config file, elevated": {
-			plainFileExists:      func(_ string) bool { return true },
+			//plainFileExists:      func(_ string) bool { return true },
+			preTest: func() {
+				_ = fs.Mkdir(cmdtoolkit.ApplicationPath(), cmdtoolkit.StdDirPermissions)
+				_ = afero.WriteFile(
+					fs,
+					filepath.Join(cmdtoolkit.ApplicationPath(), "defaults.yaml"),
+					[]byte(""),
+					cmdtoolkit.StdFilePermissions,
+				)
+			},
+			postTest: func() {
+				_ = fs.RemoveAll(cmdtoolkit.ApplicationPath())
+			},
 			forceElevated:        true,
 			forceRedirection:     false,
 			forceAdminPermission: false,
@@ -228,7 +245,12 @@ func Test_acquireAboutData(t *testing.T) {
 			},
 		},
 		"without existing config file, not elevated, redirected, with admin permission": {
-			plainFileExists:      func(_ string) bool { return false },
+			preTest: func() {
+				_ = fs.Mkdir(cmdtoolkit.ApplicationPath(), cmdtoolkit.StdDirPermissions)
+			},
+			postTest: func() {
+				_ = fs.RemoveAll(cmdtoolkit.ApplicationPath())
+			},
 			forceElevated:        false,
 			forceRedirection:     true,
 			forceAdminPermission: true,
@@ -247,7 +269,12 @@ func Test_acquireAboutData(t *testing.T) {
 			},
 		},
 		"without existing config file, not elevated, redirected, no admin permission": {
-			plainFileExists:      func(_ string) bool { return false },
+			preTest: func() {
+				_ = fs.Mkdir(cmdtoolkit.ApplicationPath(), cmdtoolkit.StdDirPermissions)
+			},
+			postTest: func() {
+				_ = fs.RemoveAll(cmdtoolkit.ApplicationPath())
+			},
 			forceElevated:        false,
 			forceRedirection:     true,
 			forceAdminPermission: false,
@@ -267,7 +294,12 @@ func Test_acquireAboutData(t *testing.T) {
 			},
 		},
 		"without existing config file, not elevated, not redirected, no admin permission": {
-			plainFileExists:      func(_ string) bool { return false },
+			preTest: func() {
+				_ = fs.Mkdir(cmdtoolkit.ApplicationPath(), cmdtoolkit.StdDirPermissions)
+			},
+			postTest: func() {
+				_ = fs.RemoveAll(cmdtoolkit.ApplicationPath())
+			},
 			forceElevated:        false,
 			forceRedirection:     false,
 			forceAdminPermission: false,
@@ -288,7 +320,8 @@ func Test_acquireAboutData(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			plainFileExists = tt.plainFileExists
+			tt.preTest()
+			defer tt.postTest()
 			tec := testingElevationControl{
 				desiredStatus: []string{},
 			}

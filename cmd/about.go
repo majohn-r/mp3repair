@@ -134,7 +134,7 @@ func acquireAboutData(o output.Bus) []string {
 		cmdtoolkit.FormatGoVersion(cachedGoVersion))
 	lines = append(lines, cmdtoolkit.FormatBuildDependencies(cachedBuildDependencies)...)
 	lines = append(lines, fmt.Sprintf("Log files are written to %s", logPath()))
-	path, exists := configFile()
+	path, exists := cmdtoolkit.DefaultConfigFileStatus()
 	switch {
 	case exists:
 		lines = append(lines, fmt.Sprintf("Configuration file %s exists", path))
@@ -153,8 +153,6 @@ func acquireAboutData(o output.Bus) []string {
 
 func init() {
 	rootCmd.AddCommand(aboutCmd)
-	addDefaults(aboutFlags)
-	o := getBus()
-	c := getConfiguration()
-	cmdtoolkit.AddFlags(o, c, aboutCmd.Flags(), aboutFlags)
+	cmdtoolkit.AddDefaults(aboutFlags)
+	cmdtoolkit.AddFlags(getBus(), getConfiguration(), aboutCmd.Flags(), aboutFlags)
 }

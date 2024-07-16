@@ -30,9 +30,8 @@ func ClearDirty(o output.Bus) {
 	if !cmdtoolkit.PlainFileExists(f) {
 		return
 	}
-	fs := cmdtoolkit.FileSystem()
 	// best effort
-	_ = fs.Remove(f)
+	_ = cmdtoolkit.FileSystem().Remove(f)
 	o.Log(output.Info, "metadata dirty file deleted", map[string]any{"fileName": f})
 }
 

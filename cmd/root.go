@@ -87,7 +87,7 @@ func initGlobals() {
 		bus = newDefaultBus(cmdtoolkit.ProductionLogger)
 		configOk := false
 		if initLogging(bus, appName) && initApplicationPath(bus, appName) {
-			internalConfig, configOk = readConfigurationFile(bus)
+			internalConfig, configOk = readDefaultsConfigFile(bus)
 		}
 		if !configOk {
 			Exit(1)

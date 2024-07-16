@@ -5,12 +5,11 @@ go 1.22
 require (
 	github.com/bogem/id3v2/v2 v2.1.4
 	github.com/cheggaaa/pb/v3 v3.1.5
-	github.com/majohn-r/cmd-toolkit v0.20.0
+	github.com/majohn-r/cmd-toolkit v0.22.1
 	github.com/majohn-r/output v0.5.3
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/sys v0.22.0
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -29,4 +28,5 @@ require (
 	github.com/utahta/go-cronowriter v1.2.0 // indirect
 	golang.org/x/text v0.16.0 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
