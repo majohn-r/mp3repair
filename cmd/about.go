@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"runtime/debug"
 	"strings"
 
 	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
@@ -90,9 +89,10 @@ func aboutRun(cmd *cobra.Command, _ []string) error {
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) {
 		flag, err := cmdtoolkit.GetString(o, values, aboutStyle)
 		if err == nil {
-			style := interpretStyle(flag)
-			logCommandStart(o, aboutCommand, map[string]any{aboutStyle: style})
-			o.WriteConsole(strings.Join(cmdtoolkit.StyledFlowerBox(acquireAboutData(o), style), "\n"))
+			o.WriteConsole(strings.Join(
+				cmdtoolkit.StyledFlowerBox(acquireAboutData(o), interpretStyle(flag)),
+				"\n",
+			))
 			exitError = nil
 		}
 	}
@@ -117,7 +117,6 @@ func interpretStyle(flag cmdtoolkit.CommandFlag[string]) cmdtoolkit.FlowerBoxSty
 }
 
 func acquireAboutData(o output.Bus) []string {
-	cachedGoVersion, cachedBuildDependencies = interpretBuildData(debug.ReadBuildInfo)
 	// 9: 1 each for
 	// - app name
 	// - copyright

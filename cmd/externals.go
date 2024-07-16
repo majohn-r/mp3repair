@@ -19,7 +19,6 @@ var (
 	initApplicationPath    = cmdtoolkit.InitApplicationPath
 	initLogging            = cmdtoolkit.InitLogging
 	interpretBuildData     = cmdtoolkit.InterpretBuildData
-	logCommandStart        = cmdtoolkit.LogCommandStart
 	logPath                = cmdtoolkit.LogPath
 	mkdir                  = cmdtoolkit.Mkdir
 	plainFileExists        = cmdtoolkit.PlainFileExists
@@ -32,6 +31,8 @@ var (
 	readMetadata           = files.ReadMetadata
 	connect                = mgr.Connect
 	Exit                   = os.Exit
+	getPid                 = os.Getpid
+	getPpid                = os.Getppid
 	rename                 = os.Rename
 	remove                 = os.Remove
 	removeAll              = os.RemoveAll

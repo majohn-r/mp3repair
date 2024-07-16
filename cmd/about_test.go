@@ -5,7 +5,6 @@ import (
 	"github.com/spf13/afero"
 	"path/filepath"
 	"reflect"
-	"runtime/debug"
 	"testing"
 
 	"github.com/majohn-r/output"
@@ -31,7 +30,6 @@ func (tec testingElevationControl) WillRunElevated() bool { return false }
 
 func Test_aboutRun(t *testing.T) {
 	originalBusGetter := busGetter
-	originalInterpretBuildData := interpretBuildData
 	originalLogPath := logPath
 	originalVersion := version
 	originalCreation := creation
@@ -39,22 +37,24 @@ func Test_aboutRun(t *testing.T) {
 	originalMP3RepairElevationControl := mp3repairElevationControl
 	fs := afero.NewOsFs()
 	originalFileSystem := cmdtoolkit.AssignFileSystem(fs)
+	originalCachedGoVersion := cachedGoVersion
+	originalCachedBuildDependencies := cachedBuildDependencies
 	defer func() {
 		busGetter = originalBusGetter
-		interpretBuildData = originalInterpretBuildData
 		logPath = originalLogPath
 		version = originalVersion
 		creation = originalCreation
 		cmdtoolkit.SetApplicationPath(originalApplicationPath)
 		mp3repairElevationControl = originalMP3RepairElevationControl
 		cmdtoolkit.AssignFileSystem(originalFileSystem)
+		cachedGoVersion = originalCachedGoVersion
+		cachedBuildDependencies = originalCachedBuildDependencies
 	}()
-	interpretBuildData = func(func() (*debug.BuildInfo, bool)) (string, []string) {
-		return "go1.22.x", []string{
-			"go.dependency.1 v1.2.3",
-			"go.dependency.2 v1.3.4",
-			"go.dependency.3 v0.1.2",
-		}
+	cachedGoVersion = "go1.22.x"
+	cachedBuildDependencies = []string{
+		"go.dependency.1 v1.2.3",
+		"go.dependency.2 v1.3.4",
+		"go.dependency.3 v0.1.2",
 	}
 	logPath = func() string {
 		return "/my/files/tmp/logs/mp3repair"
@@ -92,7 +92,6 @@ func Test_aboutRun(t *testing.T) {
 					"│ Configuration file \\my\\files\\apppath\\defaults.yaml exists                     │\n" +
 					"│ mp3repair is running with elevated privileges                                 │\n" +
 					"╰───────────────────────────────────────────────────────────────────────────────╯\n",
-				Log: "level='info' command='about' style='1' msg='executing command'\n",
 			},
 		},
 	}
@@ -177,7 +176,6 @@ func Test_about_Help(t *testing.T) {
 }
 
 func Test_acquireAboutData(t *testing.T) {
-	originalInterpretBuildData := interpretBuildData
 	originalLogPath := logPath
 	originalVersion := version
 	originalCreation := creation
@@ -185,21 +183,23 @@ func Test_acquireAboutData(t *testing.T) {
 	originalApplicationPath := cmdtoolkit.SetApplicationPath("/my/files/apppath")
 	fs := afero.NewMemMapFs()
 	originalFileSystem := cmdtoolkit.AssignFileSystem(fs)
+	originalCachedGoVersion := cachedGoVersion
+	originalCachedBuildDependencies := cachedBuildDependencies
 	defer func() {
-		interpretBuildData = originalInterpretBuildData
 		logPath = originalLogPath
 		version = originalVersion
 		creation = originalCreation
 		mp3repairElevationControl = originalMP3RepairElevationControl
 		cmdtoolkit.AssignFileSystem(originalFileSystem)
 		cmdtoolkit.SetApplicationPath(originalApplicationPath)
+		cachedGoVersion = originalCachedGoVersion
+		cachedBuildDependencies = originalCachedBuildDependencies
 	}()
-	interpretBuildData = func(func() (*debug.BuildInfo, bool)) (string, []string) {
-		return "go1.22.x", []string{
-			"go.dependency.1 v1.2.3",
-			"go.dependency.2 v1.3.4",
-			"go.dependency.3 v0.1.2",
-		}
+	cachedGoVersion = "go1.22.x"
+	cachedBuildDependencies = []string{
+		"go.dependency.1 v1.2.3",
+		"go.dependency.2 v1.3.4",
+		"go.dependency.3 v0.1.2",
 	}
 	logPath = func() string {
 		return "/my/files/tmp/logs/mp3repair"

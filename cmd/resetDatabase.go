@@ -120,14 +120,6 @@ func resetDBRun(cmd *cobra.Command, _ []string) error {
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) {
 		flags, flagsOk := processResetDBFlags(o, values)
 		if flagsOk {
-			logCommandStart(o, resetDBCommandName, map[string]any{
-				resetDBTimeoutFlag:             flags.timeout.Value,
-				resetDBServiceFlag:             flags.service.Value,
-				resetDBMetadataDirFlag:         flags.metadataDir.Value,
-				resetDBExtensionFlag:           flags.extension.Value,
-				resetDBForceFlag:               flags.force.Value,
-				resetDBIgnoreServiceErrorsFlag: flags.ignoreServiceErrors.Value,
-			})
 			exitError = flags.resetService(o)
 		}
 	}

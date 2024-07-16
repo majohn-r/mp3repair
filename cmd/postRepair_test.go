@@ -216,14 +216,6 @@ func Test_postRepairRun(t *testing.T) {
 					"Set --topDir to the path of a directory that contains artist" +
 					" directories.\n",
 				Log: "" +
-					"level='info'" +
-					" --albumFilter='.*'" +
-					" --artistFilter='.*'" +
-					" --extensions='[.mp3]'" +
-					" --topDir='.'" +
-					" --trackFilter='.*'" +
-					" command='postRepair'" +
-					" msg='executing command'\n" +
 					"level='error'" +
 					" --topDir='.'" +
 					" msg='cannot find any artist directories'\n",

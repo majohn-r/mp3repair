@@ -32,9 +32,7 @@ func postRepairRun(cmd *cobra.Command, _ []string) error {
 	ss, searchFlagsOk := evaluateSearchFlags(o, producer)
 	if searchFlagsOk {
 		// do some work here!
-		logCommandStart(o, postRepairCommandName, ss.values())
-		allArtists := ss.load(o)
-		exitError = postRepairWork(o, ss, allArtists)
+		exitError = postRepairWork(o, ss, ss.load(o))
 	}
 	return cmdtoolkit.ToErrorInterface(exitError)
 }

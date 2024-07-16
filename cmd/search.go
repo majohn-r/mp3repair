@@ -85,16 +85,6 @@ type searchSettings struct {
 	topDirectory   string
 }
 
-func (ss *searchSettings) values() map[string]any {
-	return map[string]any{
-		searchAlbumFilterFlag:    ss.albumFilter,
-		searchArtistFilterFlag:   ss.artistFilter,
-		searchTrackFilterFlag:    ss.trackFilter,
-		searchTopDirFlag:         ss.topDirectory,
-		searchFileExtensionsFlag: ss.fileExtensions,
-	}
-}
-
 func evaluateSearchFlags(o output.Bus, producer cmdtoolkit.FlagProducer) (*searchSettings, bool) {
 	values, eSlice := cmdtoolkit.ReadFlags(producer, searchFlags)
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) {

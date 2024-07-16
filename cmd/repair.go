@@ -62,13 +62,7 @@ func repairRun(cmd *cobra.Command, _ []string) error {
 	searchSettings, searchFlagsOk := evaluateSearchFlags(o, producer)
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) && searchFlagsOk {
 		if rs, flagsOk := processRepairFlags(o, values); flagsOk {
-			details := map[string]any{repairDryRunFlag: rs.dryRun.Value}
-			for k, v := range searchSettings.values() {
-				details[k] = v
-			}
-			logCommandStart(o, repairCommandName, details)
-			allArtists := searchSettings.load(o)
-			exitError = rs.processArtists(o, allArtists, searchSettings)
+			exitError = rs.processArtists(o, searchSettings.load(o), searchSettings)
 		}
 	}
 	return cmdtoolkit.ToErrorInterface(exitError)

@@ -117,25 +117,6 @@ func listRun(cmd *cobra.Command, _ []string) error {
 	searchSettings, searchFlagsOk := evaluateSearchFlags(o, producer)
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) && searchFlagsOk {
 		if ls, flagsOk := processListFlags(o, values); flagsOk {
-			details := map[string]any{
-				listAlbumsFlag:       ls.albums.Value,
-				"albums-user-set":    ls.albums.UserSet,
-				listAnnotateFlag:     ls.annotate.Value,
-				listArtistsFlag:      ls.artists.Value,
-				"artists-user-set":   ls.artists.UserSet,
-				listSortByNumberFlag: ls.sortByNumber.Value,
-				"byNumber-user-set":  ls.sortByNumber.UserSet,
-				listSortByTitleFlag:  ls.sortByTitle.Value,
-				"byTitle-user-set":   ls.sortByTitle.UserSet,
-				listDetailsFlag:      ls.details.Value,
-				listDiagnosticFlag:   ls.diagnostic.Value,
-				listTracksFlag:       ls.tracks.Value,
-				"tracks-user-set":    ls.tracks.UserSet,
-			}
-			for k, v := range searchSettings.values() {
-				details[k] = v
-			}
-			logCommandStart(o, listCommand, details)
 			switch ls.hasWorkToDo(o) {
 			case true:
 				switch ls.tracksSortable(o) {

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"runtime/debug"
 	"sync"
 	"time"
 
@@ -92,6 +93,10 @@ func initGlobals() {
 		if !configOk {
 			Exit(1)
 		}
+		bus.Log(output.Info, "process information", map[string]any{
+			"process_id":        getPid(),
+			"parent_process_id": getPpid(),
+		})
 		initialized = true
 	}
 }
@@ -139,6 +144,7 @@ func runMain(o output.Bus, cmd commandExecutor, start time.Time) int {
 			o.Log(output.Error, "Panic recovered", map[string]any{"error": r})
 		}
 	}()
+	cachedGoVersion, cachedBuildDependencies = interpretBuildData(debug.ReadBuildInfo)
 	cookedArgs := cookCommandLineArguments(o, os.Args)
 	o.Log(output.Info, "execution starts", map[string]any{
 		"version":      version,
@@ -146,6 +152,7 @@ func runMain(o output.Bus, cmd commandExecutor, start time.Time) int {
 		"goVersion":    cachedGoVersion,
 		"dependencies": cachedBuildDependencies,
 		"args":         cookedArgs,
+		"defaults":     string(cmdtoolkit.WritableDefaults()),
 	})
 	mp3repairElevationControl.Log(o, output.Info)
 	cmd.SetArgs(cookedArgs)

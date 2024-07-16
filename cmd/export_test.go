@@ -618,13 +618,7 @@ func Test_exportRun(t *testing.T) {
 					"What to do:\n" +
 					"Use either '--defaults' or '--defaults=true' to enable exporting" +
 					" defaults.\n",
-				Log: "level='info'" +
-					" --defaults='false'" +
-					" --overwrite='false'" +
-					" command='export'" +
-					" defaults-user-set='false'" +
-					" overwrite-user-set='false'" +
-					" msg='executing command'\n" +
+				Log: "" +
 					"level='error'" +
 					" --defaults='false'" +
 					" user-set='false'" +

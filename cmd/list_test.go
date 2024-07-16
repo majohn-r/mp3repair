@@ -1995,27 +1995,6 @@ func Test_listRun(t *testing.T) {
 					"Set --topDir to the path of a directory that contains artist" +
 					" directories.\n",
 				Log: "" +
-					"level='info'" +
-					" --albumFilter='.*'" +
-					" --albums='false'" +
-					" --annotate='false'" +
-					" --artistFilter='.*'" +
-					" --artists='true'" +
-					" --byNumber='false'" +
-					" --byTitle='false'" +
-					" --details='false'" +
-					" --diagnostic='false'" +
-					" --extensions='[.mp3]'" +
-					" --topDir='.'" +
-					" --trackFilter='.*'" +
-					" --tracks='false'" +
-					" albums-user-set='false'" +
-					" artists-user-set='false'" +
-					" byNumber-user-set='false'" +
-					" byTitle-user-set='false'" +
-					" command='list'" +
-					" tracks-user-set='false'" +
-					" msg='executing command'\n" +
 					"level='error'" +
 					" --topDir='.'" +
 					" msg='cannot find any artist directories'\n",
@@ -2032,28 +2011,6 @@ func Test_listRun(t *testing.T) {
 					"What to do:\n" +
 					"Either edit the configuration file and use those default values, or" +
 					" use appropriate command line values.\n",
-				Log: "" +
-					"level='info'" +
-					" --albumFilter='.*'" +
-					" --albums='false'" +
-					" --annotate='false'" +
-					" --artistFilter='.*'" +
-					" --artists='true'" +
-					" --byNumber='true'" +
-					" --byTitle='true'" +
-					" --details='false'" +
-					" --diagnostic='false'" +
-					" --extensions='[.mp3]'" +
-					" --topDir='.'" +
-					" --trackFilter='.*'" +
-					" --tracks='true'" +
-					" albums-user-set='false'" +
-					" artists-user-set='false'" +
-					" byNumber-user-set='false'" +
-					" byTitle-user-set='false'" +
-					" command='list'" +
-					" tracks-user-set='false'" +
-					" msg='executing command'\n",
 			},
 		},
 		"no work to do": {
@@ -2071,28 +2028,6 @@ func Test_listRun(t *testing.T) {
 					" is true, or\n" +
 					"[2] explicitly set at least one of these flags true on the command" +
 					" line.\n",
-				Log: "" +
-					"level='info'" +
-					" --albumFilter='.*'" +
-					" --albums='false'" +
-					" --annotate='false'" +
-					" --artistFilter='.*'" +
-					" --artists='false'" +
-					" --byNumber='false'" +
-					" --byTitle='false'" +
-					" --details='false'" +
-					" --diagnostic='false'" +
-					" --extensions='[.mp3]'" +
-					" --topDir='.'" +
-					" --trackFilter='.*'" +
-					" --tracks='false'" +
-					" albums-user-set='false'" +
-					" artists-user-set='false'" +
-					" byNumber-user-set='false'" +
-					" byTitle-user-set='false'" +
-					" command='list'" +
-					" tracks-user-set='false'" +
-					" msg='executing command'\n",
 			},
 		},
 	}

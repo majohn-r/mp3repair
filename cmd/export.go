@@ -64,12 +64,6 @@ func exportRun(cmd *cobra.Command, _ []string) error {
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) {
 		settings, flagsOk := processExportFlags(o, values)
 		if flagsOk {
-			logCommandStart(o, exportCommand, map[string]any{
-				exportDefaultsAsFlag:  settings.defaultsEnabled.Value,
-				"defaults-user-set":   settings.defaultsEnabled.UserSet,
-				exportOverwriteAsFlag: settings.overwriteEnabled.Value,
-				"overwrite-user-set":  settings.overwriteEnabled.UserSet,
-			})
 			exitError = settings.exportDefaultConfiguration(o)
 		}
 	}

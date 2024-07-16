@@ -988,16 +988,6 @@ func Test_resetDBRun(t *testing.T) {
 					"If you believe the Windows database needs to be reset, run this" +
 					" command\n" +
 					"again and use the \"--force\" flag.\n",
-				Log: "" +
-					"level='info'" +
-					" --extension='.wmdb'" +
-					" --force='false'" +
-					" --ignoreServiceErrors='false'" +
-					" --metadataDir='AppData\\Local\\Microsoft\\Media Player'" +
-					" --service='WMPNetworkSVC'" +
-					" --timeout='10'" +
-					" command='resetDatabase'" +
-					" msg='executing command'\n",
 			},
 		},
 	}

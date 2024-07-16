@@ -122,18 +122,6 @@ func checkRun(cmd *cobra.Command, _ []string) error {
 	searchSettings, searchFlagsOk := evaluateSearchFlags(o, producer)
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) && searchFlagsOk {
 		if cs, flagsOk := processCheckFlags(o, values); flagsOk {
-			details := map[string]any{
-				checkEmptyFlag:       cs.empty.Value,
-				"empty-user-set":     cs.empty.UserSet,
-				checkFilesFlag:       cs.files.Value,
-				"files-user-set":     cs.files.UserSet,
-				checkNumberingFlag:   cs.numbering.Value,
-				"numbering-user-set": cs.numbering.UserSet,
-			}
-			for k, v := range searchSettings.values() {
-				details[k] = v
-			}
-			logCommandStart(o, checkCommand, details)
 			exitError = cs.maybeDoWork(o, searchSettings)
 		}
 	}

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"runtime/debug"
 	"testing"
 	"time"
 
@@ -66,6 +67,7 @@ func Test_runMain(t *testing.T) {
 	originalCreation := creation
 	originalCachedGoVersion := cachedGoVersion
 	originalCachedBuildDependencies := cachedBuildDependencies
+	originalInterpretBuildData := interpretBuildData
 	originalMP3repairElevationControl := mp3repairElevationControl
 	defer func() {
 		since = originalSince
@@ -75,6 +77,7 @@ func Test_runMain(t *testing.T) {
 		cachedGoVersion = originalCachedGoVersion
 		cachedBuildDependencies = originalCachedBuildDependencies
 		mp3repairElevationControl = originalMP3repairElevationControl
+		interpretBuildData = originalInterpretBuildData
 	}()
 	mp3repairElevationControl = testingElevationControl{
 		logFields: map[string]any{
@@ -109,6 +112,40 @@ func Test_runMain(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Log: "level='info'" +
 					" args='[arg1 arg2]'" +
+					" defaults='" +
+					"about:\n" +
+					"    style: rounded\n" +
+					"check:\n" +
+					"    empty: false\n" +
+					"    files: false\n" +
+					"    numbering: false\n" +
+					"export:\n" +
+					"    defaults: false\n" +
+					"    overwrite: false\n" +
+					"list:\n" +
+					"    albums: false\n" +
+					"    annotate: false\n" +
+					"    artists: false\n" +
+					"    byNumber: false\n" +
+					"    byTitle: false\n" +
+					"    details: false\n" +
+					"    diagnostic: false\n" +
+					"    tracks: false\n" +
+					"repair:\n" +
+					"    dryRun: false\n" +
+					"resetDatabase:\n" +
+					"    extension: .wmdb\n" +
+					"    force: false\n" +
+					"    ignoreServiceErrors: false\n" +
+					"    metadataDir: '%USERPROFILE%\\AppData\\Local\\Microsoft\\Media Player'\n" +
+					"    service: WMPNetworkSVC\n" +
+					"    timeout: 10\n" +
+					"search:\n" +
+					"    albumFilter: .*\n" +
+					"    artistFilter: .*\n" +
+					"    extensions: .mp3\n" +
+					"    topDir: '%HOMEPATH%\\Music'\n" +
+					"    trackFilter: .*\n'" +
 					" dependencies='[foo v1.1.1 bar v1.2.2]'" +
 					" goVersion='1.22.x'" +
 					" timeStamp='2021-11-28T12:01:02Z05:00'" +
@@ -140,6 +177,40 @@ func Test_runMain(t *testing.T) {
 					"\"mp3repair\" version 0.2.3, created at 2021-11-29T13:02:03Z05:00, failed.\n",
 				Log: "level='info'" +
 					" args='[arg1a arg2a]'" +
+					" defaults='" +
+					"about:\n" +
+					"    style: rounded\n" +
+					"check:\n" +
+					"    empty: false\n" +
+					"    files: false\n" +
+					"    numbering: false\n" +
+					"export:\n" +
+					"    defaults: false\n" +
+					"    overwrite: false\n" +
+					"list:\n" +
+					"    albums: false\n" +
+					"    annotate: false\n" +
+					"    artists: false\n" +
+					"    byNumber: false\n" +
+					"    byTitle: false\n" +
+					"    details: false\n" +
+					"    diagnostic: false\n" +
+					"    tracks: false\n" +
+					"repair:\n" +
+					"    dryRun: false\n" +
+					"resetDatabase:\n" +
+					"    extension: .wmdb\n" +
+					"    force: false\n" +
+					"    ignoreServiceErrors: false\n" +
+					"    metadataDir: '%USERPROFILE%\\AppData\\Local\\Microsoft\\Media Player'\n" +
+					"    service: WMPNetworkSVC\n" +
+					"    timeout: 10\n" +
+					"search:\n" +
+					"    albumFilter: .*\n" +
+					"    artistFilter: .*\n" +
+					"    extensions: .mp3\n" +
+					"    topDir: '%HOMEPATH%\\Music'\n" +
+					"    trackFilter: .*\n'" +
 					" dependencies='[foo v1.1.2 bar v1.2.3]'" +
 					" goVersion='1.22.x'" +
 					" timeStamp='2021-11-29T13:02:03Z05:00'" +
@@ -171,6 +242,40 @@ func Test_runMain(t *testing.T) {
 					"A runtime error occurred: \"oh dear\".\n",
 				Log: "level='info'" +
 					" args='[arg1a arg2a]'" +
+					" defaults='" +
+					"about:\n" +
+					"    style: rounded\n" +
+					"check:\n" +
+					"    empty: false\n" +
+					"    files: false\n" +
+					"    numbering: false\n" +
+					"export:\n" +
+					"    defaults: false\n" +
+					"    overwrite: false\n" +
+					"list:\n" +
+					"    albums: false\n" +
+					"    annotate: false\n" +
+					"    artists: false\n" +
+					"    byNumber: false\n" +
+					"    byTitle: false\n" +
+					"    details: false\n" +
+					"    diagnostic: false\n" +
+					"    tracks: false\n" +
+					"repair:\n" +
+					"    dryRun: false\n" +
+					"resetDatabase:\n" +
+					"    extension: .wmdb\n" +
+					"    force: false\n" +
+					"    ignoreServiceErrors: false\n" +
+					"    metadataDir: '%USERPROFILE%\\AppData\\Local\\Microsoft\\Media Player'\n" +
+					"    service: WMPNetworkSVC\n" +
+					"    timeout: 10\n" +
+					"search:\n" +
+					"    albumFilter: .*\n" +
+					"    artistFilter: .*\n" +
+					"    extensions: .mp3\n" +
+					"    topDir: '%HOMEPATH%\\Music'\n" +
+					"    trackFilter: .*\n'" +
 					" dependencies='[foo v1.1.2 bar v1.2.3]'" +
 					" goVersion='1.22.x'" +
 					" timeStamp='2021-11-29T13:02:03Z05:00'" +
@@ -198,8 +303,9 @@ func Test_runMain(t *testing.T) {
 			os.Args = tt.cmdline
 			version = tt.appVersion
 			creation = tt.timestamp
-			cachedGoVersion = tt.goVersion
-			cachedBuildDependencies = tt.dependencies
+			interpretBuildData = func(buildInfoReader func() (*debug.BuildInfo, bool)) (string, []string) {
+				return tt.goVersion, tt.dependencies
+			}
 			o := output.NewRecorder()
 			runMain(o, tt.args.cmd, tt.args.start)
 			o.Report(t, "runMain()", tt.WantedRecording)
@@ -274,6 +380,8 @@ func Test_initGlobals(t *testing.T) {
 	originalInitialized := initialized
 	originalBus := bus
 	originalInternalConfig := internalConfig
+	originalGetPid := getPid
+	originalGetPpid := getPpid
 	defer func() {
 		Exit = originalExit
 		newDefaultBus = originalNewDefaultBus
@@ -285,7 +393,11 @@ func Test_initGlobals(t *testing.T) {
 		initialized = originalInitialized
 		bus = originalBus
 		internalConfig = originalInternalConfig
+		getPid = originalGetPid
+		getPpid = originalGetPpid
 	}()
+	getPid = func() int { return 12345 }
+	getPpid = func() int { return 67890 }
 	o := output.NewRecorder()
 	defaultExitFunctionCalled := false
 	defaultExitCode := -1
@@ -335,6 +447,13 @@ func Test_initGlobals(t *testing.T) {
 			wantConfig:         cmdtoolkit.EmptyConfiguration(),
 			wantExitFuncCalled: true,
 			wantExitValue:      1,
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" parent_process_id='67890'" +
+					" process_id='12345'" +
+					" msg='process information'\n",
+			},
 		},
 		"app path initialization failure": {
 			initialize: false,
@@ -354,6 +473,13 @@ func Test_initGlobals(t *testing.T) {
 			wantConfig:         cmdtoolkit.EmptyConfiguration(),
 			wantExitFuncCalled: true,
 			wantExitValue:      1,
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" parent_process_id='67890'" +
+					" process_id='12345'" +
+					" msg='process information'\n",
+			},
 		},
 		"config file read failed": {
 			initialize: false,
@@ -376,6 +502,13 @@ func Test_initGlobals(t *testing.T) {
 			wantConfig:         nil,
 			wantExitFuncCalled: true,
 			wantExitValue:      1,
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" parent_process_id='67890'" +
+					" process_id='12345'" +
+					" msg='process information'\n",
+			},
 		},
 		"all is well": {
 			initialize: false,
@@ -400,6 +533,13 @@ func Test_initGlobals(t *testing.T) {
 			wantConfig:         cmdtoolkit.EmptyConfiguration(),
 			wantExitFuncCalled: false,
 			wantExitValue:      defaultExitCode,
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" parent_process_id='67890'" +
+					" process_id='12345'" +
+					" msg='process information'\n",
+			},
 		},
 	}
 	for name, tt := range tests {

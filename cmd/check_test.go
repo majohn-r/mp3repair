@@ -832,21 +832,6 @@ func Test_checkRun(t *testing.T) {
 					" is true, or\n" +
 					"[2] explicitly set at least one of these flags true on the command" +
 					" line.\n",
-				Log: "" +
-					"level='info'" +
-					" --albumFilter='.*'" +
-					" --artistFilter='.*'" +
-					" --empty='false'" +
-					" --extensions='[.mp3]'" +
-					" --files='false'" +
-					" --numbering='false'" +
-					" --topDir='.'" +
-					" --trackFilter='.*'" +
-					" command='check'" +
-					" empty-user-set='false'" +
-					" files-user-set='false'" +
-					" numbering-user-set='false'" +
-					" msg='executing command'\n",
 			},
 		},
 	}
