@@ -497,8 +497,8 @@ func TestTrackMetadata_SetTrackNumber(t *testing.T) {
 				t.Errorf("TrackMetadata.trackNumber() got %q want %q", got, tt.want)
 			}
 			tt.tm.SetCanonicalSource(tt.args.src)
-			if got := tt.tm.canonicalTrackNumber(); got != tt.want {
-				t.Errorf("TrackMetadata.canonicalTrackNumber() got %q want %q", got, tt.want)
+			if got := tt.tm.trackNumber(tt.tm.canonicalSrc).original; got != tt.want {
+				t.Errorf("TrackMetadata.trackNumber(canonical source) got %q want %q", got, tt.want)
 			}
 		})
 	}

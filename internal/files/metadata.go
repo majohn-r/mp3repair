@@ -289,10 +289,6 @@ func (tm *TrackMetadata) trackNumber(src SourceType) correctableValue[int] {
 	return tm.commonMetadata(src).trackNumber
 }
 
-func (tm *TrackMetadata) canonicalTrackNumber() int {
-	return tm.trackNumber(tm.canonicalSrc).original
-}
-
 func (tm *TrackMetadata) trackNumberDiffers(trackNumberFromFileName int) (differs bool) {
 	for _, src := range sourceTypes {
 		if tm.errorCause(src) == "" && tm.trackNumber(src).original != trackNumberFromFileName {
