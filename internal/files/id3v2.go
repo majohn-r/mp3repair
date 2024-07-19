@@ -20,10 +20,6 @@ type id3v2Metadata struct {
 	year              string
 }
 
-func (im *id3v2Metadata) hasError() bool {
-	return im.err != nil
-}
-
 func readID3V2Tag(path string) (*id3v2.Tag, error) {
 	file, readError := cmdtoolkit.FileSystem().Open(path)
 	if readError != nil {

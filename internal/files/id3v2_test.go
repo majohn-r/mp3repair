@@ -105,11 +105,11 @@ func Test_rawReadID3V2Metadata(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			gotD := rawReadID3V2Metadata(tt.path)
-			if gotD.hasError() {
-				if !tt.wantD.hasError() {
+			if gotD.err != nil {
+				if tt.wantD.err == nil {
 					t.Errorf("rawReadID3V2Metadata() = %v, want %v", gotD, tt.wantD)
 				}
-			} else if tt.wantD.hasError() {
+			} else if tt.wantD.err != nil {
 				t.Errorf("rawReadID3V2Metadata() = %v, want %v", gotD, tt.wantD)
 			}
 		})
