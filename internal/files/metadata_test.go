@@ -113,7 +113,7 @@ func TestTrackMetadata_SetArtistName(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			tt.tm.SetArtistName(tt.args.src, tt.args.name)
-			if got := tt.tm.artistName(tt.args.src).originalValue(); got != tt.want {
+			if got := tt.tm.artistName(tt.args.src).original; got != tt.want {
 				t.Errorf("TrackMetadata.artistName() got %q want %q", got, tt.want)
 			}
 			tt.tm.SetCanonicalSource(tt.args.src)
@@ -189,7 +189,7 @@ func TestTrackMetadata_SetAlbumName(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			tt.tm.SetAlbumName(tt.args.src, tt.args.name)
-			if got := tt.tm.albumName(tt.args.src).originalValue(); got != tt.want {
+			if got := tt.tm.albumName(tt.args.src).original; got != tt.want {
 				t.Errorf("TrackMetadata.albumName() got %q want %q", got, tt.want)
 			}
 			tt.tm.SetCanonicalSource(tt.args.src)
@@ -265,7 +265,7 @@ func TestTrackMetadata_SetAlbumGenre(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			tt.tm.SetAlbumGenre(tt.args.src, tt.args.name)
-			if got := tt.tm.albumGenre(tt.args.src).originalValue(); got != tt.want {
+			if got := tt.tm.albumGenre(tt.args.src).original; got != tt.want {
 				t.Errorf("TrackMetadata.albumGenre() got %q want %q", got, tt.want)
 			}
 			tt.tm.SetCanonicalSource(tt.args.src)
@@ -341,7 +341,7 @@ func TestTrackMetadata_SetAlbumYear(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			tt.tm.SetAlbumYear(tt.args.src, tt.args.name)
-			if got := tt.tm.albumYear(tt.args.src).originalValue(); got != tt.want {
+			if got := tt.tm.albumYear(tt.args.src).original; got != tt.want {
 				t.Errorf("TrackMetadata.albumYear() got %q want %q", got, tt.want)
 			}
 			tt.tm.SetCanonicalSource(tt.args.src)
@@ -417,7 +417,7 @@ func TestTrackMetadata_SetTrackName(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			tt.tm.SetTrackName(tt.args.src, tt.args.name)
-			if got := tt.tm.trackName(tt.args.src).originalValue(); got != tt.want {
+			if got := tt.tm.trackName(tt.args.src).original; got != tt.want {
 				t.Errorf("TrackMetadata.trackName() got %q want %q", got, tt.want)
 			}
 			tt.tm.SetCanonicalSource(tt.args.src)
@@ -493,7 +493,7 @@ func TestTrackMetadata_SetTrackNumber(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			tt.tm.SetTrackNumber(tt.args.src, tt.args.number)
-			if got := tt.tm.trackNumber(tt.args.src).originalValue(); got != tt.want {
+			if got := tt.tm.trackNumber(tt.args.src).original; got != tt.want {
 				t.Errorf("TrackMetadata.trackNumber() got %q want %q", got, tt.want)
 			}
 			tt.tm.SetCanonicalSource(tt.args.src)
@@ -623,7 +623,7 @@ func TestTrackMetadata_SetCDIdentifier(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			tt.tm.SetCDIdentifier(tt.body)
-			if got := tt.tm.cdIdentifier().originalValue(); !reflect.DeepEqual(got.Body, tt.want) {
+			if got := tt.tm.cdIdentifier().original; !reflect.DeepEqual(got.Body, tt.want) {
 				t.Errorf("TrackMetadata.cdIdentifier() got %v want %v", got, tt.want)
 			}
 			if got := tt.tm.canonicalCDIdentifier(); !reflect.DeepEqual(got.Body, tt.want) {
@@ -666,42 +666,42 @@ func TestNewTrackMetadata(t *testing.T) {
 			}
 			for _, src := range []SourceType{ID3V1, ID3V2} {
 				artistName := tt.want.artistName(src)
-				if got := artistName.originalValue(); got != "" {
+				if got := artistName.original; got != "" {
 					t.Errorf("NewTrackMetadata().artistName(%s).originalValue() = %q, want %q", src.Name(), got, "")
 				}
 				if got := artistName.correctedValue(); got != "" {
 					t.Errorf("NewTrackMetadata().artistName(%s).correctedValue() = %q, want %q", src.Name(), got, "")
 				}
 				albumName := tt.want.albumName(src)
-				if got := albumName.originalValue(); got != "" {
+				if got := albumName.original; got != "" {
 					t.Errorf("NewTrackMetadata().albumName(%s).originalValue() = %q, want %q", src.Name(), got, "")
 				}
 				if got := albumName.correctedValue(); got != "" {
 					t.Errorf("NewTrackMetadata().albumName(%s).correctedValue() = %q, want %q", src.Name(), got, "")
 				}
 				albumGenre := tt.want.albumGenre(src)
-				if got := albumGenre.originalValue(); got != "" {
+				if got := albumGenre.original; got != "" {
 					t.Errorf("NewTrackMetadata().albumGenre(%s).originalValue() = %q, want %q", src.Name(), got, "")
 				}
 				if got := albumGenre.correctedValue(); got != "" {
 					t.Errorf("NewTrackMetadata().albumGenre(%s).correctedValue() = %q, want %q", src.Name(), got, "")
 				}
 				albumYear := tt.want.albumYear(src)
-				if got := albumYear.originalValue(); got != "" {
+				if got := albumYear.original; got != "" {
 					t.Errorf("NewTrackMetadata().albumYear(%s).originalValue() = %q, want %q", src.Name(), got, "")
 				}
 				if got := albumYear.correctedValue(); got != "" {
 					t.Errorf("NewTrackMetadata().albumYear(%s).correctedValue() = %q, want %q", src.Name(), got, "")
 				}
 				trackName := tt.want.trackName(src)
-				if got := trackName.originalValue(); got != "" {
+				if got := trackName.original; got != "" {
 					t.Errorf("NewTrackMetadata().trackName(%s).originalValue() = %q, want %q", src.Name(), got, "")
 				}
 				if got := trackName.correctedValue(); got != "" {
 					t.Errorf("NewTrackMetadata().trackName(%s).correctedValue() = %q, want %q", src.Name(), got, "")
 				}
 				trackNumber := tt.want.trackNumber(src)
-				if got := trackNumber.originalValue(); got != 0 {
+				if got := trackNumber.original; got != 0 {
 					t.Errorf("NewTrackMetadata().trackNumber(%s).originalValue() = %d, want %d", src.Name(), got, 0)
 				}
 				if got := trackNumber.correctedValue(); got != 0 {
@@ -715,7 +715,7 @@ func TestNewTrackMetadata(t *testing.T) {
 				}
 			}
 			cdi := tt.want.cdIdentifier()
-			if got := cdi.originalValue(); len(got.Body) != 0 {
+			if got := cdi.original; len(got.Body) != 0 {
 				t.Errorf("NewTrackMetadata().cdIdentifier().originalValue() = %v, want %v", got.Body, []byte{})
 			}
 			if got := cdi.correctedValue(); len(got.Body) != 0 {

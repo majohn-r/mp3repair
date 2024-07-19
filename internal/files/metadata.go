@@ -55,10 +55,6 @@ type correctableValue[V metadataValue] struct {
 	correction V
 }
 
-func (cv correctableValue[V]) originalValue() V {
-	return cv.original
-}
-
 func (cv correctableValue[V]) correctedValue() V {
 	return cv.correction
 }
