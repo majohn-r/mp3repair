@@ -682,10 +682,6 @@ func (im *id3v1Metadata) comment() string {
 	return im.readString(commentField)
 }
 
-func (im *id3v1Metadata) setComment(s string) {
-	im.writeString(s, commentField)
-}
-
 func (im *id3v1Metadata) readInt(f id3v1Field) int {
 	return int(im.data[f.startOffset])
 }

@@ -512,65 +512,6 @@ func TestId3v1MetadataComment(t *testing.T) {
 	}
 }
 
-func TestId3v1MetadataSetComment(t *testing.T) {
-	tests := map[string]struct {
-		v1   *id3v1Metadata
-		s    string
-		want *id3v1Metadata
-	}{
-		"typical comment": {
-			v1: newID3v1MetadataWithData(id3v1DataSet1),
-			s:  "",
-			want: newID3v1MetadataWithData([]byte{
-				'T', 'A', 'G',
-				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r',
-				'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i',
-				'e', 'w',
-				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0,
-				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				'O', 'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A',
-				't', ' ', 'T', 'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l',
-				'u', 'm',
-				'2', '0', '1', '3',
-				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				0, 0, 0, 0,
-				0,
-				29,
-				12,
-			}),
-		},
-		"long winded": {
-			v1: newID3v1MetadataWithData(id3v1DataSet1),
-			s:  "This track is genuinely insightful",
-			want: newID3v1MetadataWithData([]byte{
-				'T', 'A', 'G',
-				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r',
-				'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i',
-				'e', 'w',
-				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0,
-				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				'O', 'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A',
-				't', ' ', 'T', 'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l',
-				'u', 'm',
-				'2', '0', '1', '3',
-				'T', 'h', 'i', 's', ' ', 't', 'r', 'a', 'c', 'k', ' ', 'i', 's', ' ',
-				'g', 'e', 'n', 'u', 'i', 'n', 'e', 'l', 'y', ' ', 'i', 'n', 's', 'i',
-				0,
-				29,
-				12,
-			}),
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			tt.v1.setComment(tt.s)
-			if !reflect.DeepEqual(tt.v1, tt.want) {
-				t.Errorf("id3v1Metadata.setComment() got %v want %v", tt.v1, tt.want)
-			}
-		})
-	}
-}
-
 func TestId3v1MetadataTrack(t *testing.T) {
 	tests := map[string]struct {
 		v1     *id3v1Metadata
