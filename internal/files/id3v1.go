@@ -595,22 +595,6 @@ func (im *id3v1Metadata) rawData() []byte {
 	return im.data
 }
 
-func (im *id3v1Metadata) withData(b []byte) *id3v1Metadata {
-	im.data = make([]byte, id3v1Length)
-	switch {
-	case len(b) >= id3v1Length:
-		for k := 0; k < id3v1Length; k++ {
-			im.data[k] = b[k]
-		}
-	default:
-		copy(im.data, b)
-		for k := len(b); k < id3v1Length; k++ {
-			im.data[k] = 0
-		}
-	}
-	return im
-}
-
 func newID3v1Metadata() *id3v1Metadata {
 	return &id3v1Metadata{data: make([]byte, id3v1Length)}
 }

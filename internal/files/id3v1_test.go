@@ -68,7 +68,19 @@ func Test_Trim(t *testing.T) {
 }
 
 func newID3v1MetadataWithData(b []byte) *id3v1Metadata {
-	return newID3v1Metadata().withData(b)
+	im := newID3v1Metadata()
+	switch {
+	case len(b) >= id3v1Length:
+		for k := 0; k < id3v1Length; k++ {
+			im.data[k] = b[k]
+		}
+	default:
+		copy(im.data, b)
+		for k := len(b); k < id3v1Length; k++ {
+			im.data[k] = 0
+		}
+	}
+	return im
 }
 
 func TestNewId3v1MetadataWithData(t *testing.T) {
@@ -78,7 +90,7 @@ func TestNewId3v1MetadataWithData(t *testing.T) {
 	}{
 		"short data": {
 			b: []byte{1, 2, 3, 4},
-			want: newID3v1Metadata().withData([]byte{
+			want: newID3v1MetadataWithData([]byte{
 				1, 2, 3, 4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -87,12 +99,11 @@ func TestNewId3v1MetadataWithData(t *testing.T) {
 				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-			},
-			),
+			}),
 		},
 		"just right": {
 			b:    id3v1DataSet1,
-			want: newID3v1Metadata().withData(id3v1DataSet1),
+			want: newID3v1MetadataWithData(id3v1DataSet1),
 		},
 		"too much data": {
 			b: []byte{
@@ -106,7 +117,7 @@ func TestNewId3v1MetadataWithData(t *testing.T) {
 				70, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 				80, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 			},
-			want: newID3v1Metadata().withData([]byte{
+			want: newID3v1MetadataWithData([]byte{
 				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 				10, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 				20, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
@@ -115,8 +126,7 @@ func TestNewId3v1MetadataWithData(t *testing.T) {
 				50, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 				60, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
 				70, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-			},
-			),
+			}),
 		},
 	}
 	for name, tt := range tests {
