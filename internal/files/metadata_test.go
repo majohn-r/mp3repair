@@ -721,8 +721,8 @@ func TestNewTrackMetadata(t *testing.T) {
 			if got := cdi.correctedValue(); len(got.Body) != 0 {
 				t.Errorf("NewTrackMetadata().cdIdentifier().correctedValue() = %v, want %v", got.Body, []byte{})
 			}
-			if got := tt.want.canonicalSource(); got != undefinedSource {
-				t.Errorf("NewTrackMetadata().canonicalSource() = %s, want %s", got.Name(), undefinedSource.Name())
+			if got := tt.want.canonicalSrc; got != undefinedSource {
+				t.Errorf("NewTrackMetadata().canonicalSrc = %s, want %s", got.Name(), undefinedSource.Name())
 			}
 		})
 	}

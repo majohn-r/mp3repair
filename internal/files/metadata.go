@@ -347,10 +347,6 @@ func (tm *TrackMetadata) SetCanonicalSource(src SourceType) {
 	}
 }
 
-func (tm *TrackMetadata) canonicalSource() SourceType {
-	return tm.canonicalSrc
-}
-
 func (tm *TrackMetadata) setID3v2Values(d *id3v2Metadata) {
 	tm.SetArtistName(ID3V2, d.artistName)
 	tm.SetAlbumName(ID3V2, d.albumTitle)
