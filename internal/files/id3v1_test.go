@@ -1274,8 +1274,8 @@ func Test_populate(t *testing.T) {
 			case got == nil || tt.wantMap == nil:
 				t.Errorf("populate() map = %v, wantMap %v", got, tt.wantMap)
 			default:
-				if !reflect.DeepEqual(got.keyMap(), tt.wantMap.keyMap()) ||
-					!reflect.DeepEqual(got.valueMap(), tt.wantMap.valueMap()) {
+				if !reflect.DeepEqual(got.k2v, tt.wantMap.k2v) ||
+					!reflect.DeepEqual(got.v2k, tt.wantMap.v2k) {
 					t.Errorf("populate() map = %v, wantMap %v", got, tt.wantMap)
 				}
 			}

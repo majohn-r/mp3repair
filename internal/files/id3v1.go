@@ -123,14 +123,6 @@ func (bdMap *biDirectionalMap[K, V]) addPair(k K, v V) error {
 	return nil
 }
 
-func (bdMap *biDirectionalMap[K, V]) keyMap() map[K]V {
-	return bdMap.k2v
-}
-
-func (bdMap *biDirectionalMap[K, V]) valueMap() map[V]K {
-	return bdMap.v2k
-}
-
 func initGenres() error {
 	if genres == nil {
 		genres, _ = populate(documentedGenres)
