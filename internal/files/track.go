@@ -91,42 +91,6 @@ func (ti TrackMaker) NewTrack() *Track {
 	}
 }
 
-type tracks []*Track
-
-// Len returns the number of *Track instances.
-func (ts tracks) Len() int {
-	return len(ts)
-}
-
-// Less returns true if the first track's artist comes before the second track's
-// artist. If the tracks are from the same artist, then it returns true if the
-// first track's album comes before the second track's album. If the tracks come
-// from the same artist and album, then it returns true if the first track's
-// track number comes before the second track's track number.
-func (ts tracks) Less(i, j int) bool {
-	track1 := ts[i]
-	track2 := ts[j]
-	album1 := track1.Album
-	album2 := track2.Album
-	artist1 := album1.RecordingArtistName()
-	artist2 := album2.RecordingArtistName()
-	// compare artist name first
-	if artist1 == artist2 {
-		// artist names are the same ... try the album name next
-		if album1.Title == album2.Title {
-			// and album names are the same ... go by track number
-			return track1.Number < track2.Number
-		}
-		return album1.Title < album2.Title
-	}
-	return artist1 < artist2
-}
-
-// Swap swaps two tracks.
-func (ts tracks) Swap(i, j int) {
-	ts[i], ts[j] = ts[j], ts[i]
-}
-
 func (t *Track) needsMetadata() bool {
 	return t.Metadata == nil
 }

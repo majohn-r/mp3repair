@@ -7,7 +7,6 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"sort"
 	"strings"
 	"testing"
 
@@ -128,83 +127,6 @@ func TestTrackNameParserParse(t *testing.T) {
 				t.Errorf("TrackNameParser.Parse() gotValid = %v, want %v", gotValid, tt.wantValid)
 			}
 			o.Report(t, "TrackNameParser.Parse()", tt.WantedRecording)
-		})
-	}
-}
-
-func Test_tracks_Sort(t *testing.T) {
-	tests := map[string]struct {
-		tracks []*Track
-	}{
-		"degenerate case": {},
-		"mixed tracks": {
-			tracks: []*Track{
-				{
-					Number: 10,
-					Album: AlbumMaker{
-						Title:  "album2",
-						Artist: NewArtist("artist3", ""),
-					}.NewAlbum(),
-				},
-				{
-					Number: 1,
-					Album: AlbumMaker{
-						Title:  "album2",
-						Artist: NewArtist("artist3", ""),
-					}.NewAlbum(),
-				},
-				{
-					Number: 3,
-					Album: AlbumMaker{
-						Title:  "album3",
-						Artist: NewArtist("artist2", ""),
-					}.NewAlbum(),
-				},
-				{
-					Number: 3,
-					Album: AlbumMaker{
-						Title:  "album3",
-						Artist: NewArtist("artist4", ""),
-					}.NewAlbum(),
-				},
-				{
-					Number: 3,
-					Album: AlbumMaker{
-						Title:  "album5",
-						Artist: NewArtist("artist2", ""),
-					}.NewAlbum(),
-				},
-			},
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			sort.Sort(tracks(tt.tracks))
-			for i := range tt.tracks {
-				if i == 0 {
-					continue
-				}
-				track1 := tt.tracks[i-1]
-				track2 := tt.tracks[i]
-				album1 := track1.Album
-				album2 := track2.Album
-				artist1 := album1.RecordingArtistName()
-				artist2 := album2.RecordingArtistName()
-				if artist1 > artist2 {
-					t.Errorf("tracks.Sort() track[%d] artist name %q comes after track[%d] artist name %q",
-						i-1, artist1, i, artist2)
-				} else if artist1 == artist2 {
-					if album1.Title > album2.Title {
-						t.Errorf("tracks.Sort() track[%d] album name %q comes after track[%d] album name %q",
-							i-1, album1.Title, i, album2.Title)
-					} else if album1.Title == album2.Title {
-						if track1.Number > track2.Number {
-							t.Errorf("tracks.Sort() track[%d] track %d comes after track[%d] track %d",
-								i-1, track1.Number, i, track2.Number)
-						}
-					}
-				}
-			}
 		})
 	}
 }
