@@ -262,10 +262,6 @@ func (tm *TrackMetadata) trackName(src SourceType) correctableValue[string] {
 	return tm.commonMetadata(src).trackName
 }
 
-func (tm *TrackMetadata) canonicalTrackName() string {
-	return tm.trackName(tm.canonicalSrc).original
-}
-
 func (tm *TrackMetadata) trackNameDiffers(nameFromFile string) (differs bool) {
 	for _, src := range sourceTypes {
 		comparison := &comparableStrings{
