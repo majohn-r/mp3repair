@@ -591,10 +591,6 @@ type id3v1Metadata struct {
 	data []byte
 }
 
-func (im *id3v1Metadata) rawData() []byte {
-	return im.data
-}
-
 func newID3v1Metadata() *id3v1Metadata {
 	return &id3v1Metadata{data: make([]byte, id3v1Length)}
 }
