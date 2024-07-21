@@ -6,7 +6,7 @@ require (
 	github.com/goyek/goyek/v2 v2.1.0
 	github.com/goyek/x v0.1.7
 	github.com/josephspurrier/goversioninfo v1.4.0
-	github.com/majohn-r/tools-build v0.11.0
+	github.com/majohn-r/tools-build v0.12.0
 	github.com/spf13/afero v1.11.0
 	gopkg.in/yaml.v3 v3.0.1
 )
