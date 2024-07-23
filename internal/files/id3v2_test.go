@@ -38,33 +38,56 @@ func makePayload() []byte {
 	return payload
 }
 
-// createID3v2TaggedData creates ID3V2-tagged content. This code is
-// based on reading https://id3.org/id3v2.3.0 and on looking at a hex dump of a
-// real mp3 file.
+// createID3v2TaggedData creates ID3V2-tagged content. This code is based on reading
+// https://id3.org/id3v2.3.0 and on examining hex dumps of real mp3 files.
 func createID3v2TaggedData(audio []byte, frames map[string]string) []byte {
-	content := make([]byte, 0)
-	// block off tag header
-	content = append(content, []byte("ID3")...)
-	content = append(content, []byte{3, 0, 0, 0, 0, 0, 0}...)
-	// add some text frames; order is fixed for testing
+	// create text frames; order is fixed for testing
 	var keys []string
 	for key := range frames {
 		keys = append(keys, key)
 	}
 	sort.Strings(keys)
+	frameContents := make([][]byte, 0, len(keys))
+	frameLength := 0
 	for _, key := range keys {
-		content = append(content, makeTextFrame(key, frames[key])...)
+		frame := makeTextFrame(key, frames[key])
+		frameLength += len(frame)
+		frameContents = append(frameContents, frame)
 	}
-	contentLength := len(content) - 10
+	content := make([]byte, 0, 10+frameLength+len(audio))
+	// ID3V2 header
+	// ID3v2 file identifier   "ID3"
+	// ID3v2 version           $03 00
+	//                         major version 3 minor version 0, so ID3V2.3.0
+	// ID3v2 flags             %abc00000
+	//                          a - Unsynchronisation
+	//                              Bit 7 in the 'ID3v2 flags' indicates whether or not
+	//                              unsynchronisation is used (see section 5 for details); a set
+	//                              bit indicates usage.
+	//                          b - Extended header
+	//                              The second bit (bit 6) indicates whether or not the header is
+	//                              followed by an extended header. The extended header is
+	//                              described in section 3.2.
+	//                          c - Experimental indicator
+	//                              The third bit (bit 5) should be used as an 'experimental
+	//                              indicator'. This flag should always be set when the tag is in
+	//                              an experimental stage.
+	// ID3v2 size              4 * %0xxxxxxx
+	content = append(content, []byte("ID3")...)
+	content = append(content, []byte{3, 0, 0}...)
 	factor := 128 * 128 * 128
 	for k := 0; k < 4; k++ {
-		content[6+k] = byte(contentLength / factor)
-		contentLength %= factor
+		content = append(content, byte(frameLength/factor))
+		frameLength %= factor
 		factor /= 128
 	}
-	// add payload
+	for _, frameContent := range frameContents {
+		content = append(content, frameContent...)
+	}
+	// add audio
 	content = append(content, audio...)
 	return content
+
 }
 
 func Test_rawReadID3V2Metadata(t *testing.T) {
