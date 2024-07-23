@@ -1359,7 +1359,7 @@ func Test_listSettings_annotateAlbumName(t *testing.T) {
 }
 
 func generateArtists(artistCount, albumCount, trackCount int) []*files.Artist {
-	artists := make([]*files.Artist, 0)
+	artists := make([]*files.Artist, 0, artistCount)
 	for r := 0; r < artistCount; r++ {
 		artistName := fmt.Sprintf("my artist %d", r)
 		artist := files.NewArtist(artistName, filepath.Join("Music", artistName))

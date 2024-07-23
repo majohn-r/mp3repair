@@ -288,11 +288,7 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 	defer func() {
 		cmdtoolkit.AssignFileSystem(originalFileSystem)
 	}()
-	audio := make([]byte, 0)
-	for k := 0; k < 256; k++ {
-		audio = append(audio, byte(k))
-	}
-	frames := map[string]string{
+	content := createID3v2TaggedData(cannedPayload, map[string]string{
 		"TYER": "2022",
 		"TALB": "unknown album",
 		"TRCK": "2",
@@ -303,8 +299,7 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 		"TLEN": "1000",
 		"T???": "who knows?",
 		"Fake": "huh",
-	}
-	content := createID3v2TaggedData(audio, frames)
+	})
 	goodFileName := "goodFile.mp3"
 	_ = createFileWithContent(".", goodFileName, content)
 	tests := map[string]struct {
@@ -1173,11 +1168,7 @@ func TestTrack_Details(t *testing.T) {
 	defer func() {
 		cmdtoolkit.AssignFileSystem(originalFileSystem)
 	}()
-	audio := make([]byte, 0)
-	for k := 0; k < 256; k++ {
-		audio = append(audio, byte(k))
-	}
-	frames := map[string]string{
+	content := createID3v2TaggedData(cannedPayload, map[string]string{
 		"TYER": "2022",
 		"TALB": "unknown album",
 		"TRCK": "2",
@@ -1192,8 +1183,7 @@ func TestTrack_Details(t *testing.T) {
 		"TKEY": "D Major",
 		"TPE2": "The usual gang of idiots",
 		"TPE3": "Someone with a stick",
-	}
-	content := createID3v2TaggedData(audio, frames)
+	})
 	goodFileName := "goodFile.mp3"
 	_ = createFileWithContent(".", goodFileName, content)
 	tests := map[string]struct {

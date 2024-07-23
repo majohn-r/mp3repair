@@ -399,7 +399,7 @@ func initializeMetadata(path string) *TrackMetadata {
 }
 
 func (tm *TrackMetadata) errorCauses() []string {
-	errCauses := make([]string, 0)
+	errCauses := make([]string, 0, len(sourceTypes))
 	for _, src := range sourceTypes {
 		if cause := tm.commonMetadata(src).errorCause; cause != "" {
 			errCauses = append(errCauses, cause)

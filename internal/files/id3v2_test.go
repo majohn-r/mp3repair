@@ -14,7 +14,7 @@ import (
 )
 
 func makeTextFrame(id, content string) []byte {
-	frame := make([]byte, 0)
+	frame := make([]byte, 0, len(id)+len(content)+7)
 	frame = append(frame, []byte(id)...)
 	contentSize := 1 + len(content)
 	factor := 256 * 256 * 256
@@ -26,6 +26,16 @@ func makeTextFrame(id, content string) []byte {
 	frame = append(frame, []byte{0, 0, 0}...)
 	frame = append(frame, []byte(content)...)
 	return frame
+}
+
+var cannedPayload = makePayload()
+
+func makePayload() []byte {
+	payload := make([]byte, 0, 256)
+	for k := 0; k < 256; k++ {
+		payload = append(payload, byte(k))
+	}
+	return payload
 }
 
 // createID3v2TaggedData creates ID3V2-tagged content. This code is
@@ -62,10 +72,6 @@ func Test_rawReadID3V2Metadata(t *testing.T) {
 	defer func() {
 		cmdtoolkit.AssignFileSystem(originalFileSystem)
 	}()
-	payload := make([]byte, 0)
-	for k := 0; k < 256; k++ {
-		payload = append(payload, byte(k))
-	}
 	frames := map[string]string{
 		"TYER": "2022",
 		"TALB": "unknown album",
@@ -76,10 +82,10 @@ func Test_rawReadID3V2Metadata(t *testing.T) {
 		"TPE1": "unknown artist",
 		"TLEN": "1000",
 	}
-	content := createID3v2TaggedData(payload, frames)
+	content := createID3v2TaggedData(cannedPayload, frames)
 	_ = createFileWithContent(".", "goodFile.mp3", content)
 	frames["TRCK"] = "oops"
-	_ = createFileWithContent(".", "badFile.mp3", createID3v2TaggedData(payload, frames))
+	_ = createFileWithContent(".", "badFile.mp3", createID3v2TaggedData(cannedPayload, frames))
 	tests := map[string]struct {
 		path  string
 		wantD *id3v2Metadata
@@ -268,11 +274,7 @@ func Test_readID3V2Metadata(t *testing.T) {
 	defer func() {
 		cmdtoolkit.AssignFileSystem(originalFileSystem)
 	}()
-	payload := make([]byte, 0)
-	for k := 0; k < 256; k++ {
-		payload = append(payload, byte(k))
-	}
-	frames := map[string]string{
+	content := createID3v2TaggedData(cannedPayload, map[string]string{
 		"TYER": "2022",
 		"TALB": "unknown album",
 		"TRCK": "2",
@@ -283,8 +285,7 @@ func Test_readID3V2Metadata(t *testing.T) {
 		"TLEN": "1000",
 		"T???": "who knows?",
 		"Fake": "huh",
-	}
-	content := createID3v2TaggedData(payload, frames)
+	})
 	goodFileName := "goodFile.mp3"
 	_ = createFileWithContent(".", goodFileName, content)
 	tests := map[string]struct {

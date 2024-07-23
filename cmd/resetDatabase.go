@@ -421,7 +421,7 @@ func (rDBSettings *resetDBSettings) cleanUpMetadata(o output.Bus, stopped bool) 
 }
 
 func (rDBSettings *resetDBSettings) filterMetadataFiles(entries []fs.FileInfo) []string {
-	paths := make([]string, 0)
+	paths := make([]string, 0, len(entries))
 	for _, file := range entries {
 		if strings.HasSuffix(file.Name(), rDBSettings.extension.Value) {
 			path := filepath.Join(rDBSettings.metadataDir.Value, file.Name())
