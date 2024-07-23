@@ -42,7 +42,7 @@ func makePayload() []byte {
 // https://id3.org/id3v2.3.0 and on examining hex dumps of real mp3 files.
 func createID3v2TaggedData(audio []byte, frames map[string]string) []byte {
 	// create text frames; order is fixed for testing
-	var keys []string
+	keys := make([]string, 0, len(frames))
 	for key := range frames {
 		keys = append(keys, key)
 	}

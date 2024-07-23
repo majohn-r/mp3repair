@@ -474,14 +474,8 @@ func processAlbumMetadata(o output.Bus, artists []*Artist) {
 }
 
 func encodeChoices(m map[string]int) string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
 	values := make([]string, 0, len(m))
-	for _, k := range keys {
-		count := m[k]
+	for k, count := range m {
 		switch count {
 		case 1:
 			values = append(values, fmt.Sprintf("%q: 1 instance", k))
@@ -489,6 +483,7 @@ func encodeChoices(m map[string]int) string {
 			values = append(values, fmt.Sprintf("%q: %d instances", k, count))
 		}
 	}
+	sort.Strings(values)
 	return fmt.Sprintf("{%s}", strings.Join(values, ", "))
 }
 

@@ -117,15 +117,15 @@ func interpretStyle(flag cmdtoolkit.CommandFlag[string]) cmdtoolkit.FlowerBoxSty
 }
 
 func acquireAboutData(o output.Bus) []string {
-	// 9: 1 each for
+	// 6: 1 each for
 	// - app name
 	// - copyright
 	// - build information header
 	// - go version
 	// - log file location
 	// - configuration file status
-	// - and up to 3 for elevation status
-	lines := make([]string, 0, 9+len(cachedBuildDependencies))
+	elevationData := mp3repairElevationControl.Status(appName)
+	lines := make([]string, 0, 6+len(cachedBuildDependencies)+len(elevationData))
 	lines = append(lines,
 		cmdtoolkit.DecoratedAppName(appName, version, creation),
 		cmdtoolkit.Copyright(o, firstYear, creation, author),
@@ -140,7 +140,6 @@ func acquireAboutData(o output.Bus) []string {
 	default:
 		lines = append(lines, fmt.Sprintf("Configuration file %s does not yet exist", path))
 	}
-	elevationData := mp3repairElevationControl.Status(appName)
 	lines = append(lines, elevationData[0])
 	if len(elevationData) > 1 {
 		for _, s := range elevationData[1:] {
