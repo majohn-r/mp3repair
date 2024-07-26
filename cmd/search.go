@@ -312,7 +312,7 @@ func (ss *searchSettings) filter(o output.Bus, originalArtists []*files.Artist) 
 					originalAlbum.HasTracks() {
 					filteredAlbum := originalAlbum.Copy(filteredArtist, false)
 					for _, originalTrack := range originalAlbum.Tracks {
-						if ss.trackFilter.MatchString(originalTrack.SimpleName) {
+						if ss.trackFilter.MatchString(originalTrack.Name()) {
 							filteredTrack := originalTrack.Copy(filteredAlbum)
 							filteredAlbum.AddTrack(filteredTrack)
 						}

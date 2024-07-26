@@ -253,14 +253,14 @@ func (ls *listSettings) listTracksByNumber(o output.Bus, tracks []*files.Track) 
 	m := map[int]*files.Track{}
 	numbers := make([]int, 0, len(tracks))
 	for _, track := range tracks {
-		numbers = append(numbers, track.Number)
-		m[track.Number] = track
+		numbers = append(numbers, track.Number())
+		m[track.Number()] = track
 	}
 	sort.Ints(numbers)
 	for _, n := range numbers {
 		track := m[n]
 		if track != nil {
-			o.WriteConsole("%2d. %s\n", n, track.SimpleName)
+			o.WriteConsole("%2d. %s\n", n, track.Name())
 			o.IncrementTab(2)
 			ls.listTrackDetails(o, track)
 			ls.listTrackDiagnostics(o, track)
@@ -269,30 +269,8 @@ func (ls *listSettings) listTracksByNumber(o output.Bus, tracks []*files.Track) 
 	}
 }
 
-type trackSlice []*files.Track
-
-func (ts trackSlice) Len() int {
-	return len(ts)
-}
-
-func (ts trackSlice) Less(i, j int) bool {
-	if ts[i].SimpleName == ts[j].SimpleName {
-		album1 := ts[i].Album
-		album2 := ts[j].Album
-		if album1.Title == album2.Title {
-			return album1.RecordingArtistName() < album2.RecordingArtistName()
-		}
-		return album1.Title < album2.Title
-	}
-	return ts[i].SimpleName < ts[j].SimpleName
-}
-
-func (ts trackSlice) Swap(i, j int) {
-	ts[i], ts[j] = ts[j], ts[i]
-}
-
 func (ls *listSettings) listTracksByName(o output.Bus, tracks []*files.Track) {
-	sort.Sort(trackSlice(tracks))
+	files.SortTracks(tracks)
 	for _, track := range tracks {
 		o.WriteConsole("%s\n", ls.annotateTrackName(track))
 		o.IncrementTab(2)
@@ -307,7 +285,7 @@ func quote(s string) string {
 }
 
 func (ls *listSettings) annotateTrackName(track *files.Track) string {
-	commonName := track.SimpleName
+	commonName := track.Name()
 	if !ls.annotate.Value || ls.albums.Value {
 		return commonName
 	}
@@ -334,7 +312,7 @@ func showDetails(o output.Bus, track *files.Track, details map[string]string, de
 		})
 		o.WriteCanonicalError(
 			"The details are not available for track %q on album %q by artist %q: %q",
-			track.SimpleName, track.AlbumName(), track.RecordingArtist(),
+			track.Name(), track.AlbumName(), track.RecordingArtist(),
 			detailsError.Error())
 		return
 	}

@@ -231,7 +231,7 @@ func processTrackRepairResults(o output.Bus, t *files.Track, updateErrs []error)
 }
 
 func tryTrackBackup(o output.Bus, t *files.Track, path string) (backedUp bool) {
-	backupFile := filepath.Join(path, fmt.Sprintf("%d.mp3", t.Number))
+	backupFile := filepath.Join(path, fmt.Sprintf("%d.mp3", t.Number()))
 	switch {
 	case plainFileExists(backupFile):
 		o.WriteCanonicalError("The backup file for track file %q, %q, already exists", t,
@@ -241,7 +241,7 @@ func tryTrackBackup(o output.Bus, t *files.Track, path string) (backedUp bool) {
 			"file":    backupFile,
 		})
 	default:
-		copyErr := copyFile(t.FilePath, backupFile)
+		copyErr := copyFile(t.Path(), backupFile)
 		switch copyErr {
 		case nil:
 			o.WriteCanonicalConsole("The track file %q has been backed up to %q", t,
@@ -252,7 +252,7 @@ func tryTrackBackup(o output.Bus, t *files.Track, path string) (backedUp bool) {
 				"The track file %q could not be backed up due to error %v", t, copyErr)
 			o.Log(output.Error, "error copying file", map[string]any{
 				"command":     repairCommandName,
-				"source":      t.FilePath,
+				"source":      t.Path(),
 				"destination": backupFile,
 				"error":       copyErr,
 			})

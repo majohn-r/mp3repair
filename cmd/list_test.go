@@ -1106,41 +1106,41 @@ func Test_listSettings_listTracksByName(t *testing.T) {
 		"https://github.com/majohn-r/mp3repair/issues/147": {
 			ls: &listSettings{annotate: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			tracks: []*files.Track{
-				{
+				files.TrackMaker{
 					SimpleName: "Old Brown Shoe",
 					Album: &files.Album{
 						Title:           "Anthology 3 [Disc 2]",
 						RecordingArtist: &files.Artist{Name: "The Beatles"},
 					},
-				},
-				{
+				}.NewTrack(),
+				files.TrackMaker{
 					SimpleName: "Old Brown Shoe",
 					Album: &files.Album{
 						Title:           "Live In Japan [Disc 1]",
 						RecordingArtist: &files.Artist{Name: "George Harrison & Eric Clapton"},
 					},
-				},
-				{
+				}.NewTrack(),
+				files.TrackMaker{
 					SimpleName: "Old Brown Shoe",
 					Album: &files.Album{
 						Title:           "Past Masters, Vol. 2",
 						RecordingArtist: &files.Artist{Name: "The Beatles"},
 					},
-				},
-				{
+				}.NewTrack(),
+				files.TrackMaker{
 					SimpleName: "Old Brown Shoe",
 					Album: &files.Album{
 						Title:           "Songs From The Material World - A Tribute To George Harrison",
 						RecordingArtist: &files.Artist{Name: "Various Artists"},
 					},
-				},
-				{
+				}.NewTrack(),
+				files.TrackMaker{
 					SimpleName: "Old Brown Shoe (Take 2)",
 					Album: &files.Album{
 						Title:           "Abbey Road- Sessions [Disc 2]",
 						RecordingArtist: &files.Artist{Name: "The Beatles"},
 					},
-				},
+				}.NewTrack(),
 			},
 			tab: 0,
 			WantedRecording: output.WantedRecording{
@@ -1358,7 +1358,7 @@ func Test_listSettings_annotateAlbumName(t *testing.T) {
 	}
 }
 
-func generateArtists(artistCount, albumCount, trackCount int) []*files.Artist {
+func generateArtists(artistCount, albumCount, trackCount int, metadata *files.TrackMetadata) []*files.Artist {
 	artists := make([]*files.Artist, 0, artistCount)
 	for r := 0; r < artistCount; r++ {
 		artistName := fmt.Sprintf("my artist %d", r)
@@ -1377,6 +1377,7 @@ func generateArtists(artistCount, albumCount, trackCount int) []*files.Artist {
 					FileName:   fmt.Sprintf("%d %s.mp3", j, trackName),
 					SimpleName: trackName,
 					Number:     j,
+					Metadata:   metadata,
 				}.NewTrack()
 				album.AddTrack(track)
 			}
@@ -1388,7 +1389,7 @@ func generateArtists(artistCount, albumCount, trackCount int) []*files.Artist {
 }
 
 func generateAlbums(albumCount, trackCount int) []*files.Album {
-	artists := generateArtists(1, albumCount, trackCount)
+	artists := generateArtists(1, albumCount, trackCount, nil)
 	for _, artist := range artists {
 		return artist.Albums
 	}
@@ -1578,7 +1579,7 @@ func Test_listSettings_listFilteredArtists(t *testing.T) {
 				annotate:    cmdtoolkit.CommandFlag[bool]{Value: true},
 				sortByTitle: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
-			artists: generateArtists(3, 3, 3),
+			artists: generateArtists(3, 3, 3, nil),
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"\"my track 001\" on \"my album 00\" by \"my artist 0\"\n" +
@@ -1615,7 +1616,7 @@ func Test_listSettings_listFilteredArtists(t *testing.T) {
 				albums:   cmdtoolkit.CommandFlag[bool]{Value: true},
 				annotate: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
-			artists: generateArtists(3, 3, 3),
+			artists: generateArtists(3, 3, 3, nil),
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"Album: \"my album 00\" by \"my artist 0\"\n" +
@@ -1636,7 +1637,7 @@ func Test_listSettings_listFilteredArtists(t *testing.T) {
 				annotate:     cmdtoolkit.CommandFlag[bool]{Value: true},
 				sortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
-			artists: generateArtists(3, 3, 3),
+			artists: generateArtists(3, 3, 3, nil),
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"Album: \"my album 00\" by \"my artist 0\"\n" +
@@ -1679,7 +1680,7 @@ func Test_listSettings_listFilteredArtists(t *testing.T) {
 		},
 		"artists": {
 			ls:      &listSettings{artists: cmdtoolkit.CommandFlag[bool]{Value: true}},
-			artists: generateArtists(3, 3, 3),
+			artists: generateArtists(3, 3, 3, nil),
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"Artist: my artist 0\n" +
@@ -1694,7 +1695,7 @@ func Test_listSettings_listFilteredArtists(t *testing.T) {
 				annotate:    cmdtoolkit.CommandFlag[bool]{Value: true},
 				sortByTitle: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
-			artists: generateArtists(3, 3, 3),
+			artists: generateArtists(3, 3, 3, nil),
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"Artist: my artist 0\n" +
@@ -1734,7 +1735,7 @@ func Test_listSettings_listFilteredArtists(t *testing.T) {
 				albums:  cmdtoolkit.CommandFlag[bool]{Value: true},
 				artists: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
-			artists: generateArtists(3, 3, 3),
+			artists: generateArtists(3, 3, 3, nil),
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"Artist: my artist 0\n" +
@@ -1758,7 +1759,7 @@ func Test_listSettings_listFilteredArtists(t *testing.T) {
 				tracks:       cmdtoolkit.CommandFlag[bool]{Value: true},
 				sortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
-			artists: generateArtists(3, 3, 3),
+			artists: generateArtists(3, 3, 3, nil),
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"Artist: my artist 0\n" +
@@ -2079,7 +2080,7 @@ func Test_listSettings_listArtists(t *testing.T) {
 		"with data": {
 			ls: &listSettings{artists: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			args: args{
-				allArtists: generateArtists(3, 4, 5),
+				allArtists: generateArtists(3, 4, 5, nil),
 				searchSettings: &searchSettings{
 					artistFilter: regexp.MustCompile(".*"),
 					albumFilter:  regexp.MustCompile(".*"),
@@ -2187,112 +2188,6 @@ func Test_list_Help(t *testing.T) {
 			enableCommandRecording(o, command)
 			_ = command.Help()
 			o.Report(t, "list Help()", tt.WantedRecording)
-		})
-	}
-}
-
-func Test_trackSlice_sort(t *testing.T) {
-	tests := map[string]struct {
-		ts   []*files.Track
-		want []*files.Track
-	}{
-		"https://github.com/majohn-r/mp3repair/issues/147": {
-			ts: []*files.Track{
-				{
-					SimpleName: "b",
-					Album: &files.Album{
-						Title:           "b",
-						RecordingArtist: &files.Artist{Name: "c"},
-					},
-				},
-				{
-					SimpleName: "b",
-					Album: &files.Album{
-						Title:           "a",
-						RecordingArtist: &files.Artist{Name: "c"},
-					},
-				},
-				{
-					SimpleName: "b",
-					Album: &files.Album{
-						Title:           "b",
-						RecordingArtist: &files.Artist{Name: "a"},
-					},
-				},
-				{
-					SimpleName: "a",
-					Album: &files.Album{
-						Title:           "b",
-						RecordingArtist: &files.Artist{Name: "c"},
-					},
-				},
-				{
-					SimpleName: "a",
-					Album: &files.Album{
-						Title:           "a",
-						RecordingArtist: &files.Artist{Name: "c"},
-					},
-				},
-				{
-					SimpleName: "a",
-					Album: &files.Album{
-						Title:           "b",
-						RecordingArtist: &files.Artist{Name: "a"},
-					},
-				},
-			},
-			want: []*files.Track{
-				{
-					SimpleName: "a",
-					Album: &files.Album{
-						Title:           "a",
-						RecordingArtist: &files.Artist{Name: "c"},
-					},
-				},
-				{
-					SimpleName: "a",
-					Album: &files.Album{
-						Title:           "b",
-						RecordingArtist: &files.Artist{Name: "a"},
-					},
-				},
-				{
-					SimpleName: "a",
-					Album: &files.Album{
-						Title:           "b",
-						RecordingArtist: &files.Artist{Name: "c"},
-					},
-				},
-				{
-					SimpleName: "b",
-					Album: &files.Album{
-						Title:           "a",
-						RecordingArtist: &files.Artist{Name: "c"},
-					},
-				},
-				{
-					SimpleName: "b",
-					Album: &files.Album{
-						Title:           "b",
-						RecordingArtist: &files.Artist{Name: "a"},
-					},
-				},
-				{
-					SimpleName: "b",
-					Album: &files.Album{
-						Title:           "b",
-						RecordingArtist: &files.Artist{Name: "c"},
-					},
-				},
-			},
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			sort.Sort(trackSlice(tt.ts))
-			if !reflect.DeepEqual(tt.ts, tt.want) {
-				t.Errorf("trackSlice.sort = %v, want %v", tt.ts, tt.want)
-			}
 		})
 	}
 }

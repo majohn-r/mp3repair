@@ -228,7 +228,7 @@ func (cs *checkSettings) performNumberingAnalysis(
 				maxTrack := len(cAl.tracks())
 				for _, cT := range cAl.tracks() {
 					track := cT.backingTrack()
-					trackNumber := track.Number
+					trackNumber := track.Number()
 					trackMap[trackNumber] = append(trackMap[trackNumber], cT.name())
 					if trackNumber > maxTrack {
 						maxTrack = trackNumber

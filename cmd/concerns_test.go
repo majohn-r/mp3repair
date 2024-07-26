@@ -179,7 +179,7 @@ func Test_newConcernedArtist(t *testing.T) {
 		wantValidArtist bool
 	}{
 		"nil":  {artist: nil, wantValidArtist: false},
-		"real": {artist: generateArtists(1, 4, 5)[0], wantValidArtist: true},
+		"real": {artist: generateArtists(1, 4, 5, nil)[0], wantValidArtist: true},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -381,13 +381,13 @@ func Test_concernedAlbum_toConsole(t *testing.T) {
 func Test_concernedArtist_toConsole(t *testing.T) {
 	// artist without concerns
 	var artist1 *files.Artist
-	if artists := generateArtists(1, 1, 1); len(artists) > 0 {
+	if artists := generateArtists(1, 1, 1, nil); len(artists) > 0 {
 		artist1 = artists[0]
 	}
 	cAr000 := newConcernedArtist(artist1)
 	// artist with artist concerns
 	var artist2 *files.Artist
-	if artists := generateArtists(1, 0, 0); len(artists) > 0 {
+	if artists := generateArtists(1, 0, 0, nil); len(artists) > 0 {
 		artist2 = artists[0]
 	}
 	cAr001 := newConcernedArtist(artist2)
@@ -396,7 +396,7 @@ func Test_concernedArtist_toConsole(t *testing.T) {
 	}
 	// artist with artist and album concerns
 	var artist3 *files.Artist
-	if artists := generateArtists(1, 1, 0); len(artists) > 0 {
+	if artists := generateArtists(1, 1, 0, nil); len(artists) > 0 {
 		artist3 = artists[0]
 	}
 	cAr011 := newConcernedArtist(artist3)
@@ -406,7 +406,7 @@ func Test_concernedArtist_toConsole(t *testing.T) {
 	}
 	// artist with artist, album, and track concerns
 	var artist4 *files.Artist
-	if artists := generateArtists(1, 1, 1); len(artists) > 0 {
+	if artists := generateArtists(1, 1, 1, nil); len(artists) > 0 {
 		artist4 = artists[0]
 	}
 	cAr111 := newConcernedArtist(artist4)
@@ -417,7 +417,7 @@ func Test_concernedArtist_toConsole(t *testing.T) {
 	}
 	// artist with artist and track concerns
 	var artist5 *files.Artist
-	if artists := generateArtists(1, 1, 1); len(artists) > 0 {
+	if artists := generateArtists(1, 1, 1, nil); len(artists) > 0 {
 		artist5 = artists[0]
 	}
 	cAr101 := newConcernedArtist(artist5)
@@ -427,7 +427,7 @@ func Test_concernedArtist_toConsole(t *testing.T) {
 	}
 	// artist with album concerns
 	var artist6 *files.Artist
-	if artists := generateArtists(1, 1, 1); len(artists) > 0 {
+	if artists := generateArtists(1, 1, 1, nil); len(artists) > 0 {
 		artist6 = artists[0]
 	}
 	cAr010 := newConcernedArtist(artist6)
@@ -436,7 +436,7 @@ func Test_concernedArtist_toConsole(t *testing.T) {
 	}
 	// artist with album and track concerns
 	var artist7 *files.Artist
-	if artists := generateArtists(1, 1, 1); len(artists) > 0 {
+	if artists := generateArtists(1, 1, 1, nil); len(artists) > 0 {
 		artist7 = artists[0]
 	}
 	cAr110 := newConcernedArtist(artist7)
@@ -446,7 +446,7 @@ func Test_concernedArtist_toConsole(t *testing.T) {
 	}
 	// artist with track concerns
 	var artist8 *files.Artist
-	if artists := generateArtists(1, 1, 1); len(artists) > 0 {
+	if artists := generateArtists(1, 1, 1, nil); len(artists) > 0 {
 		artist8 = artists[0]
 	}
 	cAr100 := newConcernedArtist(artist8)
@@ -548,7 +548,7 @@ func Test_createConcernedArtists(t *testing.T) {
 	}{
 		"empty": {},
 		"plenty": {
-			artists:    generateArtists(15, 16, 17),
+			artists:    generateArtists(15, 16, 17, nil),
 			want:       15,
 			wantAlbums: 15 * 16,
 			wantTracks: 15 * 16 * 17,

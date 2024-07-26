@@ -304,16 +304,16 @@ func Test_checkSettings_performEmptyAnalysis(t *testing.T) {
 		},
 		"full slice, no problems": {
 			cs:             &checkSettings{empty: cmdtoolkit.CommandFlag[bool]{Value: true}},
-			checkedArtists: createConcernedArtists(generateArtists(5, 6, 7)),
+			checkedArtists: createConcernedArtists(generateArtists(5, 6, 7, nil)),
 		},
 		"empty artists": {
 			cs:             &checkSettings{empty: cmdtoolkit.CommandFlag[bool]{Value: true}},
-			checkedArtists: createConcernedArtists(generateArtists(1, 0, 10)),
+			checkedArtists: createConcernedArtists(generateArtists(1, 0, 10, nil)),
 			want:           true,
 		},
 		"empty albums": {
 			cs:             &checkSettings{empty: cmdtoolkit.CommandFlag[bool]{Value: true}},
-			checkedArtists: createConcernedArtists(generateArtists(4, 6, 0)),
+			checkedArtists: createConcernedArtists(generateArtists(4, 6, 0, nil)),
 			want:           true,
 		},
 	}
@@ -443,12 +443,12 @@ func Test_checkSettings_performNumberingAnalysis(t *testing.T) {
 	}{
 		"no analysis": {
 			cs:             &checkSettings{numbering: cmdtoolkit.CommandFlag[bool]{Value: false}},
-			checkedArtists: createConcernedArtists(generateArtists(5, 6, 7)),
+			checkedArtists: createConcernedArtists(generateArtists(5, 6, 7, nil)),
 			want:           false,
 		},
 		"ok analysis": {
 			cs:             &checkSettings{numbering: cmdtoolkit.CommandFlag[bool]{Value: true}},
-			checkedArtists: createConcernedArtists(generateArtists(5, 6, 7)),
+			checkedArtists: createConcernedArtists(generateArtists(5, 6, 7, nil)),
 			want:           false,
 		},
 		"missing numbers found": {
@@ -478,7 +478,7 @@ func Test_checkSettings_performNumberingAnalysis(t *testing.T) {
 }
 
 func Test_recordTrackFileConcerns(t *testing.T) {
-	originalArtists := generateArtists(5, 6, 7)
+	originalArtists := generateArtists(5, 6, 7, nil)
 	tracks := make([]*files.Track, 0)
 	for _, artist := range originalArtists {
 		copiedArtist := artist.Copy()
@@ -575,7 +575,7 @@ func Test_checkSettings_performFileAnalysis(t *testing.T) {
 		"work to do": {
 			cs: &checkSettings{files: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			args: args{
-				checkedArtists: createConcernedArtists(generateArtists(4, 5, 6)),
+				checkedArtists: createConcernedArtists(generateArtists(4, 5, 6, nil)),
 				ss: &searchSettings{
 					artistFilter: regexp.MustCompile(".*"),
 					albumFilter:  regexp.MustCompile(".*"),
@@ -679,7 +679,7 @@ func Test_checkSettings_performChecks(t *testing.T) {
 				files:     cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			args: args{
-				artists: generateArtists(1, 2, 3),
+				artists: generateArtists(1, 2, 3, nil),
 				ss: &searchSettings{
 					artistFilter: regexp.MustCompile(".*"),
 					albumFilter:  regexp.MustCompile(".*"),

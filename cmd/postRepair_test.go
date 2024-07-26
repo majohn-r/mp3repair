@@ -92,7 +92,7 @@ func Test_postRepairWork(t *testing.T) {
 					albumFilter:  regexp.MustCompile(".*"),
 					trackFilter:  regexp.MustCompile(".*"),
 				},
-				allArtists: generateArtists(2, 3, 4),
+				allArtists: generateArtists(2, 3, 4, nil),
 			},
 			WantedRecording: output.WantedRecording{
 				Console: "Backup directories to delete: 0.\n",
@@ -107,7 +107,7 @@ func Test_postRepairWork(t *testing.T) {
 					albumFilter:  regexp.MustCompile(".*"),
 					trackFilter:  regexp.MustCompile(".*"),
 				},
-				allArtists: generateArtists(2, 3, 4),
+				allArtists: generateArtists(2, 3, 4, nil),
 			},
 			WantedRecording: output.WantedRecording{
 				Console: "" +
@@ -143,7 +143,7 @@ func Test_postRepairWork(t *testing.T) {
 					albumFilter:  regexp.MustCompile(".*"),
 					trackFilter:  regexp.MustCompile(".*"),
 				},
-				allArtists: generateArtists(2, 3, 4),
+				allArtists: generateArtists(2, 3, 4, nil),
 			},
 			WantedRecording: output.WantedRecording{
 				Console: "" +

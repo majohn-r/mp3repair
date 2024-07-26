@@ -93,7 +93,7 @@ func (cT *concernedTrack) isConcerned() bool {
 }
 
 func (cT *concernedTrack) name() string {
-	return cT.backing.SimpleName
+	return cT.backing.Name()
 }
 
 func (cT *concernedTrack) toConsole(o output.Bus) {

@@ -137,7 +137,7 @@ func TestTrackString(t *testing.T) {
 		want string
 	}{
 		"expected": {
-			t:    &Track{FilePath: "my path"},
+			t:    &Track{filePath: "my path"},
 			want: "my path",
 		},
 	}
@@ -157,7 +157,7 @@ func TestTrack_AlbumName(t *testing.T) {
 	}{
 		"orphan track": {t: &Track{}, want: ""},
 		"good track": {
-			t:    &Track{Album: &Album{Title: "my album name"}},
+			t:    &Track{album: &Album{Title: "my album name"}},
 			want: "my album name"},
 	}
 	for name, tt := range tests {
@@ -177,7 +177,7 @@ func TestTrack_RecordingArtist(t *testing.T) {
 		"orphan track": {t: &Track{}, want: ""},
 		"good track": {
 			t: &Track{
-				Album: &Album{RecordingArtist: &Artist{Name: "my artist"}},
+				album: &Album{RecordingArtist: &Artist{Name: "my artist"}},
 			},
 			want: "my artist",
 		},
@@ -197,7 +197,7 @@ func TestTrack_Directory(t *testing.T) {
 		want string
 	}{
 		"typical": {
-			t:    &Track{FilePath: "Music/my artist/my album/03 track.mp3"},
+			t:    &Track{filePath: "Music/my artist/my album/03 track.mp3"},
 			want: "Music\\my artist\\my album",
 		},
 	}
@@ -216,7 +216,7 @@ func TestTrack_FileName(t *testing.T) {
 		want string
 	}{
 		"typical": {
-			t:    &Track{FilePath: "Music/my artist/my album/03 track.mp3"},
+			t:    &Track{filePath: "Music/my artist/my album/03 track.mp3"},
 			want: "03 track.mp3",
 		},
 	}
@@ -310,11 +310,11 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 		wantErr          bool
 	}{
 		"error case": {
-			t:       &Track{FilePath: "./no such file"},
+			t:       &Track{filePath: "./no such file"},
 			wantErr: true,
 		},
 		"good case": {
-			t:            &Track{FilePath: filepath.Join(".", goodFileName)},
+			t:            &Track{filePath: filepath.Join(".", goodFileName)},
 			wantEncoding: "ISO-8859-1",
 			wantVersion:  3,
 			wantFrameStrings: []string{
@@ -404,15 +404,15 @@ func TestTrack_ID3V1Diagnostics(t *testing.T) {
 		wantErr bool
 	}{
 		"small file": {
-			t:       &Track{FilePath: filepath.Join(testDir, smallFile)},
+			t:       &Track{filePath: filepath.Join(testDir, smallFile)},
 			wantErr: true,
 		},
 		"invalid file": {
-			t:       &Track{FilePath: filepath.Join(testDir, invalidFile)},
+			t:       &Track{filePath: filepath.Join(testDir, invalidFile)},
 			wantErr: true,
 		},
 		"good file": {
-			t: &Track{FilePath: filepath.Join(testDir, goodFile)},
+			t: &Track{filePath: filepath.Join(testDir, goodFile)},
 			want: []string{
 				"Artist: \"The Beatles\"",
 				"Album: \"On Air: Live At The BBC, Volum\"",
@@ -529,10 +529,10 @@ func TestTrackLoadMetadata(t *testing.T) {
 		want *TrackMetadata
 	}{
 		"no read needed": {
-			t:    &Track{Metadata: NewTrackMetadata()},
+			t:    &Track{metadata: NewTrackMetadata()},
 			want: NewTrackMetadata()},
 		"read file": {
-			t:    &Track{FilePath: filepath.Join(testDir, fileName)},
+			t:    &Track{filePath: filepath.Join(testDir, fileName)},
 			want: postReadTm,
 		},
 	}
@@ -544,8 +544,8 @@ func TestTrackLoadMetadata(t *testing.T) {
 			tt.t.loadMetadata(bar)
 			waitForFilesClosed()
 			bar.Finish()
-			if !reflect.DeepEqual(tt.t.Metadata, tt.want) {
-				t.Errorf("Track.loadMetadata() got %#v want %#v", tt.t.Metadata, tt.want)
+			if !reflect.DeepEqual(tt.t.metadata, tt.want) {
+				t.Errorf("Track.loadMetadata() got %#v want %#v", tt.t.metadata, tt.want)
 			}
 		})
 	}
@@ -580,11 +580,11 @@ func TestReadMetadata(t *testing.T) {
 				trackName := fmt.Sprintf("track %d-%d-%d", k, m, n)
 				trackFileName := fmt.Sprintf("%02d %s.mp3", n+1, trackName)
 				track := &Track{
-					FilePath:   filepath.Join(albumPath, trackFileName),
-					SimpleName: trackName,
-					Album:      album,
-					Number:     n + 1,
-					Metadata:   nil,
+					filePath:   filepath.Join(albumPath, trackFileName),
+					simpleName: trackName,
+					album:      album,
+					number:     n + 1,
+					metadata:   nil,
 				}
 				metadata := map[string]any{
 					"artist": artistName,
@@ -619,10 +619,10 @@ func TestReadMetadata(t *testing.T) {
 					for _, track := range album.Tracks {
 						if track.needsMetadata() {
 							t.Errorf("ReadMetadata() track %q has no metadata",
-								track.FilePath)
+								track.filePath)
 						} else if track.hasMetadataError() {
 							t.Errorf("ReadMetadata() track %q is defective: %v",
-								track.FilePath, track.Metadata.errorCauses())
+								track.filePath, track.metadata.errorCauses())
 						}
 					}
 				}
@@ -656,7 +656,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 		SimpleName: "bad track",
 		Number:     3,
 	}.NewTrack()
-	problematicTrack.Metadata = metadata
+	problematicTrack.metadata = metadata
 	problematicAlbum.AddTrack(problematicTrack)
 	problematicArtist.AddAlbum(problematicAlbum)
 	goodArtist := NewArtist("good artist", "")
@@ -683,7 +683,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 		SimpleName: "good track",
 		Number:     3,
 	}.NewTrack()
-	goodTrack.Metadata = metadata2
+	goodTrack.metadata = metadata2
 	goodAlbum.AddTrack(goodTrack)
 	goodArtist.AddAlbum(goodAlbum)
 	errorMetadata := NewTrackMetadata()
@@ -697,15 +697,15 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 		want []string
 	}{
 		"unread metadata": {
-			t:    &Track{Metadata: nil},
+			t:    &Track{metadata: nil},
 			want: []string{"differences cannot be determined: metadata has not been read"},
 		},
 		"track with error": {
-			t:    &Track{Metadata: errorMetadata},
+			t:    &Track{metadata: errorMetadata},
 			want: []string{"differences cannot be determined: track metadata may be corrupted"},
 		},
 		"track with no metadata": {
-			t:    &Track{Metadata: noMetadata},
+			t:    &Track{metadata: noMetadata},
 			want: []string{"differences cannot be determined: the track file contains no metadata"},
 		},
 		"track with metadata differences": {
@@ -761,10 +761,10 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 	}
 	expectedMetadata.SetCanonicalSource(ID3V2)
 	track := &Track{
-		FilePath:   filepath.Join(testDir, trackName),
-		SimpleName: strings.TrimSuffix(trackName, ".mp3"),
-		Number:     2,
-		Album: &Album{
+		filePath:   filepath.Join(testDir, trackName),
+		simpleName: strings.TrimSuffix(trackName, ".mp3"),
+		number:     2,
+		album: &Album{
 			Title:          "fine album",
 			CanonicalGenre: "classic rock",
 			CanonicalYear:  "2022",
@@ -777,13 +777,13 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 				CanonicalName: "fine artist",
 			},
 		},
-		Metadata: expectedMetadata,
+		metadata: expectedMetadata,
 	}
 	deletedTrack := &Track{
-		FilePath:   filepath.Join(testDir, "no such file"),
-		SimpleName: strings.TrimSuffix(trackName, ".mp3"),
-		Number:     2,
-		Album: &Album{
+		filePath:   filepath.Join(testDir, "no such file"),
+		simpleName: strings.TrimSuffix(trackName, ".mp3"),
+		number:     2,
+		album: &Album{
 			Title:             "fine album",
 			CanonicalGenre:    "classic rock",
 			CanonicalYear:     "2022",
@@ -794,7 +794,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 				CanonicalName: "fine artist",
 			},
 		},
-		Metadata: expectedMetadata,
+		metadata: expectedMetadata,
 	}
 	editedTm := NewTrackMetadata()
 	for _, src := range []SourceType{ID3V1, ID3V2} {
@@ -820,7 +820,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 			},
 		},
 		"no edit required": {
-			t:     &Track{Metadata: nil},
+			t:     &Track{metadata: nil},
 			wantE: []string{errNoEditNeeded.Error()},
 		},
 		"edit required": {t: track, wantTm: editedTm},
@@ -834,9 +834,9 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 			}
 			if !reflect.DeepEqual(eStrings, tt.wantE) {
 				t.Errorf("Track.UpdateMetadata() = %v, want %v", eStrings, tt.wantE)
-			} else if len(gotE) == 0 && tt.t.Metadata != nil {
+			} else if len(gotE) == 0 && tt.t.metadata != nil {
 				// verify file was correctly rewritten
-				gotTm := initializeMetadata(tt.t.FilePath)
+				gotTm := initializeMetadata(tt.t.filePath)
 				if !reflect.DeepEqual(gotTm, tt.wantTm) {
 					t.Errorf("Track.UpdateMetadata() read %#v, want %#v", gotTm, tt.wantTm)
 				}
@@ -860,7 +860,7 @@ func TestProcessArtistMetadata(t *testing.T) {
 			SimpleName: fmt.Sprintf("track%d", k),
 			Number:     k,
 		}.NewTrack()
-		track.Metadata = tm
+		track.metadata = tm
 		album1.AddTrack(track)
 	}
 	artist2 := NewArtist("artist_name", "")
@@ -877,7 +877,7 @@ func TestProcessArtistMetadata(t *testing.T) {
 			SimpleName: fmt.Sprintf("track%d", k),
 			Number:     k,
 		}.NewTrack()
-		track.Metadata = tm
+		track.metadata = tm
 		album2.AddTrack(track)
 	}
 	artist3 := NewArtist("artist_name", "")
@@ -898,7 +898,7 @@ func TestProcessArtistMetadata(t *testing.T) {
 			SimpleName: fmt.Sprintf("track%d", k),
 			Number:     k,
 		}.NewTrack()
-		track.Metadata = tm
+		track.metadata = tm
 		album3.AddTrack(track)
 	}
 	tests := map[string]struct {
@@ -949,7 +949,7 @@ func TestProcessAlbumMetadata(t *testing.T) {
 		SimpleName: "track1",
 		Number:     1,
 	}.NewTrack()
-	track1.Metadata = tm
+	track1.metadata = tm
 	album1.AddTrack(track1)
 	// more interesting test data
 	var artists2 []*Artist
@@ -971,7 +971,7 @@ func TestProcessAlbumMetadata(t *testing.T) {
 		SimpleName: "track1",
 		Number:     1,
 	}.NewTrack()
-	track2a.Metadata = tm2a
+	track2a.metadata = tm2a
 	album2.AddTrack(track2a)
 	tm2b := NewTrackMetadata()
 	tm2b.SetCanonicalSource(src)
@@ -984,7 +984,7 @@ func TestProcessAlbumMetadata(t *testing.T) {
 		SimpleName: "track2",
 		Number:     2,
 	}.NewTrack()
-	track2b.Metadata = tm2b
+	track2b.metadata = tm2b
 	album2.AddTrack(track2b)
 	tm2c := NewTrackMetadata()
 	tm2c.SetCanonicalSource(src)
@@ -997,7 +997,7 @@ func TestProcessAlbumMetadata(t *testing.T) {
 		SimpleName: "track3",
 		Number:     3,
 	}.NewTrack()
-	track2c.Metadata = tm2c
+	track2c.metadata = tm2c
 	album2.AddTrack(track2c)
 	// error case data
 	var artists3 []*Artist
@@ -1020,7 +1020,7 @@ func TestProcessAlbumMetadata(t *testing.T) {
 		SimpleName: "track1",
 		Number:     1,
 	}.NewTrack()
-	track3a.Metadata = tm3a
+	track3a.metadata = tm3a
 	album3.AddTrack(track3a)
 	tm3b := NewTrackMetadata()
 	tm3b.SetCanonicalSource(src)
@@ -1034,7 +1034,7 @@ func TestProcessAlbumMetadata(t *testing.T) {
 		SimpleName: "track2",
 		Number:     2,
 	}.NewTrack()
-	track3b.Metadata = tm3b
+	track3b.metadata = tm3b
 	album3.AddTrack(track3b)
 	tm3c := NewTrackMetadata()
 	tm3c.SetCanonicalSource(src)
@@ -1048,7 +1048,7 @@ func TestProcessAlbumMetadata(t *testing.T) {
 		SimpleName: "track3",
 		Number:     3,
 	}.NewTrack()
-	track3c.Metadata = tm3c
+	track3c.metadata = tm3c
 	album3.AddTrack(track3c)
 	// verify code can handle missing metadata
 	track4 := TrackMaker{
@@ -1132,10 +1132,10 @@ func TestTrack_ReportMetadataErrors(t *testing.T) {
 	}{
 		"error handling": {
 			t: &Track{
-				SimpleName: "silly track",
-				FilePath:   "Music\\silly artist\\silly album\\01 silly track.mp3",
-				Metadata:   tm,
-				Album: &Album{
+				simpleName: "silly track",
+				filePath:   "Music\\silly artist\\silly album\\01 silly track.mp3",
+				metadata:   tm,
+				album: &Album{
 					Title:           "silly album",
 					RecordingArtist: &Artist{Name: "silly artist"},
 				},
@@ -1192,11 +1192,11 @@ func TestTrack_Details(t *testing.T) {
 		wantErr bool
 	}{
 		"error case": {
-			t:       &Track{FilePath: "./no such file"},
+			t:       &Track{filePath: "./no such file"},
 			wantErr: true,
 		},
 		"good case": {
-			t: &Track{FilePath: filepath.Join(".", goodFileName)},
+			t: &Track{filePath: filepath.Join(".", goodFileName)},
 			want: map[string]string{
 				"Composer":       "a couple of idiots",
 				"Lyricist":       "An infinite number of monkeys with a typewriter",
@@ -1315,4 +1315,227 @@ func createNamedFile(fileName string, content []byte) (fileErr error) {
 // createFile creates a file in a specified directory with standardized content
 func createFile(dir, name string) (err error) {
 	return createFileWithContent(dir, name, []byte("file contents for "+name))
+}
+
+func TestSortTracks(t *testing.T) {
+	tests := map[string]struct {
+		tracks []*Track
+		want   []*Track
+	}{
+		"thorough": {
+			tracks: []*Track{
+				{
+					simpleName: "b",
+					album: &Album{
+						Title:           "b",
+						RecordingArtist: &Artist{Name: "c"},
+					},
+				},
+				{
+					simpleName: "b",
+					album: &Album{
+						Title:           "a",
+						RecordingArtist: &Artist{Name: "c"},
+					},
+				},
+				{
+					simpleName: "b",
+					album: &Album{
+						Title:           "b",
+						RecordingArtist: &Artist{Name: "a"},
+					},
+				},
+				{
+					simpleName: "a",
+					album: &Album{
+						Title:           "b",
+						RecordingArtist: &Artist{Name: "c"},
+					},
+				},
+				{
+					simpleName: "a",
+					album: &Album{
+						Title:           "a",
+						RecordingArtist: &Artist{Name: "c"},
+					},
+				},
+				{
+					simpleName: "a",
+					album: &Album{
+						Title:           "b",
+						RecordingArtist: &Artist{Name: "a"},
+					},
+				},
+			},
+			want: []*Track{
+				{
+					simpleName: "a",
+					album: &Album{
+						Title:           "a",
+						RecordingArtist: &Artist{Name: "c"},
+					},
+				},
+				{
+					simpleName: "a",
+					album: &Album{
+						Title:           "b",
+						RecordingArtist: &Artist{Name: "a"},
+					},
+				},
+				{
+					simpleName: "a",
+					album: &Album{
+						Title:           "b",
+						RecordingArtist: &Artist{Name: "c"},
+					},
+				},
+				{
+					simpleName: "b",
+					album: &Album{
+						Title:           "a",
+						RecordingArtist: &Artist{Name: "c"},
+					},
+				},
+				{
+					simpleName: "b",
+					album: &Album{
+						Title:           "b",
+						RecordingArtist: &Artist{Name: "a"},
+					},
+				},
+				{
+					simpleName: "b",
+					album: &Album{
+						Title:           "b",
+						RecordingArtist: &Artist{Name: "c"},
+					},
+				},
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			SortTracks(tt.tracks)
+			if got := tt.tracks; !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("SortTracks() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTrack_Path(t1 *testing.T) {
+	type fields struct {
+		album      *Album
+		FilePath   string
+		metadata   *TrackMetadata
+		SimpleName string
+		Number     int
+	}
+	tests := map[string]struct {
+		fields
+		want string
+	}{
+		"simple reader, simple test": {
+			fields: fields{
+				album:      nil,
+				FilePath:   "/c/music/my artist/my album/01 this track.mp3",
+				metadata:   nil,
+				SimpleName: "this track",
+				Number:     1,
+			},
+			want: "/c/music/my artist/my album/01 this track.mp3",
+		},
+	}
+	for name, tt := range tests {
+		t1.Run(name, func(t1 *testing.T) {
+			t := &Track{
+				album:      tt.fields.album,
+				filePath:   tt.fields.FilePath,
+				metadata:   tt.fields.metadata,
+				simpleName: tt.fields.SimpleName,
+				number:     tt.fields.Number,
+			}
+			if got := t.Path(); got != tt.want {
+				t1.Errorf("Path() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTrack_Name(t1 *testing.T) {
+	type fields struct {
+		album      *Album
+		filePath   string
+		metadata   *TrackMetadata
+		SimpleName string
+		Number     int
+	}
+	tests := map[string]struct {
+		fields
+		want string
+	}{
+		"simple reader, simple test": {
+			fields: fields{
+				album:      nil,
+				filePath:   "/c/music/my artist/my album/01 this track.mp3",
+				metadata:   nil,
+				SimpleName: "this track",
+				Number:     1,
+			},
+			want: "this track",
+		},
+	}
+	for name, tt := range tests {
+		t1.Run(name, func(t1 *testing.T) {
+			t := &Track{
+				album:      tt.fields.album,
+				filePath:   tt.fields.filePath,
+				metadata:   tt.fields.metadata,
+				simpleName: tt.fields.SimpleName,
+				number:     tt.fields.Number,
+			}
+			if got := t.Name(); got != tt.want {
+				t1.Errorf("Name() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestTrack_Number(t1 *testing.T) {
+	type fields struct {
+		album      *Album
+		filePath   string
+		metadata   *TrackMetadata
+		simpleName string
+		number     int
+	}
+	tests := map[string]struct {
+		fields
+		want int
+	}{
+		"simple reader, simple test": {
+			fields: fields{
+				album:      nil,
+				filePath:   "/c/music/my artist/my album/01 this track.mp3",
+				metadata:   nil,
+				simpleName: "this track",
+				number:     1,
+			},
+			want: 1,
+		},
+	}
+	for name, tt := range tests {
+		t1.Run(name, func(t1 *testing.T) {
+			t := &Track{
+				album:      tt.fields.album,
+				filePath:   tt.fields.filePath,
+				metadata:   tt.fields.metadata,
+				simpleName: tt.fields.simpleName,
+				number:     tt.fields.number,
+			}
+			if got := t.Number(); got != tt.want {
+				t1.Errorf("Number() = %v, want %v", got, tt.want)
+			}
+		})
+	}
 }
