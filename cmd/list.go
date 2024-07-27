@@ -187,41 +187,24 @@ func (ls *listSettings) listFilteredArtists(o output.Bus, artists []*files.Artis
 	ls.listAlbums(o, albums)
 }
 
-type albumSlice []*files.Album
-
-func (as albumSlice) Len() int {
-	return len(as)
-}
-
-func (as albumSlice) Less(i, j int) bool {
-	if as[i].Title == as[j].Title {
-		return as[i].RecordingArtistName() < as[j].RecordingArtistName()
-	}
-	return as[i].Title < as[j].Title
-}
-
-func (as albumSlice) Swap(i, j int) {
-	as[i], as[j] = as[j], as[i]
-}
-
 func (ls *listSettings) listAlbums(o output.Bus, albums []*files.Album) {
 	if ls.albums.Value {
-		sort.Sort(albumSlice(albums))
+		files.SortAlbums(albums)
 		for _, album := range albums {
 			o.WriteConsole("Album: %s\n", ls.annotateAlbumName(album))
 			o.IncrementTab(2)
-			ls.listTracks(o, album.Tracks)
+			ls.listTracks(o, album.Tracks())
 			o.DecrementTab(2)
 		}
 		return
 	}
 	trackCount := 0
 	for _, album := range albums {
-		trackCount += len(album.Tracks)
+		trackCount += len(album.Tracks())
 	}
 	tracks := make([]*files.Track, 0, trackCount)
 	for _, album := range albums {
-		tracks = append(tracks, album.Tracks...)
+		tracks = append(tracks, album.Tracks()...)
 	}
 	ls.listTracks(o, tracks)
 }
@@ -229,10 +212,10 @@ func (ls *listSettings) listAlbums(o output.Bus, albums []*files.Album) {
 func (ls *listSettings) annotateAlbumName(album *files.Album) string {
 	switch {
 	case !ls.artists.Value && ls.annotate.Value:
-		return strings.Join([]string{quote(album.Title), "by",
+		return strings.Join([]string{quote(album.Title()), "by",
 			quote(album.RecordingArtistName())}, " ")
 	default:
-		return album.Title
+		return album.Title()
 	}
 }
 

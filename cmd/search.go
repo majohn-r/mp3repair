@@ -308,13 +308,12 @@ func (ss *searchSettings) filter(o output.Bus, originalArtists []*files.Artist) 
 		if ss.artistFilter.MatchString(originalArtist.Name) && originalArtist.HasAlbums() {
 			filteredArtist := originalArtist.Copy()
 			for _, originalAlbum := range originalArtist.Albums {
-				if ss.albumFilter.MatchString(originalAlbum.Title) &&
+				if ss.albumFilter.MatchString(originalAlbum.Title()) &&
 					originalAlbum.HasTracks() {
 					filteredAlbum := originalAlbum.Copy(filteredArtist, false)
-					for _, originalTrack := range originalAlbum.Tracks {
+					for _, originalTrack := range originalAlbum.Tracks() {
 						if ss.trackFilter.MatchString(originalTrack.Name()) {
-							filteredTrack := originalTrack.Copy(filteredAlbum)
-							filteredAlbum.AddTrack(filteredTrack)
+							originalTrack.Copy(filteredAlbum, true)
 						}
 					}
 					if filteredAlbum.HasTracks() {
@@ -384,7 +383,7 @@ func (ss *searchSettings) addAlbums(o output.Bus, artist *files.Artist) {
 }
 
 func (ss *searchSettings) addTracks(o output.Bus, album *files.Album) {
-	if trackFiles, filesAvailable := readDirectory(o, album.FilePath); filesAvailable {
+	if trackFiles, filesAvailable := readDirectory(o, album.Directory()); filesAvailable {
 		for _, trackFile := range trackFiles {
 			if extension, isTrack := ss.isValidTrackFile(trackFile); isTrack {
 				var parsedName *files.ParsedTrackName
@@ -395,12 +394,12 @@ func (ss *searchSettings) addTracks(o output.Bus, album *files.Album) {
 					Extension: extension,
 				}.Parse(o)
 				if valid {
-					album.AddTrack(files.TrackMaker{
+					files.TrackMaker{
 						Album:      album,
 						FileName:   trackFile.Name(),
 						SimpleName: parsedName.SimpleName,
 						Number:     parsedName.Number,
-					}.NewTrack())
+					}.NewTrack(true)
 				}
 			}
 		}

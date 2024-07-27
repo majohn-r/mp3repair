@@ -273,7 +273,7 @@ func ensureTrackBackupDirectoryExists(o output.Bus, cAl *concernedAlbum) (path s
 			o.WriteCanonicalError("The directory %q cannot be created: %v", path, fileErr)
 			o.WriteCanonicalError(
 				"The track files in the directory %q will not be repaired",
-				cAl.backing.FilePath)
+				cAl.backing.Directory())
 			o.Log(output.Error, "cannot create directory", map[string]any{
 				"command":   repairCommandName,
 				"directory": path,

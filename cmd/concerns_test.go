@@ -142,9 +142,9 @@ func Test_newConcernedAlbum(t *testing.T) {
 						t.Errorf("newConcernedAlbum() created with wrong album: got %v, want %v",
 							got.backingAlbum(), tt.album)
 					}
-					if len(got.tracks()) != len(tt.album.Tracks) {
+					if len(got.tracks()) != len(tt.album.Tracks()) {
 						t.Errorf("newConcernedAlbum() created with %d tracks, want %d",
-							len(got.tracks()), len(tt.album.Tracks))
+							len(got.tracks()), len(tt.album.Tracks()))
 					}
 					got.addConcern(numberingConcern, "missing track 1")
 					if !got.isConcerned() {
@@ -598,9 +598,8 @@ func Test_createConcernedArtists(t *testing.T) {
 					for _, album := range artist.Albums {
 						copiedAl := album.Copy(copiedAr, false)
 						copiedAr.AddAlbum(copiedAl)
-						for _, track := range album.Tracks {
-							copiedTr := track.Copy(copiedAl)
-							copiedAl.AddTrack(copiedTr)
+						for _, track := range album.Tracks() {
+							copiedTr := track.Copy(copiedAl, true)
 							copiedTracks = append(copiedTracks, copiedTr)
 						}
 					}
@@ -632,14 +631,14 @@ func Test_concernedArtist_rollup(t *testing.T) {
 	}
 	artist1 := files.NewArtist("artist name", "artist")
 	album1 := files.AlbumMaker{
-		Title:  "album1",
-		Artist: artist1,
-		Path:   "album1",
+		Title:     "album1",
+		Artist:    artist1,
+		Directory: "album1",
 	}.NewAlbum()
 	album2 := files.AlbumMaker{
-		Title:  "album2",
-		Artist: artist1,
-		Path:   "album2",
+		Title:     "album2",
+		Artist:    artist1,
+		Directory: "album2",
 	}.NewAlbum()
 	artist1.AddAlbum(album1)
 	artist1.AddAlbum(album2)
@@ -649,14 +648,14 @@ func Test_concernedArtist_rollup(t *testing.T) {
 	}
 	artist2 := files.NewArtist("artist name", "artist")
 	album2a := files.AlbumMaker{
-		Title:  "album1",
-		Artist: artist2,
-		Path:   "album1",
+		Title:     "album1",
+		Artist:    artist2,
+		Directory: "album1",
 	}.NewAlbum()
 	album2b := files.AlbumMaker{
-		Title:  "album2",
-		Artist: artist2,
-		Path:   "album2",
+		Title:     "album2",
+		Artist:    artist2,
+		Directory: "album2",
 	}.NewAlbum()
 	artist2.AddAlbum(album2a)
 	artist2.AddAlbum(album2b)
@@ -708,23 +707,23 @@ func Test_concernedArtist_rollup(t *testing.T) {
 
 func Test_concernedAlbum_rollup(t *testing.T) {
 	albumNoTracks := newConcernedAlbum(files.AlbumMaker{
-		Title: "album",
-		Path:  "album",
+		Title:     "album",
+		Directory: "album",
 	}.NewAlbum())
-	album1 := files.AlbumMaker{Title: "album1", Path: "album1"}.NewAlbum()
-	album1.AddTrack(&files.Track{})
-	album1.AddTrack(&files.Track{})
+	album1 := files.AlbumMaker{Title: "album1", Directory: "album1"}.NewAlbum()
+	files.TrackMaker{Album: album1}.NewTrack(true)
+	files.TrackMaker{Album: album1}.NewTrack(true)
 	albumWithTracksNoConcerns := newConcernedAlbum(album1)
-	album2 := files.AlbumMaker{Title: "album2", Path: "album2"}.NewAlbum()
-	album2.AddTrack(&files.Track{})
-	album2.AddTrack(&files.Track{})
+	album2 := files.AlbumMaker{Title: "album2", Directory: "album2"}.NewAlbum()
+	files.TrackMaker{Album: album2}.NewTrack(true)
+	files.TrackMaker{Album: album2}.NewTrack(true)
 	albumWithMixedConcerns := newConcernedAlbum(album2)
 	if albumWithMixedConcerns != nil {
 		albumWithMixedConcerns.tracks()[0].addConcern(filesConcern, "no metadata")
 	}
-	album3 := files.AlbumMaker{Title: "album3", Path: "album3"}.NewAlbum()
-	album3.AddTrack(&files.Track{})
-	album3.AddTrack(&files.Track{})
+	album3 := files.AlbumMaker{Title: "album3", Directory: "album3"}.NewAlbum()
+	files.TrackMaker{Album: album3}.NewTrack(true)
+	files.TrackMaker{Album: album3}.NewTrack(true)
 	albumWithIdenticalConcerns := newConcernedAlbum(album3)
 	if albumWithIdenticalConcerns != nil {
 		for _, cT := range albumWithIdenticalConcerns.tracks() {

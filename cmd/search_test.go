@@ -671,13 +671,12 @@ func Test_searchSettings_load(t *testing.T) {
 	testArtist := files.NewArtistFromFile(artist1, topDir.name)
 	testAlbum := files.NewAlbumFromFile(album1, testArtist)
 	testArtist.AddAlbum(testAlbum)
-	testTrack := files.TrackMaker{
+	files.TrackMaker{
 		Album:      testAlbum,
 		FileName:   album1Content3.name,
 		SimpleName: "lovely music",
 		Number:     1,
-	}.NewTrack()
-	testAlbum.AddTrack(testTrack)
+	}.NewTrack(true)
 	readDirectory = func(_ output.Bus, dir string) ([]fs.FileInfo, bool) {
 		if tf, found := testFiles[dir]; found {
 			var entries []fs.FileInfo
@@ -731,98 +730,89 @@ func Test_searchSettings_load(t *testing.T) {
 func Test_searchSettings_filter(t *testing.T) {
 	artist1 := files.NewArtist("A", filepath.Join("music", "A"))
 	albumA1 := files.AlbumMaker{
-		Title:  "A1",
-		Artist: artist1,
-		Path:   filepath.Join(artist1.FilePath, "A1"),
+		Title:     "A1",
+		Artist:    artist1,
+		Directory: filepath.Join(artist1.FilePath, "A1"),
 	}.NewAlbum()
 	trackA11 := files.TrackMaker{
 		Album:      albumA1,
 		FileName:   "1 A11.mp3",
 		SimpleName: "A11",
 		Number:     1,
-	}.NewTrack()
-	albumA1.AddTrack(trackA11)
-	trackA12 := files.TrackMaker{
+	}.NewTrack(true)
+	files.TrackMaker{
 		Album:      albumA1,
 		FileName:   "2 B12.mp3",
 		SimpleName: "B12",
 		Number:     1,
-	}.NewTrack()
-	albumA1.AddTrack(trackA12)
+	}.NewTrack(true)
 	artist1.AddAlbum(albumA1)
 	albumA2 := files.AlbumMaker{
-		Title:  "B1",
-		Artist: artist1,
-		Path:   filepath.Join(artist1.FilePath, "B1"),
+		Title:     "B1",
+		Artist:    artist1,
+		Directory: filepath.Join(artist1.FilePath, "B1"),
 	}.NewAlbum()
-	trackA21 := files.TrackMaker{
+	files.TrackMaker{
 		Album:      albumA2,
 		FileName:   "1 A21.mp3",
 		SimpleName: "A21",
 		Number:     1,
-	}.NewTrack()
-	albumA2.AddTrack(trackA21)
-	trackA22 := files.TrackMaker{
+	}.NewTrack(true)
+	files.TrackMaker{
 		Album:      albumA2,
 		FileName:   "2 B22.mp3",
 		SimpleName: "B22",
 		Number:     1,
-	}.NewTrack()
-	albumA2.AddTrack(trackA22)
+	}.NewTrack(true)
 	artist1.AddAlbum(albumA2)
 	// add empty album
 	artist1.AddAlbum(files.AlbumMaker{
-		Title:  "A2",
-		Artist: artist1,
-		Path:   filepath.Join(artist1.FilePath, "A2"),
+		Title:     "A2",
+		Artist:    artist1,
+		Directory: filepath.Join(artist1.FilePath, "A2"),
 	}.NewAlbum())
 	artist2 := files.NewArtist("B", filepath.Join("music", "B"))
 	albumB1 := files.AlbumMaker{
-		Title:  "B1",
-		Artist: artist2,
-		Path:   filepath.Join(artist2.FilePath, "B1"),
+		Title:     "B1",
+		Artist:    artist2,
+		Directory: filepath.Join(artist2.FilePath, "B1"),
 	}.NewAlbum()
-	trackB11 := files.TrackMaker{
+	files.TrackMaker{
 		Album:      albumB1,
 		FileName:   "1 A11a.mp3",
 		SimpleName: "A11a",
 		Number:     1,
-	}.NewTrack()
-	albumB1.AddTrack(trackB11)
-	trackB12 := files.TrackMaker{
+	}.NewTrack(true)
+	files.TrackMaker{
 		Album:      albumB1,
 		FileName:   "2 B12a.mp3",
 		SimpleName: "B12a",
 		Number:     1,
-	}.NewTrack()
-	albumB1.AddTrack(trackB12)
+	}.NewTrack(true)
 	artist2.AddAlbum(albumB1)
 	albumB2 := files.AlbumMaker{
-		Title:  "B2",
-		Artist: artist2,
-		Path:   filepath.Join(artist2.FilePath, "B2"),
+		Title:     "B2",
+		Artist:    artist2,
+		Directory: filepath.Join(artist2.FilePath, "B2"),
 	}.NewAlbum()
-	trackB21 := files.TrackMaker{
+	files.TrackMaker{
 		Album:      albumB2,
 		FileName:   "1 A21a.mp3",
 		SimpleName: "A21a",
 		Number:     1,
-	}.NewTrack()
-	albumB2.AddTrack(trackB21)
-	trackB22 := files.TrackMaker{
+	}.NewTrack(true)
+	files.TrackMaker{
 		Album:      albumB2,
 		FileName:   "2 B22a.mp3",
 		SimpleName: "B22a",
 		Number:     1,
-	}.NewTrack()
-	albumB2.AddTrack(trackB22)
+	}.NewTrack(true)
 	artist2.AddAlbum(albumB2)
 	// create empty artist
 	artist3 := files.NewArtist("AA", filepath.Join("music", "AA"))
 	filteredArtist1 := artist1.Copy()
 	filteredAlbumA1 := albumA1.Copy(filteredArtist1, false)
-	filteredTrackA11 := trackA11.Copy(filteredAlbumA1)
-	filteredAlbumA1.AddTrack(filteredTrackA11)
+	trackA11.Copy(filteredAlbumA1, true)
 	filteredArtist1.AddAlbum(filteredAlbumA1)
 	tests := map[string]struct {
 		ss              *searchSettings

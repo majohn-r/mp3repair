@@ -120,11 +120,11 @@ func newConcernedAlbum(album *files.Album) *concernedAlbum {
 	}
 	cAl := &concernedAlbum{
 		concerns:        newConcerns(),
-		concernedTracks: make([]*concernedTrack, 0, len(album.Tracks)),
+		concernedTracks: make([]*concernedTrack, 0, len(album.Tracks())),
 		backing:         album,
 		trackMap:        map[string]*concernedTrack{},
 	}
-	for _, track := range album.Tracks {
+	for _, track := range album.Tracks() {
 		cAl.addTrack(track)
 	}
 	return cAl
@@ -158,7 +158,7 @@ func (cAl *concernedAlbum) isConcerned() bool {
 }
 
 func (cAl *concernedAlbum) name() string {
-	return cAl.backing.Title
+	return cAl.backing.Title()
 }
 
 func (cAl *concernedAlbum) lookup(track *files.Track) *concernedTrack {

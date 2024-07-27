@@ -39,13 +39,13 @@ func TestAlbum_RecordingArtistName(t *testing.T) {
 
 func TestAlbum_Copy(t *testing.T) {
 	complexAlbum := &Album{
-		Title:             "my album",
-		RecordingArtist:   NewArtist("my artist", "Music/my artist"),
-		FilePath:          "Music/my artist/my album",
-		CanonicalGenre:    "rap",
-		CanonicalTitle:    "my special album",
-		CanonicalYear:     "1993",
-		MusicCDIdentifier: id3v2.UnknownFrame{Body: []byte{0, 1, 2}},
+		title:           "my album",
+		recordingArtist: NewArtist("my artist", "Music/my artist"),
+		directory:       "Music/my artist/my album",
+		genre:           "rap",
+		canonicalTitle:  "my special album",
+		year:            "1993",
+		cdIdentifier:    id3v2.UnknownFrame{Body: []byte{0, 1, 2}},
 	}
 	for k := 1; k <= 10; k++ {
 		track := TrackMaker{
@@ -53,17 +53,17 @@ func TestAlbum_Copy(t *testing.T) {
 			FileName:   fmt.Sprintf("%d track %d.mp3", k, k),
 			SimpleName: fmt.Sprintf("track %d", k),
 			Number:     k,
-		}.NewTrack()
-		complexAlbum.AddTrack(track)
+		}.NewTrack(false)
+		complexAlbum.addTrack(track)
 	}
 	complexAlbum2 := &Album{
-		Title:             "my album",
-		RecordingArtist:   NewArtist("my artist", "Music/my artist"),
-		FilePath:          "Music/my artist/my album",
-		CanonicalGenre:    "rap",
-		CanonicalTitle:    "my special album",
-		CanonicalYear:     "1993",
-		MusicCDIdentifier: id3v2.UnknownFrame{Body: []byte{0, 1, 2}},
+		title:           "my album",
+		recordingArtist: NewArtist("my artist", "Music/my artist"),
+		directory:       "Music/my artist/my album",
+		genre:           "rap",
+		canonicalTitle:  "my special album",
+		year:            "1993",
+		cdIdentifier:    id3v2.UnknownFrame{Body: []byte{0, 1, 2}},
 	}
 	for k := 1; k <= 10; k++ {
 		track := TrackMaker{
@@ -71,8 +71,8 @@ func TestAlbum_Copy(t *testing.T) {
 			FileName:   fmt.Sprintf("%d track %d.mp3", k, k),
 			SimpleName: fmt.Sprintf("track %d", k),
 			Number:     k,
-		}.NewTrack()
-		complexAlbum2.AddTrack(track)
+		}.NewTrack(false)
+		complexAlbum2.addTrack(track)
 	}
 	type args struct {
 		ar            *Artist
@@ -85,24 +85,24 @@ func TestAlbum_Copy(t *testing.T) {
 	}{
 		"simple test": {
 			a: AlbumMaker{
-				Title:  "album name",
-				Artist: NewArtist("artist", "Music/artist"),
-				Path:   "Music/artist/album name",
+				Title:     "album name",
+				Artist:    NewArtist("artist", "Music/artist"),
+				Directory: "Music/artist/album name",
 			}.NewAlbum(),
 			args: args{
 				ar:            NewArtist("artist", "Music/artist"),
 				includeTracks: true,
 			},
 			want: AlbumMaker{
-				Title:  "album name",
-				Artist: NewArtist("artist", "Music/artist"),
-				Path:   "Music/artist/album name",
+				Title:     "album name",
+				Artist:    NewArtist("artist", "Music/artist"),
+				Directory: "Music/artist/album name",
 			}.NewAlbum(),
 		},
 		"complex test": {
 			a: complexAlbum,
 			args: args{
-				ar:            complexAlbum.RecordingArtist.Copy(),
+				ar:            complexAlbum.recordingArtist.Copy(),
 				includeTracks: true,
 			},
 			want: complexAlbum2,
@@ -124,7 +124,7 @@ func TestAlbum_BackupDirectory(t *testing.T) {
 		want string
 	}{
 		"simple": {
-			a:    AlbumMaker{Title: "album", Path: "artist/album"}.NewAlbum(),
+			a:    AlbumMaker{Title: "album", Directory: "artist/album"}.NewAlbum(),
 			want: "artist\\album\\pre-repair-backup",
 		},
 	}
@@ -191,9 +191,9 @@ func TestNewAlbumFromFile(t *testing.T) {
 				ar:   testArtist,
 			},
 			want: AlbumMaker{
-				Title:  "simple file",
-				Artist: testArtist,
-				Path:   filepath.Join(testArtist.FilePath, "simple file"),
+				Title:     "simple file",
+				Artist:    testArtist,
+				Directory: filepath.Join(testArtist.FilePath, "simple file"),
 			}.NewAlbum(),
 		},
 	}
@@ -218,7 +218,7 @@ func TestAlbum_HasTracks(t *testing.T) {
 		},
 		"with tracks": {
 			a: &Album{
-				Tracks: []*Track{{}},
+				tracks: []*Track{{}},
 			},
 			want: true,
 		},
@@ -227,6 +227,219 @@ func TestAlbum_HasTracks(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			if got := tt.a.HasTracks(); got != tt.want {
 				t.Errorf("Album.HasTracks() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAlbum_Tracks(t *testing.T) {
+	type fields struct {
+		tracks          []*Track
+		directory       string
+		recordingArtist *Artist
+		title           string
+		genre           string
+		canonicalTitle  string
+		year            string
+		cdIdentifier    id3v2.UnknownFrame
+	}
+	tracks := []*Track{
+		{
+			album:      nil,
+			filePath:   `my artist\my album\01 track 1.mp3`,
+			metadata:   nil,
+			simpleName: "track 1",
+			number:     1,
+		},
+		{
+			album:      nil,
+			filePath:   `my artist\my album\02 track 2.mp3`,
+			metadata:   nil,
+			simpleName: "track 2",
+			number:     2,
+		},
+		{
+			album:      nil,
+			filePath:   `my artist\my album\03 track 3.mp3`,
+			metadata:   nil,
+			simpleName: "track 3",
+			number:     3,
+		},
+	}
+	tests := map[string]struct {
+		fields
+		want []*Track
+	}{
+		"trivial": {
+			fields: fields{
+				tracks:          tracks,
+				directory:       `my artist\my album`,
+				recordingArtist: nil,
+				title:           "my album",
+				genre:           "rock",
+				canonicalTitle:  "my album",
+				year:            "2024",
+				cdIdentifier:    id3v2.UnknownFrame{},
+			},
+			want: tracks,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			a := &Album{
+				tracks:          tt.fields.tracks,
+				directory:       tt.fields.directory,
+				recordingArtist: tt.fields.recordingArtist,
+				title:           tt.fields.title,
+				genre:           tt.fields.genre,
+				canonicalTitle:  tt.fields.canonicalTitle,
+				year:            tt.fields.year,
+				cdIdentifier:    tt.fields.cdIdentifier,
+			}
+			if got := a.Tracks(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("Tracks() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAlbum_Directory(t *testing.T) {
+	type fields struct {
+		tracks          []*Track
+		directory       string
+		recordingArtist *Artist
+		title           string
+		genre           string
+		canonicalTitle  string
+		year            string
+		cdIdentifier    id3v2.UnknownFrame
+	}
+	tests := map[string]struct {
+		fields
+		want string
+	}{
+		"trivial": {
+			fields: fields{
+				tracks:          nil,
+				directory:       `my artist\my album`,
+				recordingArtist: nil,
+				title:           "my album",
+				genre:           "rock",
+				canonicalTitle:  "my album",
+				year:            "2024",
+				cdIdentifier:    id3v2.UnknownFrame{},
+			},
+			want: `my artist\my album`,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			a := &Album{
+				tracks:          tt.fields.tracks,
+				directory:       tt.fields.directory,
+				recordingArtist: tt.fields.recordingArtist,
+				title:           tt.fields.title,
+				genre:           tt.fields.genre,
+				canonicalTitle:  tt.fields.canonicalTitle,
+				year:            tt.fields.year,
+				cdIdentifier:    tt.fields.cdIdentifier,
+			}
+			if got := a.Directory(); got != tt.want {
+				t.Errorf("Directory() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAlbum_Title(t *testing.T) {
+	type fields struct {
+		tracks          []*Track
+		directory       string
+		recordingArtist *Artist
+		title           string
+		genre           string
+		canonicalTitle  string
+		year            string
+		cdIdentifier    id3v2.UnknownFrame
+	}
+	tests := map[string]struct {
+		fields
+		want string
+	}{
+		"trivial": {
+			fields: fields{
+				tracks:          nil,
+				directory:       `my artist\my album`,
+				recordingArtist: nil,
+				title:           "my album",
+				genre:           "rock",
+				canonicalTitle:  "my album",
+				year:            "2024",
+				cdIdentifier:    id3v2.UnknownFrame{},
+			},
+			want: "my album",
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			a := &Album{
+				tracks:          tt.fields.tracks,
+				directory:       tt.fields.directory,
+				recordingArtist: tt.fields.recordingArtist,
+				title:           tt.fields.title,
+				genre:           tt.fields.genre,
+				canonicalTitle:  tt.fields.canonicalTitle,
+				year:            tt.fields.year,
+				cdIdentifier:    tt.fields.cdIdentifier,
+			}
+			if got := a.Title(); got != tt.want {
+				t.Errorf("Title() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestSortAlbums(t *testing.T) {
+	tests := map[string]struct {
+		albums []*Album
+		want   []*Album
+	}{
+		"definitive": {
+			albums: []*Album{
+				AlbumMaker{
+					Title:  "b",
+					Artist: &Artist{Name: "c"},
+				}.NewAlbum(),
+				AlbumMaker{
+					Title:  "a",
+					Artist: &Artist{Name: "c"},
+				}.NewAlbum(),
+				AlbumMaker{
+					Title:  "b",
+					Artist: &Artist{Name: "a"},
+				}.NewAlbum(),
+			},
+			want: []*Album{
+				AlbumMaker{
+					Title:  "a",
+					Artist: &Artist{Name: "c"},
+				}.NewAlbum(),
+				AlbumMaker{
+					Title:  "b",
+					Artist: &Artist{Name: "a"},
+				}.NewAlbum(),
+				AlbumMaker{
+					Title:  "b",
+					Artist: &Artist{Name: "c"},
+				}.NewAlbum(),
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			SortAlbums(tt.albums)
+			if !reflect.DeepEqual(tt.albums, tt.want) {
+				t.Errorf("SortAlbums() = %v, want %v", tt.albums, tt.want)
 			}
 		})
 	}

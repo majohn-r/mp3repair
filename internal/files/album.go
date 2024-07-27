@@ -3,59 +3,70 @@ package files
 import (
 	"io/fs"
 	"path/filepath"
+	"sort"
 
 	"github.com/bogem/id3v2/v2"
 )
 
 // Album encapsulates information about a music album
 type Album struct {
-	Tracks          []*Track
-	FilePath        string
-	RecordingArtist *Artist
-	Title           string
+	tracks          []*Track
+	directory       string
+	recordingArtist *Artist
+	title           string
 	// the following fields are recorded in each track's metadata
-	CanonicalGenre    string
-	CanonicalTitle    string
-	CanonicalYear     string
-	MusicCDIdentifier id3v2.UnknownFrame
+	genre          string
+	canonicalTitle string
+	year           string
+	cdIdentifier   id3v2.UnknownFrame
 }
 
+// Title returns the album's title
+func (a *Album) Title() string { return a.title }
+
+// Directory returns the path representing the album
+func (a *Album) Directory() string { return a.directory }
+
+// Tracks returns the album's slice of *Track
+func (a *Album) Tracks() []*Track { return a.tracks }
+
+// NewAlbumFromFile creates a new Album primarily from file data
 func NewAlbumFromFile(file fs.FileInfo, ar *Artist) *Album {
 	albumName := file.Name()
 	return AlbumMaker{
-		Title:  albumName,
-		Artist: ar,
-		Path:   ar.subDirectory(albumName),
+		Title:     albumName,
+		Artist:    ar,
+		Directory: ar.subDirectory(albumName),
 	}.NewAlbum()
 }
 
 func (a *Album) Copy(ar *Artist, includeTracks bool) *Album {
-	a2 := AlbumMaker{Title: a.Title, Artist: ar, Path: a.FilePath}.NewAlbum()
+	a2 := AlbumMaker{Title: a.title, Artist: ar, Directory: a.directory}.NewAlbum()
 	if includeTracks {
-		for _, t := range a.Tracks {
-			a2.AddTrack(t.Copy(a2))
+		for _, t := range a.tracks {
+			a2.addTrack(t.Copy(a2, false))
 		}
 	}
-	a2.CanonicalGenre = a.CanonicalGenre
-	a2.CanonicalYear = a.CanonicalYear
-	a2.CanonicalTitle = a.CanonicalTitle
-	a2.MusicCDIdentifier = a.MusicCDIdentifier
+	a2.genre = a.genre
+	a2.year = a.year
+	a2.canonicalTitle = a.canonicalTitle
+	a2.cdIdentifier = a.cdIdentifier
 	return a2
 }
 
 type AlbumMaker struct {
-	Title  string
-	Artist *Artist
-	Path   string
+	Title     string
+	Artist    *Artist
+	Directory string
 }
 
 // NewAlbum creates a new Album instance
 func (maker AlbumMaker) NewAlbum() *Album {
 	return &Album{
-		Title:           maker.Title,
-		RecordingArtist: maker.Artist,
-		FilePath:        maker.Path,
-		CanonicalTitle:  maker.Title}
+		title:           maker.Title,
+		recordingArtist: maker.Artist,
+		directory:       maker.Directory,
+		canonicalTitle:  maker.Title}
 }
 
 // BackupDirectory gets the path for the album's backup directory
@@ -65,22 +76,31 @@ func (a *Album) BackupDirectory() string {
 
 // RecordingArtistName returns the name of the album's recording artist
 func (a *Album) RecordingArtistName() (s string) {
-	if a.RecordingArtist != nil {
-		s = a.RecordingArtist.Name
+	if a.recordingArtist != nil {
+		s = a.recordingArtist.Name
 	}
 	return
 }
 
-// AddTrack adds a new track to the album
-func (a *Album) AddTrack(t *Track) {
-	a.Tracks = append(a.Tracks, t)
+func (a *Album) addTrack(t *Track) {
+	a.tracks = append(a.tracks, t)
 }
 
 // HasTracks returns true if the album has tracks
 func (a *Album) HasTracks() bool {
-	return len(a.Tracks) != 0
+	return len(a.tracks) != 0
 }
 
 func (a *Album) subDirectory(s string) string {
-	return filepath.Join(a.FilePath, s)
+	return filepath.Join(a.directory, s)
+}
+
+// SortAlbums sorts albums by title; if titles match, then by artist name
+func SortAlbums(albums []*Album) {
+	sort.Slice(albums, func(i, j int) bool {
+		if albums[i].Title() == albums[j].Title() {
+			return albums[i].RecordingArtistName() < albums[j].RecordingArtistName()
+		}
+		return albums[i].Title() < albums[j].Title()
+	})
 }

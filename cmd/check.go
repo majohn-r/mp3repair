@@ -190,7 +190,7 @@ func (cs *checkSettings) performFileAnalysis(o output.Bus,
 			readMetadata(o, filteredArtists)
 			for _, artist := range filteredArtists {
 				for _, album := range artist.Albums {
-					for _, track := range album.Tracks {
+					for _, track := range album.Tracks() {
 						concerns := track.ReportMetadataProblems()
 						if found := recordTrackFileConcerns(concernedArtists, track, concerns); found {
 							foundConcerns = true

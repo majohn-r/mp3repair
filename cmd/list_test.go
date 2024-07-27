@@ -9,7 +9,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"regexp"
-	"sort"
 	"testing"
 
 	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
@@ -729,14 +728,14 @@ func Test_listSettings_tracksSortable(t *testing.T) {
 var (
 	sampleTrack = files.TrackMaker{
 		Album: files.AlbumMaker{
-			Title:  "my album",
-			Artist: files.NewArtist("my artist", "music/my artist"),
-			Path:   "music/my artist/my album",
+			Title:     "my album",
+			Artist:    files.NewArtist("my artist", "music/my artist"),
+			Directory: "music/my artist/my album",
 		}.NewAlbum(),
 		FileName:   "10 track 10.mp3",
 		SimpleName: "track 10",
 		Number:     10,
-	}.NewTrack()
+	}.NewTrack(false)
 	safeSearchFlags = &cmdtoolkit.FlagSet{
 		Name: "search",
 		Details: map[string]*cmdtoolkit.FlagDetails{
@@ -1053,7 +1052,7 @@ func Test_listSettings_annotateTrackName(t *testing.T) {
 func generateTracks(count int) []*files.Track {
 	albums := generateAlbums(1, count)
 	for _, album := range albums {
-		return album.Tracks
+		return album.Tracks()
 	}
 	return nil
 }
@@ -1108,39 +1107,39 @@ func Test_listSettings_listTracksByName(t *testing.T) {
 			tracks: []*files.Track{
 				files.TrackMaker{
 					SimpleName: "Old Brown Shoe",
-					Album: &files.Album{
-						Title:           "Anthology 3 [Disc 2]",
-						RecordingArtist: &files.Artist{Name: "The Beatles"},
-					},
-				}.NewTrack(),
+					Album: files.AlbumMaker{
+						Title:  "Anthology 3 [Disc 2]",
+						Artist: &files.Artist{Name: "The Beatles"},
+					}.NewAlbum(),
+				}.NewTrack(false),
 				files.TrackMaker{
 					SimpleName: "Old Brown Shoe",
-					Album: &files.Album{
-						Title:           "Live In Japan [Disc 1]",
-						RecordingArtist: &files.Artist{Name: "George Harrison & Eric Clapton"},
-					},
-				}.NewTrack(),
+					Album: files.AlbumMaker{
+						Title:  "Live In Japan [Disc 1]",
+						Artist: &files.Artist{Name: "George Harrison & Eric Clapton"},
+					}.NewAlbum(),
+				}.NewTrack(false),
 				files.TrackMaker{
 					SimpleName: "Old Brown Shoe",
-					Album: &files.Album{
-						Title:           "Past Masters, Vol. 2",
-						RecordingArtist: &files.Artist{Name: "The Beatles"},
-					},
-				}.NewTrack(),
+					Album: files.AlbumMaker{
+						Title:  "Past Masters, Vol. 2",
+						Artist: &files.Artist{Name: "The Beatles"},
+					}.NewAlbum(),
+				}.NewTrack(false),
 				files.TrackMaker{
 					SimpleName: "Old Brown Shoe",
-					Album: &files.Album{
-						Title:           "Songs From The Material World - A Tribute To George Harrison",
-						RecordingArtist: &files.Artist{Name: "Various Artists"},
-					},
-				}.NewTrack(),
+					Album: files.AlbumMaker{
+						Title:  "Songs From The Material World - A Tribute To George Harrison",
+						Artist: &files.Artist{Name: "Various Artists"},
+					}.NewAlbum(),
+				}.NewTrack(false),
 				files.TrackMaker{
 					SimpleName: "Old Brown Shoe (Take 2)",
-					Album: &files.Album{
-						Title:           "Abbey Road- Sessions [Disc 2]",
-						RecordingArtist: &files.Artist{Name: "The Beatles"},
-					},
-				}.NewTrack(),
+					Album: files.AlbumMaker{
+						Title:  "Abbey Road- Sessions [Disc 2]",
+						Artist: &files.Artist{Name: "The Beatles"},
+					}.NewAlbum(),
+				}.NewTrack(false),
 			},
 			tab: 0,
 			WantedRecording: output.WantedRecording{
@@ -1347,9 +1346,9 @@ func Test_listSettings_annotateAlbumName(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			album := files.AlbumMaker{
-				Title:  "my album",
-				Artist: files.NewArtist("my artist", filepath.Join("Music", "my artist")),
-				Path:   filepath.Join("Music", "my artist", "my album"),
+				Title:     "my album",
+				Artist:    files.NewArtist("my artist", filepath.Join("Music", "my artist")),
+				Directory: filepath.Join("Music", "my artist", "my album"),
 			}.NewAlbum()
 			if got := tt.ls.annotateAlbumName(album); got != tt.want {
 				t.Errorf("listSettings.annotateAlbumName() = %v, want %v", got, tt.want)
@@ -1366,20 +1365,19 @@ func generateArtists(artistCount, albumCount, trackCount int, metadata *files.Tr
 		for k := 0; k < albumCount; k++ {
 			albumName := fmt.Sprintf("my album %d%d", r, k)
 			album := files.AlbumMaker{
-				Title:  albumName,
-				Artist: artist,
-				Path:   filepath.Join("Music", "my artist", albumName),
+				Title:     albumName,
+				Artist:    artist,
+				Directory: filepath.Join("Music", "my artist", albumName),
 			}.NewAlbum()
 			for j := 1; j <= trackCount; j++ {
 				trackName := fmt.Sprintf("my track %d%d%d", r, k, j)
-				track := files.TrackMaker{
+				files.TrackMaker{
 					Album:      album,
 					FileName:   fmt.Sprintf("%d %s.mp3", j, trackName),
 					SimpleName: trackName,
 					Number:     j,
 					Metadata:   metadata,
-				}.NewTrack()
-				album.AddTrack(track)
+				}.NewTrack(true)
 			}
 			artist.AddAlbum(album)
 		}
@@ -1467,72 +1465,66 @@ func Test_listSettings_listAlbums(t *testing.T) {
 				annotate: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			albums: []*files.Album{
-				{
-					Title:           "Live Rhymin' [Bonus Tracks]",
-					RecordingArtist: &files.Artist{Name: "Paul Simon"},
-				},
-				{
-					Title:           "Live In Paris & Toronto [Disc 2]",
-					RecordingArtist: &files.Artist{Name: "Loreena McKennitt"},
-				},
-				{
-					Title:           "Live In Paris & Toronto [Disc 1]",
-					RecordingArtist: &files.Artist{Name: "Loreena McKennitt"},
-				},
-				{
-					Title:           "Live In Japan [Disc 2]",
-					RecordingArtist: &files.Artist{Name: "George Harrison & Eric Clapton"},
-				},
-				{
-					Title:           "Live In Japan [Disc 1]",
-					RecordingArtist: &files.Artist{Name: "George Harrison & Eric Clapton"},
-				},
-				{
-					Title:           "Live From New York City, 1967",
-					RecordingArtist: &files.Artist{Name: "Simon & Garfunkel"},
-				},
-				{
-					Title:           "Live At The Circle Room",
-					RecordingArtist: &files.Artist{Name: "Nat King Cole"},
-				},
-				{
-					Title:           "Live At The BBC [Disc 2]",
-					RecordingArtist: &files.Artist{Name: "The Beatles"},
-				},
-				{
-					Title:           "Live At The BBC [Disc 1]",
-					RecordingArtist: &files.Artist{Name: "The Beatles"},
-				},
-				{
-					Title: "Live 1975-85 [Disc 3]",
-					RecordingArtist: &files.Artist{
-						Name: "Bruce Springsteen & The E Street Band",
-					},
-				},
-				{
-					Title: "Live 1975-85 [Disc 2]",
-					RecordingArtist: &files.Artist{
-						Name: "Bruce Springsteen & The E Street Band",
-					},
-				},
-				{
-					Title: "Live 1975-85 [Disc 1]",
-					RecordingArtist: &files.Artist{
-						Name: "Bruce Springsteen & The E Street Band",
-					},
-				},
-				{
-					Title:           "Live",
-					RecordingArtist: &files.Artist{Name: "Roger Whittaker"},
-				},
-				{
-					Title:           "Live",
-					RecordingArtist: &files.Artist{Name: "Blondie"},
-				},
-				{
-					Title:           "Live",
-					RecordingArtist: &files.Artist{Name: "Big Bad Voodoo Daddy"},
-				},
+				files.AlbumMaker{
+					Title:  "Live Rhymin' [Bonus Tracks]",
+					Artist: &files.Artist{Name: "Paul Simon"},
+				}.NewAlbum(),
+				files.AlbumMaker{
+					Title:  "Live In Paris & Toronto [Disc 2]",
+					Artist: &files.Artist{Name: "Loreena McKennitt"},
+				}.NewAlbum(),
+				files.AlbumMaker{
+					Title:  "Live In Paris & Toronto [Disc 1]",
+					Artist: &files.Artist{Name: "Loreena McKennitt"},
+				}.NewAlbum(),
+				files.AlbumMaker{
+					Title:  "Live In Japan [Disc 2]",
+					Artist: &files.Artist{Name: "George Harrison & Eric Clapton"},
+				}.NewAlbum(),
+				files.AlbumMaker{
+					Title:  "Live In Japan [Disc 1]",
+					Artist: &files.Artist{Name: "George Harrison & Eric Clapton"},
+				}.NewAlbum(),
+				files.AlbumMaker{
+					Title:  "Live From New York City, 1967",
+					Artist: &files.Artist{Name: "Simon & Garfunkel"},
+				}.NewAlbum(),
+				files.AlbumMaker{
+					Title:  "Live At The Circle Room",
+					Artist: &files.Artist{Name: "Nat King Cole"},
+				}.NewAlbum(),
+				files.AlbumMaker{
+					Title:  "Live At The BBC [Disc 2]",
+					Artist: &files.Artist{Name: "The Beatles"},
+				}.NewAlbum(),
+				files.AlbumMaker{
+					Title:  "Live At The BBC [Disc 1]",
+					Artist: &files.Artist{Name: "The Beatles"},
+				}.NewAlbum(),
+				files.AlbumMaker{
+					Title:  "Live 1975-85 [Disc 3]",
+					Artist: &files.Artist{Name: "Bruce Springsteen & The E Street Band"},
+				}.NewAlbum(),
+				files.AlbumMaker{
+					Title:  "Live 1975-85 [Disc 2]",
+					Artist: &files.Artist{Name: "Bruce Springsteen & The E Street Band"},
+				}.NewAlbum(),
+				files.AlbumMaker{
+					Title:  "Live 1975-85 [Disc 1]",
+					Artist: &files.Artist{Name: "Bruce Springsteen & The E Street Band"},
+				}.NewAlbum(),
+				files.AlbumMaker{
+					Title:  "Live",
+					Artist: &files.Artist{Name: "Roger Whittaker"},
+				}.NewAlbum(),
+				files.AlbumMaker{
+					Title:  "Live",
+					Artist: &files.Artist{Name: "Blondie"},
+				}.NewAlbum(),
+				files.AlbumMaker{
+					Title:  "Live",
+					Artist: &files.Artist{Name: "Big Bad Voodoo Daddy"},
+				}.NewAlbum(),
 			},
 			tab: 0,
 			WantedRecording: output.WantedRecording{
@@ -2188,52 +2180,6 @@ func Test_list_Help(t *testing.T) {
 			enableCommandRecording(o, command)
 			_ = command.Help()
 			o.Report(t, "list Help()", tt.WantedRecording)
-		})
-	}
-}
-
-func Test_albumSlice_sort(t *testing.T) {
-	tests := map[string]struct {
-		ts   []*files.Album
-		want []*files.Album
-	}{
-		"https://github.com/majohn-r/mp3repair/issues/147": {
-			ts: []*files.Album{
-				{
-					Title:           "b",
-					RecordingArtist: &files.Artist{Name: "c"},
-				},
-				{
-					Title:           "a",
-					RecordingArtist: &files.Artist{Name: "c"},
-				},
-				{
-					Title:           "b",
-					RecordingArtist: &files.Artist{Name: "a"},
-				},
-			},
-			want: []*files.Album{
-				{
-					Title:           "a",
-					RecordingArtist: &files.Artist{Name: "c"},
-				},
-				{
-					Title:           "b",
-					RecordingArtist: &files.Artist{Name: "a"},
-				},
-				{
-					Title:           "b",
-					RecordingArtist: &files.Artist{Name: "c"},
-				},
-			},
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			sort.Sort(albumSlice(tt.ts))
-			if !reflect.DeepEqual(tt.ts, tt.want) {
-				t.Errorf("albumSlice.sort = %v, want %v", tt.ts, tt.want)
-			}
 		})
 	}
 }
