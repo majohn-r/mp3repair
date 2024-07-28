@@ -44,11 +44,11 @@ func postRepairWork(o output.Bus, ss *searchSettings, allArtists []*files.Artist
 			e = nil
 			dirCount := 0
 			for _, artist := range filteredArtists {
-				dirCount += len(artist.Albums)
+				dirCount += len(artist.Albums())
 			}
 			dirs := make([]string, 0, dirCount)
 			for _, artist := range filteredArtists {
-				for _, album := range artist.Albums {
+				for _, album := range artist.Albums() {
 					dir := album.BackupDirectory()
 					if dirExists(dir) {
 						dirs = append(dirs, dir)

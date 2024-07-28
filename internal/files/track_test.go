@@ -29,7 +29,7 @@ func TestTrackNameParserParse(t *testing.T) {
 				FileName: "59 track name.mp3",
 				Album: &Album{
 					title:           "some album",
-					recordingArtist: &Artist{Name: "some artist"},
+					recordingArtist: NewArtist("some artist", `music\some artist`),
 				},
 				Extension: ".mp3",
 			},
@@ -41,7 +41,7 @@ func TestTrackNameParserParse(t *testing.T) {
 				FileName: "60-other track name.mp3",
 				Album: &Album{
 					title:           "some album",
-					recordingArtist: &Artist{Name: "some artist"},
+					recordingArtist: NewArtist("some artist", `music\some artist`),
 				},
 				Extension: ".mp3",
 			},
@@ -56,7 +56,7 @@ func TestTrackNameParserParse(t *testing.T) {
 				FileName: "59 track name.mp4",
 				Album: &Album{
 					title:           "some album",
-					recordingArtist: &Artist{Name: "some artist"},
+					recordingArtist: NewArtist("some artist", `music\some artist`),
 				},
 				Extension: ".mp3",
 			},
@@ -79,7 +79,7 @@ func TestTrackNameParserParse(t *testing.T) {
 				FileName: "track name.mp3",
 				Album: &Album{
 					title:           "some album",
-					recordingArtist: &Artist{Name: "some artist"},
+					recordingArtist: NewArtist("some artist", `music\some artist`),
 				},
 				Extension: ".mp3",
 			},
@@ -99,7 +99,7 @@ func TestTrackNameParserParse(t *testing.T) {
 				FileName: "trackName.mp3",
 				Album: &Album{
 					title:           "some album",
-					recordingArtist: &Artist{Name: "some artist"},
+					recordingArtist: NewArtist("some artist", `music\some artist`),
 				},
 				Extension: ".mp3",
 			},
@@ -177,7 +177,7 @@ func TestTrack_RecordingArtist(t *testing.T) {
 		"orphan track": {t: &Track{}, want: ""},
 		"good track": {
 			t: &Track{
-				album: &Album{recordingArtist: &Artist{Name: "my artist"}},
+				album: &Album{recordingArtist: NewArtist("my artist", `music\my artist`)},
 			},
 			want: "my artist",
 		},
@@ -574,8 +574,7 @@ func TestReadMetadata(t *testing.T) {
 				Title:     albumName,
 				Artist:    artist,
 				Directory: albumName,
-			}.NewAlbum()
-			artist.AddAlbum(album)
+			}.NewAlbum(true)
 			for n := 0; n < 50; n++ {
 				trackName := fmt.Sprintf("track %d-%d-%d", k, m, n)
 				trackFileName := fmt.Sprintf("%02d %s.mp3", n+1, trackName)
@@ -615,7 +614,7 @@ func TestReadMetadata(t *testing.T) {
 			ReadMetadata(o, tt.artists)
 			o.Report(t, "ReadMetadata()", tt.WantedRecording)
 			for _, artist := range tt.artists {
-				for _, album := range artist.Albums {
+				for _, album := range artist.Albums() {
 					for _, track := range album.tracks {
 						if track.needsMetadata() {
 							t.Errorf("ReadMetadata() track %q has no metadata",
@@ -658,7 +657,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	}.NewTrack(false)
 	problematicTrack.metadata = metadata
 	problematicAlbum.addTrack(problematicTrack)
-	problematicArtist.AddAlbum(problematicAlbum)
+	problematicArtist.addAlbum(problematicAlbum)
 	goodArtist := NewArtist("good artist", "")
 	goodAlbum := &Album{
 		title:           "good album",
@@ -685,7 +684,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	}.NewTrack(false)
 	goodTrack.metadata = metadata2
 	goodAlbum.addTrack(goodTrack)
-	goodArtist.AddAlbum(goodAlbum)
+	goodArtist.addAlbum(goodAlbum)
 	errorMetadata := NewTrackMetadata()
 	errorMetadata.setErrorCause(ID3V1, "oops")
 	errorMetadata.setErrorCause(ID3V2, "oops")
@@ -772,10 +771,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 			cdIdentifier: id3v2.UnknownFrame{
 				Body: []byte("fine album"),
 			},
-			recordingArtist: &Artist{
-				Name:          "fine artist",
-				CanonicalName: "fine artist",
-			},
+			recordingArtist: NewArtist("fine artist", `music\fine artist`),
 		},
 		metadata: expectedMetadata,
 	}
@@ -784,15 +780,12 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 		simpleName: strings.TrimSuffix(trackName, ".mp3"),
 		number:     2,
 		album: &Album{
-			title:          "fine album",
-			genre:          "classic rock",
-			year:           "2022",
-			canonicalTitle: "fine album",
-			cdIdentifier:   id3v2.UnknownFrame{Body: []byte("fine album")},
-			recordingArtist: &Artist{
-				Name:          "fine artist",
-				CanonicalName: "fine artist",
-			},
+			title:           "fine album",
+			genre:           "classic rock",
+			year:            "2022",
+			canonicalTitle:  "fine album",
+			cdIdentifier:    id3v2.UnknownFrame{Body: []byte("fine album")},
+			recordingArtist: NewArtist("fine artist", `music\fine artist`),
 		},
 		metadata: expectedMetadata,
 	}
@@ -847,8 +840,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 
 func TestProcessArtistMetadata(t *testing.T) {
 	artist1 := NewArtist("artist_name", "")
-	album1 := AlbumMaker{Title: "album1", Artist: artist1}.NewAlbum()
-	artist1.AddAlbum(album1)
+	album1 := AlbumMaker{Title: "album1", Artist: artist1}.NewAlbum(true)
 	for k := 1; k <= 10; k++ {
 		src := ID3V2
 		tm := NewTrackMetadata()
@@ -864,8 +856,7 @@ func TestProcessArtistMetadata(t *testing.T) {
 		album1.addTrack(track)
 	}
 	artist2 := NewArtist("artist_name", "")
-	album2 := AlbumMaker{Title: "album2", Artist: artist2}.NewAlbum()
-	artist2.AddAlbum(album2)
+	album2 := AlbumMaker{Title: "album2", Artist: artist2}.NewAlbum(true)
 	for k := 1; k <= 10; k++ {
 		src := ID3V2
 		tm := NewTrackMetadata()
@@ -881,8 +872,7 @@ func TestProcessArtistMetadata(t *testing.T) {
 		album2.addTrack(track)
 	}
 	artist3 := NewArtist("artist_name", "")
-	album3 := AlbumMaker{Title: "album3", Artist: artist3}.NewAlbum()
-	artist3.AddAlbum(album3)
+	album3 := AlbumMaker{Title: "album3", Artist: artist3}.NewAlbum(true)
 	for k := 1; k <= 10; k++ {
 		src := ID3V2
 		tm := NewTrackMetadata()
@@ -936,8 +926,7 @@ func TestProcessAlbumMetadata(t *testing.T) {
 	var artists1 []*Artist
 	artist1 := NewArtist("good artist", "")
 	artists1 = append(artists1, artist1)
-	album1 := AlbumMaker{Title: "good-album", Artist: artist1}.NewAlbum()
-	artist1.AddAlbum(album1)
+	album1 := AlbumMaker{Title: "good-album", Artist: artist1}.NewAlbum(true)
 	tm := NewTrackMetadata()
 	tm.SetCanonicalSource(src)
 	tm.SetAlbumName(src, "good:album")
@@ -958,8 +947,7 @@ func TestProcessAlbumMetadata(t *testing.T) {
 	album2 := AlbumMaker{
 		Title:  "another good_album",
 		Artist: artist2,
-	}.NewAlbum()
-	artist2.AddAlbum(album2)
+	}.NewAlbum(true)
 	tm2a := NewTrackMetadata()
 	tm2a.SetCanonicalSource(src)
 	tm2a.SetAlbumName(src, "unknown album")
@@ -1006,8 +994,7 @@ func TestProcessAlbumMetadata(t *testing.T) {
 	album3 := AlbumMaker{
 		Title:  "problematic_album",
 		Artist: artist3,
-	}.NewAlbum()
-	artist3.AddAlbum(album3)
+	}.NewAlbum(true)
 	tm3a := NewTrackMetadata()
 	tm3a.SetCanonicalSource(src)
 	tm3a.SetCDIdentifier([]byte{1, 2, 3})
@@ -1137,7 +1124,7 @@ func TestTrack_ReportMetadataErrors(t *testing.T) {
 				metadata:   tm,
 				album: &Album{
 					title:           "silly album",
-					recordingArtist: &Artist{Name: "silly artist"},
+					recordingArtist: NewArtist("silly artist", `music\silly artist`),
 				},
 			},
 			WantedRecording: output.WantedRecording{
@@ -1328,42 +1315,42 @@ func TestSortTracks(t *testing.T) {
 					simpleName: "b",
 					album: &Album{
 						title:           "b",
-						recordingArtist: &Artist{Name: "c"},
+						recordingArtist: NewArtist("c", `music\c`),
 					},
 				},
 				{
 					simpleName: "b",
 					album: &Album{
 						title:           "a",
-						recordingArtist: &Artist{Name: "c"},
+						recordingArtist: NewArtist("c", `music\c`),
 					},
 				},
 				{
 					simpleName: "b",
 					album: &Album{
 						title:           "b",
-						recordingArtist: &Artist{Name: "a"},
+						recordingArtist: NewArtist("a", `music\a`),
 					},
 				},
 				{
 					simpleName: "a",
 					album: &Album{
 						title:           "b",
-						recordingArtist: &Artist{Name: "c"},
+						recordingArtist: NewArtist("c", `music\c`),
 					},
 				},
 				{
 					simpleName: "a",
 					album: &Album{
 						title:           "a",
-						recordingArtist: &Artist{Name: "c"},
+						recordingArtist: NewArtist("c", `music\c`),
 					},
 				},
 				{
 					simpleName: "a",
 					album: &Album{
 						title:           "b",
-						recordingArtist: &Artist{Name: "a"},
+						recordingArtist: NewArtist("a", `music\a`),
 					},
 				},
 			},
@@ -1372,42 +1359,42 @@ func TestSortTracks(t *testing.T) {
 					simpleName: "a",
 					album: &Album{
 						title:           "a",
-						recordingArtist: &Artist{Name: "c"},
+						recordingArtist: NewArtist("c", `music\c`),
 					},
 				},
 				{
 					simpleName: "a",
 					album: &Album{
 						title:           "b",
-						recordingArtist: &Artist{Name: "a"},
+						recordingArtist: NewArtist("a", `music\a`),
 					},
 				},
 				{
 					simpleName: "a",
 					album: &Album{
 						title:           "b",
-						recordingArtist: &Artist{Name: "c"},
+						recordingArtist: NewArtist("c", `music\c`),
 					},
 				},
 				{
 					simpleName: "b",
 					album: &Album{
 						title:           "a",
-						recordingArtist: &Artist{Name: "c"},
+						recordingArtist: NewArtist("c", `music\c`),
 					},
 				},
 				{
 					simpleName: "b",
 					album: &Album{
 						title:           "b",
-						recordingArtist: &Artist{Name: "a"},
+						recordingArtist: NewArtist("a", `music\a`),
 					},
 				},
 				{
 					simpleName: "b",
 					album: &Album{
 						title:           "b",
-						recordingArtist: &Artist{Name: "c"},
+						recordingArtist: NewArtist("c", `music\c`),
 					},
 				},
 			},
@@ -1545,12 +1532,12 @@ func TestTrackMaker_NewTrack(t *testing.T) {
 		Title:     "my album",
 		Artist:    nil,
 		Directory: "my artist/my album",
-	}.NewAlbum()
+	}.NewAlbum(false)
 	testAlbum2 := AlbumMaker{
 		Title:     "my other album",
 		Artist:    nil,
 		Directory: "my artist/my other album",
-	}.NewAlbum()
+	}.NewAlbum(false)
 	type fields struct {
 		Album      *Album
 		FileName   string
@@ -1625,12 +1612,12 @@ func TestTrack_Copy(t1 *testing.T) {
 		Title:     "my album",
 		Artist:    nil,
 		Directory: "my artist/my album",
-	}.NewAlbum()
+	}.NewAlbum(false)
 	testAlbum2 := AlbumMaker{
 		Title:     "my other album",
 		Artist:    nil,
 		Directory: "my artist/my other album",
-	}.NewAlbum()
+	}.NewAlbum(false)
 	type fields struct {
 		album      *Album
 		filePath   string

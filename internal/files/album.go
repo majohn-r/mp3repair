@@ -37,11 +37,11 @@ func NewAlbumFromFile(file fs.FileInfo, ar *Artist) *Album {
 		Title:     albumName,
 		Artist:    ar,
 		Directory: ar.subDirectory(albumName),
-	}.NewAlbum()
+	}.NewAlbum(true)
 }
 
-func (a *Album) Copy(ar *Artist, includeTracks bool) *Album {
-	a2 := AlbumMaker{Title: a.title, Artist: ar, Directory: a.directory}.NewAlbum()
+func (a *Album) Copy(ar *Artist, includeTracks, addToArtist bool) *Album {
+	a2 := AlbumMaker{Title: a.title, Artist: ar, Directory: a.directory}.NewAlbum(addToArtist)
 	if includeTracks {
 		for _, t := range a.tracks {
 			a2.addTrack(t.Copy(a2, false))
@@ -61,12 +61,17 @@ type AlbumMaker struct {
 }
 
 // NewAlbum creates a new Album instance
-func (maker AlbumMaker) NewAlbum() *Album {
-	return &Album{
+func (maker AlbumMaker) NewAlbum(addToArtist bool) *Album {
+	a := &Album{
 		title:           maker.Title,
 		recordingArtist: maker.Artist,
 		directory:       maker.Directory,
-		canonicalTitle:  maker.Title}
+		canonicalTitle:  maker.Title,
+	}
+	if addToArtist {
+		maker.Artist.addAlbum(a)
+	}
+	return a
 }
 
 // BackupDirectory gets the path for the album's backup directory
@@ -77,7 +82,7 @@ func (a *Album) BackupDirectory() string {
 // RecordingArtistName returns the name of the album's recording artist
 func (a *Album) RecordingArtistName() (s string) {
 	if a.recordingArtist != nil {
-		s = a.recordingArtist.Name
+		s = a.recordingArtist.Name()
 	}
 	return
 }

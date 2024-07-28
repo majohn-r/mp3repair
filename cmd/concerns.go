@@ -228,11 +228,11 @@ func newConcernedArtist(artist *files.Artist) *concernedArtist {
 	}
 	cAr := &concernedArtist{
 		concerns:        newConcerns(),
-		concernedAlbums: make([]*concernedAlbum, 0, len(artist.Albums)),
+		concernedAlbums: make([]*concernedAlbum, 0, len(artist.Albums())),
 		backing:         artist,
 		albumMap:        map[string]*concernedAlbum{},
 	}
-	for _, album := range artist.Albums {
+	for _, album := range artist.Albums() {
 		cAr.addAlbum(album)
 	}
 	return cAr
@@ -278,7 +278,7 @@ func (cAr *concernedArtist) lookup(track *files.Track) *concernedTrack {
 }
 
 func (cAr *concernedArtist) name() string {
-	return cAr.backing.Name
+	return cAr.backing.Name()
 }
 
 func (cAr *concernedArtist) rollup() bool {

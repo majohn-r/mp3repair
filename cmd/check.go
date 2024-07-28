@@ -189,7 +189,7 @@ func (cs *checkSettings) performFileAnalysis(o output.Bus,
 		if filteredArtists := ss.filter(o, artists); len(filteredArtists) != 0 {
 			readMetadata(o, filteredArtists)
 			for _, artist := range filteredArtists {
-				for _, album := range artist.Albums {
+				for _, album := range artist.Albums() {
 					for _, track := range album.Tracks() {
 						concerns := track.ReportMetadataProblems()
 						if found := recordTrackFileConcerns(concernedArtists, track, concerns); found {

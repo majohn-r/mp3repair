@@ -731,7 +731,7 @@ var (
 			Title:     "my album",
 			Artist:    files.NewArtist("my artist", "music/my artist"),
 			Directory: "music/my artist/my album",
-		}.NewAlbum(),
+		}.NewAlbum(false),
 		FileName:   "10 track 10.mp3",
 		SimpleName: "track 10",
 		Number:     10,
@@ -1109,36 +1109,36 @@ func Test_listSettings_listTracksByName(t *testing.T) {
 					SimpleName: "Old Brown Shoe",
 					Album: files.AlbumMaker{
 						Title:  "Anthology 3 [Disc 2]",
-						Artist: &files.Artist{Name: "The Beatles"},
-					}.NewAlbum(),
+						Artist: files.NewArtist("The Beatles", `music\The Beatles`),
+					}.NewAlbum(false),
 				}.NewTrack(false),
 				files.TrackMaker{
 					SimpleName: "Old Brown Shoe",
 					Album: files.AlbumMaker{
 						Title:  "Live In Japan [Disc 1]",
-						Artist: &files.Artist{Name: "George Harrison & Eric Clapton"},
-					}.NewAlbum(),
+						Artist: files.NewArtist("George Harrison & Eric Clapton", `music\George Harrison & Eric Clapton`),
+					}.NewAlbum(false),
 				}.NewTrack(false),
 				files.TrackMaker{
 					SimpleName: "Old Brown Shoe",
 					Album: files.AlbumMaker{
 						Title:  "Past Masters, Vol. 2",
-						Artist: &files.Artist{Name: "The Beatles"},
-					}.NewAlbum(),
+						Artist: files.NewArtist("The Beatles", `music\The Beatles`),
+					}.NewAlbum(false),
 				}.NewTrack(false),
 				files.TrackMaker{
 					SimpleName: "Old Brown Shoe",
 					Album: files.AlbumMaker{
 						Title:  "Songs From The Material World - A Tribute To George Harrison",
-						Artist: &files.Artist{Name: "Various Artists"},
-					}.NewAlbum(),
+						Artist: files.NewArtist("Various Artists", `music\Various Artists`),
+					}.NewAlbum(false),
 				}.NewTrack(false),
 				files.TrackMaker{
 					SimpleName: "Old Brown Shoe (Take 2)",
 					Album: files.AlbumMaker{
 						Title:  "Abbey Road- Sessions [Disc 2]",
-						Artist: &files.Artist{Name: "The Beatles"},
-					}.NewAlbum(),
+						Artist: files.NewArtist("The Beatles", `music\The Beatles`),
+					}.NewAlbum(false),
 				}.NewTrack(false),
 			},
 			tab: 0,
@@ -1349,7 +1349,7 @@ func Test_listSettings_annotateAlbumName(t *testing.T) {
 				Title:     "my album",
 				Artist:    files.NewArtist("my artist", filepath.Join("Music", "my artist")),
 				Directory: filepath.Join("Music", "my artist", "my album"),
-			}.NewAlbum()
+			}.NewAlbum(false)
 			if got := tt.ls.annotateAlbumName(album); got != tt.want {
 				t.Errorf("listSettings.annotateAlbumName() = %v, want %v", got, tt.want)
 			}
@@ -1368,7 +1368,7 @@ func generateArtists(artistCount, albumCount, trackCount int, metadata *files.Tr
 				Title:     albumName,
 				Artist:    artist,
 				Directory: filepath.Join("Music", "my artist", albumName),
-			}.NewAlbum()
+			}.NewAlbum(true)
 			for j := 1; j <= trackCount; j++ {
 				trackName := fmt.Sprintf("my track %d%d%d", r, k, j)
 				files.TrackMaker{
@@ -1379,7 +1379,6 @@ func generateArtists(artistCount, albumCount, trackCount int, metadata *files.Tr
 					Metadata:   metadata,
 				}.NewTrack(true)
 			}
-			artist.AddAlbum(album)
 		}
 		artists = append(artists, artist)
 	}
@@ -1389,7 +1388,7 @@ func generateArtists(artistCount, albumCount, trackCount int, metadata *files.Tr
 func generateAlbums(albumCount, trackCount int) []*files.Album {
 	artists := generateArtists(1, albumCount, trackCount, nil)
 	for _, artist := range artists {
-		return artist.Albums
+		return artist.Albums()
 	}
 	return nil
 }
@@ -1467,64 +1466,64 @@ func Test_listSettings_listAlbums(t *testing.T) {
 			albums: []*files.Album{
 				files.AlbumMaker{
 					Title:  "Live Rhymin' [Bonus Tracks]",
-					Artist: &files.Artist{Name: "Paul Simon"},
-				}.NewAlbum(),
+					Artist: files.NewArtist("Paul Simon", `music\Paul Simon`),
+				}.NewAlbum(false),
 				files.AlbumMaker{
 					Title:  "Live In Paris & Toronto [Disc 2]",
-					Artist: &files.Artist{Name: "Loreena McKennitt"},
-				}.NewAlbum(),
+					Artist: files.NewArtist("Loreena McKennitt", `music\Loreena McKennitt`),
+				}.NewAlbum(false),
 				files.AlbumMaker{
 					Title:  "Live In Paris & Toronto [Disc 1]",
-					Artist: &files.Artist{Name: "Loreena McKennitt"},
-				}.NewAlbum(),
+					Artist: files.NewArtist("Loreena McKennitt", `music\Loreena McKennitt`),
+				}.NewAlbum(false),
 				files.AlbumMaker{
 					Title:  "Live In Japan [Disc 2]",
-					Artist: &files.Artist{Name: "George Harrison & Eric Clapton"},
-				}.NewAlbum(),
+					Artist: files.NewArtist("George Harrison & Eric Clapton", `music\George Harrison & Eric Clapton`),
+				}.NewAlbum(false),
 				files.AlbumMaker{
 					Title:  "Live In Japan [Disc 1]",
-					Artist: &files.Artist{Name: "George Harrison & Eric Clapton"},
-				}.NewAlbum(),
+					Artist: files.NewArtist("George Harrison & Eric Clapton", `music\George Harrison & Eric Clapton`),
+				}.NewAlbum(false),
 				files.AlbumMaker{
 					Title:  "Live From New York City, 1967",
-					Artist: &files.Artist{Name: "Simon & Garfunkel"},
-				}.NewAlbum(),
+					Artist: files.NewArtist("Simon & Garfunkel", `music\Simon & Garfunkel`),
+				}.NewAlbum(false),
 				files.AlbumMaker{
 					Title:  "Live At The Circle Room",
-					Artist: &files.Artist{Name: "Nat King Cole"},
-				}.NewAlbum(),
+					Artist: files.NewArtist("Nat King Cole", `music\Nat King Cole`),
+				}.NewAlbum(false),
 				files.AlbumMaker{
 					Title:  "Live At The BBC [Disc 2]",
-					Artist: &files.Artist{Name: "The Beatles"},
-				}.NewAlbum(),
+					Artist: files.NewArtist("The Beatles", `music\The Beatles`),
+				}.NewAlbum(false),
 				files.AlbumMaker{
 					Title:  "Live At The BBC [Disc 1]",
-					Artist: &files.Artist{Name: "The Beatles"},
-				}.NewAlbum(),
+					Artist: files.NewArtist("The Beatles", `music\The Beatles`),
+				}.NewAlbum(false),
 				files.AlbumMaker{
 					Title:  "Live 1975-85 [Disc 3]",
-					Artist: &files.Artist{Name: "Bruce Springsteen & The E Street Band"},
-				}.NewAlbum(),
+					Artist: files.NewArtist("Bruce Springsteen & The E Street Band", `music\Bruce Springsteen & The E Street Band`),
+				}.NewAlbum(false),
 				files.AlbumMaker{
 					Title:  "Live 1975-85 [Disc 2]",
-					Artist: &files.Artist{Name: "Bruce Springsteen & The E Street Band"},
-				}.NewAlbum(),
+					Artist: files.NewArtist("Bruce Springsteen & The E Street Band", `music\Bruce Springsteen & The E Street Band`),
+				}.NewAlbum(false),
 				files.AlbumMaker{
 					Title:  "Live 1975-85 [Disc 1]",
-					Artist: &files.Artist{Name: "Bruce Springsteen & The E Street Band"},
-				}.NewAlbum(),
+					Artist: files.NewArtist("Bruce Springsteen & The E Street Band", `music\Bruce Springsteen & The E Street Band`),
+				}.NewAlbum(false),
 				files.AlbumMaker{
 					Title:  "Live",
-					Artist: &files.Artist{Name: "Roger Whittaker"},
-				}.NewAlbum(),
+					Artist: files.NewArtist("Roger Whittaker", `music\Roger Whittaker`),
+				}.NewAlbum(false),
 				files.AlbumMaker{
 					Title:  "Live",
-					Artist: &files.Artist{Name: "Blondie"},
-				}.NewAlbum(),
+					Artist: files.NewArtist("Blondie", `music\Blondie`),
+				}.NewAlbum(false),
 				files.AlbumMaker{
 					Title:  "Live",
-					Artist: &files.Artist{Name: "Big Bad Voodoo Daddy"},
-				}.NewAlbum(),
+					Artist: files.NewArtist("Big Bad Voodoo Daddy", `music\Big Bad Voodoo Daddy`),
+				}.NewAlbum(false),
 			},
 			tab: 0,
 			WantedRecording: output.WantedRecording{

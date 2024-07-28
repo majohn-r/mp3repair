@@ -670,7 +670,6 @@ func Test_searchSettings_load(t *testing.T) {
 	}
 	testArtist := files.NewArtistFromFile(artist1, topDir.name)
 	testAlbum := files.NewAlbumFromFile(album1, testArtist)
-	testArtist.AddAlbum(testAlbum)
 	files.TrackMaker{
 		Album:      testAlbum,
 		FileName:   album1Content3.name,
@@ -732,8 +731,8 @@ func Test_searchSettings_filter(t *testing.T) {
 	albumA1 := files.AlbumMaker{
 		Title:     "A1",
 		Artist:    artist1,
-		Directory: filepath.Join(artist1.FilePath, "A1"),
-	}.NewAlbum()
+		Directory: filepath.Join(artist1.Directory(), "A1"),
+	}.NewAlbum(true)
 	trackA11 := files.TrackMaker{
 		Album:      albumA1,
 		FileName:   "1 A11.mp3",
@@ -746,12 +745,11 @@ func Test_searchSettings_filter(t *testing.T) {
 		SimpleName: "B12",
 		Number:     1,
 	}.NewTrack(true)
-	artist1.AddAlbum(albumA1)
 	albumA2 := files.AlbumMaker{
 		Title:     "B1",
 		Artist:    artist1,
-		Directory: filepath.Join(artist1.FilePath, "B1"),
-	}.NewAlbum()
+		Directory: filepath.Join(artist1.Directory(), "B1"),
+	}.NewAlbum(true)
 	files.TrackMaker{
 		Album:      albumA2,
 		FileName:   "1 A21.mp3",
@@ -764,19 +762,18 @@ func Test_searchSettings_filter(t *testing.T) {
 		SimpleName: "B22",
 		Number:     1,
 	}.NewTrack(true)
-	artist1.AddAlbum(albumA2)
 	// add empty album
-	artist1.AddAlbum(files.AlbumMaker{
+	files.AlbumMaker{
 		Title:     "A2",
 		Artist:    artist1,
-		Directory: filepath.Join(artist1.FilePath, "A2"),
-	}.NewAlbum())
+		Directory: filepath.Join(artist1.Directory(), "A2"),
+	}.NewAlbum(true)
 	artist2 := files.NewArtist("B", filepath.Join("music", "B"))
 	albumB1 := files.AlbumMaker{
 		Title:     "B1",
 		Artist:    artist2,
-		Directory: filepath.Join(artist2.FilePath, "B1"),
-	}.NewAlbum()
+		Directory: filepath.Join(artist2.Directory(), "B1"),
+	}.NewAlbum(true)
 	files.TrackMaker{
 		Album:      albumB1,
 		FileName:   "1 A11a.mp3",
@@ -789,12 +786,11 @@ func Test_searchSettings_filter(t *testing.T) {
 		SimpleName: "B12a",
 		Number:     1,
 	}.NewTrack(true)
-	artist2.AddAlbum(albumB1)
 	albumB2 := files.AlbumMaker{
 		Title:     "B2",
 		Artist:    artist2,
-		Directory: filepath.Join(artist2.FilePath, "B2"),
-	}.NewAlbum()
+		Directory: filepath.Join(artist2.Directory(), "B2"),
+	}.NewAlbum(true)
 	files.TrackMaker{
 		Album:      albumB2,
 		FileName:   "1 A21a.mp3",
@@ -807,13 +803,11 @@ func Test_searchSettings_filter(t *testing.T) {
 		SimpleName: "B22a",
 		Number:     1,
 	}.NewTrack(true)
-	artist2.AddAlbum(albumB2)
 	// create empty artist
 	artist3 := files.NewArtist("AA", filepath.Join("music", "AA"))
 	filteredArtist1 := artist1.Copy()
-	filteredAlbumA1 := albumA1.Copy(filteredArtist1, false)
+	filteredAlbumA1 := albumA1.Copy(filteredArtist1, false, true)
 	trackA11.Copy(filteredAlbumA1, true)
-	filteredArtist1.AddAlbum(filteredAlbumA1)
 	tests := map[string]struct {
 		ss              *searchSettings
 		originalArtists []*files.Artist

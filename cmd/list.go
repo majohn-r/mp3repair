@@ -161,8 +161,8 @@ func (ls *listSettings) listFilteredArtists(o output.Bus, artists []*files.Artis
 		m := map[string]*files.Artist{}
 		names := make([]string, 0, len(artists))
 		for _, a := range artists {
-			m[a.Name] = a
-			names = append(names, a.Name)
+			m[a.Name()] = a
+			names = append(names, a.Name())
 		}
 		sort.Strings(names)
 		for _, s := range names {
@@ -170,7 +170,7 @@ func (ls *listSettings) listFilteredArtists(o output.Bus, artists []*files.Artis
 			artist := m[s]
 			if artist != nil {
 				o.IncrementTab(2)
-				ls.listAlbums(o, artist.Albums)
+				ls.listAlbums(o, artist.Albums())
 				o.DecrementTab(2)
 			}
 		}
@@ -178,11 +178,11 @@ func (ls *listSettings) listFilteredArtists(o output.Bus, artists []*files.Artis
 	}
 	albumCount := 0
 	for _, a := range artists {
-		albumCount += len(a.Albums)
+		albumCount += len(a.Albums())
 	}
 	albums := make([]*files.Album, 0, albumCount)
 	for _, a := range artists {
-		albums = append(albums, a.Albums...)
+		albums = append(albums, a.Albums()...)
 	}
 	ls.listAlbums(o, albums)
 }

@@ -305,19 +305,21 @@ func evaluateFilter(o output.Bus, filtering filterFlag) evaluatedFilter {
 func (ss *searchSettings) filter(o output.Bus, originalArtists []*files.Artist) []*files.Artist {
 	filteredArtists := make([]*files.Artist, 0, len(originalArtists))
 	for _, originalArtist := range originalArtists {
-		if ss.artistFilter.MatchString(originalArtist.Name) && originalArtist.HasAlbums() {
+		if ss.artistFilter.MatchString(originalArtist.Name()) && originalArtist.HasAlbums() {
 			filteredArtist := originalArtist.Copy()
-			for _, originalAlbum := range originalArtist.Albums {
-				if ss.albumFilter.MatchString(originalAlbum.Title()) &&
-					originalAlbum.HasTracks() {
-					filteredAlbum := originalAlbum.Copy(filteredArtist, false)
+			for _, originalAlbum := range originalArtist.Albums() {
+				if ss.albumFilter.MatchString(originalAlbum.Title()) && originalAlbum.HasTracks() {
+					var willHaveTracks bool
+					for _, originalTrack := range originalAlbum.Tracks() {
+						if ss.trackFilter.MatchString(originalTrack.Name()) {
+							willHaveTracks = true
+						}
+					}
+					filteredAlbum := originalAlbum.Copy(filteredArtist, false, willHaveTracks)
 					for _, originalTrack := range originalAlbum.Tracks() {
 						if ss.trackFilter.MatchString(originalTrack.Name()) {
 							originalTrack.Copy(filteredAlbum, true)
 						}
-					}
-					if filteredAlbum.HasTracks() {
-						filteredArtist.AddAlbum(filteredAlbum)
 					}
 				}
 			}
@@ -371,12 +373,11 @@ func (ss *searchSettings) load(o output.Bus) []*files.Artist {
 }
 
 func (ss *searchSettings) addAlbums(o output.Bus, artist *files.Artist) {
-	if albumFiles, artistDirRead := readDirectory(o, artist.FilePath); artistDirRead {
+	if albumFiles, artistDirRead := readDirectory(o, artist.Directory()); artistDirRead {
 		for _, albumFile := range albumFiles {
 			if albumFile.IsDir() {
 				album := files.NewAlbumFromFile(albumFile, artist)
 				ss.addTracks(o, album)
-				artist.AddAlbum(album)
 			}
 		}
 	}

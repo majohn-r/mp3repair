@@ -420,7 +420,7 @@ func Test_checkSettings_performNumberingAnalysis(t *testing.T) {
 				Title:     albumName,
 				Artist:    artist,
 				Directory: filepath.Join("Music", "my artist", albumName),
-			}.NewAlbum()
+			}.NewAlbum(true)
 			for j := 1; j <= 6; j += 2 {
 				trackName := fmt.Sprintf("my track %d%d%d", r, k, j)
 				files.TrackMaker{
@@ -430,7 +430,6 @@ func Test_checkSettings_performNumberingAnalysis(t *testing.T) {
 					Number:     j,
 				}.NewTrack(true)
 			}
-			artist.AddAlbum(album)
 		}
 		defectiveArtists = append(defectiveArtists, artist)
 	}
@@ -481,9 +480,8 @@ func Test_recordTrackFileConcerns(t *testing.T) {
 	tracks := make([]*files.Track, 0)
 	for _, artist := range originalArtists {
 		copiedArtist := artist.Copy()
-		for _, album := range artist.Albums {
-			copiedAlbum := album.Copy(copiedArtist, true)
-			copiedArtist.AddAlbum(copiedAlbum)
+		for _, album := range artist.Albums() {
+			copiedAlbum := album.Copy(copiedArtist, true, true)
 			tracks = append(tracks, copiedAlbum.Tracks()...)
 		}
 	}

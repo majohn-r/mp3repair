@@ -20,11 +20,11 @@ func TestAlbum_RecordingArtistName(t *testing.T) {
 			a: AlbumMaker{
 				Title:  "album1",
 				Artist: NewArtist("artist1", ""),
-			}.NewAlbum(),
+			}.NewAlbum(false),
 			want: "artist1",
 		},
 		"no recording artist": {
-			a:    AlbumMaker{Title: "album1"}.NewAlbum(),
+			a:    AlbumMaker{Title: "album1"}.NewAlbum(false),
 			want: "",
 		},
 	}
@@ -88,7 +88,7 @@ func TestAlbum_Copy(t *testing.T) {
 				Title:     "album name",
 				Artist:    NewArtist("artist", "Music/artist"),
 				Directory: "Music/artist/album name",
-			}.NewAlbum(),
+			}.NewAlbum(false),
 			args: args{
 				ar:            NewArtist("artist", "Music/artist"),
 				includeTracks: true,
@@ -97,7 +97,7 @@ func TestAlbum_Copy(t *testing.T) {
 				Title:     "album name",
 				Artist:    NewArtist("artist", "Music/artist"),
 				Directory: "Music/artist/album name",
-			}.NewAlbum(),
+			}.NewAlbum(false),
 		},
 		"complex test": {
 			a: complexAlbum,
@@ -110,7 +110,7 @@ func TestAlbum_Copy(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.a.Copy(tt.args.ar, tt.args.includeTracks); !reflect.DeepEqual(got,
+			if got := tt.a.Copy(tt.args.ar, tt.args.includeTracks, false); !reflect.DeepEqual(got,
 				tt.want) {
 				t.Errorf("Album.Copy() = %v, want %v", got, tt.want)
 			}
@@ -124,7 +124,7 @@ func TestAlbum_BackupDirectory(t *testing.T) {
 		want string
 	}{
 		"simple": {
-			a:    AlbumMaker{Title: "album", Directory: "artist/album"}.NewAlbum(),
+			a:    AlbumMaker{Title: "album", Directory: "artist/album"}.NewAlbum(false),
 			want: "artist\\album\\pre-repair-backup",
 		},
 	}
@@ -193,14 +193,13 @@ func TestNewAlbumFromFile(t *testing.T) {
 			want: AlbumMaker{
 				Title:     "simple file",
 				Artist:    testArtist,
-				Directory: filepath.Join(testArtist.FilePath, "simple file"),
-			}.NewAlbum(),
+				Directory: filepath.Join(testArtist.Directory(), "simple file"),
+			}.NewAlbum(true),
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := NewAlbumFromFile(tt.args.file,
-				tt.args.ar); !reflect.DeepEqual(got, tt.want) {
+			if got := NewAlbumFromFile(tt.args.file, tt.args.ar); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewAlbumFromFile() = %v, want %v", got, tt.want)
 			}
 		})
@@ -408,30 +407,30 @@ func TestSortAlbums(t *testing.T) {
 			albums: []*Album{
 				AlbumMaker{
 					Title:  "b",
-					Artist: &Artist{Name: "c"},
-				}.NewAlbum(),
+					Artist: NewArtist("c", `music\c`),
+				}.NewAlbum(false),
 				AlbumMaker{
 					Title:  "a",
-					Artist: &Artist{Name: "c"},
-				}.NewAlbum(),
+					Artist: NewArtist("c", `music\c`),
+				}.NewAlbum(false),
 				AlbumMaker{
 					Title:  "b",
-					Artist: &Artist{Name: "a"},
-				}.NewAlbum(),
+					Artist: NewArtist("a", `music\a`),
+				}.NewAlbum(false),
 			},
 			want: []*Album{
 				AlbumMaker{
 					Title:  "a",
-					Artist: &Artist{Name: "c"},
-				}.NewAlbum(),
+					Artist: NewArtist("c", `music\c`),
+				}.NewAlbum(false),
 				AlbumMaker{
 					Title:  "b",
-					Artist: &Artist{Name: "a"},
-				}.NewAlbum(),
+					Artist: NewArtist("a", `music\a`),
+				}.NewAlbum(false),
 				AlbumMaker{
 					Title:  "b",
-					Artist: &Artist{Name: "c"},
-				}.NewAlbum(),
+					Artist: NewArtist("c", `music\c`),
+				}.NewAlbum(false),
 			},
 		},
 	}
