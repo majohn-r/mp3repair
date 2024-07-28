@@ -846,7 +846,7 @@ func Test_showID3V2Diagnostics(t *testing.T) {
 		"empty frames": {
 			args: args{
 				track: sampleTrack,
-				info:  &files.ID3V2Info{Version: 1, Encoding: "UTF-8"},
+				info:  files.NewID3V2Info(1, "UTF-8", nil, nil),
 			},
 			WantedRecording: output.WantedRecording{
 				Console: "" +
@@ -857,11 +857,7 @@ func Test_showID3V2Diagnostics(t *testing.T) {
 		"with frames": {
 			args: args{
 				track: sampleTrack,
-				info: &files.ID3V2Info{
-					Version:      1,
-					Encoding:     "UTF-8",
-					FrameStrings: []string{"FRAME1", "FRAME2"},
-				},
+				info:  files.NewID3V2Info(1, "UTF-8", []string{"FRAME1", "FRAME2"}, nil),
 			},
 			WantedRecording: output.WantedRecording{
 				Console: "" +

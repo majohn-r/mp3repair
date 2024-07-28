@@ -339,17 +339,17 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 				return
 			}
 			if gotErr == nil {
-				if gotInfo.Encoding != tt.wantEncoding {
-					t.Errorf("Track.ID3V2Diagnostics() gotInfo.Encoding = %q, want %q",
-						gotInfo.Encoding, tt.wantEncoding)
+				if gotInfo.Encoding() != tt.wantEncoding {
+					t.Errorf("Track.ID3V2Diagnostics() gotInfo.encoding = %q, want %q",
+						gotInfo.Encoding(), tt.wantEncoding)
 				}
-				if gotInfo.Version != tt.wantVersion {
-					t.Errorf("Track.ID3V2Diagnostics() gotInfo.Version = %d, want %d",
-						gotInfo.Version, tt.wantVersion)
+				if gotInfo.Version() != tt.wantVersion {
+					t.Errorf("Track.ID3V2Diagnostics() gotInfo.version = %d, want %d",
+						gotInfo.Version(), tt.wantVersion)
 				}
-				if !reflect.DeepEqual(gotInfo.FrameStrings, tt.wantFrameStrings) {
-					t.Errorf("Track.ID3V2Diagnostics() gotInfo.FrameStrings = %v, want %v",
-						gotInfo.FrameStrings, tt.wantFrameStrings)
+				if !reflect.DeepEqual(gotInfo.Frames(), tt.wantFrameStrings) {
+					t.Errorf("Track.ID3V2Diagnostics() gotInfo.frames = %v, want %v",
+						gotInfo.Frames(), tt.wantFrameStrings)
 				}
 			}
 		})

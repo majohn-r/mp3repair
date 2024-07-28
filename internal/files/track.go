@@ -660,7 +660,7 @@ func (t *Track) Details() (map[string]string, error) {
 	}
 	m := map[string]string{}
 	// only include known frames
-	for _, frame := range info.RawFrames {
+	for _, frame := range info.rawFrames {
 		if value, descriptionFound := frameDescriptions[frame.name]; descriptionFound {
 			m[value] = frame.value
 		}

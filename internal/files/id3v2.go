@@ -202,27 +202,43 @@ func (itf *id3v2TrackFrame) String() string {
 }
 
 type ID3V2Info struct {
-	Version      byte
-	Encoding     string
-	FrameStrings []string
-	RawFrames    []*id3v2TrackFrame
+	version   byte
+	encoding  string
+	frames    []string
+	rawFrames []*id3v2TrackFrame
 }
 
-func readID3V2Metadata(path string) (info *ID3V2Info, e error) {
-	info = &ID3V2Info{
-		FrameStrings: []string{},
-		RawFrames:    []*id3v2TrackFrame{},
+func (info *ID3V2Info) Frames() []string { return info.frames }
+
+func (info *ID3V2Info) Version() byte {
+	return info.version
+}
+
+func (info *ID3V2Info) Encoding() string {
+	return info.encoding
+}
+
+func NewID3V2Info(version byte, encoding string, frames []string, rawFrames []*id3v2TrackFrame) *ID3V2Info {
+	return &ID3V2Info{
+		version:   version,
+		encoding:  encoding,
+		frames:    frames,
+		rawFrames: rawFrames,
 	}
+}
+
+func readID3V2Metadata(path string) (*ID3V2Info, error) {
 	tag, readErr := readID3V2Tag(path)
 	if readErr != nil {
-		e = readErr
-		return
+		return &ID3V2Info{
+			frames:    []string{},
+			rawFrames: []*id3v2TrackFrame{},
+		}, readErr
 	}
 	defer func() {
 		_ = tag.Close()
 	}()
-	info.Version = tag.Version()
-	info.Encoding = tag.DefaultEncoding().Name
+	info := NewID3V2Info(tag.Version(), tag.DefaultEncoding().Name, []string{}, []*id3v2TrackFrame{})
 	frameMap := tag.AllFrames()
 	frameNames := make([]string, 0, len(frameMap))
 	for k := range frameMap {
@@ -238,10 +254,10 @@ func readID3V2Metadata(path string) (info *ID3V2Info, e error) {
 			value = framerSliceAsString(frameMap[n])
 		}
 		frame := &id3v2TrackFrame{name: n, value: value}
-		info.FrameStrings = append(info.FrameStrings, frame.String())
-		info.RawFrames = append(info.RawFrames, frame)
+		info.frames = append(info.frames, frame.String())
+		info.rawFrames = append(info.rawFrames, frame)
 	}
-	return
+	return info, nil
 }
 
 func framerSliceAsString(f []id3v2.Framer) string {

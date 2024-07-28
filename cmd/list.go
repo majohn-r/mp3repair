@@ -340,9 +340,9 @@ func showID3V2Diagnostics(o output.Bus, track *files.Track, info *files.ID3V2Inf
 		return
 	}
 	if info != nil {
-		o.WriteConsole("ID3V2 Version: %v\n", info.Version)
-		o.WriteConsole("ID3V2 Encoding: %q\n", info.Encoding)
-		for _, frame := range info.FrameStrings {
+		o.WriteConsole("ID3V2 Version: %v\n", info.Version())
+		o.WriteConsole("ID3V2 Encoding: %q\n", info.Encoding())
+		for _, frame := range info.Frames() {
 			o.WriteConsole("ID3V2 %s\n", frame)
 		}
 	}

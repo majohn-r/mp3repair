@@ -349,17 +349,17 @@ func Test_readID3V2Metadata(t *testing.T) {
 				return
 			}
 			if gotErr == nil {
-				if gotInfo.Version != tt.wantVersion {
-					t.Errorf("readID3V2Metadata() gotInfo.Version = %v, want %v",
-						gotInfo.Version, tt.wantVersion)
+				if gotInfo.Version() != tt.wantVersion {
+					t.Errorf("readID3V2Metadata() gotInfo.version = %v, want %v",
+						gotInfo.Version(), tt.wantVersion)
 				}
-				if gotInfo.Encoding != tt.wantEncoding {
-					t.Errorf("readID3V2Metadata gotInfo.Encoding = %v, want %v",
-						gotInfo.Encoding, tt.wantEncoding)
+				if gotInfo.Encoding() != tt.wantEncoding {
+					t.Errorf("readID3V2Metadata gotInfo.encoding = %v, want %v",
+						gotInfo.Encoding(), tt.wantEncoding)
 				}
-				if !reflect.DeepEqual(gotInfo.FrameStrings, tt.wantFrameStrings) {
-					t.Errorf("readID3V2Metadata gotInfo.FrameStrings = %v, want %v",
-						gotInfo.FrameStrings, tt.wantFrameStrings)
+				if !reflect.DeepEqual(gotInfo.Frames(), tt.wantFrameStrings) {
+					t.Errorf("readID3V2Metadata gotInfo.frames = %v, want %v",
+						gotInfo.Frames(), tt.wantFrameStrings)
 				}
 			}
 		})
