@@ -83,6 +83,32 @@ func NewTrackMetadata() *TrackMetadata {
 	}
 }
 
+type TrackMetadataMaker struct {
+	Artist       string
+	Album        string
+	Genre        string
+	Year         string
+	TrackName    string
+	TrackNumber  int
+	CDIdentifier []byte
+	Source       SourceType
+}
+
+func (maker *TrackMetadataMaker) Make() *TrackMetadata {
+	tm := NewTrackMetadata()
+	for _, src := range []SourceType{ID3V1, ID3V2} {
+		tm.setArtistName(src, maker.Artist)
+		tm.setAlbumName(src, maker.Album)
+		tm.setAlbumGenre(src, maker.Genre)
+		tm.setAlbumYear(src, maker.Year)
+		tm.setTrackName(src, maker.TrackName)
+		tm.setTrackNumber(src, maker.TrackNumber)
+	}
+	tm.setCDIdentifier(maker.CDIdentifier)
+	tm.setCanonicalSource(maker.Source)
+	return tm
+}
+
 func isValidSource(src SourceType) bool {
 	switch src {
 	case ID3V1:
@@ -106,7 +132,7 @@ func (tm *TrackMetadata) commonMetadata(src SourceType) *commonMetadata {
 	return data
 }
 
-func (tm *TrackMetadata) SetArtistName(src SourceType, name string) {
+func (tm *TrackMetadata) setArtistName(src SourceType, name string) {
 	tm.commonMetadata(src).artistName.original = name
 }
 
@@ -149,7 +175,7 @@ func (tm *TrackMetadata) canonicalArtistNameMatches(artistNameFromFile string) b
 	return !comparator(comparison)
 }
 
-func (tm *TrackMetadata) SetAlbumName(src SourceType, name string) {
+func (tm *TrackMetadata) setAlbumName(src SourceType, name string) {
 	tm.commonMetadata(src).albumName.original = name
 }
 
@@ -192,7 +218,7 @@ func (tm *TrackMetadata) canonicalAlbumNameMatches(nameFromFile string) bool {
 	return !comparator(comparison)
 }
 
-func (tm *TrackMetadata) SetAlbumGenre(src SourceType, name string) {
+func (tm *TrackMetadata) setAlbumGenre(src SourceType, name string) {
 	tm.commonMetadata(src).albumGenre.original = name
 }
 
@@ -223,7 +249,7 @@ func (tm *TrackMetadata) albumGenreDiffers(canonicalAlbumGenre string) (differs 
 	return
 }
 
-func (tm *TrackMetadata) SetAlbumYear(src SourceType, name string) {
+func (tm *TrackMetadata) setAlbumYear(src SourceType, name string) {
 	tm.commonMetadata(src).albumYear.original = name
 }
 
@@ -250,7 +276,7 @@ func (tm *TrackMetadata) albumYearDiffers(canonicalAlbumYear string) (differs bo
 	return
 }
 
-func (tm *TrackMetadata) SetTrackName(src SourceType, name string) {
+func (tm *TrackMetadata) setTrackName(src SourceType, name string) {
 	tm.commonMetadata(src).trackName.original = name
 }
 
@@ -277,7 +303,7 @@ func (tm *TrackMetadata) trackNameDiffers(nameFromFile string) (differs bool) {
 	return
 }
 
-func (tm *TrackMetadata) SetTrackNumber(src SourceType, number int) {
+func (tm *TrackMetadata) setTrackNumber(src SourceType, number int) {
 	tm.commonMetadata(src).trackNumber.original = number
 }
 
@@ -316,7 +342,7 @@ func (tm *TrackMetadata) editRequired(src SourceType) bool {
 	return tm.commonMetadata(src).requiresEdit
 }
 
-func (tm *TrackMetadata) SetCDIdentifier(body []byte) {
+func (tm *TrackMetadata) setCDIdentifier(body []byte) {
 	tm.musicCDIdentifier.original = id3v2.UnknownFrame{Body: body}
 }
 
@@ -341,32 +367,32 @@ func (tm *TrackMetadata) cdIdentifierDiffers(canonicalCDIdentifier id3v2.Unknown
 	return
 }
 
-func (tm *TrackMetadata) SetCanonicalSource(src SourceType) {
+func (tm *TrackMetadata) setCanonicalSource(src SourceType) {
 	if isValidSource(src) {
 		tm.canonicalSrc = src
 	}
 }
 
 func (tm *TrackMetadata) setID3v2Values(d *id3v2Metadata) {
-	tm.SetArtistName(ID3V2, d.artistName)
-	tm.SetAlbumName(ID3V2, d.albumTitle)
-	tm.SetAlbumGenre(ID3V2, d.genre)
-	tm.SetAlbumYear(ID3V2, d.year)
-	tm.SetTrackName(ID3V2, d.trackName)
-	tm.SetTrackNumber(ID3V2, d.trackNumber)
-	tm.SetCDIdentifier(d.musicCDIdentifier.Body)
+	tm.setArtistName(ID3V2, d.artistName)
+	tm.setAlbumName(ID3V2, d.albumTitle)
+	tm.setAlbumGenre(ID3V2, d.genre)
+	tm.setAlbumYear(ID3V2, d.year)
+	tm.setTrackName(ID3V2, d.trackName)
+	tm.setTrackNumber(ID3V2, d.trackNumber)
+	tm.setCDIdentifier(d.musicCDIdentifier.Body)
 }
 
 func (tm *TrackMetadata) setID3v1Values(v1 *id3v1Metadata) {
-	tm.SetArtistName(ID3V1, v1.artist())
-	tm.SetAlbumName(ID3V1, v1.album())
+	tm.setArtistName(ID3V1, v1.artist())
+	tm.setAlbumName(ID3V1, v1.album())
 	if genre, genreFound := v1.genre(); genreFound {
-		tm.SetAlbumGenre(ID3V1, genre)
+		tm.setAlbumGenre(ID3V1, genre)
 	}
-	tm.SetAlbumYear(ID3V1, v1.year())
-	tm.SetTrackName(ID3V1, v1.title())
+	tm.setAlbumYear(ID3V1, v1.year())
+	tm.setTrackName(ID3V1, v1.title())
 	if track, trackValid := v1.track(); trackValid {
-		tm.SetTrackNumber(ID3V1, track)
+		tm.setTrackNumber(ID3V1, track)
 	}
 }
 
@@ -385,15 +411,15 @@ func initializeMetadata(path string) *TrackMetadata {
 	case id3v1Err != nil:
 		tm.setErrorCause(ID3V1, id3v1Err.Error())
 		tm.setID3v2Values(id3v2Metadata)
-		tm.SetCanonicalSource(ID3V2)
+		tm.setCanonicalSource(ID3V2)
 	case id3v2Metadata.err != nil:
 		tm.setErrorCause(ID3V2, id3v2Metadata.err.Error())
 		tm.setID3v1Values(id3v1Metadata)
-		tm.SetCanonicalSource(ID3V1)
+		tm.setCanonicalSource(ID3V1)
 	default:
 		tm.setID3v2Values(id3v2Metadata)
 		tm.setID3v1Values(id3v1Metadata)
-		tm.SetCanonicalSource(ID3V2)
+		tm.setCanonicalSource(ID3V2)
 	}
 	return tm
 }

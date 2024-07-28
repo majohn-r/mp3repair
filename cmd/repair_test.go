@@ -672,25 +672,25 @@ func Test_reportRepairsNeeded(t *testing.T) {
 }
 
 func Test_findConflictedTracks(t *testing.T) {
-	tm := files.NewTrackMetadata()
-	for _, src := range []files.SourceType{files.ID3V1, files.ID3V2} {
-		tm.SetArtistName(src, "some other artist")
-		tm.SetAlbumName(src, "some other album")
-		tm.SetAlbumGenre(src, "pop emo")
-		tm.SetAlbumYear(src, "2001")
-		tm.SetTrackName(src, "some other title")
-		tm.SetTrackNumber(src, 99)
+	maker := &files.TrackMetadataMaker{
+		Artist:       "some other artist",
+		Album:        "some other album",
+		Genre:        "pop emo",
+		Year:         "2001",
+		TrackName:    "some other title",
+		TrackNumber:  99,
+		CDIdentifier: []byte{1, 2, 3},
+		Source:       files.ID3V1,
 	}
-	tm.SetCDIdentifier([]byte{1, 2, 3})
-	tm.SetCanonicalSource(files.ID3V1)
-	dirty := createConcernedArtists(generateArtists(2, 3, 4, tm))
+	tm := maker.Make()
+	dirtyArtists := createConcernedArtists(generateArtists(2, 3, 4, tm))
 	clean := createConcernedArtists(generateArtists(2, 3, 4, nil))
 	tests := map[string]struct {
 		concernedArtists []*concernedArtist
 		want             int
 	}{
 		"clean": {concernedArtists: clean, want: 0},
-		"dirty": {concernedArtists: dirty, want: 24},
+		"dirty": {concernedArtists: dirtyArtists, want: 24},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
@@ -719,11 +719,17 @@ func Test_repairSettings_repairArtists(t *testing.T) {
 	plainFileExists = func(_ string) bool { return false }
 	copyFile = func(_, _ string) error { return nil }
 	markDirty = func(_ output.Bus) {}
-	tm := files.NewTrackMetadata()
-	tm.SetTrackNumber(files.ID3V1, 99)
-	tm.SetTrackNumber(files.ID3V2, 99)
-	tm.SetCDIdentifier([]byte{1, 2, 3})
-	tm.SetCanonicalSource(files.ID3V1)
+	maker := files.TrackMetadataMaker{
+		Artist:       "",
+		Album:        "",
+		Genre:        "",
+		Year:         "",
+		TrackName:    "",
+		TrackNumber:  99,
+		CDIdentifier: []byte{1, 2, 3},
+		Source:       files.ID3V1,
+	}
+	tm := maker.Make()
 	dirty := generateArtists(2, 3, 4, tm)
 	tests := map[string]struct {
 		rs         *repairSettings
