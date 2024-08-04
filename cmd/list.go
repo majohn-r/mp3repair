@@ -287,7 +287,7 @@ func (ls *listSettings) listTrackDetails(o output.Bus, track *files.Track) {
 	}
 }
 
-func showDetails(o output.Bus, track *files.Track, details map[string]string, detailsError error) {
+func showDetails(o output.Bus, track *files.Track, details map[string][]string, detailsError error) {
 	if detailsError != nil {
 		o.Log(output.Error, "cannot get details", map[string]any{
 			"error": detailsError,
@@ -342,8 +342,28 @@ func showID3V2Diagnostics(o output.Bus, track *files.Track, info *files.ID3V2Inf
 	if info != nil {
 		o.WriteConsole("ID3V2 Version: %v\n", info.Version())
 		o.WriteConsole("ID3V2 Encoding: %q\n", info.Encoding())
-		for _, frame := range info.Frames() {
-			o.WriteConsole("ID3V2 %s\n", frame)
+		tags := make([]string, 0, len(info.Frames()))
+		for k := range info.Frames() {
+			tags = append(tags, k)
+		}
+		sort.Strings(tags)
+		for _, tag := range tags {
+			values := info.Frames()[tag]
+			switch len(values) {
+			case 0:
+				o.WriteConsole("ID3V2 %s = <<empty>>\n", tag)
+			case 1:
+				o.WriteConsole("ID3V2 %s = %s\n", tag, values[0])
+			default:
+				header := fmt.Sprintf("ID3V2 %s = ", tag)
+				o.WriteConsole("%s%s\n", header, values[0])
+				tab := uint8(len(header))
+				o.IncrementTab(tab)
+				for _, value := range values[1:] {
+					o.WriteConsole("%s\n", value)
+				}
+				o.DecrementTab(tab)
+			}
 		}
 	}
 }

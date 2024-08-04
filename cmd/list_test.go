@@ -854,17 +854,41 @@ func Test_showID3V2Diagnostics(t *testing.T) {
 					"  ID3V2 Encoding: \"UTF-8\"\n",
 			},
 		},
-		"with frames": {
+		"with empty frames": {
 			args: args{
 				track: sampleTrack,
-				info:  files.NewID3V2Info(1, "UTF-8", []string{"FRAME1", "FRAME2"}, nil),
+				info:  files.NewID3V2Info(1, "UTF-8", map[string][]string{"FRAME1": {}, "FRAME2": {}}, nil),
 			},
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"  ID3V2 Version: 1\n" +
 					"  ID3V2 Encoding: \"UTF-8\"\n" +
-					"  ID3V2 FRAME1\n" +
-					"  ID3V2 FRAME2\n",
+					"  ID3V2 FRAME1 = <<empty>>\n" +
+					"  ID3V2 FRAME2 = <<empty>>\n",
+			},
+		},
+		"with mixed frames": {
+			args: args{
+				track: sampleTrack,
+				info: files.NewID3V2Info(
+					1,
+					"UTF-8",
+					map[string][]string{
+						"FRAME1": {},
+						"FRAME2": {"value"},
+						"FRAME3": {"value1", "value2"},
+					},
+					nil,
+				),
+			},
+			WantedRecording: output.WantedRecording{
+				Console: "" +
+					"  ID3V2 Version: 1\n" +
+					"  ID3V2 Encoding: \"UTF-8\"\n" +
+					"  ID3V2 FRAME1 = <<empty>>\n" +
+					"  ID3V2 FRAME2 = value\n" +
+					"  ID3V2 FRAME3 = value1\n" +
+					"                 value2\n",
 			},
 		},
 	}
@@ -918,7 +942,7 @@ func Test_listSettings_listTrackDiagnostics(t *testing.T) {
 func Test_showDetails(t *testing.T) {
 	type args struct {
 		track        *files.Track
-		details      map[string]string
+		details      map[string][]string
 		detailsError error
 	}
 	tests := map[string]struct {
@@ -943,16 +967,16 @@ func Test_showDetails(t *testing.T) {
 		"no error, with details": {
 			args: args{
 				track: sampleTrack,
-				details: map[string]string{
-					"composer": "some German",
-					"producer": "A True Genius",
+				details: map[string][]string{
+					"composer": {"some German"},
+					"producer": {"A True Genius"},
 				},
 			},
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"  Details:\n" +
-					"    composer = \"some German\"\n" +
-					"    producer = \"A True Genius\"\n",
+					"    composer = [\"some German\"]\n" +
+					"    producer = [\"A True Genius\"]\n",
 			},
 		},
 	}

@@ -653,12 +653,12 @@ func (t *Track) ID3V2Diagnostics() (*ID3V2Info, error) {
 }
 
 // Details returns relevant details about the track
-func (t *Track) Details() (map[string]string, error) {
+func (t *Track) Details() (map[string][]string, error) {
 	info, readErr := readID3V2Metadata(t.filePath)
 	if readErr != nil {
 		return nil, readErr
 	}
-	m := map[string]string{}
+	m := map[string][]string{}
 	// only include known frames
 	for _, frame := range info.rawFrames {
 		if value, descriptionFound := frameDescriptions[frame.name]; descriptionFound {

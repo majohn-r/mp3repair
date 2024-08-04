@@ -60,18 +60,17 @@ func createID3v2TaggedData(audio []byte, frames map[string]string) []byte {
 	// ID3v2 version           $03 00
 	//                         major version 3 minor version 0, so ID3V2.3.0
 	// ID3v2 flags             %abc00000
-	//                          a - Unsynchronisation
-	//                              Bit 7 in the 'ID3v2 flags' indicates whether or not
-	//                              unsynchronisation is used (see section 5 for details); a set
-	//                              bit indicates usage.
-	//                          b - Extended header
-	//                              The second bit (bit 6) indicates whether or not the header is
-	//                              followed by an extended header. The extended header is
-	//                              described in section 3.2.
-	//                          c - Experimental indicator
-	//                              The third bit (bit 5) should be used as an 'experimental
-	//                              indicator'. This flag should always be set when the tag is in
-	//                              an experimental stage.
+	//                          a: Unsynchronisation
+	//                             Bit 7 in the 'ID3v2 flags' indicates whether unsynchronisation
+	//                             is used (see section 5 for details); a set bit indicates usage.
+	//                          b: Extended header
+	//                             The second bit (bit 6) indicates whether the header is followed
+	//                             by an extended header. The extended header is described in
+	//                             section 3.2.
+	//                          c: Experimental indicator
+	//                             The third bit (bit 5) should be used as an 'experimental
+	//                             indicator'. This flag should always be set when the tag is in
+	//                             an experimental stage.
 	// ID3v2 size              4 * %0xxxxxxx
 	content = append(content, []byte("ID3")...)
 	content = append(content, []byte{3, 0, 0}...)
@@ -279,8 +278,8 @@ func Test_iD3V2TrackFrame_String(t *testing.T) {
 		want string
 	}{
 		"usual": {
-			f:    &id3v2TrackFrame{name: "T1", value: "V1"},
-			want: "T1 = \"V1\"",
+			f:    &id3v2TrackFrame{name: "T1", value: []string{"V1"}},
+			want: `T1 = ["V1"]`,
 		},
 	}
 	for name, tt := range tests {
@@ -315,7 +314,7 @@ func Test_readID3V2Metadata(t *testing.T) {
 		path             string
 		wantVersion      byte
 		wantEncoding     string
-		wantFrameStrings []string
+		wantFrameStrings map[string][]string
 		wantErr          bool
 	}{
 		"error case": {
@@ -326,17 +325,17 @@ func Test_readID3V2Metadata(t *testing.T) {
 			path:         filepath.Join(".", goodFileName),
 			wantEncoding: "ISO-8859-1",
 			wantVersion:  3,
-			wantFrameStrings: []string{
-				`Fake = "<<[]byte{0x0, 0x68, 0x75, 0x68}>>"`,
-				`T??? = "who knows?"`,
-				`TALB = "unknown album"`,
-				`TCOM = "a couple of idiots"`,
-				`TCON = "dance music"`,
-				`TIT2 = "unknown track"`,
-				`TLEN = "1000"`,
-				`TPE1 = "unknown artist"`,
-				`TRCK = "2"`,
-				`TYER = "2022"`,
+			wantFrameStrings: map[string][]string{
+				"Fake": {"00 68 75 68                                     •huh"},
+				"T???": {"who knows?"},
+				"TALB": {"unknown album"},
+				"TCOM": {"a couple of idiots"},
+				"TCON": {"dance music"},
+				"TIT2": {"unknown track"},
+				"TLEN": {"1000"},
+				"TPE1": {"unknown artist"},
+				"TRCK": {"2"},
+				"TYER": {"2022"},
 			},
 		},
 	}
@@ -366,32 +365,174 @@ func Test_readID3V2Metadata(t *testing.T) {
 	}
 }
 
+var (
+	freeRipMCDI = []byte{
+		0x01, 0xFF, 0xFE, '2', 0, '0', 0, '0', 0, 'f', 0, 'c', 0, '8', 0, '1', 0, '4', 0, 0, 0,
+	}
+	freeRipMCDIOutput = []string{
+		"200fc814",
+		"01 FF FE 32 00 30 00 30 00 66 00 63 00 38 00 31 •••2•0•0•f•c•8•1",
+		"00 34 00 00 00                                  •4•••",
+	}
+	lameMCDI = []byte{
+		0x00, 0xAA, 0x01, 0x14, 0x00, 0x10, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x10, 0x02, 0x00,
+		0x00, 0x00, 0x32, 0xF0, 0x00, 0x10, 0x03, 0x00, 0x00, 0x00, 0x5E, 0x93, 0x00, 0x10, 0x04, 0x00,
+		0x00, 0x00, 0x91, 0xCE, 0x00, 0x10, 0x05, 0x00, 0x00, 0x00, 0xC6, 0x21, 0x00, 0x10, 0x06, 0x00,
+		0x00, 0x00, 0xEB, 0x5D, 0x00, 0x10, 0x07, 0x00, 0x00, 0x01, 0x1C, 0x2C, 0x00, 0x10, 0x08, 0x00,
+		0x00, 0x01, 0x47, 0x24, 0x00, 0x10, 0x09, 0x00, 0x00, 0x01, 0x71, 0xFF, 0x00, 0x10, 0x0A, 0x00,
+		0x00, 0x01, 0xA2, 0x7E, 0x00, 0x10, 0x0B, 0x00, 0x00, 0x01, 0xCE, 0xF7, 0x00, 0x10, 0x0C, 0x00,
+		0x00, 0x01, 0xF9, 0x3F, 0x00, 0x10, 0x0D, 0x00, 0x00, 0x02, 0x26, 0x70, 0x00, 0x10, 0x0E, 0x00,
+		0x00, 0x02, 0x6B, 0xF6, 0x00, 0x10, 0x0F, 0x00, 0x00, 0x02, 0xB3, 0xE6, 0x00, 0x10, 0x10, 0x00,
+		0x00, 0x03, 0x0B, 0xBD, 0x00, 0x10, 0x11, 0x00, 0x00, 0x03, 0x4D, 0x07, 0x00, 0x10, 0x12, 0x00,
+		0x00, 0x03, 0x7C, 0xAC, 0x00, 0x10, 0x13, 0x00, 0x00, 0x03, 0xC6, 0xA1, 0x00, 0x10, 0x14, 0x00,
+		0x00, 0x04, 0x0F, 0x19, 0x00, 0x10, 0xAA, 0x00, 0x00, 0x04, 0x9F, 0xB2, 0x0D, 0x00,
+	}
+	lameMCDIOutput = []string{
+		"first track: 1",
+		"last track: 20",
+		"track 1 logical block address 150",
+		"track 2 logical block address 13190",
+		"track 3 logical block address 24361",
+		"track 4 logical block address 37476",
+		"track 5 logical block address 50871",
+		"track 6 logical block address 60403",
+		"track 7 logical block address 72898",
+		"track 8 logical block address 83898",
+		"track 9 logical block address 94869",
+		"track 10 logical block address 107284",
+		"track 11 logical block address 118669",
+		"track 12 logical block address 129493",
+		"track 13 logical block address 141062",
+		"track 14 logical block address 158860",
+		"track 15 logical block address 177276",
+		"track 16 logical block address 199763",
+		"track 17 logical block address 216477",
+		"track 18 logical block address 228674",
+		"track 19 logical block address 247607",
+		"track 20 logical block address 266159",
+		"leadout track logical block address 303176",
+		"00 AA 01 14 00 10 01 00 00 00 00 00 00 10 02 00 ••••••••••••••••",
+		"00 00 32 F0 00 10 03 00 00 00 5E 93 00 10 04 00 ••2•••••••^•••••",
+		"00 00 91 CE 00 10 05 00 00 00 C6 21 00 10 06 00 •••••••••••!••••",
+		"00 00 EB 5D 00 10 07 00 00 01 1C 2C 00 10 08 00 •••]•••••••,••••",
+		"00 01 47 24 00 10 09 00 00 01 71 FF 00 10 0A 00 ••G$••••••q•••••",
+		"00 01 A2 7E 00 10 0B 00 00 01 CE F7 00 10 0C 00 •••~••••••••••••",
+		"00 01 F9 3F 00 10 0D 00 00 02 26 70 00 10 0E 00 •••?••••••&p••••",
+		"00 02 6B F6 00 10 0F 00 00 02 B3 E6 00 10 10 00 ••k•••••••••••••",
+		"00 03 0B BD 00 10 11 00 00 03 4D 07 00 10 12 00 ••••••••••M•••••",
+		"00 03 7C AC 00 10 13 00 00 03 C6 A1 00 10 14 00 ••|•••••••••••••",
+		"00 04 0F 19 00 10 AA 00 00 04 9F B2 0D 00       ••••••••••••••",
+	}
+	windowsLegacyReaderMCDI = []byte{
+		0x31, 0x00, 0x34, 0x00, 0x2B, 0x00, 0x39, 0x00, 0x36, 0x00, 0x2B, 0x00, 0x33, 0x00, 0x33, 0x00,
+		0x38, 0x00, 0x36, 0x00, 0x2B, 0x00, 0x35, 0x00, 0x46, 0x00, 0x32, 0x00, 0x39, 0x00, 0x2B, 0x00,
+		0x39, 0x00, 0x32, 0x00, 0x36, 0x00, 0x34, 0x00, 0x2B, 0x00, 0x43, 0x00, 0x36, 0x00, 0x42, 0x00,
+		0x37, 0x00, 0x2B, 0x00, 0x45, 0x00, 0x42, 0x00, 0x46, 0x00, 0x33, 0x00, 0x2B, 0x00, 0x31, 0x00,
+		0x31, 0x00, 0x43, 0x00, 0x43, 0x00, 0x32, 0x00, 0x2B, 0x00, 0x31, 0x00, 0x34, 0x00, 0x37, 0x00,
+		0x42, 0x00, 0x41, 0x00, 0x2B, 0x00, 0x31, 0x00, 0x37, 0x00, 0x32, 0x00, 0x39, 0x00, 0x35, 0x00,
+		0x2B, 0x00, 0x31, 0x00, 0x41, 0x00, 0x33, 0x00, 0x31, 0x00, 0x34, 0x00, 0x2B, 0x00, 0x31, 0x00,
+		0x43, 0x00, 0x46, 0x00, 0x38, 0x00, 0x44, 0x00, 0x2B, 0x00, 0x31, 0x00, 0x46, 0x00, 0x39, 0x00,
+		0x44, 0x00, 0x35, 0x00, 0x2B, 0x00, 0x32, 0x00, 0x32, 0x00, 0x37, 0x00, 0x30, 0x00, 0x36, 0x00,
+		0x2B, 0x00, 0x32, 0x00, 0x36, 0x00, 0x43, 0x00, 0x38, 0x00, 0x43, 0x00, 0x2B, 0x00, 0x32, 0x00,
+		0x42, 0x00, 0x34, 0x00, 0x37, 0x00, 0x43, 0x00, 0x2B, 0x00, 0x33, 0x00, 0x30, 0x00, 0x43, 0x00,
+		0x35, 0x00, 0x33, 0x00, 0x2B, 0x00, 0x33, 0x00, 0x34, 0x00, 0x44, 0x00, 0x39, 0x00, 0x44, 0x00,
+		0x2B, 0x00, 0x33, 0x00, 0x37, 0x00, 0x44, 0x00, 0x34, 0x00, 0x32, 0x00, 0x2B, 0x00, 0x33, 0x00,
+		0x43, 0x00, 0x37, 0x00, 0x33, 0x00, 0x37, 0x00, 0x2B, 0x00, 0x34, 0x00, 0x30, 0x00, 0x46, 0x00,
+		0x41, 0x00, 0x46, 0x00, 0x2B, 0x00, 0x34, 0x00, 0x41, 0x00, 0x30, 0x00, 0x34, 0x00, 0x38, 0x00,
+		0x00, 0x00,
+	}
+	windowsLegacyReaderMCDIString = "14+96+3386+5F29+9264+C6B7+EBF3+11CC2+147BA+17295+1A314+1CF8D+1F9D5+22706+26C8C+2B47C+30C53+34D9D+37D42+3C737+40FAF+4A048"
+	windowsLegacyReaderMCDIOutput = []string{
+		"tracks 20",
+		"track 1 logical block address 150",
+		"track 2 logical block address 13190",
+		"track 3 logical block address 24361",
+		"track 4 logical block address 37476",
+		"track 5 logical block address 50871",
+		"track 6 logical block address 60403",
+		"track 7 logical block address 72898",
+		"track 8 logical block address 83898",
+		"track 9 logical block address 94869",
+		"track 10 logical block address 107284",
+		"track 11 logical block address 118669",
+		"track 12 logical block address 129493",
+		"track 13 logical block address 141062",
+		"track 14 logical block address 158860",
+		"track 15 logical block address 177276",
+		"track 16 logical block address 199763",
+		"track 17 logical block address 216477",
+		"track 18 logical block address 228674",
+		"track 19 logical block address 247607",
+		"track 20 logical block address 266159",
+		"leadout track logical block address 303176",
+		"31 00 34 00 2B 00 39 00 36 00 2B 00 33 00 33 00 1•4•+•9•6•+•3•3•",
+		"38 00 36 00 2B 00 35 00 46 00 32 00 39 00 2B 00 8•6•+•5•F•2•9•+•",
+		"39 00 32 00 36 00 34 00 2B 00 43 00 36 00 42 00 9•2•6•4•+•C•6•B•",
+		"37 00 2B 00 45 00 42 00 46 00 33 00 2B 00 31 00 7•+•E•B•F•3•+•1•",
+		"31 00 43 00 43 00 32 00 2B 00 31 00 34 00 37 00 1•C•C•2•+•1•4•7•",
+		"42 00 41 00 2B 00 31 00 37 00 32 00 39 00 35 00 B•A•+•1•7•2•9•5•",
+		"2B 00 31 00 41 00 33 00 31 00 34 00 2B 00 31 00 +•1•A•3•1•4•+•1•",
+		"43 00 46 00 38 00 44 00 2B 00 31 00 46 00 39 00 C•F•8•D•+•1•F•9•",
+		"44 00 35 00 2B 00 32 00 32 00 37 00 30 00 36 00 D•5•+•2•2•7•0•6•",
+		"2B 00 32 00 36 00 43 00 38 00 43 00 2B 00 32 00 +•2•6•C•8•C•+•2•",
+		"42 00 34 00 37 00 43 00 2B 00 33 00 30 00 43 00 B•4•7•C•+•3•0•C•",
+		"35 00 33 00 2B 00 33 00 34 00 44 00 39 00 44 00 5•3•+•3•4•D•9•D•",
+		"2B 00 33 00 37 00 44 00 34 00 32 00 2B 00 33 00 +•3•7•D•4•2•+•3•",
+		"43 00 37 00 33 00 37 00 2B 00 34 00 30 00 46 00 C•7•3•7•+•4•0•F•",
+		"41 00 46 00 2B 00 34 00 41 00 30 00 34 00 38 00 A•F•+•4•A•0•4•8•",
+		"00 00                                           ••",
+	}
+)
+
 func Test_framerSliceAsString(t *testing.T) {
 	tests := map[string]struct {
 		f    []id3v2.Framer
-		want string
+		want []string
 	}{
+		"freeRip MCDI": {
+			f:    []id3v2.Framer{id3v2.UnknownFrame{Body: freeRipMCDI}},
+			want: freeRipMCDIOutput,
+		},
+		"lame-generated MCDI": {
+			f:    []id3v2.Framer{id3v2.UnknownFrame{Body: lameMCDI}},
+			want: lameMCDIOutput,
+		},
+		"window legacy reader MCDI": {
+			f:    []id3v2.Framer{id3v2.UnknownFrame{Body: windowsLegacyReaderMCDI}},
+			want: windowsLegacyReaderMCDIOutput,
+		},
+		"unrecognized string MCDI": {
+			f: []id3v2.Framer{id3v2.UnknownFrame{Body: []byte{
+				0x31, 0x00, 0x34, 0x00, 0x2B, 0x00, 0x39, 0x00, 0x36, 0x00, 0x2B, 0x00, 0x33, 0x00, 0x33, 0x00,
+			}}},
+			want: []string{
+				"14+96+33",
+				"31 00 34 00 2B 00 39 00 36 00 2B 00 33 00 33 00 1•4•+•9•6•+•3•3•",
+			},
+		},
 		"single UnknownFrame": {
 			f:    []id3v2.Framer{id3v2.UnknownFrame{Body: []byte{0, 1, 2}}},
-			want: "<<[]byte{0x0, 0x1, 0x2}>>",
+			want: []string{"00 01 02                                        •••"},
 		},
 		"unexpected frame": {
 			f:    []id3v2.Framer{unspecifiedFrame{content: "hello world"}},
-			want: "<<files.unspecifiedFrame{content:\"hello world\"}>>",
+			want: []string{"files.unspecifiedFrame{content:\"hello world\"}"},
 		},
 		"multiple frames": {
 			f: []id3v2.Framer{
 				id3v2.UnknownFrame{Body: []byte{0, 1, 2}},
 				unspecifiedFrame{content: "hello world"},
 			},
-			want: "<<[0 []byte{0x0, 0x1, 0x2}]," +
-				" [1 files.unspecifiedFrame{content:\"hello world\"}]>>",
+			want: []string{
+				"00 01 02                                        •••",
+				"files.unspecifiedFrame{content:\"hello world\"}",
+			},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := framerSliceAsString(tt.f); got != tt.want {
-				t.Errorf("framerSliceAsString() = %q, want %q", got, tt.want)
+			if got := framerSliceAsString(tt.f); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("framerSliceAsString() = %#v, want %#v", got, tt.want)
 			}
 		})
 	}
@@ -729,6 +870,230 @@ func Test_isTagAbsent(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			if got := isTagAbsent(tt.tag); got != tt.want {
 				t.Errorf("isTagAbsent() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_hexDump(t *testing.T) {
+	tests := map[string]struct {
+		content []byte
+		want    []string
+	}{
+		"empty": {
+			content: nil,
+			want:    []string{},
+		},
+		"short": {
+			content: []byte{0x00},
+			want:    []string{"00                                              •"},
+		},
+		"evenly divisible by 16": {
+			content: []byte{
+				16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+				48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
+				80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95,
+				112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127,
+			},
+			want: []string{
+				"10 11 12 13 14 15 16 17 18 19 1A 1B 1C 1D 1E 1F ••••••••••••••••",
+				"30 31 32 33 34 35 36 37 38 39 3A 3B 3C 3D 3E 3F 0123456789:;<=>?",
+				"50 51 52 53 54 55 56 57 58 59 5A 5B 5C 5D 5E 5F PQRSTUVWXYZ[\\]^_",
+				"70 71 72 73 74 75 76 77 78 79 7A 7B 7C 7D 7E 7F pqrstuvwxyz{|}~•",
+			},
+		},
+		"long": {
+			content: []byte{
+				0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+				16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+				32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47,
+				48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63,
+				64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79,
+				80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95,
+				96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111,
+				112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127,
+				128, 129, 130,
+			},
+			want: []string{
+				"00 01 02 03 04 05 06 07 08 09 0A 0B 0C 0D 0E 0F ••••••••••••••••",
+				"10 11 12 13 14 15 16 17 18 19 1A 1B 1C 1D 1E 1F ••••••••••••••••",
+				"20 21 22 23 24 25 26 27 28 29 2A 2B 2C 2D 2E 2F  !\"#$%&'()*+,-./",
+				"30 31 32 33 34 35 36 37 38 39 3A 3B 3C 3D 3E 3F 0123456789:;<=>?",
+				"40 41 42 43 44 45 46 47 48 49 4A 4B 4C 4D 4E 4F @ABCDEFGHIJKLMNO",
+				"50 51 52 53 54 55 56 57 58 59 5A 5B 5C 5D 5E 5F PQRSTUVWXYZ[\\]^_",
+				"60 61 62 63 64 65 66 67 68 69 6A 6B 6C 6D 6E 6F `abcdefghijklmno",
+				"70 71 72 73 74 75 76 77 78 79 7A 7B 7C 7D 7E 7F pqrstuvwxyz{|}~•",
+				"80 81 82                                        •••",
+			},
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := hexDump(tt.content); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("hexDump() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_displayString(t *testing.T) {
+	tests := map[string]struct {
+		content []byte
+		want    string
+		want1   bool
+	}{
+		"odd length": {
+			content: []byte{'A'},
+			want:    "",
+			want1:   false,
+		},
+		"odd bytes are not all null": {
+			content: []byte{'A', 'A'},
+			want:    "",
+			want1:   false,
+		},
+		"typical, including trailing null": {
+			content: []byte{'A', 0, 'F', 0, '+', 0, '4', 0, 'A', 0, '0', 0, '4', 0, '8', 0, 0, 0},
+			want:    "AF+4A048",
+			want1:   true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, got1 := displayString(tt.content)
+			if got != tt.want {
+				t.Errorf("displayString() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("displayString() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
+
+func Test_decodeFreeRipMCDI(t *testing.T) {
+	tests := map[string]struct {
+		content []byte
+		want    []string
+		want1   bool
+	}{
+		"too short": {
+			content: []byte{1, 2},
+			want:    nil,
+			want1:   false,
+		},
+		"invalid key": {
+			content: []byte{1, 2, 3},
+			want:    nil,
+			want1:   false,
+		},
+		"invalid content": {
+			content: []byte{1, 0xff, 0xfe, '2'},
+			want:    nil,
+			want1:   false,
+		},
+		"valid content": {
+			content: freeRipMCDI,
+			want:    freeRipMCDIOutput,
+			want1:   true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, got1 := decodeFreeRipMCDI(tt.content)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("decodeFreeRipMCDI() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("decodeFreeRipMCDI() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
+
+func Test_decodeLAMEGeneratedMCDI(t *testing.T) {
+	tests := map[string]struct {
+		content []byte
+		want    []string
+		want1   bool
+	}{
+		"too short": {
+			content: []byte{1, 2, 3},
+			want:    nil,
+			want1:   false,
+		},
+		"length field too big": {
+			content: []byte{0, 4, 1, 2},
+			want:    nil,
+			want1:   false,
+		},
+		"tracks inconsistent with content": {
+			content: []byte{0, 4, 1, 2, 3},
+			want:    nil,
+			want1:   false,
+		},
+		"proper LAME output": {
+			content: lameMCDI,
+			want:    lameMCDIOutput,
+			want1:   true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, got1 := decodeLAMEGeneratedMCDI(tt.content)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("decodeLAMEGeneratedMCDI() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("decodeLAMEGeneratedMCDI() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
+
+func Test_decodeWindowsLegacyMediaPlayerMCDI(t *testing.T) {
+	type args struct {
+		s   string
+		raw []byte
+	}
+	tests := map[string]struct {
+		args
+		want  []string
+		want1 bool
+	}{
+		"no match": {
+			args: args{
+				s:   "not a match",
+				raw: []byte{},
+			},
+			want:  nil,
+			want1: false,
+		},
+		"insufficient addresses": {
+			args: args{
+				s:   "20+0+1",
+				raw: []byte{},
+			},
+			want:  nil,
+			want1: false,
+		},
+		"good data": {
+			args: args{
+				s:   windowsLegacyReaderMCDIString,
+				raw: windowsLegacyReaderMCDI,
+			},
+			want:  windowsLegacyReaderMCDIOutput,
+			want1: true,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			got, got1 := decodeWindowsLegacyMediaPlayerMCDI(tt.args.s, tt.args.raw)
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("decodeWindowsLegacyMediaPlayerMCDI() got = %v, want %v", got, tt.want)
+			}
+			if got1 != tt.want1 {
+				t.Errorf("decodeWindowsLegacyMediaPlayerMCDI() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
 	}

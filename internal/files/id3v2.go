@@ -2,6 +2,7 @@ package files
 
 import (
 	"fmt"
+	"regexp"
 	"sort"
 	"strings"
 
@@ -88,9 +89,10 @@ func normalizeGenre(s string) string {
 }
 
 var (
-	errMalformedTrackNumber = fmt.Errorf("track number first character is not a digit")
-	errMissingTrackNumber   = fmt.Errorf("track number is zero length")
-	errNoID3V2MetadataFound = fmt.Errorf("no ID3V2 metadata found")
+	errMalformedTrackNumber  = fmt.Errorf("track number first character is not a digit")
+	errMissingTrackNumber    = fmt.Errorf("track number is zero length")
+	errNoID3V2MetadataFound  = fmt.Errorf("no ID3V2 metadata found")
+	windowsLegacyMCDIPattern = regexp.MustCompile(`([0-9A-F]+\+)+([0-9A-F]+)`)
 )
 
 func toTrackNumber(s string) (int, error) {
@@ -192,7 +194,7 @@ func updateID3V2TrackMetadata(tm *TrackMetadata, path string) error {
 
 type id3v2TrackFrame struct {
 	name  string
-	value string
+	value []string
 }
 
 // String returns the contents of an ID3V2TrackFrame formatted in the form
@@ -204,11 +206,11 @@ func (itf *id3v2TrackFrame) String() string {
 type ID3V2Info struct {
 	version   byte
 	encoding  string
-	frames    []string
+	frames    map[string][]string
 	rawFrames []*id3v2TrackFrame
 }
 
-func (info *ID3V2Info) Frames() []string { return info.frames }
+func (info *ID3V2Info) Frames() map[string][]string { return info.frames }
 
 func (info *ID3V2Info) Version() byte {
 	return info.version
@@ -218,7 +220,7 @@ func (info *ID3V2Info) Encoding() string {
 	return info.encoding
 }
 
-func NewID3V2Info(version byte, encoding string, frames []string, rawFrames []*id3v2TrackFrame) *ID3V2Info {
+func NewID3V2Info(version byte, encoding string, frames map[string][]string, rawFrames []*id3v2TrackFrame) *ID3V2Info {
 	return &ID3V2Info{
 		version:   version,
 		encoding:  encoding,
@@ -231,14 +233,14 @@ func readID3V2Metadata(path string) (*ID3V2Info, error) {
 	tag, readErr := readID3V2Tag(path)
 	if readErr != nil {
 		return &ID3V2Info{
-			frames:    []string{},
+			frames:    map[string][]string{},
 			rawFrames: []*id3v2TrackFrame{},
 		}, readErr
 	}
 	defer func() {
 		_ = tag.Close()
 	}()
-	info := NewID3V2Info(tag.Version(), tag.DefaultEncoding().Name, []string{}, []*id3v2TrackFrame{})
+	info := NewID3V2Info(tag.Version(), tag.DefaultEncoding().String(), map[string][]string{}, []*id3v2TrackFrame{})
 	frameMap := tag.AllFrames()
 	frameNames := make([]string, 0, len(frameMap))
 	for k := range frameMap {
@@ -246,43 +248,255 @@ func readID3V2Metadata(path string) (*ID3V2Info, error) {
 	}
 	sort.Strings(frameNames)
 	for _, n := range frameNames {
-		var value string
+		var value []string
 		switch {
 		case strings.HasPrefix(n, "T"): // tag
-			value = removeLeadingBOMs(tag.GetTextFrame(n).Text)
+			value = []string{removeLeadingBOMs(tag.GetTextFrame(n).Text)}
 		default:
 			value = framerSliceAsString(frameMap[n])
 		}
 		frame := &id3v2TrackFrame{name: n, value: value}
-		info.frames = append(info.frames, frame.String())
+		info.frames[n] = append(info.frames[n], value...)
 		info.rawFrames = append(info.rawFrames, frame)
 	}
 	return info, nil
 }
 
-func framerSliceAsString(f []id3v2.Framer) string {
+func framerSliceAsString(f []id3v2.Framer) []string {
 	substrings := make([]string, 0, len(f))
 	switch {
 	case len(f) == 1:
 		data, ok := f[0].(id3v2.UnknownFrame)
 		switch {
 		case ok:
-			substrings = append(substrings, fmt.Sprintf("%#v", data.Body))
+			substrings = append(substrings, interpretUnknownFrame(data)...)
 		default:
 			substrings = append(substrings, fmt.Sprintf("%#v", f[0]))
 		}
 	default:
-		for k, framer := range f {
+		for _, framer := range f {
 			data, ok := framer.(id3v2.UnknownFrame)
 			switch {
 			case ok:
-				substrings = append(substrings, fmt.Sprintf("[%d %#v]", k, data.Body))
+				substrings = append(substrings, interpretUnknownFrame(data)...)
 			default:
-				substrings = append(substrings, fmt.Sprintf("[%d %#v]", k, framer))
+				substrings = append(substrings, fmt.Sprintf("%#v", framer))
 			}
 		}
 	}
-	return fmt.Sprintf("<<%s>>", strings.Join(substrings, ", "))
+	return substrings
+}
+
+func bytesToInt(content []byte) int {
+	result := 0
+	for i := 0; i < len(content); i++ {
+		result <<= 8
+		result += int(content[i])
+	}
+	return result
+}
+
+func interpretUnknownFrame(data id3v2.UnknownFrame) []string {
+	content := data.Body
+	if result, ok := decodeFreeRipMCDI(content); ok {
+		return result
+	}
+	if s, ok := displayString(content); ok {
+		if result, ok := decodeWindowsLegacyMediaPlayerMCDI(s, content); ok {
+			return result
+		}
+		// some other pattern, not seen before, so no attempt to decode the string further
+		dump := hexDump(content)
+		result := make([]string, 0, 1+len(dump))
+		result = append(result, s)
+		result = append(result, dump...)
+		return result
+	}
+	if s, ok := decodeLAMEGeneratedMCDI(content); ok {
+		return s
+	}
+	return hexDump(content)
+}
+
+func decodeLAMEGeneratedMCDI(content []byte) ([]string, bool) {
+	// this code is based on inspection of content generated by LAME, and by reading this:
+	// https://musicbrainz.org/doc/Disc_IDs_and_Tagging, which says:
+	//
+	// "Basic format in pseudo-C code (all are big-endian, MSB first):
+	//
+	//  struct cdtoc
+	//  {
+	//    unsigned short toc_data_length;
+	//    unsigned char first_track_number;
+	//    unsigned char last_track_number;
+	//    /* the following fields are repeated once per track on
+	//     * the CD, and then one extra time for the lead-out */
+	//    unsigned char reserved1; /* This should be 0 */
+	//    unsigned char adr_ctrl; /* first 4 bits for the ADR data last 4 bits for Control data */
+	//    unsigned char track_number; /* This is 0xAA for the lead-out */
+	//    unsigned char reserved2; /* This should be 0 */
+	//    unsigned long lba_address; /* NOT MSF. */
+	//    /* The lba_address may be misapplied in my hack of discid
+	//     * (off by 150 frames, track 1 starts at LBA 0), but I don't
+	//     * have a way to verify that this is the case. */
+	//  };
+	// "
+	//
+	// regarding the 150 frame correction applied here, this passage read from
+	// https://musicbrainz.org/doc/Disc_ID_Calculation was most informative:
+	//
+	// "Also note that the LBA (Logical Block Address) offsets start at address 0, but the first
+	//  track starts actually at 00:02:00 (the standard length of the lead-in track). So we need
+	//  to add 150 logical blocks to each LBA offset."
+	//
+	// My experimentation with using LAME demonstrates that it generates LBA offsets that begin
+	// with zero, and so need the 150 frame logical block correction
+	contentLength := len(content)
+	if contentLength >= 4 {
+		result := bytesToInt(content[0:2])
+		if result < contentLength {
+			trackFirst := int(content[2])
+			trackLast := int(content[3])
+			trackCount := trackLast + 1 - trackFirst
+			expectedLength := 2 + (8 * (trackCount + 1))
+			if expectedLength == result {
+				dump := hexDump(content)
+				formatted := make([]string, 0, trackCount+3+len(dump))
+				formatted = append(
+					formatted,
+					fmt.Sprintf("first track: %d", trackFirst),
+					fmt.Sprintf("last track: %d", trackLast))
+				const logicalBlockAddressCorrection = 150
+				for k := 0; k < trackCount; k++ {
+					offset := k * 8
+					lbaAddress := bytesToInt(content[offset+8:offset+12]) + logicalBlockAddressCorrection
+					formatted = append(formatted, fmt.Sprintf("track %d logical block address %d", content[6+offset], lbaAddress))
+				}
+				offset := trackCount * 8
+				lbaAddress := bytesToInt(content[offset+8:offset+12]) + logicalBlockAddressCorrection
+				formatted = append(formatted, fmt.Sprintf("leadout track logical block address %d", lbaAddress))
+				formatted = append(formatted, dump...)
+				return formatted, true
+			}
+		}
+	}
+	return nil, false
+}
+
+func decodeWindowsLegacyMediaPlayerMCDI(s string, raw []byte) ([]string, bool) {
+	if windowsLegacyMCDIPattern.MatchString(s) {
+		// windows legacy media player generates a string of hexadecimal numbers separated by plus
+		// signs. The first number is the number of tracks; the remaining numbers are the logical
+		// block addresses of the tracks. There will be one address for each track, plus one for the
+		// leadout.
+		hexStrings := strings.Split(s, "+")
+		// nilaway is not convinced that s, having matched the windows legacy pattern, couldn't
+		// somehow return a nil slice of string, so we make the check that should never fail
+		if len(hexStrings) != 0 {
+			track := 0
+			// ignoring count and error returns because the regex the string matched
+			// only matches a sequence of hexadecimal numbers separated by '+' characters
+			_, _ = fmt.Sscanf(hexStrings[0], "%x", &track)
+			if len(hexStrings) == track+2 {
+				addresses := make([]int, 0, track+1)
+				for _, ss := range hexStrings[1:] {
+					address := 0
+					_, _ = fmt.Sscanf(ss, "%x", &address)
+					addresses = append(addresses, address)
+				}
+				dump := hexDump(raw)
+				substrings := make([]string, 0, len(addresses)+1+len(dump))
+				substrings = append(substrings, fmt.Sprintf("tracks %d", track))
+				for n, address := range addresses {
+					if n == track {
+						substrings = append(substrings, fmt.Sprintf("leadout track logical block address %d", address))
+					} else {
+						substrings = append(substrings, fmt.Sprintf("track %d logical block address %d", n+1, address))
+					}
+				}
+				substrings = append(substrings, dump...)
+				return substrings, true
+			}
+		}
+	}
+	return nil, false
+}
+
+func decodeFreeRipMCDI(content []byte) ([]string, bool) {
+	if len(content) >= 3 && content[0] == 1 && content[1] == 0xff && content[2] == 0xfe {
+		if s, ok := displayString(content[3:]); ok {
+			dump := hexDump(content)
+			result := make([]string, 0, 1+len(dump))
+			result = append(result, s)
+			result = append(result, dump...)
+			return result, true
+		}
+	}
+	return nil, false
+}
+
+func hexDump(content []byte) []string {
+	values := make([]string, 0, (len(content)+15)/16)
+	fullLines := len(content) / 16
+	for j := 0; j < fullLines; j++ {
+		hex := make([]string, 0, 16)
+		printable := make([]string, 0, 16)
+		for k := 0; k < 16; k++ {
+			currentChar := content[(j*16)+k]
+			hex = append(hex, fmt.Sprintf("%02X", currentChar))
+			if currentChar >= ' ' && currentChar <= '~' {
+				printable = append(printable, fmt.Sprintf("%c", currentChar))
+			} else {
+				printable = append(printable, "•")
+			}
+		}
+		hex = append(hex, strings.Join(printable, ""))
+		values = append(values, strings.Join(hex, " "))
+	}
+	if len(content)%16 != 0 {
+		remainder := len(content) % 16
+		hex := make([]string, 0, 16)
+		printable := make([]string, 0, remainder)
+		offset := 16 * (len(content) / 16)
+		for k := 0; k < 16; k++ {
+			if k < remainder {
+				currentChar := content[offset+k]
+				hex = append(hex, fmt.Sprintf("%02X", currentChar))
+				if currentChar >= ' ' && currentChar <= '~' {
+					printable = append(printable, fmt.Sprintf("%c", currentChar))
+				} else {
+					printable = append(printable, "•")
+				}
+			} else {
+				hex = append(hex, "  ")
+			}
+		}
+		hex = append(hex, strings.Join(printable, ""))
+		values = append(values, strings.Join(hex, " "))
+	}
+	return values
+}
+
+func displayString(content []byte) (string, bool) {
+	if len(content)%2 == 0 {
+		allOddBytesAreNull := true
+		ascii := make([]byte, 0, len(content)/2)
+		for index, b := range content {
+			if index%2 == 0 {
+				ascii = append(ascii, b)
+			} else if b != 0 {
+				allOddBytesAreNull = false
+				break
+			}
+		}
+		if allOddBytesAreNull {
+			for ascii[len(ascii)-1] == 0x00 {
+				ascii = ascii[:len(ascii)-1]
+			}
+			return string(ascii), true
+		}
+	}
+	return "", false
 }
 
 func id3v2NameDiffers(cS *comparableStrings) bool {

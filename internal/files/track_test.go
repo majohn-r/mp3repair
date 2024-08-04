@@ -306,7 +306,7 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 		t                *Track
 		wantEncoding     string
 		wantVersion      byte
-		wantFrameStrings []string
+		wantFrameStrings map[string][]string
 		wantErr          bool
 	}{
 		"error case": {
@@ -317,17 +317,17 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 			t:            &Track{filePath: filepath.Join(".", goodFileName)},
 			wantEncoding: "ISO-8859-1",
 			wantVersion:  3,
-			wantFrameStrings: []string{
-				"Fake = \"<<[]byte{0x0, 0x68, 0x75, 0x68}>>\"",
-				"T??? = \"who knows?\"",
-				"TALB = \"unknown album\"",
-				"TCOM = \"a couple of idiots\"",
-				"TCON = \"dance music\"",
-				"TIT2 = \"unknown track\"",
-				"TLEN = \"1000\"",
-				"TPE1 = \"unknown artist\"",
-				"TRCK = \"2\"",
-				"TYER = \"2022\"",
+			wantFrameStrings: map[string][]string{
+				"Fake": {"00 68 75 68                                     •huh"},
+				"T???": {"who knows?"},
+				"TALB": {"unknown album"},
+				"TCOM": {"a couple of idiots"},
+				"TCON": {"dance music"},
+				"TIT2": {"unknown track"},
+				"TLEN": {"1000"},
+				"TPE1": {"unknown artist"},
+				"TRCK": {"2"},
+				"TYER": {"2022"},
 			},
 		},
 	}
@@ -1175,7 +1175,7 @@ func TestTrack_Details(t *testing.T) {
 	_ = createFileWithContent(".", goodFileName, content)
 	tests := map[string]struct {
 		t       *Track
-		want    map[string]string
+		want    map[string][]string
 		wantErr bool
 	}{
 		"error case": {
@@ -1184,13 +1184,13 @@ func TestTrack_Details(t *testing.T) {
 		},
 		"good case": {
 			t: &Track{filePath: filepath.Join(".", goodFileName)},
-			want: map[string]string{
-				"Composer":       "a couple of idiots",
-				"Lyricist":       "An infinite number of monkeys with a typewriter",
-				"Subtitle":       "Part II",
-				"Key":            "D Major",
-				"Orchestra/Band": "The usual gang of idiots",
-				"Conductor":      "Someone with a stick",
+			want: map[string][]string{
+				"Composer":       {"a couple of idiots"},
+				"Lyricist":       {"An infinite number of monkeys with a typewriter"},
+				"Subtitle":       {"Part II"},
+				"Key":            {"D Major"},
+				"Orchestra/Band": {"The usual gang of idiots"},
+				"Conductor":      {"Someone with a stick"},
 			},
 		},
 	}
