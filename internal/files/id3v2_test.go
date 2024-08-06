@@ -482,6 +482,23 @@ var (
 		"41 00 46 00 2B 00 34 00 41 00 30 00 34 00 38 00 A•F•+•4•A•0•4•8•",
 		"00 00                                           ••",
 	}
+	samplePictureFrame = id3v2.PictureFrame{
+		Encoding:    id3v2.EncodingISO,
+		MimeType:    "image/jpeg",
+		PictureType: 3,
+		Description: "CD Front Cover",
+		Picture: []byte{
+			0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x01, 0x00, 0x11,
+		},
+	}
+	samplePictureFrameOutput = []string{
+		"Encoding: ISO-8859-1",
+		"Mime Type: image/jpeg",
+		"Picture Type: Cover (front)",
+		"Description: CD Front Cover",
+		"Picture Data:",
+		"FF D8 FF E0 00 10 4A 46 49 46 00 01 01 01 00 11 ••••••JFIF••••••",
+	}
 )
 
 func Test_framerSliceAsString(t *testing.T) {
@@ -500,6 +517,10 @@ func Test_framerSliceAsString(t *testing.T) {
 		"window legacy reader MCDI": {
 			f:    []id3v2.Framer{id3v2.UnknownFrame{Body: windowsLegacyReaderMCDI}},
 			want: windowsLegacyReaderMCDIOutput,
+		},
+		"APIC": {
+			f:    []id3v2.Framer{samplePictureFrame},
+			want: samplePictureFrameOutput,
 		},
 		"unrecognized string MCDI": {
 			f: []id3v2.Framer{id3v2.UnknownFrame{Body: []byte{
@@ -1094,6 +1115,48 @@ func Test_decodeWindowsLegacyMediaPlayerMCDI(t *testing.T) {
 			}
 			if got1 != tt.want1 {
 				t.Errorf("decodeWindowsLegacyMediaPlayerMCDI() got1 = %v, want %v", got1, tt.want1)
+			}
+		})
+	}
+}
+
+func Test_interpretPictureFrame(t *testing.T) {
+	tests := map[string]struct {
+		frame *id3v2.PictureFrame
+		want  []string
+	}{
+		"typical": {
+			frame: &samplePictureFrame,
+			want:  samplePictureFrameOutput,
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := interpretPictureFrame(tt.frame); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("interpretPictureFrame() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_interpretPictureType(t *testing.T) {
+	tests := map[string]struct {
+		pictureType byte
+		want        string
+	}{
+		"typical": {
+			pictureType: 3,
+			want:        "Cover (front)",
+		},
+		"atypical": {
+			pictureType: 0xff,
+			want:        "Undocumented value 255",
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := interpretPictureType(tt.pictureType); got != tt.want {
+				t.Errorf("interpretPictureType() = %v, want %v", got, tt.want)
 			}
 		})
 	}

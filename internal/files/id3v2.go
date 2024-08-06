@@ -263,27 +263,66 @@ func readID3V2Metadata(path string) (*ID3V2Info, error) {
 }
 
 func framerSliceAsString(f []id3v2.Framer) []string {
-	substrings := make([]string, 0, len(f))
-	switch {
-	case len(f) == 1:
-		data, ok := f[0].(id3v2.UnknownFrame)
-		switch {
-		case ok:
-			substrings = append(substrings, interpretUnknownFrame(data)...)
-		default:
-			substrings = append(substrings, fmt.Sprintf("%#v", f[0]))
+	substrings := make([]string, 0, 100) // be generous!
+	for _, framer := range f {
+		if unknownFrame, isUnknownFrame := framer.(id3v2.UnknownFrame); isUnknownFrame {
+			substrings = append(substrings, interpretUnknownFrame(unknownFrame)...)
+			continue
 		}
-	default:
-		for _, framer := range f {
-			data, ok := framer.(id3v2.UnknownFrame)
-			switch {
-			case ok:
-				substrings = append(substrings, interpretUnknownFrame(data)...)
-			default:
-				substrings = append(substrings, fmt.Sprintf("%#v", framer))
-			}
+		if pictureFrame, isPictureFrame := framer.(id3v2.PictureFrame); isPictureFrame {
+			substrings = append(substrings, interpretPictureFrame(&pictureFrame)...)
+			continue
 		}
+		substrings = append(substrings, fmt.Sprintf("%#v", framer))
 	}
+	return substrings
+}
+
+var pictureTypes = map[byte]string{
+	0x00: "Other",
+	0x01: "32x32 pixels 'file icon' (PNG only)",
+	0x02: "Other file icon",
+	0x03: "Cover (front)",
+	0x04: "Cover (back)",
+	0x05: "Leaflet page",
+	0x06: "Media (e.g. label side of CD)",
+	0x07: "Lead artist/lead performer/soloist",
+	0x08: "Artist/performer",
+	0x09: "Conductor",
+	0x0A: "Band/Orchestra",
+	0x0B: "Composer",
+	0x0C: "Lyricist/text writer",
+	0x0D: "Recording Location",
+	0x0E: "During recording",
+	0x0F: "During performance",
+	0x10: "Movie/video screen capture",
+	0x11: "A bright coloured fish",
+	0x12: "Illustration",
+	0x13: "Band/artist logotype",
+	0x14: "Publisher/Studio logotype",
+}
+
+// interpretPictureType translates the byte into a string; the string values come from
+// https://id3.org/id3v2.3.0#Attached_picture
+func interpretPictureType(pictureType byte) string {
+	if description, found := pictureTypes[pictureType]; found {
+		return description
+	}
+	return fmt.Sprintf("Undocumented value %d", pictureType)
+}
+
+func interpretPictureFrame(frame *id3v2.PictureFrame) []string {
+	dump := hexDump(frame.Picture)
+	substrings := make([]string, 0, 5+len(dump))
+	substrings = append(
+		substrings,
+		fmt.Sprintf("Encoding: %s", frame.Encoding.String()),
+		fmt.Sprintf("Mime Type: %s", frame.MimeType),
+		fmt.Sprintf("Picture Type: %s", interpretPictureType(frame.PictureType)),
+		fmt.Sprintf("Description: %s", frame.Description),
+		"Picture Data:",
+	)
+	substrings = append(substrings, dump...)
 	return substrings
 }
 
