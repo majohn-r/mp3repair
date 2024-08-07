@@ -719,7 +719,7 @@ func Test_repairSettings_repairArtists(t *testing.T) {
 	plainFileExists = func(_ string) bool { return false }
 	copyFile = func(_, _ string) error { return nil }
 	markDirty = func(_ output.Bus) {}
-	maker := files.TrackMetadataMaker{
+	maker := &files.TrackMetadataMaker{
 		Artist:       "",
 		Album:        "",
 		Genre:        "",

@@ -250,6 +250,19 @@ func readID3V2Metadata(path string) (*ID3V2Info, error) {
 	for _, n := range frameNames {
 		var value []string
 		switch {
+		case n == "TLEN":
+			rawValue := removeLeadingBOMs(tag.GetTextFrame(n).Text)
+			length := 0
+			for _, c := range rawValue {
+				switch c {
+				case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+					length *= 10
+					length += int(c - '0')
+				}
+			}
+			rawSeconds := length / 1000
+			minutes := rawSeconds / 60
+			value = []string{fmt.Sprintf("%d:%02d.%03d", minutes, rawSeconds%60, length%1000)}
 		case strings.HasPrefix(n, "T"): // tag
 			value = []string{removeLeadingBOMs(tag.GetTextFrame(n).Text)}
 		default:

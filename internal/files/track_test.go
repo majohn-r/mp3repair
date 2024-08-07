@@ -324,7 +324,7 @@ func TestTrack_ID3V2Diagnostics(t *testing.T) {
 				"TCOM": {"a couple of idiots"},
 				"TCON": {"dance music"},
 				"TIT2": {"unknown track"},
-				"TLEN": {"1000"},
+				"TLEN": {"0:01.000"},
 				"TPE1": {"unknown artist"},
 				"TRCK": {"2"},
 				"TYER": {"2022"},
@@ -414,13 +414,13 @@ func TestTrack_ID3V1Diagnostics(t *testing.T) {
 		"good file": {
 			t: &Track{filePath: filepath.Join(testDir, goodFile)},
 			want: []string{
-				"Artist: \"The Beatles\"",
-				"Album: \"On Air: Live At The BBC, Volum\"",
-				"Title: \"Ringo - Pop Profile [Interview\"",
+				"Artist: The Beatles",
+				"Album: On Air: Live At The BBC, Volum",
+				"Title: Ringo - Pop Profile [Interview",
 				"Track: 29",
-				"Year: \"2013\"",
-				"Genre: \"other\"",
-				"Comment: \"silly\"",
+				"Year: 2013",
+				"Genre: other",
+				"Comment: silly",
 			},
 		},
 	}
@@ -1150,64 +1150,6 @@ func TestTrack_ReportMetadataErrors(t *testing.T) {
 	}
 }
 
-func TestTrack_Details(t *testing.T) {
-	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
-	defer func() {
-		cmdtoolkit.AssignFileSystem(originalFileSystem)
-	}()
-	content := createID3v2TaggedData(cannedPayload, map[string]string{
-		"TYER": "2022",
-		"TALB": "unknown album",
-		"TRCK": "2",
-		"TCON": "dance music",
-		"TCOM": "a couple of idiots",
-		"TIT2": "unknown track",
-		"TPE1": "unknown artist",
-		"TLEN": "1000",
-		"T???": "who knows?",
-		"TEXT": "An infinite number of monkeys with a typewriter",
-		"TIT3": "Part II",
-		"TKEY": "D Major",
-		"TPE2": "The usual gang of idiots",
-		"TPE3": "Someone with a stick",
-	})
-	goodFileName := "goodFile.mp3"
-	_ = createFileWithContent(".", goodFileName, content)
-	tests := map[string]struct {
-		t       *Track
-		want    map[string][]string
-		wantErr bool
-	}{
-		"error case": {
-			t:       &Track{filePath: "./no such file"},
-			wantErr: true,
-		},
-		"good case": {
-			t: &Track{filePath: filepath.Join(".", goodFileName)},
-			want: map[string][]string{
-				"Composer":       {"a couple of idiots"},
-				"Lyricist":       {"An infinite number of monkeys with a typewriter"},
-				"Subtitle":       {"Part II"},
-				"Key":            {"D Major"},
-				"Orchestra/Band": {"The usual gang of idiots"},
-				"Conductor":      {"Someone with a stick"},
-			},
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			got, gotErr := tt.t.Details()
-			if (gotErr != nil) != tt.wantErr {
-				t.Errorf("Track.Details() error = %v, wantErr %v", gotErr, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Track.Details() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
 type sampleWriter struct {
 	name string
 }
@@ -1689,6 +1631,29 @@ func TestTrack_Copy(t1 *testing.T) {
 			}
 			if got := len(tt.args.a.tracks); got != tt.wantAlbumTrackCount {
 				t1.Errorf("Copy() = %v, want %v", got, tt.wantAlbumTrackCount)
+			}
+		})
+	}
+}
+
+func TestFrameDescription(t *testing.T) {
+	tests := map[string]struct {
+		name string
+		want string
+	}{
+		"known case": {
+			name: "MCDI",
+			want: "Music CD identifier",
+		},
+		"unknown case": {
+			name: "Music",
+			want: "No description found",
+		},
+	}
+	for name, tt := range tests {
+		t.Run(name, func(t *testing.T) {
+			if got := FrameDescription(tt.name); got != tt.want {
+				t.Errorf("FrameDescription() = %v, want %v", got, tt.want)
 			}
 		})
 	}

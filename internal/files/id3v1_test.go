@@ -856,12 +856,12 @@ func TestReadId3v1Metadata(t *testing.T) {
 		"good file": {
 			path: filepath.Join(testDir, goodFile),
 			want: []string{
-				`Artist: "The Beatles"`,
-				`Album: "On Air: Live At The BBC, Volum"`,
-				`Title: "Ringo - Pop Profile [Interview"`,
+				`Artist: The Beatles`,
+				`Album: On Air: Live At The BBC, Volum`,
+				`Title: Ringo - Pop Profile [Interview`,
 				"Track: 29",
-				`Year: "2013"`,
-				`Genre: "other"`,
+				`Year: 2013`,
+				`Genre: other`,
 			},
 			wantErr: false,
 		},

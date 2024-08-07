@@ -30,7 +30,6 @@ func Test_processListFlags(t *testing.T) {
 				Error: "An internal error occurred: flag \"albums\" is not found.\n" +
 					"An internal error occurred: flag \"annotate\" is not found.\n" +
 					"An internal error occurred: flag \"artists\" is not found.\n" +
-					"An internal error occurred: flag \"details\" is not found.\n" +
 					"An internal error occurred: flag \"diagnostic\" is not found.\n" +
 					"An internal error occurred: flag \"byNumber\" is not found.\n" +
 					"An internal error occurred: flag \"byTitle\" is not found.\n" +
@@ -46,10 +45,6 @@ func Test_processListFlags(t *testing.T) {
 					"level='error'" +
 					" error='flag not found'" +
 					" flag='artists'" +
-					" msg='internal error'\n" +
-					"level='error'" +
-					" error='flag not found'" +
-					" flag='details'" +
 					" msg='internal error'\n" +
 					"level='error'" +
 					" error='flag not found'" +
@@ -74,7 +69,6 @@ func Test_processListFlags(t *testing.T) {
 				"albums":     {Value: true},
 				"annotate":   {Value: true},
 				"artists":    {Value: true},
-				"details":    {Value: true},
 				"diagnostic": {Value: true},
 				"byNumber":   {Value: true},
 				"byTitle":    {Value: true},
@@ -84,7 +78,6 @@ func Test_processListFlags(t *testing.T) {
 				albums:       cmdtoolkit.CommandFlag[bool]{Value: true},
 				annotate:     cmdtoolkit.CommandFlag[bool]{Value: true},
 				artists:      cmdtoolkit.CommandFlag[bool]{Value: true},
-				details:      cmdtoolkit.CommandFlag[bool]{Value: true},
 				diagnostic:   cmdtoolkit.CommandFlag[bool]{Value: true},
 				sortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true},
 				sortByTitle:  cmdtoolkit.CommandFlag[bool]{Value: true},
@@ -97,7 +90,6 @@ func Test_processListFlags(t *testing.T) {
 				"albums":     {Value: false, UserSet: true},
 				"annotate":   {Value: false},
 				"artists":    {Value: false, UserSet: true},
-				"details":    {Value: false},
 				"diagnostic": {Value: false},
 				"byNumber":   {Value: false, UserSet: true},
 				"byTitle":    {Value: false, UserSet: true},
@@ -803,10 +795,11 @@ func Test_showID3V1Diagnostics(t *testing.T) {
 			},
 			WantedRecording: output.WantedRecording{
 				Console: "" +
-					"  ID3V1 artist=my artist\n" +
-					"  ID3V1 album=my album\n" +
-					"  ID3V1 track=track 10\n" +
-					"  ID3V1 number=10\n",
+					"  ID3V1 metadata\n" +
+					"    album=my album\n" +
+					"    artist=my artist\n" +
+					"    number=10\n" +
+					"    track=track 10\n",
 			},
 		},
 	}
@@ -850,8 +843,9 @@ func Test_showID3V2Diagnostics(t *testing.T) {
 			},
 			WantedRecording: output.WantedRecording{
 				Console: "" +
-					"  ID3V2 Version: 1\n" +
-					"  ID3V2 Encoding: \"UTF-8\"\n",
+					"  ID3V2 metadata\n" +
+					"    Version: 1\n" +
+					"    Encoding: UTF-8\n",
 			},
 		},
 		"with empty frames": {
@@ -861,10 +855,11 @@ func Test_showID3V2Diagnostics(t *testing.T) {
 			},
 			WantedRecording: output.WantedRecording{
 				Console: "" +
-					"  ID3V2 Version: 1\n" +
-					"  ID3V2 Encoding: \"UTF-8\"\n" +
-					"  ID3V2 FRAME1 = <<empty>>\n" +
-					"  ID3V2 FRAME2 = <<empty>>\n",
+					"  ID3V2 metadata\n" +
+					"    Version: 1\n" +
+					"    Encoding: UTF-8\n" +
+					"    FRAME1 [No description found]: <<empty>>\n" +
+					"    FRAME2 [No description found]: <<empty>>\n",
 			},
 		},
 		"with mixed frames": {
@@ -883,12 +878,13 @@ func Test_showID3V2Diagnostics(t *testing.T) {
 			},
 			WantedRecording: output.WantedRecording{
 				Console: "" +
-					"  ID3V2 Version: 1\n" +
-					"  ID3V2 Encoding: \"UTF-8\"\n" +
-					"  ID3V2 FRAME1 = <<empty>>\n" +
-					"  ID3V2 FRAME2 = value\n" +
-					"  ID3V2 FRAME3 = value1\n" +
-					"                 value2\n",
+					"  ID3V2 metadata\n" +
+					"    Version: 1\n" +
+					"    Encoding: UTF-8\n" +
+					"    FRAME1 [No description found]: <<empty>>\n" +
+					"    FRAME2 [No description found]: value\n" +
+					"    FRAME3 [No description found]: value1\n" +
+					"                                   value2\n",
 			},
 		},
 	}
@@ -915,13 +911,13 @@ func Test_listSettings_listTrackDiagnostics(t *testing.T) {
 				Log: "level='error'" +
 					" error='open music\\my artist\\my album\\10 track 10.mp3: The system" +
 					" cannot find the path specified.'" +
-					" metadata='ID3V2'" +
+					" metadata='ID3V1'" +
 					" track='music\\my artist\\my album\\10 track 10.mp3'" +
 					" msg='metadata read error'\n" +
 					"level='error'" +
 					" error='open music\\my artist\\my album\\10 track 10.mp3: The system" +
 					" cannot find the path specified.'" +
-					" metadata='ID3V1'" +
+					" metadata='ID3V2'" +
 					" track='music\\my artist\\my album\\10 track 10.mp3'" +
 					" msg='metadata read error'\n",
 			},
@@ -935,89 +931,6 @@ func Test_listSettings_listTrackDiagnostics(t *testing.T) {
 			o := output.NewRecorder()
 			tt.ls.listTrackDiagnostics(o, tt.track)
 			o.Report(t, "listSettings.listTrackDiagnostics()", tt.WantedRecording)
-		})
-	}
-}
-
-func Test_showDetails(t *testing.T) {
-	type args struct {
-		track        *files.Track
-		details      map[string][]string
-		detailsError error
-	}
-	tests := map[string]struct {
-		args
-		output.WantedRecording
-	}{
-		"error": {
-			args: args{
-				track:        sampleTrack,
-				detailsError: fmt.Errorf("details service offline"),
-			},
-			WantedRecording: output.WantedRecording{
-				Error: "The details are not available for track \"track 10\" on album" +
-					" \"my album\" by artist \"my artist\": \"details service offline\".\n",
-				Log: "level='error'" +
-					" error='details service offline'" +
-					" track='music\\my artist\\my album\\10 track 10.mp3'" +
-					" msg='cannot get details'\n",
-			},
-		},
-		"no error, and no details": {args: args{track: sampleTrack}},
-		"no error, with details": {
-			args: args{
-				track: sampleTrack,
-				details: map[string][]string{
-					"composer": {"some German"},
-					"producer": {"A True Genius"},
-				},
-			},
-			WantedRecording: output.WantedRecording{
-				Console: "" +
-					"  Details:\n" +
-					"    composer = [\"some German\"]\n" +
-					"    producer = [\"A True Genius\"]\n",
-			},
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			o := output.NewRecorder()
-			o.IncrementTab(2)
-			showDetails(o, tt.args.track, tt.args.details, tt.args.detailsError)
-			o.Report(t, "showDetails()", tt.WantedRecording)
-		})
-	}
-}
-
-func Test_listSettings_listTrackDetails(t *testing.T) {
-	tests := map[string]struct {
-		ls    *listSettings
-		track *files.Track
-		output.WantedRecording
-	}{
-		"not wanted": {ls: &listSettings{details: cmdtoolkit.CommandFlag[bool]{Value: false}}},
-		"wanted": {
-			ls:    &listSettings{details: cmdtoolkit.CommandFlag[bool]{Value: true}},
-			track: sampleTrack,
-			WantedRecording: output.WantedRecording{
-				Error: "The details are not available for track \"track 10\" on album" +
-					" \"my album\" by artist \"my artist\":" +
-					" \"open music\\\\my artist\\\\my album\\\\10 track 10.mp3: The" +
-					" system cannot find the path specified.\".\n",
-				Log: "level='error'" +
-					" error='open music\\my artist\\my album\\10 track 10.mp3: The system" +
-					" cannot find the path specified.'" +
-					" track='music\\my artist\\my album\\10 track 10.mp3'" +
-					" msg='cannot get details'\n",
-			},
-		},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			o := output.NewRecorder()
-			tt.ls.listTrackDetails(o, tt.track)
-			o.Report(t, "listSettings.listTrackDetails()", tt.WantedRecording)
 		})
 	}
 }
@@ -1870,11 +1783,6 @@ func Test_listRun(t *testing.T) {
 				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
-			listDetails: {
-				Usage:        "include details with tracks",
-				ExpectedType: cmdtoolkit.BoolType,
-				DefaultValue: false,
-			},
 			listDiagnostic: {
 				Usage:        "include diagnostic information with tracks",
 				ExpectedType: cmdtoolkit.BoolType,
@@ -1922,11 +1830,6 @@ func Test_listRun(t *testing.T) {
 				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
-			listDetails: {
-				Usage:        "include details with tracks",
-				ExpectedType: cmdtoolkit.BoolType,
-				DefaultValue: false,
-			},
 			listDiagnostic: {
 				Usage:        "include diagnostic information with tracks",
 				ExpectedType: cmdtoolkit.BoolType,
@@ -1971,11 +1874,6 @@ func Test_listRun(t *testing.T) {
 			},
 			listAnnotate: {
 				Usage:        "annotate listings with album and artist names",
-				ExpectedType: cmdtoolkit.BoolType,
-				DefaultValue: false,
-			},
-			listDetails: {
-				Usage:        "include details with tracks",
 				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
@@ -2138,7 +2036,7 @@ func Test_list_Help(t *testing.T) {
 					" directories\n" +
 					"\n" +
 					"Usage:\n" +
-					"  list [--albums] [--artists] [--tracks] [--annotate] [--details]" +
+					"  list [--albums] [--artists] [--tracks] [--annotate]" +
 					" [--diagnostic] [--byNumber | --byTitle] [--albumFilter regex]" +
 					" [--artistFilter regex] [--trackFilter regex] [--topDir dir]" +
 					" [--extensions extensions]\n" +
@@ -2147,10 +2045,8 @@ func Test_list_Help(t *testing.T) {
 					"list --annotate\n" +
 					"  Annotate tracks with album and artist data and albums with artist" +
 					" data\n" +
-					"list --details\n" +
-					"  Include detailed information, if available, for each track. This" +
-					" includes composer,\n" +
-					"  conductor, key, lyricist, orchestra/band, and subtitle\n" +
+					"list --diagnostic\n" +
+					"  Include full listing of ID3V1 and ID3V2 tags for each track\n" +
 					"list --albums\n" +
 					"  Include the album names in the output\n" +
 					"list --artists\n" +
@@ -2177,8 +2073,6 @@ func Test_list_Help(t *testing.T) {
 					"sort tracks by track number (default false)\n" +
 					"      --byTitle               " +
 					"sort tracks by track title (default false)\n" +
-					"      --details               " +
-					"include details with tracks (default false)\n" +
 					"      --diagnostic            " +
 					"include diagnostic information with tracks (default false)\n" +
 					"      --extensions string     " +

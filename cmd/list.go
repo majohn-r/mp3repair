@@ -19,8 +19,6 @@ const (
 	listArtists          = "artists"
 	listArtistsFlag      = "--" + listArtists
 	listCommand          = "list"
-	listDetails          = "details"
-	listDetailsFlag      = "--" + listDetails
 	listDiagnostic       = "diagnostic"
 	listDiagnosticFlag   = "--" + listDiagnostic
 	listSortByNumber     = "byNumber"
@@ -34,19 +32,16 @@ const (
 var (
 	listCmd = &cobra.Command{
 		Use: listCommand + " [" + listAlbumsFlag + "] [" + listArtistsFlag + "] " +
-			"[" + listTracksFlag + "] [" + listAnnotateFlag + "] [" + listDetailsFlag + "] " +
-			"[" + listDiagnosticFlag + "] [" + listSortByNumberFlag + " | " +
-			listSortByTitleFlag + "] " + searchUsage,
+			"[" + listTracksFlag + "] [" + listAnnotateFlag + "] [" + listDiagnosticFlag + "] [" +
+			listSortByNumberFlag + " | " + listSortByTitleFlag + "] " + searchUsage,
 		DisableFlagsInUseLine: true,
 		Short:                 "Lists mp3 files and containing album and artist directories",
 		Long: fmt.Sprintf(
 			"%q lists mp3 files and containing album and artist directories", listCommand),
 		Example: listCommand + " " + listAnnotateFlag + "\n" +
 			"  Annotate tracks with album and artist data and albums with artist data\n" +
-			listCommand + " " + listDetailsFlag + "\n" +
-			"  Include detailed information, if available, for each track. This includes" +
-			" composer,\n" +
-			"  conductor, key, lyricist, orchestra/band, and subtitle\n" +
+			listCommand + " " + listDiagnosticFlag + "\n" +
+			"  Include full listing of ID3V1 and ID3V2 tags for each track\n" +
 			listCommand + " " + listAlbumsFlag + "\n" +
 			"  Include the album names in the output\n" +
 			listCommand + " " + listArtistsFlag + "\n" +
@@ -95,11 +90,6 @@ var (
 				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
-			listDetails: {
-				Usage:        "include details with tracks",
-				ExpectedType: cmdtoolkit.BoolType,
-				DefaultValue: false,
-			},
 			listDiagnostic: {
 				Usage:        "include diagnostic information with tracks",
 				ExpectedType: cmdtoolkit.BoolType,
@@ -138,7 +128,6 @@ type listSettings struct {
 	albums       cmdtoolkit.CommandFlag[bool]
 	annotate     cmdtoolkit.CommandFlag[bool]
 	artists      cmdtoolkit.CommandFlag[bool]
-	details      cmdtoolkit.CommandFlag[bool]
 	diagnostic   cmdtoolkit.CommandFlag[bool]
 	sortByNumber cmdtoolkit.CommandFlag[bool]
 	sortByTitle  cmdtoolkit.CommandFlag[bool]
@@ -245,7 +234,6 @@ func (ls *listSettings) listTracksByNumber(o output.Bus, tracks []*files.Track) 
 		if track != nil {
 			o.WriteConsole("%2d. %s\n", n, track.Name())
 			o.IncrementTab(2)
-			ls.listTrackDetails(o, track)
 			ls.listTrackDiagnostics(o, track)
 			o.DecrementTab(2)
 		}
@@ -257,7 +245,6 @@ func (ls *listSettings) listTracksByName(o output.Bus, tracks []*files.Track) {
 	for _, track := range tracks {
 		o.WriteConsole("%s\n", ls.annotateTrackName(track))
 		o.IncrementTab(2)
-		ls.listTrackDetails(o, track)
 		ls.listTrackDiagnostics(o, track)
 		o.DecrementTab(2)
 	}
@@ -279,48 +266,12 @@ func (ls *listSettings) annotateTrackName(track *files.Track) string {
 	return strings.Join(trackNameParts, " ")
 }
 
-func (ls *listSettings) listTrackDetails(o output.Bus, track *files.Track) {
-	if ls.details.Value {
-		// go get information from track and display it
-		m, readErr := track.Details()
-		showDetails(o, track, m, readErr)
-	}
-}
-
-func showDetails(o output.Bus, track *files.Track, details map[string][]string, detailsError error) {
-	if detailsError != nil {
-		o.Log(output.Error, "cannot get details", map[string]any{
-			"error": detailsError,
-			"track": track.String(),
-		})
-		o.WriteCanonicalError(
-			"The details are not available for track %q on album %q by artist %q: %q",
-			track.Name(), track.AlbumName(), track.RecordingArtist(),
-			detailsError.Error())
-		return
-	}
-	if len(details) == 0 {
-		return
-	}
-	keys := make([]string, 0, len(details))
-	for k := range details {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	o.WriteConsole("Details:\n")
-	o.IncrementTab(2)
-	for _, k := range keys {
-		o.WriteConsole("%s = %q\n", k, details[k])
-	}
-	o.DecrementTab(2)
-}
-
 func (ls *listSettings) listTrackDiagnostics(o output.Bus, track *files.Track) {
 	if ls.diagnostic.Value {
-		info, ID3V2readErr := track.ID3V2Diagnostics()
-		showID3V2Diagnostics(o, track, info, ID3V2readErr)
 		tags, ID3V1readErr := track.ID3V1Diagnostics()
 		showID3V1Diagnostics(o, track, tags, ID3V1readErr)
+		info, ID3V2readErr := track.ID3V2Diagnostics()
+		showID3V2Diagnostics(o, track, info, ID3V2readErr)
 	}
 }
 
@@ -329,9 +280,13 @@ func showID3V1Diagnostics(o output.Bus, track *files.Track, tags []string, readE
 		track.ReportMetadataReadError(o, files.ID3V1, readErr.Error())
 		return
 	}
+	o.WriteConsole("ID3V1 metadata\n")
+	o.IncrementTab(2)
+	sort.Strings(tags)
 	for _, s := range tags {
-		o.WriteConsole("ID3V1 %s\n", s)
+		o.WriteConsole("%s\n", s)
 	}
+	o.DecrementTab(2)
 }
 
 func showID3V2Diagnostics(o output.Bus, track *files.Track, info *files.ID3V2Info, readErr error) {
@@ -340,8 +295,10 @@ func showID3V2Diagnostics(o output.Bus, track *files.Track, info *files.ID3V2Inf
 		return
 	}
 	if info != nil {
-		o.WriteConsole("ID3V2 Version: %v\n", info.Version())
-		o.WriteConsole("ID3V2 Encoding: %q\n", info.Encoding())
+		o.WriteConsole("ID3V2 metadata\n")
+		o.IncrementTab(2)
+		o.WriteConsole("Version: %v\n", info.Version())
+		o.WriteConsole("Encoding: %s\n", info.Encoding())
 		tags := make([]string, 0, len(info.Frames()))
 		for k := range info.Frames() {
 			tags = append(tags, k)
@@ -349,13 +306,14 @@ func showID3V2Diagnostics(o output.Bus, track *files.Track, info *files.ID3V2Inf
 		sort.Strings(tags)
 		for _, tag := range tags {
 			values := info.Frames()[tag]
+			description := files.FrameDescription(tag)
 			switch len(values) {
 			case 0:
-				o.WriteConsole("ID3V2 %s = <<empty>>\n", tag)
+				o.WriteConsole("%s [%s]: <<empty>>\n", tag, description)
 			case 1:
-				o.WriteConsole("ID3V2 %s = %s\n", tag, values[0])
+				o.WriteConsole("%s [%s]: %s\n", tag, description, values[0])
 			default:
-				header := fmt.Sprintf("ID3V2 %s = ", tag)
+				header := fmt.Sprintf("%s [%s]: ", tag, description)
 				o.WriteConsole("%s%s\n", header, values[0])
 				tab := uint8(len(header))
 				o.IncrementTab(tab)
@@ -365,6 +323,7 @@ func showID3V2Diagnostics(o output.Bus, track *files.Track, info *files.ID3V2Inf
 				o.DecrementTab(tab)
 			}
 		}
+		o.DecrementTab(2)
 	}
 }
 
@@ -526,9 +485,6 @@ func processListFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[an
 		flagsOk = false
 	}
 	if settings.artists, flagErr = cmdtoolkit.GetBool(o, values, listArtists); flagErr != nil {
-		flagsOk = false
-	}
-	if settings.details, flagErr = cmdtoolkit.GetBool(o, values, listDetails); flagErr != nil {
 		flagsOk = false
 	}
 	if settings.diagnostic, flagErr = cmdtoolkit.GetBool(o, values, listDiagnostic); flagErr != nil {

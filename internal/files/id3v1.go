@@ -707,17 +707,21 @@ func readID3v1Metadata(path string) ([]string, error) {
 		return nil, readErr
 	}
 	output := make([]string, 0, 5)
-	output = append(output, fmt.Sprintf("Artist: %q", v1.artist()),
-		fmt.Sprintf("Album: %q", v1.album()), fmt.Sprintf("Title: %q", v1.title()))
+	output = append(
+		output,
+		fmt.Sprintf("Artist: %s", v1.artist()),
+		fmt.Sprintf("Album: %s", v1.album()),
+		fmt.Sprintf("Title: %s", v1.title()),
+	)
 	if track, trackNumberValid := v1.track(); trackNumberValid {
 		output = append(output, fmt.Sprintf("Track: %d", track))
 	}
-	output = append(output, fmt.Sprintf("Year: %q", v1.year()))
+	output = append(output, fmt.Sprintf("Year: %s", v1.year()))
 	if genre, genreFound := v1.genre(); genreFound {
-		output = append(output, fmt.Sprintf("Genre: %q", genre))
+		output = append(output, fmt.Sprintf("Genre: %s", genre))
 	}
 	if comment := v1.comment(); comment != "" {
-		output = append(output, fmt.Sprintf("Comment: %q", comment))
+		output = append(output, fmt.Sprintf("Comment: %s", comment))
 	}
 	return output, nil
 }

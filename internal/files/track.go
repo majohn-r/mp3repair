@@ -25,12 +25,81 @@ const (
 var (
 	openFiles         = make(chan empty, 20) // 20 is a typical limit for open files
 	frameDescriptions = map[string]string{
+		// list is from https://id3.org/id3v2.3.0#Declared_ID3v2_frames
+		"AENC": "Audio encryption",
+		"APIC": "Attached picture",
+		"COMM": "Comments",
+		"COMR": "Commercial frame",
+		"ENCR": "Encryption method registration",
+		"EQUA": "Equalization",
+		"ETCO": "Event timing codes",
+		"GEOB": "General encapsulated object",
+		"GRID": "Group identification registration",
+		"IPLS": "Involved people list",
+		"LINK": "Linked information",
+		"MCDI": "Music CD identifier",
+		"MLLT": "MPEG location lookup table",
+		"OWNE": "Ownership frame",
+		"PRIV": "Private frame",
+		"PCNT": "Play counter",
+		"POPM": "Popularimeter",
+		"POSS": "Position synchronisation frame",
+		"RBUF": "Recommended buffer size",
+		"RVAD": "Relative volume adjustment",
+		"RVRB": "Reverb",
+		"SYLT": "Synchronized lyric/text",
+		"SYTC": "Synchronized tempo codes",
+		"TALB": "Album/Movie/Show title",
+		"TBPM": "BPM (beats per minute)",
 		"TCOM": "Composer",
-		"TEXT": "Lyricist",
-		"TIT3": "Subtitle",
-		"TKEY": "Key",
-		"TPE2": "Orchestra/Band",
-		"TPE3": "Conductor",
+		"TCON": "Content type (genre)",
+		"TCOP": "Copyright message",
+		"TDAT": "Date",
+		"TDLY": "Playlist delay",
+		"TENC": "Encoded by",
+		"TEXT": "Lyricist/Text writer",
+		"TFLT": "File type",
+		"TIME": "Time",
+		"TIT1": "Content group description",
+		"TIT2": "Title/songname/content description",
+		"TIT3": "Subtitle/Description refinement",
+		"TKEY": "Initial key",
+		"TLAN": "Language(s)",
+		"TLEN": "Length",
+		"TMED": "Media type",
+		"TOAL": "Original album/movie/show title",
+		"TOFN": "Original filename",
+		"TOLY": "Original lyricist(s)/text writer(s)",
+		"TOPE": "Original artist(s)/performer(s)",
+		"TORY": "Original release year",
+		"TOWN": "File owner/licensee",
+		"TPE1": "Lead performer(s)/Soloist(s)",
+		"TPE2": "Band/orchestra/accompaniment",
+		"TPE3": "Conductor/performer refinement",
+		"TPE4": "Interpreted, remixed, or otherwise modified by",
+		"TPOS": "Part of a set",
+		"TPUB": "Publisher",
+		"TRCK": "Track number/Position in set",
+		"TRDA": "Recording dates",
+		"TRSN": "Internet radio station name",
+		"TRSO": "Internet radio station owner",
+		"TSIZ": "Size (bytes)",
+		"TSRC": "ISRC (international standard recording code)",
+		"TSSE": "Software/Hardware and settings used for encoding",
+		"TYER": "Year",
+		"TXXX": "User defined text information frame",
+		"UFID": "Unique file identifier",
+		"USER": "Terms of use",
+		"USLT": "Unsychronized lyric/text transcription",
+		"WCOM": "Commercial information",
+		"WCOP": "Copyright/Legal information",
+		"WOAF": "Official audio file webpage",
+		"WOAR": "Official artist/performer webpage",
+		"WOAS": "Official audio source webpage",
+		"WORS": "Official internet radio station homepage",
+		"WPAY": "Payment",
+		"WPUB": "Publishers official webpage",
+		"WXXX": "User defined URL link frame",
 	}
 	errNoEditNeeded = fmt.Errorf("no edit required")
 	trackNameRegex  = regexp.MustCompile(defaultTrackNamePattern)
@@ -47,6 +116,14 @@ type Track struct {
 	simpleName string
 	// number of the track
 	number int
+}
+
+// FrameDescription returns a description of a frame based on the frame's name
+func FrameDescription(name string) string {
+	if description, descriptionFound := frameDescriptions[name]; descriptionFound {
+		return description
+	}
+	return "No description found"
 }
 
 // Number returns the track's number
@@ -650,20 +727,4 @@ func (t *Track) ID3V1Diagnostics() ([]string, error) {
 // and a slice of all the frames in the tag.
 func (t *Track) ID3V2Diagnostics() (*ID3V2Info, error) {
 	return readID3V2Metadata(t.filePath)
-}
-
-// Details returns relevant details about the track
-func (t *Track) Details() (map[string][]string, error) {
-	info, readErr := readID3V2Metadata(t.filePath)
-	if readErr != nil {
-		return nil, readErr
-	}
-	m := map[string][]string{}
-	// only include known frames
-	for _, frame := range info.rawFrames {
-		if value, descriptionFound := frameDescriptions[frame.name]; descriptionFound {
-			m[value] = frame.value
-		}
-	}
-	return m, nil
 }

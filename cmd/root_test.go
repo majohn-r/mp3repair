@@ -128,7 +128,6 @@ func Test_runMain(t *testing.T) {
 					"    artists: false\n" +
 					"    byNumber: false\n" +
 					"    byTitle: false\n" +
-					"    details: false\n" +
 					"    diagnostic: false\n" +
 					"    tracks: false\n" +
 					"repair:\n" +
@@ -193,7 +192,6 @@ func Test_runMain(t *testing.T) {
 					"    artists: false\n" +
 					"    byNumber: false\n" +
 					"    byTitle: false\n" +
-					"    details: false\n" +
 					"    diagnostic: false\n" +
 					"    tracks: false\n" +
 					"repair:\n" +
@@ -258,7 +256,6 @@ func Test_runMain(t *testing.T) {
 					"    artists: false\n" +
 					"    byNumber: false\n" +
 					"    byTitle: false\n" +
-					"    details: false\n" +
 					"    diagnostic: false\n" +
 					"    tracks: false\n" +
 					"repair:\n" +

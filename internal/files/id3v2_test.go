@@ -332,7 +332,7 @@ func Test_readID3V2Metadata(t *testing.T) {
 				"TCOM": {"a couple of idiots"},
 				"TCON": {"dance music"},
 				"TIT2": {"unknown track"},
-				"TLEN": {"1000"},
+				"TLEN": {"0:01.000"},
 				"TPE1": {"unknown artist"},
 				"TRCK": {"2"},
 				"TYER": {"2022"},
