@@ -18,7 +18,7 @@ jobs:
       - name: Run linter
         run: gocritic check -enableAll ./... > lint-issues.txt
       - name: Post lint issues
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: lint results
           path: lint-issues.txt
@@ -27,14 +27,14 @@ jobs:
       - name: Run nilaway
         run: nilaway ./... > nilaway-issues.txt
       - name: Post nilaway issues
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: nilaway results
           path: nilaway-issues.txt
       - name: Run format check
         run: gofmt -d -e -l ./ > format-issues.txt
       - name: Post format issues
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: format results
           path: format-issues.txt
