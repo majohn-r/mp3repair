@@ -17,86 +17,87 @@ import (
 )
 
 const (
-	resetDBCommandName             = "resetDatabase"
-	resetDBTimeout                 = "timeout"
-	resetDBTimeoutFlag             = "--" + resetDBTimeout
-	resetDBTimeoutAbbr             = "t"
-	resetDBService                 = "service"
-	resetDBServiceFlag             = "--" + resetDBService
-	resetDBMetadataDir             = "metadataDir"
-	resetDBMetadataDirFlag         = "--" + resetDBMetadataDir
-	resetDBExtension               = "extension"
-	resetDBExtensionFlag           = "--" + resetDBExtension
-	resetDBForce                   = "force"
-	resetDBForceFlag               = "--" + resetDBForce
-	resetDBForceAbbr               = "f"
-	resetDBIgnoreServiceErrors     = "ignoreServiceErrors"
-	resetDBIgnoreServiceErrorsAbbr = "i"
-	resetDBIgnoreServiceErrorsFlag = "--" + resetDBIgnoreServiceErrors
-	minTimeout                     = 1
-	defaultTimeout                 = 10
-	maxTimeout                     = 60
+	resetLibraryCommandName             = "resetLibrary"
+	resetLibraryTimeout                 = "timeout"
+	resetLibraryTimeoutFlag             = "--" + resetLibraryTimeout
+	resetLibraryTimeoutAbbr             = "t"
+	resetLibraryService                 = "service"
+	resetLibraryServiceFlag             = "--" + resetLibraryService
+	resetLibraryMetadataDir             = "metadataDir"
+	resetLibraryMetadataDirFlag         = "--" + resetLibraryMetadataDir
+	resetLibraryExtension               = "extension"
+	resetLibraryExtensionFlag           = "--" + resetLibraryExtension
+	resetLibraryForce                   = "force"
+	resetLibraryForceFlag               = "--" + resetLibraryForce
+	resetLibraryForceAbbr               = "f"
+	resetLibraryIgnoreServiceErrors     = "ignoreServiceErrors"
+	resetLibraryIgnoreServiceErrorsAbbr = "i"
+	resetLibraryIgnoreServiceErrorsFlag = "--" + resetLibraryIgnoreServiceErrors
+	minTimeout                          = 1
+	defaultTimeout                      = 10
+	maxTimeout                          = 60
 )
 
 var (
-	resetDatabaseCmd = &cobra.Command{
-		Use: "" + resetDBCommandName +
-			" [" + resetDBTimeoutFlag + " seconds]" +
-			" [" + resetDBServiceFlag + " name]" +
-			" [" + resetDBMetadataDirFlag + " dir]" +
-			" [" + resetDBExtensionFlag + " string]" +
-			" [" + resetDBForceFlag + "]" +
-			" [" + resetDBIgnoreServiceErrorsFlag + "]",
+	resetLibraryCmd = &cobra.Command{
+		Use: "" + resetLibraryCommandName +
+			" [" + resetLibraryTimeoutFlag + " seconds]" +
+			" [" + resetLibraryServiceFlag + " name]" +
+			" [" + resetLibraryMetadataDirFlag + " dir]" +
+			" [" + resetLibraryExtensionFlag + " string]" +
+			" [" + resetLibraryForceFlag + "]" +
+			" [" + resetLibraryIgnoreServiceErrorsFlag + "]",
 		DisableFlagsInUseLine: true,
-		Short:                 "Resets the Windows music database",
-		Long: fmt.Sprintf("%q", resetDBCommandName) + ` resets the Windows music database
+		Short:                 "Resets the Windows Media Player library",
+		Long: fmt.Sprintf("%q", resetLibraryCommandName) + ` resets the Windows Media Player library
 
 The changes made by the '` + repairCommandName + `' command make the mp3 files inconsistent with the
-database Windows uses to organize the files into albums and artists. This command
-resets that database, which it accomplishes by deleting the database files.
+Windows Media Player library which organizes the files into albums and artists. This command
+resets that library, which it accomplishes by deleting the library files.
 
-Prior to deleting the files, the ` + resetDBCommandName + ` command attempts to stop the Windows
-media player service. If there is such an active service, this command will need to be
-run as administrator. If, for whatever reasons, the service cannot be stopped, using the` +
-			"\n" + resetDBIgnoreServiceErrorsFlag + ` flag allows the database files to be deleted, if possible.
+Prior to deleting the files, the ` + resetLibraryCommandName + ` command attempts to stop the Windows
+Media Player service, which allows Windows Media Player to share its library with a network. If
+there is such an active service, this command will need to be run as administrator. If, for
+whatever reasons, the service cannot be stopped, using the` +
+			"\n" + resetLibraryIgnoreServiceErrorsFlag + ` flag allows the library files to be deleted, if possible.
 
 This command does nothing if it determines that the ` + repairCommandName + ` command has not made any
-changes, unless the ` + resetDBForceFlag + ` flag is set.`,
-		RunE: resetDBRun,
+changes, unless the ` + resetLibraryForceFlag + ` flag is set.`,
+		RunE: resetLibraryRun,
 	}
-	resetDatabaseFlags = &cmdtoolkit.FlagSet{
-		Name: resetDBCommandName,
+	resetLibraryFlags = &cmdtoolkit.FlagSet{
+		Name: resetLibraryCommandName,
 		Details: map[string]*cmdtoolkit.FlagDetails{
-			resetDBTimeout: {
-				AbbreviatedName: resetDBTimeoutAbbr,
+			resetLibraryTimeout: {
+				AbbreviatedName: resetLibraryTimeoutAbbr,
 				Usage:           fmt.Sprintf("timeout in seconds (minimum %d, maximum %d) for stopping the media player service", minTimeout, maxTimeout),
 				ExpectedType:    cmdtoolkit.IntType,
 				DefaultValue:    cmdtoolkit.NewIntBounds(minTimeout, defaultTimeout, maxTimeout),
 			},
-			resetDBService: {
-				Usage:        "name of the media player service",
+			resetLibraryService: {
+				Usage:        "name of the Windows Media Player service",
 				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: "WMPNetworkSVC",
 			},
-			resetDBMetadataDir: {
-				Usage:        "directory where the media player service metadata files are stored",
+			resetLibraryMetadataDir: {
+				Usage:        "directory where the Windows Media Player service metadata files are stored",
 				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: filepath.Join("%USERPROFILE%", "AppData", "Local", "Microsoft", "Media Player"),
 			},
-			resetDBExtension: {
+			resetLibraryExtension: {
 				Usage:        "extension for metadata files",
 				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: ".wmdb",
 			},
-			resetDBForce: {
-				AbbreviatedName: resetDBForceAbbr,
-				Usage:           "if set, force a database reset",
+			resetLibraryForce: {
+				AbbreviatedName: resetLibraryForceAbbr,
+				Usage:           "if set, force a library reset",
 				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
-			resetDBIgnoreServiceErrors: {
-				AbbreviatedName: resetDBIgnoreServiceErrorsAbbr,
-				Usage:           "if set, ignore service errors and delete the media player service metadata files",
+			resetLibraryIgnoreServiceErrors: {
+				AbbreviatedName: resetLibraryIgnoreServiceErrorsAbbr,
+				Usage:           "if set, ignore service errors and delete the Windows Media Player service's metadata files",
 				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
@@ -113,12 +114,12 @@ changes, unless the ` + resetDBForceFlag + ` flag is set.`,
 	}
 )
 
-func resetDBRun(cmd *cobra.Command, _ []string) error {
-	exitError := cmdtoolkit.NewExitSystemError(resetDBCommandName)
+func resetLibraryRun(cmd *cobra.Command, _ []string) error {
+	exitError := cmdtoolkit.NewExitSystemError(resetLibraryCommandName)
 	o := getBus()
-	values, eSlice := cmdtoolkit.ReadFlags(cmd.Flags(), resetDatabaseFlags)
+	values, eSlice := cmdtoolkit.ReadFlags(cmd.Flags(), resetLibraryFlags)
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) {
-		flags, flagsOk := processResetDBFlags(o, values)
+		flags, flagsOk := processResetLibraryFlags(o, values)
 		if flagsOk {
 			exitError = flags.resetService(o)
 		}
@@ -126,7 +127,7 @@ func resetDBRun(cmd *cobra.Command, _ []string) error {
 	return cmdtoolkit.ToErrorInterface(exitError)
 }
 
-type resetDBSettings struct {
+type resetLibrarySettings struct {
 	extension           cmdtoolkit.CommandFlag[string]
 	force               cmdtoolkit.CommandFlag[bool]
 	ignoreServiceErrors cmdtoolkit.CommandFlag[bool]
@@ -135,7 +136,7 @@ type resetDBSettings struct {
 	timeout             cmdtoolkit.CommandFlag[int]
 }
 
-func (rDBSettings *resetDBSettings) resetService(o output.Bus) (e *cmdtoolkit.ExitError) {
+func (rDBSettings *resetLibrarySettings) resetService(o output.Bus) (e *cmdtoolkit.ExitError) {
 	if rDBSettings.force.Value || dirty() {
 		stopped, e2 := rDBSettings.stopService(o)
 		if e2 != nil {
@@ -146,14 +147,14 @@ func (rDBSettings *resetDBSettings) resetService(o output.Bus) (e *cmdtoolkit.Ex
 		maybeClearDirty(o, e)
 		return
 	}
-	e = cmdtoolkit.NewExitUserError(resetDBCommandName)
-	o.WriteCanonicalError("The %q command has no work to perform.", resetDBCommandName)
+	e = cmdtoolkit.NewExitUserError(resetLibraryCommandName)
+	o.WriteCanonicalError("The %q command has no work to perform.", resetLibraryCommandName)
 	o.WriteCanonicalError("Why?")
 	o.WriteCanonicalError("The %q program has not made any changes to any mp3 files\n"+
-		"since the last successful database reset.", appName)
+		"since the last successful library reset.", appName)
 	o.WriteError("What to do:\n")
-	o.WriteCanonicalError("If you believe the Windows database needs to be reset, run"+
-		" this command\nagain and use the %q flag.", resetDBForceFlag)
+	o.WriteCanonicalError("If you believe the Windows Media Player library needs to be reset, run"+
+		" this command\nagain and use the %q flag.", resetLibraryForceFlag)
 	return
 }
 
@@ -189,9 +190,9 @@ func openService(manager serviceManager, serviceName string) (serviceRep, error)
 	return manager.OpenService(serviceName)
 }
 
-func (rDBSettings *resetDBSettings) stopService(o output.Bus) (bool, *cmdtoolkit.ExitError) {
+func (rDBSettings *resetLibrarySettings) stopService(o output.Bus) (bool, *cmdtoolkit.ExitError) {
 	if manager, connectErr := connect(); connectErr != nil {
-		e := cmdtoolkit.NewExitSystemError(resetDBCommandName)
+		e := cmdtoolkit.NewExitSystemError(resetLibraryCommandName)
 		o.WriteCanonicalError("An attempt to connect with the service manager failed; error"+
 			" is '%v'", connectErr)
 		outputSystemErrorCause(o)
@@ -217,11 +218,11 @@ func listServices(manager serviceManager) ([]string, error) {
 	return manager.ListServices()
 }
 
-func (rDBSettings *resetDBSettings) disableService(o output.Bus, manager serviceManager) (ok bool,
+func (rDBSettings *resetLibrarySettings) disableService(o output.Bus, manager serviceManager) (ok bool,
 	e *cmdtoolkit.ExitError) {
 	service, serviceError := openService(manager, rDBSettings.service.Value)
 	if serviceError != nil {
-		e = cmdtoolkit.NewExitSystemError(resetDBCommandName)
+		e = cmdtoolkit.NewExitSystemError(resetLibraryCommandName)
 		o.WriteCanonicalError("The service %q cannot be opened: %v", rDBSettings.service.Value,
 			serviceError)
 		o.Log(output.Error, "service problem", map[string]any{
@@ -309,7 +310,7 @@ func closeService(s serviceRep) {
 	}
 }
 
-func (rDBSettings *resetDBSettings) stopFoundService(o output.Bus, manager serviceManager,
+func (rDBSettings *resetLibrarySettings) stopFoundService(o output.Bus, manager serviceManager,
 	service serviceRep) (ok bool, e *cmdtoolkit.ExitError) {
 	defer func() {
 		_ = manager.Disconnect()
@@ -317,7 +318,7 @@ func (rDBSettings *resetDBSettings) stopFoundService(o output.Bus, manager servi
 	}()
 	status, svcErr := runQuery(service)
 	if svcErr != nil {
-		e = cmdtoolkit.NewExitSystemError(resetDBCommandName)
+		e = cmdtoolkit.NewExitSystemError(resetLibraryCommandName)
 		o.WriteCanonicalError("An error occurred while trying to stop service %q: %v",
 			rDBSettings.service.Value, svcErr)
 		rDBSettings.reportServiceQueryError(o, svcErr)
@@ -339,7 +340,7 @@ func (rDBSettings *resetDBSettings) stopFoundService(o output.Bus, manager servi
 		ok, e = rDBSettings.waitForStop(o, service, timeout, 100*time.Millisecond)
 		return
 	}
-	e = cmdtoolkit.NewExitSystemError(resetDBCommandName)
+	e = cmdtoolkit.NewExitSystemError(resetLibraryCommandName)
 	o.WriteCanonicalError("The service %q cannot be stopped: %v", rDBSettings.service.Value, svcErr)
 	o.Log(output.Error, "service problem", map[string]any{
 		"service": rDBSettings.service.Value,
@@ -349,18 +350,18 @@ func (rDBSettings *resetDBSettings) stopFoundService(o output.Bus, manager servi
 	return
 }
 
-func (rDBSettings *resetDBSettings) reportServiceQueryError(o output.Bus, svcErr error) {
+func (rDBSettings *resetLibrarySettings) reportServiceQueryError(o output.Bus, svcErr error) {
 	o.Log(output.Error, "service query error", map[string]any{
 		"service": rDBSettings.service.Value,
 		"error":   svcErr,
 	})
 }
 
-func (rDBSettings *resetDBSettings) reportServiceStopped(o output.Bus) {
+func (rDBSettings *resetLibrarySettings) reportServiceStopped(o output.Bus) {
 	o.Log(output.Info, "service stopped", map[string]any{"service": rDBSettings.service.Value})
 }
 
-func (rDBSettings *resetDBSettings) waitForStop(o output.Bus, s serviceRep, expiration time.Time,
+func (rDBSettings *resetLibrarySettings) waitForStop(o output.Bus, s serviceRep, expiration time.Time,
 	checkInterval time.Duration) (bool, *cmdtoolkit.ExitError) {
 	for {
 		if expiration.Before(time.Now()) {
@@ -373,7 +374,7 @@ func (rDBSettings *resetDBSettings) waitForStop(o output.Bus, s serviceRep, expi
 				"error":   "timed out",
 				"timeout": rDBSettings.timeout.Value,
 			})
-			return false, cmdtoolkit.NewExitSystemError(resetDBCommandName)
+			return false, cmdtoolkit.NewExitSystemError(resetLibraryCommandName)
 		}
 		time.Sleep(checkInterval)
 		status, svcErr := runQuery(s)
@@ -382,7 +383,7 @@ func (rDBSettings *resetDBSettings) waitForStop(o output.Bus, s serviceRep, expi
 				"An error occurred while attempting to stop the service %q: %v",
 				rDBSettings.service.Value, svcErr)
 			rDBSettings.reportServiceQueryError(o, svcErr)
-			return false, cmdtoolkit.NewExitSystemError(resetDBCommandName)
+			return false, cmdtoolkit.NewExitSystemError(resetLibraryCommandName)
 		}
 		if status.State == svc.Stopped {
 			rDBSettings.reportServiceStopped(o)
@@ -391,16 +392,16 @@ func (rDBSettings *resetDBSettings) waitForStop(o output.Bus, s serviceRep, expi
 	}
 }
 
-func (rDBSettings *resetDBSettings) cleanUpMetadata(o output.Bus, stopped bool) *cmdtoolkit.ExitError {
+func (rDBSettings *resetLibrarySettings) cleanUpMetadata(o output.Bus, stopped bool) *cmdtoolkit.ExitError {
 	if !stopped {
 		if !rDBSettings.ignoreServiceErrors.Value {
 			o.WriteCanonicalError("Metadata files will not be deleted")
 			o.WriteCanonicalError(
 				"Why?\nThe music service %q could not be stopped, and %q is false",
-				rDBSettings.service.Value, resetDBIgnoreServiceErrorsFlag)
+				rDBSettings.service.Value, resetLibraryIgnoreServiceErrorsFlag)
 			o.WriteCanonicalError("What to do:\nRerun this command with %q set to true",
-				resetDBIgnoreServiceErrorsFlag)
-			return cmdtoolkit.NewExitUserError(resetDBCommandName)
+				resetLibraryIgnoreServiceErrorsFlag)
+			return cmdtoolkit.NewExitUserError(resetLibraryCommandName)
 		}
 	}
 	// either stopped or service errors are ignored
@@ -420,7 +421,7 @@ func (rDBSettings *resetDBSettings) cleanUpMetadata(o output.Bus, stopped bool) 
 	return nil
 }
 
-func (rDBSettings *resetDBSettings) filterMetadataFiles(entries []fs.FileInfo) []string {
+func (rDBSettings *resetLibrarySettings) filterMetadataFiles(entries []fs.FileInfo) []string {
 	paths := make([]string, 0, len(entries))
 	for _, file := range entries {
 		if strings.HasSuffix(file.Name(), rDBSettings.extension.Value) {
@@ -433,7 +434,7 @@ func (rDBSettings *resetDBSettings) filterMetadataFiles(entries []fs.FileInfo) [
 	return paths
 }
 
-func (rDBSettings *resetDBSettings) deleteMetadataFiles(o output.Bus, paths []string) (e *cmdtoolkit.ExitError) {
+func (rDBSettings *resetLibrarySettings) deleteMetadataFiles(o output.Bus, paths []string) (e *cmdtoolkit.ExitError) {
 	if len(paths) == 0 {
 		return
 	}
@@ -443,7 +444,7 @@ func (rDBSettings *resetDBSettings) deleteMetadataFiles(o output.Bus, paths []st
 		switch {
 		case fileErr != nil:
 			cmdtoolkit.LogFileDeletionFailure(o, path, fileErr)
-			e = cmdtoolkit.NewExitSystemError(resetDBCommandName)
+			e = cmdtoolkit.NewExitSystemError(resetLibraryCommandName)
 		default:
 			count++
 		}
@@ -454,31 +455,31 @@ func (rDBSettings *resetDBSettings) deleteMetadataFiles(o output.Bus, paths []st
 	return
 }
 
-func processResetDBFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (*resetDBSettings, bool) {
+func processResetLibraryFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (*resetLibrarySettings, bool) {
 	var flagErr error
-	result := &resetDBSettings{}
+	result := &resetLibrarySettings{}
 	flagsOk := true // optimistic
-	result.timeout, flagErr = cmdtoolkit.GetInt(o, values, resetDBTimeout)
+	result.timeout, flagErr = cmdtoolkit.GetInt(o, values, resetLibraryTimeout)
 	if flagErr != nil {
 		flagsOk = false
 	}
-	result.service, flagErr = cmdtoolkit.GetString(o, values, resetDBService)
+	result.service, flagErr = cmdtoolkit.GetString(o, values, resetLibraryService)
 	if flagErr != nil {
 		flagsOk = false
 	}
-	result.metadataDir, flagErr = cmdtoolkit.GetString(o, values, resetDBMetadataDir)
+	result.metadataDir, flagErr = cmdtoolkit.GetString(o, values, resetLibraryMetadataDir)
 	if flagErr != nil {
 		flagsOk = false
 	}
-	result.extension, flagErr = cmdtoolkit.GetString(o, values, resetDBExtension)
+	result.extension, flagErr = cmdtoolkit.GetString(o, values, resetLibraryExtension)
 	if flagErr != nil {
 		flagsOk = false
 	}
-	result.force, flagErr = cmdtoolkit.GetBool(o, values, resetDBForce)
+	result.force, flagErr = cmdtoolkit.GetBool(o, values, resetLibraryForce)
 	if flagErr != nil {
 		flagsOk = false
 	}
-	result.ignoreServiceErrors, flagErr = cmdtoolkit.GetBool(o, values, resetDBIgnoreServiceErrors)
+	result.ignoreServiceErrors, flagErr = cmdtoolkit.GetBool(o, values, resetLibraryIgnoreServiceErrors)
 	if flagErr != nil {
 		flagsOk = false
 	}
@@ -486,7 +487,7 @@ func processResetDBFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag
 }
 
 func init() {
-	rootCmd.AddCommand(resetDatabaseCmd)
-	cmdtoolkit.AddDefaults(resetDatabaseFlags)
-	cmdtoolkit.AddFlags(getBus(), getConfiguration(), resetDatabaseCmd.Flags(), resetDatabaseFlags)
+	rootCmd.AddCommand(resetLibraryCmd)
+	cmdtoolkit.AddDefaults(resetLibraryFlags)
+	cmdtoolkit.AddFlags(getBus(), getConfiguration(), resetLibraryCmd.Flags(), resetLibraryFlags)
 }

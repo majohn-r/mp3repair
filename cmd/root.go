@@ -58,11 +58,11 @@ process did not corrupt the audio), clean up those backups:
 
 ` + appName + ` ` + postRepairCommandName + `
 
-After repairing the mp3 files, the Windows media player system may be out of
-sync with the changes. While the system will eventually catch up, accelerate
+After repairing the mp3 files, the Windows Media Player library may be out of
+sync with the changes. While the library will eventually catch up, accelerate
 the process:
 
-` + appName + ` ` + resetDBCommandName,
+` + appName + ` ` + resetLibraryCommandName,
 	}
 	bus            = output.NewNilBus()
 	internalConfig = cmdtoolkit.EmptyConfiguration()

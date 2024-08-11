@@ -132,7 +132,7 @@ func Test_runMain(t *testing.T) {
 					"    tracks: false\n" +
 					"repair:\n" +
 					"    dryRun: false\n" +
-					"resetDatabase:\n" +
+					"resetLibrary:\n" +
 					"    extension: .wmdb\n" +
 					"    force: false\n" +
 					"    ignoreServiceErrors: false\n" +
@@ -196,7 +196,7 @@ func Test_runMain(t *testing.T) {
 					"    tracks: false\n" +
 					"repair:\n" +
 					"    dryRun: false\n" +
-					"resetDatabase:\n" +
+					"resetLibrary:\n" +
 					"    extension: .wmdb\n" +
 					"    force: false\n" +
 					"    ignoreServiceErrors: false\n" +
@@ -260,7 +260,7 @@ func Test_runMain(t *testing.T) {
 					"    tracks: false\n" +
 					"repair:\n" +
 					"    dryRun: false\n" +
-					"resetDatabase:\n" +
+					"resetLibrary:\n" +
 					"    extension: .wmdb\n" +
 					"    force: false\n" +
 					"    ignoreServiceErrors: false\n" +
@@ -610,11 +610,11 @@ func Test_root_Usage(t *testing.T) {
 					"\n" +
 					"mp3repair postRepair\n" +
 					"\n" +
-					"After repairing the mp3 files, the Windows media player system may be out of\n" +
-					"sync with the changes. While the system will eventually catch up, accelerate\n" +
+					"After repairing the mp3 files, the Windows Media Player library may be out of\n" +
+					"sync with the changes. While the library will eventually catch up, accelerate\n" +
 					"the process:\n" +
 					"\n" +
-					"mp3repair resetDatabase\n",
+					"mp3repair resetLibrary\n",
 			},
 		},
 	}

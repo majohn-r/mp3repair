@@ -19,16 +19,16 @@ import (
 	"golang.org/x/sys/windows/svc/mgr"
 )
 
-func Test_processResetDBFlags(t *testing.T) {
+func Test_processResetLibraryFlags(t *testing.T) {
 	tests := map[string]struct {
 		values map[string]*cmdtoolkit.CommandFlag[any]
-		want   *resetDBSettings
+		want   *resetLibrarySettings
 		want1  bool
 		output.WantedRecording
 	}{
 		"massive errors": {
 			values: nil,
-			want:   &resetDBSettings{},
+			want:   &resetLibrarySettings{},
 			want1:  false,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -68,7 +68,7 @@ func Test_processResetDBFlags(t *testing.T) {
 				"service":             {Value: "music service"},
 				"timeout":             {Value: 5},
 			},
-			want: &resetDBSettings{
+			want: &resetLibrarySettings{
 				extension:           cmdtoolkit.CommandFlag[string]{Value: ".foo"},
 				force:               cmdtoolkit.CommandFlag[bool]{Value: true},
 				ignoreServiceErrors: cmdtoolkit.CommandFlag[bool]{Value: true},
@@ -82,14 +82,14 @@ func Test_processResetDBFlags(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			got, got1 := processResetDBFlags(o, tt.values)
+			got, got1 := processResetLibraryFlags(o, tt.values)
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("processResetDBFlags() got = %v, want %v", got, tt.want)
+				t.Errorf("processResetLibraryFlags() got = %v, want %v", got, tt.want)
 			}
 			if got1 != tt.want1 {
-				t.Errorf("processResetDBFlags() got1 = %v, want %v", got1, tt.want1)
+				t.Errorf("processResetLibraryFlags() got1 = %v, want %v", got1, tt.want1)
 			}
-			o.Report(t, "processResetDBFlags()", tt.WantedRecording)
+			o.Report(t, "processResetLibraryFlags()", tt.WantedRecording)
 		})
 	}
 }
@@ -124,26 +124,26 @@ func newTestService(values ...svc.Status) *testService {
 	return ts
 }
 
-func Test_resetDBSettings_waitForStop(t *testing.T) {
+func Test_resetLibrarySettings_waitForStop(t *testing.T) {
 	type args struct {
 		s             serviceRep
 		expiration    time.Time
 		checkInterval time.Duration
 	}
 	tests := map[string]struct {
-		resetDBSettings *resetDBSettings
+		resetLibrarySettings *resetLibrarySettings
 		args
 		wantOk     bool
 		wantStatus *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"already timed out": {
-			resetDBSettings: &resetDBSettings{
+			resetLibrarySettings: &resetLibrarySettings{
 				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
 			args:       args{expiration: time.Now().Add(time.Duration(-1) * time.Second)},
-			wantStatus: cmdtoolkit.NewExitSystemError("resetDatabase"),
+			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
 				Error: "The service \"my service\" could not be stopped within the 10" +
 					" second timeout.\n",
@@ -157,7 +157,7 @@ func Test_resetDBSettings_waitForStop(t *testing.T) {
 			},
 		},
 		"query error": {
-			resetDBSettings: &resetDBSettings{
+			resetLibrarySettings: &resetLibrarySettings{
 				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
@@ -166,7 +166,7 @@ func Test_resetDBSettings_waitForStop(t *testing.T) {
 				expiration:    time.Now().Add(time.Duration(1) * time.Second),
 				checkInterval: 1 * time.Millisecond,
 			},
-			wantStatus: cmdtoolkit.NewExitSystemError("resetDatabase"),
+			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
 				Error: "An error occurred while attempting to stop the service " +
 					"\"my service\": no results from query.\n",
@@ -178,7 +178,7 @@ func Test_resetDBSettings_waitForStop(t *testing.T) {
 			},
 		},
 		"stops correctly": {
-			resetDBSettings: &resetDBSettings{
+			resetLibrarySettings: &resetLibrarySettings{
 				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
@@ -203,14 +203,14 @@ func Test_resetDBSettings_waitForStop(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			gotOk, gotStatus := tt.resetDBSettings.waitForStop(o, tt.args.s, tt.args.expiration, tt.args.checkInterval)
+			gotOk, gotStatus := tt.resetLibrarySettings.waitForStop(o, tt.args.s, tt.args.expiration, tt.args.checkInterval)
 			if gotOk != tt.wantOk {
-				t.Errorf("resetDBSettings.waitForStop() = %t, want %t", gotOk, tt.wantOk)
+				t.Errorf("resetLibrarySettings.waitForStop() = %t, want %t", gotOk, tt.wantOk)
 			}
 			if !compareExitErrors(gotStatus, tt.wantStatus) {
-				t.Errorf("resetDBSettings.waitForStop() = %s, want %s", gotStatus, tt.wantStatus)
+				t.Errorf("resetLibrarySettings.waitForStop() = %s, want %s", gotStatus, tt.wantStatus)
 			}
-			o.Report(t, "resetDBSettings.waitForStop()", tt.WantedRecording)
+			o.Report(t, "resetLibrarySettings.waitForStop()", tt.WantedRecording)
 		})
 	}
 }
@@ -245,20 +245,20 @@ func newTestManager(m map[string]*mgr.Service, list []string) *testManager {
 	}
 }
 
-func Test_resetDBSettings_stopFoundService(t *testing.T) {
+func Test_resetLibrarySettings_stopFoundService(t *testing.T) {
 	type args struct {
 		manager serviceManager
 		service serviceRep
 	}
 	tests := map[string]struct {
-		resetDBSettings *resetDBSettings
+		resetLibrarySettings *resetLibrarySettings
 		args
 		wantOk     bool
 		wantStatus *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"defective service": {
-			resetDBSettings: &resetDBSettings{
+			resetLibrarySettings: &resetLibrarySettings{
 				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
@@ -266,7 +266,7 @@ func Test_resetDBSettings_stopFoundService(t *testing.T) {
 				manager: newTestManager(nil, nil),
 				service: newTestService(),
 			},
-			wantStatus: cmdtoolkit.NewExitSystemError("resetDatabase"),
+			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
 				Error: "An error occurred while trying to stop service \"my service\":" +
 					" no results from query.\n",
@@ -278,7 +278,7 @@ func Test_resetDBSettings_stopFoundService(t *testing.T) {
 			},
 		},
 		"already stopped": {
-			resetDBSettings: &resetDBSettings{
+			resetLibrarySettings: &resetLibrarySettings{
 				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
@@ -296,7 +296,7 @@ func Test_resetDBSettings_stopFoundService(t *testing.T) {
 			},
 		},
 		"stopped easily": {
-			resetDBSettings: &resetDBSettings{
+			resetLibrarySettings: &resetLibrarySettings{
 				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
@@ -316,7 +316,7 @@ func Test_resetDBSettings_stopFoundService(t *testing.T) {
 			},
 		},
 		"stopped with a little more difficulty": {
-			resetDBSettings: &resetDBSettings{
+			resetLibrarySettings: &resetLibrarySettings{
 				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
@@ -337,7 +337,7 @@ func Test_resetDBSettings_stopFoundService(t *testing.T) {
 			},
 		},
 		"cannot be stopped": {
-			resetDBSettings: &resetDBSettings{
+			resetLibrarySettings: &resetLibrarySettings{
 				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
@@ -345,7 +345,7 @@ func Test_resetDBSettings_stopFoundService(t *testing.T) {
 				manager: newTestManager(nil, nil),
 				service: newTestService(svc.Status{State: svc.Paused}),
 			},
-			wantStatus: cmdtoolkit.NewExitSystemError("resetDatabase"),
+			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
 				Error: "The service \"my service\" cannot be stopped:" +
 					" no results from query.\n",
@@ -361,15 +361,15 @@ func Test_resetDBSettings_stopFoundService(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			gotOk, gotStatus := tt.resetDBSettings.stopFoundService(o, tt.args.manager,
+			gotOk, gotStatus := tt.resetLibrarySettings.stopFoundService(o, tt.args.manager,
 				tt.args.service)
 			if gotOk != tt.wantOk {
-				t.Errorf("resetDBSettings.stopFoundService() = %v, want %v", gotOk, tt.wantOk)
+				t.Errorf("resetLibrarySettings.stopFoundService() = %v, want %v", gotOk, tt.wantOk)
 			}
 			if !compareExitErrors(gotStatus, tt.wantStatus) {
-				t.Errorf("resetDBSettings.stopFoundService() = %v, want %v", gotStatus, tt.wantStatus)
+				t.Errorf("resetLibrarySettings.stopFoundService() = %v, want %v", gotStatus, tt.wantStatus)
 			}
-			o.Report(t, "resetDBSettings.stopFoundService()", tt.WantedRecording)
+			o.Report(t, "resetLibrarySettings.stopFoundService()", tt.WantedRecording)
 		})
 	}
 }
@@ -455,21 +455,21 @@ func Test_listAvailableServices(t *testing.T) {
 	}
 }
 
-func Test_resetDBSettings_disableService(t *testing.T) {
+func Test_resetLibrarySettings_disableService(t *testing.T) {
 	tests := map[string]struct {
-		resetDBSettings *resetDBSettings
-		manager         serviceManager
-		wantOk          bool
-		wantStatus      *cmdtoolkit.ExitError
+		resetLibrarySettings *resetLibrarySettings
+		manager              serviceManager
+		wantOk               bool
+		wantStatus           *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"defective manager #1": {
-			resetDBSettings: &resetDBSettings{
+			resetLibrarySettings: &resetLibrarySettings{
 				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 1},
 			},
 			manager:    newTestManager(nil, []string{"my service"}),
-			wantStatus: cmdtoolkit.NewExitSystemError("resetDatabase"),
+			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"The service \"my service\" cannot be opened: no such service.\n" +
@@ -485,12 +485,12 @@ func Test_resetDBSettings_disableService(t *testing.T) {
 			},
 		},
 		"defective manager #2": {
-			resetDBSettings: &resetDBSettings{
+			resetLibrarySettings: &resetLibrarySettings{
 				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 1},
 			},
 			manager:    newTestManager(nil, nil),
-			wantStatus: cmdtoolkit.NewExitSystemError("resetDatabase"),
+			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
 				Error: "The service \"my service\" cannot be opened: no such service.\n",
 				Log: "" +
@@ -506,12 +506,12 @@ func Test_resetDBSettings_disableService(t *testing.T) {
 			},
 		},
 		"defective manager #3": {
-			resetDBSettings: &resetDBSettings{
+			resetLibrarySettings: &resetLibrarySettings{
 				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 1},
 			},
 			manager:    newTestManager(map[string]*mgr.Service{"my service": nil}, nil),
-			wantStatus: cmdtoolkit.NewExitSystemError("resetDatabase"),
+			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
 				Error: "An error occurred while trying to stop service \"my service\":" +
 					" no service.\n",
@@ -526,19 +526,19 @@ func Test_resetDBSettings_disableService(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			gotOk, gotStatus := tt.resetDBSettings.disableService(o, tt.manager)
+			gotOk, gotStatus := tt.resetLibrarySettings.disableService(o, tt.manager)
 			if gotOk != tt.wantOk {
-				t.Errorf("resetDBSettings.disableService() = %v, want %v", gotOk, tt.wantOk)
+				t.Errorf("resetLibrarySettings.disableService() = %v, want %v", gotOk, tt.wantOk)
 			}
 			if !compareExitErrors(gotStatus, tt.wantStatus) {
-				t.Errorf("resetDBSettings.disableService() = %v, want %v", gotStatus, tt.wantStatus)
+				t.Errorf("resetLibrarySettings.disableService() = %v, want %v", gotStatus, tt.wantStatus)
 			}
-			o.Report(t, "resetDBSettings.disableService()", tt.WantedRecording)
+			o.Report(t, "resetLibrarySettings.disableService()", tt.WantedRecording)
 		})
 	}
 }
 
-func Test_resetDBSettings_stopService(t *testing.T) {
+func Test_resetLibrarySettings_stopService(t *testing.T) {
 	originalConnect := connect
 	originalProcessIsElevated := processIsElevated
 	defer func() {
@@ -547,21 +547,21 @@ func Test_resetDBSettings_stopService(t *testing.T) {
 	}()
 	processIsElevated = func() bool { return false }
 	tests := map[string]struct {
-		connect         func() (*mgr.Mgr, error)
-		resetDBSettings *resetDBSettings
-		wantOk          bool
-		wantStatus      *cmdtoolkit.ExitError
+		connect              func() (*mgr.Mgr, error)
+		resetLibrarySettings *resetLibrarySettings
+		wantOk               bool
+		wantStatus           *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"connect fails": {
 			connect: func() (*mgr.Mgr, error) {
 				return nil, fmt.Errorf("no manager available")
 			},
-			resetDBSettings: &resetDBSettings{
+			resetLibrarySettings: &resetLibrarySettings{
 				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 1},
 			},
-			wantStatus: cmdtoolkit.NewExitSystemError("resetDatabase"),
+			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"An attempt to connect with the service manager failed;" +
@@ -580,11 +580,11 @@ func Test_resetDBSettings_stopService(t *testing.T) {
 			connect: func() (*mgr.Mgr, error) {
 				return nil, nil
 			},
-			resetDBSettings: &resetDBSettings{
+			resetLibrarySettings: &resetLibrarySettings{
 				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 1},
 			},
-			wantStatus: cmdtoolkit.NewExitSystemError("resetDatabase"),
+			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
 				Error: "The service \"my service\" cannot be opened: nil manager.\n",
 				Log: "" +
@@ -604,40 +604,40 @@ func Test_resetDBSettings_stopService(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			connect = tt.connect
 			o := output.NewRecorder()
-			gotOk, gotStatus := tt.resetDBSettings.stopService(o)
+			gotOk, gotStatus := tt.resetLibrarySettings.stopService(o)
 			if gotOk != tt.wantOk {
-				t.Errorf("resetDBSettings.stopService() = %v, want %v", gotOk, tt.wantOk)
+				t.Errorf("resetLibrarySettings.stopService() = %v, want %v", gotOk, tt.wantOk)
 			}
 			if !compareExitErrors(gotStatus, tt.wantStatus) {
-				t.Errorf("resetDBSettings.stopService() = %v, want %v", gotStatus, tt.wantStatus)
+				t.Errorf("resetLibrarySettings.stopService() = %v, want %v", gotStatus, tt.wantStatus)
 			}
-			o.Report(t, "resetDBSettings.stopService()", tt.WantedRecording)
+			o.Report(t, "resetLibrarySettings.stopService()", tt.WantedRecording)
 		})
 	}
 }
 
-func Test_resetDBSettings_deleteMetadataFiles(t *testing.T) {
+func Test_resetLibrarySettings_deleteMetadataFiles(t *testing.T) {
 	originalRemove := remove
 	defer func() {
 		remove = originalRemove
 	}()
 	tests := map[string]struct {
-		remove          func(string) error
-		resetDBSettings *resetDBSettings
-		paths           []string
-		want            *cmdtoolkit.ExitError
+		remove               func(string) error
+		resetLibrarySettings *resetLibrarySettings
+		paths                []string
+		want                 *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"no files": {
-			resetDBSettings: &resetDBSettings{metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata/dir"}},
-			paths:           nil,
-			want:            nil,
+			resetLibrarySettings: &resetLibrarySettings{metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata/dir"}},
+			paths:                nil,
+			want:                 nil,
 		},
 		"locked files": {
-			remove:          func(_ string) error { return fmt.Errorf("cannot remove file") },
-			resetDBSettings: &resetDBSettings{metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata/dir"}},
-			paths:           []string{"file1", "file2"},
-			want:            cmdtoolkit.NewExitSystemError("resetDatabase"),
+			remove:               func(_ string) error { return fmt.Errorf("cannot remove file") },
+			resetLibrarySettings: &resetLibrarySettings{metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata/dir"}},
+			paths:                []string{"file1", "file2"},
+			want:                 cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
 				Console: "0 out of 2 metadata files have been deleted from" +
 					" \"metadata/dir\".\n",
@@ -653,10 +653,10 @@ func Test_resetDBSettings_deleteMetadataFiles(t *testing.T) {
 			},
 		},
 		"deletable files": {
-			remove:          func(_ string) error { return nil },
-			resetDBSettings: &resetDBSettings{metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata/dir"}},
-			paths:           []string{"file1", "file2"},
-			want:            nil,
+			remove:               func(_ string) error { return nil },
+			resetLibrarySettings: &resetLibrarySettings{metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata/dir"}},
+			paths:                []string{"file1", "file2"},
+			want:                 nil,
 			WantedRecording: output.WantedRecording{
 				Console: "2 out of 2 metadata files have been deleted from" +
 					" \"metadata/dir\".\n",
@@ -667,29 +667,29 @@ func Test_resetDBSettings_deleteMetadataFiles(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			remove = tt.remove
 			o := output.NewRecorder()
-			if got := tt.resetDBSettings.deleteMetadataFiles(o, tt.paths); !compareExitErrors(got, tt.want) {
-				t.Errorf("resetDBSettings.deleteMetadataFiles() %s want %s", got, tt.want)
+			if got := tt.resetLibrarySettings.deleteMetadataFiles(o, tt.paths); !compareExitErrors(got, tt.want) {
+				t.Errorf("resetLibrarySettings.deleteMetadataFiles() %s want %s", got, tt.want)
 			}
-			o.Report(t, "resetDBSettings.deleteMetadataFiles()", tt.WantedRecording)
+			o.Report(t, "resetLibrarySettings.deleteMetadataFiles()", tt.WantedRecording)
 		})
 	}
 }
 
-func Test_resetDBSettings_filterMetadataFiles(t *testing.T) {
+func Test_resetLibrarySettings_filterMetadataFiles(t *testing.T) {
 	originalPlainFileExists := plainFileExists
 	defer func() {
 		plainFileExists = originalPlainFileExists
 	}()
 	tests := map[string]struct {
-		plainFileExists func(string) bool
-		resetDBSettings *resetDBSettings
-		entries         []fs.FileInfo
-		want            []string
+		plainFileExists      func(string) bool
+		resetLibrarySettings *resetLibrarySettings
+		entries              []fs.FileInfo
+		want                 []string
 	}{
 		"no entries": {want: []string{}},
 		"mixed entries": {
 			plainFileExists: func(s string) bool { return !strings.Contains(s, "dir.") },
-			resetDBSettings: &resetDBSettings{
+			resetLibrarySettings: &resetLibrarySettings{
 				metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata"},
 				extension:   cmdtoolkit.CommandFlag[string]{Value: ".db"},
 			},
@@ -704,15 +704,15 @@ func Test_resetDBSettings_filterMetadataFiles(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			plainFileExists = tt.plainFileExists
-			if got := tt.resetDBSettings.filterMetadataFiles(tt.entries); !reflect.DeepEqual(got,
+			if got := tt.resetLibrarySettings.filterMetadataFiles(tt.entries); !reflect.DeepEqual(got,
 				tt.want) {
-				t.Errorf("resetDBSettings.filterMetadataFiles() = %v, want %v", got, tt.want)
+				t.Errorf("resetLibrarySettings.filterMetadataFiles() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_resetDBSettings_cleanUpMetadata(t *testing.T) {
+func Test_resetLibrarySettings_cleanUpMetadata(t *testing.T) {
 	originalReadDirectory := readDirectory
 	originalPlainFileExists := plainFileExists
 	originalRemove := remove
@@ -722,21 +722,21 @@ func Test_resetDBSettings_cleanUpMetadata(t *testing.T) {
 		remove = originalRemove
 	}()
 	tests := map[string]struct {
-		readDirectory   func(output.Bus, string) ([]fs.FileInfo, bool)
-		plainFileExists func(string) bool
-		remove          func(string) error
-		resetDBSettings *resetDBSettings
-		stopped         bool
-		want            *cmdtoolkit.ExitError
+		readDirectory        func(output.Bus, string) ([]fs.FileInfo, bool)
+		plainFileExists      func(string) bool
+		remove               func(string) error
+		resetLibrarySettings *resetLibrarySettings
+		stopped              bool
+		want                 *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"did not stop, cannot ignore it": {
-			resetDBSettings: &resetDBSettings{
+			resetLibrarySettings: &resetLibrarySettings{
 				service:             cmdtoolkit.CommandFlag[string]{Value: "musicService"},
 				ignoreServiceErrors: cmdtoolkit.CommandFlag[bool]{Value: false},
 			},
 			stopped: false,
-			want:    cmdtoolkit.NewExitUserError("resetDatabase"),
+			want:    cmdtoolkit.NewExitUserError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"Metadata files will not be deleted.\n" +
@@ -751,9 +751,9 @@ func Test_resetDBSettings_cleanUpMetadata(t *testing.T) {
 			readDirectory: func(_ output.Bus, _ string) ([]fs.FileInfo, bool) {
 				return nil, true
 			},
-			resetDBSettings: &resetDBSettings{metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata"}},
-			stopped:         true,
-			want:            nil,
+			resetLibrarySettings: &resetLibrarySettings{metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata"}},
+			stopped:              true,
+			want:                 nil,
 			WantedRecording: output.WantedRecording{
 				Console: "No metadata files were found in \"metadata\".\n",
 				Log: "" +
@@ -767,7 +767,7 @@ func Test_resetDBSettings_cleanUpMetadata(t *testing.T) {
 			readDirectory: func(_ output.Bus, _ string) ([]fs.FileInfo, bool) {
 				return nil, true
 			},
-			resetDBSettings: &resetDBSettings{
+			resetLibrarySettings: &resetLibrarySettings{
 				metadataDir:         cmdtoolkit.CommandFlag[string]{Value: "metadata"},
 				ignoreServiceErrors: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
@@ -786,7 +786,7 @@ func Test_resetDBSettings_cleanUpMetadata(t *testing.T) {
 			readDirectory: func(_ output.Bus, _ string) ([]fs.FileInfo, bool) {
 				return nil, false
 			},
-			resetDBSettings: &resetDBSettings{
+			resetLibrarySettings: &resetLibrarySettings{
 				metadataDir:         cmdtoolkit.CommandFlag[string]{Value: "metadata"},
 				ignoreServiceErrors: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
@@ -800,7 +800,7 @@ func Test_resetDBSettings_cleanUpMetadata(t *testing.T) {
 			},
 			plainFileExists: func(_ string) bool { return true },
 			remove:          func(_ string) error { return nil },
-			resetDBSettings: &resetDBSettings{
+			resetLibrarySettings: &resetLibrarySettings{
 				metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata"},
 				extension:   cmdtoolkit.CommandFlag[string]{Value: ".db"},
 			},
@@ -817,15 +817,15 @@ func Test_resetDBSettings_cleanUpMetadata(t *testing.T) {
 			plainFileExists = tt.plainFileExists
 			remove = tt.remove
 			o := output.NewRecorder()
-			if got := tt.resetDBSettings.cleanUpMetadata(o, tt.stopped); !compareExitErrors(got, tt.want) {
-				t.Errorf("resetDBSettings.cleanUpMetadata() %s want %s", got, tt.want)
+			if got := tt.resetLibrarySettings.cleanUpMetadata(o, tt.stopped); !compareExitErrors(got, tt.want) {
+				t.Errorf("resetLibrarySettings.cleanUpMetadata() %s want %s", got, tt.want)
 			}
-			o.Report(t, "resetDBSettings.cleanUpMetadata()", tt.WantedRecording)
+			o.Report(t, "resetLibrarySettings.cleanUpMetadata()", tt.WantedRecording)
 		})
 	}
 }
 
-func Test_resetDBSettings_resetService(t *testing.T) {
+func Test_resetLibrarySettings_resetService(t *testing.T) {
 	originalDirty := dirty
 	originalClearDirty := clearDirty
 	originalConnect := connect
@@ -840,30 +840,30 @@ func Test_resetDBSettings_resetService(t *testing.T) {
 	clearDirty = func(_ output.Bus) {}
 	connect = func() (*mgr.Mgr, error) { return nil, fmt.Errorf("access denied") }
 	tests := map[string]struct {
-		dirty           func() bool
-		resetDBSettings *resetDBSettings
-		want            *cmdtoolkit.ExitError
+		dirty                func() bool
+		resetLibrarySettings *resetLibrarySettings
+		want                 *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"not dirty, no force": {
-			dirty:           func() bool { return false },
-			resetDBSettings: &resetDBSettings{force: cmdtoolkit.CommandFlag[bool]{Value: false}},
-			want:            cmdtoolkit.NewExitUserError("resetDatabase"),
+			dirty:                func() bool { return false },
+			resetLibrarySettings: &resetLibrarySettings{force: cmdtoolkit.CommandFlag[bool]{Value: false}},
+			want:                 cmdtoolkit.NewExitUserError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
-					"The \"resetDatabase\" command has no work to perform.\n" +
+					"The \"resetLibrary\" command has no work to perform.\n" +
 					"Why?\n" +
 					"The \"mp3repair\" program has not made any changes to any mp3 files\n" +
-					"since the last successful database reset.\n" +
+					"since the last successful library reset.\n" +
 					"What to do:\n" +
-					"If you believe the Windows database needs to be reset, run this command\n" +
+					"If you believe the Windows Media Player library needs to be reset, run this command\n" +
 					"again and use the \"--force\" flag.\n",
 			},
 		},
 		"not dirty, force": {
-			dirty:           func() bool { return false },
-			resetDBSettings: &resetDBSettings{force: cmdtoolkit.CommandFlag[bool]{Value: true}},
-			want:            cmdtoolkit.NewExitSystemError("resetDatabase"),
+			dirty:                func() bool { return false },
+			resetLibrarySettings: &resetLibrarySettings{force: cmdtoolkit.CommandFlag[bool]{Value: true}},
+			want:                 cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"An attempt to connect with the service manager failed;" +
@@ -885,9 +885,9 @@ func Test_resetDBSettings_resetService(t *testing.T) {
 			},
 		},
 		"dirty, not force": {
-			dirty:           func() bool { return true },
-			resetDBSettings: &resetDBSettings{},
-			want:            cmdtoolkit.NewExitSystemError("resetDatabase"),
+			dirty:                func() bool { return true },
+			resetLibrarySettings: &resetLibrarySettings{},
+			want:                 cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"An attempt to connect with the service manager failed;" +
@@ -913,15 +913,15 @@ func Test_resetDBSettings_resetService(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			dirty = tt.dirty
 			o := output.NewRecorder()
-			if got := tt.resetDBSettings.resetService(o); !compareExitErrors(got, tt.want) {
-				t.Errorf("resetDBSettings.resetService() got %s want %s", got, tt.want)
+			if got := tt.resetLibrarySettings.resetService(o); !compareExitErrors(got, tt.want) {
+				t.Errorf("resetLibrarySettings.resetService() got %s want %s", got, tt.want)
 			}
-			o.Report(t, "resetDBSettings.resetService()", tt.WantedRecording)
+			o.Report(t, "resetLibrarySettings.resetService()", tt.WantedRecording)
 		})
 	}
 }
 
-func Test_resetDBRun(t *testing.T) {
+func Test_resetLibraryRun(t *testing.T) {
 	initGlobals()
 	originalBus := bus
 	originalDirty := dirty
@@ -931,7 +931,7 @@ func Test_resetDBRun(t *testing.T) {
 	}()
 	dirty = func() bool { return false }
 	flags := &cmdtoolkit.FlagSet{
-		Name: "resetDatabase",
+		Name: "resetLibrary",
 		Details: map[string]*cmdtoolkit.FlagDetails{
 			"timeout": {
 				AbbreviatedName: "t",
@@ -940,12 +940,12 @@ func Test_resetDBRun(t *testing.T) {
 				DefaultValue:    cmdtoolkit.NewIntBounds(1, 10, 60),
 			},
 			"service": {
-				Usage:        "name of the media player service",
+				Usage:        "name of the Windows Media Player service",
 				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: "WMPNetworkSVC",
 			},
 			"metadataDir": {
-				Usage:        "directory where the media player service metadata files are" + " stored",
+				Usage:        "directory where the Windows Media Player service metadata files are" + " stored",
 				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: filepath.Join("AppData", "Local", "Microsoft", "Media Player"),
 			},
@@ -956,13 +956,13 @@ func Test_resetDBRun(t *testing.T) {
 			},
 			"force": {
 				AbbreviatedName: "f",
-				Usage:           "if set, force a database reset",
+				Usage:           "if set, force a library reset",
 				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
 			"ignoreServiceErrors": {
 				AbbreviatedName: "i",
-				Usage:           "if set, ignore service errors and delete the media player service metadata files",
+				Usage:           "if set, ignore service errors and delete the Windows Media Player service's metadata files",
 				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
@@ -980,12 +980,12 @@ func Test_resetDBRun(t *testing.T) {
 			cmd: myCommand,
 			WantedRecording: output.WantedRecording{
 				Error: "" +
-					"The \"resetDatabase\" command has no work to perform.\n" +
+					"The \"resetLibrary\" command has no work to perform.\n" +
 					"Why?\n" +
 					"The \"mp3repair\" program has not made any changes to any mp3 files\n" +
-					"since the last successful database reset.\n" +
+					"since the last successful library reset.\n" +
 					"What to do:\n" +
-					"If you believe the Windows database needs to be reset, run this" +
+					"If you believe the Windows Media Player library needs to be reset, run this" +
 					" command\n" +
 					"again and use the \"--force\" flag.\n",
 			},
@@ -995,16 +995,16 @@ func Test_resetDBRun(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			bus = o
-			_ = resetDBRun(tt.cmd, tt.in1)
-			o.Report(t, "resetDBRun()", tt.WantedRecording)
+			_ = resetLibraryRun(tt.cmd, tt.in1)
+			o.Report(t, "resetLibraryRun()", tt.WantedRecording)
 		})
 	}
 }
 
-func Test_resetDatabase_Help(t *testing.T) {
-	commandUnderTest := cloneCommand(resetDatabaseCmd)
+func Test_resetLibrary_Help(t *testing.T) {
+	commandUnderTest := cloneCommand(resetLibraryCmd)
 	flagMap := map[string]*cmdtoolkit.FlagDetails{}
-	for k, v := range resetDatabaseFlags.Details {
+	for k, v := range resetLibraryFlags.Details {
 		switch k {
 		case "metadataDir":
 			flagMap[k] = v.Copy()
@@ -1013,7 +1013,7 @@ func Test_resetDatabase_Help(t *testing.T) {
 			flagMap[k] = v
 		}
 	}
-	flagCopy := &cmdtoolkit.FlagSet{Name: "resetDatabase", Details: flagMap}
+	flagCopy := &cmdtoolkit.FlagSet{Name: "resetLibrary", Details: flagMap}
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), flagCopy)
 	tests := map[string]struct {
@@ -1022,48 +1022,31 @@ func Test_resetDatabase_Help(t *testing.T) {
 		"good": {
 			WantedRecording: output.WantedRecording{
 				Console: "" +
-					"\"resetDatabase\" resets the Windows music database\n" +
+					"\"resetLibrary\" resets the Windows Media Player library\n" +
 					"\n" +
-					"The changes made by the 'repair' command make the mp3 files" +
-					" inconsistent with the\n" +
-					"database Windows uses to organize the files into albums and artists." +
-					" This command\n" +
-					"resets that database, which it accomplishes by deleting the database" +
-					" files.\n" +
+					"The changes made by the 'repair' command make the mp3 files inconsistent with the\n" +
+					"Windows Media Player library which organizes the files into albums and artists. This command\n" +
+					"resets that library, which it accomplishes by deleting the library files.\n" +
 					"\n" +
-					"Prior to deleting the files, the resetDatabase command attempts to" +
-					" stop the Windows\n" +
-					"media player service. If there is such an active service, this" +
-					" command will need to be\n" +
-					"run as administrator. If, for whatever reasons, the service cannot be" +
-					" stopped, using the\n" +
-					"--ignoreServiceErrors flag allows the database files to be deleted, if" +
-					" possible.\n" +
+					"Prior to deleting the files, the resetLibrary command attempts to stop the Windows\n" +
+					"Media Player service, which allows Windows Media Player to share its library with a network. If\n" +
+					"there is such an active service, this command will need to be run as administrator. If, for\n" +
+					"whatever reasons, the service cannot be stopped, using the\n" +
+					"--ignoreServiceErrors flag allows the library files to be deleted, if possible.\n" +
 					"\n" +
 					"This command does nothing if it determines that the repair command has not made any\n" +
 					"changes, unless the --force flag is set.\n" +
 					"\n" +
 					"Usage:\n" +
-					"  resetDatabase [--timeout seconds] [--service name]" +
-					" [--metadataDir dir] [--extension string] [--force]" +
-					" [--ignoreServiceErrors]\n" +
+					"  resetLibrary [--timeout seconds] [--service name] [--metadataDir dir] [--extension string] [--force] [--ignoreServiceErrors]\n" +
 					"\n" +
 					"Flags:\n" +
-					"      --extension string      " +
-					"extension for metadata files (default \".wmdb\")\n" +
-					"  -f, --force                 " +
-					"if set, force a database reset (default false)\n" +
-					"  -i, --ignoreServiceErrors   " +
-					"if set, ignore service errors and delete the media player service" +
-					" metadata files (default false)\n" +
-					"      --metadataDir string    " +
-					"directory where the media player service metadata files are stored" +
-					" (default \"[USERPROFILE]/AppData/Local/Microsoft/Media Player\")\n" +
-					"      --service string        " +
-					"name of the media player service (default \"WMPNetworkSVC\")\n" +
-					"  -t, --timeout int           " +
-					"timeout in seconds (minimum 1, maximum 60) for stopping the media" +
-					" player service (default 10)\n",
+					"      --extension string      extension for metadata files (default \".wmdb\")\n" +
+					"  -f, --force                 if set, force a library reset (default false)\n" +
+					"  -i, --ignoreServiceErrors   if set, ignore service errors and delete the Windows Media Player service's metadata files (default false)\n" +
+					"      --metadataDir string    directory where the Windows Media Player service metadata files are stored (default \"[USERPROFILE]/AppData/Local/Microsoft/Media Player\")\n" +
+					"      --service string        name of the Windows Media Player service (default \"WMPNetworkSVC\")\n" +
+					"  -t, --timeout int           timeout in seconds (minimum 1, maximum 60) for stopping the media player service (default 10)\n",
 			},
 		},
 	}
@@ -1073,7 +1056,7 @@ func Test_resetDatabase_Help(t *testing.T) {
 			command := commandUnderTest
 			enableCommandRecording(o, command)
 			_ = command.Help()
-			o.Report(t, "resetDatabase Help()", tt.WantedRecording)
+			o.Report(t, "resetLibrary Help()", tt.WantedRecording)
 		})
 	}
 }
@@ -1097,107 +1080,107 @@ func Test_updateServiceStatus(t *testing.T) {
 		"success, user error": {
 			args: args{
 				currentStatus:  nil,
-				proposedStatus: cmdtoolkit.NewExitUserError("resetDatabase"),
+				proposedStatus: cmdtoolkit.NewExitUserError("resetLibrary"),
 			},
-			want: cmdtoolkit.NewExitUserError("resetDatabase"),
+			want: cmdtoolkit.NewExitUserError("resetLibrary"),
 		},
 		"success, program error": {
 			args: args{
 				currentStatus:  nil,
-				proposedStatus: cmdtoolkit.NewExitProgrammingError("resetDatabase"),
+				proposedStatus: cmdtoolkit.NewExitProgrammingError("resetLibrary"),
 			},
-			want: cmdtoolkit.NewExitProgrammingError("resetDatabase"),
+			want: cmdtoolkit.NewExitProgrammingError("resetLibrary"),
 		},
 		"success, system error": {
 			args: args{
 				currentStatus:  nil,
-				proposedStatus: cmdtoolkit.NewExitSystemError("resetDatabase"),
+				proposedStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			},
-			want: cmdtoolkit.NewExitSystemError("resetDatabase"),
+			want: cmdtoolkit.NewExitSystemError("resetLibrary"),
 		},
 		"user error, success": {
 			args: args{
-				currentStatus:  cmdtoolkit.NewExitUserError("resetDatabase"),
+				currentStatus:  cmdtoolkit.NewExitUserError("resetLibrary"),
 				proposedStatus: nil,
 			},
-			want: cmdtoolkit.NewExitUserError("resetDatabase"),
+			want: cmdtoolkit.NewExitUserError("resetLibrary"),
 		},
 		"user error, user error": {
 			args: args{
-				currentStatus:  cmdtoolkit.NewExitUserError("resetDatabase"),
-				proposedStatus: cmdtoolkit.NewExitUserError("resetDatabase"),
+				currentStatus:  cmdtoolkit.NewExitUserError("resetLibrary"),
+				proposedStatus: cmdtoolkit.NewExitUserError("resetLibrary"),
 			},
-			want: cmdtoolkit.NewExitUserError("resetDatabase"),
+			want: cmdtoolkit.NewExitUserError("resetLibrary"),
 		},
 		"user error, program error": {
 			args: args{
-				currentStatus:  cmdtoolkit.NewExitUserError("resetDatabase"),
-				proposedStatus: cmdtoolkit.NewExitProgrammingError("resetDatabase"),
+				currentStatus:  cmdtoolkit.NewExitUserError("resetLibrary"),
+				proposedStatus: cmdtoolkit.NewExitProgrammingError("resetLibrary"),
 			},
-			want: cmdtoolkit.NewExitUserError("resetDatabase"),
+			want: cmdtoolkit.NewExitUserError("resetLibrary"),
 		},
 		"user error, system error": {
 			args: args{
-				currentStatus:  cmdtoolkit.NewExitUserError("resetDatabase"),
-				proposedStatus: cmdtoolkit.NewExitSystemError("resetDatabase"),
+				currentStatus:  cmdtoolkit.NewExitUserError("resetLibrary"),
+				proposedStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			},
-			want: cmdtoolkit.NewExitUserError("resetDatabase"),
+			want: cmdtoolkit.NewExitUserError("resetLibrary"),
 		},
 		"program error, success": {
 			args: args{
-				currentStatus:  cmdtoolkit.NewExitProgrammingError("resetDatabase"),
+				currentStatus:  cmdtoolkit.NewExitProgrammingError("resetLibrary"),
 				proposedStatus: nil,
 			},
-			want: cmdtoolkit.NewExitProgrammingError("resetDatabase"),
+			want: cmdtoolkit.NewExitProgrammingError("resetLibrary"),
 		},
 		"program error, user error": {
 			args: args{
-				currentStatus:  cmdtoolkit.NewExitProgrammingError("resetDatabase"),
-				proposedStatus: cmdtoolkit.NewExitUserError("resetDatabase"),
+				currentStatus:  cmdtoolkit.NewExitProgrammingError("resetLibrary"),
+				proposedStatus: cmdtoolkit.NewExitUserError("resetLibrary"),
 			},
-			want: cmdtoolkit.NewExitProgrammingError("resetDatabase"),
+			want: cmdtoolkit.NewExitProgrammingError("resetLibrary"),
 		},
 		"program error, program error": {
 			args: args{
-				currentStatus:  cmdtoolkit.NewExitProgrammingError("resetDatabase"),
-				proposedStatus: cmdtoolkit.NewExitProgrammingError("resetDatabase"),
+				currentStatus:  cmdtoolkit.NewExitProgrammingError("resetLibrary"),
+				proposedStatus: cmdtoolkit.NewExitProgrammingError("resetLibrary"),
 			},
-			want: cmdtoolkit.NewExitProgrammingError("resetDatabase"),
+			want: cmdtoolkit.NewExitProgrammingError("resetLibrary"),
 		},
 		"program error, system error": {
 			args: args{
-				currentStatus:  cmdtoolkit.NewExitProgrammingError("resetDatabase"),
-				proposedStatus: cmdtoolkit.NewExitSystemError("resetDatabase"),
+				currentStatus:  cmdtoolkit.NewExitProgrammingError("resetLibrary"),
+				proposedStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			},
-			want: cmdtoolkit.NewExitProgrammingError("resetDatabase"),
+			want: cmdtoolkit.NewExitProgrammingError("resetLibrary"),
 		},
 		"system error, success": {
 			args: args{
-				currentStatus:  cmdtoolkit.NewExitSystemError("resetDatabase"),
+				currentStatus:  cmdtoolkit.NewExitSystemError("resetLibrary"),
 				proposedStatus: nil,
 			},
-			want: cmdtoolkit.NewExitSystemError("resetDatabase"),
+			want: cmdtoolkit.NewExitSystemError("resetLibrary"),
 		},
 		"system error, user error": {
 			args: args{
-				currentStatus:  cmdtoolkit.NewExitSystemError("resetDatabase"),
-				proposedStatus: cmdtoolkit.NewExitUserError("resetDatabase"),
+				currentStatus:  cmdtoolkit.NewExitSystemError("resetLibrary"),
+				proposedStatus: cmdtoolkit.NewExitUserError("resetLibrary"),
 			},
-			want: cmdtoolkit.NewExitSystemError("resetDatabase"),
+			want: cmdtoolkit.NewExitSystemError("resetLibrary"),
 		},
 		"system error, program error": {
 			args: args{
-				currentStatus:  cmdtoolkit.NewExitSystemError("resetDatabase"),
-				proposedStatus: cmdtoolkit.NewExitProgrammingError("resetDatabase"),
+				currentStatus:  cmdtoolkit.NewExitSystemError("resetLibrary"),
+				proposedStatus: cmdtoolkit.NewExitProgrammingError("resetLibrary"),
 			},
-			want: cmdtoolkit.NewExitSystemError("resetDatabase"),
+			want: cmdtoolkit.NewExitSystemError("resetLibrary"),
 		},
 		"system error, system error": {
 			args: args{
-				currentStatus:  cmdtoolkit.NewExitSystemError("resetDatabase"),
-				proposedStatus: cmdtoolkit.NewExitSystemError("resetDatabase"),
+				currentStatus:  cmdtoolkit.NewExitSystemError("resetLibrary"),
+				proposedStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			},
-			want: cmdtoolkit.NewExitSystemError("resetDatabase"),
+			want: cmdtoolkit.NewExitSystemError("resetLibrary"),
 		},
 	}
 	for name, tt := range tests {
@@ -1227,15 +1210,15 @@ func Test_maybeClearDirty(t *testing.T) {
 			want:   true,
 		},
 		"user error": {
-			status: cmdtoolkit.NewExitUserError("resetDatabase"),
+			status: cmdtoolkit.NewExitUserError("resetLibrary"),
 			want:   false,
 		},
 		"program error": {
-			status: cmdtoolkit.NewExitProgrammingError("resetDatabase"),
+			status: cmdtoolkit.NewExitProgrammingError("resetLibrary"),
 			want:   false,
 		},
 		"system error": {
-			status: cmdtoolkit.NewExitSystemError("resetDatabase"),
+			status: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			want:   false,
 		},
 	}
