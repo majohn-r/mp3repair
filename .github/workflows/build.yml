@@ -14,7 +14,7 @@ jobs:
       - name: Get dependencies
         run: go get -u ./...
       - name: Install linter
-        run: go install -v github.com/go-critic/go-critic/cmd/gocritic@latest
+        run: "go install -v github.com/go-critic/go-critic/cmd/gocritic@latest"
       - name: Run linter
         run: gocritic check -enableAll ./... > lint-issues.txt
       - name: Post lint issues
