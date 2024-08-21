@@ -59,7 +59,10 @@ type biDirectionalMap[K comparable, V comparable] struct {
 	vNormalize func(V) V
 }
 
-func newBiDirectionalMap[K comparable, V comparable](keyNormalize func(K) K, valueNormalize func(V) V) *biDirectionalMap[K, V] {
+func newBiDirectionalMap[K comparable, V comparable](
+	keyNormalize func(K) K,
+	valueNormalize func(V) V,
+) *biDirectionalMap[K, V] {
 	bdMap := &biDirectionalMap[K, V]{
 		k2v:        map[K]V{},
 		v2k:        map[V]K{},
@@ -730,7 +733,10 @@ func fileReader(f afero.File, b []byte) (int, error) {
 	return f.Read(b)
 }
 
-func internalReadID3V1Metadata(path string, readFunc func(f afero.File, b []byte) (int, error)) (*id3v1Metadata, error) {
+func internalReadID3V1Metadata(
+	path string,
+	readFunc func(f afero.File, b []byte) (int, error),
+) (*id3v1Metadata, error) {
 	file, fileErr := cmdtoolkit.FileSystem().Open(path)
 	if fileErr != nil {
 		return nil, fileErr

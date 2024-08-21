@@ -621,7 +621,7 @@ func canonicalChoice(m map[string]int) (value string, selected bool) {
 
 // ReportMetadataReadError outputs a problem reading the metadata as an error
 // and as a log record
-func (t *Track) ReportMetadataReadError(o output.Bus, sT SourceType, e string) {
+func (t *Track) ReportMetadataReadError(o output.Bus, sT sourceType, e string) {
 	name := sT.Name()
 	o.Log(output.Error, "metadata read error", map[string]any{
 		"metadata": name,
@@ -642,7 +642,7 @@ func reportAllTrackErrors(o output.Bus, artists []*Artist) {
 
 func (t *Track) reportMetadataErrors(o output.Bus) {
 	if t.hasMetadataError() {
-		for _, src := range []SourceType{ID3V1, ID3V2} {
+		for _, src := range []sourceType{ID3V1, ID3V2} {
 			if metadata := t.metadata; metadata != nil {
 				if e := metadata.errorCause(src); e != "" {
 					t.ReportMetadataReadError(o, src, e)

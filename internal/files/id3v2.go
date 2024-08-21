@@ -2,8 +2,9 @@ package files
 
 import (
 	"fmt"
+	"maps"
 	"regexp"
-	"sort"
+	"slices"
 	"strings"
 
 	"github.com/bogem/id3v2/v2"
@@ -198,7 +199,7 @@ type id3v2TrackFrame struct {
 }
 
 // String returns the contents of an ID3V2TrackFrame formatted in the form
-// "name = \"value\"".
+// name = \"value\".
 func (itf *id3v2TrackFrame) String() string {
 	return fmt.Sprintf("%s = %q", itf.name, itf.value)
 }
@@ -242,11 +243,7 @@ func readID3V2Metadata(path string) (*ID3V2Info, error) {
 	}()
 	info := NewID3V2Info(tag.Version(), tag.DefaultEncoding().String(), map[string][]string{}, []*id3v2TrackFrame{})
 	frameMap := tag.AllFrames()
-	frameNames := make([]string, 0, len(frameMap))
-	for k := range frameMap {
-		frameNames = append(frameNames, k)
-	}
-	sort.Strings(frameNames)
+	frameNames := slices.Sorted(maps.Keys(frameMap))
 	for _, n := range frameNames {
 		var value []string
 		switch {
@@ -422,7 +419,10 @@ func decodeLAMEGeneratedMCDI(content []byte) ([]string, bool) {
 				for k := 0; k < trackCount; k++ {
 					offset := k * 8
 					lbaAddress := bytesToInt(content[offset+8:offset+12]) + logicalBlockAddressCorrection
-					formatted = append(formatted, fmt.Sprintf("track %d logical block address %d", content[6+offset], lbaAddress))
+					formatted = append(
+						formatted,
+						fmt.Sprintf("track %d logical block address %d", content[6+offset], lbaAddress),
+					)
 				}
 				offset := trackCount * 8
 				lbaAddress := bytesToInt(content[offset+8:offset+12]) + logicalBlockAddressCorrection

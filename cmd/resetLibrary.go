@@ -70,9 +70,10 @@ changes, unless the ` + resetLibraryForceFlag + ` flag is set.`,
 		Details: map[string]*cmdtoolkit.FlagDetails{
 			resetLibraryTimeout: {
 				AbbreviatedName: resetLibraryTimeoutAbbr,
-				Usage:           fmt.Sprintf("timeout in seconds (minimum %d, maximum %d) for stopping the media player service", minTimeout, maxTimeout),
-				ExpectedType:    cmdtoolkit.IntType,
-				DefaultValue:    cmdtoolkit.NewIntBounds(minTimeout, defaultTimeout, maxTimeout),
+				Usage: fmt.Sprintf("timeout in seconds (minimum %d, maximum %d) for stopping the "+
+					"media player service", minTimeout, maxTimeout),
+				ExpectedType: cmdtoolkit.IntType,
+				DefaultValue: cmdtoolkit.NewIntBounds(minTimeout, defaultTimeout, maxTimeout),
 			},
 			resetLibraryService: {
 				Usage:        "name of the Windows Media Player service",
@@ -97,9 +98,10 @@ changes, unless the ` + resetLibraryForceFlag + ` flag is set.`,
 			},
 			resetLibraryIgnoreServiceErrors: {
 				AbbreviatedName: resetLibraryIgnoreServiceErrorsAbbr,
-				Usage:           "if set, ignore service errors and delete the Windows Media Player service's metadata files",
-				ExpectedType:    cmdtoolkit.BoolType,
-				DefaultValue:    false,
+				Usage: "if set, ignore service errors and delete the Windows Media Player service's " +
+					"metadata files",
+				ExpectedType: cmdtoolkit.BoolType,
+				DefaultValue: false,
 			},
 		},
 	}
@@ -455,7 +457,10 @@ func (rDBSettings *resetLibrarySettings) deleteMetadataFiles(o output.Bus, paths
 	return
 }
 
-func processResetLibraryFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (*resetLibrarySettings, bool) {
+func processResetLibraryFlags(
+	o output.Bus,
+	values map[string]*cmdtoolkit.CommandFlag[any],
+) (*resetLibrarySettings, bool) {
 	var flagErr error
 	result := &resetLibrarySettings{}
 	flagsOk := true // optimistic

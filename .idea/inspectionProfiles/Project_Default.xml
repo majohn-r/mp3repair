@@ -6,5 +6,14 @@
       <option name="runAnnotators" value="false" />
     </inspection_tool>
     <inspection_tool class="GoUnnecessarilyExportedIdentifiers" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
+    <inspection_tool class="InconsistentLineSeparators" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="Json5StandardCompliance" enabled="true" level="WARNING" enabled_by_default="true" editorAttributes="WARNING_ATTRIBUTES" />
+    <inspection_tool class="LongLine" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="MandatoryParamsAbsent" enabled="true" level="WARNING" enabled_by_default="true" editorAttributes="WARNING_ATTRIBUTES" />
+    <inspection_tool class="ProblematicWhitespace" enabled="true" level="WARNING" enabled_by_default="true" />
+    <inspection_tool class="UnresolvedReference" enabled="false" level="ERROR" enabled_by_default="false" />
+    <inspection_tool class="YAMLDuplicatedKeys" enabled="true" level="WARNING" enabled_by_default="true" editorAttributes="WARNING_ATTRIBUTES" />
+    <inspection_tool class="YAMLRecursiveAlias" enabled="true" level="WARNING" enabled_by_default="true" editorAttributes="WARNING_ATTRIBUTES" />
+    <inspection_tool class="YAMLUnresolvedAlias" enabled="true" level="WARNING" enabled_by_default="true" editorAttributes="WARNING_ATTRIBUTES" />
   </profile>
 </component>

@@ -333,7 +333,10 @@ func Test_acquireAboutData(t *testing.T) {
 					tec.desiredStatus = append(tec.desiredStatus, "stderr, stdin, and stdout have been redirected")
 				}
 				if !tt.forceAdminPermission {
-					tec.desiredStatus = append(tec.desiredStatus, "The environment variable MP3REPAIR_RUNS_AS_ADMIN evaluates as false")
+					tec.desiredStatus = append(
+						tec.desiredStatus,
+						"The environment variable MP3REPAIR_RUNS_AS_ADMIN evaluates as false",
+					)
 				}
 			}
 			mp3repairElevationControl = tec

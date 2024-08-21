@@ -203,7 +203,12 @@ func Test_resetLibrarySettings_waitForStop(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			gotOk, gotStatus := tt.resetLibrarySettings.waitForStop(o, tt.args.s, tt.args.expiration, tt.args.checkInterval)
+			gotOk, gotStatus := tt.resetLibrarySettings.waitForStop(
+				o,
+				tt.args.s,
+				tt.args.expiration,
+				tt.args.checkInterval,
+			)
 			if gotOk != tt.wantOk {
 				t.Errorf("resetLibrarySettings.waitForStop() = %t, want %t", gotOk, tt.wantOk)
 			}
@@ -629,15 +634,19 @@ func Test_resetLibrarySettings_deleteMetadataFiles(t *testing.T) {
 		output.WantedRecording
 	}{
 		"no files": {
-			resetLibrarySettings: &resetLibrarySettings{metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata/dir"}},
-			paths:                nil,
-			want:                 nil,
+			resetLibrarySettings: &resetLibrarySettings{
+				metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata/dir"},
+			},
+			paths: nil,
+			want:  nil,
 		},
 		"locked files": {
-			remove:               func(_ string) error { return fmt.Errorf("cannot remove file") },
-			resetLibrarySettings: &resetLibrarySettings{metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata/dir"}},
-			paths:                []string{"file1", "file2"},
-			want:                 cmdtoolkit.NewExitSystemError("resetLibrary"),
+			remove: func(_ string) error { return fmt.Errorf("cannot remove file") },
+			resetLibrarySettings: &resetLibrarySettings{
+				metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata/dir"},
+			},
+			paths: []string{"file1", "file2"},
+			want:  cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
 				Console: "0 out of 2 metadata files have been deleted from" +
 					" \"metadata/dir\".\n",
@@ -653,10 +662,12 @@ func Test_resetLibrarySettings_deleteMetadataFiles(t *testing.T) {
 			},
 		},
 		"deletable files": {
-			remove:               func(_ string) error { return nil },
-			resetLibrarySettings: &resetLibrarySettings{metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata/dir"}},
-			paths:                []string{"file1", "file2"},
-			want:                 nil,
+			remove: func(_ string) error { return nil },
+			resetLibrarySettings: &resetLibrarySettings{
+				metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata/dir"},
+			},
+			paths: []string{"file1", "file2"},
+			want:  nil,
 			WantedRecording: output.WantedRecording{
 				Console: "2 out of 2 metadata files have been deleted from" +
 					" \"metadata/dir\".\n",
@@ -935,9 +946,10 @@ func Test_resetLibraryRun(t *testing.T) {
 		Details: map[string]*cmdtoolkit.FlagDetails{
 			"timeout": {
 				AbbreviatedName: "t",
-				Usage:           fmt.Sprintf("timeout in seconds (minimum %d, maximum %d) for stopping the media player service", 1, 60),
-				ExpectedType:    cmdtoolkit.IntType,
-				DefaultValue:    cmdtoolkit.NewIntBounds(1, 10, 60),
+				Usage: fmt.Sprintf("timeout in seconds (minimum %d, maximum %d) for stopping the "+
+					"media player service", 1, 60),
+				ExpectedType: cmdtoolkit.IntType,
+				DefaultValue: cmdtoolkit.NewIntBounds(1, 10, 60),
 			},
 			"service": {
 				Usage:        "name of the Windows Media Player service",
@@ -962,9 +974,10 @@ func Test_resetLibraryRun(t *testing.T) {
 			},
 			"ignoreServiceErrors": {
 				AbbreviatedName: "i",
-				Usage:           "if set, ignore service errors and delete the Windows Media Player service's metadata files",
-				ExpectedType:    cmdtoolkit.BoolType,
-				DefaultValue:    false,
+				Usage: "if set, ignore service errors and delete the Windows Media Player service's " +
+					"metadata files",
+				ExpectedType: cmdtoolkit.BoolType,
+				DefaultValue: false,
 			},
 		},
 	}
@@ -1029,24 +1042,29 @@ func Test_resetLibrary_Help(t *testing.T) {
 					"resets that library, which it accomplishes by deleting the library files.\n" +
 					"\n" +
 					"Prior to deleting the files, the resetLibrary command attempts to stop the Windows\n" +
-					"Media Player service, which allows Windows Media Player to share its library with a network. If\n" +
-					"there is such an active service, this command will need to be run as administrator. If, for\n" +
-					"whatever reasons, the service cannot be stopped, using the\n" +
+					"Media Player service, which allows Windows Media Player to share its library with a network. " +
+					"If\nthere is such an active service, this command will need to be run as administrator. If, " +
+					"for\nwhatever reasons, the service cannot be stopped, using the\n" +
 					"--ignoreServiceErrors flag allows the library files to be deleted, if possible.\n" +
 					"\n" +
 					"This command does nothing if it determines that the repair command has not made any\n" +
 					"changes, unless the --force flag is set.\n" +
 					"\n" +
 					"Usage:\n" +
-					"  resetLibrary [--timeout seconds] [--service name] [--metadataDir dir] [--extension string] [--force] [--ignoreServiceErrors]\n" +
+					"  resetLibrary [--timeout seconds] [--service name] [--metadataDir dir] [--extension string] " +
+					"[--force] [--ignoreServiceErrors]\n" +
 					"\n" +
 					"Flags:\n" +
 					"      --extension string      extension for metadata files (default \".wmdb\")\n" +
 					"  -f, --force                 if set, force a library reset (default false)\n" +
-					"  -i, --ignoreServiceErrors   if set, ignore service errors and delete the Windows Media Player service's metadata files (default false)\n" +
-					"      --metadataDir string    directory where the Windows Media Player service metadata files are stored (default \"[USERPROFILE]/AppData/Local/Microsoft/Media Player\")\n" +
-					"      --service string        name of the Windows Media Player service (default \"WMPNetworkSVC\")\n" +
-					"  -t, --timeout int           timeout in seconds (minimum 1, maximum 60) for stopping the media player service (default 10)\n",
+					"  -i, --ignoreServiceErrors   if set, ignore service errors and delete the Windows Media Player " +
+					"service's metadata files (default false)\n" +
+					"      --metadataDir string    directory where the Windows Media Player service metadata files " +
+					"are stored (default \"[USERPROFILE]/AppData/Local/Microsoft/Media Player\")\n" +
+					"      --service string        name of the Windows Media Player service (default " +
+					"\"WMPNetworkSVC\")\n" +
+					"  -t, --timeout int           timeout in seconds (minimum 1, maximum 60) for stopping the media " +
+					"player service (default 10)\n",
 			},
 		},
 	}
@@ -1185,7 +1203,10 @@ func Test_updateServiceStatus(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := updateServiceStatus(tt.args.currentStatus, tt.args.proposedStatus); !compareExitErrors(got, tt.want) {
+			if got := updateServiceStatus(
+				tt.args.currentStatus,
+				tt.args.proposedStatus,
+			); !compareExitErrors(got, tt.want) {
 				t.Errorf("updateServiceStatus() = %v, want %v", got, tt.want)
 			}
 		})

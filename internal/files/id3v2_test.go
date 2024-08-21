@@ -3,8 +3,10 @@ package files
 import (
 	"fmt"
 	"io"
+	"maps"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"sort"
 	"testing"
 
@@ -42,10 +44,7 @@ func makePayload() []byte {
 // https://id3.org/id3v2.3.0 and on examining hex dumps of real mp3 files.
 func createID3v2TaggedData(audio []byte, frames map[string]string) []byte {
 	// create text frames; order is fixed for testing
-	keys := make([]string, 0, len(frames))
-	for key := range frames {
-		keys = append(keys, key)
-	}
+	keys := slices.Collect(maps.Keys(frames))
 	sort.Strings(keys)
 	frameContents := make([][]byte, 0, len(keys))
 	frameLength := 0
@@ -441,7 +440,8 @@ var (
 		0x41, 0x00, 0x46, 0x00, 0x2B, 0x00, 0x34, 0x00, 0x41, 0x00, 0x30, 0x00, 0x34, 0x00, 0x38, 0x00,
 		0x00, 0x00,
 	}
-	windowsLegacyReaderMCDIString = "14+96+3386+5F29+9264+C6B7+EBF3+11CC2+147BA+17295+1A314+1CF8D+1F9D5+22706+26C8C+2B47C+30C53+34D9D+37D42+3C737+40FAF+4A048"
+	windowsLegacyReaderMCDIString = "14+96+3386+5F29+9264+C6B7+EBF3+11CC2+147BA+17295+1A314+1CF8D+1F9D5+22706+26C8C+" +
+		"2B47C+30C53+34D9D+37D42+3C737+40FAF+4A048"
 	windowsLegacyReaderMCDIOutput = []string{
 		"tracks 20",
 		"track 1 logical block address 150",

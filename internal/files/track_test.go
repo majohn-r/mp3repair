@@ -513,8 +513,8 @@ func TestTrackLoadMetadata(t *testing.T) {
 	})
 	fileName := "05 A brilliant track.mp3"
 	_ = createFileWithContent(testDir, fileName, payload)
-	postReadTm := NewTrackMetadata()
-	for _, src := range []SourceType{ID3V1, ID3V2} {
+	postReadTm := newTrackMetadata()
+	for _, src := range []sourceType{ID3V1, ID3V2} {
 		postReadTm.setArtistName(src, artistName)
 		postReadTm.setAlbumName(src, albumName)
 		postReadTm.setAlbumGenre(src, genre)
@@ -529,8 +529,8 @@ func TestTrackLoadMetadata(t *testing.T) {
 		want *TrackMetadata
 	}{
 		"no read needed": {
-			t:    &Track{metadata: NewTrackMetadata()},
-			want: NewTrackMetadata()},
+			t:    &Track{metadata: newTrackMetadata()},
+			want: newTrackMetadata()},
 		"read file": {
 			t:    &Track{filePath: filepath.Join(testDir, fileName)},
 			want: postReadTm,
@@ -593,7 +593,10 @@ func TestReadMetadata(t *testing.T) {
 					"year":   "2022",
 					"track":  n + 1,
 				}
-				content := createConsistentlyTaggedData([]byte{0, 1, 2, 3, 4, 5, 6, byte(k), byte(m), byte(n)}, metadata)
+				content := createConsistentlyTaggedData(
+					[]byte{0, 1, 2, 3, 4, 5, 6, byte(k), byte(m), byte(n)},
+					metadata,
+				)
 				_ = createFileWithContent(albumPath, trackFileName, content)
 				album.addTrack(track)
 			}
@@ -640,7 +643,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 		canonicalTitle:  "problematic:album",
 	}
 	src := ID3V2
-	metadata := NewTrackMetadata()
+	metadata := newTrackMetadata()
 	metadata.setCanonicalSource(src)
 	metadata.setCDIdentifier([]byte{1, 3, 5})
 	metadata.setArtistName(src, "unknown artist")
@@ -667,7 +670,7 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 		canonicalTitle:  "good album",
 	}
 	src2 := ID3V1
-	metadata2 := NewTrackMetadata()
+	metadata2 := newTrackMetadata()
 	metadata2.setCanonicalSource(src2)
 	metadata2.setArtistName(src2, "good artist")
 	metadata2.setAlbumName(src2, "good album")
@@ -685,10 +688,10 @@ func TestTrack_ReportMetadataProblems(t *testing.T) {
 	goodTrack.metadata = metadata2
 	goodAlbum.addTrack(goodTrack)
 	goodArtist.addAlbum(goodAlbum)
-	errorMetadata := NewTrackMetadata()
+	errorMetadata := newTrackMetadata()
 	errorMetadata.setErrorCause(ID3V1, "oops")
 	errorMetadata.setErrorCause(ID3V2, "oops")
-	noMetadata := NewTrackMetadata()
+	noMetadata := newTrackMetadata()
 	noMetadata.setErrorCause(ID3V1, errNoID3V1MetadataFound.Error())
 	noMetadata.setErrorCause(ID3V2, errNoID3V2MetadataFound.Error())
 	tests := map[string]struct {
@@ -749,8 +752,8 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 		"track":  1,
 	})
 	_ = createFileWithContent(testDir, trackName, trackContents)
-	expectedMetadata := NewTrackMetadata()
-	for _, src := range []SourceType{ID3V1, ID3V2} {
+	expectedMetadata := newTrackMetadata()
+	for _, src := range []sourceType{ID3V1, ID3V2} {
 		expectedMetadata.setArtistName(src, "unknown artist")
 		expectedMetadata.setAlbumName(src, "unknown album")
 		expectedMetadata.setAlbumGenre(src, "unknown")
@@ -789,8 +792,8 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 		},
 		metadata: expectedMetadata,
 	}
-	editedTm := NewTrackMetadata()
-	for _, src := range []SourceType{ID3V1, ID3V2} {
+	editedTm := newTrackMetadata()
+	for _, src := range []sourceType{ID3V1, ID3V2} {
 		editedTm.setArtistName(src, "fine artist")
 		editedTm.setAlbumName(src, "fine album")
 		editedTm.setAlbumGenre(src, "classic rock")
@@ -843,7 +846,7 @@ func TestProcessArtistMetadata(t *testing.T) {
 	album1 := AlbumMaker{Title: "album1", Artist: artist1}.NewAlbum(true)
 	for k := 1; k <= 10; k++ {
 		src := ID3V2
-		tm := NewTrackMetadata()
+		tm := newTrackMetadata()
 		tm.setCanonicalSource(src)
 		tm.setArtistName(src, "artist:name")
 		track := TrackMaker{
@@ -859,7 +862,7 @@ func TestProcessArtistMetadata(t *testing.T) {
 	album2 := AlbumMaker{Title: "album2", Artist: artist2}.NewAlbum(true)
 	for k := 1; k <= 10; k++ {
 		src := ID3V2
-		tm := NewTrackMetadata()
+		tm := newTrackMetadata()
 		tm.setCanonicalSource(src)
 		tm.setArtistName(src, "unknown artist")
 		track := TrackMaker{
@@ -875,7 +878,7 @@ func TestProcessArtistMetadata(t *testing.T) {
 	album3 := AlbumMaker{Title: "album3", Artist: artist3}.NewAlbum(true)
 	for k := 1; k <= 10; k++ {
 		src := ID3V2
-		tm := NewTrackMetadata()
+		tm := newTrackMetadata()
 		tm.setCanonicalSource(src)
 		if k%2 == 0 {
 			tm.setArtistName(src, "artist:name")
@@ -927,7 +930,7 @@ func TestProcessAlbumMetadata(t *testing.T) {
 	artist1 := NewArtist("good artist", "")
 	artists1 = append(artists1, artist1)
 	album1 := AlbumMaker{Title: "good-album", Artist: artist1}.NewAlbum(true)
-	tm := NewTrackMetadata()
+	tm := newTrackMetadata()
 	tm.setCanonicalSource(src)
 	tm.setAlbumName(src, "good:album")
 	tm.setAlbumGenre(src, "pop")
@@ -948,7 +951,7 @@ func TestProcessAlbumMetadata(t *testing.T) {
 		Title:  "another good_album",
 		Artist: artist2,
 	}.NewAlbum(true)
-	tm2a := NewTrackMetadata()
+	tm2a := newTrackMetadata()
 	tm2a.setCanonicalSource(src)
 	tm2a.setAlbumName(src, "unknown album")
 	tm2a.setAlbumGenre(src, "unknown")
@@ -961,7 +964,7 @@ func TestProcessAlbumMetadata(t *testing.T) {
 	}.NewTrack(false)
 	track2a.metadata = tm2a
 	album2.addTrack(track2a)
-	tm2b := NewTrackMetadata()
+	tm2b := newTrackMetadata()
 	tm2b.setCanonicalSource(src)
 	tm2b.setAlbumName(src, "another good:album")
 	tm2b.setAlbumGenre(src, "pop")
@@ -974,7 +977,7 @@ func TestProcessAlbumMetadata(t *testing.T) {
 	}.NewTrack(false)
 	track2b.metadata = tm2b
 	album2.addTrack(track2b)
-	tm2c := NewTrackMetadata()
+	tm2c := newTrackMetadata()
 	tm2c.setCanonicalSource(src)
 	tm2c.setAlbumName(src, "another good:album")
 	tm2c.setAlbumGenre(src, "pop")
@@ -995,7 +998,7 @@ func TestProcessAlbumMetadata(t *testing.T) {
 		Title:  "problematic_album",
 		Artist: artist3,
 	}.NewAlbum(true)
-	tm3a := NewTrackMetadata()
+	tm3a := newTrackMetadata()
 	tm3a.setCanonicalSource(src)
 	tm3a.setCDIdentifier([]byte{1, 2, 3})
 	tm3a.setAlbumName(src, "problematic:album")
@@ -1009,7 +1012,7 @@ func TestProcessAlbumMetadata(t *testing.T) {
 	}.NewTrack(false)
 	track3a.metadata = tm3a
 	album3.addTrack(track3a)
-	tm3b := NewTrackMetadata()
+	tm3b := newTrackMetadata()
 	tm3b.setCanonicalSource(src)
 	tm3b.setCDIdentifier([]byte{1, 2, 3, 4})
 	tm3b.setAlbumName(src, "problematic:Album")
@@ -1023,7 +1026,7 @@ func TestProcessAlbumMetadata(t *testing.T) {
 	}.NewTrack(false)
 	track3b.metadata = tm3b
 	album3.addTrack(track3b)
-	tm3c := NewTrackMetadata()
+	tm3c := newTrackMetadata()
 	tm3c.setCanonicalSource(src)
 	tm3c.setCDIdentifier([]byte{1, 2, 3, 4, 5})
 	tm3c.setAlbumName(src, "Problematic:album")
@@ -1110,7 +1113,7 @@ func TestProcessAlbumMetadata(t *testing.T) {
 }
 
 func TestTrack_ReportMetadataErrors(t *testing.T) {
-	tm := NewTrackMetadata()
+	tm := newTrackMetadata()
 	tm.setErrorCause(ID3V1, "id3v1 error!")
 	tm.setErrorCause(ID3V2, "id3v2 error!")
 	tests := map[string]struct {

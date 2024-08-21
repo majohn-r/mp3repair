@@ -822,19 +822,7 @@ func Test_searchSettings_filter(t *testing.T) {
 			},
 			originalArtists: []*files.Artist{},
 			want:            []*files.Artist{},
-			WantedRecording: output.WantedRecording{
-				Error: "No mp3 files remain after filtering.\n" +
-					"Why?\n" +
-					"After applying --artistFilter=\".*\", --albumFilter=\".*\", and" +
-					" --trackFilter=\".*\", no files remained.\n" +
-					"What to do:\n" +
-					"Use less restrictive filter settings.\n",
-				Log: "level='error'" +
-					" --albumFilter='.*'" +
-					" --artistFilter='.*'" +
-					" --trackFilter='.*'" +
-					" msg='no files remain after filtering'\n",
-			},
+			WantedRecording: output.WantedRecording{},
 		},
 		"filter out everything": {
 			ss: &searchSettings{

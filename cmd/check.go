@@ -142,7 +142,11 @@ func (cs *checkSettings) maybeDoWork(o output.Bus, ss *searchSettings) (err *cmd
 	return
 }
 
-func (cs *checkSettings) performChecks(o output.Bus, artists []*files.Artist, ss *searchSettings) (err *cmdtoolkit.ExitError) {
+func (cs *checkSettings) performChecks(
+	o output.Bus,
+	artists []*files.Artist,
+	ss *searchSettings,
+) (err *cmdtoolkit.ExitError) {
 	err = cmdtoolkit.NewExitUserError(checkCommand)
 	if len(artists) != 0 {
 		err = nil
@@ -178,8 +182,11 @@ func (cs *checkSettings) maybeReportCleanResults(o output.Bus, requests checkRep
 	}
 }
 
-func (cs *checkSettings) performFileAnalysis(o output.Bus,
-	concernedArtists []*concernedArtist, ss *searchSettings) bool {
+func (cs *checkSettings) performFileAnalysis(
+	o output.Bus,
+	concernedArtists []*concernedArtist,
+	ss *searchSettings,
+) bool {
 	foundConcerns := false
 	if cs.files.Value {
 		artists := make([]*files.Artist, 0, len(concernedArtists))

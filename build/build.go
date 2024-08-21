@@ -179,7 +179,10 @@ func buildExecutable(a *goyek.A) {
 	pD.generateVersionInfo()
 	if toolsbuild.Generate(a) {
 		fmt.Println("building executable")
-		toolsbuild.RunCommand(a, fmt.Sprintf("go build -ldflags %q -o %s .", strings.Join(pD.flags, " "), executableName))
+		toolsbuild.RunCommand(
+			a,
+			fmt.Sprintf("go build -ldflags %q -o %s .", strings.Join(pD.flags, " "), executableName),
+		)
 	}
 }
 
@@ -238,7 +241,13 @@ func loadProductData() {
 					var major int
 					var minor int
 					var patch int
-					if count, scanErr := fmt.Sscanf(value.Value, "%d.%d.%d", &major, &minor, &patch); count == 3 && scanErr == nil {
+					if count, scanErr := fmt.Sscanf(
+						value.Value,
+						"%d.%d.%d",
+						&major,
+						&minor,
+						&patch,
+					); count == 3 && scanErr == nil {
 						rawPD.majorLevel = major
 						rawPD.minorLevel = minor
 						rawPD.patchLevel = patch

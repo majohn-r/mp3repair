@@ -3,7 +3,9 @@ package cmd
 import (
 	"fmt"
 	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
+	"maps"
 	"mp3repair/internal/files"
+	"slices"
 	"sort"
 	"strings"
 
@@ -134,7 +136,11 @@ type listSettings struct {
 	tracks       cmdtoolkit.CommandFlag[bool]
 }
 
-func (ls *listSettings) listArtists(o output.Bus, allArtists []*files.Artist, ss *searchSettings) (err *cmdtoolkit.ExitError) {
+func (ls *listSettings) listArtists(
+	o output.Bus,
+	allArtists []*files.Artist,
+	ss *searchSettings,
+) (err *cmdtoolkit.ExitError) {
 	err = cmdtoolkit.NewExitUserError(listCommand)
 	if len(allArtists) != 0 {
 		if filteredArtists := ss.filter(o, allArtists); len(filteredArtists) != 0 {
@@ -299,11 +305,7 @@ func showID3V2Diagnostics(o output.Bus, track *files.Track, info *files.ID3V2Inf
 		o.IncrementTab(2)
 		o.WriteConsole("Version: %v\n", info.Version())
 		o.WriteConsole("Encoding: %s\n", info.Encoding())
-		tags := make([]string, 0, len(info.Frames()))
-		for k := range info.Frames() {
-			tags = append(tags, k)
-		}
-		sort.Strings(tags)
+		tags := slices.Sorted(maps.Keys(info.Frames()))
 		for _, tag := range tags {
 			values := info.Frames()[tag]
 			description := files.FrameDescription(tag)
@@ -370,23 +372,40 @@ func (ls *listSettings) tracksSortable(o output.Bus) bool {
 				case true:
 					o.WriteCanonicalError("You set %s true and %s false.", listSortByNumberFlag, listAlbumsFlag)
 				case false:
-					o.WriteCanonicalError("You set %s true and %s is configured as false", listSortByNumberFlag, listAlbumsFlag)
+					o.WriteCanonicalError(
+						"You set %s true and %s is configured as false",
+						listSortByNumberFlag,
+						listAlbumsFlag,
+					)
 				}
 			case false:
 				switch ls.albums.UserSet {
 				case true:
-					o.WriteCanonicalError("You set %s false and %s is configured as true", listAlbumsFlag, listSortByNumberFlag)
+					o.WriteCanonicalError(
+						"You set %s false and %s is configured as true",
+						listAlbumsFlag,
+						listSortByNumberFlag,
+					)
 				case false:
-					o.WriteCanonicalError("%s is configured as false, and %s is configured as true", listAlbumsFlag, listSortByNumberFlag)
+					o.WriteCanonicalError(
+						"%s is configured as false, and %s is configured as true",
+						listAlbumsFlag,
+						listSortByNumberFlag,
+					)
 				}
 			}
-			o.WriteCanonicalError("What to do:\nEither edit the configuration file or change which flags you set on the command line.")
+			o.WriteCanonicalError(
+				"What to do:\nEither edit the configuration file or change which flags you set on the command line.")
 			return false
 		case neitherSortingOptionSet:
 			if ls.sortByNumber.UserSet && ls.sortByTitle.UserSet {
 				o.WriteCanonicalError("A listing of tracks is not possible.")
 				o.WriteCanonicalError("Why?")
-				o.WriteCanonicalError("Tracks are enabled, but you set both %s and %s false", listSortByNumberFlag, listSortByTitleFlag)
+				o.WriteCanonicalError(
+					"Tracks are enabled, but you set both %s and %s false",
+					listSortByNumberFlag,
+					listSortByTitleFlag,
+				)
 				o.WriteCanonicalError("What to do:\nEnable one of the sorting flags")
 				return false
 			}

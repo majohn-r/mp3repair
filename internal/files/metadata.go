@@ -7,33 +7,33 @@ import (
 	"github.com/bogem/id3v2/v2"
 )
 
-// SourceType identifies the source of a particular form of metadata
-type SourceType int
+// sourceType identifies the source of a particular form of metadata
+type sourceType int
 
 const (
-	undefinedSource SourceType = iota
+	undefinedSource sourceType = iota
 	ID3V1
 	ID3V2
 	totalSources
 )
 
 var (
-	nameComparators = map[SourceType]func(*comparableStrings) bool{
+	nameComparators = map[sourceType]func(*comparableStrings) bool{
 		ID3V1: id3v1NameDiffers,
 		ID3V2: id3v2NameDiffers,
 	}
-	genreComparators = map[SourceType]func(*comparableStrings) bool{
+	genreComparators = map[sourceType]func(*comparableStrings) bool{
 		ID3V1: id3v1GenreDiffers,
 		ID3V2: id3v2GenreDiffers,
 	}
-	trackMetadataUpdaters = map[SourceType]func(tm *TrackMetadata, path string) error{
+	trackMetadataUpdaters = map[sourceType]func(tm *TrackMetadata, path string) error{
 		ID3V1: updateID3V1TrackMetadata,
 		ID3V2: updateID3V2TrackMetadata,
 	}
-	sourceTypes = []SourceType{ID3V1, ID3V2}
+	sourceTypes = []sourceType{ID3V1, ID3V2}
 )
 
-func (sT SourceType) Name() string {
+func (sT sourceType) Name() string {
 	switch sT {
 	case ID3V1:
 		return "ID3V1"
@@ -71,14 +71,14 @@ type commonMetadata struct {
 }
 
 type TrackMetadata struct {
-	data              map[SourceType]*commonMetadata
+	data              map[sourceType]*commonMetadata
 	musicCDIdentifier correctableValue[id3v2.UnknownFrame]
-	canonicalSrc      SourceType
+	canonicalSrc      sourceType
 }
 
-func NewTrackMetadata() *TrackMetadata {
+func newTrackMetadata() *TrackMetadata {
 	return &TrackMetadata{
-		data:         map[SourceType]*commonMetadata{},
+		data:         map[sourceType]*commonMetadata{},
 		canonicalSrc: undefinedSource,
 	}
 }
@@ -91,12 +91,12 @@ type TrackMetadataMaker struct {
 	TrackName    string
 	TrackNumber  int
 	CDIdentifier []byte
-	Source       SourceType
+	Source       sourceType
 }
 
 func (maker *TrackMetadataMaker) Make() *TrackMetadata {
-	tm := NewTrackMetadata()
-	for _, src := range []SourceType{ID3V1, ID3V2} {
+	tm := newTrackMetadata()
+	for _, src := range []sourceType{ID3V1, ID3V2} {
 		tm.setArtistName(src, maker.Artist)
 		tm.setAlbumName(src, maker.Album)
 		tm.setAlbumGenre(src, maker.Genre)
@@ -109,7 +109,7 @@ func (maker *TrackMetadataMaker) Make() *TrackMetadata {
 	return tm
 }
 
-func isValidSource(src SourceType) bool {
+func isValidSource(src sourceType) bool {
 	switch src {
 	case ID3V1:
 		return true
@@ -120,7 +120,7 @@ func isValidSource(src SourceType) bool {
 	}
 }
 
-func (tm *TrackMetadata) commonMetadata(src SourceType) *commonMetadata {
+func (tm *TrackMetadata) commonMetadata(src sourceType) *commonMetadata {
 	if !isValidSource(src) {
 		return &commonMetadata{}
 	}
@@ -132,15 +132,15 @@ func (tm *TrackMetadata) commonMetadata(src SourceType) *commonMetadata {
 	return data
 }
 
-func (tm *TrackMetadata) setArtistName(src SourceType, name string) {
+func (tm *TrackMetadata) setArtistName(src sourceType, name string) {
 	tm.commonMetadata(src).artistName.original = name
 }
 
-func (tm *TrackMetadata) correctArtistName(src SourceType, name string) {
+func (tm *TrackMetadata) correctArtistName(src sourceType, name string) {
 	tm.commonMetadata(src).artistName.correction = name
 }
 
-func (tm *TrackMetadata) artistName(src SourceType) correctableValue[string] {
+func (tm *TrackMetadata) artistName(src sourceType) correctableValue[string] {
 	return tm.commonMetadata(src).artistName
 }
 
@@ -175,15 +175,15 @@ func (tm *TrackMetadata) canonicalArtistNameMatches(artistNameFromFile string) b
 	return !comparator(comparison)
 }
 
-func (tm *TrackMetadata) setAlbumName(src SourceType, name string) {
+func (tm *TrackMetadata) setAlbumName(src sourceType, name string) {
 	tm.commonMetadata(src).albumName.original = name
 }
 
-func (tm *TrackMetadata) correctAlbumName(src SourceType, name string) {
+func (tm *TrackMetadata) correctAlbumName(src sourceType, name string) {
 	tm.commonMetadata(src).albumName.correction = name
 }
 
-func (tm *TrackMetadata) albumName(src SourceType) correctableValue[string] {
+func (tm *TrackMetadata) albumName(src sourceType) correctableValue[string] {
 	return tm.commonMetadata(src).albumName
 }
 
@@ -218,15 +218,15 @@ func (tm *TrackMetadata) canonicalAlbumNameMatches(nameFromFile string) bool {
 	return !comparator(comparison)
 }
 
-func (tm *TrackMetadata) setAlbumGenre(src SourceType, name string) {
+func (tm *TrackMetadata) setAlbumGenre(src sourceType, name string) {
 	tm.commonMetadata(src).albumGenre.original = name
 }
 
-func (tm *TrackMetadata) correctAlbumGenre(src SourceType, name string) {
+func (tm *TrackMetadata) correctAlbumGenre(src sourceType, name string) {
 	tm.commonMetadata(src).albumGenre.correction = name
 }
 
-func (tm *TrackMetadata) albumGenre(src SourceType) correctableValue[string] {
+func (tm *TrackMetadata) albumGenre(src sourceType) correctableValue[string] {
 	return tm.commonMetadata(src).albumGenre
 }
 
@@ -249,15 +249,15 @@ func (tm *TrackMetadata) albumGenreDiffers(canonicalAlbumGenre string) (differs 
 	return
 }
 
-func (tm *TrackMetadata) setAlbumYear(src SourceType, name string) {
+func (tm *TrackMetadata) setAlbumYear(src sourceType, name string) {
 	tm.commonMetadata(src).albumYear.original = name
 }
 
-func (tm *TrackMetadata) correctAlbumYear(src SourceType, name string) {
+func (tm *TrackMetadata) correctAlbumYear(src sourceType, name string) {
 	tm.commonMetadata(src).albumYear.correction = name
 }
 
-func (tm *TrackMetadata) albumYear(src SourceType) correctableValue[string] {
+func (tm *TrackMetadata) albumYear(src sourceType) correctableValue[string] {
 	return tm.commonMetadata(src).albumYear
 }
 
@@ -276,15 +276,15 @@ func (tm *TrackMetadata) albumYearDiffers(canonicalAlbumYear string) (differs bo
 	return
 }
 
-func (tm *TrackMetadata) setTrackName(src SourceType, name string) {
+func (tm *TrackMetadata) setTrackName(src sourceType, name string) {
 	tm.commonMetadata(src).trackName.original = name
 }
 
-func (tm *TrackMetadata) correctTrackName(src SourceType, name string) {
+func (tm *TrackMetadata) correctTrackName(src sourceType, name string) {
 	tm.commonMetadata(src).trackName.correction = name
 }
 
-func (tm *TrackMetadata) trackName(src SourceType) correctableValue[string] {
+func (tm *TrackMetadata) trackName(src sourceType) correctableValue[string] {
 	return tm.commonMetadata(src).trackName
 }
 
@@ -303,15 +303,15 @@ func (tm *TrackMetadata) trackNameDiffers(nameFromFile string) (differs bool) {
 	return
 }
 
-func (tm *TrackMetadata) setTrackNumber(src SourceType, number int) {
+func (tm *TrackMetadata) setTrackNumber(src sourceType, number int) {
 	tm.commonMetadata(src).trackNumber.original = number
 }
 
-func (tm *TrackMetadata) correctTrackNumber(src SourceType, number int) {
+func (tm *TrackMetadata) correctTrackNumber(src sourceType, number int) {
 	tm.commonMetadata(src).trackNumber.correction = number
 }
 
-func (tm *TrackMetadata) trackNumber(src SourceType) correctableValue[int] {
+func (tm *TrackMetadata) trackNumber(src sourceType) correctableValue[int] {
 	return tm.commonMetadata(src).trackNumber
 }
 
@@ -326,19 +326,19 @@ func (tm *TrackMetadata) trackNumberDiffers(trackNumberFromFileName int) (differ
 	return
 }
 
-func (tm *TrackMetadata) setErrorCause(src SourceType, cause string) {
+func (tm *TrackMetadata) setErrorCause(src sourceType, cause string) {
 	tm.commonMetadata(src).errorCause = cause
 }
 
-func (tm *TrackMetadata) errorCause(src SourceType) string {
+func (tm *TrackMetadata) errorCause(src sourceType) string {
 	return tm.commonMetadata(src).errorCause
 }
 
-func (tm *TrackMetadata) setEditRequired(src SourceType) {
+func (tm *TrackMetadata) setEditRequired(src sourceType) {
 	tm.commonMetadata(src).requiresEdit = true
 }
 
-func (tm *TrackMetadata) editRequired(src SourceType) bool {
+func (tm *TrackMetadata) editRequired(src sourceType) bool {
 	return tm.commonMetadata(src).requiresEdit
 }
 
@@ -367,7 +367,7 @@ func (tm *TrackMetadata) cdIdentifierDiffers(canonicalCDIdentifier id3v2.Unknown
 	return
 }
 
-func (tm *TrackMetadata) setCanonicalSource(src SourceType) {
+func (tm *TrackMetadata) setCanonicalSource(src sourceType) {
 	if isValidSource(src) {
 		tm.canonicalSrc = src
 	}
@@ -403,7 +403,7 @@ func (tm *TrackMetadata) IsValid() bool {
 func initializeMetadata(path string) *TrackMetadata {
 	id3v1Metadata, id3v1Err := internalReadID3V1Metadata(path, fileReader)
 	id3v2Metadata := rawReadID3V2Metadata(path)
-	tm := NewTrackMetadata()
+	tm := newTrackMetadata()
 	switch {
 	case id3v1Err != nil && id3v2Metadata.err != nil:
 		tm.setErrorCause(ID3V1, id3v1Err.Error())

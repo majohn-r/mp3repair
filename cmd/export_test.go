@@ -150,7 +150,11 @@ func Test_exportFlagSettings_canOverwriteConfigurationFile(t *testing.T) {
 			o := output.NewRecorder()
 			gotCanOverwrite := tt.efs.canOverwriteConfigurationFile(o, tt.f)
 			if gotCanOverwrite != tt.wantCanOverwrite {
-				t.Errorf("exportFlagSettings.canOverwriteConfigurationFile() = %v, want %v", gotCanOverwrite, tt.wantCanOverwrite)
+				t.Errorf(
+					"exportFlagSettings.canOverwriteConfigurationFile() = %v, want %v",
+					gotCanOverwrite,
+					tt.wantCanOverwrite,
+				)
 			}
 			o.Report(t, "exportFlagSettings.canOverwriteConfigurationFile()", tt.WantedRecording)
 		})

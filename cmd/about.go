@@ -29,16 +29,15 @@ var (
 		DisableFlagsInUseLine: true,
 		Short:                 "Provides information about the " + appName + " program",
 		Long: fmt.Sprintf("%q", aboutCommand) +
-			` provides the following information about the ` + appName + ` program:
-
-• The program version and build timestamp
-• Copyright information
-• Build information:
-  • The version of go used to compile the code
-  • A list of dependencies and their versions
-• The directory where log files are written
-• The full path of the application configuration file and whether it exists
-• Whether ` + appName + ` is running with elevated privileges, and, if not, why not`,
+			" provides the following information about the " + appName + " program:\n\n" +
+			"• The program version and build timestamp\n" +
+			"• Copyright information\n" +
+			"• Build information:\n" +
+			"  • The version of go used to compile the code\n" +
+			"  • A list of dependencies and their versions\n" +
+			"• The directory where log files are written\n" +
+			"• The full path of the application configuration file and whether it exists\n" +
+			"• Whether " + appName + " is running with elevated privileges, and, if not, why not",
 		Example: aboutCommand + " " + aboutStyleFlag + " name\n" +
 			"  Write 'about' information in a box of the named style.\n" +
 			"  Valid names are:\n" +

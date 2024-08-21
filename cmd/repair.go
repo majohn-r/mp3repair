@@ -72,7 +72,11 @@ type repairSettings struct {
 	dryRun cmdtoolkit.CommandFlag[bool]
 }
 
-func (rs *repairSettings) processArtists(o output.Bus, allArtists []*files.Artist, ss *searchSettings) (e *cmdtoolkit.ExitError) {
+func (rs *repairSettings) processArtists(
+	o output.Bus,
+	allArtists []*files.Artist,
+	ss *searchSettings,
+) (e *cmdtoolkit.ExitError) {
 	e = cmdtoolkit.NewExitUserError(repairCommandName)
 	if len(allArtists) != 0 {
 		if filteredArtists := ss.filter(o, allArtists); len(filteredArtists) != 0 {

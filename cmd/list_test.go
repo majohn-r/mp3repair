@@ -1048,8 +1048,11 @@ func Test_listSettings_listTracksByName(t *testing.T) {
 				files.TrackMaker{
 					SimpleName: "Old Brown Shoe",
 					Album: files.AlbumMaker{
-						Title:  "Live In Japan [Disc 1]",
-						Artist: files.NewArtist("George Harrison & Eric Clapton", `music\George Harrison & Eric Clapton`),
+						Title: "Live In Japan [Disc 1]",
+						Artist: files.NewArtist(
+							"George Harrison & Eric Clapton",
+							`music\George Harrison & Eric Clapton`,
+						),
 					}.NewAlbum(false),
 				}.NewTrack(false),
 				files.TrackMaker{
@@ -1434,16 +1437,25 @@ func Test_listSettings_listAlbums(t *testing.T) {
 					Artist: files.NewArtist("The Beatles", `music\The Beatles`),
 				}.NewAlbum(false),
 				files.AlbumMaker{
-					Title:  "Live 1975-85 [Disc 3]",
-					Artist: files.NewArtist("Bruce Springsteen & The E Street Band", `music\Bruce Springsteen & The E Street Band`),
+					Title: "Live 1975-85 [Disc 3]",
+					Artist: files.NewArtist(
+						"Bruce Springsteen & The E Street Band",
+						`music\Bruce Springsteen & The E Street Band`,
+					),
 				}.NewAlbum(false),
 				files.AlbumMaker{
-					Title:  "Live 1975-85 [Disc 2]",
-					Artist: files.NewArtist("Bruce Springsteen & The E Street Band", `music\Bruce Springsteen & The E Street Band`),
+					Title: "Live 1975-85 [Disc 2]",
+					Artist: files.NewArtist(
+						"Bruce Springsteen & The E Street Band",
+						`music\Bruce Springsteen & The E Street Band`,
+					),
 				}.NewAlbum(false),
 				files.AlbumMaker{
-					Title:  "Live 1975-85 [Disc 1]",
-					Artist: files.NewArtist("Bruce Springsteen & The E Street Band", `music\Bruce Springsteen & The E Street Band`),
+					Title: "Live 1975-85 [Disc 1]",
+					Artist: files.NewArtist(
+						"Bruce Springsteen & The E Street Band",
+						`music\Bruce Springsteen & The E Street Band`,
+					),
 				}.NewAlbum(false),
 				files.AlbumMaker{
 					Title:  "Live",

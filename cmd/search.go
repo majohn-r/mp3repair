@@ -93,7 +93,10 @@ func evaluateSearchFlags(o output.Bus, producer cmdtoolkit.FlagProducer) (*searc
 	return &searchSettings{}, false
 }
 
-func processSearchFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (settings *searchSettings, flagsOk bool) {
+func processSearchFlags(
+	o output.Bus,
+	values map[string]*cmdtoolkit.CommandFlag[any],
+) (settings *searchSettings, flagsOk bool) {
 	flagsOk = true // optimistic
 	regexOk := true
 	settings = &searchSettings{}
@@ -304,42 +307,44 @@ func evaluateFilter(o output.Bus, filtering filterFlag) evaluatedFilter {
 
 func (ss *searchSettings) filter(o output.Bus, originalArtists []*files.Artist) []*files.Artist {
 	filteredArtists := make([]*files.Artist, 0, len(originalArtists))
-	for _, originalArtist := range originalArtists {
-		if ss.artistFilter.MatchString(originalArtist.Name()) && originalArtist.HasAlbums() {
-			filteredArtist := originalArtist.Copy()
-			for _, originalAlbum := range originalArtist.Albums() {
-				if ss.albumFilter.MatchString(originalAlbum.Title()) && originalAlbum.HasTracks() {
-					var willHaveTracks bool
-					for _, originalTrack := range originalAlbum.Tracks() {
-						if ss.trackFilter.MatchString(originalTrack.Name()) {
-							willHaveTracks = true
+	if len(originalArtists) > 0 {
+		for _, originalArtist := range originalArtists {
+			if ss.artistFilter.MatchString(originalArtist.Name()) && originalArtist.HasAlbums() {
+				filteredArtist := originalArtist.Copy()
+				for _, originalAlbum := range originalArtist.Albums() {
+					if ss.albumFilter.MatchString(originalAlbum.Title()) && originalAlbum.HasTracks() {
+						var willHaveTracks bool
+						for _, originalTrack := range originalAlbum.Tracks() {
+							if ss.trackFilter.MatchString(originalTrack.Name()) {
+								willHaveTracks = true
+							}
 						}
-					}
-					filteredAlbum := originalAlbum.Copy(filteredArtist, false, willHaveTracks)
-					for _, originalTrack := range originalAlbum.Tracks() {
-						if ss.trackFilter.MatchString(originalTrack.Name()) {
-							originalTrack.Copy(filteredAlbum, true)
+						filteredAlbum := originalAlbum.Copy(filteredArtist, false, willHaveTracks)
+						for _, originalTrack := range originalAlbum.Tracks() {
+							if ss.trackFilter.MatchString(originalTrack.Name()) {
+								originalTrack.Copy(filteredAlbum, true)
+							}
 						}
 					}
 				}
-			}
-			if filteredArtist.HasAlbums() {
-				filteredArtists = append(filteredArtists, filteredArtist)
+				if filteredArtist.HasAlbums() {
+					filteredArtists = append(filteredArtists, filteredArtist)
+				}
 			}
 		}
-	}
-	if len(filteredArtists) == 0 {
-		o.WriteCanonicalError("No mp3 files remain after filtering.")
-		o.WriteCanonicalError("Why?")
-		o.WriteCanonicalError("After applying %s=%q, %s=%q, and %s=%q, no files remained",
-			searchArtistFilterFlag, ss.artistFilter, searchAlbumFilterFlag, ss.albumFilter,
-			searchTrackFilterFlag, ss.trackFilter)
-		o.WriteCanonicalError("What to do:\nUse less restrictive filter settings.")
-		o.Log(output.Error, "no files remain after filtering", map[string]any{
-			searchArtistFilterFlag: ss.artistFilter,
-			searchAlbumFilterFlag:  ss.albumFilter,
-			searchTrackFilterFlag:  ss.trackFilter,
-		})
+		if len(filteredArtists) == 0 {
+			o.WriteCanonicalError("No mp3 files remain after filtering.")
+			o.WriteCanonicalError("Why?")
+			o.WriteCanonicalError("After applying %s=%q, %s=%q, and %s=%q, no files remained",
+				searchArtistFilterFlag, ss.artistFilter, searchAlbumFilterFlag, ss.albumFilter,
+				searchTrackFilterFlag, ss.trackFilter)
+			o.WriteCanonicalError("What to do:\nUse less restrictive filter settings.")
+			o.Log(output.Error, "no files remain after filtering", map[string]any{
+				searchArtistFilterFlag: ss.artistFilter,
+				searchAlbumFilterFlag:  ss.albumFilter,
+				searchTrackFilterFlag:  ss.trackFilter,
+			})
+		}
 	}
 	return filteredArtists
 }

@@ -556,18 +556,8 @@ func Test_checkSettings_performFileAnalysis(t *testing.T) {
 				checkedArtists: []*concernedArtist{},
 				ss:             &searchSettings{},
 			},
-			want: false,
-			WantedRecording: output.WantedRecording{
-				Error: "" +
-					"No mp3 files remain after filtering.\n" +
-					"Why?\n" +
-					"After applying --artistFilter=<nil>, --albumFilter=<nil>, and" +
-					" --trackFilter=<nil>, no files remained.\n" +
-					"What to do:\n" +
-					"Use less restrictive filter settings.\n",
-				Log: "level='error' --albumFilter='<nil>' --artistFilter='<nil>'" +
-					" --trackFilter='<nil>' msg='no files remain after filtering'\n",
-			},
+			want:            false,
+			WantedRecording: output.WantedRecording{},
 		},
 		"work to do": {
 			cs: &checkSettings{files: cmdtoolkit.CommandFlag[bool]{Value: true}},
@@ -687,7 +677,8 @@ func Test_checkSettings_performChecks(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"Artist \"my artist 0\"\n" +
-					"* [files] for all albums: for all tracks: differences cannot be determined: metadata has not been read\n" +
+					"* [files] for all albums: for all tracks: " +
+					"differences cannot be determined: metadata has not been read\n" +
 					"Empty Folder Analysis: no empty folders found.\n" +
 					"Numbering Analysis: no missing or duplicate tracks found.\n",
 			},
@@ -870,10 +861,12 @@ func Test_check_Help(t *testing.T) {
 		"good": {
 			WantedRecording: output.WantedRecording{
 				Console: "" +
-					"\"check\" inspects mp3 files and their containing directories and reports any problems detected\n" +
+					"\"check\" inspects mp3 files and their containing directories and " +
+					"reports any problems detected\n" +
 					"\n" +
 					"Usage:\n" +
-					"  check [--empty] [--files] [--numbering] [--albumFilter regex] [--artistFilter regex] [--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +
+					"  check [--empty] [--files] [--numbering] [--albumFilter regex] [--artistFilter regex] " +
+					"[--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +
 					"\n" +
 					"Examples:\n" +
 					"check --empty\n" +
@@ -884,14 +877,19 @@ func Test_check_Help(t *testing.T) {
 					"  reports errors in the track numbers of mp3 files\n" +
 					"\n" +
 					"Flags:\n" +
-					"      --albumFilter string    regular expression specifying which albums to select (default \".*\")\n" +
-					"      --artistFilter string   regular expression specifying which artists to select (default \".*\")\n" +
+					"      --albumFilter string    regular expression specifying which albums to " +
+					"select (default \".*\")\n" +
+					"      --artistFilter string   regular expression specifying which " +
+					"artists to select (default \".*\")\n" +
 					"  -e, --empty                 report empty album and artist directories (default false)\n" +
-					"      --extensions string     comma-delimited list of file extensions used by mp3 files (default \".mp3\")\n" +
+					"      --extensions string     comma-delimited list of file " +
+					"extensions used by mp3 files (default \".mp3\")\n" +
 					"  -f, --files                 report metadata/file inconsistencies (default false)\n" +
-					"  -n, --numbering             report missing track numbers and duplicated track numbering (default false)\n" +
+					"  -n, --numbering             report missing track " +
+					"numbers and duplicated track numbering (default false)\n" +
 					"      --topDir string         top directory specifying where to find mp3 files (default \".\")\n" +
-					"      --trackFilter string    regular expression specifying which tracks to select (default \".*\")\n",
+					"      --trackFilter string    regular expression " +
+					"specifying which tracks to select (default \".*\")\n",
 			},
 		},
 	}
@@ -922,7 +920,8 @@ func Test_check_Usage(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"Usage:\n" +
-					"  check [--empty] [--files] [--numbering] [--albumFilter regex] [--artistFilter regex] [--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +
+					"  check [--empty] [--files] [--numbering] [--albumFilter regex] [--artistFilter regex] " +
+					"[--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +
 					"\n" +
 					"Examples:\n" +
 					"check --empty\n" +
