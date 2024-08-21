@@ -39,7 +39,9 @@ var (
 		Name:  "build",
 		Usage: "build the executable",
 		Action: func(a *goyek.A) {
-			buildExecutable(a)
+			if !toolsbuild.TaskDisabled("build") {
+				buildExecutable(a)
+			}
 		},
 	})
 
@@ -47,8 +49,10 @@ var (
 		Name:  "clean",
 		Usage: "delete build products",
 		Action: func(a *goyek.A) {
-			fmt.Println("deleting build products")
-			toolsbuild.Clean(generatedFiles)
+			if !toolsbuild.TaskDisabled("clean") {
+				fmt.Println("deleting build products")
+				toolsbuild.Clean(generatedFiles)
+			}
 		},
 	})
 
@@ -56,7 +60,9 @@ var (
 		Name:  "coverage",
 		Usage: "run unit tests and produce a coverage report",
 		Action: func(a *goyek.A) {
-			toolsbuild.GenerateCoverageReport(a, coverageFile)
+			if !toolsbuild.TaskDisabled("coverage") {
+				toolsbuild.GenerateCoverageReport(a, coverageFile)
+			}
 		},
 	})
 
@@ -64,7 +70,9 @@ var (
 		Name:  "deadcode",
 		Usage: "run deadcode analysis",
 		Action: func(a *goyek.A) {
-			toolsbuild.Deadcode(a)
+			if !toolsbuild.TaskDisabled("deadcode") {
+				toolsbuild.Deadcode(a)
+			}
 		},
 	})
 
@@ -72,7 +80,9 @@ var (
 		Name:  "doc",
 		Usage: "generate documentation",
 		Action: func(a *goyek.A) {
-			toolsbuild.GenerateDocumentation(a, []string{"build", ".idea"})
+			if !toolsbuild.TaskDisabled("doc") {
+				toolsbuild.GenerateDocumentation(a, []string{"build", ".idea"})
+			}
 		},
 	})
 
@@ -80,7 +90,9 @@ var (
 		Name:  "format",
 		Usage: "clean up source code formatting",
 		Action: func(a *goyek.A) {
-			toolsbuild.FormatSelective(a, []string{".idea"})
+			if !toolsbuild.TaskDisabled("format") {
+				toolsbuild.FormatSelective(a, []string{".idea"})
+			}
 		},
 	})
 
@@ -88,7 +100,9 @@ var (
 		Name:  "lint",
 		Usage: "run the linter on source code",
 		Action: func(a *goyek.A) {
-			toolsbuild.Lint(a)
+			if !toolsbuild.TaskDisabled("lint") {
+				toolsbuild.Lint(a)
+			}
 		},
 	})
 
@@ -96,7 +110,9 @@ var (
 		Name:  "nilaway",
 		Usage: "run nilaway on source code",
 		Action: func(a *goyek.A) {
-			toolsbuild.NilAway(a)
+			if !toolsbuild.TaskDisabled("nilaway") {
+				toolsbuild.NilAway(a)
+			}
 		},
 	})
 
@@ -104,7 +120,9 @@ var (
 		Name:  "updateDependencies",
 		Usage: "update dependencies",
 		Action: func(a *goyek.A) {
-			toolsbuild.UpdateDependencies(a)
+			if !toolsbuild.TaskDisabled("updateDependencies") {
+				toolsbuild.UpdateDependencies(a)
+			}
 		},
 	})
 
@@ -112,7 +130,9 @@ var (
 		Name:  "vulnCheck",
 		Usage: "run vulnerability check on source code",
 		Action: func(a *goyek.A) {
-			toolsbuild.VulnerabilityCheck(a)
+			if !toolsbuild.TaskDisabled("vulnCheck") {
+				toolsbuild.VulnerabilityCheck(a)
+			}
 		},
 	})
 
@@ -135,7 +155,9 @@ var (
 		Name:  "tests",
 		Usage: "run unit tests",
 		Action: func(a *goyek.A) {
-			toolsbuild.UnitTests(a)
+			if !toolsbuild.TaskDisabled("tests") {
+				toolsbuild.UnitTests(a)
+			}
 		},
 	})
 )

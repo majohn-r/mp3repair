@@ -1,12 +1,12 @@
 module mp3repair
 
-go 1.22
+go 1.23
 
 require (
 	github.com/bogem/id3v2/v2 v2.1.4
 	github.com/cheggaaa/pb/v3 v3.1.5
 	github.com/majohn-r/cmd-toolkit v0.22.2
-	github.com/majohn-r/output v0.5.3
+	github.com/majohn-r/output v0.5.4
 	github.com/spf13/afero v1.11.0
 	github.com/spf13/cobra v1.8.1
 	golang.org/x/sys v0.24.0

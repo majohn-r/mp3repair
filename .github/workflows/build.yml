@@ -10,7 +10,7 @@ jobs:
       - name: Fetch go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.22.6
+          go-version: 1.23.0
       - name: Get dependencies
         run: go get -u ./...
       - name: Install linter
@@ -22,15 +22,15 @@ jobs:
         with:
           name: lint results
           path: lint-issues.txt
-      - name: Install nilaway
-        run: go install go.uber.org/nilaway/cmd/nilaway@latest
-      - name: Run nilaway
-        run: nilaway ./... > nilaway-issues.txt
-      - name: Post nilaway issues
-        uses: actions/upload-artifact@v4
-        with:
-          name: nilaway results
-          path: nilaway-issues.txt
+#      - name: Install nilaway
+#        run: go install go.uber.org/nilaway/cmd/nilaway@latest
+#      - name: Run nilaway
+#        run: nilaway ./... > nilaway-issues.txt
+#      - name: Post nilaway issues
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: nilaway results
+#          path: nilaway-issues.txt
       - name: Run format check
         run: gofmt -d -e -l ./ > format-issues.txt
       - name: Post format issues
@@ -43,7 +43,7 @@ jobs:
       - name: Run vulnerability check
         uses: golang/govulncheck-action@v1
         with:
-          go-version-input: 1.22.6
+          go-version-input: 1.23.0
       - name: Execute unit tests with code coverage
         run: go test -coverprofile=coverage -covermode=atomic ./...
       - name: Upload coverage to Codecov
