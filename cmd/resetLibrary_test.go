@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"reflect"
 	"strings"
@@ -34,20 +35,8 @@ func Test_processResetLibraryFlags(t *testing.T) {
 				Error: "" +
 					"An internal error occurred: no flag values exist.\n" +
 					"An internal error occurred: no flag values exist.\n" +
-					"An internal error occurred: no flag values exist.\n" +
-					"An internal error occurred: no flag values exist.\n" +
-					"An internal error occurred: no flag values exist.\n" +
 					"An internal error occurred: no flag values exist.\n",
 				Log: "" +
-					"level='error'" +
-					" error='no results to extract flag values from'" +
-					" msg='internal error'\n" +
-					"level='error'" +
-					" error='no results to extract flag values from'" +
-					" msg='internal error'\n" +
-					"level='error'" +
-					" error='no results to extract flag values from'" +
-					" msg='internal error'\n" +
 					"level='error'" +
 					" error='no results to extract flag values from'" +
 					" msg='internal error'\n" +
@@ -69,11 +58,8 @@ func Test_processResetLibraryFlags(t *testing.T) {
 				"timeout":             {Value: 5},
 			},
 			want: &resetLibrarySettings{
-				extension:           cmdtoolkit.CommandFlag[string]{Value: ".foo"},
 				force:               cmdtoolkit.CommandFlag[bool]{Value: true},
 				ignoreServiceErrors: cmdtoolkit.CommandFlag[bool]{Value: true},
-				metadataDir:         cmdtoolkit.CommandFlag[string]{Value: "metadata"},
-				service:             cmdtoolkit.CommandFlag[string]{Value: "music service"},
 				timeout:             cmdtoolkit.CommandFlag[int]{Value: 5},
 			},
 			want1: true,
@@ -139,18 +125,16 @@ func Test_resetLibrarySettings_waitForStop(t *testing.T) {
 	}{
 		"already timed out": {
 			resetLibrarySettings: &resetLibrarySettings{
-				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
 			args:       args{expiration: time.Now().Add(time.Duration(-1) * time.Second)},
 			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
-				Error: "The service \"my service\" could not be stopped within the 10" +
-					" second timeout.\n",
+				Error: "The service \"WMPNetworkSVC\" could not be stopped within the 10 second timeout.\n",
 				Log: "" +
 					"level='error'" +
 					" error='timed out'" +
-					" service='my service'" +
+					" service='WMPNetworkSVC'" +
 					" timeout='10'" +
 					" trigger='Stop'" +
 					" msg='service problem'\n",
@@ -158,7 +142,6 @@ func Test_resetLibrarySettings_waitForStop(t *testing.T) {
 		},
 		"query error": {
 			resetLibrarySettings: &resetLibrarySettings{
-				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
 			args: args{
@@ -168,18 +151,17 @@ func Test_resetLibrarySettings_waitForStop(t *testing.T) {
 			},
 			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
-				Error: "An error occurred while attempting to stop the service " +
-					"\"my service\": no results from query.\n",
+				Error: "An error occurred while attempting to stop the service \"WMPNetworkSVC\": no results " +
+					"from query.\n",
 				Log: "" +
 					"level='error'" +
 					" error='no results from query'" +
-					" service='my service'" +
+					" service='WMPNetworkSVC'" +
 					" msg='service query error'\n",
 			},
 		},
 		"stops correctly": {
 			resetLibrarySettings: &resetLibrarySettings{
-				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
 			args: args{
@@ -195,7 +177,7 @@ func Test_resetLibrarySettings_waitForStop(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Log: "" +
 					"level='info'" +
-					" service='my service'" +
+					" service='WMPNetworkSVC'" +
 					" msg='service stopped'\n",
 			},
 		},
@@ -264,7 +246,6 @@ func Test_resetLibrarySettings_stopFoundService(t *testing.T) {
 	}{
 		"defective service": {
 			resetLibrarySettings: &resetLibrarySettings{
-				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
 			args: args{
@@ -273,18 +254,16 @@ func Test_resetLibrarySettings_stopFoundService(t *testing.T) {
 			},
 			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
-				Error: "An error occurred while trying to stop service \"my service\":" +
-					" no results from query.\n",
+				Error: "An error occurred while trying to stop service \"WMPNetworkSVC\": no results from query.\n",
 				Log: "" +
 					"level='error' " +
 					"error='no results from query' " +
-					"service='my service' " +
+					"service='WMPNetworkSVC' " +
 					"msg='service query error'\n",
 			},
 		},
 		"already stopped": {
 			resetLibrarySettings: &resetLibrarySettings{
-				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
 			args: args{
@@ -296,13 +275,12 @@ func Test_resetLibrarySettings_stopFoundService(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Log: "" +
 					"level='info'" +
-					" service='my service'" +
+					" service='WMPNetworkSVC'" +
 					" msg='service stopped'\n",
 			},
 		},
 		"stopped easily": {
 			resetLibrarySettings: &resetLibrarySettings{
-				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
 			args: args{
@@ -316,13 +294,12 @@ func Test_resetLibrarySettings_stopFoundService(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Log: "" +
 					"level='info'" +
-					" service='my service'" +
+					" service='WMPNetworkSVC'" +
 					" msg='service stopped'\n",
 			},
 		},
 		"stopped with a little more difficulty": {
 			resetLibrarySettings: &resetLibrarySettings{
-				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
 			args: args{
@@ -337,13 +314,12 @@ func Test_resetLibrarySettings_stopFoundService(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Log: "" +
 					"level='info'" +
-					" service='my service'" +
+					" service='WMPNetworkSVC'" +
 					" msg='service stopped'\n",
 			},
 		},
 		"cannot be stopped": {
 			resetLibrarySettings: &resetLibrarySettings{
-				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 10},
 			},
 			args: args{
@@ -352,12 +328,11 @@ func Test_resetLibrarySettings_stopFoundService(t *testing.T) {
 			},
 			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
-				Error: "The service \"my service\" cannot be stopped:" +
-					" no results from query.\n",
+				Error: "The service \"WMPNetworkSVC\" cannot be stopped: no results from query.\n",
 				Log: "" +
 					"level='error'" +
 					" error='no results from query'" +
-					" service='my service'" +
+					" service='WMPNetworkSVC'" +
 					" trigger='Stop'" +
 					" msg='service problem'\n",
 			},
@@ -470,38 +445,36 @@ func Test_resetLibrarySettings_disableService(t *testing.T) {
 	}{
 		"defective manager #1": {
 			resetLibrarySettings: &resetLibrarySettings{
-				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 1},
 			},
-			manager:    newTestManager(nil, []string{"my service"}),
+			manager:    newTestManager(nil, []string{"WMPNetworkSVC"}),
 			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
-					"The service \"my service\" cannot be opened: no such service.\n" +
+					"The service \"WMPNetworkSVC\" cannot be opened: no such service.\n" +
 					"The following services are available:\n" +
 					"  State \"no such service\":\n" +
-					"    \"my service\"\n",
+					"    \"WMPNetworkSVC\"\n",
 				Log: "" +
 					"level='error'" +
 					" error='no such service'" +
-					" service='my service'" +
+					" service='WMPNetworkSVC'" +
 					" trigger='OpenService'" +
 					" msg='service problem'\n",
 			},
 		},
 		"defective manager #2": {
 			resetLibrarySettings: &resetLibrarySettings{
-				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 1},
 			},
 			manager:    newTestManager(nil, nil),
 			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
-				Error: "The service \"my service\" cannot be opened: no such service.\n",
+				Error: "The service \"WMPNetworkSVC\" cannot be opened: no such service.\n",
 				Log: "" +
 					"level='error'" +
 					" error='no such service'" +
-					" service='my service'" +
+					" service='WMPNetworkSVC'" +
 					" trigger='OpenService'" +
 					" msg='service problem'\n" +
 					"level='error'" +
@@ -512,18 +485,16 @@ func Test_resetLibrarySettings_disableService(t *testing.T) {
 		},
 		"defective manager #3": {
 			resetLibrarySettings: &resetLibrarySettings{
-				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 1},
 			},
-			manager:    newTestManager(map[string]*mgr.Service{"my service": nil}, nil),
+			manager:    newTestManager(map[string]*mgr.Service{"WMPNetworkSVC": nil}, nil),
 			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
-				Error: "An error occurred while trying to stop service \"my service\":" +
-					" no service.\n",
+				Error: "An error occurred while trying to stop service \"WMPNetworkSVC\": no service.\n",
 				Log: "" +
 					"level='error'" +
 					" error='no service'" +
-					" service='my service'" +
+					" service='WMPNetworkSVC'" +
 					" msg='service query error'\n",
 			},
 		},
@@ -563,7 +534,6 @@ func Test_resetLibrarySettings_stopService(t *testing.T) {
 				return nil, fmt.Errorf("no manager available")
 			},
 			resetLibrarySettings: &resetLibrarySettings{
-				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 1},
 			},
 			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
@@ -586,16 +556,15 @@ func Test_resetLibrarySettings_stopService(t *testing.T) {
 				return nil, nil
 			},
 			resetLibrarySettings: &resetLibrarySettings{
-				service: cmdtoolkit.CommandFlag[string]{Value: "my service"},
 				timeout: cmdtoolkit.CommandFlag[int]{Value: 1},
 			},
 			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
-				Error: "The service \"my service\" cannot be opened: nil manager.\n",
+				Error: "The service \"WMPNetworkSVC\" cannot be opened: nil manager.\n",
 				Log: "" +
 					"level='error'" +
 					" error='nil manager'" +
-					" service='my service'" +
+					" service='WMPNetworkSVC'" +
 					" trigger='OpenService'" +
 					" msg='service problem'\n" +
 					"level='error'" +
@@ -621,35 +590,31 @@ func Test_resetLibrarySettings_stopService(t *testing.T) {
 	}
 }
 
-func Test_resetLibrarySettings_deleteMetadataFiles(t *testing.T) {
+func Test_deleteMetadataFiles(t *testing.T) {
 	originalRemove := remove
+	originalUserProfile := cmdtoolkit.NewEnvVarMemento("USERPROFILE")
+	_ = os.Setenv("USERPROFILE", "dummyProfile")
 	defer func() {
 		remove = originalRemove
+		originalUserProfile.Restore()
 	}()
 	tests := map[string]struct {
-		remove               func(string) error
-		resetLibrarySettings *resetLibrarySettings
-		paths                []string
-		want                 *cmdtoolkit.ExitError
+		remove func(string) error
+		paths  []string
+		want   *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"no files": {
-			resetLibrarySettings: &resetLibrarySettings{
-				metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata/dir"},
-			},
 			paths: nil,
 			want:  nil,
 		},
 		"locked files": {
 			remove: func(_ string) error { return fmt.Errorf("cannot remove file") },
-			resetLibrarySettings: &resetLibrarySettings{
-				metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata/dir"},
-			},
-			paths: []string{"file1", "file2"},
-			want:  cmdtoolkit.NewExitSystemError("resetLibrary"),
+			paths:  []string{"file1", "file2"},
+			want:   cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
 				Console: "0 out of 2 metadata files have been deleted from" +
-					" \"metadata/dir\".\n",
+					" \"dummyProfile\\\\AppData\\\\Local\\\\Microsoft\\\\Media Player\".\n",
 				Log: "" +
 					"level='error'" +
 					" error='cannot remove file'" +
@@ -663,14 +628,11 @@ func Test_resetLibrarySettings_deleteMetadataFiles(t *testing.T) {
 		},
 		"deletable files": {
 			remove: func(_ string) error { return nil },
-			resetLibrarySettings: &resetLibrarySettings{
-				metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata/dir"},
-			},
-			paths: []string{"file1", "file2"},
-			want:  nil,
+			paths:  []string{"file1", "file2"},
+			want:   nil,
 			WantedRecording: output.WantedRecording{
 				Console: "2 out of 2 metadata files have been deleted from" +
-					" \"metadata/dir\".\n",
+					" \"dummyProfile\\\\AppData\\\\Local\\\\Microsoft\\\\Media Player\".\n",
 			},
 		},
 	}
@@ -678,46 +640,45 @@ func Test_resetLibrarySettings_deleteMetadataFiles(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			remove = tt.remove
 			o := output.NewRecorder()
-			if got := tt.resetLibrarySettings.deleteMetadataFiles(o, tt.paths); !compareExitErrors(got, tt.want) {
-				t.Errorf("resetLibrarySettings.deleteMetadataFiles() %s want %s", got, tt.want)
+			if got := deleteMetadataFiles(o, tt.paths); !compareExitErrors(got, tt.want) {
+				t.Errorf("deleteMetadataFiles() %s want %s", got, tt.want)
 			}
-			o.Report(t, "resetLibrarySettings.deleteMetadataFiles()", tt.WantedRecording)
+			o.Report(t, "deleteMetadataFiles()", tt.WantedRecording)
 		})
 	}
 }
 
-func Test_resetLibrarySettings_filterMetadataFiles(t *testing.T) {
+func Test_filterMetadataFiles(t *testing.T) {
 	originalPlainFileExists := plainFileExists
+	originalUserProfile := cmdtoolkit.NewEnvVarMemento("USERPROFILE")
+	_ = os.Setenv("USERPROFILE", "dummyProfile")
 	defer func() {
 		plainFileExists = originalPlainFileExists
+		originalUserProfile.Restore()
 	}()
 	tests := map[string]struct {
-		plainFileExists      func(string) bool
-		resetLibrarySettings *resetLibrarySettings
-		entries              []fs.FileInfo
-		want                 []string
+		plainFileExists func(string) bool
+		entries         []fs.FileInfo
+		want            []string
 	}{
 		"no entries": {want: []string{}},
 		"mixed entries": {
 			plainFileExists: func(s string) bool { return !strings.Contains(s, "dir.") },
-			resetLibrarySettings: &resetLibrarySettings{
-				metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata"},
-				extension:   cmdtoolkit.CommandFlag[string]{Value: ".db"},
-			},
 			entries: []fs.FileInfo{
-				newTestFile("dir. foo.db", nil),
-				newTestFile("foo.db", nil),
+				newTestFile("dir. foo.wmdb", nil),
+				newTestFile("foo.wmdb", nil),
 				newTestFile("foo", nil),
 			},
-			want: []string{filepath.Join("metadata", "foo.db")},
+			want: []string{
+				filepath.Join("dummyProfile", "AppData", "Local", "Microsoft", "Media Player", "foo.wmdb"),
+			},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			plainFileExists = tt.plainFileExists
-			if got := tt.resetLibrarySettings.filterMetadataFiles(tt.entries); !reflect.DeepEqual(got,
-				tt.want) {
-				t.Errorf("resetLibrarySettings.filterMetadataFiles() = %v, want %v", got, tt.want)
+			if got := filterMetadataFiles(tt.entries); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("filterMetadataFiles() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -727,10 +688,13 @@ func Test_resetLibrarySettings_cleanUpMetadata(t *testing.T) {
 	originalReadDirectory := readDirectory
 	originalPlainFileExists := plainFileExists
 	originalRemove := remove
+	originalUserProfile := cmdtoolkit.NewEnvVarMemento("USERPROFILE")
+	_ = os.Setenv("USERPROFILE", "dummyProfile")
 	defer func() {
 		readDirectory = originalReadDirectory
 		plainFileExists = originalPlainFileExists
 		remove = originalRemove
+		originalUserProfile.Restore()
 	}()
 	tests := map[string]struct {
 		readDirectory        func(output.Bus, string) ([]fs.FileInfo, bool)
@@ -743,7 +707,6 @@ func Test_resetLibrarySettings_cleanUpMetadata(t *testing.T) {
 	}{
 		"did not stop, cannot ignore it": {
 			resetLibrarySettings: &resetLibrarySettings{
-				service:             cmdtoolkit.CommandFlag[string]{Value: "musicService"},
 				ignoreServiceErrors: cmdtoolkit.CommandFlag[bool]{Value: false},
 			},
 			stopped: false,
@@ -752,7 +715,7 @@ func Test_resetLibrarySettings_cleanUpMetadata(t *testing.T) {
 				Error: "" +
 					"Metadata files will not be deleted.\n" +
 					"Why?\n" +
-					"The music service \"musicService\" could not be stopped, and" +
+					"The Windows Media Player sharing service \"WMPNetworkSVC\" could not be stopped, and" +
 					" \"--ignoreServiceErrors\" is false.\n" +
 					"What to do:\n" +
 					"Rerun this command with \"--ignoreServiceErrors\" set to true.\n",
@@ -762,15 +725,16 @@ func Test_resetLibrarySettings_cleanUpMetadata(t *testing.T) {
 			readDirectory: func(_ output.Bus, _ string) ([]fs.FileInfo, bool) {
 				return nil, true
 			},
-			resetLibrarySettings: &resetLibrarySettings{metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata"}},
+			resetLibrarySettings: &resetLibrarySettings{},
 			stopped:              true,
 			want:                 nil,
 			WantedRecording: output.WantedRecording{
-				Console: "No metadata files were found in \"metadata\".\n",
+				Console: "No metadata files were found in " +
+					"\"dummyProfile\\\\AppData\\\\Local\\\\Microsoft\\\\Media Player\".\n",
 				Log: "" +
 					"level='info'" +
-					" directory='metadata'" +
-					" extension=''" +
+					" directory='dummyProfile\\AppData\\Local\\Microsoft\\Media Player'" +
+					" extension='.wmdb'" +
 					" msg='no files found'\n",
 			},
 		},
@@ -779,17 +743,17 @@ func Test_resetLibrarySettings_cleanUpMetadata(t *testing.T) {
 				return nil, true
 			},
 			resetLibrarySettings: &resetLibrarySettings{
-				metadataDir:         cmdtoolkit.CommandFlag[string]{Value: "metadata"},
 				ignoreServiceErrors: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			stopped: false,
 			want:    nil,
 			WantedRecording: output.WantedRecording{
-				Console: "No metadata files were found in \"metadata\".\n",
+				Console: "No metadata files were found in " +
+					"\"dummyProfile\\\\AppData\\\\Local\\\\Microsoft\\\\Media Player\".\n",
 				Log: "" +
 					"level='info'" +
-					" directory='metadata'" +
-					" extension=''" +
+					" directory='dummyProfile\\AppData\\Local\\Microsoft\\Media Player'" +
+					" extension='.wmdb'" +
 					" msg='no files found'\n",
 			},
 		},
@@ -798,7 +762,6 @@ func Test_resetLibrarySettings_cleanUpMetadata(t *testing.T) {
 				return nil, false
 			},
 			resetLibrarySettings: &resetLibrarySettings{
-				metadataDir:         cmdtoolkit.CommandFlag[string]{Value: "metadata"},
 				ignoreServiceErrors: cmdtoolkit.CommandFlag[bool]{Value: true},
 			},
 			stopped:         false,
@@ -807,18 +770,16 @@ func Test_resetLibrarySettings_cleanUpMetadata(t *testing.T) {
 		},
 		"work to do": {
 			readDirectory: func(_ output.Bus, _ string) ([]fs.FileInfo, bool) {
-				return []fs.FileInfo{newTestFile("foo.db", nil)}, true
+				return []fs.FileInfo{newTestFile("foo.wmdb", nil)}, true
 			},
-			plainFileExists: func(_ string) bool { return true },
-			remove:          func(_ string) error { return nil },
-			resetLibrarySettings: &resetLibrarySettings{
-				metadataDir: cmdtoolkit.CommandFlag[string]{Value: "metadata"},
-				extension:   cmdtoolkit.CommandFlag[string]{Value: ".db"},
-			},
-			stopped: true,
-			want:    nil,
+			plainFileExists:      func(_ string) bool { return true },
+			remove:               func(_ string) error { return nil },
+			resetLibrarySettings: &resetLibrarySettings{},
+			stopped:              true,
+			want:                 nil,
 			WantedRecording: output.WantedRecording{
-				Console: "1 out of 1 metadata files have been deleted from \"metadata\".\n",
+				Console: "1 out of 1 metadata files have been deleted from " +
+					"\"dummyProfile\\\\AppData\\\\Local\\\\Microsoft\\\\Media Player\".\n",
 			},
 		},
 	}
@@ -877,16 +838,15 @@ func Test_resetLibrarySettings_resetService(t *testing.T) {
 			want:                 cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
-					"An attempt to connect with the service manager failed;" +
-					" error is 'access denied'.\n" +
+					"An attempt to connect with the service manager failed; error is 'access denied'.\n" +
 					"Why?\n" +
 					"This failure is likely to be due to lack of permissions.\n" +
 					"What to do:\n" +
 					"If you can, try running this command as an administrator.\n" +
 					"Metadata files will not be deleted.\n" +
 					"Why?\n" +
-					"The music service \"\" could not be stopped, and" +
-					" \"--ignoreServiceErrors\" is false.\n" +
+					"The Windows Media Player sharing service \"WMPNetworkSVC\" could not be stopped, and " +
+					"\"--ignoreServiceErrors\" is false.\n" +
 					"What to do:\n" +
 					"Rerun this command with \"--ignoreServiceErrors\" set to true.\n",
 				Log: "" +
@@ -901,16 +861,15 @@ func Test_resetLibrarySettings_resetService(t *testing.T) {
 			want:                 cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
-					"An attempt to connect with the service manager failed;" +
-					" error is 'access denied'.\n" +
+					"An attempt to connect with the service manager failed; error is 'access denied'.\n" +
 					"Why?\n" +
 					"This failure is likely to be due to lack of permissions.\n" +
 					"What to do:\n" +
 					"If you can, try running this command as an administrator.\n" +
 					"Metadata files will not be deleted.\n" +
 					"Why?\n" +
-					"The music service \"\" could not be stopped, and" +
-					" \"--ignoreServiceErrors\" is false.\n" +
+					"The Windows Media Player sharing service \"WMPNetworkSVC\" could not be stopped, and " +
+					"\"--ignoreServiceErrors\" is false.\n" +
 					"What to do:\n" +
 					"Rerun this command with \"--ignoreServiceErrors\" set to true.\n",
 				Log: "" +
@@ -1018,13 +977,7 @@ func Test_resetLibrary_Help(t *testing.T) {
 	commandUnderTest := cloneCommand(resetLibraryCmd)
 	flagMap := map[string]*cmdtoolkit.FlagDetails{}
 	for k, v := range resetLibraryFlags.Details {
-		switch k {
-		case "metadataDir":
-			flagMap[k] = v.Copy()
-			flagMap[k].DefaultValue = "[USERPROFILE]/AppData/Local/Microsoft/Media Player"
-		default:
-			flagMap[k] = v
-		}
+		flagMap[k] = v
 	}
 	flagCopy := &cmdtoolkit.FlagSet{Name: "resetLibrary", Details: flagMap}
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
@@ -1043,26 +996,21 @@ func Test_resetLibrary_Help(t *testing.T) {
 					"\n" +
 					"Prior to deleting the files, the resetLibrary command attempts to stop the Windows\n" +
 					"Media Player service, which allows Windows Media Player to share its library with a network. " +
-					"If\nthere is such an active service, this command will need to be run as administrator. If, " +
-					"for\nwhatever reasons, the service cannot be stopped, using the\n" +
+					"If\n" +
+					"there is such an active service, this command will need to be run as administrator. If, for\n" +
+					"whatever reasons, the service cannot be stopped, using the\n" +
 					"--ignoreServiceErrors flag allows the library files to be deleted, if possible.\n" +
 					"\n" +
 					"This command does nothing if it determines that the repair command has not made any\n" +
 					"changes, unless the --force flag is set.\n" +
 					"\n" +
 					"Usage:\n" +
-					"  resetLibrary [--timeout seconds] [--service name] [--metadataDir dir] [--extension string] " +
-					"[--force] [--ignoreServiceErrors]\n" +
+					"  resetLibrary [--timeout seconds] [--force] [--ignoreServiceErrors]\n" +
 					"\n" +
 					"Flags:\n" +
-					"      --extension string      extension for metadata files (default \".wmdb\")\n" +
 					"  -f, --force                 if set, force a library reset (default false)\n" +
 					"  -i, --ignoreServiceErrors   if set, ignore service errors and delete the Windows Media Player " +
 					"service's metadata files (default false)\n" +
-					"      --metadataDir string    directory where the Windows Media Player service metadata files " +
-					"are stored (default \"[USERPROFILE]/AppData/Local/Microsoft/Media Player\")\n" +
-					"      --service string        name of the Windows Media Player service (default " +
-					"\"WMPNetworkSVC\")\n" +
 					"  -t, --timeout int           timeout in seconds (minimum 1, maximum 60) for stopping the media " +
 					"player service (default 10)\n",
 			},

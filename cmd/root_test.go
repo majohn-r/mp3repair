@@ -133,11 +133,8 @@ func Test_runMain(t *testing.T) {
 					"repair:\n" +
 					"    dryRun: false\n" +
 					"resetLibrary:\n" +
-					"    extension: .wmdb\n" +
 					"    force: false\n" +
 					"    ignoreServiceErrors: false\n" +
-					"    metadataDir: '%USERPROFILE%\\AppData\\Local\\Microsoft\\Media Player'\n" +
-					"    service: WMPNetworkSVC\n" +
 					"    timeout: 10\n" +
 					"search:\n" +
 					"    albumFilter: .*\n" +
@@ -197,11 +194,8 @@ func Test_runMain(t *testing.T) {
 					"repair:\n" +
 					"    dryRun: false\n" +
 					"resetLibrary:\n" +
-					"    extension: .wmdb\n" +
 					"    force: false\n" +
 					"    ignoreServiceErrors: false\n" +
-					"    metadataDir: '%USERPROFILE%\\AppData\\Local\\Microsoft\\Media Player'\n" +
-					"    service: WMPNetworkSVC\n" +
 					"    timeout: 10\n" +
 					"search:\n" +
 					"    albumFilter: .*\n" +
@@ -261,11 +255,8 @@ func Test_runMain(t *testing.T) {
 					"repair:\n" +
 					"    dryRun: false\n" +
 					"resetLibrary:\n" +
-					"    extension: .wmdb\n" +
 					"    force: false\n" +
 					"    ignoreServiceErrors: false\n" +
-					"    metadataDir: '%USERPROFILE%\\AppData\\Local\\Microsoft\\Media Player'\n" +
-					"    service: WMPNetworkSVC\n" +
 					"    timeout: 10\n" +
 					"search:\n" +
 					"    albumFilter: .*\n" +

@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io/fs"
+	"os"
 	"path/filepath"
 	"reflect"
 	"slices"
@@ -21,12 +22,6 @@ const (
 	resetLibraryTimeout                 = "timeout"
 	resetLibraryTimeoutFlag             = "--" + resetLibraryTimeout
 	resetLibraryTimeoutAbbr             = "t"
-	resetLibraryService                 = "service"
-	resetLibraryServiceFlag             = "--" + resetLibraryService
-	resetLibraryMetadataDir             = "metadataDir"
-	resetLibraryMetadataDirFlag         = "--" + resetLibraryMetadataDir
-	resetLibraryExtension               = "extension"
-	resetLibraryExtensionFlag           = "--" + resetLibraryExtension
 	resetLibraryForce                   = "force"
 	resetLibraryForceFlag               = "--" + resetLibraryForce
 	resetLibraryForceAbbr               = "f"
@@ -36,15 +31,14 @@ const (
 	minTimeout                          = 1
 	defaultTimeout                      = 10
 	maxTimeout                          = 60
+	windowsMediaPlayerSharingService    = "WMPNetworkSVC"
+	metadataFileExtension               = ".wmdb"
 )
 
 var (
 	resetLibraryCmd = &cobra.Command{
 		Use: "" + resetLibraryCommandName +
 			" [" + resetLibraryTimeoutFlag + " seconds]" +
-			" [" + resetLibraryServiceFlag + " name]" +
-			" [" + resetLibraryMetadataDirFlag + " dir]" +
-			" [" + resetLibraryExtensionFlag + " string]" +
 			" [" + resetLibraryForceFlag + "]" +
 			" [" + resetLibraryIgnoreServiceErrorsFlag + "]",
 		DisableFlagsInUseLine: true,
@@ -74,21 +68,6 @@ changes, unless the ` + resetLibraryForceFlag + ` flag is set.`,
 					"media player service", minTimeout, maxTimeout),
 				ExpectedType: cmdtoolkit.IntType,
 				DefaultValue: cmdtoolkit.NewIntBounds(minTimeout, defaultTimeout, maxTimeout),
-			},
-			resetLibraryService: {
-				Usage:        "name of the Windows Media Player service",
-				ExpectedType: cmdtoolkit.StringType,
-				DefaultValue: "WMPNetworkSVC",
-			},
-			resetLibraryMetadataDir: {
-				Usage:        "directory where the Windows Media Player service metadata files are stored",
-				ExpectedType: cmdtoolkit.StringType,
-				DefaultValue: filepath.Join("%USERPROFILE%", "AppData", "Local", "Microsoft", "Media Player"),
-			},
-			resetLibraryExtension: {
-				Usage:        "extension for metadata files",
-				ExpectedType: cmdtoolkit.StringType,
-				DefaultValue: ".wmdb",
 			},
 			resetLibraryForce: {
 				AbbreviatedName: resetLibraryForceAbbr,
@@ -130,11 +109,8 @@ func resetLibraryRun(cmd *cobra.Command, _ []string) error {
 }
 
 type resetLibrarySettings struct {
-	extension           cmdtoolkit.CommandFlag[string]
 	force               cmdtoolkit.CommandFlag[bool]
 	ignoreServiceErrors cmdtoolkit.CommandFlag[bool]
-	metadataDir         cmdtoolkit.CommandFlag[string]
-	service             cmdtoolkit.CommandFlag[string]
 	timeout             cmdtoolkit.CommandFlag[int]
 }
 
@@ -222,13 +198,16 @@ func listServices(manager serviceManager) ([]string, error) {
 
 func (rDBSettings *resetLibrarySettings) disableService(o output.Bus, manager serviceManager) (ok bool,
 	e *cmdtoolkit.ExitError) {
-	service, serviceError := openService(manager, rDBSettings.service.Value)
+	service, serviceError := openService(manager, windowsMediaPlayerSharingService)
 	if serviceError != nil {
 		e = cmdtoolkit.NewExitSystemError(resetLibraryCommandName)
-		o.WriteCanonicalError("The service %q cannot be opened: %v", rDBSettings.service.Value,
-			serviceError)
+		o.WriteCanonicalError(
+			"The service %q cannot be opened: %v",
+			windowsMediaPlayerSharingService,
+			serviceError,
+		)
 		o.Log(output.Error, "service problem", map[string]any{
-			"service": rDBSettings.service.Value,
+			"service": windowsMediaPlayerSharingService,
 			"trigger": "OpenService",
 			"error":   serviceError,
 		})
@@ -321,20 +300,23 @@ func (rDBSettings *resetLibrarySettings) stopFoundService(o output.Bus, manager 
 	status, svcErr := runQuery(service)
 	if svcErr != nil {
 		e = cmdtoolkit.NewExitSystemError(resetLibraryCommandName)
-		o.WriteCanonicalError("An error occurred while trying to stop service %q: %v",
-			rDBSettings.service.Value, svcErr)
-		rDBSettings.reportServiceQueryError(o, svcErr)
+		o.WriteCanonicalError(
+			"An error occurred while trying to stop service %q: %v",
+			windowsMediaPlayerSharingService,
+			svcErr,
+		)
+		reportServiceQueryError(o, svcErr)
 		return
 	}
 	if status.State == svc.Stopped {
-		rDBSettings.reportServiceStopped(o)
+		reportServiceStopped(o)
 		ok = true
 		return
 	}
 	status, svcErr = service.Control(svc.Stop)
 	if svcErr == nil {
 		if status.State == svc.Stopped {
-			rDBSettings.reportServiceStopped(o)
+			reportServiceStopped(o)
 			ok = true
 			return
 		}
@@ -343,24 +325,34 @@ func (rDBSettings *resetLibrarySettings) stopFoundService(o output.Bus, manager 
 		return
 	}
 	e = cmdtoolkit.NewExitSystemError(resetLibraryCommandName)
-	o.WriteCanonicalError("The service %q cannot be stopped: %v", rDBSettings.service.Value, svcErr)
+	o.WriteCanonicalError(
+		"The service %q cannot be stopped: %v",
+		windowsMediaPlayerSharingService,
+		svcErr,
+	)
 	o.Log(output.Error, "service problem", map[string]any{
-		"service": rDBSettings.service.Value,
+		"service": windowsMediaPlayerSharingService,
 		"trigger": "Stop",
 		"error":   svcErr,
 	})
 	return
 }
 
-func (rDBSettings *resetLibrarySettings) reportServiceQueryError(o output.Bus, svcErr error) {
+func reportServiceQueryError(o output.Bus, svcErr error) {
 	o.Log(output.Error, "service query error", map[string]any{
-		"service": rDBSettings.service.Value,
+		"service": windowsMediaPlayerSharingService,
 		"error":   svcErr,
 	})
 }
 
-func (rDBSettings *resetLibrarySettings) reportServiceStopped(o output.Bus) {
-	o.Log(output.Info, "service stopped", map[string]any{"service": rDBSettings.service.Value})
+func reportServiceStopped(o output.Bus) {
+	o.Log(
+		output.Info,
+		"service stopped",
+		map[string]any{
+			"service": windowsMediaPlayerSharingService,
+		},
+	)
 }
 
 func (rDBSettings *resetLibrarySettings) waitForStop(o output.Bus, s serviceRep, expiration time.Time,
@@ -369,9 +361,11 @@ func (rDBSettings *resetLibrarySettings) waitForStop(o output.Bus, s serviceRep,
 		if expiration.Before(time.Now()) {
 			o.WriteCanonicalError(
 				"The service %q could not be stopped within the %d second timeout",
-				rDBSettings.service.Value, rDBSettings.timeout.Value)
+				windowsMediaPlayerSharingService,
+				rDBSettings.timeout.Value,
+			)
 			o.Log(output.Error, "service problem", map[string]any{
-				"service": rDBSettings.service.Value,
+				"service": windowsMediaPlayerSharingService,
 				"trigger": "Stop",
 				"error":   "timed out",
 				"timeout": rDBSettings.timeout.Value,
@@ -383,15 +377,21 @@ func (rDBSettings *resetLibrarySettings) waitForStop(o output.Bus, s serviceRep,
 		if svcErr != nil {
 			o.WriteCanonicalError(
 				"An error occurred while attempting to stop the service %q: %v",
-				rDBSettings.service.Value, svcErr)
-			rDBSettings.reportServiceQueryError(o, svcErr)
+				windowsMediaPlayerSharingService,
+				svcErr,
+			)
+			reportServiceQueryError(o, svcErr)
 			return false, cmdtoolkit.NewExitSystemError(resetLibraryCommandName)
 		}
 		if status.State == svc.Stopped {
-			rDBSettings.reportServiceStopped(o)
+			reportServiceStopped(o)
 			return true, nil
 		}
 	}
+}
+
+func metadataDirectory() string {
+	return filepath.Join(os.Getenv("USERPROFILE"), "AppData", "Local", "Microsoft", "Media Player")
 }
 
 func (rDBSettings *resetLibrarySettings) cleanUpMetadata(o output.Bus, stopped bool) *cmdtoolkit.ExitError {
@@ -399,35 +399,39 @@ func (rDBSettings *resetLibrarySettings) cleanUpMetadata(o output.Bus, stopped b
 		if !rDBSettings.ignoreServiceErrors.Value {
 			o.WriteCanonicalError("Metadata files will not be deleted")
 			o.WriteCanonicalError(
-				"Why?\nThe music service %q could not be stopped, and %q is false",
-				rDBSettings.service.Value, resetLibraryIgnoreServiceErrorsFlag)
+				"Why?\nThe Windows Media Player sharing service %q could not be stopped, and %q is false",
+				windowsMediaPlayerSharingService,
+				resetLibraryIgnoreServiceErrorsFlag,
+			)
 			o.WriteCanonicalError("What to do:\nRerun this command with %q set to true",
 				resetLibraryIgnoreServiceErrorsFlag)
 			return cmdtoolkit.NewExitUserError(resetLibraryCommandName)
 		}
 	}
 	// either stopped or service errors are ignored
-	metadataFiles, filesOk := readDirectory(o, rDBSettings.metadataDir.Value)
+	dir := metadataDirectory()
+	metadataFiles, filesOk := readDirectory(o, dir)
 	if !filesOk {
 		return nil
 	}
-	pathsToDelete := rDBSettings.filterMetadataFiles(metadataFiles)
+	pathsToDelete := filterMetadataFiles(metadataFiles)
 	if len(pathsToDelete) > 0 {
-		return rDBSettings.deleteMetadataFiles(o, pathsToDelete)
+		return deleteMetadataFiles(o, pathsToDelete)
 	}
-	o.WriteCanonicalConsole("No metadata files were found in %q", rDBSettings.metadataDir.Value)
+	o.WriteCanonicalConsole("No metadata files were found in %q", dir)
 	o.Log(output.Info, "no files found", map[string]any{
-		"directory": rDBSettings.metadataDir.Value,
-		"extension": rDBSettings.extension.Value,
+		"directory": dir,
+		"extension": metadataFileExtension,
 	})
 	return nil
 }
 
-func (rDBSettings *resetLibrarySettings) filterMetadataFiles(entries []fs.FileInfo) []string {
+func filterMetadataFiles(entries []fs.FileInfo) []string {
 	paths := make([]string, 0, len(entries))
+	dir := metadataDirectory()
 	for _, file := range entries {
-		if strings.HasSuffix(file.Name(), rDBSettings.extension.Value) {
-			path := filepath.Join(rDBSettings.metadataDir.Value, file.Name())
+		if strings.HasSuffix(file.Name(), metadataFileExtension) {
+			path := filepath.Join(dir, file.Name())
 			if plainFileExists(path) {
 				paths = append(paths, path)
 			}
@@ -436,7 +440,7 @@ func (rDBSettings *resetLibrarySettings) filterMetadataFiles(entries []fs.FileIn
 	return paths
 }
 
-func (rDBSettings *resetLibrarySettings) deleteMetadataFiles(o output.Bus, paths []string) (e *cmdtoolkit.ExitError) {
+func deleteMetadataFiles(o output.Bus, paths []string) (e *cmdtoolkit.ExitError) {
 	if len(paths) == 0 {
 		return
 	}
@@ -452,8 +456,11 @@ func (rDBSettings *resetLibrarySettings) deleteMetadataFiles(o output.Bus, paths
 		}
 	}
 	o.WriteCanonicalConsole(
-		"%d out of %d metadata files have been deleted from %q", count, len(paths),
-		rDBSettings.metadataDir.Value)
+		"%d out of %d metadata files have been deleted from %q",
+		count,
+		len(paths),
+		metadataDirectory(),
+	)
 	return
 }
 
@@ -465,18 +472,6 @@ func processResetLibraryFlags(
 	result := &resetLibrarySettings{}
 	flagsOk := true // optimistic
 	result.timeout, flagErr = cmdtoolkit.GetInt(o, values, resetLibraryTimeout)
-	if flagErr != nil {
-		flagsOk = false
-	}
-	result.service, flagErr = cmdtoolkit.GetString(o, values, resetLibraryService)
-	if flagErr != nil {
-		flagsOk = false
-	}
-	result.metadataDir, flagErr = cmdtoolkit.GetString(o, values, resetLibraryMetadataDir)
-	if flagErr != nil {
-		flagsOk = false
-	}
-	result.extension, flagErr = cmdtoolkit.GetString(o, values, resetLibraryExtension)
 	if flagErr != nil {
 		flagsOk = false
 	}
