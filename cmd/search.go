@@ -186,9 +186,9 @@ func evaluateFileExtensions(o output.Bus, values map[string]*cmdtoolkit.CommandF
 	}
 	if !extensionsValid {
 		o.WriteCanonicalError("Why?")
-		o.WriteCanonicalError(
-			"Extensions must be at least two characters long and begin with '.'")
-		o.WriteCanonicalError("What to do:\nProvide appropriate extensions.")
+		o.WriteCanonicalError("Extensions must be at least two characters long and begin with '.'")
+		o.WriteCanonicalError("What to do:")
+		o.WriteCanonicalError("Provide appropriate extensions.")
 		o.Log(output.Error, "invalid file extensions", map[string]any{
 			"rejected":               failedCandidates,
 			searchFileExtensionsFlag: rawValue.Value,
@@ -215,14 +215,15 @@ func evaluateTopDir(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]
 		switch rawValue.UserSet {
 		case true:
 			o.WriteCanonicalError("The value you specified is not a readable file.")
-			o.WriteCanonicalError(
-				"What to do:\nSpecify a value that is a readable file.")
+			o.WriteCanonicalError("What to do:")
+			o.WriteCanonicalError("Specify a value that is a readable file.")
 		case false:
+			o.WriteCanonicalError("The currently configured value is not a readable file.")
+			o.WriteCanonicalError("What to do:")
 			o.WriteCanonicalError(
-				"The currently configured value is not a readable file.")
-			o.WriteCanonicalError("What to do:\n"+
-				"Edit the configuration file or specify %s with a value that is a"+
-				" readable file.", searchTopDirFlag)
+				"Edit the configuration file or specify %s with a value that is a readable file.",
+				searchTopDirFlag,
+			)
 		}
 		return
 	}
@@ -236,16 +237,16 @@ func evaluateTopDir(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]
 		o.WriteCanonicalError("Why?")
 		switch rawValue.UserSet {
 		case true:
-			o.WriteCanonicalError(
-				"The value you specified is not the name of a directory.")
-			o.WriteCanonicalError("What to do:\n" +
-				"Specify a value that is the name of a directory.")
+			o.WriteCanonicalError("The value you specified is not the name of a directory.")
+			o.WriteCanonicalError("What to do:")
+			o.WriteCanonicalError("Specify a value that is the name of a directory.")
 		default:
+			o.WriteCanonicalError("The currently configured value is not the name of a directory.")
+			o.WriteCanonicalError("What to do:")
 			o.WriteCanonicalError(
-				"The currently configured value is not the name of a directory.")
-			o.WriteCanonicalError("What to do:\n"+
-				"Edit the configuration file or specify %s with a value that is the"+
-				" name of a directory.", searchTopDirFlag)
+				"Edit the configuration file or specify %s with a value that is the name of a directory.",
+				searchTopDirFlag,
+			)
 		}
 		return
 	}
@@ -283,19 +284,29 @@ func evaluateFilter(o output.Bus, filtering filterFlag) evaluatedFilter {
 		o.WriteCanonicalError("the %s value %q cannot be used", filtering.representation, rawValue.Value)
 		switch {
 		case rawValue.UserSet:
-			o.WriteCanonicalError("Why?\n"+
+			o.WriteCanonicalError("Why?")
+			o.WriteCanonicalError(
 				"The value of %s that you specified is not a valid regular expression: %v.",
-				filtering.representation, regexErr)
-			o.WriteCanonicalError("What to do:\n"+
-				"Either try a different setting,"+
-				" or omit setting %s and try the default value.", filtering.representation)
+				filtering.representation,
+				regexErr,
+			)
+			o.WriteCanonicalError("What to do:")
+			o.BeginErrorList(false)
+			o.WriteError("Try a different setting, or\n")
+			o.WriteCanonicalError("Omit setting %s and try the default value.", filtering.representation)
+			o.EndErrorList()
 		default:
-			o.WriteCanonicalError("Why?\n"+
+			o.WriteCanonicalError("Why?")
+			o.WriteCanonicalError(
 				"The configured default value of %s is not a valid regular expression: %v.",
-				filtering.representation, regexErr)
-			o.WriteCanonicalError("What to do:\n"+
-				"Either edit the defaults.yaml file containing the settings,"+
-				" or explicitly set %s to a better value.", filtering.representation)
+				filtering.representation,
+				regexErr,
+			)
+			o.WriteCanonicalError("What to do:")
+			o.BeginErrorList(false)
+			o.WriteError("Edit the defaults.yaml file containing the settings, or\n")
+			o.WriteCanonicalError("Explicitly set %s to a better value.", filtering.representation)
+			o.EndErrorList()
 		}
 		result.regexOk = false
 		return result
@@ -338,7 +349,8 @@ func (ss *searchSettings) filter(o output.Bus, originalArtists []*files.Artist) 
 			o.WriteCanonicalError("After applying %s=%q, %s=%q, and %s=%q, no files remained",
 				searchArtistFilterFlag, ss.artistFilter, searchAlbumFilterFlag, ss.albumFilter,
 				searchTrackFilterFlag, ss.trackFilter)
-			o.WriteCanonicalError("What to do:\nUse less restrictive filter settings.")
+			o.WriteCanonicalError("What to do:")
+			o.WriteCanonicalError("Use less restrictive filter settings.")
 			o.Log(output.Error, "no files remain after filtering", map[string]any{
 				searchArtistFilterFlag: ss.artistFilter,
 				searchAlbumFilterFlag:  ss.albumFilter,
@@ -362,14 +374,12 @@ func (ss *searchSettings) load(o output.Bus) []*files.Artist {
 		}
 	}
 	if len(artists) == 0 {
-		o.WriteCanonicalError(
-			"No mp3 files could be found using the specified parameters.")
+		o.WriteCanonicalError("No mp3 files could be found using the specified parameters.")
 		o.WriteCanonicalError("Why?")
 		o.WriteCanonicalError("There were no directories found in %q (the %s value)",
 			ss.topDirectory, searchTopDirFlag)
-		o.WriteCanonicalError("What to do:\n"+
-			"Set %s to the path of a directory that contains artist directories",
-			searchTopDirFlag)
+		o.WriteCanonicalError("What to do:")
+		o.WriteCanonicalError("Set %s to the path of a directory that contains artist directories", searchTopDirFlag)
 		o.Log(output.Error, "cannot find any artist directories", map[string]any{
 			searchTopDirFlag: ss.topDirectory,
 		})

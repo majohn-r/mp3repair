@@ -28,13 +28,14 @@ func Test_exportFlagSettings_canWriteConfigurationFile(t *testing.T) {
 			},
 			wantCanWrite: false,
 			WantedRecording: output.WantedRecording{
-				Error: "Default configuration settings will not be exported.\n" +
+				Error: "" +
+					"Default configuration settings will not be exported.\n" +
 					"Why?\n" +
-					"As currently configured, exporting default configuration settings is" +
-					" disabled.\n" +
+					"As currently configured, exporting default configuration settings is disabled.\n" +
 					"What to do:\n" +
-					"Use either '--defaults' or '--defaults=true' to enable exporting" +
-					" defaults.\n",
+					"To enable exporting defaults, use either:\n" +
+					"● --defaults or\n" +
+					"● --defaults=true\n",
 				Log: "level='error'" +
 					" --defaults='false'" +
 					" user-set='false'" +
@@ -47,12 +48,14 @@ func Test_exportFlagSettings_canWriteConfigurationFile(t *testing.T) {
 			},
 			wantCanWrite: false,
 			WantedRecording: output.WantedRecording{
-				Error: "Default configuration settings will not be exported.\n" +
+				Error: "" +
+					"Default configuration settings will not be exported.\n" +
 					"Why?\n" +
 					"You explicitly set --defaults false.\n" +
 					"What to do:\n" +
-					"Use either '--defaults' or '--defaults=true' to enable exporting" +
-					" defaults.\n",
+					"To enable exporting defaults, use either:\n" +
+					"● --defaults or\n" +
+					"● --defaults=true\n",
 				Log: "level='error'" +
 					" --defaults='false'" +
 					" user-set='true'" +
@@ -97,12 +100,14 @@ func Test_exportFlagSettings_canOverwriteConfigurationFile(t *testing.T) {
 			f:                "[file name here]",
 			wantCanOverwrite: false,
 			WantedRecording: output.WantedRecording{
-				Error: "The file \"[file name here]\" exists and cannot be overwritten.\n" +
+				Error: "" +
+					"The file \"[file name here]\" exists and cannot be overwritten.\n" +
 					"Why?\n" +
 					"As currently configured, overwriting the file is disabled.\n" +
 					"What to do:\n" +
-					"Use either '--overwrite' or '--overwrite=true' to enable overwriting" +
-					" the existing file.\n",
+					"To enable overwriting the existing file, use either:\n" +
+					"● --overwrite or\n" +
+					"● --overwrite=true\n",
 				Log: "level='error'" +
 					" --overwrite='false'" +
 					" fileName='[file name here]'" +
@@ -117,12 +122,14 @@ func Test_exportFlagSettings_canOverwriteConfigurationFile(t *testing.T) {
 			f:                "[file name here]",
 			wantCanOverwrite: false,
 			WantedRecording: output.WantedRecording{
-				Error: "The file \"[file name here]\" exists and cannot be overwritten.\n" +
+				Error: "" +
+					"The file \"[file name here]\" exists and cannot be overwritten.\n" +
 					"Why?\n" +
 					"You explicitly set --overwrite false.\n" +
 					"What to do:\n" +
-					"Use either '--overwrite' or '--overwrite=true' to enable overwriting" +
-					" the existing file.\n",
+					"To enable overwriting the existing file, use either:\n" +
+					"● --overwrite or\n" +
+					"● --overwrite=true\n",
 				Log: "level='error'" +
 					" --overwrite='false'" +
 					" fileName='[file name here]'" +
@@ -243,12 +250,14 @@ func Test_exportFlagSettings_overwriteConfigurationFile(t *testing.T) {
 			args:       args{f: "[filename]"},
 			wantStatus: cmdtoolkit.NewExitUserError("export"),
 			WantedRecording: output.WantedRecording{
-				Error: "The file \"[filename]\" exists and cannot be overwritten.\n" +
+				Error: "" +
+					"The file \"[filename]\" exists and cannot be overwritten.\n" +
 					"Why?\n" +
 					"As currently configured, overwriting the file is disabled.\n" +
 					"What to do:\n" +
-					"Use either '--overwrite' or '--overwrite=true' to enable overwriting" +
-					" the existing file.\n",
+					"To enable overwriting the existing file, use either:\n" +
+					"● --overwrite or\n" +
+					"● --overwrite=true\n",
 				Log: "level='error'" +
 					" --overwrite='false'" +
 					" fileName='[filename]'" +
@@ -362,8 +371,9 @@ func Test_exportFlagSettings_exportDefaultConfiguration(t *testing.T) {
 					"As currently configured, exporting default configuration settings is" +
 					" disabled.\n" +
 					"What to do:\n" +
-					"Use either '--defaults' or '--defaults=true' to enable exporting" +
-					" defaults.\n",
+					"To enable exporting defaults, use either:\n" +
+					"● --defaults or\n" +
+					"● --defaults=true\n",
 				Log: "" +
 					"level='error'" +
 					" --defaults='false'" +
@@ -615,13 +625,14 @@ func Test_exportRun(t *testing.T) {
 				},
 			},
 			WantedRecording: output.WantedRecording{
-				Error: "Default configuration settings will not be exported.\n" +
+				Error: "" +
+					"Default configuration settings will not be exported.\n" +
 					"Why?\n" +
-					"As currently configured, exporting default configuration settings is" +
-					" disabled.\n" +
+					"As currently configured, exporting default configuration settings is disabled.\n" +
 					"What to do:\n" +
-					"Use either '--defaults' or '--defaults=true' to enable exporting" +
-					" defaults.\n",
+					"To enable exporting defaults, use either:\n" +
+					"● --defaults or\n" +
+					"● --defaults=true\n",
 				Log: "" +
 					"level='error'" +
 					" --defaults='false'" +

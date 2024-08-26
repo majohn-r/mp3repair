@@ -130,7 +130,7 @@ func (rDBSettings *resetLibrarySettings) resetService(o output.Bus) (e *cmdtoolk
 	o.WriteCanonicalError("Why?")
 	o.WriteCanonicalError("The %q program has not made any changes to any mp3 files\n"+
 		"since the last successful library reset.", appName)
-	o.WriteError("What to do:\n")
+	o.WriteCanonicalError("What to do:")
 	o.WriteCanonicalError("If you believe the Windows Media Player library needs to be reset, run"+
 		" this command\nagain and use the %q flag.", resetLibraryForceFlag)
 	return
@@ -183,9 +183,10 @@ func (rDBSettings *resetLibrarySettings) stopService(o output.Bus) (bool, *cmdto
 
 func outputSystemErrorCause(o output.Bus) {
 	if !processIsElevated() {
-		o.WriteCanonicalError("Why?\nThis failure is likely to be due to lack of permissions")
-		o.WriteCanonicalError("What to do:\n" +
-			"If you can, try running this command as an administrator.")
+		o.WriteCanonicalError("Why?")
+		o.WriteCanonicalError("This failure is likely to be due to lack of permissions")
+		o.WriteCanonicalError("What to do:")
+		o.WriteCanonicalError("If you can, try running this command as an administrator.")
 	}
 }
 
@@ -235,7 +236,7 @@ func disconnectManager(manager serviceManager) {
 }
 
 func listAvailableServices(o output.Bus, manager serviceManager, services []string) {
-	o.WriteError("The following services are available:\n")
+	o.WriteCanonicalError("The following services are available:")
 	if len(services) == 0 {
 		o.WriteError("  - none -\n")
 		return
@@ -259,7 +260,7 @@ func listAvailableServices(o output.Bus, manager serviceManager, services []stri
 	}
 	slices.Sort(states)
 	for _, state := range states {
-		o.WriteError("  State %q:\n", state)
+		o.WriteCanonicalError("  State %q:", state)
 		for _, serviceName := range m[state] {
 			o.WriteError("    %q\n", serviceName)
 		}
@@ -398,13 +399,14 @@ func (rDBSettings *resetLibrarySettings) cleanUpMetadata(o output.Bus, stopped b
 	if !stopped {
 		if !rDBSettings.ignoreServiceErrors.Value {
 			o.WriteCanonicalError("Metadata files will not be deleted")
+			o.WriteCanonicalError("Why?")
 			o.WriteCanonicalError(
-				"Why?\nThe Windows Media Player sharing service %q could not be stopped, and %q is false",
+				"The Windows Media Player sharing service %q could not be stopped, and %q is false",
 				windowsMediaPlayerSharingService,
 				resetLibraryIgnoreServiceErrorsFlag,
 			)
-			o.WriteCanonicalError("What to do:\nRerun this command with %q set to true",
-				resetLibraryIgnoreServiceErrorsFlag)
+			o.WriteCanonicalError("What to do:")
+			o.WriteCanonicalError("Rerun this command with %q set to true", resetLibraryIgnoreServiceErrorsFlag)
 			return cmdtoolkit.NewExitUserError(resetLibraryCommandName)
 		}
 	}

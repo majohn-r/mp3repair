@@ -8,15 +8,11 @@ import (
 )
 
 const (
-	exportCommand        = "export"
-	exportFlagDefaults   = "defaults"
-	exportDefaultsAsFlag = "--" + exportFlagDefaults
-	exportDefaultsCure   = "What to do:\nUse either '" + exportDefaultsAsFlag + "' or '" +
-		exportDefaultsAsFlag + "=true' to enable exporting defaults"
+	exportCommand         = "export"
+	exportFlagDefaults    = "defaults"
+	exportDefaultsAsFlag  = "--" + exportFlagDefaults
 	exportFlagOverwrite   = "overwrite"
 	exportOverwriteAsFlag = "--" + exportFlagOverwrite
-	exportOverwriteCure   = "What to do:\nUse either '" + exportOverwriteAsFlag + "' or '" +
-		exportOverwriteAsFlag + "=true' to enable overwriting the existing file"
 )
 
 var (
@@ -140,14 +136,19 @@ func (es *exportSettings) canOverwriteConfigurationFile(o output.Bus, f string) 
 			"fileName":            f,
 			"user-set":            es.overwriteEnabled.UserSet,
 		})
+		o.WriteCanonicalError("Why?")
 		switch {
 		case es.overwriteEnabled.UserSet:
-			o.WriteCanonicalError("Why?\nYou explicitly set %s false", exportOverwriteAsFlag)
+			o.WriteCanonicalError("You explicitly set %s false", exportOverwriteAsFlag)
 		default:
-			o.WriteCanonicalError(
-				"Why?\nAs currently configured, overwriting the file is disabled")
+			o.WriteCanonicalError("As currently configured, overwriting the file is disabled")
 		}
-		o.WriteCanonicalError(exportOverwriteCure)
+		o.WriteCanonicalError("What to do:")
+		o.WriteCanonicalError("To enable overwriting the existing file, use either:")
+		o.BeginErrorList(false)
+		o.WriteError(exportOverwriteAsFlag + " or\n")
+		o.WriteError(exportOverwriteAsFlag + "=true\n")
+		o.EndErrorList()
 		return false
 	}
 	return true
@@ -160,14 +161,19 @@ func (es *exportSettings) canWriteConfigurationFile(o output.Bus) bool {
 			exportDefaultsAsFlag: false,
 			"user-set":           es.defaultsEnabled.UserSet,
 		})
+		o.WriteCanonicalError("Why?")
 		switch {
 		case es.defaultsEnabled.UserSet:
-			o.WriteCanonicalError("Why?\nYou explicitly set %s false", exportDefaultsAsFlag)
+			o.WriteCanonicalError("You explicitly set %s false", exportDefaultsAsFlag)
 		default:
-			o.WriteCanonicalError("Why?\nAs currently configured, exporting default" +
-				" configuration settings is disabled")
+			o.WriteCanonicalError("As currently configured, exporting default configuration settings is disabled")
 		}
-		o.WriteCanonicalError(exportDefaultsCure)
+		o.WriteCanonicalError("What to do:")
+		o.WriteCanonicalError("To enable exporting defaults, use either:")
+		o.BeginErrorList(false)
+		o.WriteError(exportDefaultsAsFlag + " or\n")
+		o.WriteError(exportDefaultsAsFlag + "=true\n")
+		o.EndErrorList()
 		return false
 	}
 	return true

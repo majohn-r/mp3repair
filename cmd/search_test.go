@@ -49,14 +49,14 @@ func Test_evaluateFilter(t *testing.T) {
 			},
 			want: evaluatedFilter{},
 			WantedRecording: output.WantedRecording{
-				Error: "The --albumFilter value \"[9-0]\" cannot be used.\n" +
+				Error: "" +
+					"The --albumFilter value \"[9-0]\" cannot be used.\n" +
 					"Why?\n" +
-					"The value of --albumFilter that you specified is not a valid regular" +
-					" expression: error parsing regexp: invalid character class range:" +
-					" `9-0`.\n" +
+					"The value of --albumFilter that you specified is not a valid regular expression: " +
+					"error parsing regexp: invalid character class range: `9-0`.\n" +
 					"What to do:\n" +
-					"Either try a different setting, or omit setting --albumFilter and" +
-					" try the default value.\n",
+					"● Try a different setting, or\n" +
+					"● Omit setting --albumFilter and try the default value.\n",
 				Log: "level='error'" +
 					" --albumFilter='[9-0]'" +
 					" error='error parsing regexp: invalid character class range: `9-0`'" +
@@ -74,14 +74,14 @@ func Test_evaluateFilter(t *testing.T) {
 			},
 			want: evaluatedFilter{},
 			WantedRecording: output.WantedRecording{
-				Error: "The --albumFilter value \"[9-0]\" cannot be used.\n" +
+				Error: "" +
+					"The --albumFilter value \"[9-0]\" cannot be used.\n" +
 					"Why?\n" +
-					"The configured default value of --albumFilter is not a valid" +
-					" regular expression: error parsing regexp: invalid character class" +
-					" range: `9-0`.\n" +
+					"The configured default value of --albumFilter is not a valid regular expression: " +
+					"error parsing regexp: invalid character class range: `9-0`.\n" +
 					"What to do:\n" +
-					"Either edit the defaults.yaml file containing the settings, or" +
-					" explicitly set --albumFilter to a better value.\n",
+					"● Edit the defaults.yaml file containing the settings, or\n" +
+					"● Explicitly set --albumFilter to a better value.\n",
 				Log: "level='error'" +
 					" --albumFilter='[9-0]'" +
 					" error='error parsing regexp: invalid character class range: `9-0`'" +
@@ -280,26 +280,28 @@ func Test_processSearchFlags(t *testing.T) {
 			},
 			wantSettings: &searchSettings{},
 			WantedRecording: output.WantedRecording{
-				Error: "The --albumFilter value \"[2\" cannot be used.\n" +
+				Error: "" +
+					"The --albumFilter value \"[2\" cannot be used.\n" +
 					"Why?\n" +
-					"The configured default value of --albumFilter is not a valid regular" +
-					" expression: error parsing regexp: missing closing ]: `[2`.\n" +
+					"The configured default value of --albumFilter is not a valid regular expression: " +
+					"error parsing regexp: missing closing ]: `[2`.\n" +
 					"What to do:\n" +
-					"Either edit the defaults.yaml file containing the settings, or" +
-					" explicitly set --albumFilter to a better value.\n" +
+					"● Edit the defaults.yaml file containing the settings, or\n" +
+					"● Explicitly set --albumFilter to a better value.\n" +
 					"The --artistFilter value \"[1-0]\" cannot be used.\n" +
-					"Why?\nThe configured default value of --artistFilter is not a valid" +
-					" regular expression: error parsing regexp: invalid character class range: `1-0`.\n" +
+					"Why?\n" +
+					"The configured default value of --artistFilter is not a valid regular expression: " +
+					"error parsing regexp: invalid character class range: `1-0`.\n" +
 					"What to do:\n" +
-					"Either edit the defaults.yaml file containing the settings, or" +
-					" explicitly set --artistFilter to a better value.\n" +
+					"● Edit the defaults.yaml file containing the settings, or\n" +
+					"● Explicitly set --artistFilter to a better value.\n" +
 					"The --trackFilter value \"0++\" cannot be used.\n" +
 					"Why?\n" +
-					"The configured default value of --trackFilter is not a valid regular" +
-					" expression: error parsing regexp: invalid nested repetition operator: `++`.\n" +
+					"The configured default value of --trackFilter is not a valid regular expression: " +
+					"error parsing regexp: invalid nested repetition operator: `++`.\n" +
 					"What to do:\n" +
-					"Either edit the defaults.yaml file containing the settings, or" +
-					" explicitly set --trackFilter to a better value.\n" +
+					"● Edit the defaults.yaml file containing the settings, or\n" +
+					"● Explicitly set --trackFilter to a better value.\n" +
 					"Here are some common errors in filter expressions and what to do:\n" +
 					"Character class problems\n" +
 					"Character classes are sets of 1 or more characters, enclosed in square" +

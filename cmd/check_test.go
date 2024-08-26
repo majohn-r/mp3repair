@@ -101,10 +101,8 @@ func Test_checkSettings_hasWorkToDo(t *testing.T) {
 					"The flags --empty, --files, and --numbering are all configured false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags" +
-					" is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command" +
-					" line.\n",
+					" 1. Edit the configuration file so that at least one of these flags is true, or\n" +
+					" 2. Explicitly set at least one of these flags true on the command line.\n",
 			},
 		},
 		"no work, empty configured that way": {
@@ -114,14 +112,11 @@ func Test_checkSettings_hasWorkToDo(t *testing.T) {
 				Error: "" +
 					"No checks will be executed.\n" +
 					"Why?\n" +
-					"In addition to --files and --numbering configured false, you" +
-					" explicitly set --empty false.\n" +
+					"In addition to --files and --numbering configured false, you explicitly set --empty false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags" +
-					" is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command" +
-					" line.\n",
+					" 1. Edit the configuration file so that at least one of these flags is true, or\n" +
+					" 2. Explicitly set at least one of these flags true on the command line.\n",
 			},
 		},
 		"no work, files configured that way": {
@@ -131,14 +126,11 @@ func Test_checkSettings_hasWorkToDo(t *testing.T) {
 				Error: "" +
 					"No checks will be executed.\n" +
 					"Why?\n" +
-					"In addition to --empty and --numbering configured false, you" +
-					" explicitly set --files false.\n" +
+					"In addition to --empty and --numbering configured false, you explicitly set --files false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags" +
-					" is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command" +
-					" line.\n",
+					" 1. Edit the configuration file so that at least one of these flags is true, or\n" +
+					" 2. Explicitly set at least one of these flags true on the command line.\n",
 			},
 		},
 		"no work, numbering configured that way": {
@@ -148,14 +140,11 @@ func Test_checkSettings_hasWorkToDo(t *testing.T) {
 				Error: "" +
 					"No checks will be executed.\n" +
 					"Why?\n" +
-					"In addition to --empty and --files configured false, you explicitly" +
-					" set --numbering false.\n" +
+					"In addition to --empty and --files configured false, you explicitly set --numbering false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags" +
-					" is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command" +
-					" line.\n",
+					" 1. Edit the configuration file so that at least one of these flags is true, or\n" +
+					" 2. Explicitly set at least one of these flags true on the command line.\n",
 			},
 		},
 		"no work, empty and files configured that way": {
@@ -168,14 +157,11 @@ func Test_checkSettings_hasWorkToDo(t *testing.T) {
 				Error: "" +
 					"No checks will be executed.\n" +
 					"Why?\n" +
-					"In addition to --numbering configured false, you explicitly set" +
-					" --empty and --files false.\n" +
+					"In addition to --numbering configured false, you explicitly set --empty and --files false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags" +
-					" is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command" +
-					" line.\n",
+					" 1. Edit the configuration file so that at least one of these flags is true, or\n" +
+					" 2. Explicitly set at least one of these flags true on the command line.\n",
 			},
 		},
 		"no work, empty and numbering configured that way": {
@@ -188,14 +174,11 @@ func Test_checkSettings_hasWorkToDo(t *testing.T) {
 				Error: "" +
 					"No checks will be executed.\n" +
 					"Why?\n" +
-					"In addition to --files configured false, you explicitly set --empty" +
-					" and --numbering false.\n" +
+					"In addition to --files configured false, you explicitly set --empty and --numbering false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags" +
-					" is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command" +
-					" line.\n",
+					" 1. Edit the configuration file so that at least one of these flags is true, or\n" +
+					" 2. Explicitly set at least one of these flags true on the command line.\n",
 			},
 		},
 		"no work, numbering and files configured that way": {
@@ -208,14 +191,11 @@ func Test_checkSettings_hasWorkToDo(t *testing.T) {
 				Error: "" +
 					"No checks will be executed.\n" +
 					"Why?\n" +
-					"In addition to --empty configured false, you explicitly set --files" +
-					" and --numbering false.\n" +
+					"In addition to --empty configured false, you explicitly set --files and --numbering false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags" +
-					" is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command" +
-					" line.\n",
+					" 1. Edit the configuration file so that at least one of these flags is true, or\n" +
+					" 2. Explicitly set at least one of these flags true on the command line.\n",
 			},
 		},
 		"no work, all flags configured that way": {
@@ -232,10 +212,8 @@ func Test_checkSettings_hasWorkToDo(t *testing.T) {
 					"You explicitly set --empty, --files, and --numbering false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags" +
-					" is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command" +
-					" line.\n",
+					" 1. Edit the configuration file so that at least one of these flags is true, or\n" +
+					" 2. Explicitly set at least one of these flags true on the command line.\n",
 			},
 		},
 		"check empty": {
@@ -711,14 +689,11 @@ func Test_checkSettings_maybeDoWork(t *testing.T) {
 				Error: "" +
 					"No checks will be executed.\n" +
 					"Why?\n" +
-					"The flags --empty, --files, and --numbering are all configured" +
-					" false.\n" +
+					"The flags --empty, --files, and --numbering are all configured false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags" +
-					" is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command" +
-					" line.\n",
+					" 1. Edit the configuration file so that at least one of these flags is true, or\n" +
+					" 2. Explicitly set at least one of these flags true on the command line.\n",
 			},
 		},
 		"try a little work": {
@@ -812,14 +787,11 @@ func Test_checkRun(t *testing.T) {
 				Error: "" +
 					"No checks will be executed.\n" +
 					"Why?\n" +
-					"The flags --empty, --files, and --numbering are all configured" +
-					" false.\n" +
+					"The flags --empty, --files, and --numbering are all configured false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags" +
-					" is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command" +
-					" line.\n",
+					" 1. Edit the configuration file so that at least one of these flags is true, or\n" +
+					" 2. Explicitly set at least one of these flags true on the command line.\n",
 			},
 		},
 	}

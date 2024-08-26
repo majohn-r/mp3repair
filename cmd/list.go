@@ -359,8 +359,11 @@ func (ls *listSettings) tracksSortable(o output.Bus) bool {
 						listSortByNumberFlag, listSortByTitleFlag)
 				}
 			}
-			o.WriteCanonicalError("What to do:\nEither edit the configuration file and use" +
-				" those default values, or use appropriate command line values")
+			o.WriteCanonicalError("What to do:")
+			o.BeginErrorList(false)
+			o.WriteError("Edit the configuration file and use its default values, or\n")
+			o.WriteCanonicalError("use more appropriate command line values")
+			o.EndErrorList()
 			return false
 		case ls.sortByNumber.Value && !ls.albums.Value:
 			o.WriteCanonicalError("Sorting tracks by number not possible.")
@@ -394,8 +397,11 @@ func (ls *listSettings) tracksSortable(o output.Bus) bool {
 					)
 				}
 			}
-			o.WriteCanonicalError(
-				"What to do:\nEither edit the configuration file or change which flags you set on the command line.")
+			o.WriteCanonicalError("What to do:")
+			o.BeginErrorList(false)
+			o.WriteError("Edit the configuration file and use its default values, or\n")
+			o.WriteCanonicalError("change which flags you set on the command line.")
+			o.EndErrorList()
 			return false
 		case neitherSortingOptionSet:
 			if ls.sortByNumber.UserSet && ls.sortByTitle.UserSet {
@@ -406,7 +412,8 @@ func (ls *listSettings) tracksSortable(o output.Bus) bool {
 					listSortByNumberFlag,
 					listSortByTitleFlag,
 				)
-				o.WriteCanonicalError("What to do:\nEnable one of the sorting flags")
+				o.WriteCanonicalError("What to do:")
+				o.WriteCanonicalError("Enable one of the sorting flags")
 				return false
 			}
 			// pick a sensible option
@@ -438,9 +445,13 @@ func (ls *listSettings) tracksSortable(o output.Bus) bool {
 		o.WriteCanonicalError("Why?")
 		o.WriteCanonicalError(
 			"Tracks are not included in the output, but you explicitly set %s or %s true.",
-			listSortByNumberFlag, listSortByTitleFlag)
-		o.WriteCanonicalError("What to do:\nEither set %s true or remove the sorting flags"+
-			" from the command line.", listTracksFlag)
+			listSortByNumberFlag,
+			listSortByTitleFlag)
+		o.WriteCanonicalError("What to do:")
+		o.BeginErrorList(false)
+		o.WriteError("Set %s true, or\n", listTracksFlag)
+		o.WriteCanonicalError("Remove the sorting flags from the command line.")
+		o.EndErrorList()
 		return false
 	}
 	return true
@@ -450,7 +461,8 @@ func (ls *listSettings) hasWorkToDo(o output.Bus) bool {
 	if ls.albums.Value || ls.artists.Value || ls.tracks.Value {
 		return true
 	}
-	o.WriteCanonicalError("No listing will be output.\nWhy?\n")
+	o.WriteCanonicalError("No listing will be output.")
+	o.WriteCanonicalError("Why?")
 	switch {
 	case ls.albums.UserSet || ls.artists.UserSet || ls.tracks.UserSet:
 		flagsUserSet := make([]string, 0, 3)
@@ -486,10 +498,12 @@ func (ls *listSettings) hasWorkToDo(o output.Bus) bool {
 		o.WriteCanonicalError("The flags %s, %s, and %s are all configured false",
 			listAlbumsFlag, listArtistsFlag, listTracksFlag)
 	}
-	o.WriteError("What to do:\n")
-	o.WriteCanonicalError("Either:\n[1] Edit the configuration file so that at least one" +
-		" of these flags is true, or\n[2] explicitly set at least one of these flags true on" +
-		" the command line")
+	o.WriteCanonicalError("What to do:")
+	o.WriteCanonicalError("Either:")
+	o.BeginErrorList(true)
+	o.WriteError("Edit the configuration file so that at least one of these flags is true, or\n")
+	o.WriteCanonicalError("Explicitly set at least one of these flags true on the command line")
+	o.EndErrorList()
 	return false
 }
 

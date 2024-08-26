@@ -344,7 +344,8 @@ func (cs *checkSettings) hasWorkToDo(o output.Bus) bool {
 		return true
 	}
 	userPartiallyAtFault := cs.empty.UserSet || cs.files.UserSet || cs.numbering.UserSet
-	o.WriteCanonicalError("No checks will be executed.\nWhy?\n")
+	o.WriteCanonicalError("No checks will be executed.")
+	o.WriteCanonicalError("Why?")
 	switch userPartiallyAtFault {
 	case true:
 		flagsUserSet := make([]string, 0, 3)
@@ -381,10 +382,12 @@ func (cs *checkSettings) hasWorkToDo(o output.Bus) bool {
 		o.WriteCanonicalError("The flags %s, %s, and %s are all configured false",
 			checkEmptyFlag, checkFilesFlag, checkNumberingFlag)
 	}
-	o.WriteError("What to do:\n")
-	o.WriteCanonicalError("Either:\n[1] Edit the configuration file so that at least one" +
-		" of these flags is true, or\n[2] explicitly set at least one of these flags true on" +
-		" the command line")
+	o.WriteCanonicalError("What to do:")
+	o.WriteCanonicalError("Either:")
+	o.BeginErrorList(true)
+	o.WriteError("Edit the configuration file so that at least one of these flags is true, or\n")
+	o.WriteCanonicalError("Explicitly set at least one of these flags true on the command line")
+	o.EndErrorList()
 	return false
 }
 

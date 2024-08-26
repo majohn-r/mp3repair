@@ -164,7 +164,7 @@ func reportRepairsNeeded(o output.Bus, concernedArtists []*concernedArtist) {
 		if cAr := artistMap[name]; cAr != nil {
 			if cAr.isConcerned() {
 				if !headerPrinted {
-					o.WriteConsole("The following concerns can be repaired:\n")
+					o.WriteCanonicalConsole("The following concerns can be repaired:")
 					headerPrinted = true
 				}
 				cAr.toConsole(o)

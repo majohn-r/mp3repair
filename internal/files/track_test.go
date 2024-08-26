@@ -1190,6 +1190,12 @@ func (sB *sampleBus) DecrementTab(_ uint8) {}
 func (sB *sampleBus) Tab() uint8 {
 	return 0
 }
+func (sB *sampleBus) BeginConsoleList(_ bool)                     {}
+func (sB *sampleBus) EndConsoleList()                             {}
+func (sB *sampleBus) BeginErrorList(_ bool)                       {}
+func (sB *sampleBus) EndErrorList()                               {}
+func (sB *sampleBus) ConsoleListDecorator() *output.ListDecorator { return nil }
+func (sB *sampleBus) ErrorListDecorator() *output.ListDecorator   { return nil }
 
 func TestProgressWriter(t *testing.T) {
 	errorWriter := &sampleWriter{name: "error"}

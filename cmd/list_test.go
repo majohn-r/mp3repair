@@ -129,46 +129,40 @@ func Test_listSettings_hasWorkToDo(t *testing.T) {
 		"none true, none explicitly set": {
 			ls: &listSettings{},
 			WantedRecording: output.WantedRecording{
-				Error: "No listing will be output.\n" +
+				Error: "" +
+					"No listing will be output.\n" +
 					"Why?\n" +
-					"The flags --albums, --artists, and --tracks are all configured" +
-					" false.\n" +
+					"The flags --albums, --artists, and --tracks are all configured false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags" +
-					" is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command" +
-					" line.\n",
+					" 1. Edit the configuration file so that at least one of these flags is true, or\n" +
+					" 2. Explicitly set at least one of these flags true on the command line.\n",
 			},
 		},
 		"none true, tracks explicitly set": {
 			ls: &listSettings{tracks: cmdtoolkit.CommandFlag[bool]{UserSet: true}},
 			WantedRecording: output.WantedRecording{
-				Error: "No listing will be output.\n" +
+				Error: "" +
+					"No listing will be output.\n" +
 					"Why?\n" +
-					"In addition to --albums and --artists configured false, you" +
-					" explicitly set --tracks false.\n" +
+					"In addition to --albums and --artists configured false, you explicitly set --tracks false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags" +
-					" is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command" +
-					" line.\n",
+					" 1. Edit the configuration file so that at least one of these flags is true, or\n" +
+					" 2. Explicitly set at least one of these flags true on the command line.\n",
 			},
 		},
 		"none true, artists explicitly set": {
 			ls: &listSettings{artists: cmdtoolkit.CommandFlag[bool]{UserSet: true}},
 			WantedRecording: output.WantedRecording{
-				Error: "No listing will be output.\n" +
+				Error: "" +
+					"No listing will be output.\n" +
 					"Why?\n" +
-					"In addition to --albums and --tracks configured false, you" +
-					" explicitly set --artists false.\n" +
+					"In addition to --albums and --tracks configured false, you explicitly set --artists false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags" +
-					" is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command" +
-					" line.\n",
+					" 1. Edit the configuration file so that at least one of these flags is true, or\n" +
+					" 2. Explicitly set at least one of these flags true on the command line.\n",
 			},
 		},
 		"none true, artists and tracks explicitly set": {
@@ -177,31 +171,27 @@ func Test_listSettings_hasWorkToDo(t *testing.T) {
 				tracks:  cmdtoolkit.CommandFlag[bool]{UserSet: true},
 			},
 			WantedRecording: output.WantedRecording{
-				Error: "No listing will be output.\n" +
+				Error: "" +
+					"No listing will be output.\n" +
 					"Why?\n" +
-					"In addition to --albums configured false, you explicitly set" +
-					" --artists and --tracks false.\n" +
+					"In addition to --albums configured false, you explicitly set --artists and --tracks false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags" +
-					" is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command" +
-					" line.\n",
+					" 1. Edit the configuration file so that at least one of these flags is true, or\n" +
+					" 2. Explicitly set at least one of these flags true on the command line.\n",
 			},
 		},
 		"none true, albums explicitly set": {
 			ls: &listSettings{albums: cmdtoolkit.CommandFlag[bool]{UserSet: true}},
 			WantedRecording: output.WantedRecording{
-				Error: "No listing will be output.\n" +
+				Error: "" +
+					"No listing will be output.\n" +
 					"Why?\n" +
-					"In addition to --artists and --tracks configured false, you" +
-					" explicitly set --albums false.\n" +
+					"In addition to --artists and --tracks configured false, you explicitly set --albums false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags" +
-					" is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command" +
-					" line.\n",
+					" 1. Edit the configuration file so that at least one of these flags is true, or\n" +
+					" 2. Explicitly set at least one of these flags true on the command line.\n",
 			},
 		},
 		"none true, albums and tracks explicitly set": {
@@ -210,16 +200,14 @@ func Test_listSettings_hasWorkToDo(t *testing.T) {
 				tracks: cmdtoolkit.CommandFlag[bool]{UserSet: true},
 			},
 			WantedRecording: output.WantedRecording{
-				Error: "No listing will be output.\n" +
+				Error: "" +
+					"No listing will be output.\n" +
 					"Why?\n" +
-					"In addition to --artists configured false, you explicitly set" +
-					" --albums and --tracks false.\n" +
+					"In addition to --artists configured false, you explicitly set --albums and --tracks false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags" +
-					" is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command" +
-					" line.\n",
+					" 1. Edit the configuration file so that at least one of these flags is true, or\n" +
+					" 2. Explicitly set at least one of these flags true on the command line.\n",
 			},
 		},
 		"none true, albums and artists explicitly set": {
@@ -228,16 +216,14 @@ func Test_listSettings_hasWorkToDo(t *testing.T) {
 				artists: cmdtoolkit.CommandFlag[bool]{UserSet: true},
 			},
 			WantedRecording: output.WantedRecording{
-				Error: "No listing will be output.\n" +
+				Error: "" +
+					"No listing will be output.\n" +
 					"Why?\n" +
-					"In addition to --tracks configured false, you explicitly set" +
-					" --albums and --artists false.\n" +
+					"In addition to --tracks configured false, you explicitly set --albums and --artists false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags" +
-					" is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command" +
-					" line.\n",
+					" 1. Edit the configuration file so that at least one of these flags is true, or\n" +
+					" 2. Explicitly set at least one of these flags true on the command line.\n",
 			},
 		},
 		"none true, albums and artists and tracks explicitly set": {
@@ -247,15 +233,14 @@ func Test_listSettings_hasWorkToDo(t *testing.T) {
 				tracks:  cmdtoolkit.CommandFlag[bool]{UserSet: true},
 			},
 			WantedRecording: output.WantedRecording{
-				Error: "No listing will be output.\n" +
+				Error: "" +
+					"No listing will be output.\n" +
 					"Why?\n" +
 					"You explicitly set --albums, --artists, and --tracks false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags" +
-					" is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command" +
-					" line.\n",
+					" 1. Edit the configuration file so that at least one of these flags is true, or\n" +
+					" 2. Explicitly set at least one of these flags true on the command line.\n",
 			},
 		},
 		"tracks true": {
@@ -412,12 +397,13 @@ func Test_listSettings_tracksSortable(t *testing.T) {
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
-				Error: "Track sorting cannot be done.\n" +
+				Error: "" +
+					"Track sorting cannot be done.\n" +
 					"Why?\n" +
 					"The --byNumber and --byTitle flags are both configured true.\n" +
 					"What to do:\n" +
-					"Either edit the configuration file and use those default values, or" +
-					" use appropriate command line values.\n",
+					"● Edit the configuration file and use its default values, or\n" +
+					"● Use more appropriate command line values.\n",
 			},
 		},
 		"tracks listed, both options set, by number explicitly": {
@@ -428,13 +414,14 @@ func Test_listSettings_tracksSortable(t *testing.T) {
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
-				Error: "Track sorting cannot be done.\n" +
+				Error: "" +
+					"Track sorting cannot be done.\n" +
 					"Why?\n" +
 					"The --byTitle flag is configured true and you explicitly set" +
 					" --byNumber true.\n" +
 					"What to do:\n" +
-					"Either edit the configuration file and use those default values, or" +
-					" use appropriate command line values.\n",
+					"● Edit the configuration file and use its default values, or\n" +
+					"● Use more appropriate command line values.\n",
 			},
 		},
 		"tracks listed, both options set, by title explicitly": {
@@ -445,13 +432,14 @@ func Test_listSettings_tracksSortable(t *testing.T) {
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
-				Error: "Track sorting cannot be done.\n" +
+				Error: "" +
+					"Track sorting cannot be done.\n" +
 					"Why?\n" +
 					"The --byNumber flag is configured true and you explicitly set" +
 					" --byTitle true.\n" +
 					"What to do:\n" +
-					"Either edit the configuration file and use those default values, or" +
-					" use appropriate command line values.\n",
+					"● Edit the configuration file and use its default values, or\n" +
+					"● Use more appropriate command line values.\n",
 			},
 		},
 		"tracks listed, both options set, both explicitly": {
@@ -462,12 +450,13 @@ func Test_listSettings_tracksSortable(t *testing.T) {
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
-				Error: "Track sorting cannot be done.\n" +
+				Error: "" +
+					"Track sorting cannot be done.\n" +
 					"Why?\n" +
 					"You explicitly set --byNumber and --byTitle true.\n" +
 					"What to do:\n" +
-					"Either edit the configuration file and use those default values, or" +
-					" use appropriate command line values.\n",
+					"● Edit the configuration file and use its default values, or\n" +
+					"● Use more appropriate command line values.\n",
 			},
 		},
 		"tracks listed, no albums, sort by number, neither explicitly": {
@@ -477,14 +466,14 @@ func Test_listSettings_tracksSortable(t *testing.T) {
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
-				Error: "Sorting tracks by number not possible.\n" +
+				Error: "" +
+					"Sorting tracks by number not possible.\n" +
 					"Why?\n" +
 					"Track numbers are only relevant if albums are also output.\n" +
-					"--albums is configured as false, and --byNumber is configured as" +
-					" true.\n" +
+					"--albums is configured as false, and --byNumber is configured as true.\n" +
 					"What to do:\n" +
-					"Either edit the configuration file or change which flags you set on" +
-					" the command line.\n",
+					"● Edit the configuration file and use its default values, or\n" +
+					"● Change which flags you set on the command line.\n",
 			},
 		},
 		"tracks listed, no albums, sort by number, albums explicitly": {
@@ -495,13 +484,14 @@ func Test_listSettings_tracksSortable(t *testing.T) {
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
-				Error: "Sorting tracks by number not possible.\n" +
+				Error: "" +
+					"Sorting tracks by number not possible.\n" +
 					"Why?\n" +
 					"Track numbers are only relevant if albums are also output.\n" +
 					"You set --albums false and --byNumber is configured as true.\n" +
 					"What to do:\n" +
-					"Either edit the configuration file or change which flags you set on" +
-					" the command line.\n",
+					"● Edit the configuration file and use its default values, or\n" +
+					"● Change which flags you set on the command line.\n",
 			},
 		},
 		"tracks listed, no albums, sort by number, sort explicitly": {
@@ -511,13 +501,14 @@ func Test_listSettings_tracksSortable(t *testing.T) {
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
-				Error: "Sorting tracks by number not possible.\n" +
+				Error: "" +
+					"Sorting tracks by number not possible.\n" +
 					"Why?\n" +
 					"Track numbers are only relevant if albums are also output.\n" +
 					"You set --byNumber true and --albums is configured as false.\n" +
 					"What to do:\n" +
-					"Either edit the configuration file or change which flags you set on" +
-					" the command line.\n",
+					"● Edit the configuration file and use its default values, or\n" +
+					"● Change which flags you set on the command line.\n",
 			},
 		},
 		"tracks listed, no albums, sort by number, both explicitly": {
@@ -528,13 +519,14 @@ func Test_listSettings_tracksSortable(t *testing.T) {
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
-				Error: "Sorting tracks by number not possible.\n" +
+				Error: "" +
+					"Sorting tracks by number not possible.\n" +
 					"Why?\n" +
 					"Track numbers are only relevant if albums are also output.\n" +
 					"You set --byNumber true and --albums false.\n" +
 					"What to do:\n" +
-					"Either edit the configuration file or change which flags you set on" +
-					" the command line.\n",
+					"● Edit the configuration file and use its default values, or\n" +
+					"● Change which flags you set on the command line.\n",
 			},
 		},
 		"tracks listed, both sorting options explicitly false": {
@@ -639,25 +631,26 @@ func Test_listSettings_tracksSortable(t *testing.T) {
 			ls:   &listSettings{sortByNumber: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true}},
 			want: false,
 			WantedRecording: output.WantedRecording{
-				Error: "Your sorting preferences are not relevant.\n" +
+				Error: "" +
+					"Your sorting preferences are not relevant.\n" +
 					"Why?\n" +
-					"Tracks are not included in the output, but you explicitly set" +
-					" --byNumber or --byTitle true.\n" +
+					"Tracks are not included in the output, but you explicitly set --byNumber or --byTitle true.\n" +
 					"What to do:\n" +
-					"Either set --tracks true or remove the sorting flags from the" +
-					" command line.\n",
+					"● Set --tracks true, or\n" +
+					"● Remove the sorting flags from the command line.\n",
 			},
 		},
 		"tracks not listed, sort by title explicitly called for": {
 			ls:   &listSettings{sortByTitle: cmdtoolkit.CommandFlag[bool]{Value: true, UserSet: true}},
 			want: false,
 			WantedRecording: output.WantedRecording{
-				Error: "Your sorting preferences are not relevant.\n" +
+				Error: "" +
+					"Your sorting preferences are not relevant.\n" +
 					"Why?\n" +
-					"Tracks are not included in the output, but you explicitly set" +
-					" --byNumber or --byTitle true.\nWhat to do:\n" +
-					"Either set --tracks true or remove the sorting flags from the" +
-					" command line.\n",
+					"Tracks are not included in the output, but you explicitly set --byNumber or --byTitle true.\n" +
+					"What to do:\n" +
+					"● Set --tracks true, or\n" +
+					"● Remove the sorting flags from the command line.\n",
 			},
 		},
 		"tracks not listed, sort by number and title explicitly called for": {
@@ -667,13 +660,13 @@ func Test_listSettings_tracksSortable(t *testing.T) {
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
-				Error: "Your sorting preferences are not relevant.\n" +
+				Error: "" +
+					"Your sorting preferences are not relevant.\n" +
 					"Why?\n" +
-					"Tracks are not included in the output, but you explicitly set" +
-					" --byNumber or --byTitle true.\n" +
+					"Tracks are not included in the output, but you explicitly set --byNumber or --byTitle true.\n" +
 					"What to do:\n" +
-					"Either set --tracks true or remove the sorting flags from the" +
-					" command line.\n",
+					"● Set --tracks true, or\n" +
+					"● Remove the sorting flags from the command line.\n",
 			},
 		},
 		"tracks listed, albums too, just sort by number": {
@@ -1931,8 +1924,8 @@ func Test_listRun(t *testing.T) {
 					"Why?\n" +
 					"The --byNumber and --byTitle flags are both configured true.\n" +
 					"What to do:\n" +
-					"Either edit the configuration file and use those default values, or" +
-					" use appropriate command line values.\n",
+					"● Edit the configuration file and use its default values, or\n" +
+					"● Use more appropriate command line values.\n",
 			},
 		},
 		"no work to do": {
@@ -1942,14 +1935,11 @@ func Test_listRun(t *testing.T) {
 				Error: "" +
 					"No listing will be output.\n" +
 					"Why?\n" +
-					"The flags --albums, --artists, and --tracks are all configured" +
-					" false.\n" +
+					"The flags --albums, --artists, and --tracks are all configured false.\n" +
 					"What to do:\n" +
 					"Either:\n" +
-					"[1] Edit the configuration file so that at least one of these flags" +
-					" is true, or\n" +
-					"[2] explicitly set at least one of these flags true on the command" +
-					" line.\n",
+					" 1. Edit the configuration file so that at least one of these flags is true, or\n" +
+					" 2. Explicitly set at least one of these flags true on the command line.\n",
 			},
 		},
 	}
