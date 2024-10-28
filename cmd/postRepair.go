@@ -55,7 +55,7 @@ func postRepairWork(o output.Bus, ss *searchSettings, allArtists []*files.Artist
 					}
 				}
 			}
-			o.WriteCanonicalConsole("Backup directories to delete: %d", len(dirs))
+			o.ConsolePrintf("Backup directories to delete: %d.\n", len(dirs))
 			if len(dirs) > 0 {
 				sort.Strings(dirs)
 				dirsDeleted := 0
@@ -67,7 +67,7 @@ func postRepairWork(o output.Bus, ss *searchSettings, allArtists []*files.Artist
 						e = cmdtoolkit.NewExitSystemError(postRepairCommandName)
 					}
 				}
-				o.WriteCanonicalConsole("Backup directories deleted: %d", dirsDeleted)
+				o.ConsolePrintf("Backup directories deleted: %d.\n", dirsDeleted)
 			}
 		}
 	}

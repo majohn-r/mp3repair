@@ -151,8 +151,9 @@ func Test_resetLibrarySettings_waitForStop(t *testing.T) {
 			},
 			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
-				Error: "An error occurred while attempting to stop the service \"WMPNetworkSVC\": no results " +
-					"from query.\n",
+				Error: "" +
+					"An error occurred while attempting to stop the service \"WMPNetworkSVC\": " +
+					"'no results from query'.\n",
 				Log: "" +
 					"level='error'" +
 					" error='no results from query'" +
@@ -254,7 +255,7 @@ func Test_resetLibrarySettings_stopFoundService(t *testing.T) {
 			},
 			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
-				Error: "An error occurred while trying to stop service \"WMPNetworkSVC\": no results from query.\n",
+				Error: "An error occurred while trying to stop service \"WMPNetworkSVC\": 'no results from query'.\n",
 				Log: "" +
 					"level='error' " +
 					"error='no results from query' " +
@@ -328,7 +329,7 @@ func Test_resetLibrarySettings_stopFoundService(t *testing.T) {
 			},
 			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
-				Error: "The service \"WMPNetworkSVC\" cannot be stopped: no results from query.\n",
+				Error: "The service \"WMPNetworkSVC\" cannot be stopped: 'no results from query'.\n",
 				Log: "" +
 					"level='error'" +
 					" error='no results from query'" +
@@ -451,7 +452,7 @@ func Test_resetLibrarySettings_disableService(t *testing.T) {
 			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
-					"The service \"WMPNetworkSVC\" cannot be opened: no such service.\n" +
+					"The service \"WMPNetworkSVC\" cannot be opened: 'no such service'.\n" +
 					"The following services are available:\n" +
 					"  State \"no such service\":\n" +
 					"    \"WMPNetworkSVC\"\n",
@@ -470,7 +471,7 @@ func Test_resetLibrarySettings_disableService(t *testing.T) {
 			manager:    newTestManager(nil, nil),
 			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
-				Error: "The service \"WMPNetworkSVC\" cannot be opened: no such service.\n",
+				Error: "The service \"WMPNetworkSVC\" cannot be opened: 'no such service'.\n",
 				Log: "" +
 					"level='error'" +
 					" error='no such service'" +
@@ -490,7 +491,7 @@ func Test_resetLibrarySettings_disableService(t *testing.T) {
 			manager:    newTestManager(map[string]*mgr.Service{"WMPNetworkSVC": nil}, nil),
 			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
-				Error: "An error occurred while trying to stop service \"WMPNetworkSVC\": no service.\n",
+				Error: "An error occurred while trying to stop service \"WMPNetworkSVC\": 'no service'.\n",
 				Log: "" +
 					"level='error'" +
 					" error='no service'" +
@@ -560,7 +561,7 @@ func Test_resetLibrarySettings_stopService(t *testing.T) {
 			},
 			wantStatus: cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
-				Error: "The service \"WMPNetworkSVC\" cannot be opened: nil manager.\n",
+				Error: "The service \"WMPNetworkSVC\" cannot be opened: 'nil manager'.\n",
 				Log: "" +
 					"level='error'" +
 					" error='nil manager'" +

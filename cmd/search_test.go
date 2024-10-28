@@ -53,7 +53,7 @@ func Test_evaluateFilter(t *testing.T) {
 					"The --albumFilter value \"[9-0]\" cannot be used.\n" +
 					"Why?\n" +
 					"The value of --albumFilter that you specified is not a valid regular expression: " +
-					"error parsing regexp: invalid character class range: `9-0`.\n" +
+					"'*syntax.Error: error parsing regexp: invalid character class range: `9-0`'.\n" +
 					"What to do:\n" +
 					"● Try a different setting, or\n" +
 					"● Omit setting --albumFilter and try the default value.\n",
@@ -78,7 +78,7 @@ func Test_evaluateFilter(t *testing.T) {
 					"The --albumFilter value \"[9-0]\" cannot be used.\n" +
 					"Why?\n" +
 					"The configured default value of --albumFilter is not a valid regular expression: " +
-					"error parsing regexp: invalid character class range: `9-0`.\n" +
+					"'*syntax.Error: error parsing regexp: invalid character class range: `9-0`'.\n" +
 					"What to do:\n" +
 					"● Edit the defaults.yaml file containing the settings, or\n" +
 					"● Explicitly set --albumFilter to a better value.\n",
@@ -284,21 +284,21 @@ func Test_processSearchFlags(t *testing.T) {
 					"The --albumFilter value \"[2\" cannot be used.\n" +
 					"Why?\n" +
 					"The configured default value of --albumFilter is not a valid regular expression: " +
-					"error parsing regexp: missing closing ]: `[2`.\n" +
+					"'*syntax.Error: error parsing regexp: missing closing ]: `[2`'.\n" +
 					"What to do:\n" +
 					"● Edit the defaults.yaml file containing the settings, or\n" +
 					"● Explicitly set --albumFilter to a better value.\n" +
 					"The --artistFilter value \"[1-0]\" cannot be used.\n" +
 					"Why?\n" +
 					"The configured default value of --artistFilter is not a valid regular expression: " +
-					"error parsing regexp: invalid character class range: `1-0`.\n" +
+					"'*syntax.Error: error parsing regexp: invalid character class range: `1-0`'.\n" +
 					"What to do:\n" +
 					"● Edit the defaults.yaml file containing the settings, or\n" +
 					"● Explicitly set --artistFilter to a better value.\n" +
 					"The --trackFilter value \"0++\" cannot be used.\n" +
 					"Why?\n" +
 					"The configured default value of --trackFilter is not a valid regular expression: " +
-					"error parsing regexp: invalid nested repetition operator: `++`.\n" +
+					"'*syntax.Error: error parsing regexp: invalid nested repetition operator: `++`'.\n" +
 					"What to do:\n" +
 					"● Edit the defaults.yaml file containing the settings, or\n" +
 					"● Explicitly set --trackFilter to a better value.\n" +
@@ -486,11 +486,11 @@ func Test_evaluateSearchFlags(t *testing.T) {
 			producer:     testFlagProducer{},
 			wantSettings: &searchSettings{},
 			WantedRecording: output.WantedRecording{
-				Error: "An internal error occurred: flag \"albumFilter\" does not exist.\n" +
-					"An internal error occurred: flag \"artistFilter\" does not exist.\n" +
-					"An internal error occurred: flag \"extensions\" does not exist.\n" +
-					"An internal error occurred: flag \"topDir\" does not exist.\n" +
-					"An internal error occurred: flag \"trackFilter\" does not exist.\n",
+				Error: "An internal error occurred: 'flag \"albumFilter\" does not exist'.\n" +
+					"An internal error occurred: 'flag \"artistFilter\" does not exist'.\n" +
+					"An internal error occurred: 'flag \"extensions\" does not exist'.\n" +
+					"An internal error occurred: 'flag \"topDir\" does not exist'.\n" +
+					"An internal error occurred: 'flag \"trackFilter\" does not exist'.\n",
 				Log: "level='error'" +
 					" error='flag \"albumFilter\" does not exist'" +
 					" msg='internal error'\n" +

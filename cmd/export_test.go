@@ -200,7 +200,7 @@ func Test_createConfigurationFile(t *testing.T) {
 			},
 			want: false,
 			WantedRecording: output.WantedRecording{
-				Error: "The file \"filename\" cannot be created: disc jammed.\n",
+				Error: "The file \"filename\" cannot be created: 'disc jammed'.\n",
 				Log: "level='error'" +
 					" command='export'" +
 					" error='disc jammed'" +
@@ -276,7 +276,7 @@ func Test_exportFlagSettings_overwriteConfigurationFile(t *testing.T) {
 			wantStatus: cmdtoolkit.NewExitSystemError("export"),
 			WantedRecording: output.WantedRecording{
 				Error: "The file \"[filename]\" cannot be renamed to" +
-					" \"[filename]-backup\": sorry, cannot rename that file.\n",
+					" \"[filename]-backup\": 'sorry, cannot rename that file'.\n",
 				Log: "level='error'" +
 					" error='sorry, cannot rename that file'" +
 					" new='[filename]-backup'" +
@@ -295,7 +295,7 @@ func Test_exportFlagSettings_overwriteConfigurationFile(t *testing.T) {
 			},
 			wantStatus: cmdtoolkit.NewExitSystemError("export"),
 			WantedRecording: output.WantedRecording{
-				Error: "The file \"[filename]\" cannot be created: disk is full.\n",
+				Error: "The file \"[filename]\" cannot be created: 'disk is full'.\n",
 				Log: "level='error'" +
 					" command='export'" +
 					" error='disk is full'" +
@@ -398,7 +398,7 @@ func Test_exportFlagSettings_exportDefaultConfiguration(t *testing.T) {
 			wantStatus: cmdtoolkit.NewExitSystemError("export"),
 			WantedRecording: output.WantedRecording{
 				Error: "The file \"appPath\\\\defaults.yaml\" cannot be created:" +
-					" cannot write file, sorry.\n",
+					" 'cannot write file, sorry'.\n",
 				Log: "" +
 					"level='error'" +
 					" command='export'" +
@@ -584,7 +584,7 @@ func Test_exportRun(t *testing.T) {
 				},
 			},
 			WantedRecording: output.WantedRecording{
-				Error: "An internal error occurred: no details for flag \"defaults\".\n",
+				Error: "An internal error occurred: 'no details for flag \"defaults\"'.\n",
 				Log: "level='error'" +
 					" error='no details for flag \"defaults\"'" +
 					" msg='internal error'\n",

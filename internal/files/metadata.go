@@ -94,9 +94,9 @@ type TrackMetadataMaker struct {
 	Source       sourceType
 }
 
-func (maker *TrackMetadataMaker) Make() *TrackMetadata {
+func (maker *TrackMetadataMaker) MakeMetadata() *TrackMetadata {
 	tm := newTrackMetadata()
-	for _, src := range []sourceType{ID3V1, ID3V2} {
+	for _, src := range sourceTypes {
 		tm.setArtistName(src, maker.Artist)
 		tm.setAlbumName(src, maker.Album)
 		tm.setAlbumGenre(src, maker.Genre)

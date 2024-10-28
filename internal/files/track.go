@@ -424,7 +424,7 @@ func ReadMetadata(o output.Bus, artists []*Artist) {
 			count += len(album.tracks)
 		}
 	}
-	o.WriteCanonicalError("Reading track metadata")
+	o.ErrorPrintln("Reading track metadata.")
 	// derived from the Default ProgressBarTemplate used by the progress bar,
 	// following guidance in the ElementSpeed definition to change the output to
 	// display the speed in tracks per second
@@ -486,9 +486,12 @@ func processArtistMetadata(o output.Bus, artists []*Artist) {
 }
 
 func reportAmbiguousChoices(o output.Bus, subject, context string, choices map[string]int) {
-	o.WriteCanonicalError("There are multiple %s fields for %q,"+
-		" and there is no unambiguously preferred choice; candidates are %v", subject, context,
-		encodeChoices(choices))
+	o.ErrorPrintf(
+		"There are multiple %s fields for %q, and there is no unambiguously preferred choice; candidates are %v.\n",
+		subject,
+		context,
+		encodeChoices(choices),
+	)
 }
 
 func logAmbiguousValue(o output.Bus, m map[string]any) {
@@ -642,7 +645,7 @@ func reportAllTrackErrors(o output.Bus, artists []*Artist) {
 
 func (t *Track) reportMetadataErrors(o output.Bus) {
 	if t.hasMetadataError() {
-		for _, src := range []sourceType{ID3V1, ID3V2} {
+		for _, src := range sourceTypes {
 			if metadata := t.metadata; metadata != nil {
 				if e := metadata.errorCause(src); e != "" {
 					t.ReportMetadataReadError(o, src, e)
@@ -676,8 +679,12 @@ func (parser TrackNameParser) Parse(o output.Bus) (*ParsedTrackName, bool) {
 			"albumName":  parser.Album.title,
 			"artistName": parser.Album.RecordingArtistName(),
 		})
-		o.WriteCanonicalError("The track %q on album %q by artist %q cannot be parsed",
-			parser.FileName, parser.Album.title, parser.Album.RecordingArtistName())
+		o.ErrorPrintf(
+			"The track %q on album %q by artist %q cannot be parsed.\n",
+			parser.FileName,
+			parser.Album.title,
+			parser.Album.RecordingArtistName(),
+		)
 		return nil, false
 	}
 	name := &ParsedTrackName{}

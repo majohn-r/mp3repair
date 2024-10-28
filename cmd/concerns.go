@@ -59,12 +59,12 @@ func (c concerns) toConsole(o output.Bus) {
 		cStrings := make([]string, 0, len(c.concernsCollection))
 		for key, value := range c.concernsCollection {
 			for _, s := range value {
-				cStrings = append(cStrings, fmt.Sprintf("* [%s] %s\n", concernName(key), s))
+				cStrings = append(cStrings, fmt.Sprintf("* [%s] %s", concernName(key), s))
 			}
 		}
 		slices.Sort(cStrings)
 		for _, s := range cStrings {
-			o.WriteConsole(s)
+			o.ConsolePrintln(s)
 		}
 	}
 }
@@ -98,7 +98,7 @@ func (cT *concernedTrack) name() string {
 
 func (cT *concernedTrack) toConsole(o output.Bus) {
 	if cT.isConcerned() {
-		o.WriteConsole("Track %q\n", cT.name())
+		o.ConsolePrintf("Track %q\n", cT.name())
 		cT.concerns.toConsole(o)
 	}
 }
@@ -191,7 +191,7 @@ func (cAl *concernedAlbum) rollup() bool {
 
 func (cAl *concernedAlbum) toConsole(o output.Bus) {
 	if cAl.isConcerned() {
-		o.WriteConsole("Album %q\n", cAl.name())
+		o.ConsolePrintf("Album %q\n", cAl.name())
 		cAl.concerns.toConsole(o)
 		m := map[string]*concernedTrack{}
 		names := make([]string, 0, len(cAl.concernedTracks))
@@ -306,7 +306,7 @@ func (cAr *concernedArtist) rollup() bool {
 
 func (cAr *concernedArtist) toConsole(o output.Bus) {
 	if cAr.isConcerned() {
-		o.WriteConsole("Artist %q\n", cAr.name())
+		o.ConsolePrintf("Artist %q\n", cAr.name())
 		cAr.concerns.toConsole(o)
 		m := map[string]*concernedAlbum{}
 		names := make([]string, 0, len(cAr.concernedAlbums))

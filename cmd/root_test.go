@@ -335,8 +335,7 @@ func Test_cookCommandLineArguments(t *testing.T) {
 			},
 			want: []string{"foo", "bar"},
 			WantedRecording: output.WantedRecording{
-				Error: "An error was found in processing argument \"%arg%\": dereference" +
-					" service dead.\n",
+				Error: "An error was found in processing argument \"%arg%\": 'dereference service dead'.\n",
 				Log: "level='error'" +
 					" argument='%arg%'" +
 					" error='dereference service dead'" +

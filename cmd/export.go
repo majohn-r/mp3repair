@@ -86,7 +86,7 @@ func createConfigurationFile(o output.Bus, f string, content []byte) bool {
 		cmdtoolkit.ReportFileCreationFailure(o, exportCommand, f, fileErr)
 		return false
 	}
-	o.WriteCanonicalConsole("File %q has been written", f)
+	o.ConsolePrintf("File %q has been written.\n", f)
 	return true
 }
 
@@ -113,7 +113,7 @@ func (es *exportSettings) overwriteConfigurationFile(o output.Bus, f string, pay
 	}
 	backup := f + "-backup"
 	if fileErr := rename(f, backup); fileErr != nil {
-		o.WriteCanonicalError("The file %q cannot be renamed to %q: %v", f, backup, fileErr)
+		o.ErrorPrintf("The file %q cannot be renamed to %q: %v.\n", f, backup, cmdtoolkit.ErrorToString(fileErr))
 		o.Log(output.Error, "rename failed", map[string]any{
 			"error": fileErr,
 			"old":   f,
@@ -130,24 +130,24 @@ func (es *exportSettings) overwriteConfigurationFile(o output.Bus, f string, pay
 
 func (es *exportSettings) canOverwriteConfigurationFile(o output.Bus, f string) bool {
 	if !es.overwriteEnabled.Value {
-		o.WriteCanonicalError("The file %q exists and cannot be overwritten", f)
+		o.ErrorPrintf("The file %q exists and cannot be overwritten.\n", f)
 		o.Log(output.Error, "overwrite is not permitted", map[string]any{
 			exportOverwriteAsFlag: false,
 			"fileName":            f,
 			"user-set":            es.overwriteEnabled.UserSet,
 		})
-		o.WriteCanonicalError("Why?")
+		o.ErrorPrintln("Why?")
 		switch {
 		case es.overwriteEnabled.UserSet:
-			o.WriteCanonicalError("You explicitly set %s false", exportOverwriteAsFlag)
+			o.ErrorPrintf("You explicitly set %s false.\n", exportOverwriteAsFlag)
 		default:
-			o.WriteCanonicalError("As currently configured, overwriting the file is disabled")
+			o.ErrorPrintln("As currently configured, overwriting the file is disabled.")
 		}
-		o.WriteCanonicalError("What to do:")
-		o.WriteCanonicalError("To enable overwriting the existing file, use either:")
+		o.ErrorPrintln("What to do:")
+		o.ErrorPrintln("To enable overwriting the existing file, use either:")
 		o.BeginErrorList(false)
-		o.WriteError(exportOverwriteAsFlag + " or\n")
-		o.WriteError(exportOverwriteAsFlag + "=true\n")
+		o.ErrorPrintln(exportOverwriteAsFlag + " or")
+		o.ErrorPrintln(exportOverwriteAsFlag + "=true")
 		o.EndErrorList()
 		return false
 	}
@@ -156,23 +156,23 @@ func (es *exportSettings) canOverwriteConfigurationFile(o output.Bus, f string) 
 
 func (es *exportSettings) canWriteConfigurationFile(o output.Bus) bool {
 	if !es.defaultsEnabled.Value {
-		o.WriteCanonicalError("default configuration settings will not be exported")
+		o.ErrorPrintln("Default configuration settings will not be exported.")
 		o.Log(output.Error, "export defaults disabled", map[string]any{
 			exportDefaultsAsFlag: false,
 			"user-set":           es.defaultsEnabled.UserSet,
 		})
-		o.WriteCanonicalError("Why?")
+		o.ErrorPrintln("Why?")
 		switch {
 		case es.defaultsEnabled.UserSet:
-			o.WriteCanonicalError("You explicitly set %s false", exportDefaultsAsFlag)
+			o.ErrorPrintf("You explicitly set %s false.\n", exportDefaultsAsFlag)
 		default:
-			o.WriteCanonicalError("As currently configured, exporting default configuration settings is disabled")
+			o.ErrorPrintln("As currently configured, exporting default configuration settings is disabled.")
 		}
-		o.WriteCanonicalError("What to do:")
-		o.WriteCanonicalError("To enable exporting defaults, use either:")
+		o.ErrorPrintln("What to do:")
+		o.ErrorPrintln("To enable exporting defaults, use either:")
 		o.BeginErrorList(false)
-		o.WriteError(exportDefaultsAsFlag + " or\n")
-		o.WriteError(exportDefaultsAsFlag + "=true\n")
+		o.ErrorPrintln(exportDefaultsAsFlag + " or")
+		o.ErrorPrintln(exportDefaultsAsFlag + "=true")
 		o.EndErrorList()
 		return false
 	}

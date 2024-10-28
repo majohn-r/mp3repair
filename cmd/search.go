@@ -146,7 +146,7 @@ func processSearchFlags(
 	}
 	if !regexOk {
 		// user has attempted to use filters that don't compile
-		o.WriteCanonicalError(searchRegexInstructions)
+		o.ErrorPrintln(searchRegexInstructions)
 	}
 	topDir, topDirFilterOk := evaluateTopDir(o, values)
 	switch {
@@ -179,16 +179,16 @@ func evaluateFileExtensions(o output.Bus, values map[string]*cmdtoolkit.CommandF
 		case strings.HasPrefix(candidate, ".") && len(candidate) >= 2:
 			extensions = append(extensions, candidate)
 		default:
-			o.WriteCanonicalError("The extension %q cannot be used.", candidate)
+			o.ErrorPrintf("The extension %q cannot be used.\n", candidate)
 			failedCandidates = append(failedCandidates, candidate)
 			extensionsValid = false
 		}
 	}
 	if !extensionsValid {
-		o.WriteCanonicalError("Why?")
-		o.WriteCanonicalError("Extensions must be at least two characters long and begin with '.'")
-		o.WriteCanonicalError("What to do:")
-		o.WriteCanonicalError("Provide appropriate extensions.")
+		o.ErrorPrintln("Why?")
+		o.ErrorPrintln("Extensions must be at least two characters long and begin with '.'.")
+		o.ErrorPrintln("What to do:")
+		o.ErrorPrintln("Provide appropriate extensions.")
 		o.Log(output.Error, "invalid file extensions", map[string]any{
 			"rejected":               failedCandidates,
 			searchFileExtensionsFlag: rawValue.Value,
@@ -204,47 +204,45 @@ func evaluateTopDir(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]
 	}
 	file, fileErr := cmdtoolkit.FileSystem().Stat(rawValue.Value)
 	if fileErr != nil {
-		o.WriteCanonicalError("The %s value, %q, cannot be used", searchTopDirFlag,
-			rawValue.Value)
+		o.ErrorPrintf("The %s value, %q, cannot be used.\n", searchTopDirFlag, rawValue.Value)
 		o.Log(output.Error, "invalid directory", map[string]any{
 			"error":          fileErr,
 			searchTopDirFlag: rawValue.Value,
 			"user-set":       rawValue.UserSet,
 		})
-		o.WriteCanonicalError("Why?")
+		o.ErrorPrintln("Why?")
 		switch rawValue.UserSet {
 		case true:
-			o.WriteCanonicalError("The value you specified is not a readable file.")
-			o.WriteCanonicalError("What to do:")
-			o.WriteCanonicalError("Specify a value that is a readable file.")
+			o.ErrorPrintln("The value you specified is not a readable file.")
+			o.ErrorPrintln("What to do:")
+			o.ErrorPrintln("Specify a value that is a readable file.")
 		case false:
-			o.WriteCanonicalError("The currently configured value is not a readable file.")
-			o.WriteCanonicalError("What to do:")
-			o.WriteCanonicalError(
-				"Edit the configuration file or specify %s with a value that is a readable file.",
+			o.ErrorPrintln("The currently configured value is not a readable file.")
+			o.ErrorPrintln("What to do:")
+			o.ErrorPrintf(
+				"Edit the configuration file or specify %s with a value that is a readable file.\n",
 				searchTopDirFlag,
 			)
 		}
 		return
 	}
 	if !file.IsDir() {
-		o.WriteCanonicalError("The %s value, %q, cannot be used", searchTopDirFlag,
-			rawValue.Value)
+		o.ErrorPrintf("The %s value, %q, cannot be used.\n", searchTopDirFlag, rawValue.Value)
 		o.Log(output.Error, "the file is not a directory", map[string]any{
 			searchTopDirFlag: rawValue.Value,
 			"user-set":       rawValue.UserSet,
 		})
-		o.WriteCanonicalError("Why?")
+		o.ErrorPrintln("Why?")
 		switch rawValue.UserSet {
 		case true:
-			o.WriteCanonicalError("The value you specified is not the name of a directory.")
-			o.WriteCanonicalError("What to do:")
-			o.WriteCanonicalError("Specify a value that is the name of a directory.")
+			o.ErrorPrintln("The value you specified is not the name of a directory.")
+			o.ErrorPrintln("What to do:")
+			o.ErrorPrintln("Specify a value that is the name of a directory.")
 		default:
-			o.WriteCanonicalError("The currently configured value is not the name of a directory.")
-			o.WriteCanonicalError("What to do:")
-			o.WriteCanonicalError(
-				"Edit the configuration file or specify %s with a value that is the name of a directory.",
+			o.ErrorPrintln("The currently configured value is not the name of a directory.")
+			o.ErrorPrintln("What to do:")
+			o.ErrorPrintf(
+				"Edit the configuration file or specify %s with a value that is the name of a directory.\n",
 				searchTopDirFlag,
 			)
 		}
@@ -281,31 +279,31 @@ func evaluateFilter(o output.Bus, filtering filterFlag) evaluatedFilter {
 				"user-set":               rawValue.UserSet,
 				"error":                  regexErr,
 			})
-		o.WriteCanonicalError("the %s value %q cannot be used", filtering.representation, rawValue.Value)
+		o.ErrorPrintf("The %s value %q cannot be used.\n", filtering.representation, rawValue.Value)
 		switch {
 		case rawValue.UserSet:
-			o.WriteCanonicalError("Why?")
-			o.WriteCanonicalError(
-				"The value of %s that you specified is not a valid regular expression: %v.",
+			o.ErrorPrintln("Why?")
+			o.ErrorPrintf(
+				"The value of %s that you specified is not a valid regular expression: %s.\n",
 				filtering.representation,
-				regexErr,
+				cmdtoolkit.ErrorToString(regexErr),
 			)
-			o.WriteCanonicalError("What to do:")
+			o.ErrorPrintln("What to do:")
 			o.BeginErrorList(false)
-			o.WriteError("Try a different setting, or\n")
-			o.WriteCanonicalError("Omit setting %s and try the default value.", filtering.representation)
+			o.ErrorPrintln("Try a different setting, or")
+			o.ErrorPrintf("Omit setting %s and try the default value.\n", filtering.representation)
 			o.EndErrorList()
 		default:
-			o.WriteCanonicalError("Why?")
-			o.WriteCanonicalError(
-				"The configured default value of %s is not a valid regular expression: %v.",
+			o.ErrorPrintln("Why?")
+			o.ErrorPrintf(
+				"The configured default value of %s is not a valid regular expression: %v.\n",
 				filtering.representation,
-				regexErr,
+				cmdtoolkit.ErrorToString(regexErr),
 			)
-			o.WriteCanonicalError("What to do:")
+			o.ErrorPrintln("What to do:")
 			o.BeginErrorList(false)
-			o.WriteError("Edit the defaults.yaml file containing the settings, or\n")
-			o.WriteCanonicalError("Explicitly set %s to a better value.", filtering.representation)
+			o.ErrorPrintln("Edit the defaults.yaml file containing the settings, or")
+			o.ErrorPrintf("Explicitly set %s to a better value.\n", filtering.representation)
 			o.EndErrorList()
 		}
 		result.regexOk = false
@@ -344,13 +342,19 @@ func (ss *searchSettings) filter(o output.Bus, originalArtists []*files.Artist) 
 			}
 		}
 		if len(filteredArtists) == 0 {
-			o.WriteCanonicalError("No mp3 files remain after filtering.")
-			o.WriteCanonicalError("Why?")
-			o.WriteCanonicalError("After applying %s=%q, %s=%q, and %s=%q, no files remained",
-				searchArtistFilterFlag, ss.artistFilter, searchAlbumFilterFlag, ss.albumFilter,
-				searchTrackFilterFlag, ss.trackFilter)
-			o.WriteCanonicalError("What to do:")
-			o.WriteCanonicalError("Use less restrictive filter settings.")
+			o.ErrorPrintln("No mp3 files remain after filtering.")
+			o.ErrorPrintln("Why?")
+			o.ErrorPrintf(
+				"After applying %s=%q, %s=%q, and %s=%q, no files remained.\n",
+				searchArtistFilterFlag,
+				ss.artistFilter,
+				searchAlbumFilterFlag,
+				ss.albumFilter,
+				searchTrackFilterFlag,
+				ss.trackFilter,
+			)
+			o.ErrorPrintln("What to do:")
+			o.ErrorPrintln("Use less restrictive filter settings.")
 			o.Log(output.Error, "no files remain after filtering", map[string]any{
 				searchArtistFilterFlag: ss.artistFilter,
 				searchAlbumFilterFlag:  ss.albumFilter,
@@ -374,12 +378,11 @@ func (ss *searchSettings) load(o output.Bus) []*files.Artist {
 		}
 	}
 	if len(artists) == 0 {
-		o.WriteCanonicalError("No mp3 files could be found using the specified parameters.")
-		o.WriteCanonicalError("Why?")
-		o.WriteCanonicalError("There were no directories found in %q (the %s value)",
-			ss.topDirectory, searchTopDirFlag)
-		o.WriteCanonicalError("What to do:")
-		o.WriteCanonicalError("Set %s to the path of a directory that contains artist directories", searchTopDirFlag)
+		o.ErrorPrintln("No mp3 files could be found using the specified parameters.")
+		o.ErrorPrintln("Why?")
+		o.ErrorPrintf("There were no directories found in %q (the %s value).\n", ss.topDirectory, searchTopDirFlag)
+		o.ErrorPrintln("What to do:")
+		o.ErrorPrintf("Set %s to the path of a directory that contains artist directories.\n", searchTopDirFlag)
 		o.Log(output.Error, "cannot find any artist directories", map[string]any{
 			searchTopDirFlag: ss.topDirectory,
 		})

@@ -98,7 +98,7 @@ func Test_ensureTrackBackupDirectoryExists(t *testing.T) {
 				Error: "" +
 					"The directory" +
 					" \"Music\\\\my artist\\\\my album 00\\\\pre-repair-backup\"" +
-					" cannot be created: plain file exists.\n" +
+					" cannot be created: 'plain file exists'.\n" +
 					"The track files in the directory" +
 					" \"Music\\\\my artist\\\\my album 00\" will not be repaired.\n",
 				Log: "" +
@@ -179,7 +179,7 @@ func Test_tryTrackBackup(t *testing.T) {
 				Error: "" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\"" +
-					" could not be backed up due to error dir by that name exists.\n" +
+					" could not be backed up due to error 'dir by that name exists'.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\"" +
 					" will not be repaired.\n",
@@ -447,12 +447,12 @@ func Test_backupAndRepairTracks(t *testing.T) {
 				Error: "" +
 					"The directory" +
 					" \"Music\\\\my artist\\\\my album 11\\\\pre-repair-backup\"" +
-					" cannot be created: parent directory is not a directory.\n" +
+					" cannot be created: 'parent directory is not a directory'.\n" +
 					"The track files in the directory" +
 					" \"Music\\\\my artist\\\\my album 11\" will not be repaired.\n" +
 					"The directory" +
 					" \"Music\\\\my artist\\\\my album 12\\\\pre-repair-backup\"" +
-					" cannot be created: parent directory is not a directory.\n" +
+					" cannot be created: 'parent directory is not a directory'.\n" +
 					"The track files in the directory" +
 					" \"Music\\\\my artist\\\\my album 12\" will not be repaired.\n",
 				Log: "" +
@@ -478,43 +478,43 @@ func Test_backupAndRepairTracks(t *testing.T) {
 				Error: "" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 11\\\\2 my track 112.mp3\"" +
-					" could not be backed up due to error oops.\n" +
+					" could not be backed up due to error 'oops'.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 11\\\\2 my track 112.mp3\"" +
 					" will not be repaired.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 11\\\\3 my track 113.mp3\"" +
-					" could not be backed up due to error oops.\n" +
+					" could not be backed up due to error 'oops'.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 11\\\\3 my track 113.mp3\"" +
 					" will not be repaired.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 11\\\\4 my track 114.mp3\"" +
-					" could not be backed up due to error oops.\n" +
+					" could not be backed up due to error 'oops'.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 11\\\\4 my track 114.mp3\"" +
 					" will not be repaired.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\1 my track 121.mp3\"" +
-					" could not be backed up due to error oops.\n" +
+					" could not be backed up due to error 'oops'.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\1 my track 121.mp3\"" +
 					" will not be repaired.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\2 my track 122.mp3\"" +
-					" could not be backed up due to error oops.\n" +
+					" could not be backed up due to error 'oops'.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\2 my track 122.mp3\"" +
 					" will not be repaired.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\3 my track 123.mp3\"" +
-					" could not be backed up due to error oops.\n" +
+					" could not be backed up due to error 'oops'.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\3 my track 123.mp3\"" +
 					" will not be repaired.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\4 my track 124.mp3\"" +
-					" could not be backed up due to error oops.\n" +
+					" could not be backed up due to error 'oops'.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\4 my track 124.mp3\"" +
 					" will not be repaired.\n",
@@ -682,7 +682,7 @@ func Test_findConflictedTracks(t *testing.T) {
 		CDIdentifier: []byte{1, 2, 3},
 		Source:       files.ID3V1,
 	}
-	tm := maker.Make()
+	tm := maker.MakeMetadata()
 	dirtyArtists := createConcernedArtists(generateArtists(2, 3, 4, tm))
 	clean := createConcernedArtists(generateArtists(2, 3, 4, nil))
 	tests := map[string]struct {
@@ -729,7 +729,7 @@ func Test_repairSettings_repairArtists(t *testing.T) {
 		CDIdentifier: []byte{1, 2, 3},
 		Source:       files.ID3V1,
 	}
-	tm := maker.Make()
+	tm := maker.MakeMetadata()
 	dirty := generateArtists(2, 3, 4, tm)
 	tests := map[string]struct {
 		rs         *repairSettings

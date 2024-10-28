@@ -664,7 +664,7 @@ func TestNewTrackMetadata(t *testing.T) {
 			if got := newTrackMetadata(); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("NewTrackMetadata() = %v, want %v", got, tt.want)
 			}
-			for _, src := range []sourceType{ID3V1, ID3V2} {
+			for _, src := range sourceTypes {
 				artistName := tt.want.artistName(src)
 				if got := artistName.original; got != "" {
 					t.Errorf("NewTrackMetadata().artistName(%s).originalValue() = %q, want %q", src.Name(), got, "")
@@ -2112,7 +2112,7 @@ func TestTrackMetadata_CanonicalArtistNameMatches(t *testing.T) {
 func TestTrackMetadata_Update(t *testing.T) {
 	// create some TrackMetadata to apply
 	loadedTm := newTrackMetadata()
-	for _, src := range []sourceType{ID3V1, ID3V2} {
+	for _, src := range sourceTypes {
 		loadedTm.correctArtistName(src, "corrected artist")
 		loadedTm.correctAlbumName(src, "corrected album")
 		loadedTm.correctAlbumGenre(src, "rock")
@@ -2177,7 +2177,7 @@ func TestTrackMetadata_Update(t *testing.T) {
 
 func TestTrackMetadataMaker_Make(t *testing.T) {
 	tm := newTrackMetadata()
-	for _, src := range []sourceType{ID3V1, ID3V2} {
+	for _, src := range sourceTypes {
 		tm.setArtistName(src, "artist name")
 		tm.setAlbumName(src, "album name")
 		tm.setAlbumGenre(src, "album genre")
@@ -2227,8 +2227,8 @@ func TestTrackMetadataMaker_Make(t *testing.T) {
 				CDIdentifier: tt.fields.CDIdentifier,
 				Source:       tt.fields.Source,
 			}
-			if got := maker.Make(); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Make() = %v, want %v", got, tt.want)
+			if got := maker.MakeMetadata(); !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("MakeMetadata() = %v, want %v", got, tt.want)
 			}
 		})
 	}

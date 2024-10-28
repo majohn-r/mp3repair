@@ -164,7 +164,7 @@ func reportRepairsNeeded(o output.Bus, concernedArtists []*concernedArtist) {
 		if cAr := artistMap[name]; cAr != nil {
 			if cAr.isConcerned() {
 				if !headerPrinted {
-					o.WriteCanonicalConsole("The following concerns can be repaired:")
+					o.ConsolePrintln("The following concerns can be repaired:")
 					headerPrinted = true
 				}
 				cAr.toConsole(o)
@@ -177,7 +177,7 @@ func reportRepairsNeeded(o output.Bus, concernedArtists []*concernedArtist) {
 }
 
 func nothingToDo(o output.Bus) {
-	o.WriteCanonicalConsole("No repairable track defects were found.")
+	o.ConsolePrintln("No repairable track defects were found.")
 }
 
 func backupAndRepairTracks(o output.Bus, concernedArtists []*concernedArtist) *cmdtoolkit.ExitError {
@@ -216,7 +216,7 @@ func backupAndRepairTracks(o output.Bus, concernedArtists []*concernedArtist) *c
 
 func processTrackRepairResults(o output.Bus, t *files.Track, updateErrs []error) *cmdtoolkit.ExitError {
 	if len(updateErrs) != 0 {
-		o.WriteCanonicalError("An error occurred repairing track %q", t)
+		o.ErrorPrintf("An error occurred repairing track %q.\n", t)
 		errorStrings := make([]string, 0, len(updateErrs))
 		for _, e2 := range updateErrs {
 			errorStrings = append(errorStrings, fmt.Sprintf("%q", e2.Error()))
@@ -229,7 +229,7 @@ func processTrackRepairResults(o output.Bus, t *files.Track, updateErrs []error)
 		})
 		return cmdtoolkit.NewExitSystemError(repairCommandName)
 	}
-	o.WriteConsole("%q repaired.\n", t)
+	o.ConsolePrintf("%q repaired.\n", t)
 	markDirty(o)
 	return nil
 }
@@ -238,8 +238,7 @@ func tryTrackBackup(o output.Bus, t *files.Track, path string) (backedUp bool) {
 	backupFile := filepath.Join(path, fmt.Sprintf("%d.mp3", t.Number()))
 	switch {
 	case plainFileExists(backupFile):
-		o.WriteCanonicalError("The backup file for track file %q, %q, already exists", t,
-			backupFile)
+		o.ErrorPrintf("The backup file for track file %q, %q, already exists.\n", t, backupFile)
 		o.Log(output.Error, "file already exists", map[string]any{
 			"command": repairCommandName,
 			"file":    backupFile,
@@ -248,12 +247,14 @@ func tryTrackBackup(o output.Bus, t *files.Track, path string) (backedUp bool) {
 		copyErr := copyFile(t.Path(), backupFile)
 		switch copyErr {
 		case nil:
-			o.WriteCanonicalConsole("The track file %q has been backed up to %q", t,
-				backupFile)
+			o.ConsolePrintf("The track file %q has been backed up to %q.\n", t, backupFile)
 			backedUp = true
 		default:
-			o.WriteCanonicalError(
-				"The track file %q could not be backed up due to error %v", t, copyErr)
+			o.ErrorPrintf(
+				"The track file %q could not be backed up due to error %s.\n",
+				t,
+				cmdtoolkit.ErrorToString(copyErr),
+			)
 			o.Log(output.Error, "error copying file", map[string]any{
 				"command":     repairCommandName,
 				"source":      t.Path(),
@@ -263,7 +264,7 @@ func tryTrackBackup(o output.Bus, t *files.Track, path string) (backedUp bool) {
 		}
 	}
 	if !backedUp {
-		o.WriteCanonicalError("The track file %q will not be repaired", t)
+		o.ErrorPrintf("The track file %q will not be repaired.\n", t)
 	}
 	return
 }
@@ -274,10 +275,8 @@ func ensureTrackBackupDirectoryExists(o output.Bus, cAl *concernedAlbum) (path s
 	if !dirExists(path) {
 		if fileErr := mkdir(path); fileErr != nil {
 			exists = false
-			o.WriteCanonicalError("The directory %q cannot be created: %v", path, fileErr)
-			o.WriteCanonicalError(
-				"The track files in the directory %q will not be repaired",
-				cAl.backing.Directory())
+			o.ErrorPrintf("The directory %q cannot be created: %s.\n", path, cmdtoolkit.ErrorToString(fileErr))
+			o.ErrorPrintf("The track files in the directory %q will not be repaired.\n", cAl.backing.Directory())
 			o.Log(output.Error, "cannot create directory", map[string]any{
 				"command":   repairCommandName,
 				"directory": path,

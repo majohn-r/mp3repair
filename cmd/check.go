@@ -172,13 +172,13 @@ type checkReportRequests struct {
 
 func (cs *checkSettings) maybeReportCleanResults(o output.Bus, requests checkReportRequests) {
 	if !requests.reportEmptyCheckResults && cs.empty.Value {
-		o.WriteCanonicalConsole("Empty Folder Analysis: no empty folders found")
+		o.ConsolePrintln("Empty Folder Analysis: no empty folders found.")
 	}
 	if !requests.reportNumberingCheckResults && cs.numbering.Value {
-		o.WriteCanonicalConsole("Numbering Analysis: no missing or duplicate tracks found")
+		o.ConsolePrintln("Numbering Analysis: no missing or duplicate tracks found.")
 	}
 	if !requests.reportFilesCheckResults && cs.files.Value {
-		o.WriteCanonicalConsole("File Analysis: no inconsistencies found")
+		o.ConsolePrintln("File Analysis: no inconsistencies found.")
 	}
 }
 
@@ -344,8 +344,8 @@ func (cs *checkSettings) hasWorkToDo(o output.Bus) bool {
 		return true
 	}
 	userPartiallyAtFault := cs.empty.UserSet || cs.files.UserSet || cs.numbering.UserSet
-	o.WriteCanonicalError("No checks will be executed.")
-	o.WriteCanonicalError("Why?")
+	o.ErrorPrintln("No checks will be executed.")
+	o.ErrorPrintln("Why?")
 	switch userPartiallyAtFault {
 	case true:
 		flagsUserSet := make([]string, 0, 3)
@@ -370,23 +370,31 @@ func (cs *checkSettings) hasWorkToDo(o output.Bus) bool {
 		}
 		switch len(flagsFromConfig) {
 		case 0:
-			o.WriteCanonicalError("You explicitly set %s, %s, and %s false",
-				checkEmptyFlag, checkFilesFlag, checkNumberingFlag)
+			o.ErrorPrintf(
+				"You explicitly set %s, %s, and %s false.\n",
+				checkEmptyFlag,
+				checkFilesFlag,
+				checkNumberingFlag,
+			)
 		default:
-			o.WriteCanonicalError(
-				"In addition to %s configured false, you explicitly set %s false",
+			o.ErrorPrintf(
+				"In addition to %s configured false, you explicitly set %s false.\n",
 				strings.Join(flagsFromConfig, " and "),
 				strings.Join(flagsUserSet, " and "))
 		}
 	default:
-		o.WriteCanonicalError("The flags %s, %s, and %s are all configured false",
-			checkEmptyFlag, checkFilesFlag, checkNumberingFlag)
+		o.ErrorPrintf(
+			"The flags %s, %s, and %s are all configured false.\n",
+			checkEmptyFlag,
+			checkFilesFlag,
+			checkNumberingFlag,
+		)
 	}
-	o.WriteCanonicalError("What to do:")
-	o.WriteCanonicalError("Either:")
+	o.ErrorPrintln("What to do:")
+	o.ErrorPrintln("Either:")
 	o.BeginErrorList(true)
-	o.WriteError("Edit the configuration file so that at least one of these flags is true, or\n")
-	o.WriteCanonicalError("Explicitly set at least one of these flags true on the command line")
+	o.ErrorPrintln("Edit the configuration file so that at least one of these flags is true, or")
+	o.ErrorPrintln("Explicitly set at least one of these flags true on the command line.")
 	o.EndErrorList()
 	return false
 }

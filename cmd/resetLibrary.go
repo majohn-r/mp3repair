@@ -126,13 +126,13 @@ func (rDBSettings *resetLibrarySettings) resetService(o output.Bus) (e *cmdtoolk
 		return
 	}
 	e = cmdtoolkit.NewExitUserError(resetLibraryCommandName)
-	o.WriteCanonicalError("The %q command has no work to perform.", resetLibraryCommandName)
-	o.WriteCanonicalError("Why?")
-	o.WriteCanonicalError("The %q program has not made any changes to any mp3 files\n"+
-		"since the last successful library reset.", appName)
-	o.WriteCanonicalError("What to do:")
-	o.WriteCanonicalError("If you believe the Windows Media Player library needs to be reset, run"+
-		" this command\nagain and use the %q flag.", resetLibraryForceFlag)
+	o.ErrorPrintf("The %q command has no work to perform.\n", resetLibraryCommandName)
+	o.ErrorPrintln("Why?")
+	o.ErrorPrintf("The %q program has not made any changes to any mp3 files\n", appName)
+	o.ErrorPrintln("since the last successful library reset.")
+	o.ErrorPrintln("What to do:")
+	o.ErrorPrintln("If you believe the Windows Media Player library needs to be reset, run this command")
+	o.ErrorPrintf("again and use the %q flag.\n", resetLibraryForceFlag)
 	return
 }
 
@@ -171,8 +171,10 @@ func openService(manager serviceManager, serviceName string) (serviceRep, error)
 func (rDBSettings *resetLibrarySettings) stopService(o output.Bus) (bool, *cmdtoolkit.ExitError) {
 	if manager, connectErr := connect(); connectErr != nil {
 		e := cmdtoolkit.NewExitSystemError(resetLibraryCommandName)
-		o.WriteCanonicalError("An attempt to connect with the service manager failed; error"+
-			" is '%v'", connectErr)
+		o.ErrorPrintf(
+			"An attempt to connect with the service manager failed; error is %s.\n",
+			cmdtoolkit.ErrorToString(connectErr),
+		)
 		outputSystemErrorCause(o)
 		o.Log(output.Error, "service manager connect failed", map[string]any{"error": connectErr})
 		return false, e
@@ -183,10 +185,10 @@ func (rDBSettings *resetLibrarySettings) stopService(o output.Bus) (bool, *cmdto
 
 func outputSystemErrorCause(o output.Bus) {
 	if !processIsElevated() {
-		o.WriteCanonicalError("Why?")
-		o.WriteCanonicalError("This failure is likely to be due to lack of permissions")
-		o.WriteCanonicalError("What to do:")
-		o.WriteCanonicalError("If you can, try running this command as an administrator.")
+		o.ErrorPrintln("Why?")
+		o.ErrorPrintln("This failure is likely to be due to lack of permissions.")
+		o.ErrorPrintln("What to do:")
+		o.ErrorPrintln("If you can, try running this command as an administrator.")
 	}
 }
 
@@ -202,10 +204,10 @@ func (rDBSettings *resetLibrarySettings) disableService(o output.Bus, manager se
 	service, serviceError := openService(manager, windowsMediaPlayerSharingService)
 	if serviceError != nil {
 		e = cmdtoolkit.NewExitSystemError(resetLibraryCommandName)
-		o.WriteCanonicalError(
-			"The service %q cannot be opened: %v",
+		o.ErrorPrintf(
+			"The service %q cannot be opened: %s.\n",
 			windowsMediaPlayerSharingService,
-			serviceError,
+			cmdtoolkit.ErrorToString(serviceError),
 		)
 		o.Log(output.Error, "service problem", map[string]any{
 			"service": windowsMediaPlayerSharingService,
@@ -236,9 +238,9 @@ func disconnectManager(manager serviceManager) {
 }
 
 func listAvailableServices(o output.Bus, manager serviceManager, services []string) {
-	o.WriteCanonicalError("The following services are available:")
+	o.ErrorPrintln("The following services are available:")
 	if len(services) == 0 {
-		o.WriteError("  - none -\n")
+		o.ErrorPrintln("  - none -")
 		return
 	}
 	slices.Sort(services)
@@ -260,9 +262,9 @@ func listAvailableServices(o output.Bus, manager serviceManager, services []stri
 	}
 	slices.Sort(states)
 	for _, state := range states {
-		o.WriteCanonicalError("  State %q:", state)
+		o.ErrorPrintf("  State %q:\n", state)
 		for _, serviceName := range m[state] {
-			o.WriteError("    %q\n", serviceName)
+			o.ErrorPrintf("    %q\n", serviceName)
 		}
 	}
 }
@@ -301,10 +303,10 @@ func (rDBSettings *resetLibrarySettings) stopFoundService(o output.Bus, manager 
 	status, svcErr := runQuery(service)
 	if svcErr != nil {
 		e = cmdtoolkit.NewExitSystemError(resetLibraryCommandName)
-		o.WriteCanonicalError(
-			"An error occurred while trying to stop service %q: %v",
+		o.ErrorPrintf(
+			"An error occurred while trying to stop service %q: %s.\n",
 			windowsMediaPlayerSharingService,
-			svcErr,
+			cmdtoolkit.ErrorToString(svcErr),
 		)
 		reportServiceQueryError(o, svcErr)
 		return
@@ -326,10 +328,10 @@ func (rDBSettings *resetLibrarySettings) stopFoundService(o output.Bus, manager 
 		return
 	}
 	e = cmdtoolkit.NewExitSystemError(resetLibraryCommandName)
-	o.WriteCanonicalError(
-		"The service %q cannot be stopped: %v",
+	o.ErrorPrintf(
+		"The service %q cannot be stopped: %s.\n",
 		windowsMediaPlayerSharingService,
-		svcErr,
+		cmdtoolkit.ErrorToString(svcErr),
 	)
 	o.Log(output.Error, "service problem", map[string]any{
 		"service": windowsMediaPlayerSharingService,
@@ -360,8 +362,8 @@ func (rDBSettings *resetLibrarySettings) waitForStop(o output.Bus, s serviceRep,
 	checkInterval time.Duration) (bool, *cmdtoolkit.ExitError) {
 	for {
 		if expiration.Before(time.Now()) {
-			o.WriteCanonicalError(
-				"The service %q could not be stopped within the %d second timeout",
+			o.ErrorPrintf(
+				"The service %q could not be stopped within the %d second timeout.\n",
 				windowsMediaPlayerSharingService,
 				rDBSettings.timeout.Value,
 			)
@@ -376,10 +378,10 @@ func (rDBSettings *resetLibrarySettings) waitForStop(o output.Bus, s serviceRep,
 		time.Sleep(checkInterval)
 		status, svcErr := runQuery(s)
 		if svcErr != nil {
-			o.WriteCanonicalError(
-				"An error occurred while attempting to stop the service %q: %v",
+			o.ErrorPrintf(
+				"An error occurred while attempting to stop the service %q: %s.\n",
 				windowsMediaPlayerSharingService,
-				svcErr,
+				cmdtoolkit.ErrorToString(svcErr),
 			)
 			reportServiceQueryError(o, svcErr)
 			return false, cmdtoolkit.NewExitSystemError(resetLibraryCommandName)
@@ -398,15 +400,15 @@ func metadataDirectory() string {
 func (rDBSettings *resetLibrarySettings) cleanUpMetadata(o output.Bus, stopped bool) *cmdtoolkit.ExitError {
 	if !stopped {
 		if !rDBSettings.ignoreServiceErrors.Value {
-			o.WriteCanonicalError("Metadata files will not be deleted")
-			o.WriteCanonicalError("Why?")
-			o.WriteCanonicalError(
-				"The Windows Media Player sharing service %q could not be stopped, and %q is false",
+			o.ErrorPrintln("Metadata files will not be deleted.")
+			o.ErrorPrintln("Why?")
+			o.ErrorPrintf(
+				"The Windows Media Player sharing service %q could not be stopped, and %q is false.\n",
 				windowsMediaPlayerSharingService,
 				resetLibraryIgnoreServiceErrorsFlag,
 			)
-			o.WriteCanonicalError("What to do:")
-			o.WriteCanonicalError("Rerun this command with %q set to true", resetLibraryIgnoreServiceErrorsFlag)
+			o.ErrorPrintln("What to do:")
+			o.ErrorPrintf("Rerun this command with %q set to true.\n", resetLibraryIgnoreServiceErrorsFlag)
 			return cmdtoolkit.NewExitUserError(resetLibraryCommandName)
 		}
 	}
@@ -420,7 +422,7 @@ func (rDBSettings *resetLibrarySettings) cleanUpMetadata(o output.Bus, stopped b
 	if len(pathsToDelete) > 0 {
 		return deleteMetadataFiles(o, pathsToDelete)
 	}
-	o.WriteCanonicalConsole("No metadata files were found in %q", dir)
+	o.ConsolePrintf("No metadata files were found in %q.\n", dir)
 	o.Log(output.Info, "no files found", map[string]any{
 		"directory": dir,
 		"extension": metadataFileExtension,
@@ -457,8 +459,8 @@ func deleteMetadataFiles(o output.Bus, paths []string) (e *cmdtoolkit.ExitError)
 			count++
 		}
 	}
-	o.WriteCanonicalConsole(
-		"%d out of %d metadata files have been deleted from %q",
+	o.ConsolePrintf(
+		"%d out of %d metadata files have been deleted from %q.\n",
 		count,
 		len(paths),
 		metadataDirectory(),

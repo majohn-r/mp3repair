@@ -88,7 +88,7 @@ func aboutRun(cmd *cobra.Command, _ []string) error {
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) {
 		flag, err := cmdtoolkit.GetString(o, values, aboutStyle)
 		if err == nil {
-			o.WriteConsole(strings.Join(
+			o.ConsolePrintf(strings.Join(
 				cmdtoolkit.StyledFlowerBox(acquireAboutData(o), interpretStyle(flag)),
 				"\n",
 			))

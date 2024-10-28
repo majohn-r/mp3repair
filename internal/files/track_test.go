@@ -514,7 +514,7 @@ func TestTrackLoadMetadata(t *testing.T) {
 	fileName := "05 A brilliant track.mp3"
 	_ = createFileWithContent(testDir, fileName, payload)
 	postReadTm := newTrackMetadata()
-	for _, src := range []sourceType{ID3V1, ID3V2} {
+	for _, src := range sourceTypes {
 		postReadTm.setArtistName(src, artistName)
 		postReadTm.setAlbumName(src, albumName)
 		postReadTm.setAlbumGenre(src, genre)
@@ -753,7 +753,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 	})
 	_ = createFileWithContent(testDir, trackName, trackContents)
 	expectedMetadata := newTrackMetadata()
-	for _, src := range []sourceType{ID3V1, ID3V2} {
+	for _, src := range sourceTypes {
 		expectedMetadata.setArtistName(src, "unknown artist")
 		expectedMetadata.setAlbumName(src, "unknown album")
 		expectedMetadata.setAlbumGenre(src, "unknown")
@@ -793,7 +793,7 @@ func TestTrack_UpdateMetadata(t *testing.T) {
 		metadata: expectedMetadata,
 	}
 	editedTm := newTrackMetadata()
-	for _, src := range []sourceType{ID3V1, ID3V2} {
+	for _, src := range sourceTypes {
 		editedTm.setArtistName(src, "fine artist")
 		editedTm.setAlbumName(src, "fine album")
 		editedTm.setAlbumGenre(src, "classic rock")
@@ -1169,10 +1169,6 @@ type sampleBus struct {
 }
 
 func (sB *sampleBus) Log(_ output.Level, _ string, _ map[string]any) {}
-func (sB *sampleBus) WriteCanonicalConsole(_ string, _ ...any)       {}
-func (sB *sampleBus) WriteConsole(_ string, _ ...any)                {}
-func (sB *sampleBus) WriteCanonicalError(_ string, _ ...any)         {}
-func (sB *sampleBus) WriteError(_ string, _ ...any)                  {}
 func (sB *sampleBus) ConsoleWriter() io.Writer {
 	return sB.consoleWriter
 }
@@ -1196,6 +1192,10 @@ func (sB *sampleBus) BeginErrorList(_ bool)                       {}
 func (sB *sampleBus) EndErrorList()                               {}
 func (sB *sampleBus) ConsoleListDecorator() *output.ListDecorator { return nil }
 func (sB *sampleBus) ErrorListDecorator() *output.ListDecorator   { return nil }
+func (sB *sampleBus) ConsolePrintf(_ string, _ ...any)            {}
+func (sB *sampleBus) ErrorPrintf(_ string, _ ...any)              {}
+func (sB *sampleBus) ConsolePrintln(_ string)                     {}
+func (sB *sampleBus) ErrorPrintln(_ string)                       {}
 
 func TestProgressWriter(t *testing.T) {
 	errorWriter := &sampleWriter{name: "error"}

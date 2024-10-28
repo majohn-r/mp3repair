@@ -708,8 +708,8 @@ func Test_checkSettings_maybeDoWork(t *testing.T) {
 			wantStatus: cmdtoolkit.NewExitUserError("check"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
-					"The directory \"no dir\" cannot be read: open no dir: The system" +
-					" cannot find the file specified.\n" +
+					"The directory \"no dir\" cannot be read: '*fs.PathError: open no dir: The system" +
+					" cannot find the file specified.'.\n" +
 					"No mp3 files could be found using the specified parameters.\n" +
 					"Why?\n" +
 					"There were no directories found in \"no dir\" (the --topDir value).\n" +

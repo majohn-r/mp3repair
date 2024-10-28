@@ -161,7 +161,7 @@ func (ls *listSettings) listFilteredArtists(o output.Bus, artists []*files.Artis
 		}
 		sort.Strings(names)
 		for _, s := range names {
-			o.WriteConsole("Artist: %s\n", s)
+			o.ConsolePrintf("Artist: %s\n", s)
 			artist := m[s]
 			if artist != nil {
 				o.IncrementTab(2)
@@ -186,7 +186,7 @@ func (ls *listSettings) listAlbums(o output.Bus, albums []*files.Album) {
 	if ls.albums.Value {
 		files.SortAlbums(albums)
 		for _, album := range albums {
-			o.WriteConsole("Album: %s\n", ls.annotateAlbumName(album))
+			o.ConsolePrintf("Album: %s\n", ls.annotateAlbumName(album))
 			o.IncrementTab(2)
 			ls.listTracks(o, album.Tracks())
 			o.DecrementTab(2)
@@ -238,7 +238,7 @@ func (ls *listSettings) listTracksByNumber(o output.Bus, tracks []*files.Track) 
 	for _, n := range numbers {
 		track := m[n]
 		if track != nil {
-			o.WriteConsole("%2d. %s\n", n, track.Name())
+			o.ConsolePrintf("%2d. %s\n", n, track.Name())
 			o.IncrementTab(2)
 			ls.listTrackDiagnostics(o, track)
 			o.DecrementTab(2)
@@ -249,7 +249,7 @@ func (ls *listSettings) listTracksByNumber(o output.Bus, tracks []*files.Track) 
 func (ls *listSettings) listTracksByName(o output.Bus, tracks []*files.Track) {
 	files.SortTracks(tracks)
 	for _, track := range tracks {
-		o.WriteConsole("%s\n", ls.annotateTrackName(track))
+		o.ConsolePrintln(ls.annotateTrackName(track))
 		o.IncrementTab(2)
 		ls.listTrackDiagnostics(o, track)
 		o.DecrementTab(2)
@@ -286,11 +286,11 @@ func showID3V1Diagnostics(o output.Bus, track *files.Track, tags []string, readE
 		track.ReportMetadataReadError(o, files.ID3V1, readErr.Error())
 		return
 	}
-	o.WriteConsole("ID3V1 metadata\n")
+	o.ConsolePrintln("ID3V1 metadata")
 	o.IncrementTab(2)
 	sort.Strings(tags)
 	for _, s := range tags {
-		o.WriteConsole("%s\n", s)
+		o.ConsolePrintln(s)
 	}
 	o.DecrementTab(2)
 }
@@ -301,26 +301,26 @@ func showID3V2Diagnostics(o output.Bus, track *files.Track, info *files.ID3V2Inf
 		return
 	}
 	if info != nil {
-		o.WriteConsole("ID3V2 metadata\n")
+		o.ConsolePrintln("ID3V2 metadata")
 		o.IncrementTab(2)
-		o.WriteConsole("Version: %v\n", info.Version())
-		o.WriteConsole("Encoding: %s\n", info.Encoding())
+		o.ConsolePrintf("Version: %v\n", info.Version())
+		o.ConsolePrintf("Encoding: %s\n", info.Encoding())
 		tags := slices.Sorted(maps.Keys(info.Frames()))
 		for _, tag := range tags {
 			values := info.Frames()[tag]
 			description := files.FrameDescription(tag)
 			switch len(values) {
 			case 0:
-				o.WriteConsole("%s [%s]: <<empty>>\n", tag, description)
+				o.ConsolePrintf("%s [%s]: <<empty>>\n", tag, description)
 			case 1:
-				o.WriteConsole("%s [%s]: %s\n", tag, description, values[0])
+				o.ConsolePrintf("%s [%s]: %s\n", tag, description, values[0])
 			default:
 				header := fmt.Sprintf("%s [%s]: ", tag, description)
-				o.WriteConsole("%s%s\n", header, values[0])
+				o.ConsolePrintf("%s%s\n", header, values[0])
 				tab := uint8(len(header))
 				o.IncrementTab(tab)
 				for _, value := range values[1:] {
-					o.WriteConsole("%s\n", value)
+					o.ConsolePrintln(value)
 				}
 				o.DecrementTab(tab)
 			}
@@ -335,48 +335,54 @@ func (ls *listSettings) tracksSortable(o output.Bus) bool {
 	if ls.tracks.Value {
 		switch {
 		case bothSortingOptionsSet:
-			o.WriteCanonicalError("Track sorting cannot be done")
-			o.WriteCanonicalError("Why?")
+			o.ErrorPrintln("Track sorting cannot be done.")
+			o.ErrorPrintln("Why?")
 			switch ls.sortByNumber.UserSet {
 			case true:
 				switch ls.sortByTitle.UserSet {
 				case true:
-					o.WriteCanonicalError("You explicitly set %s and %s true",
-						listSortByNumberFlag, listSortByTitleFlag)
+					o.ErrorPrintf("You explicitly set %s and %s true.\n", listSortByNumberFlag, listSortByTitleFlag)
 				case false:
-					o.WriteCanonicalError(
-						"The %s flag is configured true and you explicitly set %s true",
-						listSortByTitleFlag, listSortByNumberFlag)
+					o.ErrorPrintf(
+						"The %s flag is configured true and you explicitly set %s true.\n",
+						listSortByTitleFlag,
+						listSortByNumberFlag,
+					)
 				}
 			case false:
 				switch ls.sortByTitle.UserSet {
 				case true:
-					o.WriteCanonicalError(
-						"The %s flag is configured true and you explicitly set %s true",
-						listSortByNumberFlag, listSortByTitleFlag)
+					o.ErrorPrintf(
+						"The %s flag is configured true and you explicitly set %s true.\n",
+						listSortByNumberFlag,
+						listSortByTitleFlag,
+					)
 				case false:
-					o.WriteCanonicalError("The %s and %s flags are both configured true",
-						listSortByNumberFlag, listSortByTitleFlag)
+					o.ErrorPrintf(
+						"The %s and %s flags are both configured true.\n",
+						listSortByNumberFlag,
+						listSortByTitleFlag,
+					)
 				}
 			}
-			o.WriteCanonicalError("What to do:")
+			o.ErrorPrintln("What to do:")
 			o.BeginErrorList(false)
-			o.WriteError("Edit the configuration file and use its default values, or\n")
-			o.WriteCanonicalError("use more appropriate command line values")
+			o.ErrorPrintln("Edit the configuration file and use its default values, or")
+			o.ErrorPrintln("Use more appropriate command line values.")
 			o.EndErrorList()
 			return false
 		case ls.sortByNumber.Value && !ls.albums.Value:
-			o.WriteCanonicalError("Sorting tracks by number not possible.")
-			o.WriteCanonicalError("Why?")
-			o.WriteCanonicalError("Track numbers are only relevant if albums are also output.")
+			o.ErrorPrintln("Sorting tracks by number not possible.")
+			o.ErrorPrintln("Why?")
+			o.ErrorPrintln("Track numbers are only relevant if albums are also output.")
 			switch ls.sortByNumber.UserSet {
 			case true:
 				switch ls.albums.UserSet {
 				case true:
-					o.WriteCanonicalError("You set %s true and %s false.", listSortByNumberFlag, listAlbumsFlag)
+					o.ErrorPrintf("You set %s true and %s false.\n", listSortByNumberFlag, listAlbumsFlag)
 				case false:
-					o.WriteCanonicalError(
-						"You set %s true and %s is configured as false",
+					o.ErrorPrintf(
+						"You set %s true and %s is configured as false.\n",
 						listSortByNumberFlag,
 						listAlbumsFlag,
 					)
@@ -384,36 +390,36 @@ func (ls *listSettings) tracksSortable(o output.Bus) bool {
 			case false:
 				switch ls.albums.UserSet {
 				case true:
-					o.WriteCanonicalError(
-						"You set %s false and %s is configured as true",
+					o.ErrorPrintf(
+						"You set %s false and %s is configured as true.\n",
 						listAlbumsFlag,
 						listSortByNumberFlag,
 					)
 				case false:
-					o.WriteCanonicalError(
-						"%s is configured as false, and %s is configured as true",
+					o.ErrorPrintf(
+						"%s is configured as false, and %s is configured as true.\n",
 						listAlbumsFlag,
 						listSortByNumberFlag,
 					)
 				}
 			}
-			o.WriteCanonicalError("What to do:")
+			o.ErrorPrintln("What to do:")
 			o.BeginErrorList(false)
-			o.WriteError("Edit the configuration file and use its default values, or\n")
-			o.WriteCanonicalError("change which flags you set on the command line.")
+			o.ErrorPrintln("Edit the configuration file and use its default values, or")
+			o.ErrorPrintln("Change which flags you set on the command line.")
 			o.EndErrorList()
 			return false
 		case neitherSortingOptionSet:
 			if ls.sortByNumber.UserSet && ls.sortByTitle.UserSet {
-				o.WriteCanonicalError("A listing of tracks is not possible.")
-				o.WriteCanonicalError("Why?")
-				o.WriteCanonicalError(
-					"Tracks are enabled, but you set both %s and %s false",
+				o.ErrorPrintln("A listing of tracks is not possible.")
+				o.ErrorPrintln("Why?")
+				o.ErrorPrintf(
+					"Tracks are enabled, but you set both %s and %s false.\n",
 					listSortByNumberFlag,
 					listSortByTitleFlag,
 				)
-				o.WriteCanonicalError("What to do:")
-				o.WriteCanonicalError("Enable one of the sorting flags")
+				o.ErrorPrintln("What to do:")
+				o.ErrorPrintln("Enable one of the sorting flags.")
 				return false
 			}
 			// pick a sensible option
@@ -441,16 +447,16 @@ func (ls *listSettings) tracksSortable(o output.Bus) bool {
 		}
 	}
 	if (ls.sortByNumber.Value && ls.sortByNumber.UserSet) || (ls.sortByTitle.Value && ls.sortByTitle.UserSet) {
-		o.WriteCanonicalError("Your sorting preferences are not relevant")
-		o.WriteCanonicalError("Why?")
-		o.WriteCanonicalError(
-			"Tracks are not included in the output, but you explicitly set %s or %s true.",
+		o.ErrorPrintln("Your sorting preferences are not relevant.")
+		o.ErrorPrintln("Why?")
+		o.ErrorPrintf(
+			"Tracks are not included in the output, but you explicitly set %s or %s true.\n",
 			listSortByNumberFlag,
 			listSortByTitleFlag)
-		o.WriteCanonicalError("What to do:")
+		o.ErrorPrintln("What to do:")
 		o.BeginErrorList(false)
-		o.WriteError("Set %s true, or\n", listTracksFlag)
-		o.WriteCanonicalError("Remove the sorting flags from the command line.")
+		o.ErrorPrintf("Set %s true, or\n", listTracksFlag)
+		o.ErrorPrintln("Remove the sorting flags from the command line.")
 		o.EndErrorList()
 		return false
 	}
@@ -461,8 +467,8 @@ func (ls *listSettings) hasWorkToDo(o output.Bus) bool {
 	if ls.albums.Value || ls.artists.Value || ls.tracks.Value {
 		return true
 	}
-	o.WriteCanonicalError("No listing will be output.")
-	o.WriteCanonicalError("Why?")
+	o.ErrorPrintln("No listing will be output.")
+	o.ErrorPrintln("Why?")
 	switch {
 	case ls.albums.UserSet || ls.artists.UserSet || ls.tracks.UserSet:
 		flagsUserSet := make([]string, 0, 3)
@@ -487,22 +493,27 @@ func (ls *listSettings) hasWorkToDo(o output.Bus) bool {
 		}
 		switch len(flagsFromConfig) {
 		case 0:
-			o.WriteCanonicalError("You explicitly set %s, %s, and %s false",
-				listAlbumsFlag, listArtistsFlag, listTracksFlag)
+			o.ErrorPrintf("You explicitly set %s, %s, and %s false.\n", listAlbumsFlag, listArtistsFlag, listTracksFlag)
 		default:
-			o.WriteCanonicalError(
-				"In addition to %s configured false, you explicitly set %s false",
-				strings.Join(flagsFromConfig, " and "), strings.Join(flagsUserSet, " and "))
+			o.ErrorPrintf(
+				"In addition to %s configured false, you explicitly set %s false.\n",
+				strings.Join(flagsFromConfig, " and "),
+				strings.Join(flagsUserSet, " and "),
+			)
 		}
 	default: // user did not set any of the relevant flags that way
-		o.WriteCanonicalError("The flags %s, %s, and %s are all configured false",
-			listAlbumsFlag, listArtistsFlag, listTracksFlag)
+		o.ErrorPrintf(
+			"The flags %s, %s, and %s are all configured false.\n",
+			listAlbumsFlag,
+			listArtistsFlag,
+			listTracksFlag,
+		)
 	}
-	o.WriteCanonicalError("What to do:")
-	o.WriteCanonicalError("Either:")
+	o.ErrorPrintln("What to do:")
+	o.ErrorPrintln("Either:")
 	o.BeginErrorList(true)
-	o.WriteError("Edit the configuration file so that at least one of these flags is true, or\n")
-	o.WriteCanonicalError("Explicitly set at least one of these flags true on the command line")
+	o.ErrorPrintln("Edit the configuration file so that at least one of these flags is true, or")
+	o.ErrorPrintln("Explicitly set at least one of these flags true on the command line.")
 	o.EndErrorList()
 	return false
 }
