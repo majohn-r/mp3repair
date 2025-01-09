@@ -16,9 +16,9 @@ var (
 	copyFile               = cmdtoolkit.CopyFile
 	dereferenceEnvVar      = cmdtoolkit.DereferenceEnvVar
 	dirExists              = cmdtoolkit.DirExists
+	getBuildData           = cmdtoolkit.GetBuildData
 	initApplicationPath    = cmdtoolkit.InitApplicationPath
 	initLogging            = cmdtoolkit.InitLogging
-	interpretBuildData     = cmdtoolkit.InterpretBuildData
 	logPath                = cmdtoolkit.LogPath
 	mkdir                  = cmdtoolkit.Mkdir
 	plainFileExists        = cmdtoolkit.PlainFileExists

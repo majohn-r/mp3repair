@@ -60,6 +60,29 @@ type panickyCommand struct{}
 func (p panickyCommand) SetArgs(_ []string) {}
 func (p panickyCommand) Execute() error     { panic("oh dear") }
 
+type localBuildInfo struct {
+	goVersion    string
+	mainVersion  string
+	dependencies []string
+	settings     []string
+}
+
+func (lib *localBuildInfo) GoVersion() string {
+	return lib.goVersion
+}
+
+func (lib *localBuildInfo) MainVersion() string {
+	return lib.mainVersion
+}
+
+func (lib *localBuildInfo) Dependencies() []string {
+	return lib.dependencies
+}
+
+func (lib *localBuildInfo) Settings() []string {
+	return lib.settings
+}
+
 func Test_runMain(t *testing.T) {
 	originalArgs := os.Args
 	originalSince := since
@@ -67,7 +90,7 @@ func Test_runMain(t *testing.T) {
 	originalCreation := creation
 	originalCachedGoVersion := cachedGoVersion
 	originalCachedBuildDependencies := cachedBuildDependencies
-	originalInterpretBuildData := interpretBuildData
+	originalGetBuildData := getBuildData
 	originalMP3repairElevationControl := mp3repairElevationControl
 	defer func() {
 		since = originalSince
@@ -77,7 +100,7 @@ func Test_runMain(t *testing.T) {
 		cachedGoVersion = originalCachedGoVersion
 		cachedBuildDependencies = originalCachedBuildDependencies
 		mp3repairElevationControl = originalMP3repairElevationControl
-		interpretBuildData = originalInterpretBuildData
+		getBuildData = originalGetBuildData
 	}()
 	mp3repairElevationControl = testingElevationControl{
 		logFields: map[string]any{
@@ -99,7 +122,9 @@ func Test_runMain(t *testing.T) {
 		appVersion   string
 		timestamp    string
 		goVersion    string
+		mainVersion  string
 		dependencies []string
+		settings     []string
 		output.WantedRecording
 	}{
 		"happy": {
@@ -108,10 +133,13 @@ func Test_runMain(t *testing.T) {
 			appVersion:   "0.1.2",
 			timestamp:    "2021-11-28T12:01:02Z05:00",
 			goVersion:    "1.22.x",
+			mainVersion:  "0.45.0",
+			settings:     []string{"-ldflags: -X main.version=0.45.0", "cmd: gcc", "git: 2.3.4"},
 			dependencies: []string{"foo v1.1.1", "bar v1.2.2"},
 			WantedRecording: output.WantedRecording{
 				Log: "level='info'" +
 					" args='[arg1 arg2]'" +
+					" buildSettings='[-ldflags: -X main.version=0.45.0 cmd: gcc git: 2.3.4]'" +
 					" defaults='" +
 					"about:\n" +
 					"    style: rounded\n" +
@@ -144,6 +172,7 @@ func Test_runMain(t *testing.T) {
 					"    trackFilter: .*\n'" +
 					" dependencies='[foo v1.1.1 bar v1.2.2]'" +
 					" goVersion='1.22.x'" +
+					" mainVersion='0.45.0'" +
 					" timeStamp='2021-11-28T12:01:02Z05:00'" +
 					" version='0.1.2'" +
 					" msg='execution starts'\n" +
@@ -167,12 +196,15 @@ func Test_runMain(t *testing.T) {
 			timestamp:    "2021-11-29T13:02:03Z05:00",
 			cmdline:      []string{"sadApp", "arg1a", "arg2a"},
 			goVersion:    "1.22.x",
+			mainVersion:  "0.45.0",
+			settings:     []string{"-ldflags: -X main.version=0.45.0", "cmd: gcc", "git: 2.3.4"},
 			dependencies: []string{"foo v1.1.2", "bar v1.2.3"},
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"\"mp3repair\" version 0.2.3, created at 2021-11-29T13:02:03Z05:00, failed.\n",
 				Log: "level='info'" +
 					" args='[arg1a arg2a]'" +
+					" buildSettings='[-ldflags: -X main.version=0.45.0 cmd: gcc git: 2.3.4]'" +
 					" defaults='" +
 					"about:\n" +
 					"    style: rounded\n" +
@@ -205,6 +237,7 @@ func Test_runMain(t *testing.T) {
 					"    trackFilter: .*\n'" +
 					" dependencies='[foo v1.1.2 bar v1.2.3]'" +
 					" goVersion='1.22.x'" +
+					" mainVersion='0.45.0'" +
 					" timeStamp='2021-11-29T13:02:03Z05:00'" +
 					" version='0.2.3'" +
 					" msg='execution starts'\n" +
@@ -228,12 +261,15 @@ func Test_runMain(t *testing.T) {
 			timestamp:    "2021-11-29T13:02:03Z05:00",
 			cmdline:      []string{"sadApp", "arg1a", "arg2a"},
 			goVersion:    "1.22.x",
+			mainVersion:  "0.45.0",
+			settings:     []string{"-ldflags: -X main.version=0.45.0", "cmd: gcc", "git: 2.3.4"},
 			dependencies: []string{"foo v1.1.2", "bar v1.2.3"},
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"A runtime error occurred: \"oh dear\".\n",
 				Log: "level='info'" +
 					" args='[arg1a arg2a]'" +
+					" buildSettings='[-ldflags: -X main.version=0.45.0 cmd: gcc git: 2.3.4]'" +
 					" defaults='" +
 					"about:\n" +
 					"    style: rounded\n" +
@@ -266,6 +302,7 @@ func Test_runMain(t *testing.T) {
 					"    trackFilter: .*\n'" +
 					" dependencies='[foo v1.1.2 bar v1.2.3]'" +
 					" goVersion='1.22.x'" +
+					" mainVersion='0.45.0'" +
 					" timeStamp='2021-11-29T13:02:03Z05:00'" +
 					" version='0.2.3'" +
 					" msg='execution starts'\n" +
@@ -291,8 +328,13 @@ func Test_runMain(t *testing.T) {
 			os.Args = tt.cmdline
 			version = tt.appVersion
 			creation = tt.timestamp
-			interpretBuildData = func(buildInfoReader func() (*debug.BuildInfo, bool)) (string, []string) {
-				return tt.goVersion, tt.dependencies
+			getBuildData = func(buildInfoReader func() (*debug.BuildInfo, bool)) cmdtoolkit.BuildInformation {
+				return &localBuildInfo{
+					goVersion:    tt.goVersion,
+					dependencies: tt.dependencies,
+					mainVersion:  tt.mainVersion,
+					settings:     tt.settings,
+				}
 			}
 			o := output.NewRecorder()
 			runMain(o, tt.args.cmd, tt.args.start)

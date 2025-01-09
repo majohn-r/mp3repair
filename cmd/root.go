@@ -147,15 +147,19 @@ func runMain(o output.Bus, cmd commandExecutor, start time.Time) int {
 			o.Log(output.Error, "Panic recovered", map[string]any{"error": r})
 		}
 	}()
-	cachedGoVersion, cachedBuildDependencies = interpretBuildData(debug.ReadBuildInfo)
+	bi := getBuildData(debug.ReadBuildInfo)
+	cachedGoVersion = bi.GoVersion()
+	cachedBuildDependencies = bi.Dependencies()
 	cookedArgs := cookCommandLineArguments(o, os.Args)
 	o.Log(output.Info, "execution starts", map[string]any{
-		"version":      version,
-		"timeStamp":    creation,
-		"goVersion":    cachedGoVersion,
-		"dependencies": cachedBuildDependencies,
-		"args":         cookedArgs,
-		"defaults":     string(cmdtoolkit.WritableDefaults()),
+		"version":       version,
+		"mainVersion":   bi.MainVersion(),
+		"buildSettings": bi.Settings(),
+		"timeStamp":     creation,
+		"goVersion":     cachedGoVersion,
+		"dependencies":  cachedBuildDependencies,
+		"args":          cookedArgs,
+		"defaults":      string(cmdtoolkit.WritableDefaults()),
 	})
 	mp3repairElevationControl.Log(o, output.Info)
 	cmd.SetArgs(cookedArgs)
