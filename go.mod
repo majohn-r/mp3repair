@@ -5,7 +5,7 @@ go 1.24
 require (
 	github.com/bogem/id3v2/v2 v2.1.4
 	github.com/cheggaaa/pb/v3 v3.1.6
-	github.com/majohn-r/cmd-toolkit v0.24.1
+	github.com/majohn-r/cmd-toolkit v0.25.0
 	github.com/majohn-r/output v0.9.0
 	github.com/spf13/afero v1.12.0
 	github.com/spf13/cobra v1.9.1

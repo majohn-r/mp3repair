@@ -21,6 +21,7 @@ var (
 	initLogging            = cmdtoolkit.InitLogging
 	logPath                = cmdtoolkit.LogPath
 	mkdir                  = cmdtoolkit.Mkdir
+	modificationTime       = cmdtoolkit.ModificationTime
 	plainFileExists        = cmdtoolkit.PlainFileExists
 	processIsElevated      = cmdtoolkit.ProcessIsElevated
 	readDefaultsConfigFile = cmdtoolkit.ReadDefaultsConfigFile

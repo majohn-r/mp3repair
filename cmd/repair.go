@@ -238,10 +238,17 @@ func tryTrackBackup(o output.Bus, t *files.Track, path string) (backedUp bool) {
 	backupFile := filepath.Join(path, fmt.Sprintf("%d.mp3", t.Number()))
 	switch {
 	case plainFileExists(backupFile):
-		o.ErrorPrintf("The backup file for track file %q, %q, already exists.\n", t, backupFile)
-		o.Log(output.Error, "file already exists", map[string]any{
+		backedUp = true
+		var status string
+		if modTime, err := modificationTime(backupFile); err == nil {
+			status = modTime.Format("2006-01-02 15:04:05")
+		} else {
+			status = fmt.Sprintf("error getting modification time: %v", err)
+		}
+		o.Log(output.Info, "file already exists", map[string]any{
 			"command": repairCommandName,
 			"file":    backupFile,
+			"modTime": status,
 		})
 	default:
 		copyErr := copyFile(t.Path(), backupFile)

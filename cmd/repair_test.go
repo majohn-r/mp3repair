@@ -9,6 +9,7 @@ import (
 	"reflect"
 	"regexp"
 	"testing"
+	"time"
 
 	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
@@ -130,9 +131,11 @@ func Test_ensureTrackBackupDirectoryExists(t *testing.T) {
 func Test_tryTrackBackup(t *testing.T) {
 	originalPlainFileExists := plainFileExists
 	originalCopyFile := copyFile
+	originalModificationTime := modificationTime
 	defer func() {
 		plainFileExists = originalPlainFileExists
 		copyFile = originalCopyFile
+		modificationTime = originalModificationTime
 	}()
 	track := &files.Track{}
 	if tracks := generateTracks(1); len(tracks) > 0 {
@@ -142,29 +145,44 @@ func Test_tryTrackBackup(t *testing.T) {
 		t    *files.Track
 		path string
 	}
+	safeTime := time.Now()
 	tests := map[string]struct {
-		plainFileExists func(path string) bool
-		copyFile        func(src, destination string) error
+		plainFileExists  func(path string) bool
+		copyFile         func(src, destination string) error
+		modificationTime func(path string) (time.Time, error)
 		args
 		wantBackedUp bool
 		output.WantedRecording
 	}{
-		"backup already exists": {
+		"backup already exists (normal)": {
 			plainFileExists: func(_ string) bool { return true },
-			args:            args{t: track, path: "backupDir"},
-			wantBackedUp:    false,
+			modificationTime: func(_ string) (time.Time, error) {
+				return safeTime, nil
+			},
+			args:         args{t: track, path: "backupDir"},
+			wantBackedUp: true,
 			WantedRecording: output.WantedRecording{
-				Error: "" +
-					"The backup file for track file" +
-					" \"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\"," +
-					" \"backupDir\\\\1.mp3\", already exists.\n" +
-					"The track file " +
-					"\"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\"" +
-					" will not be repaired.\n",
 				Log: "" +
-					"level='error'" +
+					"level='info'" +
 					" command='repair'" +
 					" file='backupDir\\1.mp3'" +
+					" modTime='" + safeTime.Format("2006-01-02 15:04:05") + "'" +
+					" msg='file already exists'\n",
+			},
+		},
+		"backup already exists (error on modification time": {
+			plainFileExists: func(_ string) bool { return true },
+			modificationTime: func(_ string) (time.Time, error) {
+				return safeTime, fmt.Errorf("file disappeared")
+			},
+			args:         args{t: track, path: "backupDir"},
+			wantBackedUp: true,
+			WantedRecording: output.WantedRecording{
+				Log: "" +
+					"level='info'" +
+					" command='repair'" +
+					" file='backupDir\\1.mp3'" +
+					" modTime='error getting modification time: file disappeared'" +
 					" msg='file already exists'\n",
 			},
 		},
@@ -206,6 +224,7 @@ func Test_tryTrackBackup(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			plainFileExists = tt.plainFileExists
+			modificationTime = tt.modificationTime
 			copyFile = tt.copyFile
 			o := output.NewRecorder()
 			gotBackedUp := tryTrackBackup(o, tt.args.t, tt.args.path)
