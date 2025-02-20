@@ -340,47 +340,74 @@ func (t *Track) ReportMetadataProblems() []string {
 	if !s.hasConflicts() {
 		return nil
 	}
-	// 7: 1 each for
+	// 13: 2 each for
 	// - track numbering conflict
 	// - track name conflict
 	// - album name conflict
 	// - artist name conflict
 	// - album year conflict
 	// - album genre conflict
+	// and 1 for
 	// - MCDI conflict
-	diffs := make([]string, 0, 7)
+	diffs := make([]string, 0, 13)
 	if s.HasNumberingConflict() {
-		diffs = append(diffs,
-			fmt.Sprintf("metadata does not agree with track number %d", t.number))
+		for _, src := range sourceTypes {
+			if t.metadata.trackNumber(src).differenceExists {
+				diffs = append(diffs,
+					fmt.Sprintf("%s metadata [%v] does not agree with track number %d", src.String(),
+						t.metadata.trackNumber(src).original, t.number))
+			}
+		}
 	}
 	if s.HasTrackNameConflict() {
-		diffs = append(diffs,
-			fmt.Sprintf("metadata does not agree with track name %q", t.simpleName))
+		for _, src := range sourceTypes {
+			if t.metadata.trackName(src).differenceExists {
+				diffs = append(diffs,
+					fmt.Sprintf("%s metadata [%v] does not agree with track name %q", src.String(),
+						t.metadata.trackName(src).original, t.simpleName))
+			}
+		}
 	}
 	if s.HasAlbumNameConflict() {
-		diffs = append(diffs,
-			fmt.Sprintf("metadata does not agree with album name %q",
-				t.album.canonicalTitle))
+		for _, src := range sourceTypes {
+			if t.metadata.albumName(src).differenceExists {
+				diffs = append(diffs,
+					fmt.Sprintf("%s metadata [%v] does not agree with album name %q", src.String(),
+						t.metadata.albumName(src).original, t.album.canonicalTitle))
+			}
+		}
 	}
 	if s.HasArtistNameConflict() {
-		diffs = append(diffs,
-			fmt.Sprintf("metadata does not agree with artist name %q",
-				t.album.recordingArtist.canonicalName()))
+		for _, src := range sourceTypes {
+			if t.metadata.artistName(src).differenceExists {
+				diffs = append(diffs,
+					fmt.Sprintf("%s metadata [%v] does not agree with artist name %q", src.String(),
+						t.metadata.artistName(src).original, t.album.recordingArtist.canonicalName()))
+			}
+		}
 	}
 	if s.HasGenreConflict() {
-		diffs = append(diffs,
-			fmt.Sprintf("metadata does not agree with album genre %q",
-				t.album.genre))
+		for _, src := range sourceTypes {
+			if t.metadata.albumGenre(src).differenceExists {
+				diffs = append(diffs,
+					fmt.Sprintf("%s metadata [%v] does not agree with album genre %q", src.String(),
+						t.metadata.albumGenre(src).original, t.album.genre))
+			}
+		}
 	}
 	if s.HasYearConflict() {
-		diffs = append(diffs,
-			fmt.Sprintf("metadata does not agree with album year %q",
-				t.album.year))
+		for _, src := range sourceTypes {
+			if t.metadata.albumYear(src).differenceExists {
+				diffs = append(diffs,
+					fmt.Sprintf("%s metadata [%v] does not agree with album year %q", src.String(),
+						t.metadata.albumYear(src).original, t.album.year))
+			}
+		}
 	}
 	if s.HasMCDIConflict() {
 		diffs = append(diffs,
-			fmt.Sprintf("metadata does not agree with the MCDI frame %q",
-				string(t.album.cdIdentifier.Body)))
+			fmt.Sprintf("ID3V2 metadata [%v] does not agree with the MCDI frame %q",
+				t.metadata.cdIdentifier().original.Body, string(t.album.cdIdentifier.Body)))
 	}
 	sort.Strings(diffs)
 	return diffs

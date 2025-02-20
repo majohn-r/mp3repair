@@ -11,12 +11,19 @@ Key to symbols
 - 😒 change is invisible to the user
 - 🆕 new feature
 
+## v0.43.3
+
+_pre-release `2025-02-20`_
+
+- 🐛 fixed bug where metadata differences were found by **`check -f`** but insufficient detail was given to make it
+obvious what to fix (sometimes, for instance, problems exist in the file space, not metadata)
+
 ## v0.43.2
 
 _pre-release `2025-02-20`_
 
 - 🐛 fixed bug where repair would fail (be blocked) if a file under repair had been repaired previously and its backup
-file had not been cleaned up.
+file had not been cleaned up
 
 ## v0.43.0
 

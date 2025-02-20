@@ -17,6 +17,17 @@ const (
 	totalSources
 )
 
+func (sT sourceType) String() string {
+	result := "undefined"
+	if sT == ID3V1 {
+		result = "ID3V1"
+	}
+	if sT == ID3V2 {
+		result = "ID3V2"
+	}
+	return result
+}
+
 var (
 	nameComparators = map[sourceType]func(*comparableStrings) bool{
 		ID3V1: id3v1NameDiffers,
@@ -51,8 +62,9 @@ type metadataValue interface {
 }
 
 type correctableValue[V metadataValue] struct {
-	original   V
-	correction V
+	original         V
+	correction       V
+	differenceExists bool
 }
 
 func (cv correctableValue[V]) correctedValue() V {
@@ -138,6 +150,7 @@ func (tm *TrackMetadata) setArtistName(src sourceType, name string) {
 
 func (tm *TrackMetadata) correctArtistName(src sourceType, name string) {
 	tm.commonMetadata(src).artistName.correction = name
+	tm.commonMetadata(src).artistName.differenceExists = true
 }
 
 func (tm *TrackMetadata) artistName(src sourceType) correctableValue[string] {
@@ -181,6 +194,7 @@ func (tm *TrackMetadata) setAlbumName(src sourceType, name string) {
 
 func (tm *TrackMetadata) correctAlbumName(src sourceType, name string) {
 	tm.commonMetadata(src).albumName.correction = name
+	tm.commonMetadata(src).albumName.differenceExists = true
 }
 
 func (tm *TrackMetadata) albumName(src sourceType) correctableValue[string] {
@@ -224,6 +238,7 @@ func (tm *TrackMetadata) setAlbumGenre(src sourceType, name string) {
 
 func (tm *TrackMetadata) correctAlbumGenre(src sourceType, name string) {
 	tm.commonMetadata(src).albumGenre.correction = name
+	tm.commonMetadata(src).albumGenre.differenceExists = true
 }
 
 func (tm *TrackMetadata) albumGenre(src sourceType) correctableValue[string] {
@@ -255,6 +270,7 @@ func (tm *TrackMetadata) setAlbumYear(src sourceType, name string) {
 
 func (tm *TrackMetadata) correctAlbumYear(src sourceType, name string) {
 	tm.commonMetadata(src).albumYear.correction = name
+	tm.commonMetadata(src).albumYear.differenceExists = true
 }
 
 func (tm *TrackMetadata) albumYear(src sourceType) correctableValue[string] {
@@ -282,6 +298,7 @@ func (tm *TrackMetadata) setTrackName(src sourceType, name string) {
 
 func (tm *TrackMetadata) correctTrackName(src sourceType, name string) {
 	tm.commonMetadata(src).trackName.correction = name
+	tm.commonMetadata(src).trackName.differenceExists = true
 }
 
 func (tm *TrackMetadata) trackName(src sourceType) correctableValue[string] {
@@ -309,6 +326,7 @@ func (tm *TrackMetadata) setTrackNumber(src sourceType, number int) {
 
 func (tm *TrackMetadata) correctTrackNumber(src sourceType, number int) {
 	tm.commonMetadata(src).trackNumber.correction = number
+	tm.commonMetadata(src).trackNumber.differenceExists = true
 }
 
 func (tm *TrackMetadata) trackNumber(src sourceType) correctableValue[int] {
@@ -348,6 +366,7 @@ func (tm *TrackMetadata) setCDIdentifier(body []byte) {
 
 func (tm *TrackMetadata) correctCDIdentifier(body []byte) {
 	tm.musicCDIdentifier.correction = id3v2.UnknownFrame{Body: body}
+	tm.musicCDIdentifier.differenceExists = true
 }
 
 func (tm *TrackMetadata) cdIdentifier() correctableValue[id3v2.UnknownFrame] {
