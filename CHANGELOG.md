@@ -11,9 +11,9 @@ Key to symbols
 - 😒 change is invisible to the user
 - 🆕 new feature
 
-## v0.43.1
+## v0.43.2
 
-_pre-release `2025-02-19`_
+_pre-release `2025-02-20`_
 
 - 🐛 fixed bug where repair would fail (be blocked) if a file under repair had been repaired previously and its backup
 file had not been cleaned up.
