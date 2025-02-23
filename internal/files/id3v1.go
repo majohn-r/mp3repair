@@ -340,228 +340,228 @@ var (
 		191: "Psybient",
 	}
 	runeByteMapping = map[rune][]byte{
-		'…': {0x85},
-		'¡': {0xA1},
-		'¢': {0xA2},
-		'£': {0xA3},
-		'¤': {0xA4},
-		'¥': {0xA5},
-		'¦': {0xA6},
-		'§': {0xA7},
-		'¨': {0xA8},
-		'©': {0xA9},
-		'ª': {0xAA},
-		'«': {0xAB},
-		'¬': {0xAC},
-		'®': {0xAE},
-		'¯': {0xAF},
-		'°': {0xB0},
-		'±': {0xB1},
-		'²': {0xB2},
-		'³': {0xB3},
-		'´': {0xB4},
-		'µ': {0xB5},
-		'¶': {0xB6},
-		'·': {0xB7},
-		'¸': {0xB8},
-		'¹': {0xB9},
-		'º': {0xBA},
-		'»': {0xBB},
-		'¼': {0xBC},
-		'½': {0xBD},
-		'¾': {0xBE},
-		'¿': {0xBF},
-		'À': {0xC0},
-		'Á': {0xC1},
-		'Â': {0xC2},
-		'Ã': {0xC3},
-		'Ä': {0xC4},
-		'Å': {0xC5},
-		'Æ': {0xC6},
-		'Ç': {0xC7},
-		'È': {0xC8},
-		'É': {0xC9},
-		'Ê': {0xCA},
-		'Ë': {0xCB},
-		'Ì': {0xCC},
-		'Í': {0xCD},
-		'Î': {0xCE},
-		'Ï': {0xCF},
-		'Ð': {0xD0},
-		'Ñ': {0xD1},
-		'Ò': {0xD2},
-		'Ó': {0xD3},
-		'Ô': {0xD4},
-		'Õ': {0xD5},
-		'Ö': {0xD6},
-		'×': {0xD7},
-		'Ø': {0xD8},
-		'Ù': {0xD9},
-		'Ú': {0xDA},
-		'Û': {0xDB},
-		'Ü': {0xDC},
-		'Ý': {0xDD},
-		'Þ': {0xDE},
-		'ß': {0xDF},
-		'à': {0xE0},
-		'á': {0xE1},
-		'â': {0xE2},
-		'ã': {0xE3},
-		'ä': {0xE4},
-		'å': {0xE5},
-		'æ': {0xE6},
-		'ç': {0xE7},
-		'è': {0xE8},
-		'é': {0xE9},
-		'ê': {0xEA},
-		'ë': {0xEB},
-		'ì': {0xEC},
-		'í': {0xED},
-		'î': {0xEE},
-		'ï': {0xEF},
-		'ñ': {0xF1},
-		'ò': {0xF2},
-		'ó': {0xF3},
-		'ô': {0xF4},
-		'õ': {0xF5},
-		'ö': {0xF6},
-		'÷': {0xF7},
-		'ø': {0xF8},
-		'ù': {0xF9},
-		'ú': {0xFA},
-		'û': {0xFB},
-		'ü': {0xFC},
-		'ý': {0xFD},
-		'þ': {0xFE},
-		'ÿ': {0xFF},
-		'Ā': {'A'},      // Latin Capital letter A with macron
-		'ā': {'a'},      // Latin Small letter A with macron
-		'Ă': {'A'},      // Latin Capital letter A with breve
-		'ă': {'a'},      // Latin Small letter A with breve
-		'Ą': {'A'},      // Latin Capital letter A with ogonek
-		'ą': {'a'},      // Latin Small letter A with ogonek
-		'Ć': {'C'},      // Latin Capital letter C with acute
-		'ć': {'c'},      // Latin Small letter C with acute
-		'Ĉ': {'C'},      // Latin Capital letter C with circumflex
-		'ĉ': {'c'},      // Latin Small letter C with circumflex
-		'Ċ': {'C'},      // Latin Capital letter C with dot above
-		'ċ': {'c'},      // Latin Small letter C with dot above
-		'Č': {'C'},      // Latin Capital letter C with caron
-		'č': {'c'},      // Latin Small letter C with caron
-		'Ď': {'D'},      // Latin Capital letter D with caron
-		'ď': {'d'},      // Latin Small letter D with caron
-		'Đ': {'D'},      // Latin Capital letter D with stroke
-		'đ': {'d'},      // Latin Small letter D with stroke
-		'Ē': {'E'},      // Latin Capital letter E with macron
-		'ē': {'e'},      // Latin Small letter E with macron
-		'Ĕ': {'E'},      // Latin Capital letter E with breve
-		'ĕ': {'e'},      // Latin Small letter E with breve
-		'Ė': {'E'},      // Latin Capital letter E with dot above
-		'ė': {'e'},      // Latin Small letter E with dot above
-		'Ę': {'E'},      // Latin Capital letter E with ogonek
-		'ę': {'e'},      // Latin Small letter E with ogonek
-		'Ě': {'E'},      // Latin Capital letter E with caron
-		'ě': {'e'},      // Latin Small letter E with caron
-		'Ĝ': {'G'},      // Latin Capital letter G with circumflex
-		'ĝ': {'g'},      // Latin Small letter G with circumflex
-		'Ğ': {'G'},      // Latin Capital letter G with breve
-		'ğ': {'g'},      // Latin Small letter G with breve
-		'Ġ': {'G'},      // Latin Capital letter G with dot above
-		'ġ': {'g'},      // Latin Small letter G with dot above
-		'Ģ': {'G'},      // Latin Capital letter G with cedilla
-		'ģ': {'g'},      // Latin Small letter G with cedilla
-		'Ĥ': {'H'},      // Latin Capital letter H with circumflex
-		'ĥ': {'h'},      // Latin Small letter H with circumflex
-		'Ħ': {'H'},      // Latin Capital letter H with stroke
-		'ħ': {'h'},      // Latin Small letter H with stroke
-		'Ĩ': {'I'},      // Latin Capital letter I with tilde
-		'ĩ': {'i'},      // Latin Small letter I with tilde
-		'Ī': {'I'},      // Latin Capital letter I with macron
-		'ī': {'i'},      // Latin Small letter I with macron
-		'Ĭ': {'I'},      // Latin Capital letter I with breve
-		'ĭ': {'i'},      // Latin Small letter I with breve
-		'Į': {'I'},      // Latin Capital letter I with ogonek
-		'į': {'i'},      // Latin Small letter I with ogonek
-		'İ': {'I'},      // Latin Capital letter I with dot above
-		'ı': {'i'},      // Latin Small letter dotless I
-		'Ĳ': {'I', 'J'}, // Latin Capital Ligature IJ
-		'ĳ': {'i', 'j'}, // Latin Small Ligature IJ
-		'Ĵ': {'J'},      // Latin Capital letter J with circumflex
-		'ĵ': {'j'},      // Latin Small letter J with circumflex
-		'Ķ': {'K'},      // Latin Capital letter K with cedilla
-		'ķ': {'k'},      // Latin Small letter K with cedilla
-		'ĸ': {'k'},      // Latin Small letter Kra
-		'Ĺ': {'L'},      // Latin Capital letter L with acute
-		'ĺ': {'l'},      // Latin Small letter L with acute
-		'Ļ': {'L'},      // Latin Capital letter L with cedilla
-		'ļ': {'l'},      // Latin Small letter L with cedilla
-		'Ľ': {'L'},      // Latin Capital letter L with caron
-		'ľ': {'l'},      // Latin Small letter L with caron
-		'Ŀ': {'L'},      // Latin Capital letter L with middle dot
-		'ŀ': {'l'},      // Latin Small letter L with middle dot
-		'Ł': {'L'},      // Latin Capital letter L with stroke
-		'ł': {'L'},      // Latin Small letter L with stroke
-		'Ń': {'N'},      // Latin Capital letter N with acute
-		'ń': {'n'},      // Latin Small letter N with acute
-		'Ņ': {'N'},      // Latin Capital letter N with cedilla
-		'ņ': {'n'},      // Latin Small letter N with cedilla
-		'Ň': {'N'},      // Latin Capital letter N with caron
-		'ň': {'n'},      // Latin Small letter N with caron
-		'ŉ': {'n'},      // Latin Small letter N preceded by apostrophe
-		'Ŋ': {'N', 'G'}, // Latin Capital letter Eng
-		'ŋ': {'n', 'g'}, // Latin Small letter Eng
-		'Ō': {'O'},      // Latin Capital letter O with macron
-		'ō': {'o'},      // Latin Small letter O with macron
-		'Ŏ': {'O'},      // Latin Capital letter O with breve
-		'ŏ': {'o'},      // Latin Small letter O with breve
-		'Ő': {'O'},      // Latin Capital Letter O with double acute
-		'ő': {'o'},      // Latin Small Letter O with double acute
-		'Œ': {'O', 'E'}, // Latin Capital Ligature OE
-		'œ': {'o', 'e'}, // Latin Small Ligature OE
-		'Ŕ': {'R'},      // Latin Capital letter R with acute
-		'ŕ': {'r'},      // Latin Small letter R with acute
-		'Ŗ': {'R'},      // Latin Capital letter R with cedilla
-		'ŗ': {'t'},      // Latin Small letter R with cedilla
-		'Ř': {'R'},      // Latin Capital letter R with caron
-		'ř': {'r'},      // Latin Small letter R with caron
-		'Ś': {'S'},      // Latin Capital letter S with acute
-		'ś': {'s'},      // Latin Small letter S with acute
-		'Ŝ': {'S'},      // Latin Capital letter S with circumflex
-		'ŝ': {'s'},      // Latin Small letter S with circumflex
-		'Ş': {'S'},      // Latin Capital letter S with cedilla
-		'ş': {'s'},      // Latin Small letter S with cedilla
-		'Š': {'S'},      // Latin Capital letter S with caron
-		'š': {'s'},      // Latin Small letter S with caron
-		'Ţ': {'T'},      // Latin Capital letter T with cedilla
-		'ţ': {'t'},      // Latin Small letter T with cedilla
-		'Ť': {'T'},      // Latin Capital letter T with caron
-		'ť': {'t'},      // Latin Small letter T with caron
-		'Ŧ': {'T'},      // Latin Capital letter T with stroke
-		'ŧ': {'t'},      // Latin Small letter T with stroke
-		'Ũ': {'U'},      // Latin Capital letter U with tilde
-		'ũ': {'u'},      // Latin Small letter U with tilde
-		'Ū': {'U'},      // Latin Capital letter U with macron
-		'ū': {'u'},      // Latin Small letter U with macron
-		'Ŭ': {'U'},      // Latin Capital letter U with breve
-		'ŭ': {'u'},      // Latin Small letter U with breve
-		'Ů': {'U'},      // Latin Capital letter U with ring above
-		'ů': {'u'},      // Latin Small letter U with ring above
-		'Ű': {'U'},      // Latin Capital Letter U with double acute
-		'ű': {'u'},      // Latin Small Letter U with double acute
-		'Ų': {'U'},      // Latin Capital letter U with ogonek
-		'ų': {'u'},      // Latin Small letter U with ogonek
-		'Ŵ': {'W'},      // Latin Capital letter W with circumflex
-		'ŵ': {'w'},      // Latin Small letter W with circumflex
-		'Ŷ': {'Y'},      // Latin Capital letter Y with circumflex
-		'ŷ': {'y'},      // Latin Small letter Y with circumflex
-		'Ÿ': {'Y'},      // Latin Capital letter Y with diaeresis
-		'Ź': {'Z'},      // Latin Capital letter Z with acute
-		'ź': {'z'},      // Latin Small letter Z with acute
-		'Ż': {'Z'},      // Latin Capital letter Z with dot above
-		'ż': {'z'},      // Latin Small letter Z with dot above
-		'Ž': {'Z'},      // Latin Capital letter Z with caron
-		'ž': {'z'},      // Latin Small letter Z with caron
-		'ſ': {'S'},      // Latin Small letter long S
+		'…': []byte("..."),
+		'¡': {'!'},
+		'¢': []byte("cent"),
+		'£': []byte("pound"),
+		'¤': []byte("currency"),
+		'¥': []byte("yen"),
+		'¦': {'|'},
+		'§': []byte("ss"),
+		'¨': []byte("umlaut"),
+		'©': []byte("(C)"),
+		'ª': {'a'},
+		'«': []byte("<<"),
+		'¬': []byte("not"),
+		'®': []byte("(R)"),
+		'¯': {'-'},
+		'°': []byte("degree"),
+		'±': []byte("+/-"),
+		'²': {'2'},
+		'³': {'3'},
+		'´': {'\''},
+		'µ': []byte("nano"),
+		'¶': []byte("pp"),
+		'·': {'.'},
+		'¸': {'?'},
+		'¹': {'?'},
+		'º': {'o'},
+		'»': []byte(">>"),
+		'¼': []byte("1/4"),
+		'½': []byte("1/2"),
+		'¾': []byte("3/4"),
+		'¿': {'?'},
+		'À': {'A'},
+		'Á': {'A'},
+		'Â': {'A'},
+		'Ã': {'A'},
+		'Ä': {'A'},
+		'Å': {'A'},
+		'Æ': []byte("AE"),
+		'Ç': {'C'},
+		'È': {'E'},
+		'É': {'E'},
+		'Ê': {'E'},
+		'Ë': {'E'},
+		'Ì': {'I'},
+		'Í': {'I'},
+		'Î': {'I'},
+		'Ï': {'I'},
+		'Ð': {'D'},
+		'Ñ': {'N'},
+		'Ò': {'O'},
+		'Ó': {'O'},
+		'Ô': {'O'},
+		'Õ': {'O'},
+		'Ö': {'O'},
+		'×': {'x'},
+		'Ø': {'O'},
+		'Ù': {'U'},
+		'Ú': {'U'},
+		'Û': {'U'},
+		'Ü': {'U'},
+		'Ý': {'Y'},
+		'Þ': []byte("TH"),
+		'ß': {'S'},
+		'à': {'a'},
+		'á': {'a'},
+		'â': {'a'},
+		'ã': {'a'},
+		'ä': {'a'},
+		'å': {'a'},
+		'æ': []byte("ae"),
+		'ç': {'c'},
+		'è': {'e'},
+		'é': {'e'},
+		'ê': {'e'},
+		'ë': {'e'},
+		'ì': {'i'},
+		'í': {'i'},
+		'î': {'i'},
+		'ï': {'i'},
+		'ñ': {'n'},
+		'ò': {'o'},
+		'ó': {'o'},
+		'ô': {'o'},
+		'õ': {'o'},
+		'ö': {'o'},
+		'÷': {'/'},
+		'ø': {'o'},
+		'ù': {'u'},
+		'ú': {'u'},
+		'û': {'u'},
+		'ü': {'u'},
+		'ý': {'y'},
+		'þ': []byte("th"),
+		'ÿ': {'y'},
+		'Ā': {'A'},        // Latin Capital letter A with macron
+		'ā': {'a'},        // Latin Small letter A with macron
+		'Ă': {'A'},        // Latin Capital letter A with breve
+		'ă': {'a'},        // Latin Small letter A with breve
+		'Ą': {'A'},        // Latin Capital letter A with ogonek
+		'ą': {'a'},        // Latin Small letter A with ogonek
+		'Ć': {'C'},        // Latin Capital letter C with acute
+		'ć': {'c'},        // Latin Small letter C with acute
+		'Ĉ': {'C'},        // Latin Capital letter C with circumflex
+		'ĉ': {'c'},        // Latin Small letter C with circumflex
+		'Ċ': {'C'},        // Latin Capital letter C with dot above
+		'ċ': {'c'},        // Latin Small letter C with dot above
+		'Č': {'C'},        // Latin Capital letter C with caron
+		'č': {'c'},        // Latin Small letter C with caron
+		'Ď': {'D'},        // Latin Capital letter D with caron
+		'ď': {'d'},        // Latin Small letter D with caron
+		'Đ': {'D'},        // Latin Capital letter D with stroke
+		'đ': {'d'},        // Latin Small letter D with stroke
+		'Ē': {'E'},        // Latin Capital letter E with macron
+		'ē': {'e'},        // Latin Small letter E with macron
+		'Ĕ': {'E'},        // Latin Capital letter E with breve
+		'ĕ': {'e'},        // Latin Small letter E with breve
+		'Ė': {'E'},        // Latin Capital letter E with dot above
+		'ė': {'e'},        // Latin Small letter E with dot above
+		'Ę': {'E'},        // Latin Capital letter E with ogonek
+		'ę': {'e'},        // Latin Small letter E with ogonek
+		'Ě': {'E'},        // Latin Capital letter E with caron
+		'ě': {'e'},        // Latin Small letter E with caron
+		'Ĝ': {'G'},        // Latin Capital letter G with circumflex
+		'ĝ': {'g'},        // Latin Small letter G with circumflex
+		'Ğ': {'G'},        // Latin Capital letter G with breve
+		'ğ': {'g'},        // Latin Small letter G with breve
+		'Ġ': {'G'},        // Latin Capital letter G with dot above
+		'ġ': {'g'},        // Latin Small letter G with dot above
+		'Ģ': {'G'},        // Latin Capital letter G with cedilla
+		'ģ': {'g'},        // Latin Small letter G with cedilla
+		'Ĥ': {'H'},        // Latin Capital letter H with circumflex
+		'ĥ': {'h'},        // Latin Small letter H with circumflex
+		'Ħ': {'H'},        // Latin Capital letter H with stroke
+		'ħ': {'h'},        // Latin Small letter H with stroke
+		'Ĩ': {'I'},        // Latin Capital letter I with tilde
+		'ĩ': {'i'},        // Latin Small letter I with tilde
+		'Ī': {'I'},        // Latin Capital letter I with macron
+		'ī': {'i'},        // Latin Small letter I with macron
+		'Ĭ': {'I'},        // Latin Capital letter I with breve
+		'ĭ': {'i'},        // Latin Small letter I with breve
+		'Į': {'I'},        // Latin Capital letter I with ogonek
+		'į': {'i'},        // Latin Small letter I with ogonek
+		'İ': {'I'},        // Latin Capital letter I with dot above
+		'ı': {'i'},        // Latin Small letter dotless I
+		'Ĳ': []byte("IJ"), // Latin Capital Ligature IJ
+		'ĳ': []byte("ij"), // Latin Small Ligature IJ
+		'Ĵ': {'J'},        // Latin Capital letter J with circumflex
+		'ĵ': {'j'},        // Latin Small letter J with circumflex
+		'Ķ': {'K'},        // Latin Capital letter K with cedilla
+		'ķ': {'k'},        // Latin Small letter K with cedilla
+		'ĸ': {'k'},        // Latin Small letter Kra
+		'Ĺ': {'L'},        // Latin Capital letter L with acute
+		'ĺ': {'l'},        // Latin Small letter L with acute
+		'Ļ': {'L'},        // Latin Capital letter L with cedilla
+		'ļ': {'l'},        // Latin Small letter L with cedilla
+		'Ľ': {'L'},        // Latin Capital letter L with caron
+		'ľ': {'l'},        // Latin Small letter L with caron
+		'Ŀ': {'L'},        // Latin Capital letter L with middle dot
+		'ŀ': {'l'},        // Latin Small letter L with middle dot
+		'Ł': {'L'},        // Latin Capital letter L with stroke
+		'ł': {'L'},        // Latin Small letter L with stroke
+		'Ń': {'N'},        // Latin Capital letter N with acute
+		'ń': {'n'},        // Latin Small letter N with acute
+		'Ņ': {'N'},        // Latin Capital letter N with cedilla
+		'ņ': {'n'},        // Latin Small letter N with cedilla
+		'Ň': {'N'},        // Latin Capital letter N with caron
+		'ň': {'n'},        // Latin Small letter N with caron
+		'ŉ': {'n'},        // Latin Small letter N preceded by apostrophe
+		'Ŋ': []byte("NG"), // Latin Capital letter Eng
+		'ŋ': []byte("ng"), // Latin Small letter Eng
+		'Ō': {'O'},        // Latin Capital letter O with macron
+		'ō': {'o'},        // Latin Small letter O with macron
+		'Ŏ': {'O'},        // Latin Capital letter O with breve
+		'ŏ': {'o'},        // Latin Small letter O with breve
+		'Ő': {'O'},        // Latin Capital Letter O with double acute
+		'ő': {'o'},        // Latin Small Letter O with double acute
+		'Œ': []byte("OE"), // Latin Capital Ligature OE
+		'œ': []byte("oe"), // Latin Small Ligature OE
+		'Ŕ': {'R'},        // Latin Capital letter R with acute
+		'ŕ': {'r'},        // Latin Small letter R with acute
+		'Ŗ': {'R'},        // Latin Capital letter R with cedilla
+		'ŗ': {'t'},        // Latin Small letter R with cedilla
+		'Ř': {'R'},        // Latin Capital letter R with caron
+		'ř': {'r'},        // Latin Small letter R with caron
+		'Ś': {'S'},        // Latin Capital letter S with acute
+		'ś': {'s'},        // Latin Small letter S with acute
+		'Ŝ': {'S'},        // Latin Capital letter S with circumflex
+		'ŝ': {'s'},        // Latin Small letter S with circumflex
+		'Ş': {'S'},        // Latin Capital letter S with cedilla
+		'ş': {'s'},        // Latin Small letter S with cedilla
+		'Š': {'S'},        // Latin Capital letter S with caron
+		'š': {'s'},        // Latin Small letter S with caron
+		'Ţ': {'T'},        // Latin Capital letter T with cedilla
+		'ţ': {'t'},        // Latin Small letter T with cedilla
+		'Ť': {'T'},        // Latin Capital letter T with caron
+		'ť': {'t'},        // Latin Small letter T with caron
+		'Ŧ': {'T'},        // Latin Capital letter T with stroke
+		'ŧ': {'t'},        // Latin Small letter T with stroke
+		'Ũ': {'U'},        // Latin Capital letter U with tilde
+		'ũ': {'u'},        // Latin Small letter U with tilde
+		'Ū': {'U'},        // Latin Capital letter U with macron
+		'ū': {'u'},        // Latin Small letter U with macron
+		'Ŭ': {'U'},        // Latin Capital letter U with breve
+		'ŭ': {'u'},        // Latin Small letter U with breve
+		'Ů': {'U'},        // Latin Capital letter U with ring above
+		'ů': {'u'},        // Latin Small letter U with ring above
+		'Ű': {'U'},        // Latin Capital Letter U with double acute
+		'ű': {'u'},        // Latin Small Letter U with double acute
+		'Ų': {'U'},        // Latin Capital letter U with ogonek
+		'ų': {'u'},        // Latin Small letter U with ogonek
+		'Ŵ': {'W'},        // Latin Capital letter W with circumflex
+		'ŵ': {'w'},        // Latin Small letter W with circumflex
+		'Ŷ': {'Y'},        // Latin Capital letter Y with circumflex
+		'ŷ': {'y'},        // Latin Small letter Y with circumflex
+		'Ÿ': {'Y'},        // Latin Capital letter Y with diaeresis
+		'Ź': {'Z'},        // Latin Capital letter Z with acute
+		'ź': {'z'},        // Latin Small letter Z with acute
+		'Ż': {'Z'},        // Latin Capital letter Z with dot above
+		'ż': {'z'},        // Latin Small letter Z with dot above
+		'Ž': {'Z'},        // Latin Capital letter Z with caron
+		'ž': {'z'},        // Latin Small letter Z with caron
+		'ſ': {'S'},        // Latin Small letter long S
 	}
 	// tagField is the initial field for ID3V1 metadata, and should contain 'TAG'
 	tagField = initID3v1Field(tagOffset, tagLength)
@@ -873,13 +873,16 @@ func id3v1NameDiffers(cS *comparableStrings) bool {
 	for bs[len(bs)-1] == ' ' {
 		bs = bs[:len(bs)-1]
 	}
-	metadataRunes := []rune(strings.ToLower(cS.metadata))
-	externalRunes := []rune(string(bs))
+	metadata := strings.ToLower(cS.metadata)
+	metadataRunes := []rune(metadata)
+	external := strings.ToLower(string(bs))
+	externalRunes := []rune(external)
 	if len(metadataRunes) != len(externalRunes) {
 		return true
 	}
 	for i, c := range metadataRunes {
-		if externalRunes[i] == c {
+		r := externalRunes[i]
+		if r == c {
 			continue
 		}
 		// allow for the metadata rune to be one that is illegal for file names:

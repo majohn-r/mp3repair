@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 	"testing"
+	"unicode/utf8"
 
 	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/spf13/afero"
@@ -224,7 +225,7 @@ func TestId3v1MetadataSetTitle(t *testing.T) {
 			s:  "Grohg - Cortège Macabre",
 			want: newID3v1MetadataWithData([]byte{
 				'T', 'A', 'G',
-				'G', 'r', 'o', 'h', 'g', ' ', '-', ' ', 'C', 'o', 'r', 't', 0xE8, 'g',
+				'G', 'r', 'o', 'h', 'g', ' ', '-', ' ', 'C', 'o', 'r', 't', 'e', 'g',
 				'e', ' ', 'M', 'a', 'c', 'a', 'b', 'r', 'e', 0, 0, 0, 0, 0, 0, 0,
 				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0, 0,
 				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
@@ -323,7 +324,7 @@ func TestId3v1MetadataSetArtist(t *testing.T) {
 				'R', 'i', 'n', 'g', 'o', ' ', '-', ' ', 'P', 'o', 'p', ' ', 'P', 'r',
 				'o', 'f', 'i', 'l', 'e', ' ', '[', 'I', 'n', 't', 'e', 'r', 'v', 'i',
 				'e', 'w',
-				'A', 'n', 't', 'o', 'n', 0xED, 'n', ' ', 'D', 'v', 'o', 'r', 0xE1, 'k',
+				'A', 'n', 't', 'o', 'n', 'i', 'n', ' ', 'D', 'v', 'o', 'r', 'a', 'k',
 				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 				'O', 'n', ' ', 'A', 'i', 'r', ':', ' ', 'L', 'i', 'v', 'e', ' ', 'A',
 				't', ' ', 'T', 'h', 'e', ' ', 'B', 'B', 'C', ',', ' ', 'V', 'o', 'l',
@@ -427,7 +428,7 @@ func TestId3v1MetadataSetAlbum(t *testing.T) {
 				'e', 'w',
 				'T', 'h', 'e', ' ', 'B', 'e', 'a', 't', 'l', 'e', 's', 0, 0, 0, 0, 0,
 				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-				'D', 0xE9, 'j', 0xE0, ' ', 'V', 'u', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+				'D', 'e', 'j', 'a', ' ', 'V', 'u', 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 				0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 				'2', '0', '1', '3',
 				' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ', ' ',
@@ -1102,14 +1103,14 @@ func TestId3v1NameDiffers(t *testing.T) {
 		"non-ASCII values": {
 			cS: &comparableStrings{
 				external: "Grohg - Cortège Macabre",
-				metadata: "Grohg - Cort\xe8ge Macabre",
+				metadata: "Grohg - Cortege Macabre",
 			},
 			want: false,
 		},
 		"larger non-ASCII values": {
 			cS: &comparableStrings{
 				external: "Dvořák",
-				metadata: "Dvor\xe1k",
+				metadata: "Dvorak",
 			},
 			want: false,
 		},
@@ -1140,6 +1141,20 @@ func TestId3v1NameDiffers(t *testing.T) {
 				metadata: "simple: nam",
 			},
 			want: true,
+		},
+		"long non-ASCII text": {
+			cS: &comparableStrings{
+				external: "Großer Herr, o starker König (from Christmas Oratorio)",
+				metadata: "GroSer Herr, o starker Konig (",
+			},
+			want: false,
+		},
+		"long non-ASCII text #2": {
+			cS: &comparableStrings{
+				external: "Troika (from Lieutenant KijÃ© Suite, Op. 60)",
+				metadata: "Troika (from Lieutenant KijA(C",
+			},
+			want: false,
 		},
 	}
 	for name, tt := range tests {
@@ -1280,5 +1295,13 @@ func Test_populate(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestRuneMapping(t *testing.T) {
+	for r, b := range runeByteMapping {
+		if !utf8.FullRune(b) {
+			t.Errorf("bad runeByteMapping[%s] = %x", string(r), b[0])
+		}
 	}
 }

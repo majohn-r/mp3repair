@@ -11,6 +11,12 @@ Key to symbols
 - 😒 change is invisible to the user
 - 🆕 new feature
 
+## v0.43.4
+
+_pre-release `2025-02-23`_
+
+- 🐛 fixed bugs handling the processing of non-ASCII characters in file names with respect to the ID3V1 metadata
+
 ## v0.43.3
 
 _pre-release `2025-02-20`_
