@@ -11,6 +11,15 @@ Key to symbols
 - 😒 change is invisible to the user
 - 🆕 new feature
 
+## v0.43.5
+
+_pre-release `2025-03-10`_
+
+- 🐛 fixed bug that occured when the program is opened with elevated privileges, as with the new Windows 11 `sudo`
+command or from a window running with elevated privileges, in which, as the program exits, it prompts the user for an
+unnecessary 'press enter'. The program now only presents that prompt if it had relaunched itself in a new window with
+elevated privileges.
+
 ## v0.43.4
 
 _pre-release `2025-02-23`_
