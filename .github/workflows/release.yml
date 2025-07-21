@@ -16,9 +16,11 @@ jobs:
           go-version-file: go.mod
       - name: Display the release tag
         run: echo ${{ github.event.release.tag_name }}
+      - name: Fetch goversioninfo
+        run: go get github.com/josephspurrier/goversioninfo/cmd/goversioninfo
       - name: Build the executable
         shell: bash
-        run: echo $PATH ; ./build.sh
+        run: ./build.sh
       - name: Upload the executable
         uses: svenstaro/upload-release-action@v2
         with:
