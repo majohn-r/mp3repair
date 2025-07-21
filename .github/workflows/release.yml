@@ -17,7 +17,7 @@ jobs:
       - name: Display the release tag
         run: echo ${{ github.event.release.tag_name }}
       - name: Fetch goversioninfo
-        run: go get github.com/josephspurrier/goversioninfo/cmd/goversioninfo
+        run: go install -v github.com/josephspurrier/goversioninfo/cmd/goversioninfo
       - name: Build the executable
         shell: bash
         run: ./build.sh
