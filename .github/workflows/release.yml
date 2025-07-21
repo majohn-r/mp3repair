@@ -1,0 +1,27 @@
+
+on:
+  release:
+    types:
+      - created
+jobs:
+  build:
+    name: Build Executable
+    runs-on: windows-latest
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v4
+      - name: Fetch go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Display the release tag
+        run: echo ${{ github.event.release.tag_name }}
+      - name: Build the executable
+        run: ./build.sh
+      - name: Upload the executable
+        uses: actions/svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref }}
+          file: ./mp3repair.exe
+          file_glob: true
