@@ -8,7 +8,6 @@ require (
 	github.com/josephspurrier/goversioninfo v1.5.0
 	github.com/majohn-r/tools-build v0.13.1
 	github.com/spf13/afero v1.14.0
-	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -19,4 +18,5 @@ require (
 	github.com/mattn/go-shellwords v1.0.12 // indirect
 	golang.org/x/sys v0.34.0 // indirect
 	golang.org/x/text v0.27.0 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

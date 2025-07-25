@@ -20,7 +20,7 @@ jobs:
         run: go install -v github.com/josephspurrier/goversioninfo/cmd/goversioninfo
       - name: Build the executable
         shell: bash
-        run: ./build.sh
+        run: ./build.sh -useVersion=${{ github.event.release.tag_name }}
       - name: Upload the executable
         uses: svenstaro/upload-release-action@v2
         with:

@@ -2,9 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"path/filepath"
-	"sort"
 	"strings"
 	"time"
 
@@ -12,7 +12,6 @@ import (
 	"github.com/josephspurrier/goversioninfo"
 	toolsbuild "github.com/majohn-r/tools-build"
 	"github.com/spf13/afero"
-	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -27,6 +26,10 @@ const (
 )
 
 var (
+	versionFlag = flag.String(
+		"useVersion",
+		"v0.0.0",
+		"version for the executable in the form 'vMAJOR.MINOR.PATCH-releaseModifier'")
 	generatedFiles = []string{
 		coverageFile,
 		versionInfoFile,
@@ -162,18 +165,8 @@ var (
 	})
 )
 
-type config struct {
-	// special functions:
-	//   timestamp:   treat as Flag, but the associated value is generated at runtime
-	Function string
-	// flag name
-	Flag string
-	// value to use
-	Value string
-}
-
 func buildExecutable(a *goyek.A) {
-	loadProductData()
+	defineProductData()
 	// logged output shows up when running verbose (-v) or on error
 	a.Logf("configuration: %#v", pD)
 	pD.generateVersionInfo()
@@ -223,40 +216,29 @@ func (pD *productData) generateVersionInfo() {
 	}
 }
 
-func loadProductData() {
+func defineProductData() {
 	if pD == nil {
 		rawPD := &productData{}
-		rawYaml, _ := afero.ReadFile(fileSystem, "buildData.yaml")
-		var data []config
-		_ = yaml.Unmarshal(rawYaml, &data)
 		const flagFormat = "-X %s=%s"
-		for _, value := range data {
-			switch value.Function {
-			case "timestamp":
-				rawPD.flags = append(rawPD.flags, fmt.Sprintf(flagFormat, value.Flag, time.Now().Format(time.RFC3339)))
-			default:
-				rawPD.flags = append(rawPD.flags, fmt.Sprintf(flagFormat, value.Flag, value.Value))
-				switch value.Flag {
-				case "mp3repair/cmd.version":
-					var major int
-					var minor int
-					var patch int
-					if count, scanErr := fmt.Sscanf(
-						value.Value,
-						"%d.%d.%d",
-						&major,
-						&minor,
-						&patch,
-					); count == 3 && scanErr == nil {
-						rawPD.majorLevel = major
-						rawPD.minorLevel = minor
-						rawPD.patchLevel = patch
-						rawPD.semanticVersion = fmt.Sprintf("v%s", value.Value)
-					}
-				}
-			}
+		rawPD.flags = append(rawPD.flags,
+			fmt.Sprintf(flagFormat, "mp3repair/cmd.creation", time.Now().Format(time.RFC3339)))
+		rawPD.flags = append(rawPD.flags,
+			fmt.Sprintf(flagFormat, "mp3repair/cmd.version", *versionFlag))
+		var major int
+		var minor int
+		var patch int
+		if count, scanErr := fmt.Sscanf(
+			*versionFlag,
+			"v%d.%d.%d",
+			&major,
+			&minor,
+			&patch,
+		); count == 3 && scanErr == nil {
+			rawPD.majorLevel = major
+			rawPD.minorLevel = minor
+			rawPD.patchLevel = patch
+			rawPD.semanticVersion = *versionFlag
 		}
-		sort.Strings(rawPD.flags)
 		pD = rawPD
 	}
 }

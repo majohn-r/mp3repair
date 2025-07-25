@@ -1,5 +1,0 @@
----
-  - function: timestamp
-    flag: mp3repair/cmd.creation
-  - flag: mp3repair/cmd.version
-    value: 0.43.6
