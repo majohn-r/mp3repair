@@ -33,7 +33,7 @@ jobs:
       - name: create the zip file
         uses: thedoctor0/zip-release@0.7.6
         with:
-          filename: mp3repair.exe
+          filename: mp3repair.zip
           path: release
       - name: Upload the zip file
         uses: svenstaro/upload-release-action@v2
