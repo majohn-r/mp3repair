@@ -28,3 +28,17 @@ jobs:
           tag: ${{ github.ref }}
           file: ./mp3repair.exe
           file_glob: true
+      - name: copy executable to release subdirectory
+        run: copy ./mp3repair.exe release
+      - name: create the zip file
+        uses: thedoctor0/zip-release@0.7.6
+        with:
+          filename: mp3repair.exe
+          path: release
+      - name: Upload the zip file
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          tag: ${{ github.ref }}
+          file: ./releases/mp3repair.zip
+          file_glob: true
