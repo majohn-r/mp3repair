@@ -21,13 +21,6 @@ jobs:
       - name: Build the executable
         shell: bash
         run: ./build.sh -useVersion=${{ github.event.release.tag_name }}
-      - name: Upload the executable
-        uses: svenstaro/upload-release-action@v2
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.ref }}
-          file: ./mp3repair.exe
-          file_glob: true
       - name: copy executable to release subdirectory
         run: copy ./mp3repair.exe release
       - name: create the zip file
