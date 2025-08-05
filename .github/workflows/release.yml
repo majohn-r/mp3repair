@@ -40,5 +40,5 @@ jobs:
         with:
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           tag: ${{ github.ref }}
-          file: ./releases/mp3repair.zip
+          file: ./mp3repair.zip
           file_glob: true
