@@ -11,7 +11,7 @@ Key to symbols
 - 😒 change is invisible to the user
 - 🆕 new feature
 
-## v0.43.7
+## v0.43.9
 
 _pre-release `2026-08-29`_
 
