@@ -357,7 +357,7 @@ func Test_processSearchFlags(t *testing.T) {
 					" msg='the filter cannot be parsed as a regular expression'\n" +
 					"level='error'" +
 					" --topDir='no such dir'" +
-					" error='CreateFile no such dir: The system cannot find the file" +
+					" error='GetFileAttributesEx no such dir: The system cannot find the file" +
 					" specified.'" +
 					" user-set='false'" +
 					" msg='invalid directory'\n" +
