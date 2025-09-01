@@ -541,8 +541,9 @@ func TestTrackLoadMetadata(t *testing.T) {
 			bar := pb.New(1)
 			bar.SetWriter(output.NewNilBus().ErrorWriter())
 			bar.Start()
-			tt.t.loadMetadata(bar)
-			waitForFilesClosed()
+			openFiles := make(chan empty, 20)
+			tt.t.loadMetadata(openFiles, bar)
+			waitForFilesClosed(openFiles)
 			bar.Finish()
 			if !reflect.DeepEqual(tt.t.metadata, tt.want) {
 				t.Errorf("Track.loadMetadata() got %#v want %#v", tt.t.metadata, tt.want)
@@ -614,7 +615,7 @@ func TestReadMetadata(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			ReadMetadata(o, tt.artists)
+			ReadMetadata(o, tt.artists, 20)
 			o.Report(t, "ReadMetadata()", tt.WantedRecording)
 			for _, artist := range tt.artists {
 				for _, album := range artist.Albums() {

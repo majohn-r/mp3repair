@@ -6,9 +6,10 @@ package main
 
 import (
 	"fmt"
-	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"mp3repair/cmd"
 	"os"
+
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 )
 
 var (

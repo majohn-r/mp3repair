@@ -2,10 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"mp3repair/internal/files"
 	"slices"
 	"strings"
+
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"
@@ -73,7 +74,7 @@ const (
 var (
 	checkCmd = &cobra.Command{
 		Use: checkCommand + " [" + checkEmptyFlag + "] [" +
-			checkFilesFlag + "] [" + checkNumberingFlag + "] " + searchUsage,
+			checkFilesFlag + "] [" + checkNumberingFlag + "] " + searchUsage + " " + ioUsage,
 		DisableFlagsInUseLine: true,
 		Short: "" +
 			"Inspects mp3 files and their directories and reports" + " problems",
@@ -119,10 +120,11 @@ func checkRun(cmd *cobra.Command, _ []string) error {
 	o := getBus()
 	producer := cmd.Flags()
 	values, eSlice := cmdtoolkit.ReadFlags(producer, checkFlags)
-	searchSettings, searchFlagsOk := evaluateSearchFlags(o, producer)
-	if cmdtoolkit.ProcessFlagErrors(o, eSlice) && searchFlagsOk {
+	ss, searchFlagsOk := evaluateSearchFlags(o, producer)
+	ios, ioFlagsOk := evaluateIOFlags(o, producer)
+	if cmdtoolkit.ProcessFlagErrors(o, eSlice) && searchFlagsOk && ioFlagsOk {
 		if cs, flagsOk := processCheckFlags(o, values); flagsOk {
-			exitError = cs.maybeDoWork(o, searchSettings)
+			exitError = cs.maybeDoWork(o, ss, ios)
 		}
 	}
 	return cmdtoolkit.ToErrorInterface(exitError)
@@ -134,10 +136,10 @@ type checkSettings struct {
 	numbering cmdtoolkit.CommandFlag[bool]
 }
 
-func (cs *checkSettings) maybeDoWork(o output.Bus, ss *searchSettings) (err *cmdtoolkit.ExitError) {
+func (cs *checkSettings) maybeDoWork(o output.Bus, ss *searchSettings, ios *ioSettings) (err *cmdtoolkit.ExitError) {
 	err = cmdtoolkit.NewExitUserError(checkCommand)
 	if cs.hasWorkToDo(o) {
-		err = cs.performChecks(o, ss.load(o), ss)
+		err = cs.performChecks(o, ss.load(o), ss, ios)
 	}
 	return
 }
@@ -146,6 +148,7 @@ func (cs *checkSettings) performChecks(
 	o output.Bus,
 	artists []*files.Artist,
 	ss *searchSettings,
+	ios *ioSettings,
 ) (err *cmdtoolkit.ExitError) {
 	err = cmdtoolkit.NewExitUserError(checkCommand)
 	if len(artists) != 0 {
@@ -154,7 +157,7 @@ func (cs *checkSettings) performChecks(
 		concernedArtists := createConcernedArtists(artists)
 		requests.reportEmptyCheckResults = cs.performEmptyAnalysis(concernedArtists)
 		requests.reportNumberingCheckResults = cs.performNumberingAnalysis(concernedArtists)
-		requests.reportFilesCheckResults = cs.performFileAnalysis(o, concernedArtists, ss)
+		requests.reportFilesCheckResults = cs.performFileAnalysis(o, concernedArtists, ss, ios)
 		for _, artist := range concernedArtists {
 			artist.rollup()
 			artist.toConsole(o)
@@ -186,6 +189,7 @@ func (cs *checkSettings) performFileAnalysis(
 	o output.Bus,
 	concernedArtists []*concernedArtist,
 	ss *searchSettings,
+	ios *ioSettings,
 ) bool {
 	foundConcerns := false
 	if cs.files.Value {
@@ -194,7 +198,7 @@ func (cs *checkSettings) performFileAnalysis(
 			artists = append(artists, cAr.backingArtist())
 		}
 		if filteredArtists := ss.filter(o, artists); len(filteredArtists) != 0 {
-			readMetadata(o, filteredArtists)
+			readMetadata(o, filteredArtists, ios.openFileLimit)
 			for _, artist := range filteredArtists {
 				for _, album := range artist.Albums() {
 					for _, track := range album.Tracks() {
@@ -418,5 +422,5 @@ func processCheckFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[a
 func init() {
 	rootCmd.AddCommand(checkCmd)
 	cmdtoolkit.AddDefaults(checkFlags)
-	cmdtoolkit.AddFlags(getBus(), getConfiguration(), checkCmd.Flags(), checkFlags, searchFlags)
+	cmdtoolkit.AddFlags(getBus(), getConfiguration(), checkCmd.Flags(), checkFlags, searchFlags, ioFlags)
 }

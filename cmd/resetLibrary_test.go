@@ -64,6 +64,52 @@ func Test_processResetLibraryFlags(t *testing.T) {
 			},
 			want1: true,
 		},
+		"timeout too low": {
+			values: map[string]*cmdtoolkit.CommandFlag[any]{
+				"extension":           {Value: ".foo"},
+				"force":               {Value: true},
+				"ignoreServiceErrors": {Value: true},
+				"metadataDir":         {Value: "metadata"},
+				"service":             {Value: "music service"},
+				"timeout":             {Value: minTimeout - 1},
+			},
+			want: &resetLibrarySettings{
+				force:               cmdtoolkit.CommandFlag[bool]{Value: true},
+				ignoreServiceErrors: cmdtoolkit.CommandFlag[bool]{Value: true},
+				timeout:             cmdtoolkit.CommandFlag[int]{Value: minTimeout},
+			},
+			want1: true,
+			WantedRecording: output.WantedRecording{
+				Log: "level='warning'" +
+					" flag='timeout'" +
+					" providedValue='0'" +
+					" replacedBy='1'" +
+					" msg='user-supplied value replaced'\n",
+			},
+		},
+		"timeout too high": {
+			values: map[string]*cmdtoolkit.CommandFlag[any]{
+				"extension":           {Value: ".foo"},
+				"force":               {Value: true},
+				"ignoreServiceErrors": {Value: true},
+				"metadataDir":         {Value: "metadata"},
+				"service":             {Value: "music service"},
+				"timeout":             {Value: maxTimeout + 1},
+			},
+			want: &resetLibrarySettings{
+				force:               cmdtoolkit.CommandFlag[bool]{Value: true},
+				ignoreServiceErrors: cmdtoolkit.CommandFlag[bool]{Value: true},
+				timeout:             cmdtoolkit.CommandFlag[int]{Value: maxTimeout},
+			},
+			want1: true,
+			WantedRecording: output.WantedRecording{
+				Log: "level='warning'" +
+					" flag='timeout'" +
+					" providedValue='61'" +
+					" replacedBy='60'" +
+					" msg='user-supplied value replaced'\n",
+			},
+		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {

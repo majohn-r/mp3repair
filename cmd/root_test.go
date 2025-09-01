@@ -150,6 +150,8 @@ func Test_runMain(t *testing.T) {
 					"export:\n" +
 					"    defaults: false\n" +
 					"    overwrite: false\n" +
+					"io:\n" +
+					"    maxOpenFiles: 1000\n" +
 					"list:\n" +
 					"    albums: false\n" +
 					"    annotate: false\n" +
@@ -215,6 +217,8 @@ func Test_runMain(t *testing.T) {
 					"export:\n" +
 					"    defaults: false\n" +
 					"    overwrite: false\n" +
+					"io:\n" +
+					"    maxOpenFiles: 1000\n" +
 					"list:\n" +
 					"    albums: false\n" +
 					"    annotate: false\n" +
@@ -280,6 +284,8 @@ func Test_runMain(t *testing.T) {
 					"export:\n" +
 					"    defaults: false\n" +
 					"    overwrite: false\n" +
+					"io:\n" +
+					"    maxOpenFiles: 1000\n" +
 					"list:\n" +
 					"    albums: false\n" +
 					"    annotate: false\n" +

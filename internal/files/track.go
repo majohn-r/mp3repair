@@ -23,7 +23,6 @@ const (
 )
 
 var (
-	openFiles         = make(chan empty, 20) // 20 is a typical limit for open files
 	frameDescriptions = map[string]string{
 		// list is from https://id3.org/id3v2.3.0#Declared_ID3v2_frames
 		"AENC": "Audio encryption",
@@ -429,7 +428,7 @@ func (t *Track) UpdateMetadata() (e []error) {
 
 type empty struct{}
 
-func (t *Track) loadMetadata(bar *pb.ProgressBar) {
+func (t *Track) loadMetadata(openFiles chan empty, bar *pb.ProgressBar) {
 	if t.needsMetadata() {
 		openFiles <- empty{} // block while full
 		go func() {
@@ -443,7 +442,7 @@ func (t *Track) loadMetadata(bar *pb.ProgressBar) {
 }
 
 // ReadMetadata reads the metadata for all the artists' tracks.
-func ReadMetadata(o output.Bus, artists []*Artist) {
+func ReadMetadata(o output.Bus, artists []*Artist, fileLimit int) {
 	// count the tracks
 	count := 0
 	for _, artist := range artists {
@@ -452,6 +451,7 @@ func ReadMetadata(o output.Bus, artists []*Artist) {
 		}
 	}
 	o.ErrorPrintln("Reading track metadata.")
+	openFiles := make(chan empty, fileLimit)
 	// derived from the Default ProgressBarTemplate used by the progress bar,
 	// following guidance in the ElementSpeed definition to change the output to
 	// display the speed in tracks per second
@@ -462,11 +462,11 @@ func ReadMetadata(o output.Bus, artists []*Artist) {
 	for _, artist := range artists {
 		for _, album := range artist.Albums() {
 			for _, track := range album.tracks {
-				track.loadMetadata(bar)
+				track.loadMetadata(openFiles, bar)
 			}
 		}
 	}
-	waitForFilesClosed()
+	waitForFilesClosed(openFiles)
 	bar.Finish()
 	processAlbumMetadata(o, artists)
 	processArtistMetadata(o, artists)
@@ -652,7 +652,7 @@ func canonicalChoice(m map[string]int) (value string, selected bool) {
 // ReportMetadataReadError outputs a problem reading the metadata as an error
 // and as a log record
 func (t *Track) ReportMetadataReadError(o output.Bus, sT sourceType, e string) {
-	name := sT.Name()
+	name := sT.name()
 	o.Log(output.Error, "metadata read error", map[string]any{
 		"metadata": name,
 		"track":    t.String(),
@@ -682,7 +682,7 @@ func (t *Track) reportMetadataErrors(o output.Bus) {
 	}
 }
 
-func waitForFilesClosed() {
+func waitForFilesClosed(openFiles chan empty) {
 	for len(openFiles) != 0 {
 		time.Sleep(1 * time.Microsecond)
 	}

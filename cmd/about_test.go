@@ -1,11 +1,12 @@
 package cmd
 
 import (
-	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
-	"github.com/spf13/afero"
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
+	"github.com/spf13/afero"
 
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"

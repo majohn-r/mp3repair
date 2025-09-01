@@ -733,7 +733,7 @@ func Test_repairSettings_repairArtists(t *testing.T) {
 		copyFile = originalCopyFile
 		markDirty = originalMarkDirty
 	}()
-	readMetadata = func(_ output.Bus, _ []*files.Artist) {}
+	readMetadata = func(_ output.Bus, _ []*files.Artist, _ int) {}
 	dirExists = func(_ string) bool { return true }
 	plainFileExists = func(_ string) bool { return false }
 	copyFile = func(_, _ string) error { return nil }
@@ -1426,7 +1426,7 @@ func Test_repairSettings_repairArtists(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			got := tt.rs.repairArtists(o, tt.artists)
+			got := tt.rs.repairArtists(o, tt.artists, &ioSettings{openFileLimit: 100})
 			if !compareExitErrors(got, tt.wantStatus) {
 				t.Errorf("repairSettings.repairArtists() got %s want %s", got, tt.wantStatus)
 			}
@@ -1440,10 +1440,11 @@ func Test_repairSettings_processArtists(t *testing.T) {
 	defer func() {
 		readMetadata = originalReadMetadata
 	}()
-	readMetadata = func(_ output.Bus, _ []*files.Artist) {}
+	readMetadata = func(_ output.Bus, _ []*files.Artist, _ int) {}
 	type args struct {
 		allArtists []*files.Artist
 		ss         *searchSettings
+		ios        *ioSettings
 	}
 	tests := map[string]struct {
 		rs *repairSettings
@@ -1465,6 +1466,7 @@ func Test_repairSettings_processArtists(t *testing.T) {
 					albumFilter:  regexp.MustCompile(".*"),
 					trackFilter:  regexp.MustCompile(".*"),
 				},
+				ios: &ioSettings{openFileLimit: 200},
 			},
 			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
@@ -1475,7 +1477,7 @@ func Test_repairSettings_processArtists(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			got := tt.rs.processArtists(o, tt.args.allArtists, tt.args.ss)
+			got := tt.rs.processArtists(o, tt.args.allArtists, tt.args.ss, tt.args.ios)
 			if !compareExitErrors(got, tt.wantStatus) {
 				t.Errorf("repairSettings.processArtists() got %s want %s", got, tt.wantStatus)
 			}
@@ -1505,7 +1507,7 @@ func Test_repairRun(t *testing.T) {
 	}
 	command := &cobra.Command{}
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), command.Flags(),
-		repairFlags, searchFlags)
+		repairFlags, searchFlags, ioFlags)
 	tests := map[string]struct {
 		cmd *cobra.Command
 		in1 []string
@@ -1546,7 +1548,7 @@ func Test_repair_Help(t *testing.T) {
 	searchFlags = safeSearchFlags
 	commandUnderTest := cloneCommand(repairCmd)
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
-		commandUnderTest.Flags(), repairFlags, searchFlags)
+		commandUnderTest.Flags(), repairFlags, searchFlags, ioFlags)
 	tests := map[string]struct {
 		output.WantedRecording
 	}{
@@ -1567,7 +1569,7 @@ func Test_repair_Help(t *testing.T) {
 					"\n" +
 					"Usage:\n" +
 					"  repair [--dryRun] [--albumFilter regex] [--artistFilter regex]" +
-					" [--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +
+					" [--trackFilter regex] [--topDir dir] [--extensions extensions] [--maxOpenFiles count]\n" +
 					"\n" +
 					"Examples:\n" +
 					"repair --dryRun\n  Output what would be repaired, but does not perform the stated repairs\n" +
@@ -1581,6 +1583,8 @@ func Test_repair_Help(t *testing.T) {
 					"output what would have been repaired, but make no repairs (default false)\n" +
 					"      --extensions string     " +
 					"comma-delimited list of file extensions used by mp3 files (default \".mp3\")\n" +
+					"      --maxOpenFiles int      the maximum number of files that can be read simultaneously " +
+					"(at least 1, at most 32767, default 1000) (default 1000)\n" +
 					"      --topDir string         " +
 					"top directory specifying where to find mp3 files (default \".\")\n" +
 					"      --trackFilter string    " +

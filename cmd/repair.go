@@ -2,11 +2,12 @@ package cmd
 
 import (
 	"fmt"
-	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"mp3repair/internal/files"
 	"path/filepath"
 	"slices"
 	"strings"
+
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"
@@ -20,8 +21,7 @@ const (
 
 var (
 	repairCmd = &cobra.Command{
-		Use: repairCommandName + " [" + repairDryRunFlag + "] " +
-			searchUsage,
+		Use:                   repairCommandName + " [" + repairDryRunFlag + "] " + searchUsage + " " + ioUsage,
 		DisableFlagsInUseLine: true,
 		Short: "Repairs problems found by running '" + checkCommand + " " +
 			checkFilesFlag + "'",
@@ -59,10 +59,11 @@ func repairRun(cmd *cobra.Command, _ []string) error {
 	o := getBus()
 	producer := cmd.Flags()
 	values, eSlice := cmdtoolkit.ReadFlags(producer, repairFlags)
-	searchSettings, searchFlagsOk := evaluateSearchFlags(o, producer)
-	if cmdtoolkit.ProcessFlagErrors(o, eSlice) && searchFlagsOk {
+	ss, searchFlagsOk := evaluateSearchFlags(o, producer)
+	ios, ioFlagsOk := evaluateIOFlags(o, producer)
+	if cmdtoolkit.ProcessFlagErrors(o, eSlice) && searchFlagsOk && ioFlagsOk {
 		if rs, flagsOk := processRepairFlags(o, values); flagsOk {
-			exitError = rs.processArtists(o, searchSettings.load(o), searchSettings)
+			exitError = rs.processArtists(o, ss.load(o), ss, ios)
 		}
 	}
 	return cmdtoolkit.ToErrorInterface(exitError)
@@ -76,18 +77,20 @@ func (rs *repairSettings) processArtists(
 	o output.Bus,
 	allArtists []*files.Artist,
 	ss *searchSettings,
+	ios *ioSettings,
 ) (e *cmdtoolkit.ExitError) {
 	e = cmdtoolkit.NewExitUserError(repairCommandName)
 	if len(allArtists) != 0 {
 		if filteredArtists := ss.filter(o, allArtists); len(filteredArtists) != 0 {
-			e = rs.repairArtists(o, filteredArtists)
+			e = rs.repairArtists(o, filteredArtists, ios)
 		}
 	}
 	return
 }
 
-func (rs *repairSettings) repairArtists(o output.Bus, artists []*files.Artist) *cmdtoolkit.ExitError {
-	readMetadata(o, artists) // read all track metadata
+func (rs *repairSettings) repairArtists(o output.Bus, artists []*files.Artist, ios *ioSettings) *cmdtoolkit.ExitError {
+	// read all track metadata
+	readMetadata(o, artists, ios.openFileLimit)
 	concernedArtists := createConcernedArtists(artists)
 	count := findConflictedTracks(concernedArtists)
 	if rs.dryRun.Value {
@@ -307,5 +310,5 @@ func processRepairFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[
 func init() {
 	rootCmd.AddCommand(repairCmd)
 	cmdtoolkit.AddDefaults(repairFlags)
-	cmdtoolkit.AddFlags(getBus(), getConfiguration(), repairCmd.Flags(), repairFlags, searchFlags)
+	cmdtoolkit.AddFlags(getBus(), getConfiguration(), repairCmd.Flags(), repairFlags, searchFlags, ioFlags)
 }

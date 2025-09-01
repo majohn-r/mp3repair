@@ -511,10 +511,11 @@ func Test_checkSettings_performFileAnalysis(t *testing.T) {
 	defer func() {
 		readMetadata = originalReadMetadata
 	}()
-	readMetadata = func(_ output.Bus, _ []*files.Artist) {}
+	readMetadata = func(_ output.Bus, _ []*files.Artist, _ int) {}
 	type args struct {
 		checkedArtists []*concernedArtist
 		ss             *searchSettings
+		ios            *ioSettings
 	}
 	tests := map[string]struct {
 		cs *checkSettings
@@ -533,6 +534,7 @@ func Test_checkSettings_performFileAnalysis(t *testing.T) {
 			args: args{
 				checkedArtists: []*concernedArtist{},
 				ss:             &searchSettings{},
+				ios:            &ioSettings{},
 			},
 			want:            false,
 			WantedRecording: output.WantedRecording{},
@@ -546,6 +548,7 @@ func Test_checkSettings_performFileAnalysis(t *testing.T) {
 					albumFilter:  regexp.MustCompile(".*"),
 					trackFilter:  regexp.MustCompile(".*"),
 				},
+				ios: &ioSettings{openFileLimit: 100},
 			},
 			want:            true,
 			WantedRecording: output.WantedRecording{},
@@ -554,7 +557,7 @@ func Test_checkSettings_performFileAnalysis(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			got := tt.cs.performFileAnalysis(o, tt.args.checkedArtists, tt.args.ss)
+			got := tt.cs.performFileAnalysis(o, tt.args.checkedArtists, tt.args.ss, tt.args.ios)
 			if got != tt.want {
 				t.Errorf("checkSettings.performFileAnalysis() = %v, want %v", got, tt.want)
 			}
@@ -620,10 +623,11 @@ func Test_checkSettings_performChecks(t *testing.T) {
 	defer func() {
 		readMetadata = originalReadMetadata
 	}()
-	readMetadata = func(_ output.Bus, _ []*files.Artist) {}
+	readMetadata = func(_ output.Bus, _ []*files.Artist, _ int) {}
 	type args struct {
 		artists []*files.Artist
 		ss      *searchSettings
+		ios     *ioSettings
 	}
 	tests := map[string]struct {
 		cs *checkSettings
@@ -633,7 +637,7 @@ func Test_checkSettings_performChecks(t *testing.T) {
 	}{
 		"no artists": {
 			cs:              nil,
-			args:            args{artists: nil, ss: nil},
+			args:            args{artists: nil, ss: nil, ios: nil},
 			wantStatus:      cmdtoolkit.NewExitUserError("check"),
 			WantedRecording: output.WantedRecording{},
 		},
@@ -650,6 +654,7 @@ func Test_checkSettings_performChecks(t *testing.T) {
 					albumFilter:  regexp.MustCompile(".*"),
 					trackFilter:  regexp.MustCompile(".*"),
 				},
+				ios: &ioSettings{openFileLimit: 100},
 			},
 			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
@@ -665,7 +670,7 @@ func Test_checkSettings_performChecks(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			got := tt.cs.performChecks(o, tt.args.artists, tt.args.ss)
+			got := tt.cs.performChecks(o, tt.args.artists, tt.args.ss, tt.args.ios)
 			if !compareExitErrors(got, tt.wantStatus) {
 				t.Errorf("checkSettings.performChecks() got %s want %s", got, tt.wantStatus)
 			}
@@ -678,12 +683,14 @@ func Test_checkSettings_maybeDoWork(t *testing.T) {
 	tests := map[string]struct {
 		cs         *checkSettings
 		ss         *searchSettings
+		ios        *ioSettings
 		wantStatus *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"nothing to do": {
 			cs:         &checkSettings{},
 			ss:         nil,
+			ios:        nil,
 			wantStatus: cmdtoolkit.NewExitUserError("check"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -705,6 +712,7 @@ func Test_checkSettings_maybeDoWork(t *testing.T) {
 				fileExtensions: []string{".mp3"},
 				topDirectory:   filepath.Join(".", "no dir"),
 			},
+			ios:        &ioSettings{openFileLimit: 100},
 			wantStatus: cmdtoolkit.NewExitUserError("check"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -730,7 +738,7 @@ func Test_checkSettings_maybeDoWork(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			if got := tt.cs.maybeDoWork(o, tt.ss); !compareExitErrors(got, tt.wantStatus) {
+			if got := tt.cs.maybeDoWork(o, tt.ss, tt.ios); !compareExitErrors(got, tt.wantStatus) {
 				t.Errorf("checkSettings.maybeDoWork() got %s want %s", got, tt.wantStatus)
 			}
 			o.Report(t, "checkSettings.maybeDoWork()", tt.WantedRecording)
@@ -772,7 +780,7 @@ func Test_checkRun(t *testing.T) {
 	}
 	command := &cobra.Command{}
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), command.Flags(),
-		checkFlags, searchFlags)
+		checkFlags, searchFlags, ioFlags)
 	type args struct {
 		cmd *cobra.Command
 		in1 []string
@@ -826,7 +834,7 @@ func Test_check_Help(t *testing.T) {
 	searchFlags = safeSearchFlags
 	commandUnderTest := cloneCommand(checkCmd)
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
-		commandUnderTest.Flags(), checkFlags, searchFlags)
+		commandUnderTest.Flags(), checkFlags, searchFlags, ioFlags)
 	tests := map[string]struct {
 		output.WantedRecording
 	}{
@@ -838,7 +846,7 @@ func Test_check_Help(t *testing.T) {
 					"\n" +
 					"Usage:\n" +
 					"  check [--empty] [--files] [--numbering] [--albumFilter regex] [--artistFilter regex] " +
-					"[--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +
+					"[--trackFilter regex] [--topDir dir] [--extensions extensions] [--maxOpenFiles count]\n" +
 					"\n" +
 					"Examples:\n" +
 					"check --empty\n" +
@@ -857,6 +865,8 @@ func Test_check_Help(t *testing.T) {
 					"      --extensions string     comma-delimited list of file " +
 					"extensions used by mp3 files (default \".mp3\")\n" +
 					"  -f, --files                 report metadata/file inconsistencies (default false)\n" +
+					"      --maxOpenFiles int      the maximum number of files that can be read simultaneously " +
+					"(at least 1, at most 32767, default 1000) (default 1000)\n" +
 					"  -n, --numbering             report missing track " +
 					"numbers and duplicated track numbering (default false)\n" +
 					"      --topDir string         top directory specifying where to find mp3 files (default \".\")\n" +
@@ -884,7 +894,7 @@ func Test_check_Usage(t *testing.T) {
 	searchFlags = safeSearchFlags
 	commandUnderTest := cloneCommand(checkCmd)
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
-		commandUnderTest.Flags(), checkFlags, searchFlags)
+		commandUnderTest.Flags(), checkFlags, searchFlags, ioFlags)
 	tests := map[string]struct {
 		output.WantedRecording
 	}{
@@ -893,7 +903,7 @@ func Test_check_Usage(t *testing.T) {
 				Console: "" +
 					"Usage:\n" +
 					"  check [--empty] [--files] [--numbering] [--albumFilter regex] [--artistFilter regex] " +
-					"[--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +
+					"[--trackFilter regex] [--topDir dir] [--extensions extensions] [--maxOpenFiles count]\n" +
 					"\n" +
 					"Examples:\n" +
 					"check --empty\n" +
@@ -915,6 +925,8 @@ func Test_check_Usage(t *testing.T) {
 					"comma-delimited list of file extensions used by mp3 files (default \".mp3\")\n" +
 					"  -f, --files                 " +
 					"report metadata/file inconsistencies (default false)\n" +
+					"      --maxOpenFiles int      the maximum number of files that can be read simultaneously " +
+					"(at least 1, at most 32767, default 1000) (default 1000)\n" +
 					"  -n, --numbering             " +
 					"report missing track numbers and duplicated track numbering (default false)\n" +
 					"      --topDir string         " +

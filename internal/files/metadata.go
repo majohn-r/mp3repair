@@ -44,7 +44,7 @@ var (
 	sourceTypes = []sourceType{ID3V1, ID3V2}
 )
 
-func (sT sourceType) Name() string {
+func (sT sourceType) name() string {
 	switch sT {
 	case ID3V1:
 		return "ID3V1"

@@ -22,8 +22,8 @@ func TestSourceTypeName(t *testing.T) {
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
-			if got := tt.sT.Name(); got != tt.want {
-				t.Errorf("SourceType.Name() = %v, want %v", got, tt.want)
+			if got := tt.sT.name(); got != tt.want {
+				t.Errorf("SourceType.name() = %v, want %v", got, tt.want)
 			}
 		})
 	}
@@ -667,51 +667,51 @@ func TestNewTrackMetadata(t *testing.T) {
 			for _, src := range sourceTypes {
 				artistName := tt.want.artistName(src)
 				if got := artistName.original; got != "" {
-					t.Errorf("NewTrackMetadata().artistName(%s).originalValue() = %q, want %q", src.Name(), got, "")
+					t.Errorf("NewTrackMetadata().artistName(%s).originalValue() = %q, want %q", src.name(), got, "")
 				}
 				if got := artistName.correctedValue(); got != "" {
-					t.Errorf("NewTrackMetadata().artistName(%s).correctedValue() = %q, want %q", src.Name(), got, "")
+					t.Errorf("NewTrackMetadata().artistName(%s).correctedValue() = %q, want %q", src.name(), got, "")
 				}
 				albumName := tt.want.albumName(src)
 				if got := albumName.original; got != "" {
-					t.Errorf("NewTrackMetadata().albumName(%s).originalValue() = %q, want %q", src.Name(), got, "")
+					t.Errorf("NewTrackMetadata().albumName(%s).originalValue() = %q, want %q", src.name(), got, "")
 				}
 				if got := albumName.correctedValue(); got != "" {
-					t.Errorf("NewTrackMetadata().albumName(%s).correctedValue() = %q, want %q", src.Name(), got, "")
+					t.Errorf("NewTrackMetadata().albumName(%s).correctedValue() = %q, want %q", src.name(), got, "")
 				}
 				albumGenre := tt.want.albumGenre(src)
 				if got := albumGenre.original; got != "" {
-					t.Errorf("NewTrackMetadata().albumGenre(%s).originalValue() = %q, want %q", src.Name(), got, "")
+					t.Errorf("NewTrackMetadata().albumGenre(%s).originalValue() = %q, want %q", src.name(), got, "")
 				}
 				if got := albumGenre.correctedValue(); got != "" {
-					t.Errorf("NewTrackMetadata().albumGenre(%s).correctedValue() = %q, want %q", src.Name(), got, "")
+					t.Errorf("NewTrackMetadata().albumGenre(%s).correctedValue() = %q, want %q", src.name(), got, "")
 				}
 				albumYear := tt.want.albumYear(src)
 				if got := albumYear.original; got != "" {
-					t.Errorf("NewTrackMetadata().albumYear(%s).originalValue() = %q, want %q", src.Name(), got, "")
+					t.Errorf("NewTrackMetadata().albumYear(%s).originalValue() = %q, want %q", src.name(), got, "")
 				}
 				if got := albumYear.correctedValue(); got != "" {
-					t.Errorf("NewTrackMetadata().albumYear(%s).correctedValue() = %q, want %q", src.Name(), got, "")
+					t.Errorf("NewTrackMetadata().albumYear(%s).correctedValue() = %q, want %q", src.name(), got, "")
 				}
 				trackName := tt.want.trackName(src)
 				if got := trackName.original; got != "" {
-					t.Errorf("NewTrackMetadata().trackName(%s).originalValue() = %q, want %q", src.Name(), got, "")
+					t.Errorf("NewTrackMetadata().trackName(%s).originalValue() = %q, want %q", src.name(), got, "")
 				}
 				if got := trackName.correctedValue(); got != "" {
-					t.Errorf("NewTrackMetadata().trackName(%s).correctedValue() = %q, want %q", src.Name(), got, "")
+					t.Errorf("NewTrackMetadata().trackName(%s).correctedValue() = %q, want %q", src.name(), got, "")
 				}
 				trackNumber := tt.want.trackNumber(src)
 				if got := trackNumber.original; got != 0 {
-					t.Errorf("NewTrackMetadata().trackNumber(%s).originalValue() = %d, want %d", src.Name(), got, 0)
+					t.Errorf("NewTrackMetadata().trackNumber(%s).originalValue() = %d, want %d", src.name(), got, 0)
 				}
 				if got := trackNumber.correctedValue(); got != 0 {
-					t.Errorf("NewTrackMetadata().trackNumber(%s).correctedValue() = %d, want %d", src.Name(), got, 0)
+					t.Errorf("NewTrackMetadata().trackNumber(%s).correctedValue() = %d, want %d", src.name(), got, 0)
 				}
 				if got := tt.want.errorCause(src); got != "" {
-					t.Errorf("NewTrackMetadata().errorCause(%s) = %q, want %q", src.Name(), got, "")
+					t.Errorf("NewTrackMetadata().errorCause(%s) = %q, want %q", src.name(), got, "")
 				}
 				if got := tt.want.editRequired(src); got != false {
-					t.Errorf("NewTrackMetadata().editRequired(%s) = %t, want %t", src.Name(), got, false)
+					t.Errorf("NewTrackMetadata().editRequired(%s) = %t, want %t", src.name(), got, false)
 				}
 			}
 			cdi := tt.want.cdIdentifier()
@@ -722,7 +722,7 @@ func TestNewTrackMetadata(t *testing.T) {
 				t.Errorf("NewTrackMetadata().cdIdentifier().correctedValue() = %v, want %v", got.Body, []byte{})
 			}
 			if got := tt.want.canonicalSrc; got != undefinedSource {
-				t.Errorf("NewTrackMetadata().canonicalSrc = %s, want %s", got.Name(), undefinedSource.Name())
+				t.Errorf("NewTrackMetadata().canonicalSrc = %s, want %s", got.name(), undefinedSource.name())
 			}
 		})
 	}

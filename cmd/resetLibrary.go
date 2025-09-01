@@ -59,6 +59,7 @@ This command does nothing if it determines that the ` + repairCommandName + ` co
 changes, unless the ` + resetLibraryForceFlag + ` flag is set.`,
 		RunE: resetLibraryRun,
 	}
+	timeoutBounds     = cmdtoolkit.NewIntBounds(minTimeout, defaultTimeout, maxTimeout)
 	resetLibraryFlags = &cmdtoolkit.FlagSet{
 		Name: resetLibraryCommandName,
 		Details: map[string]*cmdtoolkit.FlagDetails{
@@ -67,7 +68,7 @@ changes, unless the ` + resetLibraryForceFlag + ` flag is set.`,
 				Usage: fmt.Sprintf("timeout in seconds (minimum %d, maximum %d) for stopping the "+
 					"media player service", minTimeout, maxTimeout),
 				ExpectedType: cmdtoolkit.IntType,
-				DefaultValue: cmdtoolkit.NewIntBounds(minTimeout, defaultTimeout, maxTimeout),
+				DefaultValue: timeoutBounds,
 			},
 			resetLibraryForce: {
 				AbbreviatedName: resetLibraryForceAbbr,
@@ -478,6 +479,9 @@ func processResetLibraryFlags(
 	result.timeout, flagErr = cmdtoolkit.GetInt(o, values, resetLibraryTimeout)
 	if flagErr != nil {
 		flagsOk = false
+	} else {
+		rawValue := result.timeout.Value
+		result.timeout.Value = constrainBoundedValue(o, resetLibraryTimeout, rawValue, timeoutBounds)
 	}
 	result.force, flagErr = cmdtoolkit.GetBool(o, values, resetLibraryForce)
 	if flagErr != nil {
@@ -487,7 +491,20 @@ func processResetLibraryFlags(
 	if flagErr != nil {
 		flagsOk = false
 	}
+	fmt.Printf("settings: %v\n", result)
 	return result, flagsOk
+}
+
+func constrainBoundedValue(o output.Bus, flag string, rawValue int, bounds *cmdtoolkit.IntBounds) int {
+	result := bounds.ConstrainedValue(rawValue)
+	if result != rawValue {
+		o.Log(output.Warning, "user-supplied value replaced", map[string]any{
+			"flag":          flag,
+			"providedValue": rawValue,
+			"replacedBy":    result,
+		})
+	}
+	return result
 }
 
 func init() {

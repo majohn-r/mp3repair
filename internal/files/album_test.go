@@ -137,15 +137,6 @@ func TestAlbum_BackupDirectory(t *testing.T) {
 	}
 }
 
-/*
-	Name() string       // base name of the file
-	Size() int64        // length in bytes for regular files; system-dependent for others
-	Mode() FileMode     // file mode bits
-	ModTime() time.Time // modification time
-	IsDir() bool        // abbreviation for Mode().IsDir()
-	Sys() any           // underlying data source (can return nil)
-*/
-
 type testFile struct {
 	name string
 	mode fs.FileMode

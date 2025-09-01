@@ -2,9 +2,10 @@ package cmd
 
 import (
 	"fmt"
-	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"mp3repair/internal/files"
 	"sort"
+
+	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"

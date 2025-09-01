@@ -11,6 +11,23 @@ Key to symbols
 - 😒 change is invisible to the user
 - 🆕 new feature
 
+## v0.44.0
+
+_pre-release `2026-08-31`_
+
+- 🐛 added **--maxOpenFiles** argument to the **check** and **repair** commands, which allows the user to specify the
+maximum number of simultaneously open files; the provided value must be in the range of 1 to 32767, with the default
+value being 1000.
+- 🐛 fixed a problem where user values for integer-valued command flags, which are always supposed to be bounded by
+minimum and maximum values, were blindly accepted even if they fell outside the prescribed bounds. This affected the
+**resetLibrary** command's **timeout** flag and the newly created **--maxOpenFiles** flag. In the case of the
+**--maxOpenFiles** flag, a user could specify a very large value, which put the program under a great deal of strain as
+it struggled to create a slice of channels that large, or 0, which caused the **check** or **repair** command to freeze
+up as code waited for a slot to insert a channel into a 0-sized slice of channels, or a negative value, which caused a
+panic as the program attempted to instantiate a slice of channels with a negative size.
+- 😒 cleaned up IDE-generated complaints (unsorted imports and a function name that did not need to be capitalized).
+- 😒 updated code dependencies.
+
 ## v0.43.9
 
 _pre-release `2026-08-29`_
