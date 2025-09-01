@@ -491,7 +491,6 @@ func processResetLibraryFlags(
 	if flagErr != nil {
 		flagsOk = false
 	}
-	fmt.Printf("settings: %v\n", result)
 	return result, flagsOk
 }
 
