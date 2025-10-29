@@ -92,6 +92,7 @@ func Test_runMain(t *testing.T) {
 	originalCachedBuildDependencies := cachedBuildDependencies
 	originalGetBuildData := getBuildData
 	originalMP3repairElevationControl := mp3repairElevationControl
+	originalApplicationName := applicationName
 	defer func() {
 		since = originalSince
 		os.Args = originalArgs
@@ -101,7 +102,9 @@ func Test_runMain(t *testing.T) {
 		cachedBuildDependencies = originalCachedBuildDependencies
 		mp3repairElevationControl = originalMP3repairElevationControl
 		getBuildData = originalGetBuildData
+		applicationName = originalApplicationName
 	}()
+	applicationName = "mp3repair"
 	mp3repairElevationControl = testingElevationControl{
 		logFields: map[string]any{
 			"elevated":             true,
@@ -620,6 +623,9 @@ func Test_initGlobals(t *testing.T) {
 }
 
 func Test_root_Usage(t *testing.T) {
+	originalApplicationName := applicationName
+	defer func() { applicationName = originalApplicationName }()
+	applicationName = "mp3repair"
 	tests := map[string]struct {
 		output.WantedRecording
 	}{
@@ -660,6 +666,7 @@ func Test_root_Usage(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			command := cloneCommand(rootCmd)
+			command.Example = genExample(applicationName)
 			enableCommandRecording(o, command)
 			_ = command.Usage()
 			o.Report(t, "root Usage()", tt.WantedRecording)

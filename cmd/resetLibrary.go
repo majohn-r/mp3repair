@@ -116,7 +116,7 @@ type resetLibrarySettings struct {
 }
 
 func (rDBSettings *resetLibrarySettings) resetService(o output.Bus) (e *cmdtoolkit.ExitError) {
-	if rDBSettings.force.Value || dirty() {
+	if rDBSettings.force.Value || dirty(o) {
 		stopped, e2 := rDBSettings.stopService(o)
 		if e2 != nil {
 			e = e2
@@ -129,7 +129,7 @@ func (rDBSettings *resetLibrarySettings) resetService(o output.Bus) (e *cmdtoolk
 	e = cmdtoolkit.NewExitUserError(resetLibraryCommandName)
 	o.ErrorPrintf("The %q command has no work to perform.\n", resetLibraryCommandName)
 	o.ErrorPrintln("Why?")
-	o.ErrorPrintf("The %q program has not made any changes to any mp3 files\n", appName)
+	o.ErrorPrintf("The %q program has not made any changes to any mp3 files\n", applicationName)
 	o.ErrorPrintln("since the last successful library reset.")
 	o.ErrorPrintln("What to do:")
 	o.ErrorPrintln("If you believe the Windows Media Player library needs to be reset, run this command")

@@ -849,23 +849,26 @@ func Test_resetLibrarySettings_resetService(t *testing.T) {
 	originalClearDirty := clearDirty
 	originalConnect := connect
 	originalProcessIsElevated := processIsElevated
+	originalApplicationName := applicationName
 	defer func() {
 		dirty = originalDirty
 		clearDirty = originalClearDirty
 		connect = originalConnect
 		processIsElevated = originalProcessIsElevated
+		applicationName = originalApplicationName
 	}()
+	applicationName = "mp3repair"
 	processIsElevated = func() bool { return false }
 	clearDirty = func(_ output.Bus) {}
 	connect = func() (*mgr.Mgr, error) { return nil, fmt.Errorf("access denied") }
 	tests := map[string]struct {
-		dirty                func() bool
+		dirty                func(o output.Bus) bool
 		resetLibrarySettings *resetLibrarySettings
 		want                 *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"not dirty, no force": {
-			dirty:                func() bool { return false },
+			dirty:                func(_ output.Bus) bool { return false },
 			resetLibrarySettings: &resetLibrarySettings{force: cmdtoolkit.CommandFlag[bool]{Value: false}},
 			want:                 cmdtoolkit.NewExitUserError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
@@ -880,7 +883,7 @@ func Test_resetLibrarySettings_resetService(t *testing.T) {
 			},
 		},
 		"not dirty, force": {
-			dirty:                func() bool { return false },
+			dirty:                func(_ output.Bus) bool { return false },
 			resetLibrarySettings: &resetLibrarySettings{force: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			want:                 cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
@@ -903,7 +906,7 @@ func Test_resetLibrarySettings_resetService(t *testing.T) {
 			},
 		},
 		"dirty, not force": {
-			dirty:                func() bool { return true },
+			dirty:                func(_ output.Bus) bool { return true },
 			resetLibrarySettings: &resetLibrarySettings{},
 			want:                 cmdtoolkit.NewExitSystemError("resetLibrary"),
 			WantedRecording: output.WantedRecording{
@@ -940,13 +943,16 @@ func Test_resetLibrarySettings_resetService(t *testing.T) {
 
 func Test_resetLibraryRun(t *testing.T) {
 	initGlobals()
+	originalApplicationName := applicationName
 	originalBus := bus
 	originalDirty := dirty
 	defer func() {
 		bus = originalBus
 		dirty = originalDirty
+		applicationName = originalApplicationName
 	}()
-	dirty = func() bool { return false }
+	applicationName = "mp3repair"
+	dirty = func(_ output.Bus) bool { return false }
 	flags := &cmdtoolkit.FlagSet{
 		Name: "resetLibrary",
 		Details: map[string]*cmdtoolkit.FlagDetails{

@@ -5,8 +5,9 @@ go 1.25
 require (
 	github.com/bogem/id3v2/v2 v2.1.4
 	github.com/cheggaaa/pb/v3 v3.1.7
-	github.com/majohn-r/cmd-toolkit v0.27.2
-	github.com/majohn-r/output v0.9.4
+	github.com/google/go-cmp v0.7.0
+	github.com/majohn-r/cmd-toolkit v0.29.1
+	github.com/majohn-r/output v0.10.0
 	github.com/spf13/afero v1.15.0
 	github.com/spf13/cobra v1.10.1
 	golang.org/x/sys v0.37.0
@@ -14,7 +15,9 @@ require (
 
 require (
 	github.com/VividCortex/ewma v1.2.0 // indirect
-	github.com/clipperhouse/uax29/v2 v2.2.0 // indirect
+	github.com/adrg/xdg v0.5.3 // indirect
+	github.com/clipperhouse/stringish v0.1.1 // indirect
+	github.com/clipperhouse/uax29/v2 v2.3.0 // indirect
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/kr/pretty v0.3.1 // indirect

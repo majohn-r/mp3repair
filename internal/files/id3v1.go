@@ -1,7 +1,6 @@
 package files
 
 import (
-	"bytes"
 	"fmt"
 	"io"
 	"io/fs"
@@ -603,7 +602,7 @@ func (im *id3v1Metadata) title() string {
 }
 
 func (im *id3v1Metadata) writeString(s string, f id3v1Field) {
-	copy(im.data[f.startOffset:f.endOffset], bytes.Repeat([]byte{0}, f.length))
+	copy(im.data[f.startOffset:f.endOffset], make([]byte, f.length))
 	// truncate long strings ...
 	if len(s) > f.length {
 		s = s[0:f.length]

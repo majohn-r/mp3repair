@@ -13,7 +13,6 @@ const (
 	aboutCommand   = "about"
 	aboutStyle     = "style"
 	aboutStyleFlag = "--" + aboutStyle
-	appName        = "mp3repair" // the name of the application
 	author         = "Marc Johnson"
 	firstYear      = 2021 // the year when development of this application began
 )
@@ -27,17 +26,8 @@ var (
 	aboutCmd = &cobra.Command{
 		Use:                   aboutCommand + " [" + aboutStyleFlag + " name]",
 		DisableFlagsInUseLine: true,
-		Short:                 "Provides information about the " + appName + " program",
-		Long: fmt.Sprintf("%q", aboutCommand) +
-			" provides the following information about the " + appName + " program:\n\n" +
-			"• The program version and build timestamp\n" +
-			"• Copyright information\n" +
-			"• Build information:\n" +
-			"  • The version of go used to compile the code\n" +
-			"  • A list of dependencies and their versions\n" +
-			"• The directory where log files are written\n" +
-			"• The full path of the application configuration file and whether it exists\n" +
-			"• Whether " + appName + " is running with elevated privileges, and, if not, why not",
+		Short:                 "Provides information about the " + applicationName + " program",
+		Long:                  genLongHelp(),
 		Example: aboutCommand + " " + aboutStyleFlag + " name\n" +
 			"  Write 'about' information in a box of the named style.\n" +
 			"  Valid names are:\n" +
@@ -81,6 +71,19 @@ var (
 	)
 )
 
+func genLongHelp() string {
+	return fmt.Sprintf("%q", aboutCommand) +
+		" provides the following information about the " + applicationName + " program:\n\n" +
+		"• The program version and build timestamp\n" +
+		"• Copyright information\n" +
+		"• Build information:\n" +
+		"  • The version of go used to compile the code\n" +
+		"  • A list of dependencies and their versions\n" +
+		"• The directory where log files are written\n" +
+		"• The full path of the application configuration file and whether it exists\n" +
+		"• Whether " + applicationName + " is running with elevated privileges, and, if not, why not"
+}
+
 func aboutRun(cmd *cobra.Command, _ []string) error {
 	o := busGetter()
 	values, eSlice := cmdtoolkit.ReadFlags(cmd.Flags(), aboutFlags)
@@ -123,10 +126,10 @@ func acquireAboutData(o output.Bus) []string {
 	// - go version
 	// - log file location
 	// - configuration file status
-	elevationData := mp3repairElevationControl.Status(appName)
+	elevationData := mp3repairElevationControl.Status(applicationName)
 	lines := make([]string, 0, 6+len(cachedBuildDependencies)+len(elevationData))
 	lines = append(lines,
-		cmdtoolkit.DecoratedAppName(appName, version, creation),
+		cmdtoolkit.DecoratedAppName(applicationName, version, creation),
 		cmdtoolkit.Copyright(o, firstYear, creation, author),
 		"Build Information",
 		cmdtoolkit.FormatGoVersion(cachedGoVersion))

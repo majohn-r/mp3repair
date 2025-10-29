@@ -23,10 +23,11 @@ const (
 )
 
 var (
-	rootCmd = &cobra.Command{
+	applicationName string
+	rootCmd         = &cobra.Command{
 		SilenceErrors: true,
-		Use:           appName,
-		Short:         fmt.Sprintf("%q is a repair program for mp3 files", appName),
+		Use:           applicationName,
+		Short:         fmt.Sprintf("%q is a repair program for mp3 files", applicationName),
 		Long: fmt.Sprintf("%q is a repair program for mp3 files.\n"+
 			"\n"+
 			"Most mp3 files, particularly if ripped from CDs, contain metadata as well as\n"+
@@ -38,31 +39,8 @@ var (
 			"tracks are mysteriously associated with non-existent albums, tracks play out\n"+
 			"of sequence, and so forth.\n"+
 			"\n"+
-			"The %q program exists to find and repair such problems.", appName, appName),
-		Example: `The ` + appName + ` program might be used like this:
-
-First, get a listing of the available mp3 files:
-
-` + appName + ` ` + listCommand + ` -lrt
-
-Then check for problems in the track metadata:
-
-` + appName + ` ` + checkCommand + ` ` + checkFilesFlag + `
-
-If problems were found, repair the mp3 files:
-
-` + appName + ` ` + repairCommandName + `
-The ` + repairCommandName + ` command creates backup files for each track it rewrites. After
-listening to the files that have been repaired (verifying that the repair
-process did not corrupt the audio), clean up those backups:
-
-` + appName + ` ` + postRepairCommandName + `
-
-After repairing the mp3 files, the Windows Media Player library may be out of
-sync with the changes. While the library will eventually catch up, accelerate
-the process:
-
-` + appName + ` ` + resetLibraryCommandName,
+			"The %q program exists to find and repair such problems.", applicationName, applicationName),
+		Example: genExample(applicationName),
 	}
 	bus            = output.NewNilBus()
 	internalConfig = cmdtoolkit.EmptyConfiguration()
@@ -70,6 +48,33 @@ the process:
 	initLock       = &sync.RWMutex{}
 	initialized    = false
 )
+
+func genExample(name string) string {
+	return `The ` + name + ` program might be used like this:
+
+First, get a listing of the available mp3 files:
+
+` + name + ` ` + listCommand + ` -lrt
+
+Then check for problems in the track metadata:
+
+` + name + ` ` + checkCommand + ` ` + checkFilesFlag + `
+
+If problems were found, repair the mp3 files:
+
+` + name + ` ` + repairCommandName + `
+The ` + repairCommandName + ` command creates backup files for each track it rewrites. After
+listening to the files that have been repaired (verifying that the repair
+process did not corrupt the audio), clean up those backups:
+
+` + name + ` ` + postRepairCommandName + `
+
+After repairing the mp3 files, the Windows Media Player library may be out of
+sync with the changes. While the library will eventually catch up, accelerate
+the process:
+
+` + name + ` ` + resetLibraryCommandName
+}
 
 func getBus() output.Bus {
 	initGlobals()
@@ -84,10 +89,13 @@ func getConfiguration() *cmdtoolkit.Configuration {
 func initGlobals() {
 	initLock.Lock()
 	defer initLock.Unlock()
+	if applicationName == "" {
+		applicationName = cmdtoolkit.AppName()
+	}
 	if !initialized {
 		bus = newDefaultBus(cmdtoolkit.ProductionLogger)
 		configOk := false
-		if initLogging(bus, appName) && initApplicationPath(bus, appName) {
+		if initLogging(bus, applicationName) && initApplicationPath(bus, applicationName) {
 			internalConfig, configOk = readDefaultsConfigFile(bus)
 		}
 		if !configOk {
@@ -170,7 +178,7 @@ func runMain(o output.Bus, cmd commandExecutor, start time.Time) int {
 		"exitCode": exitCode,
 	})
 	if exitCode != 0 {
-		o.ErrorPrintf("%q version %s, created at %s, failed.\n", appName, version, creation)
+		o.ErrorPrintf("%q version %s, created at %s, failed.\n", applicationName, version, creation)
 	}
 	return exitCode
 }

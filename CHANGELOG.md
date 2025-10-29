@@ -11,6 +11,14 @@ Key to symbols
 - 😒 change is invisible to the user
 - 🆕 new feature
 
+## v0.44.2
+
+_pre-release `2025-10-29`_
+
+- ⚠️ the dirty file that is used to determine whether the Windows Media Player library needs to be reset now uses
+[XDG](https://specifications.freedesktop.org/basedir-spec/latest/) based code to locate the file. This addresses
+[issue 205](https://github.com/majohn-r/mp3repair/issues/205).
+
 ## v0.44.1
 
 _pre-release `2025-10-09`_

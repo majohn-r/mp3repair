@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/spf13/afero"
 
@@ -40,6 +41,7 @@ func Test_aboutRun(t *testing.T) {
 	originalFileSystem := cmdtoolkit.AssignFileSystem(fs)
 	originalCachedGoVersion := cachedGoVersion
 	originalCachedBuildDependencies := cachedBuildDependencies
+	originalApplicationName := applicationName
 	defer func() {
 		busGetter = originalBusGetter
 		logPath = originalLogPath
@@ -50,6 +52,7 @@ func Test_aboutRun(t *testing.T) {
 		cmdtoolkit.AssignFileSystem(originalFileSystem)
 		cachedGoVersion = originalCachedGoVersion
 		cachedBuildDependencies = originalCachedBuildDependencies
+		applicationName = originalApplicationName
 	}()
 	cachedGoVersion = "go1.22.x"
 	cachedBuildDependencies = []string{
@@ -69,6 +72,7 @@ func Test_aboutRun(t *testing.T) {
 		[]byte{},
 		cmdtoolkit.StdFilePermissions,
 	)
+	applicationName = "mp3repair"
 	type args struct {
 		in0 *cobra.Command
 		in1 []string
@@ -115,6 +119,17 @@ func enableCommandRecording(o *output.Recorder, command *cobra.Command) {
 }
 
 func Test_about_Help(t *testing.T) {
+	originalAboutCmd := aboutCmd
+	originalApplicationName := applicationName
+	originalRootCmd := rootCmd
+	defer func() {
+		aboutCmd = originalAboutCmd
+		applicationName = originalApplicationName
+		rootCmd = originalRootCmd
+	}()
+	applicationName = "mp3repair"
+	aboutCmd.Long = genLongHelp()
+	rootCmd.Use = applicationName
 	tests := map[string]struct {
 		output.WantedRecording
 	}{
@@ -186,6 +201,7 @@ func Test_acquireAboutData(t *testing.T) {
 	originalFileSystem := cmdtoolkit.AssignFileSystem(fs)
 	originalCachedGoVersion := cachedGoVersion
 	originalCachedBuildDependencies := cachedBuildDependencies
+	originalApplicationName := applicationName
 	defer func() {
 		logPath = originalLogPath
 		version = originalVersion
@@ -195,6 +211,7 @@ func Test_acquireAboutData(t *testing.T) {
 		cmdtoolkit.SetApplicationPath(originalApplicationPath)
 		cachedGoVersion = originalCachedGoVersion
 		cachedBuildDependencies = originalCachedBuildDependencies
+		applicationName = originalApplicationName
 	}()
 	cachedGoVersion = "go1.22.x"
 	cachedBuildDependencies = []string{
@@ -207,6 +224,7 @@ func Test_acquireAboutData(t *testing.T) {
 	}
 	version = "0.40.0"
 	creation = "2024-02-24T13:14:05-05:00"
+	applicationName = "mp3repair"
 	tests := map[string]struct {
 		preTest              func()
 		postTest             func()
@@ -342,7 +360,7 @@ func Test_acquireAboutData(t *testing.T) {
 			}
 			mp3repairElevationControl = tec
 			if got := acquireAboutData(output.NewNilBus()); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("acquireAboutData() got %v, want %v", got, tt.want)
+				t.Errorf("acquireAboutData(): %s", cmp.Diff(tt.want, got))
 			}
 		})
 	}
