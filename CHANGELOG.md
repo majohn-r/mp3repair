@@ -11,6 +11,13 @@ Key to symbols
 - 😒 change is invisible to the user
 - 🆕 new feature
 
+## v0.44.3
+
+_pre-release `2025-10-30`_
+
+- ⚠️ the configuration file `defaults.yaml` used to be located in `%HOME%\AppData\Roaming\mp3repair`; it is now located
+in `%HOME%\AppData\Local\mp3repair`.
+
 ## v0.44.2
 
 _pre-release `2025-10-29`_
