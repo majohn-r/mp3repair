@@ -11,6 +11,13 @@ Key to symbols
 - 😒 change is invisible to the user
 - 🆕 new feature
 
+## v0.44.4
+
+_pre-release `2025-19-31`_
+
+- ⚠️ log files used to be written to a temp folder (typically `%HOME%\AppData\Local\Temp\mp3repair\logs`); they're now
+written to `%HOME%\AppData\Local\mp3repair\logs`.
+
 ## v0.44.3
 
 _pre-release `2025-10-30`_
