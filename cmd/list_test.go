@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/adrg/xdg"
 	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"
@@ -738,11 +739,6 @@ var (
 				Usage:        "regular expression specifying which tracks to select",
 				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: ".*",
-			},
-			searchTopDir: {
-				Usage:        "top directory specifying where to find mp3 files",
-				ExpectedType: cmdtoolkit.StringType,
-				DefaultValue: ".",
 			},
 			searchFileExtensions: {
 				Usage:        "comma-delimited list of file extensions used by mp3" + " files",
@@ -1746,11 +1742,14 @@ func Test_listRun(t *testing.T) {
 	initGlobals()
 	originalBus := bus
 	originalSearchFlags := searchFlags
+	originalMusicDir := xdg.UserDirs.Music
 	defer func() {
 		bus = originalBus
 		searchFlags = originalSearchFlags
+		xdg.UserDirs.Music = originalMusicDir
 	}()
 	searchFlags = safeSearchFlags
+	xdg.UserDirs.Music = "."
 
 	testListFlags := &cmdtoolkit.FlagSet{
 		Name: listCommand,
@@ -1905,13 +1904,12 @@ func Test_listRun(t *testing.T) {
 				Error: "" +
 					"No mp3 files could be found using the specified parameters.\n" +
 					"Why?\n" +
-					"There were no directories found in \".\" (the --topDir value).\n" +
+					"There were no directories found in \".\".\n" +
 					"What to do:\n" +
-					"Set --topDir to the path of a directory that contains artist" +
-					" directories.\n",
+					"Set XDG_MUSIC_DIR to the path of a directory that contains artist directories.\n",
 				Log: "" +
 					"level='error'" +
-					" --topDir='.'" +
+					" $XDG_MUSIC_DIR='.'" +
 					" msg='cannot find any artist directories'\n",
 			},
 		},
@@ -2021,10 +2019,13 @@ func Test_listSettings_listArtists(t *testing.T) {
 
 func Test_list_Help(t *testing.T) {
 	originalSearchFlags := searchFlags
+	originalMusicDir := xdg.UserDirs.Music
 	defer func() {
 		searchFlags = originalSearchFlags
+		xdg.UserDirs.Music = originalMusicDir
 	}()
 	searchFlags = safeSearchFlags
+	xdg.UserDirs.Music = "."
 	commandUnderTest := cloneCommand(listCmd)
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), listFlags, searchFlags)
@@ -2040,8 +2041,7 @@ func Test_list_Help(t *testing.T) {
 					"Usage:\n" +
 					"  list [--albums] [--artists] [--tracks] [--annotate]" +
 					" [--diagnostic] [--byNumber | --byTitle] [--albumFilter regex]" +
-					" [--artistFilter regex] [--trackFilter regex] [--topDir dir]" +
-					" [--extensions extensions]\n" +
+					" [--artistFilter regex] [--trackFilter regex] [--extensions extensions]\n" +
 					"\n" +
 					"Examples:\n" +
 					"list --annotate\n" +
@@ -2079,8 +2079,6 @@ func Test_list_Help(t *testing.T) {
 					"include diagnostic information with tracks (default false)\n" +
 					"      --extensions string     " +
 					"comma-delimited list of file extensions used by mp3 files (default \".mp3\")\n" +
-					"      --topDir string         " +
-					"top directory specifying where to find mp3 files (default \".\")\n" +
 					"      --trackFilter string    " +
 					"regular expression specifying which tracks to select (default \".*\")\n" +
 					"  -t, --tracks                " +

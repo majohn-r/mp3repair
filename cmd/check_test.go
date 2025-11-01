@@ -11,6 +11,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/adrg/xdg"
 	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"
@@ -710,7 +711,7 @@ func Test_checkSettings_maybeDoWork(t *testing.T) {
 				albumFilter:    regexp.MustCompile(".*"),
 				trackFilter:    regexp.MustCompile(".*"),
 				fileExtensions: []string{".mp3"},
-				topDirectory:   filepath.Join(".", "no dir"),
+				musicDir:       filepath.Join(".", "no dir"),
 			},
 			ios:        &ioSettings{openFileLimit: 100},
 			wantStatus: cmdtoolkit.NewExitUserError("check"),
@@ -720,17 +721,16 @@ func Test_checkSettings_maybeDoWork(t *testing.T) {
 					" cannot find the file specified.'.\n" +
 					"No mp3 files could be found using the specified parameters.\n" +
 					"Why?\n" +
-					"There were no directories found in \"no dir\" (the --topDir value).\n" +
+					"There were no directories found in \"no dir\".\n" +
 					"What to do:\n" +
-					"Set --topDir to the path of a directory that contains artist" +
-					" directories.\n",
+					"Set XDG_MUSIC_DIR to the path of a directory that contains artist directories.\n",
 				Log: "" +
 					"level='error'" +
 					" directory='no dir'" +
 					" error='open no dir: The system cannot find the file specified.'" +
 					" msg='cannot read directory'\n" +
 					"level='error'" +
-					" --topDir='no dir'" +
+					" $XDG_MUSIC_DIR='no dir'" +
 					" msg='cannot find any artist directories'\n",
 			},
 		},
@@ -750,11 +750,14 @@ func Test_checkRun(t *testing.T) {
 	initGlobals()
 	originalBus := bus
 	originalSearchFlags := searchFlags
+	originalMusicDir := xdg.UserDirs.Music
 	defer func() {
 		bus = originalBus
 		searchFlags = originalSearchFlags
+		xdg.UserDirs.Music = originalMusicDir
 	}()
 	searchFlags = safeSearchFlags
+	xdg.UserDirs.Music = "."
 	checkFlags := &cmdtoolkit.FlagSet{
 		Name: checkCommand,
 		Details: map[string]*cmdtoolkit.FlagDetails{
@@ -828,10 +831,13 @@ func cloneCommand(original *cobra.Command) *cobra.Command {
 
 func Test_check_Help(t *testing.T) {
 	originalSearchFlags := searchFlags
+	originalMusicDir := xdg.UserDirs.Music
 	defer func() {
 		searchFlags = originalSearchFlags
+		xdg.UserDirs.Music = originalMusicDir
 	}()
 	searchFlags = safeSearchFlags
+	xdg.UserDirs.Music = "."
 	commandUnderTest := cloneCommand(checkCmd)
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), checkFlags, searchFlags, ioFlags)
@@ -846,7 +852,7 @@ func Test_check_Help(t *testing.T) {
 					"\n" +
 					"Usage:\n" +
 					"  check [--empty] [--files] [--numbering] [--albumFilter regex] [--artistFilter regex] " +
-					"[--trackFilter regex] [--topDir dir] [--extensions extensions] [--maxOpenFiles count]\n" +
+					"[--trackFilter regex] [--extensions extensions] [--maxOpenFiles count]\n" +
 					"\n" +
 					"Examples:\n" +
 					"check --empty\n" +
@@ -869,7 +875,6 @@ func Test_check_Help(t *testing.T) {
 					"(at least 1, at most 32767, default 1000) (default 1000)\n" +
 					"  -n, --numbering             report missing track " +
 					"numbers and duplicated track numbering (default false)\n" +
-					"      --topDir string         top directory specifying where to find mp3 files (default \".\")\n" +
 					"      --trackFilter string    regular expression " +
 					"specifying which tracks to select (default \".*\")\n",
 			},
@@ -888,10 +893,13 @@ func Test_check_Help(t *testing.T) {
 
 func Test_check_Usage(t *testing.T) {
 	originalSearchFlags := searchFlags
+	originalMusicDir := xdg.UserDirs.Music
 	defer func() {
 		searchFlags = originalSearchFlags
+		xdg.UserDirs.Music = originalMusicDir
 	}()
 	searchFlags = safeSearchFlags
+	xdg.UserDirs.Music = "."
 	commandUnderTest := cloneCommand(checkCmd)
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), checkFlags, searchFlags, ioFlags)
@@ -903,7 +911,7 @@ func Test_check_Usage(t *testing.T) {
 				Console: "" +
 					"Usage:\n" +
 					"  check [--empty] [--files] [--numbering] [--albumFilter regex] [--artistFilter regex] " +
-					"[--trackFilter regex] [--topDir dir] [--extensions extensions] [--maxOpenFiles count]\n" +
+					"[--trackFilter regex] [--extensions extensions] [--maxOpenFiles count]\n" +
 					"\n" +
 					"Examples:\n" +
 					"check --empty\n" +
@@ -929,8 +937,6 @@ func Test_check_Usage(t *testing.T) {
 					"(at least 1, at most 32767, default 1000) (default 1000)\n" +
 					"  -n, --numbering             " +
 					"report missing track numbers and duplicated track numbering (default false)\n" +
-					"      --topDir string         " +
-					"top directory specifying where to find mp3 files (default \".\")\n" +
 					"      --trackFilter string    " +
 					"regular expression specifying which tracks to select (default \".*\")\n",
 			},

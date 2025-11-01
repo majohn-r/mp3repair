@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/adrg/xdg"
 	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"github.com/spf13/afero"
@@ -116,137 +117,98 @@ func Test_evaluateFilter(t *testing.T) {
 	}
 }
 
-func Test_evaluateTopDir(t *testing.T) {
+func Test_evaluateMusicDir(t *testing.T) {
+	originalMusicDir := xdg.UserDirs.Music
 	originalFileSystem := cmdtoolkit.AssignFileSystem(afero.NewMemMapFs())
 	defer func() {
 		cmdtoolkit.AssignFileSystem(originalFileSystem)
+		xdg.UserDirs.Music = originalMusicDir
 	}()
 	goodDir := "music"
 	badDir := filepath.Join(goodDir, "moreMusic")
 	_ = cmdtoolkit.FileSystem().Mkdir(goodDir, cmdtoolkit.StdDirPermissions)
 	_ = afero.WriteFile(cmdtoolkit.FileSystem(), badDir, []byte("data"), cmdtoolkit.StdFilePermissions)
 	tests := map[string]struct {
-		values  map[string]*cmdtoolkit.CommandFlag[any]
-		wantDir string
-		wantOk  bool
+		values   map[string]*cmdtoolkit.CommandFlag[any]
+		musicDir string
+		wantDir  string
+		wantOk   bool
 		output.WantedRecording
 	}{
-		"missing flag": {
-			values: map[string]*cmdtoolkit.CommandFlag[any]{},
+		"non-existent file": {
+			musicDir: "no such directory",
 			WantedRecording: output.WantedRecording{
-				Error: "An internal error occurred: flag \"topDir\" is not found.\n",
-				Log: "level='error'" +
-					" error='flag not found'" +
-					" flag='topDir'" +
-					" msg='internal error'\n",
-			},
-		},
-		"non-existent file, user set": {
-			values: map[string]*cmdtoolkit.CommandFlag[any]{
-				"topDir": {UserSet: true, Value: "no such directory"},
-			},
-			WantedRecording: output.WantedRecording{
-				Error: "The --topDir value, \"no such directory\", cannot be used.\n" +
+				Error: "The music directory value, \"no such directory\", cannot be used.\n" +
 					"Why?\n" +
-					"The value you specified is not a readable file.\n" +
+					"The value is not a readable folder.\n" +
 					"What to do:\n" +
-					"Specify a value that is a readable file.\n",
+					"Set XDG_MUSIC_DIR to a value that is a readable folder.\n",
 				Log: "level='error'" +
-					" --topDir='no such directory'" +
+					" directory='no such directory'" +
 					" error='open no such directory: file does not exist'" +
-					" user-set='true'" +
 					" msg='invalid directory'\n",
 			},
 		},
-		"non-existent file, as configured": {
-			values: map[string]*cmdtoolkit.CommandFlag[any]{
-				"topDir": {UserSet: false, Value: "no such directory"},
-			},
+		"non-existent directory": {
+			musicDir: badDir,
 			WantedRecording: output.WantedRecording{
-				Error: "The --topDir value, \"no such directory\", cannot be used.\n" +
+				Error: "The music directory value, \"music\\\\moreMusic\", cannot be used.\n" +
 					"Why?\n" +
-					"The currently configured value is not a readable file.\n" +
+					"The value is not a readable folder.\n" +
 					"What to do:\n" +
-					"Edit the configuration file or specify --topDir with a value that is" +
-					" a readable file.\n",
+					"Set XDG_MUSIC_DIR to a value that is a readable folder.\n",
 				Log: "level='error'" +
-					" --topDir='no such directory'" +
-					" error='open no such directory: file does not exist'" +
-					" user-set='false'" +
-					" msg='invalid directory'\n",
-			},
-		},
-		"non-existent directory, user set": {
-			values: map[string]*cmdtoolkit.CommandFlag[any]{
-				"topDir": {UserSet: true, Value: badDir},
-			},
-			WantedRecording: output.WantedRecording{
-				Error: "The --topDir value, \"music\\\\moreMusic\", cannot be used.\n" +
-					"Why?\n" +
-					"The value you specified is not the name of a directory.\n" +
-					"What to do:\n" +
-					"Specify a value that is the name of a directory.\n",
-				Log: "level='error'" +
-					" --topDir='" + badDir + "'" +
-					" user-set='true'" +
-					" msg='the file is not a directory'\n",
-			},
-		},
-		"non-existent directory, as configured": {
-			values: map[string]*cmdtoolkit.CommandFlag[any]{
-				"topDir": {UserSet: false, Value: badDir},
-			},
-			WantedRecording: output.WantedRecording{
-				Error: "The --topDir value, \"music\\\\moreMusic\", cannot be used.\n" +
-					"Why?\n" +
-					"The currently configured value is not the name of a directory.\n" +
-					"What to do:\n" +
-					"Edit the configuration file or specify --topDir with a value that is" +
-					" the name of a directory.\n",
-				Log: "level='error'" +
-					" --topDir='" + badDir + "'" +
-					" user-set='false'" +
+					" directory='" + badDir + "'" +
 					" msg='the file is not a directory'\n",
 			},
 		},
 		"valid directory": {
-			values: map[string]*cmdtoolkit.CommandFlag[any]{
-				"topDir": {UserSet: false, Value: goodDir},
-			},
-			wantDir: goodDir,
-			wantOk:  true,
+			musicDir: goodDir,
+			wantDir:  goodDir,
+			wantOk:   true,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			gotDir, gotOk := evaluateTopDir(o, tt.values)
+			xdg.UserDirs.Music = tt.musicDir
+			gotDir, gotOk := evaluateMusicDir(o)
 			if gotDir != tt.wantDir {
-				t.Errorf("evaluateTopDir() gotDir = %v, want %v", gotDir, tt.wantDir)
+				t.Errorf("evaluateMusicDir() gotDir = %v, want %v", gotDir, tt.wantDir)
 			}
 			if gotOk != tt.wantOk {
-				t.Errorf("evaluateTopDir() gotOk = %v, want %v", gotOk, tt.wantOk)
+				t.Errorf("evaluateMusicDir() gotOk = %v, want %v", gotOk, tt.wantOk)
 			}
-			o.Report(t, "evaluateTopDir()", tt.WantedRecording)
+			o.Report(t, "evaluateMusicDir()", tt.WantedRecording)
 		})
 	}
 }
 
 func Test_processSearchFlags(t *testing.T) {
+	originalMusicDir := xdg.UserDirs.Music
+	defer func() {
+		xdg.UserDirs.Music = originalMusicDir
+	}()
 	tests := map[string]struct {
 		values       map[string]*cmdtoolkit.CommandFlag[any]
+		musicDir     string
 		wantSettings *searchSettings
 		wantOk       bool
 		output.WantedRecording
 	}{
 		"no data": {
 			values:       map[string]*cmdtoolkit.CommandFlag[any]{},
+			musicDir:     "",
 			wantSettings: &searchSettings{},
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"albumFilter\" is not found.\n" +
 					"An internal error occurred: flag \"artistFilter\" is not found.\n" +
 					"An internal error occurred: flag \"trackFilter\" is not found.\n" +
-					"An internal error occurred: flag \"topDir\" is not found.\n" +
+					"The music directory value, \"\", cannot be used.\n" +
+					"Why?\n" +
+					"The value is not a readable folder.\n" +
+					"What to do:\n" +
+					"Set XDG_MUSIC_DIR to a value that is a readable folder.\n" +
 					"An internal error occurred: flag \"extensions\" is not found.\n",
 				Log: "level='error'" +
 					" error='flag not found'" +
@@ -261,9 +223,9 @@ func Test_processSearchFlags(t *testing.T) {
 					" flag='trackFilter'" +
 					" msg='internal error'\n" +
 					"level='error'" +
-					" error='flag not found'" +
-					" flag='topDir'" +
-					" msg='internal error'\n" +
+					" directory=''" +
+					" error='Stat : The system cannot find the path specified.'" +
+					" msg='invalid directory'\n" +
 					"level='error'" +
 					" error='flag not found'" +
 					" flag='extensions'" +
@@ -275,9 +237,9 @@ func Test_processSearchFlags(t *testing.T) {
 				"albumFilter":  {Value: "[2"},
 				"artistFilter": {Value: "[1-0]"},
 				"trackFilter":  {Value: "0++"},
-				"topDir":       {Value: "no such dir"},
 				"extensions":   {Value: "foo,bar"},
 			},
+			musicDir:     "no such dir",
 			wantSettings: &searchSettings{},
 			WantedRecording: output.WantedRecording{
 				Error: "" +
@@ -327,12 +289,11 @@ func Test_processSearchFlags(t *testing.T) {
 					"For more (too much, often, you are warned) information, do a web" +
 					" search for\n" +
 					"\"golang regexp\".\n" +
-					"The --topDir value, \"no such dir\", cannot be used.\n" +
+					"The music directory value, \"no such dir\", cannot be used.\n" +
 					"Why?\n" +
-					"The currently configured value is not a readable file.\n" +
+					"The value is not a readable folder.\n" +
 					"What to do:\n" +
-					"Edit the configuration file or specify --topDir with a value that" +
-					" is a readable file.\n" +
+					"Set XDG_MUSIC_DIR to a value that is a readable folder.\n" +
 					"The extension \"foo\" cannot be used.\n" +
 					"The extension \"bar\" cannot be used.\n" +
 					"Why?\n" +
@@ -356,10 +317,9 @@ func Test_processSearchFlags(t *testing.T) {
 					" user-set='false'" +
 					" msg='the filter cannot be parsed as a regular expression'\n" +
 					"level='error'" +
-					" --topDir='no such dir'" +
+					" directory='no such dir'" +
 					" error='GetFileAttributesEx no such dir: The system cannot find the file" +
 					" specified.'" +
-					" user-set='false'" +
 					" msg='invalid directory'\n" +
 					"level='error'" +
 					" --extensions='foo,bar'" +
@@ -372,15 +332,15 @@ func Test_processSearchFlags(t *testing.T) {
 				"albumFilter":  {Value: "[23]"},
 				"artistFilter": {Value: "[0-7]"},
 				"trackFilter":  {Value: "0+"},
-				"topDir":       {Value: "."},
 				"extensions":   {Value: ".mp3"},
 			},
+			musicDir: ".",
 			wantSettings: &searchSettings{
 				artistFilter:   regexp.MustCompile("[0-7]"),
 				albumFilter:    regexp.MustCompile("[23]"),
 				trackFilter:    regexp.MustCompile("0+"),
 				fileExtensions: []string{".mp3"},
-				topDirectory:   ".",
+				musicDir:       ".",
 			},
 			wantOk: true,
 		},
@@ -388,6 +348,7 @@ func Test_processSearchFlags(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
+			xdg.UserDirs.Music = tt.musicDir
 			gotSettings, gotOk := processSearchFlags(o, tt.values)
 			if !reflect.DeepEqual(gotSettings, tt.wantSettings) {
 				t.Errorf("processSearchFlags() gotSettings = %v, want %v", gotSettings, tt.wantSettings)
@@ -476,20 +437,25 @@ func (tfp testFlagProducer) GetString(name string) (s string, flagErr error) {
 }
 
 func Test_evaluateSearchFlags(t *testing.T) {
+	originalMusicDir := xdg.UserDirs.Music
+	defer func() {
+		xdg.UserDirs.Music = originalMusicDir
+	}()
 	tests := map[string]struct {
 		producer     cmdtoolkit.FlagProducer
+		musicDir     string
 		wantSettings *searchSettings
 		wantOk       bool
 		output.WantedRecording
 	}{
 		"errors": {
 			producer:     testFlagProducer{},
+			musicDir:     "",
 			wantSettings: &searchSettings{},
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: 'flag \"albumFilter\" does not exist'.\n" +
 					"An internal error occurred: 'flag \"artistFilter\" does not exist'.\n" +
 					"An internal error occurred: 'flag \"extensions\" does not exist'.\n" +
-					"An internal error occurred: 'flag \"topDir\" does not exist'.\n" +
 					"An internal error occurred: 'flag \"trackFilter\" does not exist'.\n",
 				Log: "level='error'" +
 					" error='flag \"albumFilter\" does not exist'" +
@@ -499,9 +465,6 @@ func Test_evaluateSearchFlags(t *testing.T) {
 					" msg='internal error'\n" +
 					"level='error'" +
 					" error='flag \"extensions\" does not exist'" +
-					" msg='internal error'\n" +
-					"level='error'" +
-					" error='flag \"topDir\" does not exist'" +
 					" msg='internal error'\n" +
 					"level='error'" +
 					" error='flag \"trackFilter\" does not exist'" +
@@ -514,16 +477,16 @@ func Test_evaluateSearchFlags(t *testing.T) {
 					"albumFilter":  {value: "\\d+", valueKind: cmdtoolkit.StringType},
 					"artistFilter": {value: "Beatles", valueKind: cmdtoolkit.StringType},
 					"trackFilter":  {value: "Sadie", valueKind: cmdtoolkit.StringType},
-					"topDir":       {value: ".", valueKind: cmdtoolkit.StringType},
 					"extensions":   {value: ".mp3", valueKind: cmdtoolkit.StringType},
 				},
 			},
+			musicDir: ".",
 			wantSettings: &searchSettings{
 				artistFilter:   regexp.MustCompile("Beatles"),
 				albumFilter:    regexp.MustCompile(`\d+`),
 				trackFilter:    regexp.MustCompile("Sadie"),
 				fileExtensions: []string{".mp3"},
-				topDirectory:   ".",
+				musicDir:       ".",
 			},
 			wantOk: true,
 		},
@@ -531,6 +494,7 @@ func Test_evaluateSearchFlags(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
+			xdg.UserDirs.Music = tt.musicDir
 			gotSettings, gotOk := evaluateSearchFlags(o, tt.producer)
 			if !reflect.DeepEqual(gotSettings, tt.wantSettings) {
 				t.Errorf("evaluateSearchFlags() gotSettings = %v, want %v", gotSettings, tt.wantSettings)
@@ -656,21 +620,21 @@ func Test_searchSettings_load(t *testing.T) {
 	album2 := newTestFile("not an album", nil)
 	artist1 := newTestFile("artist", []*testFile{album1, album2})
 	artist2 := newTestFile("not an artist", nil)
-	topDir := newTestFile("music", []*testFile{artist1, artist2})
+	musicDir := newTestFile("music", []*testFile{artist1, artist2})
 	testFiles := map[string]*testFile{
-		topDir.name:                                           topDir,
-		filepath.Join(topDir.name, artist1.name):              artist1,
-		filepath.Join(topDir.name, artist2.name):              artist2,
-		filepath.Join(topDir.name, artist1.name, album1.name): album1,
-		filepath.Join(topDir.name, artist1.name, album2.name): album2,
-		filepath.Join(topDir.name, artist1.name, album1.name,
+		musicDir.name: musicDir,
+		filepath.Join(musicDir.name, artist1.name):              artist1,
+		filepath.Join(musicDir.name, artist2.name):              artist2,
+		filepath.Join(musicDir.name, artist1.name, album1.name): album1,
+		filepath.Join(musicDir.name, artist1.name, album2.name): album2,
+		filepath.Join(musicDir.name, artist1.name, album1.name,
 			album1Content1.name): album1Content1,
-		filepath.Join(topDir.name, artist1.name, album1.name,
+		filepath.Join(musicDir.name, artist1.name, album1.name,
 			album1Content2.name): album1Content2,
-		filepath.Join(topDir.name, artist1.name, album1.name,
+		filepath.Join(musicDir.name, artist1.name, album1.name,
 			album1Content3.name): album1Content3,
 	}
-	testArtist := files.NewArtistFromFile(artist1, topDir.name)
+	testArtist := files.NewArtistFromFile(artist1, musicDir.name)
 	testAlbum := files.NewAlbumFromFile(album1, testArtist)
 	files.TrackMaker{
 		Album:      testAlbum,
@@ -693,25 +657,24 @@ func Test_searchSettings_load(t *testing.T) {
 		want []*files.Artist
 		output.WantedRecording
 	}{
-		"topDir read error": {
-			ss:   &searchSettings{topDirectory: "td"},
+		"musicDir read error": {
+			ss:   &searchSettings{musicDir: "td"},
 			want: []*files.Artist{},
 			WantedRecording: output.WantedRecording{
 				Error: "No mp3 files could be found using the specified parameters.\n" +
 					"Why?\n" +
-					"There were no directories found in \"td\" (the --topDir value).\n" +
+					"There were no directories found in \"td\".\n" +
 					"What to do:\n" +
-					"Set --topDir to the path of a directory that contains artist" +
-					" directories.\n",
+					"Set XDG_MUSIC_DIR to the path of a directory that contains artist directories.\n",
 				Log: "level='error'" +
-					" --topDir='td'" +
+					" $XDG_MUSIC_DIR='td'" +
 					" msg='cannot find any artist directories'\n",
 			},
 		},
 		"good read": {
 			ss: &searchSettings{
 				fileExtensions: []string{".mp3"},
-				topDirectory:   "music",
+				musicDir:       "music",
 			},
 			want: []*files.Artist{testArtist},
 		},

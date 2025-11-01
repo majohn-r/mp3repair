@@ -173,7 +173,6 @@ func Test_runMain(t *testing.T) {
 					"    albumFilter: .*\n" +
 					"    artistFilter: .*\n" +
 					"    extensions: .mp3\n" +
-					"    topDir: '%HOMEPATH%\\Music'\n" +
 					"    trackFilter: .*\n'" +
 					" dependencies='[foo v1.1.1 bar v1.2.2]'" +
 					" goVersion='1.22.x'" +
@@ -240,7 +239,6 @@ func Test_runMain(t *testing.T) {
 					"    albumFilter: .*\n" +
 					"    artistFilter: .*\n" +
 					"    extensions: .mp3\n" +
-					"    topDir: '%HOMEPATH%\\Music'\n" +
 					"    trackFilter: .*\n'" +
 					" dependencies='[foo v1.1.2 bar v1.2.3]'" +
 					" goVersion='1.22.x'" +
@@ -307,7 +305,6 @@ func Test_runMain(t *testing.T) {
 					"    albumFilter: .*\n" +
 					"    artistFilter: .*\n" +
 					"    extensions: .mp3\n" +
-					"    topDir: '%HOMEPATH%\\Music'\n" +
 					"    trackFilter: .*\n'" +
 					" dependencies='[foo v1.1.2 bar v1.2.3]'" +
 					" goVersion='1.22.x'" +

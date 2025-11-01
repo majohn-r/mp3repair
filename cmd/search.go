@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/adrg/xdg"
 	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
@@ -18,13 +19,11 @@ const (
 	searchArtistFilterFlag   = "--" + searchArtistFilter
 	searchFileExtensions     = "extensions"
 	searchFileExtensionsFlag = "--" + searchFileExtensions
-	searchTopDir             = "topDir"
-	searchTopDirFlag         = "--" + searchTopDir
 	searchTrackFilter        = "trackFilter"
 	searchTrackFilterFlag    = "--" + searchTrackFilter
 	searchUsage              = "[" + searchAlbumFilterFlag + " regex] [" +
 		searchArtistFilterFlag + " regex] [" + searchTrackFilterFlag + " regex] [" +
-		searchTopDirFlag + " dir] [" + searchFileExtensionsFlag + " extensions]"
+		searchFileExtensionsFlag + " extensions]"
 	searchRegexInstructions = "" +
 		`Here are some common errors in filter expressions and what to do:
 Character class problems
@@ -63,11 +62,6 @@ var (
 				ExpectedType: cmdtoolkit.StringType,
 				DefaultValue: ".*",
 			},
-			searchTopDir: {
-				Usage:        "top directory specifying where to find mp3 files",
-				ExpectedType: cmdtoolkit.StringType,
-				DefaultValue: filepath.Join("%HOMEPATH%", "Music"),
-			},
 			searchFileExtensions: {
 				Usage:        "comma-delimited list of file extensions used by mp3 files",
 				ExpectedType: cmdtoolkit.StringType,
@@ -82,7 +76,7 @@ type searchSettings struct {
 	albumFilter    *regexp.Regexp
 	trackFilter    *regexp.Regexp
 	fileExtensions []string
-	topDirectory   string
+	musicDir       string
 }
 
 func evaluateSearchFlags(o output.Bus, producer cmdtoolkit.FlagProducer) (*searchSettings, bool) {
@@ -148,10 +142,10 @@ func processSearchFlags(
 		// user has attempted to use filters that don't compile
 		o.ErrorPrintln(searchRegexInstructions)
 	}
-	topDir, topDirFilterOk := evaluateTopDir(o, values)
+	musicDir, musicDirOk := evaluateMusicDir(o)
 	switch {
-	case topDirFilterOk:
-		settings.topDirectory = topDir
+	case musicDirOk:
+		settings.musicDir = musicDir
 	default:
 		flagsOk = false
 	}
@@ -197,60 +191,31 @@ func evaluateFileExtensions(o output.Bus, values map[string]*cmdtoolkit.CommandF
 	return extensions, extensionsValid
 }
 
-func evaluateTopDir(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (dir string, topDirValid bool) {
-	rawValue, flagErr := cmdtoolkit.GetString(o, values, searchTopDir)
-	if flagErr != nil {
-		return
-	}
-	file, fileErr := cmdtoolkit.FileSystem().Stat(rawValue.Value)
+func evaluateMusicDir(o output.Bus) (string, bool) {
+	musicDir := xdg.UserDirs.Music
+	file, fileErr := cmdtoolkit.FileSystem().Stat(musicDir)
 	if fileErr != nil {
-		o.ErrorPrintf("The %s value, %q, cannot be used.\n", searchTopDirFlag, rawValue.Value)
 		o.Log(output.Error, "invalid directory", map[string]any{
-			"error":          fileErr,
-			searchTopDirFlag: rawValue.Value,
-			"user-set":       rawValue.UserSet,
+			"error":     fileErr,
+			"directory": musicDir,
 		})
-		o.ErrorPrintln("Why?")
-		switch rawValue.UserSet {
-		case true:
-			o.ErrorPrintln("The value you specified is not a readable file.")
-			o.ErrorPrintln("What to do:")
-			o.ErrorPrintln("Specify a value that is a readable file.")
-		case false:
-			o.ErrorPrintln("The currently configured value is not a readable file.")
-			o.ErrorPrintln("What to do:")
-			o.ErrorPrintf(
-				"Edit the configuration file or specify %s with a value that is a readable file.\n",
-				searchTopDirFlag,
-			)
-		}
-		return
+		reportBadMusicDir(o, musicDir)
+		return "", false
 	}
 	if !file.IsDir() {
-		o.ErrorPrintf("The %s value, %q, cannot be used.\n", searchTopDirFlag, rawValue.Value)
-		o.Log(output.Error, "the file is not a directory", map[string]any{
-			searchTopDirFlag: rawValue.Value,
-			"user-set":       rawValue.UserSet,
-		})
-		o.ErrorPrintln("Why?")
-		switch rawValue.UserSet {
-		case true:
-			o.ErrorPrintln("The value you specified is not the name of a directory.")
-			o.ErrorPrintln("What to do:")
-			o.ErrorPrintln("Specify a value that is the name of a directory.")
-		default:
-			o.ErrorPrintln("The currently configured value is not the name of a directory.")
-			o.ErrorPrintln("What to do:")
-			o.ErrorPrintf(
-				"Edit the configuration file or specify %s with a value that is the name of a directory.\n",
-				searchTopDirFlag,
-			)
-		}
-		return
+		o.Log(output.Error, "the file is not a directory", map[string]any{"directory": musicDir})
+		reportBadMusicDir(o, musicDir)
+		return "", false
 	}
-	dir = rawValue.Value
-	topDirValid = true
-	return
+	return musicDir, true
+}
+
+func reportBadMusicDir(o output.Bus, musicDir string) {
+	o.ErrorPrintf("The music directory value, %q, cannot be used.\n", musicDir)
+	o.ErrorPrintln("Why?")
+	o.ErrorPrintln("The value is not a readable folder.")
+	o.ErrorPrintln("What to do:")
+	o.ErrorPrintln("Set XDG_MUSIC_DIR to a value that is a readable folder.")
 }
 
 type filterFlag struct {
@@ -366,12 +331,12 @@ func (ss *searchSettings) filter(o output.Bus, originalArtists []*files.Artist) 
 }
 
 func (ss *searchSettings) load(o output.Bus) []*files.Artist {
-	artistFiles, dirRead := readDirectory(o, ss.topDirectory)
+	artistFiles, dirRead := readDirectory(o, ss.musicDir)
 	artists := make([]*files.Artist, 0, len(artistFiles))
 	if dirRead {
 		for _, artistFile := range artistFiles {
 			if artistFile.IsDir() {
-				artist := files.NewArtistFromFile(artistFile, ss.topDirectory)
+				artist := files.NewArtistFromFile(artistFile, ss.musicDir)
 				ss.addAlbums(o, artist)
 				artists = append(artists, artist)
 			}
@@ -380,11 +345,11 @@ func (ss *searchSettings) load(o output.Bus) []*files.Artist {
 	if len(artists) == 0 {
 		o.ErrorPrintln("No mp3 files could be found using the specified parameters.")
 		o.ErrorPrintln("Why?")
-		o.ErrorPrintf("There were no directories found in %q (the %s value).\n", ss.topDirectory, searchTopDirFlag)
+		o.ErrorPrintf("There were no directories found in %q.\n", ss.musicDir)
 		o.ErrorPrintln("What to do:")
-		o.ErrorPrintf("Set %s to the path of a directory that contains artist directories.\n", searchTopDirFlag)
+		o.ErrorPrintln("Set XDG_MUSIC_DIR to the path of a directory that contains artist directories.")
 		o.Log(output.Error, "cannot find any artist directories", map[string]any{
-			searchTopDirFlag: ss.topDirectory,
+			"$XDG_MUSIC_DIR": ss.musicDir,
 		})
 	}
 	return artists

@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"testing"
 
+	"github.com/adrg/xdg"
 	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"
@@ -194,6 +195,11 @@ func Test_postRepairRun(t *testing.T) {
 	defer func() {
 		bus = originalBus
 	}()
+	originalMusicDir := xdg.UserDirs.Music
+	defer func() {
+		xdg.UserDirs.Music = originalMusicDir
+	}()
+	xdg.UserDirs.Music = "."
 	command := &cobra.Command{}
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), command.Flags(),
 		safeSearchFlags)
@@ -211,13 +217,13 @@ func Test_postRepairRun(t *testing.T) {
 				Error: "" +
 					"No mp3 files could be found using the specified parameters.\n" +
 					"Why?\n" +
-					"There were no directories found in \".\" (the --topDir value).\n" +
+					"There were no directories found in \".\".\n" +
 					"What to do:\n" +
-					"Set --topDir to the path of a directory that contains artist" +
+					"Set XDG_MUSIC_DIR to the path of a directory that contains artist" +
 					" directories.\n",
 				Log: "" +
 					"level='error'" +
-					" --topDir='.'" +
+					" $XDG_MUSIC_DIR='.'" +
 					" msg='cannot find any artist directories'\n",
 			},
 		},
@@ -233,6 +239,11 @@ func Test_postRepairRun(t *testing.T) {
 }
 
 func Test_postRepair_Help(t *testing.T) {
+	originalMusicDir := xdg.UserDirs.Music
+	defer func() {
+		xdg.UserDirs.Music = originalMusicDir
+	}()
+	xdg.UserDirs.Music = "."
 	commandUnderTest := cloneCommand(postRepairCmd)
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), safeSearchFlags)
@@ -247,7 +258,7 @@ func Test_postRepair_Help(t *testing.T) {
 					"\n" +
 					"Usage:\n" +
 					"  postRepair [--albumFilter regex] [--artistFilter regex]" +
-					" [--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +
+					" [--trackFilter regex] [--extensions extensions]\n" +
 					"\n" +
 					"Flags:\n" +
 					"      --albumFilter string    regular expression specifying which" +
@@ -256,8 +267,6 @@ func Test_postRepair_Help(t *testing.T) {
 					" artists to select (default \".*\")\n" +
 					"      --extensions string     comma-delimited list of file extensions" +
 					" used by mp3 files (default \".mp3\")\n" +
-					"      --topDir string         top directory specifying where to find" +
-					" mp3 files (default \".\")\n" +
 					"      --trackFilter string    regular expression specifying which" +
 					" tracks to select (default \".*\")\n",
 			},
@@ -275,6 +284,11 @@ func Test_postRepair_Help(t *testing.T) {
 }
 
 func Test_postRepair_Usage(t *testing.T) {
+	originalMusicDir := xdg.UserDirs.Music
+	defer func() {
+		xdg.UserDirs.Music = originalMusicDir
+	}()
+	xdg.UserDirs.Music = "."
 	commandUnderTest := cloneCommand(postRepairCmd)
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), safeSearchFlags)
@@ -286,7 +300,7 @@ func Test_postRepair_Usage(t *testing.T) {
 				Console: "" +
 					"Usage:\n" +
 					"  postRepair [--albumFilter regex] [--artistFilter regex]" +
-					" [--trackFilter regex] [--topDir dir] [--extensions extensions]\n" +
+					" [--trackFilter regex] [--extensions extensions]\n" +
 					"\n" +
 					"Flags:\n" +
 					"      --albumFilter string    regular expression specifying which" +
@@ -295,8 +309,6 @@ func Test_postRepair_Usage(t *testing.T) {
 					" artists to select (default \".*\")\n" +
 					"      --extensions string     comma-delimited list of file extensions" +
 					" used by mp3 files (default \".mp3\")\n" +
-					"      --topDir string         top directory specifying where to find" +
-					" mp3 files (default \".\")\n" +
 					"      --trackFilter string    regular expression specifying which" +
 					" tracks to select (default \".*\")\n",
 			},

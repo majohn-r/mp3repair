@@ -11,9 +11,16 @@ Key to symbols
 - 😒 change is invisible to the user
 - 🆕 new feature
 
+## v0.45.0
+
+_pre-release `2025-11-01`_
+
+- ⚠️ fixed [issue 206](https://github.com/majohn-r/mp3repair/issues/206) to use the `XDG` music dir instead of a
+command-line `--topDir` argument.
+
 ## v0.44.4
 
-_pre-release `2025-19-31`_
+_pre-release `2025-10-31`_
 
 - ⚠️ log files used to be written to a temp folder (typically `%HOME%\AppData\Local\Temp\mp3repair\logs`); they're now
 written to `%HOME%\AppData\Local\mp3repair\logs`.

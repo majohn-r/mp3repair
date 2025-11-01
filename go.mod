@@ -3,6 +3,7 @@ module mp3repair
 go 1.25
 
 require (
+	github.com/adrg/xdg v0.5.3
 	github.com/bogem/id3v2/v2 v2.1.4
 	github.com/cheggaaa/pb/v3 v3.1.7
 	github.com/google/go-cmp v0.7.0
@@ -15,7 +16,6 @@ require (
 
 require (
 	github.com/VividCortex/ewma v1.2.0 // indirect
-	github.com/adrg/xdg v0.5.3 // indirect
 	github.com/clipperhouse/stringish v0.1.1 // indirect
 	github.com/clipperhouse/uax29/v2 v2.3.0 // indirect
 	github.com/fatih/color v1.18.0 // indirect
