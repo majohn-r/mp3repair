@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/goyek/goyek/v2"
+	"github.com/goyek/goyek/v3"
 	"github.com/josephspurrier/goversioninfo"
 	toolsbuild "github.com/majohn-r/tools-build"
 	"github.com/spf13/afero"
