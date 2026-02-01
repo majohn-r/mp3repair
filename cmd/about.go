@@ -26,8 +26,8 @@ var (
 	aboutCmd = &cobra.Command{
 		Use:                   aboutCommand + " [" + aboutStyleFlag + " name]",
 		DisableFlagsInUseLine: true,
-		Short:                 "Provides information about the " + applicationName + " program",
-		Long:                  genLongHelp(),
+		Short:                 genAboutShortHelp(cmdtoolkit.AppName()),
+		Long:                  getAboutLongHelp(cmdtoolkit.AppName()),
 		Example: aboutCommand + " " + aboutStyleFlag + " name\n" +
 			"  Write 'about' information in a box of the named style.\n" +
 			"  Valid names are:\n" +
@@ -71,9 +71,13 @@ var (
 	)
 )
 
-func genLongHelp() string {
+func genAboutShortHelp(appName string) string {
+	return "Provides information about the " + appName + " program"
+}
+
+func getAboutLongHelp(appName string) string {
 	return fmt.Sprintf("%q", aboutCommand) +
-		" provides the following information about the " + applicationName + " program:\n\n" +
+		" provides the following information about the " + appName + " program:\n\n" +
 		"• The program version and build timestamp\n" +
 		"• Copyright information\n" +
 		"• Build information:\n" +
@@ -81,7 +85,7 @@ func genLongHelp() string {
 		"  • A list of dependencies and their versions\n" +
 		"• The directory where log files are written\n" +
 		"• The full path of the application configuration file and whether it exists\n" +
-		"• Whether " + applicationName + " is running with elevated privileges, and, if not, why not"
+		"• Whether " + appName + " is running with elevated privileges, and, if not, why not"
 }
 
 func aboutRun(cmd *cobra.Command, _ []string) error {

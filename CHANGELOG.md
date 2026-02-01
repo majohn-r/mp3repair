@@ -11,6 +11,14 @@ Key to symbols
 - 😒 change is invisible to the user
 - 🆕 new feature
 
+## v0.45.2
+
+_pre-release `2026-02-01`_
+
+- 🐛 fixed missing application name in help output.
+- 🐛 first shot at a user-focused README.
+- 😒 updated dependencies.
+
 ## v0.45.1
 
 _pre-release `2026-01-24`_

@@ -128,7 +128,7 @@ func Test_about_Help(t *testing.T) {
 		rootCmd = originalRootCmd
 	}()
 	applicationName = "mp3repair"
-	aboutCmd.Long = genLongHelp()
+	aboutCmd.Long = getAboutLongHelp(applicationName)
 	rootCmd.Use = applicationName
 	tests := map[string]struct {
 		output.WantedRecording

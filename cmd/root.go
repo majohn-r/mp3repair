@@ -23,7 +23,7 @@ const (
 )
 
 var (
-	applicationName string
+	applicationName = cmdtoolkit.AppName()
 	rootCmd         = &cobra.Command{
 		SilenceErrors: true,
 		Use:           applicationName,
@@ -89,9 +89,6 @@ func getConfiguration() *cmdtoolkit.Configuration {
 func initGlobals() {
 	initLock.Lock()
 	defer initLock.Unlock()
-	if applicationName == "" {
-		applicationName = cmdtoolkit.AppName()
-	}
 	if !initialized {
 		bus = newDefaultBus(cmdtoolkit.ProductionLogger)
 		configOk := false
