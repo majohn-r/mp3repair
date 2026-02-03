@@ -29,7 +29,9 @@ func main() {
 	// add self-promoted flag to os.Args
 	originalArgs := os.Args
 	os.Args = injectSelfPromotion(os.Args)
-	if !elevationControl.WillRunElevated() {
+	attemptError, elevationStatus := elevationControl.AttemptRunElevated()
+	cmd.ElevationError(attemptError)
+	if !elevationStatus {
 		configureExit(selfPromoted)
 		os.Args = originalArgs
 		executor()

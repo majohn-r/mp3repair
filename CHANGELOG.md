@@ -11,6 +11,12 @@ Key to symbols
 - 😒 change is invisible to the user
 - 🆕 new feature
 
+## v0.45.3
+
+_pre-release `2026-02-03`_
+
+- 🐛 fix [issue 210](https://github.com/majohn-r/mp3repair/issues/210)
+
 ## v0.45.2
 
 _pre-release `2026-02-01`_

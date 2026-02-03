@@ -7,7 +7,7 @@ require (
 	github.com/bogem/id3v2/v2 v2.1.4
 	github.com/cheggaaa/pb/v3 v3.1.7
 	github.com/google/go-cmp v0.7.0
-	github.com/majohn-r/cmd-toolkit v0.29.4
+	github.com/majohn-r/cmd-toolkit v0.30.0
 	github.com/majohn-r/output v0.10.1
 	github.com/spf13/afero v1.15.0
 	github.com/spf13/cobra v1.10.2
