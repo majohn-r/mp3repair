@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"errors"
 	"fmt"
 	"strings"
 
@@ -70,14 +69,7 @@ var (
 		ElevatedPrivilegesPermissionVar,
 		DefaultElevatedPrivilegesPermission,
 	)
-	elevationError error
 )
-
-func ElevationError(e error) {
-	if e != nil && !errors.Is(e, &cmdtoolkit.ElevationNotAttempted{}) {
-		elevationError = e
-	}
-}
 
 func genAboutShortHelp(appName string) string {
 	return "Provides information about the " + appName + " program"
@@ -159,9 +151,6 @@ func acquireAboutData(o output.Bus) []string {
 		for _, s := range elevationData[1:] {
 			lines = append(lines, fmt.Sprintf(" - %s", s))
 		}
-	}
-	if elevationError != nil {
-		lines = append(lines, fmt.Sprintf("Privilege elevation failed: %[1]q (%[1]T)", elevationError))
 	}
 	return lines
 }

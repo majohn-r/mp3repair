@@ -1,8 +1,6 @@
 package cmd
 
 import (
-	"errors"
-	"fmt"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -208,7 +206,6 @@ func Test_acquireAboutData(t *testing.T) {
 	originalCachedGoVersion := cachedGoVersion
 	originalCachedBuildDependencies := cachedBuildDependencies
 	originalApplicationName := applicationName
-	originalElevationError := elevationError
 	defer func() {
 		logPath = originalLogPath
 		version = originalVersion
@@ -219,7 +216,6 @@ func Test_acquireAboutData(t *testing.T) {
 		cachedGoVersion = originalCachedGoVersion
 		cachedBuildDependencies = originalCachedBuildDependencies
 		applicationName = originalApplicationName
-		elevationError = originalElevationError
 	}()
 	cachedGoVersion = "go1.22.x"
 	cachedBuildDependencies = []string{
@@ -274,11 +270,9 @@ func Test_acquireAboutData(t *testing.T) {
 		"without existing config file, not elevated, redirected, with admin permission": {
 			preTest: func() {
 				_ = fs.Mkdir(cmdtoolkit.ApplicationPath(), cmdtoolkit.StdDirPermissions)
-				ElevationError(fmt.Errorf("user declined"))
 			},
 			postTest: func() {
 				_ = fs.RemoveAll(cmdtoolkit.ApplicationPath())
-				elevationError = originalElevationError
 			},
 			forceElevated:        false,
 			forceRedirection:     true,
@@ -295,7 +289,6 @@ func Test_acquireAboutData(t *testing.T) {
 				"Configuration file \\my\\files\\apppath\\defaults.yaml does not yet exist",
 				"mp3repair is not running with elevated privileges",
 				" - stderr, stdin, and stdout have been redirected",
-				"Privilege elevation failed: \"user declined\" (*errors.errorString)",
 			},
 		},
 		"without existing config file, not elevated, redirected, no admin permission": {
@@ -435,29 +428,6 @@ func Test_interpretStyle(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			if got := interpretStyle(tt.flag); got != tt.want {
 				t.Errorf("interpretStyle() = %v, want %v", got, tt.want)
-			}
-		})
-	}
-}
-
-func TestElevationError(t *testing.T) {
-	originalElevationError := elevationError
-	defer func() { elevationError = originalElevationError }()
-	testError := fmt.Errorf("test error")
-	tests := map[string]struct {
-		e    error
-		want error
-	}{
-		"nil":          {e: nil, want: nil},
-		"cannot do it": {e: &cmdtoolkit.ElevationNotAttempted{}, want: nil},
-		"proper error": {e: testError, want: testError},
-	}
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
-			elevationError = nil
-			ElevationError(tt.e)
-			if !errors.Is(elevationError, tt.want) {
-				t.Errorf("elevationError() = %v, want %v", elevationError, tt.want)
 			}
 		})
 	}
