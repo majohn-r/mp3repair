@@ -60,16 +60,16 @@ Then scan for problems in the track metadata:
 
 ` + name + ` ` + scanCommand + ` ` + scanFilesFlag + `
 
-If problems were found, repair the mp3 files:
+If problems were found, rewrite the mp3 files:
 
-` + name + ` ` + repairCommandName + `
-The ` + repairCommandName + ` command creates backup files for each track it rewrites. After
-listening to the files that have been repaired (verifying that the repair
+` + name + ` ` + rewriteCommandName + `
+The ` + rewriteCommandName + ` command creates backup files for each track it rewrites. After
+listening to the files that have been rewritten (verifying that the rewrite
 process did not corrupt the audio), clean up those backups:
 
 ` + name + ` ` + cleanupCommandName + `
 
-After repairing the mp3 files, the Windows Media Player library may be out of
+After rewriting the mp3 files, the Windows Media Player library may be out of
 sync with the changes. While the library will eventually catch up, accelerate
 the process:
 

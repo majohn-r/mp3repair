@@ -18,10 +18,10 @@ var (
 		Use:                   cleanupCommandName + " " + searchUsage,
 		DisableFlagsInUseLine: true,
 		Short: "Deletes the backup directories, and their contents, created" +
-			" by the " + repairCommandName + " command",
+			" by the " + rewriteCommandName + " command",
 		Long: fmt.Sprintf(
 			"%q deletes the backup directories (and their contents) created by the %q command",
-			cleanupCommandName, repairCommandName),
+			cleanupCommandName, rewriteCommandName),
 		RunE: cleanupRun,
 	}
 )

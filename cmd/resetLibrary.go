@@ -45,7 +45,7 @@ var (
 		Short:                 "Resets the Windows Media Player library",
 		Long: fmt.Sprintf("%q", resetLibraryCommandName) + ` resets the Windows Media Player library
 
-The changes made by the '` + repairCommandName + `' command make the mp3 files inconsistent with the
+The changes made by the '` + rewriteCommandName + `' command make the mp3 files inconsistent with the
 Windows Media Player library which organizes the files into albums and artists. This command
 resets that library, which it accomplishes by deleting the library files.
 
@@ -55,7 +55,7 @@ there is such an active service, this command will need to be run as administrat
 whatever reasons, the service cannot be stopped, using the` +
 			"\n" + resetLibraryIgnoreServiceErrorsFlag + ` flag allows the library files to be deleted, if possible.
 
-This command does nothing if it determines that the ` + repairCommandName + ` command has not made any
+This command does nothing if it determines that the ` + rewriteCommandName + ` command has not made any
 changes, unless the ` + resetLibraryForceFlag + ` flag is set.`,
 		RunE: resetLibraryRun,
 	}

@@ -1,6 +1,6 @@
 package files
 
-const backupDirName = "pre-repair-backup"
+const backupDirName = "pre-rewrite-backup"
 
 // identifies whether the specified rune is an illegal file name character as defined here:
 // https://docs.microsoft.com/en-us/windows/win32/fileio/naming-a-file

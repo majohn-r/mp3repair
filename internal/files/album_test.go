@@ -125,7 +125,7 @@ func TestAlbum_BackupDirectory(t *testing.T) {
 	}{
 		"simple": {
 			a:    AlbumMaker{Title: "album", Directory: "artist/album"}.NewAlbum(false),
-			want: "artist\\album\\pre-repair-backup",
+			want: "artist\\album\\pre-rewrite-backup",
 		},
 	}
 	for name, tt := range tests {

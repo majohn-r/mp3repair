@@ -1043,7 +1043,7 @@ func Test_resetLibrary_Help(t *testing.T) {
 				Console: "" +
 					"\"resetLibrary\" resets the Windows Media Player library\n" +
 					"\n" +
-					"The changes made by the 'repair' command make the mp3 files inconsistent with the\n" +
+					"The changes made by the 'rewrite' command make the mp3 files inconsistent with the\n" +
 					"Windows Media Player library which organizes the files into albums and artists. This command\n" +
 					"resets that library, which it accomplishes by deleting the library files.\n" +
 					"\n" +
@@ -1054,7 +1054,7 @@ func Test_resetLibrary_Help(t *testing.T) {
 					"whatever reasons, the service cannot be stopped, using the\n" +
 					"--ignoreServiceErrors flag allows the library files to be deleted, if possible.\n" +
 					"\n" +
-					"This command does nothing if it determines that the repair command has not made any\n" +
+					"This command does nothing if it determines that the rewrite command has not made any\n" +
 					"changes, unless the --force flag is set.\n" +
 					"\n" +
 					"Usage:\n" +

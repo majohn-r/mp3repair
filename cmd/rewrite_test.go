@@ -17,16 +17,16 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func Test_processRepairFlags(t *testing.T) {
+func Test_processRewriteFlags(t *testing.T) {
 	tests := map[string]struct {
 		values map[string]*cmdtoolkit.CommandFlag[any]
-		want   *repairSettings
+		want   *rewriteSettings
 		want1  bool
 		output.WantedRecording
 	}{
 		"bad value": {
 			values: map[string]*cmdtoolkit.CommandFlag[any]{},
-			want:   &repairSettings{},
+			want:   &rewriteSettings{},
 			want1:  false,
 			WantedRecording: output.WantedRecording{
 				Error: "An internal error occurred: flag \"dryRun\" is not found.\n",
@@ -39,21 +39,21 @@ func Test_processRepairFlags(t *testing.T) {
 		},
 		"good value": {
 			values: map[string]*cmdtoolkit.CommandFlag[any]{"dryRun": {Value: true}},
-			want:   &repairSettings{dryRun: cmdtoolkit.CommandFlag[bool]{Value: true}},
+			want:   &rewriteSettings{dryRun: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			want1:  true,
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			got, got1 := processRepairFlags(o, tt.values)
+			got, got1 := processRewriteFlags(o, tt.values)
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("processRepairFlags() got = %v, want %v", got, tt.want)
+				t.Errorf("processRewriteFlags() got = %v, want %v", got, tt.want)
 			}
 			if got1 != tt.want1 {
-				t.Errorf("processRepairFlags() got1 = %v, want %v", got1, tt.want1)
+				t.Errorf("processRewriteFlags() got1 = %v, want %v", got1, tt.want1)
 			}
-			o.Report(t, "processRepairFlags()", tt.WantedRecording)
+			o.Report(t, "processRewriteFlags()", tt.WantedRecording)
 		})
 	}
 }
@@ -99,14 +99,14 @@ func Test_ensureTrackBackupDirectoryExists(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"The directory" +
-					" \"Music\\\\my artist\\\\my album 00\\\\pre-repair-backup\"" +
+					" \"Music\\\\my artist\\\\my album 00\\\\pre-rewrite-backup\"" +
 					" cannot be created: 'plain file exists'.\n" +
 					"The track files in the directory" +
-					" \"Music\\\\my artist\\\\my album 00\" will not be repaired.\n",
+					" \"Music\\\\my artist\\\\my album 00\" will not be rewritten.\n",
 				Log: "" +
 					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 00\\pre-repair-backup'" +
+					" command='rewrite'" +
+					" directory='Music\\my artist\\my album 00\\pre-rewrite-backup'" +
 					" error='plain file exists'" +
 					" msg='cannot create directory'\n",
 			},
@@ -165,7 +165,7 @@ func Test_tryTrackBackup(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Log: "" +
 					"level='info'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" file='backupDir\\1.mp3'" +
 					" modTime='" + safeTime.Format("2006-01-02 15:04:05") + "'" +
 					" msg='file already exists'\n",
@@ -181,7 +181,7 @@ func Test_tryTrackBackup(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Log: "" +
 					"level='info'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" file='backupDir\\1.mp3'" +
 					" modTime='error getting modification time: file disappeared'" +
 					" msg='file already exists'\n",
@@ -201,10 +201,10 @@ func Test_tryTrackBackup(t *testing.T) {
 					" could not be backed up due to error 'dir by that name exists'.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\"" +
-					" will not be repaired.\n",
+					" will not be rewritten.\n",
 				Log: "" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" destination='backupDir\\1.mp3' error='dir by that name exists'" +
 					" source='Music\\my artist\\my album 00\\1 my track 001.mp3'" +
 					" msg='error copying file'\n",
@@ -237,7 +237,7 @@ func Test_tryTrackBackup(t *testing.T) {
 	}
 }
 
-func Test_processTrackRepairResults(t *testing.T) {
+func Test_processTrackRewriteResults(t *testing.T) {
 	originalMarkDirty := markDirty
 	defer func() {
 		markDirty = originalMarkDirty
@@ -265,24 +265,23 @@ func Test_processTrackRepairResults(t *testing.T) {
 			wantDirty:  true,
 			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
-				Console: "\"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\"" +
-					" repaired.\n",
+				Console: "\"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\" rewritten.\n",
 			},
 		},
 		"single failure": {
 			args:       args{t: track, err: []error{fmt.Errorf("file locked")}},
 			wantDirty:  false,
-			wantStatus: cmdtoolkit.NewExitSystemError("repair"),
+			wantStatus: cmdtoolkit.NewExitSystemError("rewrite"),
 			WantedRecording: output.WantedRecording{
-				Error: "An error occurred repairing track" +
+				Error: "An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\".\n",
 				Log: "" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 00'" +
 					" error='[\"file locked\"]'" +
 					" fileName='1 my track 001.mp3'" +
-					" msg='cannot edit track'\n",
+					" msg='cannot rewrite track'\n",
 			},
 		},
 		"multiple failures": {
@@ -291,17 +290,17 @@ func Test_processTrackRepairResults(t *testing.T) {
 				err: []error{fmt.Errorf("file locked"), fmt.Errorf("syntax error")},
 			},
 			wantDirty:  false,
-			wantStatus: cmdtoolkit.NewExitSystemError("repair"),
+			wantStatus: cmdtoolkit.NewExitSystemError("rewrite"),
 			WantedRecording: output.WantedRecording{
-				Error: "An error occurred repairing track" +
+				Error: "An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\".\n",
 				Log: "" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 00'" +
 					" error='[\"file locked\", \"syntax error\"]'" +
 					" fileName='1 my track 001.mp3'" +
-					" msg='cannot edit track'\n",
+					" msg='cannot rewrite track'\n",
 			},
 		},
 	}
@@ -309,18 +308,18 @@ func Test_processTrackRepairResults(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			markedDirty = false
-			if got := processTrackRepairResults(o, tt.args.t, tt.args.err); !compareExitErrors(got, tt.wantStatus) {
-				t.Errorf("processTrackRepairResults() got %s want %s", got, tt.wantStatus)
+			if got := processTrackRewriteResults(o, tt.args.t, tt.args.err); !compareExitErrors(got, tt.wantStatus) {
+				t.Errorf("processTrackRewriteResults() got %s want %s", got, tt.wantStatus)
 			}
 			if got := markedDirty; got != tt.wantDirty {
-				t.Errorf("processTrackRepairResults() got %t want %t", got, tt.wantDirty)
+				t.Errorf("processTrackRewriteResults() got %t want %t", got, tt.wantDirty)
 			}
-			o.Report(t, "processTrackRepairResults()", tt.WantedRecording)
+			o.Report(t, "processTrackRewriteResults()", tt.WantedRecording)
 		})
 	}
 }
 
-func Test_backupAndRepairTracks(t *testing.T) {
+func Test_backupAndRewriteTracks(t *testing.T) {
 	concernedArtists := createConcernedArtists(generateArtists(2, 3, 4, nil))
 	skipArtist := true
 	skipAlbum := true
@@ -366,95 +365,95 @@ func Test_backupAndRepairTracks(t *testing.T) {
 			plainFileExists:  func(_ string) bool { return false },
 			copyFile:         func(_, _ string) error { return nil },
 			concernedArtists: concernedArtists,
-			wantStatus:       cmdtoolkit.NewExitSystemError("repair"),
+			wantStatus:       cmdtoolkit.NewExitSystemError("rewrite"),
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 11\\\\2 my track 112.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 11\\\\pre-repair-backup\\\\2.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 11\\\\pre-rewrite-backup\\\\2.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 11\\\\3 my track 113.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 11\\\\pre-repair-backup\\\\3.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 11\\\\pre-rewrite-backup\\\\3.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 11\\\\4 my track 114.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 11\\\\pre-repair-backup\\\\4.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 11\\\\pre-rewrite-backup\\\\4.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\1 my track 121.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 12\\\\pre-repair-backup\\\\1.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 12\\\\pre-rewrite-backup\\\\1.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\2 my track 122.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 12\\\\pre-repair-backup\\\\2.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 12\\\\pre-rewrite-backup\\\\2.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\3 my track 123.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 12\\\\pre-repair-backup\\\\3.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 12\\\\pre-rewrite-backup\\\\3.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\4 my track 124.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 12\\\\pre-repair-backup\\\\4.mp3\".\n",
+					" \"Music\\\\my artist\\\\my album 12\\\\pre-rewrite-backup\\\\4.mp3\".\n",
 				Error: "" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 11\\\\2 my track 112.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 11\\\\3 my track 113.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 11\\\\4 my track 114.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 12\\\\1 my track 121.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 12\\\\2 my track 122.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 12\\\\3 my track 123.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 12\\\\4 my track 124.mp3\".\n",
 				Log: "" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 11'" +
 					" error='[\"no edit required\"]'" +
 					" fileName='2 my track 112.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 11'" +
 					" error='[\"no edit required\"]'" +
 					" fileName='3 my track 113.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 11'" +
 					" error='[\"no edit required\"]'" +
 					" fileName='4 my track 114.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 12'" +
 					" error='[\"no edit required\"]'" +
 					" fileName='1 my track 121.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 12'" +
 					" error='[\"no edit required\"]'" +
 					" fileName='2 my track 122.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 12'" +
 					" error='[\"no edit required\"]'" +
 					" fileName='3 my track 123.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 12'" +
 					" error='[\"no edit required\"]'" +
 					" fileName='4 my track 124.mp3'" +
-					" msg='cannot edit track'\n",
+					" msg='cannot rewrite track'\n",
 			},
 		},
 		"basic test2": {
@@ -462,28 +461,28 @@ func Test_backupAndRepairTracks(t *testing.T) {
 			plainFileExists:  func(_ string) bool { return false },
 			copyFile:         func(_, _ string) error { return nil },
 			concernedArtists: concernedArtists,
-			wantStatus:       cmdtoolkit.NewExitSystemError("repair"),
+			wantStatus:       cmdtoolkit.NewExitSystemError("rewrite"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"The directory" +
-					" \"Music\\\\my artist\\\\my album 11\\\\pre-repair-backup\"" +
+					" \"Music\\\\my artist\\\\my album 11\\\\pre-rewrite-backup\"" +
 					" cannot be created: 'parent directory is not a directory'.\n" +
 					"The track files in the directory" +
-					" \"Music\\\\my artist\\\\my album 11\" will not be repaired.\n" +
+					" \"Music\\\\my artist\\\\my album 11\" will not be rewritten.\n" +
 					"The directory" +
-					" \"Music\\\\my artist\\\\my album 12\\\\pre-repair-backup\"" +
+					" \"Music\\\\my artist\\\\my album 12\\\\pre-rewrite-backup\"" +
 					" cannot be created: 'parent directory is not a directory'.\n" +
 					"The track files in the directory" +
-					" \"Music\\\\my artist\\\\my album 12\" will not be repaired.\n",
+					" \"Music\\\\my artist\\\\my album 12\" will not be rewritten.\n",
 				Log: "" +
 					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 11\\pre-repair-backup'" +
+					" command='rewrite'" +
+					" directory='Music\\my artist\\my album 11\\pre-rewrite-backup'" +
 					" error='parent directory is not a directory'" +
 					" msg='cannot create directory'\n" +
 					"level='error'" +
-					" command='repair'" +
-					" directory='Music\\my artist\\my album 12\\pre-repair-backup'" +
+					" command='rewrite'" +
+					" directory='Music\\my artist\\my album 12\\pre-rewrite-backup'" +
 					" error='parent directory is not a directory'" +
 					" msg='cannot create directory'\n",
 			},
@@ -493,7 +492,7 @@ func Test_backupAndRepairTracks(t *testing.T) {
 			plainFileExists:  func(_ string) bool { return false },
 			copyFile:         func(_, _ string) error { return fmt.Errorf("oops") },
 			concernedArtists: concernedArtists,
-			wantStatus:       cmdtoolkit.NewExitSystemError("repair"),
+			wantStatus:       cmdtoolkit.NewExitSystemError("rewrite"),
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"The track file" +
@@ -501,83 +500,83 @@ func Test_backupAndRepairTracks(t *testing.T) {
 					" could not be backed up due to error 'oops'.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 11\\\\2 my track 112.mp3\"" +
-					" will not be repaired.\n" +
+					" will not be rewritten.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 11\\\\3 my track 113.mp3\"" +
 					" could not be backed up due to error 'oops'.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 11\\\\3 my track 113.mp3\"" +
-					" will not be repaired.\n" +
+					" will not be rewritten.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 11\\\\4 my track 114.mp3\"" +
 					" could not be backed up due to error 'oops'.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 11\\\\4 my track 114.mp3\"" +
-					" will not be repaired.\n" +
+					" will not be rewritten.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\1 my track 121.mp3\"" +
 					" could not be backed up due to error 'oops'.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\1 my track 121.mp3\"" +
-					" will not be repaired.\n" +
+					" will not be rewritten.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\2 my track 122.mp3\"" +
 					" could not be backed up due to error 'oops'.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\2 my track 122.mp3\"" +
-					" will not be repaired.\n" +
+					" will not be rewritten.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\3 my track 123.mp3\"" +
 					" could not be backed up due to error 'oops'.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\3 my track 123.mp3\"" +
-					" will not be repaired.\n" +
+					" will not be rewritten.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\4 my track 124.mp3\"" +
 					" could not be backed up due to error 'oops'.\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\4 my track 124.mp3\"" +
-					" will not be repaired.\n",
+					" will not be rewritten.\n",
 				Log: "" +
 					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 11\\pre-repair-backup\\2.mp3'" +
+					" command='rewrite'" +
+					" destination='Music\\my artist\\my album 11\\pre-rewrite-backup\\2.mp3'" +
 					" error='oops'" +
 					" source='Music\\my artist\\my album 11\\2 my track 112.mp3'" +
 					" msg='error copying file'\n" +
 					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 11\\pre-repair-backup\\3.mp3'" +
+					" command='rewrite'" +
+					" destination='Music\\my artist\\my album 11\\pre-rewrite-backup\\3.mp3'" +
 					" error='oops'" +
 					" source='Music\\my artist\\my album 11\\3 my track 113.mp3'" +
 					" msg='error copying file'\n" +
 					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 11\\pre-repair-backup\\4.mp3'" +
+					" command='rewrite'" +
+					" destination='Music\\my artist\\my album 11\\pre-rewrite-backup\\4.mp3'" +
 					" error='oops'" +
 					" source='Music\\my artist\\my album 11\\4 my track 114.mp3'" +
 					" msg='error copying file'\n" +
 					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 12\\pre-repair-backup\\1.mp3'" +
+					" command='rewrite'" +
+					" destination='Music\\my artist\\my album 12\\pre-rewrite-backup\\1.mp3'" +
 					" error='oops'" +
 					" source='Music\\my artist\\my album 12\\1 my track 121.mp3'" +
 					" msg='error copying file'\n" +
 					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 12\\pre-repair-backup\\2.mp3'" +
+					" command='rewrite'" +
+					" destination='Music\\my artist\\my album 12\\pre-rewrite-backup\\2.mp3'" +
 					" error='oops'" +
 					" source='Music\\my artist\\my album 12\\2 my track 122.mp3'" +
 					" msg='error copying file'\n" +
 					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 12\\pre-repair-backup\\3.mp3'" +
+					" command='rewrite'" +
+					" destination='Music\\my artist\\my album 12\\pre-rewrite-backup\\3.mp3'" +
 					" error='oops'" +
 					" source='Music\\my artist\\my album 12\\3 my track 123.mp3'" +
 					" msg='error copying file'\n" +
 					"level='error'" +
-					" command='repair'" +
-					" destination='Music\\my artist\\my album 12\\pre-repair-backup\\4.mp3'" +
+					" command='rewrite'" +
+					" destination='Music\\my artist\\my album 12\\pre-rewrite-backup\\4.mp3'" +
 					" error='oops'" +
 					" source='Music\\my artist\\my album 12\\4 my track 124.mp3'" +
 					" msg='error copying file'\n",
@@ -590,15 +589,15 @@ func Test_backupAndRepairTracks(t *testing.T) {
 			plainFileExists = tt.plainFileExists
 			copyFile = tt.copyFile
 			o := output.NewRecorder()
-			if got := backupAndRepairTracks(o, tt.concernedArtists); !compareExitErrors(got, tt.wantStatus) {
-				t.Errorf("backupAndRepairTracks() got %s want %s", got, tt.wantStatus)
+			if got := backupAndRewriteTracks(o, tt.concernedArtists); !compareExitErrors(got, tt.wantStatus) {
+				t.Errorf("backupAndRewriteTracks() got %s want %s", got, tt.wantStatus)
 			}
-			o.Report(t, "backupAndRepairTracks()", tt.WantedRecording)
+			o.Report(t, "backupAndRewriteTracks()", tt.WantedRecording)
 		})
 	}
 }
 
-func Test_reportRepairsNeeded(t *testing.T) {
+func Test_reportRewritesNeeded(t *testing.T) {
 	dirty := createConcernedArtists(generateArtists(2, 3, 4, nil))
 	for _, cAr := range dirty {
 		for _, cAl := range cAr.albums() {
@@ -615,14 +614,14 @@ func Test_reportRepairsNeeded(t *testing.T) {
 		"clean": {
 			concernedArtists: clean,
 			WantedRecording: output.WantedRecording{
-				Console: "No repairable track defects were found.\n",
+				Console: "No rewritable track defects were found.\n",
 			},
 		},
 		"dirty": {
 			concernedArtists: dirty,
 			WantedRecording: output.WantedRecording{
 				Console: "" +
-					"The following concerns can be repaired:\n" +
+					"The following concerns can be rewritten:\n" +
 					"Artist \"my artist 0\"\n" +
 					"  Album \"my album 00\"\n" +
 					"    Track \"my track 001\"\n" +
@@ -685,8 +684,8 @@ func Test_reportRepairsNeeded(t *testing.T) {
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			reportRepairsNeeded(o, tt.concernedArtists)
-			o.Report(t, "reportRepairsNeeded()", tt.WantedRecording)
+			reportRewritesNeeded(o, tt.concernedArtists)
+			o.Report(t, "reportRewritesNeeded()", tt.WantedRecording)
 		})
 	}
 }
@@ -721,7 +720,7 @@ func Test_findConflictedTracks(t *testing.T) {
 	}
 }
 
-func Test_repairSettings_repairArtists(t *testing.T) {
+func Test_rewriteSettings_rewriteArtists(t *testing.T) {
 	originalReadMetadata := readMetadata
 	originalDirExists := dirExists
 	originalPlainFileExists := plainFileExists
@@ -752,26 +751,26 @@ func Test_repairSettings_repairArtists(t *testing.T) {
 	tm := maker.MakeMetadata()
 	dirty := generateArtists(2, 3, 4, tm)
 	tests := map[string]struct {
-		rs         *repairSettings
+		rs         *rewriteSettings
 		artists    []*files.Artist
 		wantStatus *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"clean dry run": {
-			rs:         &repairSettings{dryRun: cmdtoolkit.CommandFlag[bool]{Value: true}},
+			rs:         &rewriteSettings{dryRun: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			artists:    generateArtists(2, 3, 4, nil),
 			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
-				Console: "No repairable track defects were found.\n",
+				Console: "No rewritable track defects were found.\n",
 			},
 		},
 		"dirty dry run": {
-			rs:         &repairSettings{dryRun: cmdtoolkit.CommandFlag[bool]{Value: true}},
+			rs:         &rewriteSettings{dryRun: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			artists:    dirty,
 			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
 				Console: "" +
-					"The following concerns can be repaired:\n" +
+					"The following concerns can be rewritten:\n" +
 					"Artist \"my artist 0\"\n" +
 					"  Album \"my album 00\"\n" +
 					"    Track \"my track 001\"\n" +
@@ -1046,397 +1045,397 @@ func Test_repairSettings_repairArtists(t *testing.T) {
 					" the track number field does not match the track's file name\n",
 			},
 		},
-		"clean repair": {
-			rs:         &repairSettings{dryRun: cmdtoolkit.CommandFlag[bool]{Value: false}},
+		"clean rewrite": {
+			rs:         &rewriteSettings{dryRun: cmdtoolkit.CommandFlag[bool]{Value: false}},
 			artists:    generateArtists(2, 3, 4, nil),
 			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
-				Console: "No repairable track defects were found.\n",
+				Console: "No rewritable track defects were found.\n",
 			},
 		},
-		"dirty repair": {
-			rs:         &repairSettings{dryRun: cmdtoolkit.CommandFlag[bool]{Value: false}},
+		"dirty rewrite": {
+			rs:         &rewriteSettings{dryRun: cmdtoolkit.CommandFlag[bool]{Value: false}},
 			artists:    dirty,
-			wantStatus: cmdtoolkit.NewExitSystemError("repair"),
+			wantStatus: cmdtoolkit.NewExitSystemError("rewrite"),
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 00\\\\pre-repair-backup\\\\1.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 00\\\\pre-rewrite-backup\\\\1.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 00\\\\2 my track 002.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 00\\\\pre-repair-backup\\\\2.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 00\\\\pre-rewrite-backup\\\\2.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 00\\\\3 my track 003.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 00\\\\pre-repair-backup\\\\3.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 00\\\\pre-rewrite-backup\\\\3.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 00\\\\4 my track 004.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 00\\\\pre-repair-backup\\\\4.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 00\\\\pre-rewrite-backup\\\\4.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 01\\\\1 my track 011.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 01\\\\pre-repair-backup\\\\1.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 01\\\\pre-rewrite-backup\\\\1.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 01\\\\2 my track 012.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 01\\\\pre-repair-backup\\\\2.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 01\\\\pre-rewrite-backup\\\\2.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 01\\\\3 my track 013.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 01\\\\pre-repair-backup\\\\3.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 01\\\\pre-rewrite-backup\\\\3.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 01\\\\4 my track 014.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 01\\\\pre-repair-backup\\\\4.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 01\\\\pre-rewrite-backup\\\\4.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 02\\\\1 my track 021.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 02\\\\pre-repair-backup\\\\1.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 02\\\\pre-rewrite-backup\\\\1.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 02\\\\2 my track 022.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 02\\\\pre-repair-backup\\\\2.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 02\\\\pre-rewrite-backup\\\\2.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 02\\\\3 my track 023.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 02\\\\pre-repair-backup\\\\3.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 02\\\\pre-rewrite-backup\\\\3.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 02\\\\4 my track 024.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 02\\\\pre-repair-backup\\\\4.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 02\\\\pre-rewrite-backup\\\\4.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 10\\\\1 my track 101.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 10\\\\pre-repair-backup\\\\1.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 10\\\\pre-rewrite-backup\\\\1.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 10\\\\2 my track 102.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 10\\\\pre-repair-backup\\\\2.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 10\\\\pre-rewrite-backup\\\\2.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 10\\\\3 my track 103.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 10\\\\pre-repair-backup\\\\3.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 10\\\\pre-rewrite-backup\\\\3.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 10\\\\4 my track 104.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 10\\\\pre-repair-backup\\\\4.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 10\\\\pre-rewrite-backup\\\\4.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 11\\\\1 my track 111.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 11\\\\pre-repair-backup\\\\1.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 11\\\\pre-rewrite-backup\\\\1.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 11\\\\2 my track 112.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 11\\\\pre-repair-backup\\\\2.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 11\\\\pre-rewrite-backup\\\\2.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 11\\\\3 my track 113.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 11\\\\pre-repair-backup\\\\3.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 11\\\\pre-rewrite-backup\\\\3.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 11\\\\4 my track 114.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 11\\\\pre-repair-backup\\\\4.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 11\\\\pre-rewrite-backup\\\\4.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\1 my track 121.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 12\\\\pre-repair-backup\\\\1.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 12\\\\pre-rewrite-backup\\\\1.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\2 my track 122.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 12\\\\pre-repair-backup\\\\2.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 12\\\\pre-rewrite-backup\\\\2.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\3 my track 123.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 12\\\\pre-repair-backup\\\\3.mp3\".\n" +
+					" \"Music\\\\my artist\\\\my album 12\\\\pre-rewrite-backup\\\\3.mp3\".\n" +
 					"The track file" +
 					" \"Music\\\\my artist\\\\my album 12\\\\4 my track 124.mp3\"" +
 					" has been backed up to" +
-					" \"Music\\\\my artist\\\\my album 12\\\\pre-repair-backup\\\\4.mp3\".\n",
+					" \"Music\\\\my artist\\\\my album 12\\\\pre-rewrite-backup\\\\4.mp3\".\n",
 				Error: "" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 00\\\\2 my track 002.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 00\\\\3 my track 003.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 00\\\\4 my track 004.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 01\\\\1 my track 011.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 01\\\\2 my track 012.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 01\\\\3 my track 013.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 01\\\\4 my track 014.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 02\\\\1 my track 021.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 02\\\\2 my track 022.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 02\\\\3 my track 023.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 02\\\\4 my track 024.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 10\\\\1 my track 101.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 10\\\\2 my track 102.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 10\\\\3 my track 103.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 10\\\\4 my track 104.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 11\\\\1 my track 111.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 11\\\\2 my track 112.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 11\\\\3 my track 113.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 11\\\\4 my track 114.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 12\\\\1 my track 121.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 12\\\\2 my track 122.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 12\\\\3 my track 123.mp3\".\n" +
-					"An error occurred repairing track" +
+					"An error occurred rewriting track" +
 					" \"Music\\\\my artist\\\\my album 12\\\\4 my track 124.mp3\".\n",
 				Log: "level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 00'" +
 					" error='[\"open Music\\\\my artist\\\\my album 00\\\\1 my track" +
 					" 001.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 00\\\\1 my track 001.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='1 my track 001.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 00'" +
 					" error='[\"open Music\\\\my artist\\\\my album 00\\\\2 my track" +
 					" 002.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 00\\\\2 my track 002.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='2 my track 002.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 00'" +
 					" error='[\"open Music\\\\my artist\\\\my album 00\\\\3 my track" +
 					" 003.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 00\\\\3 my track 003.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='3 my track 003.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 00'" +
 					" error='[\"open Music\\\\my artist\\\\my album 00\\\\4 my track" +
 					" 004.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 00\\\\4 my track 004.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='4 my track 004.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 01'" +
 					" error='[\"open Music\\\\my artist\\\\my album 01\\\\1 my track" +
 					" 011.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 01\\\\1 my track 011.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='1 my track 011.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 01'" +
 					" error='[\"open Music\\\\my artist\\\\my album 01\\\\2 my track" +
 					" 012.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 01\\\\2 my track 012.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='2 my track 012.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 01'" +
 					" error='[\"open Music\\\\my artist\\\\my album 01\\\\3 my track" +
 					" 013.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 01\\\\3 my track 013.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='3 my track 013.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 01'" +
 					" error='[\"open Music\\\\my artist\\\\my album 01\\\\4 my track" +
 					" 014.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 01\\\\4 my track 014.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='4 my track 014.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 02'" +
 					" error='[\"open Music\\\\my artist\\\\my album 02\\\\1 my track" +
 					" 021.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 02\\\\1 my track 021.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='1 my track 021.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 02'" +
 					" error='[\"open Music\\\\my artist\\\\my album 02\\\\2 my track" +
 					" 022.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 02\\\\2 my track 022.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='2 my track 022.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 02'" +
 					" error='[\"open Music\\\\my artist\\\\my album 02\\\\3 my track" +
 					" 023.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 02\\\\3 my track 023.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='3 my track 023.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 02'" +
 					" error='[\"open Music\\\\my artist\\\\my album 02\\\\4 my track" +
 					" 024.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 02\\\\4 my track 024.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='4 my track 024.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 10'" +
 					" error='[\"open Music\\\\my artist\\\\my album 10\\\\1 my track" +
 					" 101.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 10\\\\1 my track 101.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='1 my track 101.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 10'" +
 					" error='[\"open Music\\\\my artist\\\\my album 10\\\\2 my track" +
 					" 102.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 10\\\\2 my track 102.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='2 my track 102.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 10'" +
 					" error='[\"open Music\\\\my artist\\\\my album 10\\\\3 my track" +
 					" 103.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 10\\\\3 my track 103.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='3 my track 103.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 10'" +
 					" error='[\"open Music\\\\my artist\\\\my album 10\\\\4 my track" +
 					" 104.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 10\\\\4 my track 104.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='4 my track 104.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 11'" +
 					" error='[\"open Music\\\\my artist\\\\my album 11\\\\1 my track" +
 					" 111.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 11\\\\1 my track 111.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='1 my track 111.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 11'" +
 					" error='[\"open Music\\\\my artist\\\\my album 11\\\\2 my track" +
 					" 112.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 11\\\\2 my track 112.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='2 my track 112.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 11'" +
 					" error='[\"open Music\\\\my artist\\\\my album 11\\\\3 my track" +
 					" 113.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 11\\\\3 my track 113.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='3 my track 113.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 11'" +
 					" error='[\"open Music\\\\my artist\\\\my album 11\\\\4 my track" +
 					" 114.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 11\\\\4 my track 114.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='4 my track 114.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 12'" +
 					" error='[\"open Music\\\\my artist\\\\my album 12\\\\1 my track" +
 					" 121.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 12\\\\1 my track 121.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='1 my track 121.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 12'" +
 					" error='[\"open Music\\\\my artist\\\\my album 12\\\\2 my track" +
 					" 122.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 12\\\\2 my track 122.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='2 my track 122.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 12'" +
 					" error='[\"open Music\\\\my artist\\\\my album 12\\\\3 my track" +
 					" 123.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 12\\\\3 my track 123.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='3 my track 123.mp3'" +
-					" msg='cannot edit track'\n" +
+					" msg='cannot rewrite track'\n" +
 					"level='error'" +
-					" command='repair'" +
+					" command='rewrite'" +
 					" directory='Music\\my artist\\my album 12'" +
 					" error='[\"open Music\\\\my artist\\\\my album 12\\\\4 my track" +
 					" 124.mp3: The system cannot find the path specified.\"," +
 					" \"open Music\\\\my artist\\\\my album 12\\\\4 my track 124.mp3: The" +
 					" system cannot find the path specified.\"]'" +
 					" fileName='4 my track 124.mp3'" +
-					" msg='cannot edit track'\n",
+					" msg='cannot rewrite track'\n",
 			},
 		},
 	}
 	for name, tt := range tests {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
-			got := tt.rs.repairArtists(o, tt.artists, &ioSettings{openFileLimit: 100})
+			got := tt.rs.rewriteArtists(o, tt.artists, &ioSettings{openFileLimit: 100})
 			if !compareExitErrors(got, tt.wantStatus) {
-				t.Errorf("repairSettings.repairArtists() got %s want %s", got, tt.wantStatus)
+				t.Errorf("rewriteSettings.rewriteArtists() got %s want %s", got, tt.wantStatus)
 			}
-			o.Report(t, "repairSettings.repairArtists()", tt.WantedRecording)
+			o.Report(t, "rewriteSettings.rewriteArtists()", tt.WantedRecording)
 		})
 	}
 }
 
-func Test_repairSettings_processArtists(t *testing.T) {
+func Test_rewriteSettings_processArtists(t *testing.T) {
 	originalReadMetadata := readMetadata
 	defer func() {
 		readMetadata = originalReadMetadata
@@ -1448,18 +1447,18 @@ func Test_repairSettings_processArtists(t *testing.T) {
 		ios        *ioSettings
 	}
 	tests := map[string]struct {
-		rs *repairSettings
+		rs *rewriteSettings
 		args
 		wantStatus *cmdtoolkit.ExitError
 		output.WantedRecording
 	}{
 		"nothing to do": {
-			rs:         &repairSettings{dryRun: cmdtoolkit.CommandFlag[bool]{Value: true}},
+			rs:         &rewriteSettings{dryRun: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			args:       args{},
-			wantStatus: cmdtoolkit.NewExitUserError("repair"),
+			wantStatus: cmdtoolkit.NewExitUserError("rewrite"),
 		},
 		"clean artists": {
-			rs: &repairSettings{dryRun: cmdtoolkit.CommandFlag[bool]{Value: true}},
+			rs: &rewriteSettings{dryRun: cmdtoolkit.CommandFlag[bool]{Value: true}},
 			args: args{
 				allArtists: generateArtists(2, 3, 4, nil),
 				ss: &searchSettings{
@@ -1471,7 +1470,7 @@ func Test_repairSettings_processArtists(t *testing.T) {
 			},
 			wantStatus: nil,
 			WantedRecording: output.WantedRecording{
-				Console: "No repairable track defects were found.\n",
+				Console: "No rewritable track defects were found.\n",
 			},
 		},
 	}
@@ -1480,14 +1479,14 @@ func Test_repairSettings_processArtists(t *testing.T) {
 			o := output.NewRecorder()
 			got := tt.rs.processArtists(o, tt.args.allArtists, tt.args.ss, tt.args.ios)
 			if !compareExitErrors(got, tt.wantStatus) {
-				t.Errorf("repairSettings.processArtists() got %s want %s", got, tt.wantStatus)
+				t.Errorf("rewriteSettings.processArtists() got %s want %s", got, tt.wantStatus)
 			}
-			o.Report(t, "repairSettings.processArtists()", tt.WantedRecording)
+			o.Report(t, "rewriteSettings.processArtists()", tt.WantedRecording)
 		})
 	}
 }
 
-func Test_repairRun(t *testing.T) {
+func Test_rewriteRun(t *testing.T) {
 	initGlobals()
 	originalBus := bus
 	originalSearchFlags := searchFlags
@@ -1501,11 +1500,11 @@ func Test_repairRun(t *testing.T) {
 		xdg.UserDirs.Music = originalMusicDir
 	}()
 	xdg.UserDirs.Music = "."
-	repairFlags := &cmdtoolkit.FlagSet{
-		Name: "repair",
+	rewriteFlags := &cmdtoolkit.FlagSet{
+		Name: "rewrite",
 		Details: map[string]*cmdtoolkit.FlagDetails{
 			"dryRun": {
-				Usage:        "output what would have been repaired, but make no" + " repairs",
+				Usage:        "output what files would have been rewritten, but rewrites no files",
 				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
@@ -1513,7 +1512,7 @@ func Test_repairRun(t *testing.T) {
 	}
 	command := &cobra.Command{}
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(), command.Flags(),
-		repairFlags, searchFlags, ioFlags)
+		rewriteFlags, searchFlags, ioFlags)
 	tests := map[string]struct {
 		cmd *cobra.Command
 		in1 []string
@@ -1540,13 +1539,13 @@ func Test_repairRun(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			bus = o // cook getBus()
-			_ = repairRun(tt.cmd, tt.in1)
-			o.Report(t, "repairRun()", tt.WantedRecording)
+			_ = rewriteRun(tt.cmd, tt.in1)
+			o.Report(t, "rewriteRun()", tt.WantedRecording)
 		})
 	}
 }
 
-func Test_repair_Help(t *testing.T) {
+func Test_rewrite_Help(t *testing.T) {
 	originalSearchFlags := searchFlags
 	defer func() {
 		searchFlags = originalSearchFlags
@@ -1557,29 +1556,29 @@ func Test_repair_Help(t *testing.T) {
 	}()
 	xdg.UserDirs.Music = "."
 	searchFlags = safeSearchFlags
-	commandUnderTest := cloneCommand(repairCmd)
+	commandUnderTest := cloneCommand(rewriteCmd)
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
-		commandUnderTest.Flags(), repairFlags, searchFlags, ioFlags)
+		commandUnderTest.Flags(), rewriteFlags, searchFlags, ioFlags)
 	tests := map[string]struct {
 		output.WantedRecording
 	}{
 		"good": {
 			WantedRecording: output.WantedRecording{
 				Console: "" +
-					"\"repair\" repairs the problems found by running 'scan --files'\n" +
+					"\"rewrite\" rewrites the files with problems found by running 'scan --files'\n" +
 					"\n" +
 					"This command rewrites the mp3 files that the scan command noted as having metadata\n" +
-					"inconsistent with the file structure. Prior to rewriting an mp3 file, the repair\n" +
+					"inconsistent with the file structure. Prior to rewriting an mp3 file, the rewrite\n" +
 					"command creates a backup directory for the parent album and copies the original mp3\n" +
 					"file into that backup directory. Use the cleanup command to automatically delete\n" +
 					"the backup folders.\n" +
 					"\n" +
 					"Usage:\n" +
-					"  repair [--dryRun] [--albumFilter regex] [--artistFilter regex]" +
+					"  rewrite [--dryRun] [--albumFilter regex] [--artistFilter regex]" +
 					" [--trackFilter regex] [--extensions extensions] [--maxOpenFiles count]\n" +
 					"\n" +
 					"Examples:\n" +
-					"repair --dryRun\n  Output what would be repaired, but does not perform the stated repairs\n" +
+					"rewrite --dryRun\n  Output what would be rewritten, but does not rewrite the files\n" +
 					"\n" +
 					"Flags:\n" +
 					"      --albumFilter string    " +
@@ -1587,7 +1586,7 @@ func Test_repair_Help(t *testing.T) {
 					"      --artistFilter string   " +
 					"regular expression specifying which artists to select (default \".*\")\n" +
 					"      --dryRun                " +
-					"output what would have been repaired, but make no repairs (default false)\n" +
+					"output what would have been rewritten, but rewrites no files (default false)\n" +
 					"      --extensions string     " +
 					"comma-delimited list of file extensions used by mp3 files (default \".mp3\")\n" +
 					"      --maxOpenFiles int      the maximum number of files that can be read simultaneously " +
@@ -1603,7 +1602,7 @@ func Test_repair_Help(t *testing.T) {
 			command := commandUnderTest
 			enableCommandRecording(o, command)
 			_ = command.Help()
-			o.Report(t, "repair Help()", tt.WantedRecording)
+			o.Report(t, "rewrite Help()", tt.WantedRecording)
 		})
 	}
 }

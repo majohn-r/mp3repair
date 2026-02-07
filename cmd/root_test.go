@@ -115,6 +115,46 @@ func Test_runMain(t *testing.T) {
 			"environment_variable": ElevatedPrivilegesPermissionVar,
 		},
 	}
+	const startLog = "level='info'" +
+		" args='[arg1 arg2]'" +
+		" buildSettings='[-ldflags: -X main.version=0.45.0 cmd: gcc git: 2.3.4]'" +
+		" defaults='" +
+		"about:\n" +
+		"    style: rounded\n" +
+		"export:\n" +
+		"    defaults: false\n" +
+		"    overwrite: false\n" +
+		"io:\n" +
+		"    maxOpenFiles: 1000\n" +
+		"list:\n" +
+		"    albums: false\n" +
+		"    annotate: false\n" +
+		"    artists: false\n" +
+		"    byNumber: false\n" +
+		"    byTitle: false\n" +
+		"    diagnostic: false\n" +
+		"    tracks: false\n" +
+		"resetLibrary:\n" +
+		"    force: false\n" +
+		"    ignoreServiceErrors: false\n" +
+		"    timeout: 10\n" +
+		"rewrite:\n" +
+		"    dryRun: false\n" +
+		"scan:\n" +
+		"    empty: false\n" +
+		"    files: false\n" +
+		"    numbering: false\n" +
+		"search:\n" +
+		"    albumFilter: .*\n" +
+		"    artistFilter: .*\n" +
+		"    extensions: .mp3\n" +
+		"    trackFilter: .*\n'" +
+		" dependencies='[foo v1.1.1 bar v1.2.2]'" +
+		" goVersion='1.22.x'" +
+		" mainVersion='0.45.0'" +
+		" timeStamp='2021-11-28T12:01:02Z05:00'" +
+		" version='0.1.2'" +
+		" msg='execution starts'\n"
 	type args struct {
 		cmd   commandExecutor
 		start time.Time
@@ -140,46 +180,7 @@ func Test_runMain(t *testing.T) {
 			settings:     []string{"-ldflags: -X main.version=0.45.0", "cmd: gcc", "git: 2.3.4"},
 			dependencies: []string{"foo v1.1.1", "bar v1.2.2"},
 			WantedRecording: output.WantedRecording{
-				Log: "level='info'" +
-					" args='[arg1 arg2]'" +
-					" buildSettings='[-ldflags: -X main.version=0.45.0 cmd: gcc git: 2.3.4]'" +
-					" defaults='" +
-					"about:\n" +
-					"    style: rounded\n" +
-					"export:\n" +
-					"    defaults: false\n" +
-					"    overwrite: false\n" +
-					"io:\n" +
-					"    maxOpenFiles: 1000\n" +
-					"list:\n" +
-					"    albums: false\n" +
-					"    annotate: false\n" +
-					"    artists: false\n" +
-					"    byNumber: false\n" +
-					"    byTitle: false\n" +
-					"    diagnostic: false\n" +
-					"    tracks: false\n" +
-					"repair:\n" +
-					"    dryRun: false\n" +
-					"resetLibrary:\n" +
-					"    force: false\n" +
-					"    ignoreServiceErrors: false\n" +
-					"    timeout: 10\n" +
-					"scan:\n" +
-					"    empty: false\n" +
-					"    files: false\n" +
-					"    numbering: false\n" +
-					"search:\n" +
-					"    albumFilter: .*\n" +
-					"    artistFilter: .*\n" +
-					"    extensions: .mp3\n" +
-					"    trackFilter: .*\n'" +
-					" dependencies='[foo v1.1.1 bar v1.2.2]'" +
-					" goVersion='1.22.x'" +
-					" mainVersion='0.45.0'" +
-					" timeStamp='2021-11-28T12:01:02Z05:00'" +
-					" version='0.1.2'" +
-					" msg='execution starts'\n" +
+				Log: startLog +
 					"level='info'" +
 					" admin_permission='true'" +
 					" elevated='true'" +
@@ -196,56 +197,17 @@ func Test_runMain(t *testing.T) {
 		},
 		"sad": {
 			args:         args{cmd: sadCommand{}, start: time.Now()},
-			appVersion:   "0.2.3",
-			timestamp:    "2021-11-29T13:02:03Z05:00",
-			cmdline:      []string{"sadApp", "arg1a", "arg2a"},
+			appVersion:   "0.1.2",
+			timestamp:    "2021-11-28T12:01:02Z05:00",
+			cmdline:      []string{"sadApp", "arg1", "arg2"},
 			goVersion:    "1.22.x",
 			mainVersion:  "0.45.0",
 			settings:     []string{"-ldflags: -X main.version=0.45.0", "cmd: gcc", "git: 2.3.4"},
-			dependencies: []string{"foo v1.1.2", "bar v1.2.3"},
+			dependencies: []string{"foo v1.1.1", "bar v1.2.2"},
 			WantedRecording: output.WantedRecording{
 				Error: "" +
-					"\"mp3repair\" version 0.2.3, created at 2021-11-29T13:02:03Z05:00, failed.\n",
-				Log: "level='info'" +
-					" args='[arg1a arg2a]'" +
-					" buildSettings='[-ldflags: -X main.version=0.45.0 cmd: gcc git: 2.3.4]'" +
-					" defaults='" +
-					"about:\n" +
-					"    style: rounded\n" +
-					"export:\n" +
-					"    defaults: false\n" +
-					"    overwrite: false\n" +
-					"io:\n" +
-					"    maxOpenFiles: 1000\n" +
-					"list:\n" +
-					"    albums: false\n" +
-					"    annotate: false\n" +
-					"    artists: false\n" +
-					"    byNumber: false\n" +
-					"    byTitle: false\n" +
-					"    diagnostic: false\n" +
-					"    tracks: false\n" +
-					"repair:\n" +
-					"    dryRun: false\n" +
-					"resetLibrary:\n" +
-					"    force: false\n" +
-					"    ignoreServiceErrors: false\n" +
-					"    timeout: 10\n" +
-					"scan:\n" +
-					"    empty: false\n" +
-					"    files: false\n" +
-					"    numbering: false\n" +
-					"search:\n" +
-					"    albumFilter: .*\n" +
-					"    artistFilter: .*\n" +
-					"    extensions: .mp3\n" +
-					"    trackFilter: .*\n'" +
-					" dependencies='[foo v1.1.2 bar v1.2.3]'" +
-					" goVersion='1.22.x'" +
-					" mainVersion='0.45.0'" +
-					" timeStamp='2021-11-29T13:02:03Z05:00'" +
-					" version='0.2.3'" +
-					" msg='execution starts'\n" +
+					"\"mp3repair\" version 0.1.2, created at 2021-11-28T12:01:02Z05:00, failed.\n",
+				Log: startLog +
 					"level='info'" +
 					" admin_permission='true'" +
 					" elevated='true'" +
@@ -262,56 +224,17 @@ func Test_runMain(t *testing.T) {
 		},
 		"panicky": {
 			args:         args{cmd: panickyCommand{}, start: time.Now()},
-			appVersion:   "0.2.3",
-			timestamp:    "2021-11-29T13:02:03Z05:00",
-			cmdline:      []string{"sadApp", "arg1a", "arg2a"},
+			appVersion:   "0.1.2",
+			timestamp:    "2021-11-28T12:01:02Z05:00",
+			cmdline:      []string{"sadApp", "arg1", "arg2"},
 			goVersion:    "1.22.x",
 			mainVersion:  "0.45.0",
 			settings:     []string{"-ldflags: -X main.version=0.45.0", "cmd: gcc", "git: 2.3.4"},
-			dependencies: []string{"foo v1.1.2", "bar v1.2.3"},
+			dependencies: []string{"foo v1.1.1", "bar v1.2.2"},
 			WantedRecording: output.WantedRecording{
 				Error: "" +
 					"A runtime error occurred: \"oh dear\".\n",
-				Log: "level='info'" +
-					" args='[arg1a arg2a]'" +
-					" buildSettings='[-ldflags: -X main.version=0.45.0 cmd: gcc git: 2.3.4]'" +
-					" defaults='" +
-					"about:\n" +
-					"    style: rounded\n" +
-					"export:\n" +
-					"    defaults: false\n" +
-					"    overwrite: false\n" +
-					"io:\n" +
-					"    maxOpenFiles: 1000\n" +
-					"list:\n" +
-					"    albums: false\n" +
-					"    annotate: false\n" +
-					"    artists: false\n" +
-					"    byNumber: false\n" +
-					"    byTitle: false\n" +
-					"    diagnostic: false\n" +
-					"    tracks: false\n" +
-					"repair:\n" +
-					"    dryRun: false\n" +
-					"resetLibrary:\n" +
-					"    force: false\n" +
-					"    ignoreServiceErrors: false\n" +
-					"    timeout: 10\n" +
-					"scan:\n" +
-					"    empty: false\n" +
-					"    files: false\n" +
-					"    numbering: false\n" +
-					"search:\n" +
-					"    albumFilter: .*\n" +
-					"    artistFilter: .*\n" +
-					"    extensions: .mp3\n" +
-					"    trackFilter: .*\n'" +
-					" dependencies='[foo v1.1.2 bar v1.2.3]'" +
-					" goVersion='1.22.x'" +
-					" mainVersion='0.45.0'" +
-					" timeStamp='2021-11-29T13:02:03Z05:00'" +
-					" version='0.2.3'" +
-					" msg='execution starts'\n" +
+				Log: startLog +
 					"level='info'" +
 					" admin_permission='true'" +
 					" elevated='true'" +
@@ -377,9 +300,8 @@ func Test_cookCommandLineArguments(t *testing.T) {
 			dereferenceEnvVar: func(s string) (string, error) {
 				if s == "%arg%" {
 					return "", fmt.Errorf("dereference service dead")
-				} else {
-					return s, nil
 				}
+				return s, nil
 			},
 			want: []string{"foo", "bar"},
 			WantedRecording: output.WantedRecording{
@@ -642,16 +564,16 @@ func Test_root_Usage(t *testing.T) {
 					"\n" +
 					"mp3repair scan --files\n" +
 					"\n" +
-					"If problems were found, repair the mp3 files:\n" +
+					"If problems were found, rewrite the mp3 files:\n" +
 					"\n" +
-					"mp3repair repair\n" +
-					"The repair command creates backup files for each track it rewrites. After\n" +
-					"listening to the files that have been repaired (verifying that the repair\n" +
+					"mp3repair rewrite\n" +
+					"The rewrite command creates backup files for each track it rewrites. After\n" +
+					"listening to the files that have been rewritten (verifying that the rewrite\n" +
 					"process did not corrupt the audio), clean up those backups:\n" +
 					"\n" +
 					"mp3repair cleanup\n" +
 					"\n" +
-					"After repairing the mp3 files, the Windows Media Player library may be out of\n" +
+					"After rewriting the mp3 files, the Windows Media Player library may be out of\n" +
 					"sync with the changes. While the library will eventually catch up, accelerate\n" +
 					"the process:\n" +
 					"\n" +

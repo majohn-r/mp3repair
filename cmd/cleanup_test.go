@@ -116,22 +116,22 @@ func Test_cleanupWork(t *testing.T) {
 					"Backup directories deleted: 6.\n",
 				Log: "" +
 					"level='info'" +
-					" directory='Music\\my artist\\my album 00\\pre-repair-backup'" +
+					" directory='Music\\my artist\\my album 00\\pre-rewrite-backup'" +
 					" msg='directory deleted'\n" +
 					"level='info'" +
-					" directory='Music\\my artist\\my album 01\\pre-repair-backup'" +
+					" directory='Music\\my artist\\my album 01\\pre-rewrite-backup'" +
 					" msg='directory deleted'\n" +
 					"level='info'" +
-					" directory='Music\\my artist\\my album 02\\pre-repair-backup'" +
+					" directory='Music\\my artist\\my album 02\\pre-rewrite-backup'" +
 					" msg='directory deleted'\n" +
 					"level='info'" +
-					" directory='Music\\my artist\\my album 10\\pre-repair-backup'" +
+					" directory='Music\\my artist\\my album 10\\pre-rewrite-backup'" +
 					" msg='directory deleted'\n" +
 					"level='info'" +
-					" directory='Music\\my artist\\my album 11\\pre-repair-backup'" +
+					" directory='Music\\my artist\\my album 11\\pre-rewrite-backup'" +
 					" msg='directory deleted'\n" +
 					"level='info'" +
-					" directory='Music\\my artist\\my album 12\\pre-repair-backup'" +
+					" directory='Music\\my artist\\my album 12\\pre-rewrite-backup'" +
 					" msg='directory deleted'\n",
 			},
 		},
@@ -152,27 +152,27 @@ func Test_cleanupWork(t *testing.T) {
 					"Backup directories deleted: 0.\n",
 				Log: "" +
 					"level='error'" +
-					" directory='Music\\my artist\\my album 00\\pre-repair-backup'" +
+					" directory='Music\\my artist\\my album 00\\pre-rewrite-backup'" +
 					" error='nope'" +
 					" msg='cannot delete directory'\n" +
 					"level='error'" +
-					" directory='Music\\my artist\\my album 01\\pre-repair-backup'" +
+					" directory='Music\\my artist\\my album 01\\pre-rewrite-backup'" +
 					" error='nope'" +
 					" msg='cannot delete directory'\n" +
 					"level='error'" +
-					" directory='Music\\my artist\\my album 02\\pre-repair-backup'" +
+					" directory='Music\\my artist\\my album 02\\pre-rewrite-backup'" +
 					" error='nope'" +
 					" msg='cannot delete directory'\n" +
 					"level='error'" +
-					" directory='Music\\my artist\\my album 10\\pre-repair-backup'" +
+					" directory='Music\\my artist\\my album 10\\pre-rewrite-backup'" +
 					" error='nope'" +
 					" msg='cannot delete directory'\n" +
 					"level='error'" +
-					" directory='Music\\my artist\\my album 11\\pre-repair-backup'" +
+					" directory='Music\\my artist\\my album 11\\pre-rewrite-backup'" +
 					" error='nope'" +
 					" msg='cannot delete directory'\n" +
 					"level='error'" +
-					" directory='Music\\my artist\\my album 12\\pre-repair-backup'" +
+					" directory='Music\\my artist\\my album 12\\pre-rewrite-backup'" +
 					" error='nope'" +
 					" msg='cannot delete directory'\n",
 			},
@@ -254,7 +254,7 @@ func Test_cleanup_Help(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"\"cleanup\" deletes the backup directories (and their contents) created by the " +
-					"\"repair\" command\n" +
+					"\"rewrite\" command\n" +
 					"\n" +
 					"Usage:\n" +
 					"  cleanup [--albumFilter regex] [--artistFilter regex]" + " [--trackFilter regex] " +

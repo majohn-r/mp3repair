@@ -14,34 +14,35 @@ import (
 )
 
 const (
-	repairCommandName = "repair"
-	repairDryRun      = "dryRun"
-	repairDryRunFlag  = "--" + repairDryRun
+	rewriteCommandName = "rewrite"
+	rewriteDryRun      = "dryRun"
+	rewriteDryRunFlag  = "--" + rewriteDryRun
 )
 
 var (
-	repairCmd = &cobra.Command{
-		Use:                   repairCommandName + " [" + repairDryRunFlag + "] " + searchUsage + " " + ioUsage,
+	rewriteCmd = &cobra.Command{
+		Use:                   rewriteCommandName + " [" + rewriteDryRunFlag + "] " + searchUsage + " " + ioUsage,
 		DisableFlagsInUseLine: true,
-		Short:                 "Repairs problems found by running '" + scanCommand + " " + scanFilesFlag + "'",
+		Short: "Rewrites files with problems found by running '" + scanCommand + " " + scanFilesFlag +
+			"'",
 		Long: "" +
-			fmt.Sprintf("%q repairs the problems found by running '%s %s'\n",
-				repairCommandName, scanCommand, scanFilesFlag) +
+			fmt.Sprintf("%q rewrites the files with problems found by running '%s %s'\n",
+				rewriteCommandName, scanCommand, scanFilesFlag) +
 			"\n" +
 			"This command rewrites the mp3 files that the " + scanCommand + " command noted as having metadata\n" +
-			"inconsistent with the file structure. Prior to rewriting an mp3 file, the " + repairCommandName + "\n" +
+			"inconsistent with the file structure. Prior to rewriting an mp3 file, the " + rewriteCommandName + "\n" +
 			"command creates a backup directory for the parent album and copies the" + " original mp3\n" +
 			"file into that backup directory. Use the " + cleanupCommandName + " command to automatically delete\n" +
 			"the backup folders.",
-		Example: repairCommandName + " " + repairDryRunFlag + "\n" +
-			"  Output what would be repaired, but does not perform the stated repairs",
-		RunE: repairRun,
+		Example: rewriteCommandName + " " + rewriteDryRunFlag + "\n" +
+			"  Output what would be rewritten, but does not rewrite the files",
+		RunE: rewriteRun,
 	}
-	repairFlags = &cmdtoolkit.FlagSet{
-		Name: repairCommandName,
+	rewriteFlags = &cmdtoolkit.FlagSet{
+		Name: rewriteCommandName,
 		Details: map[string]*cmdtoolkit.FlagDetails{
 			"dryRun": {
-				Usage:        "output what would have been repaired, but make no repairs",
+				Usage:        "output what would have been rewritten, but rewrites no files",
 				ExpectedType: cmdtoolkit.BoolType,
 				DefaultValue: false,
 			},
@@ -49,54 +50,55 @@ var (
 	}
 )
 
-func repairRun(cmd *cobra.Command, _ []string) error {
-	exitError := cmdtoolkit.NewExitProgrammingError(repairCommandName)
+func rewriteRun(cmd *cobra.Command, _ []string) error {
+	exitError := cmdtoolkit.NewExitProgrammingError(rewriteCommandName)
 	o := getBus()
 	producer := cmd.Flags()
-	values, eSlice := cmdtoolkit.ReadFlags(producer, repairFlags)
+	values, eSlice := cmdtoolkit.ReadFlags(producer, rewriteFlags)
 	ss, searchFlagsOk := evaluateSearchFlags(o, producer)
 	ios, ioFlagsOk := evaluateIOFlags(o, producer)
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) && searchFlagsOk && ioFlagsOk {
-		if rs, flagsOk := processRepairFlags(o, values); flagsOk {
+		if rs, flagsOk := processRewriteFlags(o, values); flagsOk {
 			exitError = rs.processArtists(o, ss.load(o), ss, ios)
 		}
 	}
 	return cmdtoolkit.ToErrorInterface(exitError)
 }
 
-type repairSettings struct {
+type rewriteSettings struct {
 	dryRun cmdtoolkit.CommandFlag[bool]
 }
 
-func (rs *repairSettings) processArtists(
+func (rs *rewriteSettings) processArtists(
 	o output.Bus,
 	allArtists []*files.Artist,
 	ss *searchSettings,
 	ios *ioSettings,
 ) (e *cmdtoolkit.ExitError) {
-	e = cmdtoolkit.NewExitUserError(repairCommandName)
+	e = cmdtoolkit.NewExitUserError(rewriteCommandName)
 	if len(allArtists) != 0 {
 		if filteredArtists := ss.filter(o, allArtists); len(filteredArtists) != 0 {
-			e = rs.repairArtists(o, filteredArtists, ios)
+			e = rs.rewriteArtists(o, filteredArtists, ios)
 		}
 	}
 	return
 }
 
-func (rs *repairSettings) repairArtists(o output.Bus, artists []*files.Artist, ios *ioSettings) *cmdtoolkit.ExitError {
+func (rs *rewriteSettings) rewriteArtists(
+	o output.Bus, artists []*files.Artist, ios *ioSettings) *cmdtoolkit.ExitError {
 	// read all track metadata
 	readMetadata(o, artists, ios.openFileLimit)
 	concernedArtists := createConcernedArtists(artists)
 	count := findConflictedTracks(concernedArtists)
 	if rs.dryRun.Value {
-		reportRepairsNeeded(o, concernedArtists)
+		reportRewritesNeeded(o, concernedArtists)
 		return nil
 	}
 	if count == 0 {
 		nothingToDo(o)
 		return nil
 	}
-	return backupAndRepairTracks(o, concernedArtists)
+	return backupAndRewriteTracks(o, concernedArtists)
 }
 
 func findConflictedTracks(concernedArtists []*concernedArtist) int {
@@ -145,7 +147,7 @@ func findConflictedTracks(concernedArtists []*concernedArtist) int {
 	return count
 }
 
-func reportRepairsNeeded(o output.Bus, concernedArtists []*concernedArtist) {
+func reportRewritesNeeded(o output.Bus, concernedArtists []*concernedArtist) {
 	artistNames := make([]string, 0, len(concernedArtists))
 	artistMap := map[string]*concernedArtist{}
 	for _, cAr := range concernedArtists {
@@ -159,7 +161,7 @@ func reportRepairsNeeded(o output.Bus, concernedArtists []*concernedArtist) {
 		if cAr := artistMap[name]; cAr != nil {
 			if cAr.isConcerned() {
 				if !headerPrinted {
-					o.ConsolePrintln("The following concerns can be repaired:")
+					o.ConsolePrintln("The following concerns can be rewritten:")
 					headerPrinted = true
 				}
 				cAr.toConsole(o)
@@ -172,10 +174,10 @@ func reportRepairsNeeded(o output.Bus, concernedArtists []*concernedArtist) {
 }
 
 func nothingToDo(o output.Bus) {
-	o.ConsolePrintln("No repairable track defects were found.")
+	o.ConsolePrintln("No rewritable track defects were found.")
 }
 
-func backupAndRepairTracks(o output.Bus, concernedArtists []*concernedArtist) *cmdtoolkit.ExitError {
+func backupAndRewriteTracks(o output.Bus, concernedArtists []*concernedArtist) *cmdtoolkit.ExitError {
 	var e *cmdtoolkit.ExitError
 	for _, cAr := range concernedArtists {
 		if !cAr.isConcerned() {
@@ -187,7 +189,7 @@ func backupAndRepairTracks(o output.Bus, concernedArtists []*concernedArtist) *c
 			}
 			path, exists := ensureTrackBackupDirectoryExists(o, cAl)
 			if !exists {
-				e = cmdtoolkit.NewExitSystemError(repairCommandName)
+				e = cmdtoolkit.NewExitSystemError(rewriteCommandName)
 				continue
 			}
 			for _, cT := range cAl.concernedTracks {
@@ -196,11 +198,11 @@ func backupAndRepairTracks(o output.Bus, concernedArtists []*concernedArtist) *c
 				}
 				t := cT.backing
 				if !tryTrackBackup(o, t, path) {
-					e = cmdtoolkit.NewExitSystemError(repairCommandName)
+					e = cmdtoolkit.NewExitSystemError(rewriteCommandName)
 					continue
 				}
 				err := t.UpdateMetadata()
-				if e2 := processTrackRepairResults(o, t, err); e2 != nil {
+				if e2 := processTrackRewriteResults(o, t, err); e2 != nil {
 					e = e2
 				}
 			}
@@ -209,22 +211,22 @@ func backupAndRepairTracks(o output.Bus, concernedArtists []*concernedArtist) *c
 	return e
 }
 
-func processTrackRepairResults(o output.Bus, t *files.Track, updateErrs []error) *cmdtoolkit.ExitError {
+func processTrackRewriteResults(o output.Bus, t *files.Track, updateErrs []error) *cmdtoolkit.ExitError {
 	if len(updateErrs) != 0 {
-		o.ErrorPrintf("An error occurred repairing track %q.\n", t)
+		o.ErrorPrintf("An error occurred rewriting track %q.\n", t)
 		errorStrings := make([]string, 0, len(updateErrs))
 		for _, e2 := range updateErrs {
 			errorStrings = append(errorStrings, fmt.Sprintf("%q", e2.Error()))
 		}
-		o.Log(output.Error, "cannot edit track", map[string]any{
-			"command":   repairCommandName,
+		o.Log(output.Error, "cannot rewrite track", map[string]any{
+			"command":   rewriteCommandName,
 			"directory": t.Directory(),
 			"fileName":  t.FileName(),
 			"error":     fmt.Sprintf("[%s]", strings.Join(errorStrings, ", ")),
 		})
-		return cmdtoolkit.NewExitSystemError(repairCommandName)
+		return cmdtoolkit.NewExitSystemError(rewriteCommandName)
 	}
-	o.ConsolePrintf("%q repaired.\n", t)
+	o.ConsolePrintf("%q rewritten.\n", t)
 	markDirty(o)
 	return nil
 }
@@ -241,7 +243,7 @@ func tryTrackBackup(o output.Bus, t *files.Track, path string) (backedUp bool) {
 			status = fmt.Sprintf("error getting modification time: %v", err)
 		}
 		o.Log(output.Info, "file already exists", map[string]any{
-			"command": repairCommandName,
+			"command": rewriteCommandName,
 			"file":    backupFile,
 			"modTime": status,
 		})
@@ -258,7 +260,7 @@ func tryTrackBackup(o output.Bus, t *files.Track, path string) (backedUp bool) {
 				cmdtoolkit.ErrorToString(copyErr),
 			)
 			o.Log(output.Error, "error copying file", map[string]any{
-				"command":     repairCommandName,
+				"command":     rewriteCommandName,
 				"source":      t.Path(),
 				"destination": backupFile,
 				"error":       copyErr,
@@ -266,7 +268,7 @@ func tryTrackBackup(o output.Bus, t *files.Track, path string) (backedUp bool) {
 		}
 	}
 	if !backedUp {
-		o.ErrorPrintf("The track file %q will not be repaired.\n", t)
+		o.ErrorPrintf("The track file %q will not be rewritten.\n", t)
 	}
 	return
 }
@@ -278,9 +280,9 @@ func ensureTrackBackupDirectoryExists(o output.Bus, cAl *concernedAlbum) (path s
 		if fileErr := mkdir(path); fileErr != nil {
 			exists = false
 			o.ErrorPrintf("The directory %q cannot be created: %s.\n", path, cmdtoolkit.ErrorToString(fileErr))
-			o.ErrorPrintf("The track files in the directory %q will not be repaired.\n", cAl.backing.Directory())
+			o.ErrorPrintf("The track files in the directory %q will not be rewritten.\n", cAl.backing.Directory())
 			o.Log(output.Error, "cannot create directory", map[string]any{
-				"command":   repairCommandName,
+				"command":   rewriteCommandName,
 				"directory": path,
 				"error":     fileErr,
 			})
@@ -289,18 +291,18 @@ func ensureTrackBackupDirectoryExists(o output.Bus, cAl *concernedAlbum) (path s
 	return
 }
 
-func processRepairFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (*repairSettings, bool) {
-	rs := &repairSettings{}
+func processRewriteFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (*rewriteSettings, bool) {
+	rs := &rewriteSettings{}
 	flagsOk := true // optimistic
 	var flagErr error
-	if rs.dryRun, flagErr = cmdtoolkit.GetBool(o, values, repairDryRun); flagErr != nil {
+	if rs.dryRun, flagErr = cmdtoolkit.GetBool(o, values, rewriteDryRun); flagErr != nil {
 		flagsOk = false
 	}
 	return rs, flagsOk
 }
 
 func init() {
-	rootCmd.AddCommand(repairCmd)
-	cmdtoolkit.AddDefaults(repairFlags)
-	cmdtoolkit.AddFlags(getBus(), getConfiguration(), repairCmd.Flags(), repairFlags, searchFlags, ioFlags)
+	rootCmd.AddCommand(rewriteCmd)
+	cmdtoolkit.AddDefaults(rewriteFlags)
+	cmdtoolkit.AddFlags(getBus(), getConfiguration(), rewriteCmd.Flags(), rewriteFlags, searchFlags, ioFlags)
 }
