@@ -1571,7 +1571,7 @@ func Test_repair_Help(t *testing.T) {
 					"This command rewrites the mp3 files that the scan command noted as having metadata\n" +
 					"inconsistent with the file structure. Prior to rewriting an mp3 file, the repair\n" +
 					"command creates a backup directory for the parent album and copies the original mp3\n" +
-					"file into that backup directory. Use the postRepair command to automatically delete\n" +
+					"file into that backup directory. Use the cleanup command to automatically delete\n" +
 					"the backup folders.\n" +
 					"\n" +
 					"Usage:\n" +

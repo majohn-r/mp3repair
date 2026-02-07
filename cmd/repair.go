@@ -31,7 +31,7 @@ var (
 			"This command rewrites the mp3 files that the " + scanCommand + " command noted as having metadata\n" +
 			"inconsistent with the file structure. Prior to rewriting an mp3 file, the " + repairCommandName + "\n" +
 			"command creates a backup directory for the parent album and copies the" + " original mp3\n" +
-			"file into that backup directory. Use the " + postRepairCommandName + " command to automatically delete\n" +
+			"file into that backup directory. Use the " + cleanupCommandName + " command to automatically delete\n" +
 			"the backup folders.",
 		Example: repairCommandName + " " + repairDryRunFlag + "\n" +
 			"  Output what would be repaired, but does not perform the stated repairs",

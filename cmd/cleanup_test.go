@@ -61,7 +61,7 @@ func Test_removeTrackBackupDirectory(t *testing.T) {
 	}
 }
 
-func Test_postRepairWork(t *testing.T) {
+func Test_cleanupWork(t *testing.T) {
 	originalRemoveAll := removeAll
 	originalDirExists := dirExists
 	defer func() {
@@ -183,13 +183,13 @@ func Test_postRepairWork(t *testing.T) {
 			removeAll = tt.removeAll
 			dirExists = tt.dirExists
 			o := output.NewRecorder()
-			_ = postRepairWork(o, tt.args.ss, tt.args.allArtists)
-			o.Report(t, "postRepairWork()", tt.WantedRecording)
+			_ = cleanupWork(o, tt.args.ss, tt.args.allArtists)
+			o.Report(t, "cleanupWork()", tt.WantedRecording)
 		})
 	}
 }
 
-func Test_postRepairRun(t *testing.T) {
+func Test_cleanupRun(t *testing.T) {
 	initGlobals()
 	originalBus := bus
 	defer func() {
@@ -232,19 +232,19 @@ func Test_postRepairRun(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			o := output.NewRecorder()
 			bus = o // cook getBus()
-			_ = postRepairRun(tt.args.cmd, tt.args.in1)
-			o.Report(t, "postRepairRun()", tt.WantedRecording)
+			_ = cleanupRun(tt.args.cmd, tt.args.in1)
+			o.Report(t, "cleanupRun()", tt.WantedRecording)
 		})
 	}
 }
 
-func Test_postRepair_Help(t *testing.T) {
+func Test_cleanup_Help(t *testing.T) {
 	originalMusicDir := xdg.UserDirs.Music
 	defer func() {
 		xdg.UserDirs.Music = originalMusicDir
 	}()
 	xdg.UserDirs.Music = "."
-	commandUnderTest := cloneCommand(postRepairCmd)
+	commandUnderTest := cloneCommand(cleanupCmd)
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), safeSearchFlags)
 	tests := map[string]struct {
@@ -253,22 +253,22 @@ func Test_postRepair_Help(t *testing.T) {
 		"good": {
 			WantedRecording: output.WantedRecording{
 				Console: "" +
-					"\"postRepair\" deletes the backup directories (and their contents)" +
-					" created by the \"repair\" command\n" +
+					"\"cleanup\" deletes the backup directories (and their contents) created by the " +
+					"\"repair\" command\n" +
 					"\n" +
 					"Usage:\n" +
-					"  postRepair [--albumFilter regex] [--artistFilter regex]" +
-					" [--trackFilter regex] [--extensions extensions]\n" +
+					"  cleanup [--albumFilter regex] [--artistFilter regex]" + " [--trackFilter regex] " +
+					"[--extensions extensions]\n" +
 					"\n" +
 					"Flags:\n" +
-					"      --albumFilter string    regular expression specifying which" +
-					" albums to select (default \".*\")\n" +
-					"      --artistFilter string   regular expression specifying which" +
-					" artists to select (default \".*\")\n" +
-					"      --extensions string     comma-delimited list of file extensions" +
-					" used by mp3 files (default \".mp3\")\n" +
-					"      --trackFilter string    regular expression specifying which" +
-					" tracks to select (default \".*\")\n",
+					"      --albumFilter string    regular expression specifying which albums to select " +
+					"(default \".*\")\n" +
+					"      --artistFilter string   regular expression specifying which artists to select " +
+					"(default \".*\")\n" +
+					"      --extensions string     comma-delimited list of file extensions used by mp3 files " +
+					"(default \".mp3\")\n" +
+					"      --trackFilter string    regular expression specifying which" + " tracks to select " +
+					"(default \".*\")\n",
 			},
 		},
 	}
@@ -278,18 +278,18 @@ func Test_postRepair_Help(t *testing.T) {
 			command := commandUnderTest
 			enableCommandRecording(o, command)
 			_ = command.Help()
-			o.Report(t, "postRepair Help()", tt.WantedRecording)
+			o.Report(t, "cleanup Help()", tt.WantedRecording)
 		})
 	}
 }
 
-func Test_postRepair_Usage(t *testing.T) {
+func Test_cleanup_Usage(t *testing.T) {
 	originalMusicDir := xdg.UserDirs.Music
 	defer func() {
 		xdg.UserDirs.Music = originalMusicDir
 	}()
 	xdg.UserDirs.Music = "."
-	commandUnderTest := cloneCommand(postRepairCmd)
+	commandUnderTest := cloneCommand(cleanupCmd)
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), safeSearchFlags)
 	tests := map[string]struct {
@@ -299,18 +299,18 @@ func Test_postRepair_Usage(t *testing.T) {
 			WantedRecording: output.WantedRecording{
 				Console: "" +
 					"Usage:\n" +
-					"  postRepair [--albumFilter regex] [--artistFilter regex]" +
-					" [--trackFilter regex] [--extensions extensions]\n" +
+					"  cleanup [--albumFilter regex] [--artistFilter regex] [--trackFilter regex] " +
+					"[--extensions extensions]\n" +
 					"\n" +
 					"Flags:\n" +
-					"      --albumFilter string    regular expression specifying which" +
-					" albums to select (default \".*\")\n" +
-					"      --artistFilter string   regular expression specifying which" +
-					" artists to select (default \".*\")\n" +
-					"      --extensions string     comma-delimited list of file extensions" +
-					" used by mp3 files (default \".mp3\")\n" +
-					"      --trackFilter string    regular expression specifying which" +
-					" tracks to select (default \".*\")\n",
+					"      --albumFilter string    regular expression specifying which albums to select " +
+					"(default \".*\")\n" +
+					"      --artistFilter string   regular expression specifying which artists to select " +
+					"(default \".*\")\n" +
+					"      --extensions string     comma-delimited list of file extensions used by mp3 files " +
+					"(default \".mp3\")\n" +
+					"      --trackFilter string    regular expression specifying which tracks to select " +
+					"(default \".*\")\n",
 			},
 		},
 	}
@@ -320,7 +320,7 @@ func Test_postRepair_Usage(t *testing.T) {
 			command := commandUnderTest
 			enableCommandRecording(o, command)
 			_ = command.Usage()
-			o.Report(t, "postRepair Usage()", tt.WantedRecording)
+			o.Report(t, "cleanup Usage()", tt.WantedRecording)
 		})
 	}
 }

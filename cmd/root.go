@@ -67,7 +67,7 @@ The ` + repairCommandName + ` command creates backup files for each track it rew
 listening to the files that have been repaired (verifying that the repair
 process did not corrupt the audio), clean up those backups:
 
-` + name + ` ` + postRepairCommandName + `
+` + name + ` ` + cleanupCommandName + `
 
 After repairing the mp3 files, the Windows Media Player library may be out of
 sync with the changes. While the library will eventually catch up, accelerate

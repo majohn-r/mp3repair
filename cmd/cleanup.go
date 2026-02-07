@@ -11,35 +11,35 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const postRepairCommandName = "postRepair"
+const cleanupCommandName = "cleanup"
 
 var (
-	postRepairCmd = &cobra.Command{
-		Use:                   postRepairCommandName + " " + searchUsage,
+	cleanupCmd = &cobra.Command{
+		Use:                   cleanupCommandName + " " + searchUsage,
 		DisableFlagsInUseLine: true,
 		Short: "Deletes the backup directories, and their contents, created" +
 			" by the " + repairCommandName + " command",
 		Long: fmt.Sprintf(
 			"%q deletes the backup directories (and their contents) created by the %q command",
-			postRepairCommandName, repairCommandName),
-		RunE: postRepairRun,
+			cleanupCommandName, repairCommandName),
+		RunE: cleanupRun,
 	}
 )
 
-func postRepairRun(cmd *cobra.Command, _ []string) error {
-	exitError := cmdtoolkit.NewExitProgrammingError(postRepairCommandName)
+func cleanupRun(cmd *cobra.Command, _ []string) error {
+	exitError := cmdtoolkit.NewExitProgrammingError(cleanupCommandName)
 	o := getBus()
 	producer := cmd.Flags()
 	ss, searchFlagsOk := evaluateSearchFlags(o, producer)
 	if searchFlagsOk {
 		// do some work here!
-		exitError = postRepairWork(o, ss, ss.load(o))
+		exitError = cleanupWork(o, ss, ss.load(o))
 	}
 	return cmdtoolkit.ToErrorInterface(exitError)
 }
 
-func postRepairWork(o output.Bus, ss *searchSettings, allArtists []*files.Artist) (e *cmdtoolkit.ExitError) {
-	e = cmdtoolkit.NewExitUserError(postRepairCommandName)
+func cleanupWork(o output.Bus, ss *searchSettings, allArtists []*files.Artist) (e *cmdtoolkit.ExitError) {
+	e = cmdtoolkit.NewExitUserError(cleanupCommandName)
 	if len(allArtists) != 0 {
 		if filteredArtists := ss.filter(o, allArtists); len(filteredArtists) != 0 {
 			e = nil
@@ -65,7 +65,7 @@ func postRepairWork(o output.Bus, ss *searchSettings, allArtists []*files.Artist
 					case true:
 						dirsDeleted++
 					default:
-						e = cmdtoolkit.NewExitSystemError(postRepairCommandName)
+						e = cmdtoolkit.NewExitSystemError(cleanupCommandName)
 					}
 				}
 				o.ConsolePrintf("Backup directories deleted: %d.\n", dirsDeleted)
@@ -88,6 +88,6 @@ func removeTrackBackupDirectory(o output.Bus, dir string) bool {
 }
 
 func init() {
-	rootCmd.AddCommand(postRepairCmd)
-	cmdtoolkit.AddFlags(getBus(), getConfiguration(), postRepairCmd.Flags(), searchFlags)
+	rootCmd.AddCommand(cleanupCmd)
+	cmdtoolkit.AddFlags(getBus(), getConfiguration(), cleanupCmd.Flags(), searchFlags)
 }

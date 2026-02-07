@@ -649,7 +649,7 @@ func Test_root_Usage(t *testing.T) {
 					"listening to the files that have been repaired (verifying that the repair\n" +
 					"process did not corrupt the audio), clean up those backups:\n" +
 					"\n" +
-					"mp3repair postRepair\n" +
+					"mp3repair cleanup\n" +
 					"\n" +
 					"After repairing the mp3 files, the Windows Media Player library may be out of\n" +
 					"sync with the changes. While the library will eventually catch up, accelerate\n" +
