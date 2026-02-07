@@ -146,10 +146,6 @@ func Test_runMain(t *testing.T) {
 					" defaults='" +
 					"about:\n" +
 					"    style: rounded\n" +
-					"check:\n" +
-					"    empty: false\n" +
-					"    files: false\n" +
-					"    numbering: false\n" +
 					"export:\n" +
 					"    defaults: false\n" +
 					"    overwrite: false\n" +
@@ -169,6 +165,10 @@ func Test_runMain(t *testing.T) {
 					"    force: false\n" +
 					"    ignoreServiceErrors: false\n" +
 					"    timeout: 10\n" +
+					"scan:\n" +
+					"    empty: false\n" +
+					"    files: false\n" +
+					"    numbering: false\n" +
 					"search:\n" +
 					"    albumFilter: .*\n" +
 					"    artistFilter: .*\n" +
@@ -212,10 +212,6 @@ func Test_runMain(t *testing.T) {
 					" defaults='" +
 					"about:\n" +
 					"    style: rounded\n" +
-					"check:\n" +
-					"    empty: false\n" +
-					"    files: false\n" +
-					"    numbering: false\n" +
 					"export:\n" +
 					"    defaults: false\n" +
 					"    overwrite: false\n" +
@@ -235,6 +231,10 @@ func Test_runMain(t *testing.T) {
 					"    force: false\n" +
 					"    ignoreServiceErrors: false\n" +
 					"    timeout: 10\n" +
+					"scan:\n" +
+					"    empty: false\n" +
+					"    files: false\n" +
+					"    numbering: false\n" +
 					"search:\n" +
 					"    albumFilter: .*\n" +
 					"    artistFilter: .*\n" +
@@ -278,10 +278,6 @@ func Test_runMain(t *testing.T) {
 					" defaults='" +
 					"about:\n" +
 					"    style: rounded\n" +
-					"check:\n" +
-					"    empty: false\n" +
-					"    files: false\n" +
-					"    numbering: false\n" +
 					"export:\n" +
 					"    defaults: false\n" +
 					"    overwrite: false\n" +
@@ -301,6 +297,10 @@ func Test_runMain(t *testing.T) {
 					"    force: false\n" +
 					"    ignoreServiceErrors: false\n" +
 					"    timeout: 10\n" +
+					"scan:\n" +
+					"    empty: false\n" +
+					"    files: false\n" +
+					"    numbering: false\n" +
 					"search:\n" +
 					"    albumFilter: .*\n" +
 					"    artistFilter: .*\n" +
@@ -638,9 +638,9 @@ func Test_root_Usage(t *testing.T) {
 					"\n" +
 					"mp3repair list -lrt\n" +
 					"\n" +
-					"Then check for problems in the track metadata:\n" +
+					"Then scan for problems in the track metadata:\n" +
 					"\n" +
-					"mp3repair check --files\n" +
+					"mp3repair scan --files\n" +
 					"\n" +
 					"If problems were found, repair the mp3 files:\n" +
 					"\n" +

@@ -14,35 +14,31 @@ import (
 
 // Details:
 
-// A mp3 file usually contains ID3V1 metadata (gory details: https://id3.org/ID3v1),
-// ID3V2 metadata (gory details: https://id3.org/id3v2.3.0), often both, in addition to
-// the audio data. The integrity check reads each mp3 file's metadata and does the
-// following:
+// A mp3 file usually contains ID3V1 metadata (gory details: https://id3.org/ID3v1), ID3V2 metadata (gory details:
+// https://id3.org/id3v2.3.0), often both, in addition to the audio data. The integrity scan reads each mp3 file's
+// metadata and does the following:
 
-// * Verify that the file name begins with the track number encoded in the TRCK (track
-//   number/position in set) ID3V2 frame and the ID3V1 track field, and that the rest of
-//   the file name matches the value encoded in the TIT2 (title/song name/content
-//   description) ID3V2 frame and the ID3V1 song title field.
-// * Verify that the containing album directory's name matches the TALB (album/movie/
-//   show title) ID3V2 frame and the ID3V1 album field, and that all mp3 files in the
-//   same album directory use the same album name in their ID3V2 and ID3V1 metadata.
-// * Verify that the containing artist directory's name matches the TPE1 (lead artist/
-//   lead performer/soloist/performing group) ID3V2 frame and the ID3V1 artist field, and
-//   that all mp3 files within the same artist directory use the same artist name in their
-//   ID3V2 and ID3V1 metadata.
+// * Verify that the file name begins with the track number encoded in the TRCK (track number/position in set) ID3V2
+//   frame and the ID3V1 track field
+// * Verify that the rest of the file name matches the value encoded in the TIT2 (title/song name/content description)
+//   ID3V2 frame and the ID3V1 song title field.
+// * Verify that the containing album directory's name matches the TALB (album/movie/ show title) ID3V2 frame and the
+//   ID3V1 album field, and that all mp3 files in the same album directory use the same album name in their ID3V2 and
+//   ID3V1 metadata.
+// * Verify that the containing artist directory's name matches the TPE1 (lead artist/ lead performer/soloist/performing
+//   group) ID3V2 frame and the ID3V1 artist field, and that all mp3 files within the same artist directory use the same
+//   artist name in their ID3V2 and ID3V1 metadata.
 // * Verify that all the mp3 files in the same album directory:
-//   - contain the same TYER (year) ID3V2 frame and the same ID3V1 year field, and that
-//     both agree.
-//   - contain the same TCON (content type, aka genre) ID3V2 frame and the same ID3V1
-//     genre field, and that the ID3V1 and ID3V2 genre agree as closely as possible.
+//   - contain the same TYER (year) ID3V2 frame and the same ID3V1 year field, and that both agree.
+//   - contain the same TCON (content type, aka genre) ID3V2 frame and the same ID3V1 genre field, and that the ID3V1
+//     and ID3V2 genre agree as closely as possible.
 //   - contain the same MCDI (music CD identifier) ID3V2 frame.
 
 // About name matching:
 
-//   File names and their corresponding metadata values cannot always be identical, as
-//   some characters in the metadata may not be legal file name characters and end up
-//   being replaced with, typically, punctuation characters. The check code takes those
-//   differences into account. The following characters are known to be illegal in Windows
+//   File names and their corresponding metadata values cannot always be identical, as some characters in the metadata
+//   may not be legal file name characters and end up being replaced with, typically, punctuation characters. The scan
+//   code takes those differences into account. The following characters are known to be illegal in Windows
 //   file names:
 //   asterisk (*)      backward slash (\) colon (:)
 //   forward slash (/) greater than (>)   less than (<)
@@ -50,63 +46,60 @@ import (
 
 // About ID3V1 and ID3V2 consistency:
 
-//   The ID3V1 format is older (more primitive) than the ID3V2 format, and the check code
-//   takes into account:
-//   - ID3V1 fields can not encode multibyte characters; similar 8-bit characters are
-//     used as needed.
+//   The ID3V1 format is older (more primitive) than the ID3V2 format, and the scan code takes into account:
+//   - ID3V1 fields can not encode multibyte characters; similar 8-bit characters are used as needed.
 //   - ID3V2 frames are variable-length; corresponding ID3V1 fields are fixed-length.
-//   - ID3V1 encodes genre as a numeric code that indexes a table of genre names; ID3V2
-//     encodes genre as free-form text.
+//   - ID3V1 encodes genre as a numeric code that indexes a table of genre names; ID3V2 encodes genre as free-form text.
 
 const (
-	checkCommand       = "check"
-	checkEmpty         = "empty"
-	checkEmptyAbbr     = "e"
-	checkEmptyFlag     = "--" + checkEmpty
-	checkFiles         = "files"
-	checkFilesAbbr     = "f"
-	checkFilesFlag     = "--" + checkFiles
-	checkNumbering     = "numbering"
-	checkNumberingAbbr = "n"
-	checkNumberingFlag = "--" + checkNumbering
+	scanCommand       = "scan"
+	scanEmpty         = "empty"
+	scanEmptyAbbr     = "e"
+	scanEmptyFlag     = "--" + scanEmpty
+	scanFiles         = "files"
+	scanFilesAbbr     = "f"
+	scanFilesFlag     = "--" + scanFiles
+	scanNumbering     = "numbering"
+	scanNumberingAbbr = "n"
+	scanNumberingFlag = "--" + scanNumbering
 )
 
 var (
-	checkCmd = &cobra.Command{
-		Use: checkCommand + " [" + checkEmptyFlag + "] [" +
-			checkFilesFlag + "] [" + checkNumberingFlag + "] " + searchUsage + " " + ioUsage,
+	scanCmd = &cobra.Command{
+		Use: scanCommand + " [" + scanEmptyFlag + "] [" + scanFilesFlag + "] [" + scanNumberingFlag + "] " +
+			searchUsage + " " + ioUsage,
 		DisableFlagsInUseLine: true,
 		Short: "" +
 			"Inspects mp3 files and their directories and reports" + " problems",
 		Long: fmt.Sprintf(
 			"%q inspects mp3 files and their containing directories and reports any"+
-				" problems detected", checkCommand),
+				" problems detected", scanCommand),
 		Example: "" +
-			checkCommand + " " + checkEmptyFlag + "\n" +
+			scanCommand + " " + scanEmptyFlag + "\n" +
 			"  reports empty artist and album directories\n" +
-			checkCommand + " " + checkFilesFlag + "\n" +
+			scanCommand + " " + scanFilesFlag + "\n" +
 			"  reads each mp3 file's metadata and reports any inconsistencies found\n" +
-			checkCommand + " " + checkNumberingFlag + "\n" +
+			scanCommand + " " + scanNumberingFlag + "\n" +
 			"  reports errors in the track numbers of mp3 files",
-		RunE: checkRun,
+		RunE: scanRun,
 	}
-	checkFlags = &cmdtoolkit.FlagSet{
-		Name: checkCommand,
+	scanFlags = &cmdtoolkit.FlagSet{
+		Name: scanCommand,
 		Details: map[string]*cmdtoolkit.FlagDetails{
-			checkEmpty: {
-				AbbreviatedName: checkEmptyAbbr,
+			scanEmpty: {
+				AbbreviatedName: scanEmptyAbbr,
 				Usage:           "report empty album and artist directories",
 				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
-			checkFiles: {
-				AbbreviatedName: checkFilesAbbr,
+			scanFiles: {
+				AbbreviatedName: scanFilesAbbr,
 				Usage:           "report metadata/file inconsistencies",
 				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
 			},
-			checkNumbering: {
-				AbbreviatedName: checkNumberingAbbr,
+			scanNumbering: {
+				AbbreviatedName: scanNumberingAbbr,
 				Usage:           "report missing track numbers and duplicated track numbering",
 				ExpectedType:    cmdtoolkit.BoolType,
 				DefaultValue:    false,
@@ -115,84 +108,84 @@ var (
 	}
 )
 
-func checkRun(cmd *cobra.Command, _ []string) error {
-	exitError := cmdtoolkit.NewExitProgrammingError(checkCommand)
+func scanRun(cmd *cobra.Command, _ []string) error {
+	exitError := cmdtoolkit.NewExitProgrammingError(scanCommand)
 	o := getBus()
 	producer := cmd.Flags()
-	values, eSlice := cmdtoolkit.ReadFlags(producer, checkFlags)
+	values, eSlice := cmdtoolkit.ReadFlags(producer, scanFlags)
 	ss, searchFlagsOk := evaluateSearchFlags(o, producer)
 	ios, ioFlagsOk := evaluateIOFlags(o, producer)
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) && searchFlagsOk && ioFlagsOk {
-		if cs, flagsOk := processCheckFlags(o, values); flagsOk {
+		if cs, flagsOk := processScanFlags(o, values); flagsOk {
 			exitError = cs.maybeDoWork(o, ss, ios)
 		}
 	}
 	return cmdtoolkit.ToErrorInterface(exitError)
 }
 
-type checkSettings struct {
+type scanSettings struct {
 	empty     cmdtoolkit.CommandFlag[bool]
 	files     cmdtoolkit.CommandFlag[bool]
 	numbering cmdtoolkit.CommandFlag[bool]
 }
 
-func (cs *checkSettings) maybeDoWork(o output.Bus, ss *searchSettings, ios *ioSettings) (err *cmdtoolkit.ExitError) {
-	err = cmdtoolkit.NewExitUserError(checkCommand)
-	if cs.hasWorkToDo(o) {
-		err = cs.performChecks(o, ss.load(o), ss, ios)
+func (scanSets *scanSettings) maybeDoWork(o output.Bus, ss *searchSettings, ios *ioSettings) (err *cmdtoolkit.ExitError) {
+	err = cmdtoolkit.NewExitUserError(scanCommand)
+	if scanSets.hasWorkToDo(o) {
+		err = scanSets.performScans(o, ss.load(o), ss, ios)
 	}
 	return
 }
 
-func (cs *checkSettings) performChecks(
+func (scanSets *scanSettings) performScans(
 	o output.Bus,
 	artists []*files.Artist,
 	ss *searchSettings,
 	ios *ioSettings,
 ) (err *cmdtoolkit.ExitError) {
-	err = cmdtoolkit.NewExitUserError(checkCommand)
+	err = cmdtoolkit.NewExitUserError(scanCommand)
 	if len(artists) != 0 {
 		err = nil
-		requests := checkReportRequests{}
+		requests := scanReportRequests{}
 		concernedArtists := createConcernedArtists(artists)
-		requests.reportEmptyCheckResults = cs.performEmptyAnalysis(concernedArtists)
-		requests.reportNumberingCheckResults = cs.performNumberingAnalysis(concernedArtists)
-		requests.reportFilesCheckResults = cs.performFileAnalysis(o, concernedArtists, ss, ios)
+		requests.reportEmptyScanResults = scanSets.performEmptyAnalysis(concernedArtists)
+		requests.reportNumberingScanResults = scanSets.performNumberingAnalysis(concernedArtists)
+		requests.reportFilesScanResults = scanSets.performFileAnalysis(o, concernedArtists, ss, ios)
 		for _, artist := range concernedArtists {
 			artist.rollup()
 			artist.toConsole(o)
 		}
-		cs.maybeReportCleanResults(o, requests)
+		scanSets.maybeReportCleanResults(o, requests)
 	}
 	return
 }
 
-type checkReportRequests struct {
-	reportEmptyCheckResults     bool
-	reportFilesCheckResults     bool
-	reportNumberingCheckResults bool
+type scanReportRequests struct {
+	reportEmptyScanResults     bool
+	reportFilesScanResults     bool
+	reportNumberingScanResults bool
 }
 
-func (cs *checkSettings) maybeReportCleanResults(o output.Bus, requests checkReportRequests) {
-	if !requests.reportEmptyCheckResults && cs.empty.Value {
+func (scanSets *scanSettings) maybeReportCleanResults(o output.Bus, requests scanReportRequests) {
+	if !requests.reportEmptyScanResults && scanSets.empty.Value {
 		o.ConsolePrintln("Empty Folder Analysis: no empty folders found.")
 	}
-	if !requests.reportNumberingCheckResults && cs.numbering.Value {
+	if !requests.reportNumberingScanResults && scanSets.numbering.Value {
 		o.ConsolePrintln("Numbering Analysis: no missing or duplicate tracks found.")
 	}
-	if !requests.reportFilesCheckResults && cs.files.Value {
+	if !requests.reportFilesScanResults && scanSets.files.Value {
 		o.ConsolePrintln("File Analysis: no inconsistencies found.")
 	}
 }
 
-func (cs *checkSettings) performFileAnalysis(
+func (scanSets *scanSettings) performFileAnalysis(
 	o output.Bus,
 	concernedArtists []*concernedArtist,
 	ss *searchSettings,
 	ios *ioSettings,
 ) bool {
 	foundConcerns := false
-	if cs.files.Value {
+	if scanSets.files.Value {
 		artists := make([]*files.Artist, 0, len(concernedArtists))
 		for _, cAr := range concernedArtists {
 			artists = append(artists, cAr.backingArtist())
@@ -229,10 +222,10 @@ func recordTrackFileConcerns(artists []*concernedArtist, track *files.Track, con
 	return foundConcerns
 }
 
-func (cs *checkSettings) performNumberingAnalysis(
+func (scanSets *scanSettings) performNumberingAnalysis(
 	concernedArtists []*concernedArtist) bool {
 	foundConcerns := false
-	if cs.numbering.Value {
+	if scanSets.numbering.Value {
 		for _, cAr := range concernedArtists {
 			for _, cAl := range cAr.albums() {
 				trackMap := map[int][]string{}
@@ -323,9 +316,9 @@ func (gap numberGap) generateMissingTrackNumbers() string {
 	return fmt.Sprintf("%d-%d", min(gap.value1, gap.value2), max(gap.value1, gap.value2))
 }
 
-func (cs *checkSettings) performEmptyAnalysis(concernedArtists []*concernedArtist) bool {
+func (scanSets *scanSettings) performEmptyAnalysis(concernedArtists []*concernedArtist) bool {
 	emptyFoldersFound := false
-	if cs.empty.Value {
+	if scanSets.empty.Value {
 		for _, concernedArtist := range concernedArtists {
 			if !concernedArtist.backingArtist().HasAlbums() {
 				concernedArtist.addConcern(emptyConcern, "no albums found")
@@ -343,42 +336,42 @@ func (cs *checkSettings) performEmptyAnalysis(concernedArtists []*concernedArtis
 	return emptyFoldersFound
 }
 
-func (cs *checkSettings) hasWorkToDo(o output.Bus) bool {
-	if cs.empty.Value || cs.files.Value || cs.numbering.Value {
+func (scanSets *scanSettings) hasWorkToDo(o output.Bus) bool {
+	if scanSets.empty.Value || scanSets.files.Value || scanSets.numbering.Value {
 		return true
 	}
-	userPartiallyAtFault := cs.empty.UserSet || cs.files.UserSet || cs.numbering.UserSet
-	o.ErrorPrintln("No checks will be executed.")
+	userPartiallyAtFault := scanSets.empty.UserSet || scanSets.files.UserSet || scanSets.numbering.UserSet
+	o.ErrorPrintln("No scans will be performed.")
 	o.ErrorPrintln("Why?")
 	switch userPartiallyAtFault {
 	case true:
 		flagsUserSet := make([]string, 0, 3)
 		flagsFromConfig := make([]string, 0, 3)
-		switch cs.empty.UserSet {
+		switch scanSets.empty.UserSet {
 		case true:
-			flagsUserSet = append(flagsUserSet, checkEmptyFlag)
+			flagsUserSet = append(flagsUserSet, scanEmptyFlag)
 		case false:
-			flagsFromConfig = append(flagsFromConfig, checkEmptyFlag)
+			flagsFromConfig = append(flagsFromConfig, scanEmptyFlag)
 		}
-		switch cs.files.UserSet {
+		switch scanSets.files.UserSet {
 		case true:
-			flagsUserSet = append(flagsUserSet, checkFilesFlag)
+			flagsUserSet = append(flagsUserSet, scanFilesFlag)
 		case false:
-			flagsFromConfig = append(flagsFromConfig, checkFilesFlag)
+			flagsFromConfig = append(flagsFromConfig, scanFilesFlag)
 		}
-		switch cs.numbering.UserSet {
+		switch scanSets.numbering.UserSet {
 		case true:
-			flagsUserSet = append(flagsUserSet, checkNumberingFlag)
+			flagsUserSet = append(flagsUserSet, scanNumberingFlag)
 		case false:
-			flagsFromConfig = append(flagsFromConfig, checkNumberingFlag)
+			flagsFromConfig = append(flagsFromConfig, scanNumberingFlag)
 		}
 		switch len(flagsFromConfig) {
 		case 0:
 			o.ErrorPrintf(
 				"You explicitly set %s, %s, and %s false.\n",
-				checkEmptyFlag,
-				checkFilesFlag,
-				checkNumberingFlag,
+				scanEmptyFlag,
+				scanFilesFlag,
+				scanNumberingFlag,
 			)
 		default:
 			o.ErrorPrintf(
@@ -389,9 +382,9 @@ func (cs *checkSettings) hasWorkToDo(o output.Bus) bool {
 	default:
 		o.ErrorPrintf(
 			"The flags %s, %s, and %s are all configured false.\n",
-			checkEmptyFlag,
-			checkFilesFlag,
-			checkNumberingFlag,
+			scanEmptyFlag,
+			scanFilesFlag,
+			scanNumberingFlag,
 		)
 	}
 	o.ErrorPrintln("What to do:")
@@ -403,24 +396,24 @@ func (cs *checkSettings) hasWorkToDo(o output.Bus) bool {
 	return false
 }
 
-func processCheckFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (*checkSettings, bool) {
-	settings := &checkSettings{}
+func processScanFlags(o output.Bus, values map[string]*cmdtoolkit.CommandFlag[any]) (*scanSettings, bool) {
+	settings := &scanSettings{}
 	flagsOk := true // optimistic
 	var flagErr error
-	if settings.empty, flagErr = cmdtoolkit.GetBool(o, values, checkEmpty); flagErr != nil {
+	if settings.empty, flagErr = cmdtoolkit.GetBool(o, values, scanEmpty); flagErr != nil {
 		flagsOk = false
 	}
-	if settings.files, flagErr = cmdtoolkit.GetBool(o, values, checkFiles); flagErr != nil {
+	if settings.files, flagErr = cmdtoolkit.GetBool(o, values, scanFiles); flagErr != nil {
 		flagsOk = false
 	}
-	if settings.numbering, flagErr = cmdtoolkit.GetBool(o, values, checkNumbering); flagErr != nil {
+	if settings.numbering, flagErr = cmdtoolkit.GetBool(o, values, scanNumbering); flagErr != nil {
 		flagsOk = false
 	}
 	return settings, flagsOk
 }
 
 func init() {
-	rootCmd.AddCommand(checkCmd)
-	cmdtoolkit.AddDefaults(checkFlags)
-	cmdtoolkit.AddFlags(getBus(), getConfiguration(), checkCmd.Flags(), checkFlags, searchFlags, ioFlags)
+	rootCmd.AddCommand(scanCmd)
+	cmdtoolkit.AddDefaults(scanFlags)
+	cmdtoolkit.AddFlags(getBus(), getConfiguration(), scanCmd.Flags(), scanFlags, searchFlags, ioFlags)
 }

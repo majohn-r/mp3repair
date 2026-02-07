@@ -23,20 +23,15 @@ var (
 	repairCmd = &cobra.Command{
 		Use:                   repairCommandName + " [" + repairDryRunFlag + "] " + searchUsage + " " + ioUsage,
 		DisableFlagsInUseLine: true,
-		Short: "Repairs problems found by running '" + checkCommand + " " +
-			checkFilesFlag + "'",
+		Short:                 "Repairs problems found by running '" + scanCommand + " " + scanFilesFlag + "'",
 		Long: "" +
 			fmt.Sprintf("%q repairs the problems found by running '%s %s'\n",
-				repairCommandName, checkCommand, checkFilesFlag) +
+				repairCommandName, scanCommand, scanFilesFlag) +
 			"\n" +
-			"This command rewrites the mp3 files that the " + checkCommand +
-			" command noted as having metadata\n" +
-			"inconsistent with the file structure. Prior to rewriting an mp3 file, the " +
-			repairCommandName + "\n" +
-			"command creates a backup directory for the parent album and copies the" +
-			" original mp3\n" +
-			"file into that backup directory. Use the " + postRepairCommandName +
-			" command to automatically delete\n" +
+			"This command rewrites the mp3 files that the " + scanCommand + " command noted as having metadata\n" +
+			"inconsistent with the file structure. Prior to rewriting an mp3 file, the " + repairCommandName + "\n" +
+			"command creates a backup directory for the parent album and copies the" + " original mp3\n" +
+			"file into that backup directory. Use the " + postRepairCommandName + " command to automatically delete\n" +
 			"the backup folders.",
 		Example: repairCommandName + " " + repairDryRunFlag + "\n" +
 			"  Output what would be repaired, but does not perform the stated repairs",
@@ -115,13 +110,11 @@ func findConflictedTracks(concernedArtists []*concernedArtist) int {
 				state = cT.backing.ReconcileMetadata()
 				if state.HasArtistNameConflict() {
 					cT.addConcern(conflictConcern,
-						"the artist name field does not match the name of the artist"+
-							" directory")
+						"the artist name field does not match the name of the artist directory")
 				}
 				if state.HasAlbumNameConflict() {
 					cT.addConcern(conflictConcern,
-						"the album name field does not match the name of the album"+
-							" directory")
+						"the album name field does not match the name of the album directory")
 				}
 				if state.HasGenreConflict() {
 					cT.addConcern(conflictConcern,
@@ -129,8 +122,7 @@ func findConflictedTracks(concernedArtists []*concernedArtist) int {
 				}
 				if state.HasMCDIConflict() {
 					cT.addConcern(conflictConcern,
-						"the music CD identifier field does not match the other tracks in"+
-							" the album")
+						"the music CD identifier field does not match the other tracks in the album")
 				}
 				if state.HasNumberingConflict() {
 					cT.addConcern(conflictConcern,

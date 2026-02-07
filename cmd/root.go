@@ -14,11 +14,11 @@ import (
 )
 
 const (
-	// ElevatedPrivilegesPermissionVar is the name of an environment variable a user can set to
-	// govern whether mp3repair should run with elevated privileges
+	// ElevatedPrivilegesPermissionVar is the name of an environment variable a user can set to govern whether mp3repair
+	// should run with elevated privileges
 	ElevatedPrivilegesPermissionVar = "MP3REPAIR_RUNS_AS_ADMIN"
-	// DefaultElevatedPrivilegesPermission is the setting to use if ElevatedPrivilegesPermissionVar
-	// is not set or is set to a non-boolean value
+	// DefaultElevatedPrivilegesPermission is the setting to use if ElevatedPrivilegesPermissionVar is not set or is set
+	// to a non-boolean value
 	DefaultElevatedPrivilegesPermission = true
 )
 
@@ -56,9 +56,9 @@ First, get a listing of the available mp3 files:
 
 ` + name + ` ` + listCommand + ` -lrt
 
-Then check for problems in the track metadata:
+Then scan for problems in the track metadata:
 
-` + name + ` ` + checkCommand + ` ` + checkFilesFlag + `
+` + name + ` ` + scanCommand + ` ` + scanFilesFlag + `
 
 If problems were found, repair the mp3 files:
 
@@ -135,9 +135,8 @@ type commandExecutor interface {
 	Execute() error
 }
 
-// Execute adds all child commands to the root command and sets flags
-// appropriately. This is called by main.main(). It only needs to happen once to
-// the rootCmd.
+// Execute adds all child commands to the root command and sets flags appropriately. This is called by main.main(). It
+// only needs to happen once to the rootCmd.
 func Execute() {
 	start := time.Now()
 	o := getBus()

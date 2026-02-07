@@ -55,8 +55,8 @@ func Test_isSelfPromoted(t *testing.T) {
 			want1: false,
 		},
 		"multiple args, no self promotion": {
-			args:  []string{"./mp3repair.exe", "check", "-f"},
-			want:  []string{"./mp3repair.exe", "check", "-f"},
+			args:  []string{"./mp3repair.exe", "scan", "-f"},
+			want:  []string{"./mp3repair.exe", "scan", "-f"},
 			want1: false,
 		},
 		"minimal args with self-promotion": {
@@ -65,13 +65,13 @@ func Test_isSelfPromoted(t *testing.T) {
 			want1: true,
 		},
 		"more args with self-promotion": {
-			args:  []string{"./mp3repair.exe", selfPromotionMarker, "check", "-f"},
-			want:  []string{"./mp3repair.exe", "check", "-f"},
+			args:  []string{"./mp3repair.exe", selfPromotionMarker, "scan", "-f"},
+			want:  []string{"./mp3repair.exe", "scan", "-f"},
 			want1: true,
 		},
 		"misplaced self-promotion": {
-			args:  []string{"./mp3repair.exe", "check", selfPromotionMarker, "-f"},
-			want:  []string{"./mp3repair.exe", "check", selfPromotionMarker, "-f"},
+			args:  []string{"./mp3repair.exe", "scan", selfPromotionMarker, "-f"},
+			want:  []string{"./mp3repair.exe", "scan", selfPromotionMarker, "-f"},
 			want1: false,
 		},
 	}
@@ -100,8 +100,8 @@ func Test_injectSelfPromotion(t *testing.T) {
 			want: []string{"./mp3repair.exe", selfPromotionMarker},
 		},
 		"multiple args": {
-			args: []string{"./mp3repair.exe", "check", "-f"},
-			want: []string{"./mp3repair.exe", selfPromotionMarker, "check", "-f"},
+			args: []string{"./mp3repair.exe", "scan", "-f"},
+			want: []string{"./mp3repair.exe", selfPromotionMarker, "scan", "-f"},
 		},
 	}
 	for name, tt := range tests {
