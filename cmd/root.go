@@ -69,11 +69,11 @@ process did not corrupt the audio), clean up those backups:
 
 ` + name + ` ` + cleanupCommandName + `
 
-After rewriting the mp3 files, the Windows Media Player library may be out of
-sync with the changes. While the library will eventually catch up, accelerate
+After rewriting the mp3 files, the Windows Media Player database may be out of
+sync with the changes. While the database will eventually catch up, accelerate
 the process:
 
-` + name + ` ` + resetLibraryCommandName
+` + name + ` ` + resetDatabaseCommandName
 }
 
 func getBus() output.Bus {

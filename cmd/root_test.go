@@ -134,7 +134,7 @@ func Test_runMain(t *testing.T) {
 		"    byTitle: false\n" +
 		"    diagnostic: false\n" +
 		"    tracks: false\n" +
-		"resetLibrary:\n" +
+		"resetDatabase:\n" +
 		"    force: false\n" +
 		"    ignoreServiceErrors: false\n" +
 		"    timeout: 10\n" +
@@ -573,11 +573,11 @@ func Test_root_Usage(t *testing.T) {
 					"\n" +
 					"mp3repair cleanup\n" +
 					"\n" +
-					"After rewriting the mp3 files, the Windows Media Player library may be out of\n" +
-					"sync with the changes. While the library will eventually catch up, accelerate\n" +
+					"After rewriting the mp3 files, the Windows Media Player database may be out of\n" +
+					"sync with the changes. While the database will eventually catch up, accelerate\n" +
 					"the process:\n" +
 					"\n" +
-					"mp3repair resetLibrary\n",
+					"mp3repair resetDatabase\n",
 			},
 		},
 	}
