@@ -11,6 +11,9 @@ import (
 	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
+/*
+Copyright © 2026 Marc Johnson (marc.johnson27591@gmail.com)
+*/
 
 const (
 	searchAlbumFilter        = "albumFilter"

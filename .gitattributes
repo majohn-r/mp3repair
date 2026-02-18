@@ -1,0 +1,2 @@
+# force go source to be treated as binary
+*.go -text

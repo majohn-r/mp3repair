@@ -16,6 +16,9 @@ import (
 	"golang.org/x/sys/windows/svc"
 	"golang.org/x/sys/windows/svc/mgr"
 )
+/*
+Copyright © 2026 Marc Johnson (marc.johnson27591@gmail.com)
+*/
 
 const (
 	resetDatabaseCommandName             = "resetDatabase"

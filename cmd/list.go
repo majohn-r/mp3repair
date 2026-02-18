@@ -13,6 +13,9 @@ import (
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"
 )
+/*
+Copyright © 2026 Marc Johnson (marc.johnson27591@gmail.com)
+*/
 
 const (
 	listAlbums           = "albums"

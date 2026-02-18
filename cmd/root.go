@@ -12,6 +12,9 @@ import (
 	"github.com/majohn-r/output"
 	"github.com/spf13/cobra"
 )
+/*
+Copyright © 2026 Marc Johnson (marc.johnson27591@gmail.com)
+*/
 
 const (
 	// ElevatedPrivilegesPermissionVar is the name of an environment variable a user can set to govern whether mp3repair

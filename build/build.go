@@ -13,7 +13,9 @@ import (
 	toolsbuild "github.com/majohn-r/tools-build"
 	"github.com/spf13/afero"
 )
-
+/*
+Copyright © 2026 Marc Johnson (marc.johnson27591@gmail.com)
+*/
 const (
 	applicationDescription = "mp3 repair utility"
 	applicationName        = "mp3repair"

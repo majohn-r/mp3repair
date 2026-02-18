@@ -1,5 +1,5 @@
 /*
- * Copyright © 2021 Marc Johnson (marc.johnson27591@gmail.com)
+ * Copyright © 2026 Marc Johnson (marc.johnson27591@gmail.com)
  */
 
 package cmd

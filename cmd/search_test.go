@@ -15,6 +15,9 @@ import (
 	"github.com/majohn-r/output"
 	"github.com/spf13/afero"
 )
+/*
+Copyright © 2026 Marc Johnson (marc.johnson27591@gmail.com)
+*/
 
 func Test_evaluateFilter(t *testing.T) {
 	tests := map[string]struct {
