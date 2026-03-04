@@ -564,13 +564,13 @@ func TestReadMetadata(t *testing.T) {
 	testDir := "ReadMetadata"
 	_ = cmdtoolkit.Mkdir(testDir)
 	var artists []*Artist
-	for k := 0; k < 5; k++ {
+	for k := range 5 {
 		artistName := fmt.Sprintf("artist %d", k)
 		artistPath := filepath.Join(testDir, artistName)
 		_ = cmdtoolkit.Mkdir(artistPath)
 		artist := NewArtist(artistName, artistPath)
 		artists = append(artists, artist)
-		for m := 0; m < 20; m++ {
+		for m := range 20 {
 			albumName := fmt.Sprintf("album %d-%d", k, m)
 			albumPath := filepath.Join(artistPath, albumName)
 			_ = cmdtoolkit.Mkdir(albumPath)
@@ -579,7 +579,7 @@ func TestReadMetadata(t *testing.T) {
 				Artist:    artist,
 				Directory: albumName,
 			}.NewAlbum(true)
-			for n := 0; n < 50; n++ {
+			for n := range 50 {
 				trackName := fmt.Sprintf("track %d-%d-%d", k, m, n)
 				trackFileName := fmt.Sprintf("%02d %s.mp3", n+1, trackName)
 				track := &Track{

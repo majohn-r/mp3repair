@@ -1,7 +1,7 @@
 package cmd
 
 /*
-Copyright © 2026 Marc Johnson (marc.johnson27591@gmail.com)
+Copyright Â© 2026 Marc Johnson (marc.johnson27591@gmail.com)
 */
 
 import (

@@ -6,6 +6,7 @@ package cmd
 import (
 	"fmt"
 	"io/fs"
+	"maps"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -1029,9 +1030,7 @@ func Test_resetDatabaseRun(t *testing.T) {
 func Test_resetDatabase_Help(t *testing.T) {
 	commandUnderTest := cloneCommand(resetDatabaseCmd)
 	flagMap := map[string]*cmdtoolkit.FlagDetails{}
-	for k, v := range resetDatabaseFlags.Details {
-		flagMap[k] = v
-	}
+	maps.Copy(flagMap, resetDatabaseFlags.Details)
 	flagCopy := &cmdtoolkit.FlagSet{Name: "resetDatabase", Details: flagMap}
 	cmdtoolkit.AddFlags(output.NewNilBus(), cmdtoolkit.EmptyConfiguration(),
 		commandUnderTest.Flags(), flagCopy)

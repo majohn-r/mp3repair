@@ -23,7 +23,7 @@ func makeTextFrame(id, content string) []byte {
 	frame = append(frame, []byte(id)...)
 	contentSize := 1 + len(content)
 	factor := 256 * 256 * 256
-	for k := 0; k < 4; k++ {
+	for range 4 {
 		frame = append(frame, byte(contentSize/factor))
 		contentSize %= factor
 		factor /= 256
@@ -37,7 +37,7 @@ var cannedPayload = makePayload()
 
 func makePayload() []byte {
 	payload := make([]byte, 0, 256)
-	for k := 0; k < 256; k++ {
+	for k := range 256 {
 		payload = append(payload, byte(k))
 	}
 	return payload
@@ -77,7 +77,7 @@ func createID3v2TaggedData(audio []byte, frames map[string]string) []byte {
 	content = append(content, []byte("ID3")...)
 	content = append(content, []byte{3, 0, 0}...)
 	factor := 128 * 128 * 128
-	for k := 0; k < 4; k++ {
+	for range 4 {
 		content = append(content, byte(frameLength/factor))
 		frameLength %= factor
 		factor /= 128

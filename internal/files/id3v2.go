@@ -341,7 +341,7 @@ func interpretPictureFrame(frame *id3v2.PictureFrame) []string {
 
 func bytesToInt(content []byte) int {
 	result := 0
-	for i := 0; i < len(content); i++ {
+	for i := range content {
 		result <<= 8
 		result += int(content[i])
 	}
@@ -419,7 +419,7 @@ func decodeLAMEGeneratedMCDI(content []byte) ([]string, bool) {
 					fmt.Sprintf("first track: %d", trackFirst),
 					fmt.Sprintf("last track: %d", trackLast))
 				const logicalBlockAddressCorrection = 150
-				for k := 0; k < trackCount; k++ {
+				for k := range trackCount {
 					offset := k * 8
 					lbaAddress := bytesToInt(content[offset+8:offset+12]) + logicalBlockAddressCorrection
 					formatted = append(
@@ -493,10 +493,10 @@ func decodeFreeRipMCDI(content []byte) ([]string, bool) {
 func hexDump(content []byte) []string {
 	values := make([]string, 0, (len(content)+15)/16)
 	fullLines := len(content) / 16
-	for j := 0; j < fullLines; j++ {
+	for j := range fullLines {
 		hex := make([]string, 0, 16)
 		printable := make([]string, 0, 16)
-		for k := 0; k < 16; k++ {
+		for k := range 16 {
 			currentChar := content[(j*16)+k]
 			hex = append(hex, fmt.Sprintf("%02X", currentChar))
 			if currentChar >= ' ' && currentChar <= '~' {
@@ -513,7 +513,7 @@ func hexDump(content []byte) []string {
 		hex := make([]string, 0, 16)
 		printable := make([]string, 0, remainder)
 		offset := 16 * (len(content) / 16)
-		for k := 0; k < 16; k++ {
+		for k := range 16 {
 			if k < remainder {
 				currentChar := content[offset+k]
 				hex = append(hex, fmt.Sprintf("%02X", currentChar))

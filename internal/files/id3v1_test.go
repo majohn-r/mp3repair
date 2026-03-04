@@ -75,7 +75,7 @@ func newID3v1MetadataWithData(b []byte) *id3v1Metadata {
 	im := newID3v1Metadata()
 	switch {
 	case len(b) >= id3v1Length:
-		for k := 0; k < id3v1Length; k++ {
+		for k := range id3v1Length {
 			im.data[k] = b[k]
 		}
 	default:

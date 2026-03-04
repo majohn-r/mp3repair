@@ -1,5 +1,5 @@
 /*
-Copyright © 2026 Marc Johnson (marc.johnson27591@gmail.com)
+Copyright Â© 2026 Marc Johnson (marc.johnson27591@gmail.com)
 */
 package files
 
@@ -497,11 +497,11 @@ func TestTrackMetadata_SetTrackNumber(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			tt.tm.setTrackNumber(tt.args.src, tt.args.number)
 			if got := tt.tm.trackNumber(tt.args.src).original; got != tt.want {
-				t.Errorf("TrackMetadata.trackNumber() got %q want %q", got, tt.want)
+				t.Errorf("TrackMetadata.trackNumber() got %d want %d", got, tt.want)
 			}
 			tt.tm.setCanonicalSource(tt.args.src)
 			if got := tt.tm.trackNumber(tt.tm.canonicalSrc).original; got != tt.want {
-				t.Errorf("TrackMetadata.trackNumber(canonical source) got %q want %q", got, tt.want)
+				t.Errorf("TrackMetadata.trackNumber(canonical source) got %d want %d", got, tt.want)
 			}
 		})
 	}
@@ -537,7 +537,7 @@ func TestTrackMetadata_CorrectTrackNumber(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			tt.tm.correctTrackNumber(tt.args.src, tt.args.number)
 			if got := tt.tm.trackNumber(tt.args.src).correctedValue(); got != tt.want {
-				t.Errorf("TrackMetadata.trackNumber() got %q want %q", got, tt.want)
+				t.Errorf("TrackMetadata.trackNumber() got %d want %d", got, tt.want)
 			}
 		})
 	}

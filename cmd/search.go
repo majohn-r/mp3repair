@@ -5,14 +5,16 @@ import (
 	"mp3repair/internal/files"
 	"path/filepath"
 	"regexp"
+	"slices"
 	"strings"
 
 	"github.com/adrg/xdg"
 	cmdtoolkit "github.com/majohn-r/cmd-toolkit"
 	"github.com/majohn-r/output"
 )
+
 /*
-Copyright © 2026 Marc Johnson (marc.johnson27591@gmail.com)
+Copyright Â© 2026 Marc Johnson (marc.johnson27591@gmail.com)
 */
 
 const (
@@ -396,10 +398,8 @@ func (ss *searchSettings) addTracks(o output.Bus, album *files.Album) {
 func (ss *searchSettings) isValidTrackFile(file fs.FileInfo) (string, bool) {
 	extension := filepath.Ext(file.Name())
 	if !file.IsDir() {
-		for _, expectedExtension := range ss.fileExtensions {
-			if expectedExtension == extension {
-				return extension, true
-			}
+		if slices.Contains(ss.fileExtensions, extension) {
+			return extension, true
 		}
 	}
 	return extension, false

@@ -1,6 +1,7 @@
 /*
-Copyright © 2026 Marc Johnson (marc.johnson27591@gmail.com)
+Copyright Â© 2026 Marc Johnson (marc.johnson27591@gmail.com)
 */
+
 package files
 
 const backupDirName = "pre-rewrite-backup"

@@ -388,12 +388,12 @@ func Test_generateNumberingConcerns(t *testing.T) {
 	}
 }
 
-func Test_scankSettings_performNumberingAnalysis(t *testing.T) {
+func Test_scanSettings_performNumberingAnalysis(t *testing.T) {
 	var defectiveArtists []*files.Artist
-	for r := 0; r < 4; r++ {
+	for r := range 4 {
 		artistName := fmt.Sprintf("my artist %d", r)
 		artist := files.NewArtist(artistName, filepath.Join("Music", artistName))
-		for k := 0; k < 5; k++ {
+		for k := range 5 {
 			albumName := fmt.Sprintf("my album %d%d", r, k)
 			album := files.AlbumMaker{
 				Title:     albumName,

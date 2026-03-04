@@ -1,6 +1,7 @@
 /*
 Copyright © 2026 Marc Johnson (marc.johnson27591@gmail.com)
 */
+
 package cmd
 
 import (
@@ -98,7 +99,7 @@ func aboutRun(cmd *cobra.Command, _ []string) error {
 	if cmdtoolkit.ProcessFlagErrors(o, eSlice) {
 		flag, err := cmdtoolkit.GetString(o, values, aboutStyle)
 		if err == nil {
-			o.ConsolePrintf(strings.Join(
+			o.ConsolePrintf("%s", strings.Join(
 				cmdtoolkit.StyledFlowerBox(acquireAboutData(o), interpretStyle(flag)),
 				"\n",
 			))

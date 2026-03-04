@@ -1,7 +1,7 @@
 /*
 Copyright © 2026 Marc Johnson (marc.johnson27591@gmail.com)
 */
-//go:generate goversioninfo -icon=mp3repair.ico
+//go:generate goversioninfo -64 -icon=mp3repair.ico
 package main
 
 import (
