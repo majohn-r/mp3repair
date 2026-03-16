@@ -26,6 +26,19 @@ const (
 	versionInfoFile = "versionInfo.json"
 	resourceFile    = "resource.syso"
 	executableName  = applicationName + ".exe"
+	// task names
+	taskBuild              = "build"
+	taskClean              = "clean"
+	taskCoverage           = "coverage"
+	taskDeadCode           = "deadcode"
+	taskDoc                = "doc"
+	taskFix                = "fix"
+	taskFormat             = "format"
+	taskLint               = "lint"
+	taskNilAway            = "nilaway"
+	taskTests              = "tests"
+	taskUpdateDependencies = "updateDependencies"
+	taskVulnCheck          = "vulnCheck"
 )
 
 var (
@@ -42,20 +55,20 @@ var (
 	fileSystem = afero.NewOsFs()
 	pD         *productData
 	build      = goyek.Define(goyek.Task{
-		Name:  "build",
+		Name:  taskBuild,
 		Usage: "build the executable",
 		Action: func(a *goyek.A) {
-			if !toolsbuild.TaskDisabled("build") {
+			if !toolsbuild.TaskDisabled(taskBuild) {
 				buildExecutable(a)
 			}
 		},
 	})
 
 	clean = goyek.Define(goyek.Task{
-		Name:  "clean",
+		Name:  taskClean,
 		Usage: "delete build products",
 		Action: func(a *goyek.A) {
-			if !toolsbuild.TaskDisabled("clean") {
+			if !toolsbuild.TaskDisabled(taskClean) {
 				fmt.Println("deleting build products")
 				toolsbuild.Clean(generatedFiles)
 			}
@@ -63,80 +76,90 @@ var (
 	})
 
 	_ = goyek.Define(goyek.Task{
-		Name:  "coverage",
+		Name:  taskCoverage,
 		Usage: "run unit tests and produce a coverage report",
 		Action: func(a *goyek.A) {
-			if !toolsbuild.TaskDisabled("coverage") {
+			if !toolsbuild.TaskDisabled(taskCoverage) {
 				toolsbuild.GenerateCoverageReport(a, coverageFile)
 			}
 		},
 	})
 
 	_ = goyek.Define(goyek.Task{
-		Name:  "deadcode",
+		Name:  taskDeadCode,
 		Usage: "run deadcode analysis",
 		Action: func(a *goyek.A) {
-			if !toolsbuild.TaskDisabled("deadcode") {
+			if !toolsbuild.TaskDisabled(taskDeadCode) {
 				toolsbuild.Deadcode(a)
 			}
 		},
 	})
 
 	_ = goyek.Define(goyek.Task{
-		Name:  "doc",
+		Name:  taskDoc,
 		Usage: "generate documentation",
 		Action: func(a *goyek.A) {
-			if !toolsbuild.TaskDisabled("doc") {
+			if !toolsbuild.TaskDisabled(taskDoc) {
 				toolsbuild.GenerateDocumentation(a, []string{"build", ".idea"})
 			}
 		},
 	})
 
+	_ = goyek.Define(goyek.Task{
+		Name:  taskFix,
+		Usage: "run go fix",
+		Action: func(a *goyek.A) {
+			if !toolsbuild.TaskDisabled(taskFix) {
+				toolsbuild.GoFix(a)
+			}
+		},
+	})
+
 	format = goyek.Define(goyek.Task{
-		Name:  "format",
+		Name:  taskFormat,
 		Usage: "clean up source code formatting",
 		Action: func(a *goyek.A) {
-			if !toolsbuild.TaskDisabled("format") {
+			if !toolsbuild.TaskDisabled(taskFormat) {
 				toolsbuild.FormatSelective(a, []string{".idea"})
 			}
 		},
 	})
 
 	lint = goyek.Define(goyek.Task{
-		Name:  "lint",
+		Name:  taskLint,
 		Usage: "run the linter on source code",
 		Action: func(a *goyek.A) {
-			if !toolsbuild.TaskDisabled("lint") {
+			if !toolsbuild.TaskDisabled(taskLint) {
 				toolsbuild.Lint(a)
 			}
 		},
 	})
 
 	nilaway = goyek.Define(goyek.Task{
-		Name:  "nilaway",
+		Name:  taskNilAway,
 		Usage: "run nilaway on source code",
 		Action: func(a *goyek.A) {
-			if !toolsbuild.TaskDisabled("nilaway") {
+			if !toolsbuild.TaskDisabled(taskNilAway) {
 				toolsbuild.NilAway(a)
 			}
 		},
 	})
 
 	updateDependencies = goyek.Define(goyek.Task{
-		Name:  "updateDependencies",
+		Name:  taskUpdateDependencies,
 		Usage: "update dependencies",
 		Action: func(a *goyek.A) {
-			if !toolsbuild.TaskDisabled("updateDependencies") {
+			if !toolsbuild.TaskDisabled(taskUpdateDependencies) {
 				toolsbuild.UpdateDependencies(a)
 			}
 		},
 	})
 
 	vulnCheck = goyek.Define(goyek.Task{
-		Name:  "vulnCheck",
+		Name:  taskVulnCheck,
 		Usage: "run vulnerability check on source code",
 		Action: func(a *goyek.A) {
-			if !toolsbuild.TaskDisabled("vulnCheck") {
+			if !toolsbuild.TaskDisabled(taskVulnCheck) {
 				toolsbuild.VulnerabilityCheck(a)
 			}
 		},
@@ -158,10 +181,10 @@ var (
 	})
 
 	tests = goyek.Define(goyek.Task{
-		Name:  "tests",
+		Name:  taskTests,
 		Usage: "run unit tests",
 		Action: func(a *goyek.A) {
-			if !toolsbuild.TaskDisabled("tests") {
+			if !toolsbuild.TaskDisabled(taskTests) {
 				toolsbuild.UnitTests(a)
 			}
 		},

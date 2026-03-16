@@ -16,28 +16,9 @@ jobs:
       - name: Install linter
         run: go install -v github.com/go-critic/go-critic/cmd/gocritic@latest
       - name: Run linter
-        run: gocritic check -enableAll ./... > lint-issues.txt
-      - name: Post lint issues
-        uses: actions/upload-artifact@v4
-        with:
-          name: lint results
-          path: lint-issues.txt
-#      - name: Install nilaway
-#        run: go install go.uber.org/nilaway/cmd/nilaway@latest
-#      - name: Run nilaway
-#        run: nilaway ./... > nilaway-issues.txt
-#      - name: Post nilaway issues
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: nilaway results
-#          path: nilaway-issues.txt
+        run: gocritic check -enableAll ./...
       - name: Run format check
-        run: gofmt -d -e -l ./ > format-issues.txt
-      - name: Post format issues
-        uses: actions/upload-artifact@v4
-        with:
-          name: format results
-          path: format-issues.txt
+        run: gofmt -d -e -l ./
       - name: Get vulnerability check program
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
       - name: Run vulnerability check
